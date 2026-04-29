@@ -17,45 +17,50 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 
-import React from 'react';
-import { Button, Dropdown } from '@douyinfe/semi-ui';
+import React, { useState, useRef, useEffect } from 'react';
 import fireworks from 'react-fireworks';
 
 const NewYearButton = ({ isNewYear }) => {
-  if (!isNewYear) {
-    return null;
-  }
+  const [open, setOpen] = useState(false);
+  const ref = useRef(null);
+
+  useEffect(() => {
+    const handler = (e) => {
+      if (ref.current && !ref.current.contains(e.target)) setOpen(false);
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, []);
+
+  if (!isNewYear) return null;
 
   const handleNewYearClick = () => {
+    setOpen(false);
     fireworks.init('root', {});
     fireworks.start();
-    setTimeout(() => {
-      fireworks.stop();
-    }, 3000);
+    setTimeout(() => fireworks.stop(), 3000);
   };
 
   return (
-    <Dropdown
-      position='bottomRight'
-      render={
-        <Dropdown.Menu className='!bg-semi-color-bg-overlay !border-semi-color-border !shadow-lg !rounded-lg dark:!bg-gray-700 dark:!border-gray-600'>
-          <Dropdown.Item
+    <div className='relative' ref={ref}>
+      <button
+        onClick={() => setOpen((o) => !o)}
+        aria-label='New Year'
+        className='inline-flex items-center justify-center w-9 h-9 rounded-full hover:bg-ui-bg-subtle transition-colors text-xl'
+      >
+        🎉
+      </button>
+      {open && (
+        <div className='absolute right-0 mt-2 w-48 bg-ui-bg-elevated border border-ui-border rounded-xl shadow-lg py-1 z-50'>
+          <button
             onClick={handleNewYearClick}
-            className='!text-semi-color-text-0 hover:!bg-semi-color-fill-1 dark:!text-gray-200 dark:hover:!bg-gray-600'
+            className='flex w-full px-3 py-2 text-sm text-ui-text hover:bg-ui-bg-subtle transition-colors'
           >
             Happy New Year!!! 🎉
-          </Dropdown.Item>
-        </Dropdown.Menu>
-      }
-    >
-      <Button
-        theme='borderless'
-        type='tertiary'
-        icon={<span className='text-xl'>🎉</span>}
-        aria-label='New Year'
-        className='!p-1.5 !text-current focus:!bg-semi-color-fill-1 dark:focus:!bg-gray-700 rounded-full'
-      />
-    </Dropdown>
+          </button>
+        </div>
+      )}
+    </div>
   );
 };
 

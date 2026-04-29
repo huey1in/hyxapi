@@ -115,29 +115,29 @@ const Home = () => {
         <div className='w-full min-h-screen flex flex-col items-center justify-center px-6 py-24'>
           {/* 主标题 */}
           <div className='text-center max-w-3xl mx-auto mb-12'>
-            <h1 className={`text-5xl md:text-6xl lg:text-7xl font-semibold text-black leading-tight mb-6 ${isChinese ? 'tracking-wide' : ''}`}>
+            <h1 className={`text-5xl md:text-6xl lg:text-7xl font-semibold text-ui-text leading-tight mb-6 ${isChinese ? 'tracking-wide' : ''}`}>
               {t('统一的')}<br />
               <span className='shine-text'>{t('大模型接口网关')}</span>
             </h1>
-            <p className='text-gray-500 text-lg md:text-xl'>
+            <p className='text-ui-text-2 text-lg md:text-xl'>
               {t('更好的价格，更好的稳定性，只需要将模型基址替换为：')}
             </p>
           </div>
 
           {/* Base URL 输入框 */}
           <div className='w-full max-w-lg mb-10'>
-            <div className='flex items-center border border-black rounded-xl overflow-hidden bg-white'>
-              <span className='flex-1 px-4 py-3 text-sm text-gray-700 truncate select-all'>
+            <div className='flex items-center border border-ui-border rounded-xl overflow-hidden bg-ui-bg'>
+              <span className='flex-1 px-4 py-3 text-sm text-ui-text truncate select-all'>
                 {serverAddress}
               </span>
-              <div className='px-3 py-3 text-xs text-gray-400 border-l border-gray-200 min-w-[80px] text-center overflow-hidden'>
+              <div className='px-3 py-3 text-xs text-ui-text-3 border-l border-ui-border min-w-[80px] text-center overflow-hidden'>
                 <span key={endpointIndex} className='block truncate'>
                   {endpointItems[endpointIndex]?.value}
                 </span>
               </div>
               <button
                 onClick={handleCopyBaseURL}
-                className='px-4 py-3 bg-black text-white text-sm font-medium hover:bg-[#333] transition-colors whitespace-nowrap'
+                className='px-4 py-3 bg-ui-accent text-ui-accent-fg text-sm font-medium hover:bg-ui-accent-hover transition-colors whitespace-nowrap'
               >
                 {t('复制')}
               </button>
@@ -147,17 +147,14 @@ const Home = () => {
           {/* 操作按钮 */}
           <div className='flex flex-row gap-3'>
             <Link to='/console'>
-              <button className='px-6 py-3 text-sm font-medium rounded-lg transition-colors' style={{ backgroundColor: '#000', color: '#fff' }}
-                onMouseEnter={e => e.currentTarget.style.backgroundColor = '#333'}
-                onMouseLeave={e => e.currentTarget.style.backgroundColor = '#000'}
-              >
+              <button className='px-6 py-3 text-sm font-medium rounded-lg transition-colors bg-ui-accent text-ui-accent-fg hover:bg-ui-accent-hover'>
                 {t('获取密钥')}
               </button>
             </Link>
             {isDemoSiteMode && statusState?.status?.version ? (
               <button
                 onClick={() => window.open('https://github.com/QuantumNous/new-api', '_blank')}
-                className='px-6 py-3 text-sm font-medium rounded-lg border border-gray-200 text-gray-700 bg-white hover:bg-gray-50 transition-colors'
+                className='px-6 py-3 text-sm font-medium rounded-lg border border-ui-border text-ui-text-2 bg-ui-bg hover:bg-ui-bg-subtle transition-colors'
               >
                 {statusState.status.version}
               </button>

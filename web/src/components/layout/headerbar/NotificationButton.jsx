@@ -18,29 +18,23 @@ For commercial licensing, please contact support@quantumnous.com
 */
 
 import React from 'react';
-import { Button, Badge } from '@douyinfe/semi-ui';
 import { Bell } from 'lucide-react';
 
 const NotificationButton = ({ unreadCount, onNoticeOpen, t }) => {
-  const buttonProps = {
-    icon: <Bell size={18} />,
-    'aria-label': t('系统公告'),
-    onClick: onNoticeOpen,
-    theme: 'borderless',
-    type: 'tertiary',
-    className:
-      '!p-1.5 !text-current focus:!bg-semi-color-fill-1 dark:focus:!bg-gray-700 !rounded-full !bg-semi-color-fill-0 dark:!bg-semi-color-fill-1 hover:!bg-semi-color-fill-1 dark:hover:!bg-semi-color-fill-2',
-  };
-
-  if (unreadCount > 0) {
-    return (
-      <Badge count={unreadCount} type='danger' overflowCount={99}>
-        <Button {...buttonProps} />
-      </Badge>
-    );
-  }
-
-  return <Button {...buttonProps} />;
+  return (
+    <button
+      onClick={onNoticeOpen}
+      aria-label={t('系统公告')}
+      className='relative inline-flex items-center justify-center w-9 h-9 rounded-full text-ui-text-2 hover:bg-ui-bg-subtle transition-colors'
+    >
+      <Bell size={18} />
+      {unreadCount > 0 && (
+        <span className='absolute top-0.5 right-0.5 min-w-[16px] h-4 px-1 flex items-center justify-center text-[10px] font-bold bg-ui-badge text-ui-badge-fg rounded-full leading-none'>
+          {unreadCount > 99 ? '99+' : unreadCount}
+        </span>
+      )}
+    </button>
+  );
 };
 
 export default NotificationButton;

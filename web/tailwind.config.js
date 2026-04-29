@@ -18,6 +18,7 @@ For commercial licensing, please contact support@quantumnous.com
 */
 
 export default {
+  darkMode: 'class',
   content: ['./index.html', './src/**/*.{js,jsx,ts,tsx}'],
   theme: {
     colors: {
@@ -134,6 +135,28 @@ export default {
       'semi-color-data-19': 'var(--semi-color-data-19)',
     },
     extend: {
+      colors: {
+        'ui-bg':            'var(--ui-bg)',
+        'ui-bg-elevated':   'var(--ui-bg-elevated)',
+        'ui-bg-subtle':     'var(--ui-bg-subtle)',
+        'ui-header-bg':     'var(--ui-header-bg)',
+        'ui-border':        'var(--ui-border)',
+        'ui-divider':       'var(--ui-divider)',
+        'ui-text':          'var(--ui-text)',
+        'ui-text-2':        'var(--ui-text-2)',
+        'ui-text-3':        'var(--ui-text-3)',
+        'ui-accent':        'var(--ui-accent)',
+        'ui-accent-fg':     'var(--ui-accent-fg)',
+        'ui-accent-hover':  'var(--ui-accent-hover)',
+        'ui-danger':        'var(--ui-danger)',
+        'ui-danger-bg':     'var(--ui-danger-bg)',
+        'ui-badge':         'var(--ui-badge)',
+        'ui-badge-fg':      'var(--ui-badge-fg)',
+        'ui-tag-purple-bg': 'var(--ui-tag-purple-bg)',
+        'ui-tag-purple':    'var(--ui-tag-purple)',
+        'ui-tag-blue-bg':   'var(--ui-tag-blue-bg)',
+        'ui-tag-blue':      'var(--ui-tag-blue)',
+      },
       borderRadius: {
         'semi-border-radius-extra-small':
           'var(--semi-border-radius-extra-small)',

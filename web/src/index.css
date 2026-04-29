@@ -18,6 +18,51 @@
   --sidebar-width: 180px;
   --sidebar-width-collapsed: 60px;
   --sidebar-current-width: var(--sidebar-width);
+
+  /* ── 自定义设计 token ── */
+  --ui-bg:            #ffffff;
+  --ui-bg-elevated:   #ffffff;
+  --ui-bg-subtle:     #f4f4f5;
+  --ui-header-bg:     rgba(255, 255, 255, 0.8);
+  --ui-border:        #e4e4e7;
+  --ui-divider:       #f4f4f5;
+  --ui-text:          #18181b;
+  --ui-text-2:        #71717a;
+  --ui-text-3:        #a1a1aa;
+  --ui-accent:        #18181b;
+  --ui-accent-fg:     #ffffff;
+  --ui-accent-hover:  #3f3f46;
+  --ui-danger:        #ef4444;
+  --ui-danger-bg:     #fef2f2;
+  --ui-badge:         #ef4444;
+  --ui-badge-fg:      #ffffff;
+  --ui-tag-purple-bg: rgba(124, 58, 237, 0.1);
+  --ui-tag-purple:    #7c3aed;
+  --ui-tag-blue-bg:   rgba(29, 78, 216, 0.1);
+  --ui-tag-blue:      #1d4ed8;
+}
+
+html.dark {
+  --ui-bg:            #09090b;
+  --ui-bg-elevated:   #18181b;
+  --ui-bg-subtle:     #27272a;
+  --ui-header-bg:     rgba(9, 9, 11, 0.8);
+  --ui-border:        #27272a;
+  --ui-divider:       #1c1c1e;
+  --ui-text:          #fafafa;
+  --ui-text-2:        #a1a1aa;
+  --ui-text-3:        #52525b;
+  --ui-accent:        #ffffff;
+  --ui-accent-fg:     #09090b;
+  --ui-accent-hover:  #e4e4e7;
+  --ui-danger:        #f87171;
+  --ui-danger-bg:     rgba(239, 68, 68, 0.1);
+  --ui-badge:         #ef4444;
+  --ui-badge-fg:      #ffffff;
+  --ui-tag-purple-bg: rgba(167, 139, 250, 0.15);
+  --ui-tag-purple:    #a78bfa;
+  --ui-tag-blue-bg:   rgba(147, 197, 253, 0.15);
+  --ui-tag-blue:      #93c5fd;
 }
 
 body.sidebar-collapsed {
@@ -1034,5 +1079,11 @@ button.bg-black:hover:not(:disabled) {
 button.bg-black:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+}
+
+/* View Transitions: 禁用默认淡入淡出，使用自定义圆形扩散动画 */
+::view-transition-new(root),
+::view-transition-old(root) {
+  animation: none;
 }
 

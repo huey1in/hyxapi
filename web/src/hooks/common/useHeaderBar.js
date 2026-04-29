@@ -197,14 +197,45 @@ export const useHeaderBar = ({ onMobileMenuToggle, drawerOpen }) => {
   );
 
   const handleThemeToggle = useCallback(
-    (newTheme) => {
+    (newTheme, event) => {
       if (
         !newTheme ||
         (newTheme !== 'light' && newTheme !== 'dark' && newTheme !== 'auto')
       ) {
         return;
       }
-      setTheme(newTheme);
+
+      if (!document.startViewTransition) {
+        setTheme(newTheme);
+        return;
+      }
+
+      const { clientX, clientY } = event ?? {};
+      const x = clientX ?? innerWidth / 2;
+      const y = clientY ?? innerHeight / 2;
+      const radius = Math.hypot(
+        Math.max(x, innerWidth - x),
+        Math.max(y, innerHeight - y),
+      );
+      const clipPath = [
+        `circle(0px at ${x}px ${y}px)`,
+        `circle(${radius}px at ${x}px ${y}px)`,
+      ];
+
+      const transition = document.startViewTransition(() => {
+        setTheme(newTheme);
+      });
+
+      transition.ready.then(() => {
+        document.documentElement.animate(
+          { clipPath },
+          {
+            duration: 500,
+            easing: 'ease-in-out',
+            pseudoElement: '::view-transition-new(root)',
+          },
+        );
+      });
     },
     [setTheme],
   );

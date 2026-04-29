@@ -70,7 +70,7 @@ go test ./model/... -run TestPayment   # single test
 - `service/` — shared services (HTTP client, token encoding, subscription resets, Codex credential refresh)
 - `setting/` — runtime configuration subsystems (ratio settings, model settings, operation settings, performance settings)
 - `middleware/distributor.go` — selects an upstream channel for each request based on model name, user group, token permissions, and channel priority/weight
-- `constant/` — channel type integers, relay mode constants, task platform identifiers
+- `constant/` — channel type integers, relay mode constants, task platform identifiers. **Constraint:** this package may only import Go stdlib — no internal package imports, no business logic.
 
 ### Frontend (React 18 + Vite + Semi UI)
 
@@ -101,10 +101,15 @@ The backend reads environment variables (and optionally `.env`):
 
 ## Adding a New Provider Channel
 
+**Synchronous (chat/embedding/audio/image):**
 1. Create `relay/channel/<name>/` with a struct implementing `channel.Adaptor` (all methods in `relay/channel/adapter.go`)
 2. Add a new `APIType` constant in `constant/`
 3. Register it in `relay/relay_adaptor.go`'s `GetAdaptor()` switch
-4. Add channel type constant in the frontend's channel type lists
+4. Add an entry to `CHANNEL_OPTIONS` in `web/src/constants/channel.constants.js`
+
+**Async task-based (video gen, etc.):**
+1. Create `relay/channel/task/<name>/` implementing `channel.TaskAdaptor`
+2. Same steps 2–4 above; register in `relay/relay_adaptor.go`'s `GetTaskAdaptor()` switch
 
 ## Billing / Quota Flow
 
