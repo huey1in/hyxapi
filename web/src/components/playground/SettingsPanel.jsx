@@ -17,228 +17,190 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 
-import React from 'react';
-import { Card, Select, Typography, Button, Switch } from '@douyinfe/semi-ui';
-import { Sparkles, Users, ToggleLeft, X, Settings } from 'lucide-react';
+import React, { useState } from 'react';
+import { Sparkles, Users, ToggleLeft, X, Settings, ChevronDown } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { renderGroupOption, selectFilter } from '../../helpers';
 import ParameterControl from './ParameterControl';
 import ImageUrlInput from './ImageUrlInput';
 import ConfigManager from './ConfigManager';
 import CustomRequestEditor from './CustomRequestEditor';
 
+const NativeSelect = ({ value, onChange, options, placeholder, disabled, filter }) => {
+  const [open, setOpen] = useState(false);
+  const [search, setSearch] = useState('');
+
+  const filtered = filter && search
+    ? options.filter((o) => String(o.label || o.value || '').toLowerCase().includes(search.toLowerCase()))
+    : options;
+
+  const selectedLabel = options.find((o) => o.value === value)?.label || value || placeholder;
+
+  return (
+    <div className='relative'>
+      <button
+        type='button'
+        onClick={() => !disabled && setOpen(!open)}
+        disabled={disabled}
+        className='w-full flex items-center justify-between px-3 py-2 text-sm border border-gray-200 rounded-lg bg-white disabled:opacity-50 disabled:cursor-not-allowed hover:border-gray-400 transition-colors text-left'
+      >
+        <span className={value ? 'text-gray-900' : 'text-gray-400'}>{selectedLabel}</span>
+        <ChevronDown size={14} className='text-gray-400 flex-shrink-0' />
+      </button>
+      {open && (
+        <>
+          <div className='fixed inset-0 z-40' onClick={() => setOpen(false)} />
+          <div className='absolute z-50 mt-1 w-full bg-white border border-gray-200 rounded-lg shadow-lg overflow-hidden'>
+            {filter && (
+              <div className='p-2 border-b border-gray-100'>
+                <input
+                  type='text'
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  placeholder='搜索...'
+                  className='w-full px-2 py-1 text-xs border border-gray-200 rounded focus:outline-none'
+                  autoFocus
+                  onClick={(e) => e.stopPropagation()}
+                />
+              </div>
+            )}
+            <div className='max-h-48 overflow-y-auto'>
+              {filtered.map((opt) => (
+                <button
+                  key={opt.value}
+                  type='button'
+                  onClick={() => { onChange(opt.value); setOpen(false); setSearch(''); }}
+                  className={`w-full text-left px-3 py-2 text-sm hover:bg-gray-50 transition-colors ${opt.value === value ? 'bg-gray-100 font-medium' : ''}`}
+                >
+                  {opt.label || opt.value}
+                </button>
+              ))}
+              {filtered.length === 0 && <div className='px-3 py-2 text-xs text-gray-400'>无匹配结果</div>}
+            </div>
+          </div>
+        </>
+      )}
+    </div>
+  );
+};
+
 const SettingsPanel = ({
-  inputs,
-  parameterEnabled,
-  models,
-  groups,
-  styleState,
-  showDebugPanel,
-  customRequestMode,
-  customRequestBody,
-  onInputChange,
-  onParameterToggle,
-  onCloseSettings,
-  onConfigImport,
-  onConfigReset,
-  onCustomRequestModeChange,
-  onCustomRequestBodyChange,
-  previewPayload,
-  messages,
+  inputs, parameterEnabled, models, groups, styleState,
+  showDebugPanel, customRequestMode, customRequestBody,
+  onInputChange, onParameterToggle, onCloseSettings,
+  onConfigImport, onConfigReset, onCustomRequestModeChange,
+  onCustomRequestBodyChange, previewPayload, messages,
 }) => {
   const { t } = useTranslation();
 
-  const currentConfig = {
-    inputs,
-    parameterEnabled,
-    showDebugPanel,
-    customRequestMode,
-    customRequestBody,
-  };
+  const currentConfig = { inputs, parameterEnabled, showDebugPanel, customRequestMode, customRequestBody };
 
   return (
-    <Card
-      className='h-full flex flex-col'
-      bordered={false}
-      bodyStyle={{
-        padding: styleState.isMobile ? '16px' : '24px',
-        height: '100%',
-        display: 'flex',
-        flexDirection: 'column',
-      }}
-    >
-      {/* 标题区域 - 与调试面板保持一致 */}
-      <div className='flex items-center justify-between mb-6 flex-shrink-0'>
-        <div className='flex items-center'>
-          <div className='w-10 h-10 rounded-full bg-gradient-to-r from-purple-500 to-pink-500 flex items-center justify-center mr-3'>
-            <Settings size={20} className='text-white' />
+    <div className='h-full flex flex-col' style={{ padding: styleState.isMobile ? '16px' : '24px' }}>
+      {/* 标题 */}
+      <div className='flex items-center justify-between mb-5 flex-shrink-0'>
+        <div className='flex items-center gap-3'>
+          <div className='w-8 h-8 rounded-full bg-gradient-to-r from-purple-500 to-pink-500 flex items-center justify-center'>
+            <Settings size={16} className='text-white' />
           </div>
-          <Typography.Title heading={5} className='mb-0'>
-            {t('模型配置')}
-          </Typography.Title>
+          <span className='font-semibold text-gray-900'>{t('模型配置')}</span>
         </div>
-
         {styleState.isMobile && onCloseSettings && (
-          <Button
-            icon={<X size={16} />}
-            onClick={onCloseSettings}
-            theme='borderless'
-            type='tertiary'
-            size='small'
-            className='!rounded-lg'
-          />
+          <button onClick={onCloseSettings} className='w-7 h-7 flex items-center justify-center text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors'>
+            <X size={16} />
+          </button>
         )}
       </div>
 
       {/* 移动端配置管理 */}
       {styleState.isMobile && (
         <div className='mb-4 flex-shrink-0'>
-          <ConfigManager
-            currentConfig={currentConfig}
-            onConfigImport={onConfigImport}
-            onConfigReset={onConfigReset}
-            styleState={{ ...styleState, isMobile: false }}
-            messages={messages}
-          />
+          <ConfigManager currentConfig={currentConfig} onConfigImport={onConfigImport} onConfigReset={onConfigReset} styleState={{ ...styleState, isMobile: false }} messages={messages} />
         </div>
       )}
 
-      <div className='space-y-6 overflow-y-auto flex-1 pr-2 model-settings-scroll'>
-        {/* 自定义请求体编辑器 */}
+      <div className='space-y-5 overflow-y-auto flex-1 pr-1'>
+        {/* 自定义请求体 */}
         <CustomRequestEditor
-          customRequestMode={customRequestMode}
-          customRequestBody={customRequestBody}
-          onCustomRequestModeChange={onCustomRequestModeChange}
-          onCustomRequestBodyChange={onCustomRequestBodyChange}
+          customRequestMode={customRequestMode} customRequestBody={customRequestBody}
+          onCustomRequestModeChange={onCustomRequestModeChange} onCustomRequestBodyChange={onCustomRequestBodyChange}
           defaultPayload={previewPayload}
         />
 
-        {/* 分组选择 */}
-        <div className={customRequestMode ? 'opacity-50' : ''}>
+        {/* 分组 */}
+        <div className={customRequestMode ? 'opacity-50 pointer-events-none' : ''}>
           <div className='flex items-center gap-2 mb-2'>
-            <Users size={16} className='text-gray-500' />
-            <Typography.Text strong className='text-sm'>
-              {t('分组')}
-            </Typography.Text>
-            {customRequestMode && (
-              <Typography.Text className='text-xs text-orange-600'>
-                ({t('已在自定义模式中忽略')})
-              </Typography.Text>
-            )}
+            <Users size={14} className='text-gray-400' />
+            <span className='text-sm font-medium'>{t('分组')}</span>
+            {customRequestMode && <span className='text-xs text-orange-600'>({t('已在自定义模式中忽略')})</span>}
           </div>
-          <Select
-            placeholder={t('请选择分组')}
-            name='group'
-            required
-            selection
-            filter={selectFilter}
-            autoClearSearchValue={false}
-            onChange={(value) => onInputChange('group', value)}
+          <NativeSelect
             value={inputs.group}
-            autoComplete='new-password'
-            optionList={groups}
-            renderOptionItem={renderGroupOption}
-            style={{ width: '100%' }}
-            dropdownStyle={{ width: '100%', maxWidth: '100%' }}
-            className='!rounded-lg'
+            onChange={(v) => onInputChange('group', v)}
+            options={groups || []}
+            placeholder={t('请选择分组')}
             disabled={customRequestMode}
+            filter
           />
         </div>
 
-        {/* 模型选择 */}
-        <div className={customRequestMode ? 'opacity-50' : ''}>
+        {/* 模型 */}
+        <div className={customRequestMode ? 'opacity-50 pointer-events-none' : ''}>
           <div className='flex items-center gap-2 mb-2'>
-            <Sparkles size={16} className='text-gray-500' />
-            <Typography.Text strong className='text-sm'>
-              {t('模型')}
-            </Typography.Text>
-            {customRequestMode && (
-              <Typography.Text className='text-xs text-orange-600'>
-                ({t('已在自定义模式中忽略')})
-              </Typography.Text>
-            )}
+            <Sparkles size={14} className='text-gray-400' />
+            <span className='text-sm font-medium'>{t('模型')}</span>
+            {customRequestMode && <span className='text-xs text-orange-600'>({t('已在自定义模式中忽略')})</span>}
           </div>
-          <Select
-            placeholder={t('请选择模型')}
-            name='model'
-            required
-            selection
-            filter={selectFilter}
-            autoClearSearchValue={false}
-            onChange={(value) => onInputChange('model', value)}
+          <NativeSelect
             value={inputs.model}
-            autoComplete='new-password'
-            optionList={models}
-            style={{ width: '100%' }}
-            dropdownStyle={{ width: '100%', maxWidth: '100%' }}
-            className='!rounded-lg'
+            onChange={(v) => onInputChange('model', v)}
+            options={models || []}
+            placeholder={t('请选择模型')}
             disabled={customRequestMode}
+            filter
           />
         </div>
 
-        {/* 图片URL输入 */}
-        <div className={customRequestMode ? 'opacity-50' : ''}>
+        {/* 图片URL */}
+        <div className={customRequestMode ? 'opacity-50 pointer-events-none' : ''}>
           <ImageUrlInput
-            imageUrls={inputs.imageUrls}
-            imageEnabled={inputs.imageEnabled}
+            imageUrls={inputs.imageUrls} imageEnabled={inputs.imageEnabled}
             onImageUrlsChange={(urls) => onInputChange('imageUrls', urls)}
-            onImageEnabledChange={(enabled) =>
-              onInputChange('imageEnabled', enabled)
-            }
+            onImageEnabledChange={(enabled) => onInputChange('imageEnabled', enabled)}
             disabled={customRequestMode}
           />
         </div>
 
-        {/* 参数控制组件 */}
-        <div className={customRequestMode ? 'opacity-50' : ''}>
-          <ParameterControl
-            inputs={inputs}
-            parameterEnabled={parameterEnabled}
-            onInputChange={onInputChange}
-            onParameterToggle={onParameterToggle}
-            disabled={customRequestMode}
-          />
+        {/* 参数控制 */}
+        <div className={customRequestMode ? 'opacity-50 pointer-events-none' : ''}>
+          <ParameterControl inputs={inputs} parameterEnabled={parameterEnabled} onInputChange={onInputChange} onParameterToggle={onParameterToggle} disabled={customRequestMode} />
         </div>
 
-        {/* 流式输出开关 */}
-        <div className={customRequestMode ? 'opacity-50' : ''}>
+        {/* 流式输出 */}
+        <div className={customRequestMode ? 'opacity-50 pointer-events-none' : ''}>
           <div className='flex items-center justify-between'>
             <div className='flex items-center gap-2'>
-              <ToggleLeft size={16} className='text-gray-500' />
-              <Typography.Text strong className='text-sm'>
-                {t('流式输出')}
-              </Typography.Text>
-              {customRequestMode && (
-                <Typography.Text className='text-xs text-orange-600'>
-                  ({t('已在自定义模式中忽略')})
-                </Typography.Text>
-              )}
+              <ToggleLeft size={14} className='text-gray-400' />
+              <span className='text-sm font-medium'>{t('流式输出')}</span>
+              {customRequestMode && <span className='text-xs text-orange-600'>({t('已在自定义模式中忽略')})</span>}
             </div>
-            <Switch
-              checked={inputs.stream}
-              onChange={(checked) => onInputChange('stream', checked)}
-              checkedText={t('开')}
-              uncheckedText={t('关')}
-              size='small'
+            <button
+              onClick={() => !customRequestMode && onInputChange('stream', !inputs.stream)}
               disabled={customRequestMode}
-            />
+              className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors disabled:opacity-40 ${inputs.stream ? 'bg-black' : 'bg-gray-200'}`}
+            >
+              <span className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white transition-transform ${inputs.stream ? 'translate-x-[18px]' : 'translate-x-[2px]'}`} />
+            </button>
           </div>
         </div>
       </div>
 
-      {/* 桌面端的配置管理放在底部 */}
+      {/* 桌面端配置管理底部 */}
       {!styleState.isMobile && (
-        <div className='flex-shrink-0 pt-3'>
-          <ConfigManager
-            currentConfig={currentConfig}
-            onConfigImport={onConfigImport}
-            onConfigReset={onConfigReset}
-            styleState={styleState}
-            messages={messages}
-          />
+        <div className='flex-shrink-0 pt-4 border-t border-gray-100 mt-4'>
+          <ConfigManager currentConfig={currentConfig} onConfigImport={onConfigImport} onConfigReset={onConfigReset} styleState={styleState} messages={messages} />
         </div>
       )}
-    </Card>
+    </div>
   );
 };
 

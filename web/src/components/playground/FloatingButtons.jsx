@@ -18,7 +18,6 @@ For commercial licensing, please contact support@quantumnous.com
 */
 
 import React from 'react';
-import { Button } from '@douyinfe/semi-ui';
 import { Settings, Eye, EyeOff } from 'lucide-react';
 
 const FloatingButtons = ({
@@ -32,52 +31,23 @@ const FloatingButtons = ({
 
   return (
     <>
-      {/* 设置按钮 */}
       {!showSettings && (
-        <Button
-          icon={<Settings size={18} />}
-          style={{
-            position: 'fixed',
-            right: 16,
-            bottom: 90,
-            zIndex: 1000,
-            width: 36,
-            height: 36,
-            borderRadius: '50%',
-            padding: 0,
-            boxShadow: '0 4px 12px rgba(0, 0, 0, 0.2)',
-            background: 'linear-gradient(to right, #8b5cf6, #6366f1)',
-          }}
+        <button
           onClick={onToggleSettings}
-          theme='solid'
-          type='primary'
-          className='lg:hidden'
-        />
+          className='fixed right-4 z-[1000] w-9 h-9 rounded-full flex items-center justify-center bg-black text-white shadow-lg lg:hidden'
+          style={{ bottom: 90 }}
+        >
+          <Settings size={18} />
+        </button>
       )}
-
-      {/* 调试按钮 */}
       {!showSettings && (
-        <Button
-          icon={showDebugPanel ? <EyeOff size={18} /> : <Eye size={18} />}
+        <button
           onClick={onToggleDebugPanel}
-          theme='solid'
-          type={showDebugPanel ? 'danger' : 'primary'}
-          style={{
-            position: 'fixed',
-            right: 16,
-            bottom: 140,
-            zIndex: 1000,
-            width: 36,
-            height: 36,
-            borderRadius: '50%',
-            padding: 0,
-            boxShadow: '0 4px 12px rgba(0, 0, 0, 0.2)',
-            background: showDebugPanel
-              ? 'linear-gradient(to right, #e11d48, #be123c)'
-              : 'linear-gradient(to right, #4f46e5, #6366f1)',
-          }}
-          className='lg:hidden'
-        />
+          className={`fixed right-4 z-[1000] w-9 h-9 rounded-full flex items-center justify-center text-white shadow-lg lg:hidden ${showDebugPanel ? 'bg-red-600' : 'bg-black'}`}
+          style={{ bottom: 140 }}
+        >
+          {showDebugPanel ? <EyeOff size={18} /> : <Eye size={18} />}
+        </button>
       )}
     </>
   );

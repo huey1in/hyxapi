@@ -18,206 +18,85 @@ For commercial licensing, please contact support@quantumnous.com
 */
 
 import React, { useState, useEffect } from 'react';
-import {
-  Card,
-  Typography,
-  Tabs,
-  TabPane,
-  Button,
-  Dropdown,
-} from '@douyinfe/semi-ui';
 import { Code, Zap, Clock, X, Eye, Send } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import CodeViewer from './CodeViewer';
 import SSEViewer from './SSEViewer';
 
-const DebugPanel = ({
-  debugData,
-  activeDebugTab,
-  onActiveDebugTabChange,
-  styleState,
-  onCloseDebugPanel,
-  customRequestMode,
-}) => {
-  const { t } = useTranslation();
+const TABS = [
+  { key: 'preview', icon: Eye, label: '预览请求体' },
+  { key: 'request', icon: Send, label: '实际请求体' },
+  { key: 'response', icon: Zap, label: '响应' },
+];
 
+const DebugPanel = ({ debugData, activeDebugTab, onActiveDebugTabChange, styleState, onCloseDebugPanel, customRequestMode }) => {
+  const { t } = useTranslation();
   const [activeKey, setActiveKey] = useState(activeDebugTab);
 
-  useEffect(() => {
-    setActiveKey(activeDebugTab);
-  }, [activeDebugTab]);
+  useEffect(() => { setActiveKey(activeDebugTab); }, [activeDebugTab]);
 
-  const handleTabChange = (key) => {
-    setActiveKey(key);
-    onActiveDebugTabChange(key);
-  };
-
-  const renderArrow = (items, pos, handleArrowClick, defaultNode) => {
-    const style = {
-      width: 32,
-      height: 32,
-      margin: '0 12px',
-      display: 'flex',
-      justifyContent: 'center',
-      alignItems: 'center',
-      borderRadius: '100%',
-      background: 'rgba(var(--semi-grey-1), 1)',
-      color: 'var(--semi-color-text)',
-      cursor: 'pointer',
-    };
-
-    return (
-      <Dropdown
-        render={
-          <Dropdown.Menu>
-            {items.map((item) => {
-              return (
-                <Dropdown.Item
-                  key={item.itemKey}
-                  onClick={() => handleTabChange(item.itemKey)}
-                >
-                  {item.tab}
-                </Dropdown.Item>
-              );
-            })}
-          </Dropdown.Menu>
-        }
-      >
-        {pos === 'start' ? (
-          <div style={style} onClick={handleArrowClick}>
-            ←
-          </div>
-        ) : (
-          <div style={style} onClick={handleArrowClick}>
-            →
-          </div>
-        )}
-      </Dropdown>
-    );
-  };
+  const handleTabChange = (key) => { setActiveKey(key); onActiveDebugTabChange(key); };
 
   return (
-    <Card
-      className='h-full flex flex-col'
-      bordered={false}
-      bodyStyle={{
-        padding: styleState.isMobile ? '16px' : '24px',
-        height: '100%',
-        display: 'flex',
-        flexDirection: 'column',
-      }}
-    >
-      <div className='flex items-center justify-between mb-6 flex-shrink-0'>
-        <div className='flex items-center'>
-          <div className='w-10 h-10 rounded-full bg-gradient-to-r from-green-500 to-blue-500 flex items-center justify-center mr-3'>
-            <Code size={20} className='text-white' />
+    <div className='h-full flex flex-col' style={{ padding: styleState.isMobile ? '16px' : '24px' }}>
+      {/* 头部 */}
+      <div className='flex items-center justify-between mb-4 flex-shrink-0'>
+        <div className='flex items-center gap-3'>
+          <div className='w-8 h-8 rounded-full bg-gradient-to-r from-green-500 to-blue-500 flex items-center justify-center'>
+            <Code size={16} className='text-white' />
           </div>
-          <Typography.Title heading={5} className='mb-0'>
-            {t('调试信息')}
-          </Typography.Title>
+          <span className='font-semibold text-gray-900'>{t('调试信息')}</span>
         </div>
-
         {styleState.isMobile && onCloseDebugPanel && (
-          <Button
-            icon={<X size={16} />}
-            onClick={onCloseDebugPanel}
-            theme='borderless'
-            type='tertiary'
-            size='small'
-            className='!rounded-lg'
-          />
+          <button onClick={onCloseDebugPanel} className='w-7 h-7 flex items-center justify-center text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors'>
+            <X size={16} />
+          </button>
         )}
       </div>
 
-      <div className='flex-1 overflow-hidden debug-panel'>
-        <Tabs
-          renderArrow={renderArrow}
-          type='card'
-          collapsible
-          className='h-full'
-          style={{ height: '100%', display: 'flex', flexDirection: 'column' }}
-          activeKey={activeKey}
-          onChange={handleTabChange}
-        >
-          <TabPane
-            tab={
-              <div className='flex items-center gap-2'>
-                <Eye size={16} />
-                {t('预览请求体')}
-                {customRequestMode && (
-                  <span className='px-1.5 py-0.5 text-xs bg-orange-100 text-orange-600 rounded-full'>
-                    自定义
-                  </span>
-                )}
-              </div>
-            }
-            itemKey='preview'
+      {/* Tab 切换 */}
+      <div className='flex gap-1 mb-3 flex-shrink-0 border-b border-gray-200'>
+        {TABS.map(({ key, icon: Icon, label }) => (
+          <button
+            key={key}
+            onClick={() => handleTabChange(key)}
+            className={`flex items-center gap-1.5 px-3 py-2 text-xs font-medium border-b-2 transition-colors -mb-px ${activeKey === key ? 'border-black text-black' : 'border-transparent text-gray-500 hover:text-gray-700'}`}
           >
-            <CodeViewer
-              content={debugData.previewRequest}
-              title='preview'
-              language='json'
-            />
-          </TabPane>
-
-          <TabPane
-            tab={
-              <div className='flex items-center gap-2'>
-                <Send size={16} />
-                {t('实际请求体')}
-              </div>
-            }
-            itemKey='request'
-          >
-            <CodeViewer
-              content={debugData.request}
-              title='request'
-              language='json'
-            />
-          </TabPane>
-
-          <TabPane
-            tab={
-              <div className='flex items-center gap-2'>
-                <Zap size={16} />
-                {t('响应')}
-                {debugData.sseMessages && debugData.sseMessages.length > 0 && (
-                  <span className='px-1.5 py-0.5 text-xs bg-blue-100 text-blue-600 rounded-full'>
-                    SSE ({debugData.sseMessages.length})
-                  </span>
-                )}
-              </div>
-            }
-            itemKey='response'
-          >
-            {debugData.sseMessages && debugData.sseMessages.length > 0 ? (
-              <SSEViewer sseData={debugData.sseMessages} title='response' />
-            ) : (
-              <CodeViewer
-                content={debugData.response}
-                title='response'
-                language='json'
-              />
+            <Icon size={13} />
+            {t(label)}
+            {key === 'response' && debugData.sseMessages?.length > 0 && (
+              <span className='px-1.5 py-0.5 text-xs bg-blue-100 text-blue-600 rounded-full'>SSE ({debugData.sseMessages.length})</span>
             )}
-          </TabPane>
-        </Tabs>
+            {key === 'preview' && customRequestMode && (
+              <span className='px-1.5 py-0.5 text-xs bg-orange-100 text-orange-600 rounded-full'>自定义</span>
+            )}
+          </button>
+        ))}
       </div>
 
-      <div className='flex items-center justify-between mt-4 pt-4 flex-shrink-0'>
-        {(debugData.timestamp || debugData.previewTimestamp) && (
-          <div className='flex items-center gap-2'>
-            <Clock size={14} className='text-gray-500' />
-            <Typography.Text className='text-xs text-gray-500'>
-              {activeKey === 'preview' && debugData.previewTimestamp
-                ? `${t('预览更新')}: ${new Date(debugData.previewTimestamp).toLocaleString()}`
-                : debugData.timestamp
-                  ? `${t('最后请求')}: ${new Date(debugData.timestamp).toLocaleString()}`
-                  : ''}
-            </Typography.Text>
-          </div>
+      {/* 内容 */}
+      <div className='flex-1 overflow-hidden'>
+        {activeKey === 'preview' && <CodeViewer content={debugData.previewRequest} title='preview' language='json' />}
+        {activeKey === 'request' && <CodeViewer content={debugData.request} title='request' language='json' />}
+        {activeKey === 'response' && (
+          debugData.sseMessages?.length > 0
+            ? <SSEViewer sseData={debugData.sseMessages} title='response' />
+            : <CodeViewer content={debugData.response} title='response' language='json' />
         )}
       </div>
-    </Card>
+
+      {/* 时间戳 */}
+      {(debugData.timestamp || debugData.previewTimestamp) && (
+        <div className='flex items-center gap-2 mt-3 pt-3 border-t border-gray-100 flex-shrink-0'>
+          <Clock size={12} className='text-gray-400' />
+          <span className='text-xs text-gray-400'>
+            {activeKey === 'preview' && debugData.previewTimestamp
+              ? `${t('预览更新')}: ${new Date(debugData.previewTimestamp).toLocaleString()}`
+              : debugData.timestamp ? `${t('最后请求')}: ${new Date(debugData.timestamp).toLocaleString()}` : ''}
+          </span>
+        </div>
+      )}
+    </div>
   );
 };
 
