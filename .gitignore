@@ -1,0 +1,7 @@
+web/node_modules/
+web/dist/
+*.db
+*.log
+.env
+one-api
+new-api
