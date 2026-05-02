@@ -36,18 +36,19 @@ const HeaderLogo = ({
 
   return (
     <Link to='/' className='group flex items-center gap-2'>
-      <div className='relative w-8 h-8 md:w-8 md:h-8'>
-        <SkeletonWrapper loading={isLoading || !logoLoaded} type='image' />
-        <img
-          src={logo}
-          alt='logo'
-          className={`absolute inset-0 w-full h-full transition-all duration-200 group-hover:scale-110 rounded-full ${!isLoading && logoLoaded ? 'opacity-100' : 'opacity-0'}`}
-        />
-      </div>
-      <div className='hidden md:flex items-center gap-2'>
+      <div className='flex items-center gap-2'>
         <SkeletonWrapper loading={isLoading} type='title' width={120} height={24}>
-          <span className='text-base font-semibold text-ui-text tracking-tight'>
-            {systemName}
+          <span
+            className='text-2xl font-bold text-ui-text transition-opacity group-hover:opacity-80'
+            style={{ fontFamily: "'Space Grotesk', sans-serif", letterSpacing: '-0.03em' }}
+          >
+            {systemName === 'TokenC' ? (
+              <>
+                Token<span className='text-ui-brand'>C</span>
+              </>
+            ) : (
+              systemName
+            )}
           </span>
         </SkeletonWrapper>
         {(isSelfUseMode || isDemoSiteMode) && !isLoading && (

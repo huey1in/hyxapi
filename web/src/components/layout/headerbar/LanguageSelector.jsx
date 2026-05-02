@@ -22,12 +22,7 @@ import { Languages } from 'lucide-react';
 
 const LANGUAGES = [
   { code: 'zh-CN', label: '简体中文' },
-  { code: 'zh-TW', label: '繁體中文' },
   { code: 'en', label: 'English' },
-  { code: 'fr', label: 'Français' },
-  { code: 'ja', label: '日本語' },
-  { code: 'ru', label: 'Русский' },
-  { code: 'vi', label: 'Tiếng Việt' },
 ];
 
 const LanguageSelector = ({ currentLang, onLanguageChange, t }) => {
@@ -47,13 +42,13 @@ const LanguageSelector = ({ currentLang, onLanguageChange, t }) => {
       <button
         onClick={() => setOpen((o) => !o)}
         aria-label={t('common.changeLanguage')}
-        className='inline-flex items-center justify-center w-9 h-9 rounded-full text-ui-text-2 hover:bg-ui-bg-subtle transition-colors'
+        className='inline-flex items-center justify-center w-9 h-9 rounded-lg text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-subtle active:scale-90 transition-all duration-150'
       >
         <Languages size={18} />
       </button>
 
       {open && (
-        <div className='absolute right-0 mt-2 w-40 bg-ui-bg-elevated border border-ui-border rounded-xl shadow-lg py-1 z-50'>
+        <div className='absolute right-0 mt-2 w-40 bg-ui-bg-elevated border border-ui-border rounded-xl shadow-lg py-1 z-50 animate-dropdown'>
           {LANGUAGES.map(({ code, label }) => (
             <button
               key={code}

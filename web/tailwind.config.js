@@ -156,6 +156,7 @@ export default {
         'ui-tag-purple':    'var(--ui-tag-purple)',
         'ui-tag-blue-bg':   'var(--ui-tag-blue-bg)',
         'ui-tag-blue':      'var(--ui-tag-blue)',
+        'ui-brand':         'var(--ui-brand)',
       },
       borderRadius: {
         'semi-border-radius-extra-small':

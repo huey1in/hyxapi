@@ -40,6 +40,7 @@
   --ui-tag-purple:    #7c3aed;
   --ui-tag-blue-bg:   rgba(29, 78, 216, 0.1);
   --ui-tag-blue:      #1d4ed8;
+  --ui-brand:         #3b82f6;
 }
 
 html.dark {
@@ -63,6 +64,7 @@ html.dark {
   --ui-tag-purple:    #a78bfa;
   --ui-tag-blue-bg:   rgba(147, 197, 253, 0.15);
   --ui-tag-blue:      #93c5fd;
+  --ui-brand:         #60a5fa;
 }
 
 body.sidebar-collapsed {
@@ -1085,5 +1087,48 @@ button.bg-black:disabled {
 ::view-transition-new(root),
 ::view-transition-old(root) {
   animation: none;
+}
+
+/* 自定义 toast 动画 */
+@keyframes toast-in {
+  from { opacity: 0; transform: translateX(20px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+.animate-toast-in {
+  animation: toast-in 0.18s ease-out;
+}
+
+@keyframes dropdown-in {
+  from { opacity: 0; transform: translateY(-4px) scale(0.96); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+.animate-dropdown {
+  animation: dropdown-in 0.14s ease-out;
+  transform-origin: top right;
+}
+
+@keyframes fade {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+.animate-fade {
+  animation: fade 0.4s ease-out;
+}
+
+@keyframes marquee {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-25%); }
+}
+.animate-marquee {
+  animation: marquee 40s linear infinite;
+}
+
+@keyframes blob {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  33%      { transform: translate(40px, -30px) scale(1.05); }
+  66%      { transform: translate(-30px, 30px) scale(0.95); }
+}
+.animate-blob-slow {
+  animation: blob 18s ease-in-out infinite;
 }
 

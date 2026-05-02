@@ -17,8 +17,8 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 
-import React from 'react';
-import { Link } from 'react-router-dom';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { Link, useLocation } from 'react-router-dom';
 import SkeletonWrapper from '../components/SkeletonWrapper';
 
 const Navigation = ({
@@ -28,49 +28,77 @@ const Navigation = ({
   userState,
   pricingRequireAuth,
 }) => {
-  const renderNavLinks = () => {
-    const baseClasses =
-      'flex-shrink-0 flex items-center gap-1 font-semibold rounded-md transition-all duration-200 ease-in-out';
-    const hoverClasses = 'text-ui-text-2 hover:text-ui-text';
-    const spacingClasses = isMobile ? 'p-1' : 'p-2';
+  const location = useLocation();
+  const containerRef = useRef(null);
+  const [indicator, setIndicator] = useState({ left: 0, width: 0, opacity: 0 });
 
-    const commonLinkClasses = `${baseClasses} ${spacingClasses} ${hoverClasses}`;
+  const activeKey = useMemo(() => {
+    const link = mainNavLinks.find((l) => {
+      if (l.isExternal) return false;
+      if (l.to === '/') return location.pathname === '/';
+      return location.pathname.startsWith(l.to);
+    });
+    return link?.itemKey ?? null;
+  }, [location.pathname, mainNavLinks]);
 
-    return mainNavLinks.map((link) => {
-      const linkContent = <span>{link.text}</span>;
+  useEffect(() => {
+    if (!activeKey || !containerRef.current) {
+      setIndicator((prev) => ({ ...prev, opacity: 0 }));
+      return;
+    }
+    const el = containerRef.current.querySelector(`[data-key="${activeKey}"]`);
+    if (el) {
+      setIndicator({
+        left: el.offsetLeft,
+        width: el.offsetWidth,
+        opacity: 1,
+      });
+    }
+  }, [activeKey, mainNavLinks, isMobile]);
+
+  const linkClass = (isActive) =>
+    `relative z-10 ${isMobile ? 'px-2.5 py-1' : 'px-3.5 py-1.5'} text-xs font-medium rounded-full transition-colors whitespace-nowrap ${
+      isActive ? 'text-ui-text' : 'text-ui-text-2 hover:text-ui-text'
+    }`;
+
+  const renderLinks = () =>
+    mainNavLinks.map((link) => {
+      const isActive = link.itemKey === activeKey;
 
       if (link.isExternal) {
         return (
           <a
             key={link.itemKey}
+            data-key={link.itemKey}
             href={link.externalLink}
             target='_blank'
             rel='noopener noreferrer'
-            className={commonLinkClasses}
+            className={linkClass(isActive)}
           >
-            {linkContent}
+            {link.text}
           </a>
         );
       }
 
       let targetPath = link.to;
-      if (link.itemKey === 'console' && !userState.user) {
+      if (link.itemKey === 'console' && !userState.user) targetPath = '/login';
+      if (link.itemKey === 'pricing' && pricingRequireAuth && !userState.user)
         targetPath = '/login';
-      }
-      if (link.itemKey === 'pricing' && pricingRequireAuth && !userState.user) {
-        targetPath = '/login';
-      }
 
       return (
-        <Link key={link.itemKey} to={targetPath} className={commonLinkClasses}>
-          {linkContent}
+        <Link
+          key={link.itemKey}
+          data-key={link.itemKey}
+          to={targetPath}
+          className={linkClass(isActive)}
+        >
+          {link.text}
         </Link>
       );
     });
-  };
 
   return (
-    <nav className='flex flex-1 items-center gap-1 lg:gap-2 mx-2 md:mx-4 overflow-x-auto whitespace-nowrap scrollbar-hide'>
+    <nav className='flex items-center overflow-x-auto scrollbar-hide'>
       <SkeletonWrapper
         loading={isLoading}
         type='navigation'
@@ -79,7 +107,21 @@ const Navigation = ({
         height={16}
         isMobile={isMobile}
       >
-        {renderNavLinks()}
+        <div
+          ref={containerRef}
+          className='relative inline-flex items-center bg-ui-bg-subtle rounded-full p-1'
+        >
+          <span
+            aria-hidden
+            className='absolute top-1 bottom-1 bg-ui-bg-elevated rounded-full shadow-sm transition-all duration-300 ease-out'
+            style={{
+              left: indicator.left,
+              width: indicator.width,
+              opacity: indicator.opacity,
+            }}
+          />
+          {renderLinks()}
+        </div>
       </SkeletonWrapper>
     </nav>
   );

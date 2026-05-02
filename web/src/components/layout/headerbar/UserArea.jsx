@@ -75,7 +75,7 @@ const UserArea = ({
         </button>
 
         {open && (
-          <div className='absolute right-0 mt-2 w-44 bg-ui-bg-elevated border border-ui-border rounded-xl shadow-lg py-1 z-50'>
+          <div className='absolute right-0 mt-2 w-44 bg-ui-bg-elevated border border-ui-border rounded-xl shadow-lg py-1 z-50 animate-dropdown'>
             {menuItems.map((item) => (
               <button
                 key={item.label}
@@ -103,24 +103,20 @@ const UserArea = ({
   const showRegisterButton = !isSelfUseMode;
 
   return (
-    <div className='flex items-center gap-1'>
+    <div className='flex items-center gap-2'>
       <Link
         to='/login'
-        className={`px-3 py-1.5 text-xs font-medium text-ui-text hover:bg-ui-bg-subtle transition-colors ${
-          showRegisterButton && !isMobile ? 'rounded-l-full' : 'rounded-full'
-        }`}
+        className='px-3 py-1.5 text-xs font-medium text-ui-text-2 hover:text-ui-text transition-colors'
       >
         {t('登录')}
       </Link>
       {showRegisterButton && (
-        <div className='hidden md:block'>
-          <Link
-            to='/register'
-            className='px-3 py-1.5 text-xs font-medium bg-ui-accent text-ui-accent-fg hover:bg-ui-accent-hover transition-colors rounded-r-full'
-          >
-            {t('注册')}
-          </Link>
-        </div>
+        <Link
+          to='/register'
+          className='hidden md:inline-flex items-center px-4 py-1.5 text-xs font-semibold bg-ui-accent text-ui-accent-fg rounded-full transition-all duration-200 hover:bg-ui-accent-hover hover:shadow-md active:scale-95'
+        >
+          {t('注册')}
+        </Link>
       )}
     </div>
   );

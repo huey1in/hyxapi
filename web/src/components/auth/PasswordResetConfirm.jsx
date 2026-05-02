@@ -23,7 +23,7 @@ import { useSearchParams, Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 
 const inputClass =
-  'w-full px-4 py-3 text-sm border border-black rounded-lg outline-none focus:ring-2 focus:ring-black bg-white disabled:bg-gray-50 disabled:text-gray-500';
+  'w-full px-4 py-3 text-sm border border-ui-border rounded-lg outline-none focus:ring-2 focus:ring-ui-accent bg-ui-bg text-ui-text placeholder:text-ui-text-3 disabled:bg-ui-bg-subtle disabled:text-ui-text-3';
 
 const PasswordResetConfirm = () => {
   const { t } = useTranslation();
@@ -78,10 +78,10 @@ const PasswordResetConfirm = () => {
   }
 
   return (
-    <div className='min-h-screen flex items-center justify-center px-4 py-12'>
-      <div className='w-full max-w-sm mt-[60px]'>
-        <div className='bg-white rounded-2xl p-8'>
-          <h2 className='text-2xl font-semibold text-black mb-6'>
+    <div className='min-h-[calc(100vh-4rem)] flex items-start sm:items-center justify-center px-0 sm:px-4 pt-24 pb-12'>
+      <div className='w-full max-w-sm sm:mt-[60px]'>
+        <div className='p-6 sm:bg-ui-bg-elevated sm:rounded-2xl sm:border sm:border-ui-border sm:p-8'>
+          <h2 className='text-2xl font-semibold text-ui-text mb-6'>
             {t('密码重置确认')}
           </h2>
 
@@ -93,7 +93,7 @@ const PasswordResetConfirm = () => {
             )}
 
             <div>
-              <label className='block mb-2 text-sm font-medium text-black'>
+              <label className='block mb-2 text-sm font-medium text-ui-text'>
                 {t('邮箱')}
               </label>
               <input
@@ -107,7 +107,7 @@ const PasswordResetConfirm = () => {
 
             {newPassword && (
               <div>
-                <label className='block mb-2 text-sm font-medium text-black'>
+                <label className='block mb-2 text-sm font-medium text-ui-text'>
                   {t('新密码')}
                 </label>
                 <div className='flex gap-2'>
@@ -133,7 +133,7 @@ const PasswordResetConfirm = () => {
             <button
               onClick={handleSubmit}
               disabled={loading || disableButton || !!newPassword || !isValidResetLink}
-              className='w-full py-3 text-sm font-medium rounded-lg transition-colors bg-black text-white hover:bg-[#333] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2'
+              className='w-full py-3 text-sm font-medium rounded-lg transition-colors bg-ui-accent text-ui-accent-fg hover:bg-ui-accent-hover disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2'
             >
               {loading && (
                 <span className='w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin' />
@@ -142,8 +142,8 @@ const PasswordResetConfirm = () => {
             </button>
           </div>
 
-          <p className='mt-6 text-center text-sm text-gray-500'>
-            <Link to='/login' className='text-black font-medium underline'>
+          <p className='mt-6 text-center text-sm text-ui-text-2'>
+            <Link to='/login' className='text-ui-text font-medium underline'>
               {t('返回登录')}
             </Link>
           </p>

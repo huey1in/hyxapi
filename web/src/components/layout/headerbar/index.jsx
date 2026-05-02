@@ -17,12 +17,14 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 
-import React from 'react';
+import React, { useState } from 'react';
+import { Menu } from 'lucide-react';
 import { useHeaderBar } from '../../../hooks/common/useHeaderBar';
 import { useNotifications } from '../../../hooks/common/useNotifications';
 import { useNavigation } from '../../../hooks/common/useNavigation';
 import NoticeModal from '../NoticeModal';
 import MobileMenuButton from './MobileMenuButton';
+import MobileNavDrawer from './MobileNavDrawer';
 import HeaderLogo from './HeaderLogo';
 import Navigation from './Navigation';
 import ActionButtons from './ActionButtons';
@@ -54,6 +56,8 @@ const HeaderBar = ({ onMobileMenuToggle, drawerOpen }) => {
     t,
   } = useHeaderBar({ onMobileMenuToggle, drawerOpen });
 
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
+
   const {
     noticeVisible,
     unreadCount,
@@ -74,9 +78,19 @@ const HeaderBar = ({ onMobileMenuToggle, drawerOpen }) => {
         unreadKeys={getUnreadKeys()}
       />
 
-      <div className='w-full px-2'>
-        <div className='flex items-center justify-between h-16'>
-          <div className='flex items-center'>
+      {!isConsoleRoute && (
+        <MobileNavDrawer
+          open={mobileNavOpen}
+          onClose={() => setMobileNavOpen(false)}
+          mainNavLinks={mainNavLinks}
+          userState={userState}
+          pricingRequireAuth={pricingRequireAuth}
+        />
+      )}
+
+      <div className='w-full px-4'>
+        <div className='flex items-center h-16 gap-4'>
+          <div className='flex items-center gap-3 min-w-0'>
             <MobileMenuButton
               isConsoleRoute={isConsoleRoute}
               isMobile={isMobile}
@@ -85,6 +99,17 @@ const HeaderBar = ({ onMobileMenuToggle, drawerOpen }) => {
               onToggle={handleMobileMenuToggle}
               t={t}
             />
+
+            {/* Public mobile nav hamburger (only on non-console routes) */}
+            {!isConsoleRoute && (
+              <button
+                onClick={() => setMobileNavOpen(true)}
+                aria-label='open navigation'
+                className='md:hidden inline-flex items-center justify-center w-9 h-9 rounded-lg text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-subtle active:scale-90 transition-all duration-150'
+              >
+                <Menu size={20} />
+              </button>
+            )}
 
             <HeaderLogo
               isMobile={isMobile}
@@ -99,30 +124,34 @@ const HeaderBar = ({ onMobileMenuToggle, drawerOpen }) => {
             />
           </div>
 
-          <Navigation
-            mainNavLinks={mainNavLinks}
-            isMobile={isMobile}
-            isLoading={isLoading}
-            userState={userState}
-            pricingRequireAuth={pricingRequireAuth}
-          />
+          <div className='ml-auto flex items-center gap-3'>
+            <div className='hidden md:block'>
+              <Navigation
+                mainNavLinks={mainNavLinks}
+                isMobile={isMobile}
+                isLoading={isLoading}
+                userState={userState}
+                pricingRequireAuth={pricingRequireAuth}
+              />
+            </div>
 
-          <ActionButtons
-            isNewYear={isNewYear}
-            unreadCount={unreadCount}
-            onNoticeOpen={handleNoticeOpen}
-            theme={theme}
-            onThemeToggle={handleThemeToggle}
-            currentLang={currentLang}
-            onLanguageChange={handleLanguageChange}
-            userState={userState}
-            isLoading={isLoading}
-            isMobile={isMobile}
-            isSelfUseMode={isSelfUseMode}
-            logout={logout}
-            navigate={navigate}
-            t={t}
-          />
+            <ActionButtons
+              isNewYear={isNewYear}
+              unreadCount={unreadCount}
+              onNoticeOpen={handleNoticeOpen}
+              theme={theme}
+              onThemeToggle={handleThemeToggle}
+              currentLang={currentLang}
+              onLanguageChange={handleLanguageChange}
+              userState={userState}
+              isLoading={isLoading}
+              isMobile={isMobile}
+              isSelfUseMode={isSelfUseMode}
+              logout={logout}
+              navigate={navigate}
+              t={t}
+            />
+          </div>
         </div>
       </div>
     </header>

@@ -18,23 +18,27 @@ For commercial licensing, please contact support@quantumnous.com
 */
 
 import React, { useEffect, useState, useContext, useMemo } from 'react';
-import {
-  Button,
-  Modal,
-  Empty,
-  Tabs,
-  TabPane,
-  Timeline,
-} from '@douyinfe/semi-ui';
+import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
-import { API, showError, getRelativeTime } from '../../helpers';
 import { marked } from 'marked';
-import {
-  IllustrationNoContent,
-  IllustrationNoContentDark,
-} from '@douyinfe/semi-illustrations';
+import { Bell, Megaphone, Inbox, X, Loader2 } from 'lucide-react';
+import { API, showError, getRelativeTime } from '../../helpers';
 import { StatusContext } from '../../context/Status';
-import { Bell, Megaphone } from 'lucide-react';
+
+const TYPE_COLOR = {
+  success: '#22c55e',
+  warning: '#f59e0b',
+  error: '#ef4444',
+};
+
+const EmptyState = ({ icon: Icon = Inbox, description }) => (
+  <div className='flex flex-col items-center justify-center py-16 text-ui-text-3'>
+    <div className='w-16 h-16 rounded-full bg-ui-bg-subtle flex items-center justify-center mb-3'>
+      <Icon size={28} />
+    </div>
+    <p className='text-sm'>{description}</p>
+  </div>
+);
 
 const NoticeModal = ({
   visible,
@@ -51,7 +55,6 @@ const NoticeModal = ({
   const [statusState] = useContext(StatusContext);
 
   const announcements = statusState?.status?.announcements || [];
-
   const unreadSet = useMemo(() => new Set(unreadKeys), [unreadKeys]);
 
   const getKeyForItem = (item) =>
@@ -88,12 +91,7 @@ const NoticeModal = ({
       const res = await API.get('/api/notice');
       const { success, message, data } = res.data;
       if (success) {
-        if (data !== '') {
-          const htmlNotice = marked.parse(data);
-          setNoticeContent(htmlNotice);
-        } else {
-          setNoticeContent('');
-        }
+        setNoticeContent(data ? marked.parse(data) : '');
       } else {
         showError(message);
       }
@@ -105,150 +103,156 @@ const NoticeModal = ({
   };
 
   useEffect(() => {
-    if (visible) {
-      displayNotice();
-    }
+    if (visible) displayNotice();
   }, [visible]);
 
   useEffect(() => {
-    if (visible) {
-      setActiveTab(defaultTab);
-    }
+    if (visible) setActiveTab(defaultTab);
   }, [defaultTab, visible]);
+
+  useEffect(() => {
+    if (!visible) return;
+    const handleEsc = (e) => e.key === 'Escape' && onClose();
+    document.addEventListener('keydown', handleEsc);
+    const original = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.removeEventListener('keydown', handleEsc);
+      document.body.style.overflow = original;
+    };
+  }, [visible, onClose]);
+
+  if (!visible) return null;
+
+  const tabs = [
+    { key: 'inApp', Icon: Bell, label: t('通知') },
+    { key: 'system', Icon: Megaphone, label: t('系统公告') },
+  ];
 
   const renderMarkdownNotice = () => {
     if (loading) {
       return (
-        <div className='py-12'>
-          <Empty description={t('加载中...')} />
-        </div>
+        <EmptyState icon={Loader2} description={t('加载中...')} />
       );
     }
-
     if (!noticeContent) {
-      return (
-        <div className='py-12'>
-          <Empty
-            image={
-              <IllustrationNoContent style={{ width: 150, height: 150 }} />
-            }
-            darkModeImage={
-              <IllustrationNoContentDark style={{ width: 150, height: 150 }} />
-            }
-            description={t('暂无公告')}
-          />
-        </div>
-      );
+      return <EmptyState description={t('暂无公告')} />;
     }
-
     return (
       <div
         dangerouslySetInnerHTML={{ __html: noticeContent }}
-        className='notice-content-scroll max-h-[55vh] overflow-y-auto pr-2'
+        className='notice-content-scroll max-h-[55vh] overflow-y-auto pr-2 text-ui-text text-sm leading-relaxed'
       />
     );
   };
 
   const renderAnnouncementTimeline = () => {
     if (processedAnnouncements.length === 0) {
-      return (
-        <div className='py-12'>
-          <Empty
-            image={
-              <IllustrationNoContent style={{ width: 150, height: 150 }} />
-            }
-            darkModeImage={
-              <IllustrationNoContentDark style={{ width: 150, height: 150 }} />
-            }
-            description={t('暂无系统公告')}
-          />
-        </div>
-      );
+      return <EmptyState description={t('暂无系统公告')} />;
     }
-
     return (
-      <div className='max-h-[55vh] overflow-y-auto pr-2 card-content-scroll'>
-        <Timeline mode='left'>
-          {processedAnnouncements.map((item, idx) => {
-            const htmlContent = marked.parse(item.content || '');
-            const htmlExtra = item.extra ? marked.parse(item.extra) : '';
-            return (
-              <Timeline.Item
-                key={idx}
-                type={item.type}
-                time={`${item.relative ? item.relative + ' ' : ''}${item.time}`}
-                extra={
-                  item.extra ? (
-                    <div
-                      className='text-xs text-gray-500'
-                      dangerouslySetInnerHTML={{ __html: htmlExtra }}
-                    />
-                  ) : null
-                }
-                className={item.isUnread ? '' : ''}
-              >
-                <div>
-                  <div
-                    className={item.isUnread ? 'shine-text' : ''}
-                    dangerouslySetInnerHTML={{ __html: htmlContent }}
-                  />
+      <div className='max-h-[55vh] overflow-y-auto pr-2'>
+        {processedAnnouncements.map((item, idx) => {
+          const htmlContent = marked.parse(item.content || '');
+          const htmlExtra = item.extra ? marked.parse(item.extra) : '';
+          const isLast = idx === processedAnnouncements.length - 1;
+          const dotColor = TYPE_COLOR[item.type] || 'var(--ui-text-3)';
+          return (
+            <div key={item.key + idx} className='flex gap-3'>
+              <div className='flex flex-col items-center pt-1.5'>
+                <span
+                  className='w-2.5 h-2.5 rounded-full ring-4 ring-ui-bg-elevated'
+                  style={{ background: dotColor }}
+                />
+                {!isLast && <div className='w-px flex-1 bg-ui-border mt-1' />}
+              </div>
+              <div className={`flex-1 ${isLast ? '' : 'pb-5'}`}>
+                <div className='text-xs text-ui-text-3 mb-1'>
+                  {item.relative ? `${item.relative} ` : ''}
+                  {item.time}
                 </div>
-              </Timeline.Item>
-            );
-          })}
-        </Timeline>
+                <div
+                  className={`text-sm text-ui-text ${item.isUnread ? 'shine-text' : ''}`}
+                  dangerouslySetInnerHTML={{ __html: htmlContent }}
+                />
+                {item.extra && (
+                  <div
+                    className='text-xs text-ui-text-2 mt-1'
+                    dangerouslySetInnerHTML={{ __html: htmlExtra }}
+                  />
+                )}
+              </div>
+            </div>
+          );
+        })}
       </div>
     );
   };
 
-  const renderBody = () => {
-    if (activeTab === 'inApp') {
-      return renderMarkdownNotice();
-    }
-    return renderAnnouncementTimeline();
-  };
-
-  return (
-    <Modal
-      title={
-        <div className='flex items-center justify-between w-full'>
-          <span>{t('系统公告')}</span>
-          <Tabs activeKey={activeTab} onChange={setActiveTab} type='button'>
-            <TabPane
-              tab={
-                <span className='flex items-center gap-1'>
-                  <Bell size={14} /> {t('通知')}
-                </span>
-              }
-              itemKey='inApp'
-            />
-            <TabPane
-              tab={
-                <span className='flex items-center gap-1'>
-                  <Megaphone size={14} /> {t('系统公告')}
-                </span>
-              }
-              itemKey='system'
-            />
-          </Tabs>
-        </div>
-      }
-      visible={visible}
-      onCancel={onClose}
-      footer={
-        <div className='flex justify-end'>
-          <Button type='secondary' onClick={handleCloseTodayNotice}>
-            {t('今日关闭')}
-          </Button>
-          <Button type='primary' onClick={onClose}>
-            {t('关闭公告')}
-          </Button>
-        </div>
-      }
-      size={isMobile ? 'full-width' : 'large'}
+  return createPortal(
+    <div
+      className='fixed inset-0 z-[100] flex items-center justify-center p-4'
+      style={{ background: 'rgba(0,0,0,0.5)' }}
+      onClick={onClose}
     >
-      {renderBody()}
-    </Modal>
+      <div
+        className='bg-ui-bg-elevated rounded-2xl shadow-2xl border border-ui-border flex flex-col overflow-hidden w-full max-w-2xl max-h-[85vh]'
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Header */}
+        <div className='flex items-center justify-between gap-3 px-5 py-3.5 border-b border-ui-border'>
+          <div className='flex items-center gap-4 min-w-0'>
+            <span className='text-base font-semibold text-ui-text whitespace-nowrap'>
+              {t('系统公告')}
+            </span>
+            <div className='inline-flex bg-ui-bg-subtle rounded-full p-0.5'>
+              {tabs.map(({ key, Icon, label }) => (
+                <button
+                  key={key}
+                  onClick={() => setActiveTab(key)}
+                  className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium transition-colors ${
+                    activeTab === key
+                      ? 'bg-ui-bg-elevated text-ui-text shadow-sm'
+                      : 'text-ui-text-2 hover:text-ui-text'
+                  }`}
+                >
+                  <Icon size={13} /> {label}
+                </button>
+              ))}
+            </div>
+          </div>
+          <button
+            onClick={onClose}
+            aria-label={t('关闭')}
+            className='p-1.5 rounded-lg text-ui-text-2 hover:bg-ui-bg-subtle hover:text-ui-text transition-colors flex-shrink-0'
+          >
+            <X size={18} />
+          </button>
+        </div>
+
+        {/* Body */}
+        <div className='flex-1 overflow-hidden p-5'>
+          {activeTab === 'inApp' ? renderMarkdownNotice() : renderAnnouncementTimeline()}
+        </div>
+
+        {/* Footer */}
+        <div className='flex justify-end gap-2 px-5 py-3 border-t border-ui-border'>
+          <button
+            onClick={handleCloseTodayNotice}
+            className='px-4 py-1.5 text-sm font-medium rounded-lg border border-ui-border text-ui-text hover:bg-ui-bg-subtle transition-colors'
+          >
+            {t('今日关闭')}
+          </button>
+          <button
+            onClick={onClose}
+            className='px-4 py-1.5 text-sm font-medium rounded-lg bg-ui-accent text-ui-accent-fg hover:bg-ui-accent-hover transition-colors'
+          >
+            {t('关闭公告')}
+          </button>
+        </div>
+      </div>
+    </div>,
+    document.body,
   );
 };
 

@@ -25,7 +25,7 @@ const NotificationButton = ({ unreadCount, onNoticeOpen, t }) => {
     <button
       onClick={onNoticeOpen}
       aria-label={t('系统公告')}
-      className='relative inline-flex items-center justify-center w-9 h-9 rounded-full text-ui-text-2 hover:bg-ui-bg-subtle transition-colors'
+      className='relative inline-flex items-center justify-center w-9 h-9 rounded-lg text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-subtle active:scale-90 transition-all duration-150'
     >
       <Bell size={18} />
       {unreadCount > 0 && (

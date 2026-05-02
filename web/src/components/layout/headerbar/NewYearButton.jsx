@@ -46,12 +46,12 @@ const NewYearButton = ({ isNewYear }) => {
       <button
         onClick={() => setOpen((o) => !o)}
         aria-label='New Year'
-        className='inline-flex items-center justify-center w-9 h-9 rounded-full hover:bg-ui-bg-subtle transition-colors text-xl'
+        className='inline-flex items-center justify-center w-9 h-9 rounded-lg hover:bg-ui-bg-subtle active:scale-90 transition-all duration-150 text-xl'
       >
         🎉
       </button>
       {open && (
-        <div className='absolute right-0 mt-2 w-48 bg-ui-bg-elevated border border-ui-border rounded-xl shadow-lg py-1 z-50'>
+        <div className='absolute right-0 mt-2 w-48 bg-ui-bg-elevated border border-ui-border rounded-xl shadow-lg py-1 z-50 animate-dropdown'>
           <button
             onClick={handleNewYearClick}
             className='flex w-full px-3 py-2 text-sm text-ui-text hover:bg-ui-bg-subtle transition-colors'

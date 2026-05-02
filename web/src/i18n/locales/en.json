@@ -3673,6 +3673,17 @@
     "默认折叠侧边栏": "Default collapse sidebar",
     "默认测试模型": "Default Test Model",
     "默认用户消息": "Default User Message",
-    "默认补全倍率": "Default completion ratio"
+    "默认补全倍率": "Default completion ratio",
+    "兼容 OpenAI / Claude / Gemini 等协议，智能路由，统一计费。": "Compatible with OpenAI / Claude / Gemini protocols. Smart routing and unified billing.",
+    "免费开始": "Get started",
+    "三步接入，分钟级上线": "Three steps. Live in minutes.",
+    "邮箱或 GitHub / Discord 等账号一键登录，即刻开始使用。": "Sign in with email or GitHub / Discord — get started instantly.",
+    "创建 API Key": "Create an API key",
+    "在控制台创建密钥，支持多 Key 管理与权限控制。": "Create keys in the console. Multi-key management and permission control included.",
+    "发起请求": "Make a request",
+    "使用你熟悉的 SDK 调用任意模型，完全兼容原生协议。": "Call any model with the SDK you already use — fully compatible with native protocols.",
+    "让每个 token 都有去处": "Every token finds its way home",
+    "免费注册，分钟级接入。兼容你现有的 SDK 和工作流。": "Free to start, live in minutes. Works with your existing SDK and workflow.",
+    "加载首页内容失败...": "Failed to load homepage content..."
   }
 }

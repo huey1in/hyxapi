@@ -37,7 +37,7 @@ const ThemeToggle = ({ theme, onThemeToggle, t }) => {
       onClick={handleClick}
       aria-label={label}
       title={label}
-      className='inline-flex items-center justify-center w-9 h-9 rounded-full text-ui-text-2 hover:bg-ui-bg-subtle transition-colors'
+      className='inline-flex items-center justify-center w-9 h-9 rounded-lg text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-subtle active:scale-90 transition-all duration-150'
     >
       <Icon size={18} />
     </button>

@@ -17,10 +17,10 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 
-import { Toast, Pagination } from '@douyinfe/semi-ui';
+import { Pagination } from '@douyinfe/semi-ui';
 import { toastConstants } from '../constants';
 import React from 'react';
-import { toast } from 'react-toastify';
+import { toast } from '../components/common/Toast';
 import {
   THINK_TAG_REGEX,
   MESSAGE_ROLES,
@@ -48,7 +48,7 @@ export function isRoot() {
 
 export function getSystemName() {
   let system_name = localStorage.getItem('system_name');
-  if (!system_name) return 'New API';
+  if (!system_name) return 'TokenC';
   return system_name;
 }
 
@@ -125,49 +125,43 @@ export function showError(error) {
     if (error.name === 'AxiosError') {
       switch (error.response.status) {
         case 401:
-          // 清除用户状态
           localStorage.removeItem('user');
-          // toast.error('错误：未登录或登录已过期，请重新登录！', showErrorOptions);
           window.location.href = '/login?expired=true';
           break;
         case 429:
-          Toast.error('错误：请求次数过多，请稍后再试！');
+          toast.error('错误：请求次数过多，请稍后再试！');
           break;
         case 500:
-          Toast.error('错误：服务器内部错误，请联系管理员！');
+          toast.error('错误：服务器内部错误，请联系管理员！');
           break;
         case 405:
-          Toast.info('本站仅作演示之用，无服务端！');
+          toast.info('本站仅作演示之用，无服务端！');
           break;
         default:
-          Toast.error('错误：' + error.message);
+          toast.error('错误：' + error.message);
       }
       return;
     }
-    Toast.error('错误：' + error.message);
+    toast.error('错误：' + error.message);
   } else {
-    Toast.error('错误：' + error);
+    toast.error('错误：' + error);
   }
 }
 
 export function showWarning(message) {
-  Toast.warning(message);
+  toast.warning(message);
 }
 
 export function showSuccess(message) {
-  Toast.success(message);
+  toast.success(message);
 }
 
 export function showInfo(message) {
-  Toast.info(message);
+  toast.info(message);
 }
 
-export function showNotice(message, isHTML = false) {
-  if (isHTML) {
-    toast(<HTMLToastContent htmlContent={message} />, showNoticeOptions);
-  } else {
-    Toast.info(message);
-  }
+export function showNotice(message) {
+  toast.info(message);
 }
 
 export function openPage(url) {

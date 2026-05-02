@@ -51,16 +51,16 @@ import { useTranslation } from 'react-i18next';
 import { SiDiscord } from 'react-icons/si';
 
 const inputClass =
-  'w-full px-4 py-3 text-sm border border-black rounded-lg outline-none focus:ring-2 focus:ring-black bg-white';
+  'w-full px-4 py-3 text-sm border border-ui-border rounded-lg outline-none focus:ring-2 focus:ring-ui-accent bg-ui-bg text-ui-text placeholder:text-ui-text-3';
 
 const OAuthButton = ({ onClick, loading, disabled, children, icon }) => (
   <button
     onClick={onClick}
     disabled={loading || disabled}
-    className='w-full flex items-center justify-center gap-3 px-4 py-3 text-sm font-medium border border-gray-200 rounded-lg bg-white hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed'
+    className='w-full flex items-center justify-center gap-3 px-4 py-3 text-sm font-medium border border-ui-border rounded-lg bg-ui-bg-elevated hover:bg-ui-bg-subtle text-ui-text transition-colors disabled:opacity-50 disabled:cursor-not-allowed'
   >
     {loading ? (
-      <span className='w-4 h-4 border-2 border-gray-400 border-t-transparent rounded-full animate-spin' />
+      <span className='w-4 h-4 border-2 border-ui-text-3 border-t-transparent rounded-full animate-spin' />
     ) : icon}
     <span>{children}</span>
   </button>
@@ -312,7 +312,7 @@ const LoginForm = () => {
           onChange={(e) => setAgreedToTerms(e.target.checked)}
           className='mt-0.5 accent-black'
         />
-        <span className='text-xs text-gray-500'>
+        <span className='text-xs text-ui-text-2'>
           {t('我已阅读并同意')}
           {hasUserAgreement && (
             <a href='/user-agreement' target='_blank' rel='noopener noreferrer' className='underline mx-1'>{t('用户协议')}</a>
@@ -375,13 +375,13 @@ const LoginForm = () => {
 
       <div className='flex items-center gap-3 my-2'>
         <div className='flex-1 h-px bg-gray-200' />
-        <span className='text-xs text-gray-400'>{t('或')}</span>
+        <span className='text-xs text-ui-text-3'>{t('或')}</span>
         <div className='flex-1 h-px bg-gray-200' />
       </div>
 
       <button
         onClick={() => { setEmailLoginLoading(true); setShowEmailLogin(true); setEmailLoginLoading(false); }}
-        className='w-full py-3 text-sm font-medium rounded-lg transition-colors bg-black text-white hover:bg-[#333]'
+        className='w-full py-3 text-sm font-medium rounded-lg transition-colors bg-ui-accent text-ui-accent-fg hover:bg-ui-accent-hover'
       >
         {t('使用 邮箱或用户名 登录')}
       </button>
@@ -398,7 +398,7 @@ const LoginForm = () => {
       )}
 
       <div>
-        <label className='block mb-2 text-sm font-medium text-black'>{t('用户名或邮箱')}</label>
+        <label className='block mb-2 text-sm font-medium text-ui-text'>{t('用户名或邮箱')}</label>
         <input
           type='text'
           placeholder={t('请输入您的用户名或邮箱地址')}
@@ -409,7 +409,7 @@ const LoginForm = () => {
       </div>
 
       <div>
-        <label className='block mb-2 text-sm font-medium text-black'>{t('密码')}</label>
+        <label className='block mb-2 text-sm font-medium text-ui-text'>{t('密码')}</label>
         <input
           type='password'
           placeholder={t('请输入您的密码')}
@@ -425,7 +425,7 @@ const LoginForm = () => {
       <button
         onClick={handleSubmit}
         disabled={loginLoading || ((hasUserAgreement || hasPrivacyPolicy) && !agreedToTerms)}
-        className='w-full py-3 text-sm font-medium rounded-lg transition-colors bg-black text-white hover:bg-[#333] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2'
+        className='w-full py-3 text-sm font-medium rounded-lg transition-colors bg-ui-accent text-ui-accent-fg hover:bg-ui-accent-hover disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2'
       >
         {loginLoading && <span className='w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin' />}
         {t('继续')}
@@ -433,7 +433,7 @@ const LoginForm = () => {
 
       <button
         onClick={() => { setResetPasswordLoading(true); navigate('/reset'); setResetPasswordLoading(false); }}
-        className='w-full py-2 text-sm text-gray-500 hover:text-black transition-colors'
+        className='w-full py-2 text-sm text-ui-text-2 hover:text-ui-text transition-colors'
       >
         {t('忘记密码？')}
       </button>
@@ -442,12 +442,12 @@ const LoginForm = () => {
         <>
           <div className='flex items-center gap-3'>
             <div className='flex-1 h-px bg-gray-200' />
-            <span className='text-xs text-gray-400'>{t('或')}</span>
+            <span className='text-xs text-ui-text-3'>{t('或')}</span>
             <div className='flex-1 h-px bg-gray-200' />
           </div>
           <button
             onClick={() => { setOtherLoginOptionsLoading(true); setShowEmailLogin(false); setOtherLoginOptionsLoading(false); }}
-            className='w-full py-3 text-sm font-medium border border-gray-200 rounded-lg bg-white hover:bg-gray-50 transition-colors'
+            className='w-full py-3 text-sm font-medium border border-ui-border rounded-lg bg-ui-bg-elevated hover:bg-ui-bg-subtle text-ui-text transition-colors'
           >
             {t('其他登录选项')}
           </button>
@@ -457,18 +457,18 @@ const LoginForm = () => {
   );
 
   return (
-    <div className='min-h-screen flex items-center justify-center px-4 py-12'>
-      <div className='w-full max-w-sm mt-[60px]'>
+    <div className='min-h-[calc(100vh-4rem)] flex items-start sm:items-center justify-center px-0 sm:px-4 pt-24 pb-12'>
+      <div className='w-full max-w-sm sm:mt-[60px]'>
         {/* 卡片 */}
-        <div className='bg-white rounded-2xl p-8'>
-          <h2 className='text-2xl font-semibold text-black mb-6'>{t('登录')}</h2>
+        <div className='p-6 sm:bg-ui-bg-elevated sm:rounded-2xl sm:border sm:border-ui-border sm:p-8'>
+          <h2 className='text-2xl font-semibold text-ui-text mb-6'>{t('登录')}</h2>
 
           {showEmailLogin || !hasOAuthLoginOptions ? renderEmailLoginForm() : renderOAuthOptions()}
 
           {!status.self_use_mode_enabled && (
-            <p className='mt-6 text-center text-sm text-gray-500'>
+            <p className='mt-6 text-center text-sm text-ui-text-2'>
               {t('没有账户？')}{' '}
-              <Link to='/register' className='text-black font-medium underline'>{t('注册')}</Link>
+              <Link to='/register' className='text-ui-text font-medium underline'>{t('注册')}</Link>
             </p>
           )}
         </div>
@@ -494,7 +494,7 @@ const LoginForm = () => {
         <div className='flex flex-col items-center'>
           <img src={status.wechat_qrcode} alt='微信二维码' className='mb-4' />
         </div>
-        <p className='text-center text-sm text-gray-600 mb-4'>
+        <p className='text-center text-sm text-ui-text-2 mb-4'>
           {t('微信扫码关注公众号，输入「验证码」获取验证码（三分钟内有效）')}
         </p>
         <input
