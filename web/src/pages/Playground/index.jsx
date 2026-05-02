@@ -1,126 +1,144 @@
 /*
 Copyright (C) 2025 QuantumNous
 
-This program is free software: you can redistribute it and/or modify
-it under the terms of the GNU Affero General Public License as
-published by the Free Software Foundation, either version 3 of the
-License, or (at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-GNU Affero General Public License for more details.
-
-You should have received a copy of the GNU Affero General Public License
-along with this program. If not, see <https://www.gnu.org/licenses/>.
-
-For commercial licensing, please contact support@quantumnous.com
+Simplified chat-style playground (no params/debug panel).
 */
 
-import React, { useContext, useEffect, useCallback, useRef } from 'react';
+import React, {
+  useContext,
+  useEffect,
+  useRef,
+  useState,
+} from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { showError, showWarning } from '../../helpers';
+import { Send, Square, Trash2, ChevronDown, Bot, Users } from 'lucide-react';
 
-// Context
 import { UserContext } from '../../context/User';
-import { useIsMobile } from '../../hooks/common/useIsMobile';
-
-// hooks
 import { usePlaygroundState } from '../../hooks/playground/usePlaygroundState';
-import { useMessageActions } from '../../hooks/playground/useMessageActions';
 import { useApiRequest } from '../../hooks/playground/useApiRequest';
-import { useSyncMessageAndCustomBody } from '../../hooks/playground/useSyncMessageAndCustomBody';
-import { useMessageEdit } from '../../hooks/playground/useMessageEdit';
 import { useDataLoader } from '../../hooks/playground/useDataLoader';
-
-// Constants and utils
 import {
-  MESSAGE_ROLES,
-  ERROR_MESSAGES,
-} from '../../constants/playground.constants';
-import {
-  getLogo,
-  stringToColor,
+  showWarning,
+  buildApiPayload,
   buildMessageContent,
   createMessage,
   createLoadingAssistantMessage,
   getTextContent,
-  buildApiPayload,
-  encodeToBase64,
 } from '../../helpers';
+import { MESSAGE_ROLES } from '../../constants/playground.constants';
+import MarkdownRenderer from '../../components/common/markdown/MarkdownRenderer';
 
-// Components
-import {
-  OptimizedSettingsPanel,
-  OptimizedDebugPanel,
-  OptimizedMessageContent,
-  OptimizedMessageActions,
-} from '../../components/playground/OptimizedComponents';
-import ChatArea from '../../components/playground/ChatArea';
-import FloatingButtons from '../../components/playground/FloatingButtons';
-import { PlaygroundProvider } from '../../contexts/PlaygroundContext';
+// 紧凑的内嵌选择器（chip 样式）
+const SelectChip = ({
+  Icon,
+  options,
+  value,
+  onChange,
+  placeholder,
+  emptyText,
+}) => {
+  const [open, setOpen] = useState(false);
+  const ref = useRef(null);
 
-// 生成头像
-const generateAvatarDataUrl = (username) => {
-  if (!username) {
-    return 'https://lf3-static.bytednsdoc.com/obj/eden-cn/ptlz_zlp/ljhwZthlaukjlkulzlp/docs-icon.png';
-  }
-  const firstLetter = username[0].toUpperCase();
-  const bgColor = stringToColor(username);
-  const svg = `
-    <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32">
-      <circle cx="16" cy="16" r="16" fill="${bgColor}" />
-      <text x="50%" y="50%" dominant-baseline="central" text-anchor="middle" font-size="16" fill="#ffffff" font-family="sans-serif">${firstLetter}</text>
-    </svg>
-  `;
-  return `data:image/svg+xml;base64,${encodeToBase64(svg)}`;
+  useEffect(() => {
+    const handler = (e) => {
+      if (ref.current && !ref.current.contains(e.target)) setOpen(false);
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, []);
+
+  const list = (options || []).map((m) =>
+    typeof m === 'string' ? { label: m, value: m } : m,
+  );
+  const current = list.find((o) => o.value === value);
+
+  return (
+    <div className='relative' ref={ref}>
+      <button
+        onClick={() => setOpen((o) => !o)}
+        className='inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-xs text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-subtle transition-colors max-w-[180px]'
+      >
+        {Icon && <Icon size={13} className='flex-shrink-0' />}
+        <span className='truncate'>
+          {current?.label || value || placeholder}
+        </span>
+        <ChevronDown size={12} className='text-ui-text-3 flex-shrink-0' />
+      </button>
+      {open && (
+        <div className='absolute left-0 bottom-full mb-2 w-56 max-h-72 overflow-y-auto bg-ui-bg-elevated border border-ui-border rounded-xl shadow-lg py-1 z-30 animate-dropdown'>
+          {list.length === 0 ? (
+            <div className='px-4 py-5 text-center text-xs text-ui-text-3'>
+              {emptyText}
+            </div>
+          ) : (
+            list.map((m) => (
+              <button
+                key={m.value}
+                onClick={() => {
+                  onChange(m.value);
+                  setOpen(false);
+                }}
+                className={`flex w-full px-3 py-1.5 text-xs transition-colors text-left ${
+                  value === m.value
+                    ? 'bg-ui-bg-subtle text-ui-text font-semibold'
+                    : 'text-ui-text-2 hover:bg-ui-bg-subtle hover:text-ui-text'
+                }`}
+              >
+                {m.label}
+              </button>
+            ))
+          )}
+        </div>
+      )}
+    </div>
+  );
+};
+
+const Bubble = ({ role, children }) => {
+  const isUser = role === MESSAGE_ROLES.USER;
+  return (
+    <div className={`flex ${isUser ? 'justify-end' : 'justify-start'} px-2`}>
+      <div
+        className={`max-w-[85%] md:max-w-[75%] rounded-2xl px-4 py-3 text-sm leading-relaxed break-words ${
+          isUser
+            ? 'bg-ui-accent text-ui-accent-fg'
+            : 'bg-ui-bg-elevated border border-ui-border text-ui-text'
+        }`}
+      >
+        {children}
+      </div>
+    </div>
+  );
 };
 
 const Playground = () => {
   const { t } = useTranslation();
   const [userState] = useContext(UserContext);
-  const isMobile = useIsMobile();
-  const styleState = { isMobile };
   const [searchParams] = useSearchParams();
+  const scrollRef = useRef(null);
+  const inputRef = useRef(null);
+  const [draft, setDraft] = useState('');
 
   const state = usePlaygroundState();
   const {
     inputs,
     parameterEnabled,
-    showDebugPanel,
-    customRequestMode,
-    customRequestBody,
-    showSettings,
     models,
     groups,
-    status,
     message,
-    debugData,
-    activeDebugTab,
-    previewPayload,
     sseSourceRef,
-    chatRef,
     handleInputChange,
-    handleParameterToggle,
-    debouncedSaveConfig,
     saveMessagesImmediately,
-    handleConfigImport,
-    handleConfigReset,
-    setShowSettings,
     setModels,
     setGroups,
-    setStatus,
     setMessage,
     setDebugData,
     setActiveDebugTab,
-    setPreviewPayload,
-    setShowDebugPanel,
-    setCustomRequestMode,
-    setCustomRequestBody,
+    debouncedSaveConfig,
   } = state;
 
-  // API 请求相关
   const { sendRequest, onStopGenerator } = useApiRequest(
     setMessage,
     setDebugData,
@@ -129,435 +147,217 @@ const Playground = () => {
     saveMessagesImmediately,
   );
 
-  // 数据加载
   useDataLoader(userState, inputs, handleInputChange, setModels, setGroups);
 
-  // 消息编辑
-  const {
-    editingMessageId,
-    editValue,
-    setEditValue,
-    handleMessageEdit,
-    handleEditSave,
-    handleEditCancel,
-  } = useMessageEdit(
-    setMessage,
-    inputs,
-    parameterEnabled,
-    sendRequest,
-    saveMessagesImmediately,
+  const isGenerating = message.some(
+    (m) => m.status === 'loading' || m.status === 'incomplete',
   );
-
-  // 消息和自定义请求体同步
-  const { syncMessageToCustomBody, syncCustomBodyToMessage } =
-    useSyncMessageAndCustomBody(
-      customRequestMode,
-      customRequestBody,
-      message,
-      inputs,
-      setCustomRequestBody,
-      setMessage,
-      debouncedSaveConfig,
-    );
-
-  // 角色信息
-  const roleInfo = {
-    user: {
-      name: userState?.user?.username || 'User',
-      avatar: generateAvatarDataUrl(userState?.user?.username),
-    },
-    assistant: {
-      name: 'Assistant',
-      avatar: getLogo(),
-    },
-    system: {
-      name: 'System',
-      avatar: getLogo(),
-    },
-  };
-
-  // 消息操作
-  const messageActions = useMessageActions(
-    message,
-    setMessage,
-    onMessageSend,
-    saveMessagesImmediately,
-  );
-
-  // 构建预览请求体
-  const constructPreviewPayload = useCallback(() => {
-    try {
-      // 如果是自定义请求体模式且有自定义内容，直接返回解析后的自定义请求体
-      if (customRequestMode && customRequestBody && customRequestBody.trim()) {
-        try {
-          return JSON.parse(customRequestBody);
-        } catch (parseError) {
-          console.warn('自定义请求体JSON解析失败，回退到默认预览:', parseError);
-        }
-      }
-
-      // 默认预览逻辑
-      let messages = [...message];
-
-      // 如果存在用户消息
-      if (
-        !(
-          messages.length === 0 ||
-          messages.every((msg) => msg.role !== MESSAGE_ROLES.USER)
-        )
-      ) {
-        // 处理最后一个用户消息的图片
-        for (let i = messages.length - 1; i >= 0; i--) {
-          if (messages[i].role === MESSAGE_ROLES.USER) {
-            if (inputs.imageEnabled && inputs.imageUrls) {
-              const validImageUrls = inputs.imageUrls.filter(
-                (url) => url.trim() !== '',
-              );
-              if (validImageUrls.length > 0) {
-                const textContent = getTextContent(messages[i]) || '示例消息';
-                const content = buildMessageContent(
-                  textContent,
-                  validImageUrls,
-                  true,
-                );
-                messages[i] = { ...messages[i], content };
-              }
-            }
-            break;
-          }
-        }
-      }
-
-      return buildApiPayload(messages, null, inputs, parameterEnabled);
-    } catch (error) {
-      console.error('构造预览请求体失败:', error);
-      return null;
-    }
-  }, [inputs, parameterEnabled, message, customRequestMode, customRequestBody]);
-
-  // 发送消息
-  function onMessageSend(content, attachment) {
-    console.log('attachment: ', attachment);
-
-    // 创建用户消息和加载消息
-    const userMessage = createMessage(MESSAGE_ROLES.USER, content);
-    const loadingMessage = createLoadingAssistantMessage();
-
-    // 如果是自定义请求体模式
-    if (customRequestMode && customRequestBody) {
-      try {
-        const customPayload = JSON.parse(customRequestBody);
-
-        setMessage((prevMessage) => {
-          const newMessages = [...prevMessage, userMessage, loadingMessage];
-
-          // 发送自定义请求体
-          sendRequest(customPayload, customPayload.stream !== false);
-
-          // 发送消息后保存，传入新消息列表
-          setTimeout(() => saveMessagesImmediately(newMessages), 0);
-
-          return newMessages;
-        });
-        return;
-      } catch (error) {
-        console.error('自定义请求体JSON解析失败:', error);
-        showError(ERROR_MESSAGES.JSON_PARSE_ERROR);
-        return;
-      }
-    }
-
-    // 默认模式
-    const validImageUrls = inputs.imageUrls.filter((url) => url.trim() !== '');
-    const messageContent = buildMessageContent(
-      content,
-      validImageUrls,
-      inputs.imageEnabled,
-    );
-    const userMessageWithImages = createMessage(
-      MESSAGE_ROLES.USER,
-      messageContent,
-    );
-
-    setMessage((prevMessage) => {
-      const newMessages = [...prevMessage, userMessageWithImages];
-
-      const payload = buildApiPayload(
-        newMessages,
-        null,
-        inputs,
-        parameterEnabled,
-      );
-      sendRequest(payload, inputs.stream);
-
-      // 禁用图片模式
-      if (inputs.imageEnabled) {
-        setTimeout(() => {
-          handleInputChange('imageEnabled', false);
-        }, 100);
-      }
-
-      // 发送消息后保存，传入新消息列表（包含用户消息和加载消息）
-      const messagesWithLoading = [...newMessages, loadingMessage];
-      setTimeout(() => saveMessagesImmediately(messagesWithLoading), 0);
-
-      return messagesWithLoading;
-    });
-  }
-
-  // 切换推理展开状态
-  const toggleReasoningExpansion = useCallback(
-    (messageId) => {
-      setMessage((prevMessages) =>
-        prevMessages.map((msg) =>
-          msg.id === messageId && msg.role === MESSAGE_ROLES.ASSISTANT
-            ? { ...msg, isReasoningExpanded: !msg.isReasoningExpanded }
-            : msg,
-        ),
-      );
-    },
-    [setMessage],
-  );
-
-  // 渲染函数
-  const renderCustomChatContent = useCallback(
-    ({ message, className }) => {
-      const isCurrentlyEditing = editingMessageId === message.id;
-
-      return (
-        <OptimizedMessageContent
-          message={message}
-          className={className}
-          styleState={styleState}
-          onToggleReasoningExpansion={toggleReasoningExpansion}
-          isEditing={isCurrentlyEditing}
-          onEditSave={handleEditSave}
-          onEditCancel={handleEditCancel}
-          editValue={editValue}
-          onEditValueChange={setEditValue}
-        />
-      );
-    },
-    [
-      styleState,
-      editingMessageId,
-      editValue,
-      handleEditSave,
-      handleEditCancel,
-      setEditValue,
-      toggleReasoningExpansion,
-    ],
-  );
-
-  const renderChatBoxAction = useCallback(
-    (props) => {
-      const { message: currentMessage } = props;
-      const isAnyMessageGenerating = message.some(
-        (msg) => msg.status === 'loading' || msg.status === 'incomplete',
-      );
-      const isCurrentlyEditing = editingMessageId === currentMessage.id;
-
-      return (
-        <OptimizedMessageActions
-          message={currentMessage}
-          styleState={styleState}
-          onMessageReset={messageActions.handleMessageReset}
-          onMessageCopy={messageActions.handleMessageCopy}
-          onMessageDelete={messageActions.handleMessageDelete}
-          onRoleToggle={messageActions.handleRoleToggle}
-          onMessageEdit={handleMessageEdit}
-          isAnyMessageGenerating={isAnyMessageGenerating}
-          isEditing={isCurrentlyEditing}
-        />
-      );
-    },
-    [messageActions, styleState, message, editingMessageId, handleMessageEdit],
-  );
-
-  // Effects
-
-  // 同步消息和自定义请求体
-  useEffect(() => {
-    syncMessageToCustomBody();
-  }, [message, syncMessageToCustomBody]);
 
   useEffect(() => {
-    syncCustomBodyToMessage();
-  }, [customRequestBody, syncCustomBodyToMessage]);
+    if (!inputs.stream) handleInputChange('stream', true);
+  }, []);
 
-  // 处理URL参数
   useEffect(() => {
     if (searchParams.get('expired')) {
       showWarning(t('登录过期，请重新登录！'));
     }
   }, [searchParams, t]);
 
-  // Playground 组件无需再监听窗口变化，isMobile 由 useIsMobile Hook 自动更新
-
-  // 构建预览payload
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      const preview = constructPreviewPayload();
-      setPreviewPayload(preview);
-      setDebugData((prev) => ({
-        ...prev,
-        previewRequest: preview ? JSON.stringify(preview, null, 2) : null,
-        previewTimestamp: preview ? new Date().toISOString() : null,
-      }));
-    }, 300);
-
-    return () => clearTimeout(timer);
-  }, [
-    message,
-    inputs,
-    parameterEnabled,
-    customRequestMode,
-    customRequestBody,
-    constructPreviewPayload,
-    setPreviewPayload,
-    setDebugData,
-  ]);
-
-  // 自动保存配置
   useEffect(() => {
     debouncedSaveConfig();
-  }, [
-    inputs,
-    parameterEnabled,
-    showDebugPanel,
-    customRequestMode,
-    customRequestBody,
-    debouncedSaveConfig,
-  ]);
+  }, [inputs, parameterEnabled, debouncedSaveConfig]);
 
-  // 清空对话的处理函数
-  const handleClearMessages = useCallback(() => {
-    setMessage([]);
-    // 清空对话后保存，传入空数组
-    setTimeout(() => saveMessagesImmediately([]), 0);
-  }, [setMessage, saveMessagesImmediately]);
+  useEffect(() => {
+    if (scrollRef.current) {
+      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+    }
+  }, [message]);
 
-  // 处理粘贴图片
-  const handlePasteImage = useCallback(
-    (base64Data) => {
-      if (!inputs.imageEnabled) {
-        return;
-      }
-      // 添加图片到 imageUrls 数组
-      const newUrls = [...(inputs.imageUrls || []), base64Data];
-      handleInputChange('imageUrls', newUrls);
-    },
-    [inputs.imageEnabled, inputs.imageUrls, handleInputChange],
-  );
+  const handleSend = () => {
+    const text = draft.trim();
+    if (!text || isGenerating) return;
+    if (!inputs.model) {
+      showWarning('请先选择一个模型');
+      return;
+    }
+    setDraft('');
+    if (inputRef.current) inputRef.current.style.height = 'auto';
+    inputRef.current?.focus();
 
-  // Playground Context 值
-  const playgroundContextValue = {
-    onPasteImage: handlePasteImage,
-    imageUrls: inputs.imageUrls || [],
-    imageEnabled: inputs.imageEnabled || false,
+    const userMessage = createMessage(
+      MESSAGE_ROLES.USER,
+      buildMessageContent(text, [], false),
+    );
+    const loading = createLoadingAssistantMessage();
+
+    setMessage((prev) => {
+      const next = [...prev, userMessage];
+      const payload = buildApiPayload(next, null, inputs, parameterEnabled);
+      sendRequest(payload, true);
+      const all = [...next, loading];
+      setTimeout(() => saveMessagesImmediately(all), 0);
+      return all;
+    });
   };
 
+  const handleKeyDown = (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleSend();
+    }
+  };
+
+  const handleClear = () => {
+    setMessage([]);
+    setTimeout(() => saveMessagesImmediately([]), 0);
+  };
+
+  const renderAssistantContent = (msg) => {
+    const text = getTextContent(msg);
+    if (!text && msg.status === 'loading') {
+      return (
+        <div className='flex items-center gap-1.5 text-ui-text-3'>
+          <span className='w-1.5 h-1.5 rounded-full bg-ui-text-3 animate-pulse' />
+          <span className='w-1.5 h-1.5 rounded-full bg-ui-text-3 animate-pulse' style={{ animationDelay: '0.15s' }} />
+          <span className='w-1.5 h-1.5 rounded-full bg-ui-text-3 animate-pulse' style={{ animationDelay: '0.3s' }} />
+        </div>
+      );
+    }
+    if (msg.error) {
+      return <span className='text-ui-danger'>{msg.error}</span>;
+    }
+    return <MarkdownRenderer content={text || ''} />;
+  };
+
+  const canSend = !!draft.trim() && !!inputs.model;
+
   return (
-    <PlaygroundProvider value={playgroundContextValue}>
-      <div className='h-full'>
-        <div className='h-full flex flex-col md:flex-row'>
-          {(showSettings || !isMobile) && (
-            <div
-              className={`
-              bg-transparent border-r-0 flex-shrink-0 overflow-auto mt-[60px]
-              ${
-                isMobile
-                  ? 'fixed top-0 left-0 right-0 bottom-0 z-[1000] w-full h-auto bg-white shadow-lg'
-                  : 'relative z-[1] w-80 h-[calc(100vh-66px)]'
-              }
-            `}
-            >
-              <OptimizedSettingsPanel
-                inputs={inputs}
-                parameterEnabled={parameterEnabled}
-                models={models}
-                groups={groups}
-                styleState={styleState}
-                showSettings={showSettings}
-                showDebugPanel={showDebugPanel}
-                customRequestMode={customRequestMode}
-                customRequestBody={customRequestBody}
-                onInputChange={handleInputChange}
-                onParameterToggle={handleParameterToggle}
-                onCloseSettings={() => setShowSettings(false)}
-                onConfigImport={handleConfigImport}
-                onConfigReset={handleConfigReset}
-                onCustomRequestModeChange={setCustomRequestMode}
-                onCustomRequestBodyChange={setCustomRequestBody}
-                previewPayload={previewPayload}
-                messages={message}
-              />
-            </div>
-          )}
-
-          <div className='relative flex-1 overflow-hidden'>
-            <div className='overflow-hidden flex flex-col lg:flex-row h-[calc(100vh-66px)] mt-[60px]'>
-              <div className='flex-1 flex flex-col'>
-                <ChatArea
-                  chatRef={chatRef}
-                  message={message}
-                  inputs={inputs}
-                  styleState={styleState}
-                  showDebugPanel={showDebugPanel}
-                  roleInfo={roleInfo}
-                  onMessageSend={onMessageSend}
-                  onMessageCopy={messageActions.handleMessageCopy}
-                  onMessageReset={messageActions.handleMessageReset}
-                  onMessageDelete={messageActions.handleMessageDelete}
-                  onStopGenerator={onStopGenerator}
-                  onClearMessages={handleClearMessages}
-                  onToggleDebugPanel={() => setShowDebugPanel(!showDebugPanel)}
-                  renderCustomChatContent={renderCustomChatContent}
-                  renderChatBoxAction={renderChatBoxAction}
-                />
+    // 顶部留出 16(64px) 的导航栏空间，整个区块独占视口剩余高度
+    <div className='fixed left-0 right-0 top-16 bottom-0 flex flex-col bg-ui-bg'>
+      {/* Messages */}
+      <div ref={scrollRef} className='flex-1 overflow-y-auto'>
+        {message.length === 0 ? (
+          (() => {
+            const username = userState?.user?.username || '';
+            const hour = new Date().getHours();
+            const greeting =
+              hour < 6 ? '夜深了'
+              : hour < 12 ? '早上好'
+              : hour < 14 ? '中午好'
+              : hour < 18 ? '下午好'
+              : '晚上好';
+            return (
+              <div className='h-full flex flex-col items-center justify-center text-center px-6'>
+                <h2
+                  className='text-3xl md:text-5xl font-bold text-ui-text mb-3'
+                  style={{ fontFamily: "'Space Grotesk', sans-serif", letterSpacing: '-0.025em' }}
+                >
+                  {greeting}
+                  {username && (
+                    <>
+                      ，<span className='text-ui-brand'>{username}</span>
+                    </>
+                  )}
+                </h2>
+                <p className='text-ui-text-2 text-sm md:text-base'>
+                  今天想聊点什么？
+                </p>
               </div>
-
-              {/* 调试面板 - 桌面端 */}
-              {showDebugPanel && !isMobile && (
-                <div className='w-96 flex-shrink-0 h-full'>
-                  <OptimizedDebugPanel
-                    debugData={debugData}
-                    activeDebugTab={activeDebugTab}
-                    onActiveDebugTabChange={setActiveDebugTab}
-                    styleState={styleState}
-                    customRequestMode={customRequestMode}
-                  />
-                </div>
-              )}
-            </div>
-
-            {/* 调试面板 - 移动端覆盖层 */}
-            {showDebugPanel && isMobile && (
-              <div className='fixed top-0 left-0 right-0 bottom-0 z-[1000] bg-white overflow-auto shadow-lg'>
-                <OptimizedDebugPanel
-                  debugData={debugData}
-                  activeDebugTab={activeDebugTab}
-                  onActiveDebugTabChange={setActiveDebugTab}
-                  styleState={styleState}
-                  showDebugPanel={showDebugPanel}
-                  onCloseDebugPanel={() => setShowDebugPanel(false)}
-                  customRequestMode={customRequestMode}
-                />
-              </div>
-            )}
-
-            {/* 浮动按钮 */}
-            <FloatingButtons
-              styleState={styleState}
-              showSettings={showSettings}
-              showDebugPanel={showDebugPanel}
-              onToggleSettings={() => setShowSettings(!showSettings)}
-              onToggleDebugPanel={() => setShowDebugPanel(!showDebugPanel)}
-            />
+            );
+          })()
+        ) : (
+          <div className='max-w-3xl mx-auto py-6 px-2 space-y-4'>
+            {message.map((msg) => (
+              <Bubble key={msg.id} role={msg.role}>
+                {msg.role === MESSAGE_ROLES.USER ? (
+                  <span className='whitespace-pre-wrap'>{getTextContent(msg)}</span>
+                ) : (
+                  renderAssistantContent(msg)
+                )}
+              </Bubble>
+            ))}
           </div>
+        )}
+      </div>
+
+      {/* Input area: single integrated card */}
+      <div className='shrink-0 px-3 md:px-4 pb-4 pt-2'>
+        <div className='max-w-3xl mx-auto'>
+          <div className='bg-ui-bg-elevated border border-ui-border rounded-2xl shadow-sm focus-within:border-ui-text-3 transition-colors'>
+            <textarea
+              ref={inputRef}
+              value={draft}
+              onChange={(e) => setDraft(e.target.value)}
+              onKeyDown={handleKeyDown}
+              rows={2}
+              placeholder='发消息给模型，Enter 发送 / Shift + Enter 换行'
+              className='block w-full resize-none bg-transparent border-0 outline-none focus:ring-0 px-4 pt-3.5 pb-1 text-sm text-ui-text placeholder:text-ui-text-3 rounded-t-2xl'
+              style={{ minHeight: '60px', maxHeight: '200px' }}
+              onInput={(e) => {
+                e.target.style.height = 'auto';
+                e.target.style.height = `${Math.min(e.target.scrollHeight, 200)}px`;
+              }}
+            />
+
+            {/* Toolbar row */}
+            <div className='flex items-center justify-between gap-2 px-2 pb-2'>
+              <div className='flex items-center gap-1 min-w-0 flex-1 flex-wrap'>
+                <SelectChip
+                  Icon={Users}
+                  options={groups}
+                  value={inputs.group}
+                  onChange={(v) => handleInputChange('group', v)}
+                  placeholder='分组'
+                  emptyText='暂无可用分组'
+                />
+                <span className='text-ui-border'>·</span>
+                <SelectChip
+                  Icon={Bot}
+                  options={models}
+                  value={inputs.model}
+                  onChange={(v) => handleInputChange('model', v)}
+                  placeholder='选择模型'
+                  emptyText='暂无可用模型'
+                />
+              </div>
+              <div className='flex items-center gap-1 flex-shrink-0'>
+                {message.length > 0 && (
+                  <button
+                    onClick={handleClear}
+                    title='新对话'
+                    aria-label='clear'
+                    className='inline-flex items-center justify-center w-8 h-8 rounded-lg text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-subtle transition-colors'
+                  >
+                    <Trash2 size={14} />
+                  </button>
+                )}
+                {isGenerating ? (
+                  <button
+                    onClick={onStopGenerator}
+                    aria-label='stop'
+                    className='inline-flex items-center justify-center w-8 h-8 rounded-lg bg-ui-bg-subtle text-ui-text hover:bg-ui-border transition-colors'
+                  >
+                    <Square size={13} fill='currentColor' />
+                  </button>
+                ) : (
+                  <button
+                    onClick={handleSend}
+                    disabled={!canSend}
+                    aria-label='send'
+                    className='inline-flex items-center justify-center w-8 h-8 rounded-lg bg-ui-accent text-ui-accent-fg hover:bg-ui-accent-hover disabled:opacity-30 disabled:hover:bg-ui-accent transition-colors'
+                  >
+                    <Send size={13} />
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
+          <p className='mt-2 text-center text-[11px] text-ui-text-3'>
+            模型可能产生不准确的信息，请核实重要内容
+          </p>
         </div>
       </div>
-    </PlaygroundProvider>
+    </div>
   );
 };
 

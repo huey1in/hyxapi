@@ -193,7 +193,8 @@ export const handleApiError = (error, response = null) => {
 
 // 处理模型数据
 export const processModelsData = (data, currentModel) => {
-  const modelOptions = data.map((model) => ({
+  const list = Array.isArray(data) ? data : [];
+  const modelOptions = list.map((model) => ({
     label: model,
     value: model,
   }));

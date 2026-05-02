@@ -42,6 +42,7 @@ const routerMap = {
   setting: '/console/setting',
   playground: '/console/playground',
   personal: '/console/personal',
+  detail: '/console',
 };
 
 const SiderBar = ({ onNavigate = () => {} }) => {
