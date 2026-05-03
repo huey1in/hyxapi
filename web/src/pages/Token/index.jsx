@@ -189,6 +189,65 @@ const useTokensList = () => {
   };
 };
 
+// ── form atoms (stable identity, must live at module scope) ──
+const FormSection = ({ title, children }) => (
+  <div>
+    <h3 className='text-[11px] uppercase tracking-[0.12em] font-semibold text-ui-text-3 mb-3'>
+      {title}
+    </h3>
+    <div className='space-y-4'>{children}</div>
+  </div>
+);
+
+const FormField = ({ label, hint, children, required }) => (
+  <div>
+    <div className='flex items-baseline justify-between mb-1.5'>
+      <label className='text-xs font-medium text-ui-text'>
+        {label}
+        {required && <span className='text-ui-danger ml-0.5'>*</span>}
+      </label>
+      {hint && <span className='text-[11px] text-ui-text-3'>{hint}</span>}
+    </div>
+    {children}
+  </div>
+);
+
+const FormToggle = ({ checked, onChange }) => (
+  <span
+    role='switch'
+    aria-checked={checked}
+    onClick={() => onChange(!checked)}
+    className='relative inline-block w-9 h-5 rounded-full transition-colors flex-shrink-0 cursor-pointer'
+    style={{ background: checked ? 'var(--ui-brand)' : 'var(--ui-border)' }}
+  >
+    <span
+      className='absolute top-0.5 w-4 h-4 rounded-full transition-all'
+      style={{
+        left: checked ? '18px' : '2px',
+        background: '#ffffff',
+        boxShadow: '0 1px 2px rgba(0,0,0,0.2)',
+      }}
+    />
+  </span>
+);
+
+const SwitchRow = ({ title, description, checked, onChange, children }) => (
+  <div>
+    <div className='flex items-start justify-between gap-4'>
+      <div className='flex-1 min-w-0'>
+        <div className='text-sm text-ui-text font-medium'>{title}</div>
+        {description && (
+          <div className='text-[11px] text-ui-text-3 mt-0.5'>{description}</div>
+        )}
+      </div>
+      <div className='pt-0.5'>
+        <FormToggle checked={checked} onChange={onChange} />
+      </div>
+    </div>
+    {checked && children && <div className='mt-3'>{children}</div>}
+  </div>
+);
+
 // ── edit modal ──────────────────────────────────────────
 const TokenFormModal = ({ open, token, onClose, onSaved, t }) => {
   const isEdit = !!token?.id;
@@ -292,34 +351,6 @@ const TokenFormModal = ({ open, token, onClose, onSaved, t }) => {
 
   const inputCls =
     'w-full px-3 py-2 text-sm bg-ui-bg border border-ui-border rounded-lg text-ui-text outline-none focus:border-ui-text-3 transition-colors';
-  const Field = ({ label, children, hint }) => (
-    <div>
-      <label className='block text-xs font-medium text-ui-text-2 mb-1.5'>{label}</label>
-      {children}
-      {hint && <p className='mt-1 text-[11px] text-ui-text-3'>{hint}</p>}
-    </div>
-  );
-  const Switch = ({ checked, onChange, label }) => (
-    <label className='flex items-center justify-between gap-3 text-xs text-ui-text-2 cursor-pointer select-none'>
-      <span>{label}</span>
-      <span
-        role='switch'
-        aria-checked={checked}
-        onClick={() => onChange(!checked)}
-        className='relative inline-block w-9 h-5 rounded-full transition-colors flex-shrink-0'
-        style={{ background: checked ? 'var(--ui-brand)' : 'var(--ui-border)' }}
-      >
-        <span
-          className='absolute top-0.5 w-4 h-4 rounded-full transition-all'
-          style={{
-            left: checked ? '18px' : '2px',
-            background: '#ffffff',
-            boxShadow: '0 1px 2px rgba(0,0,0,0.2)',
-          }}
-        />
-      </span>
-    </label>
-  );
 
   return createPortal(
     <div
@@ -328,136 +359,168 @@ const TokenFormModal = ({ open, token, onClose, onSaved, t }) => {
       onClick={onClose}
     >
       <div
-        className='bg-ui-bg-elevated border border-ui-border rounded-2xl shadow-2xl w-full max-w-lg my-8 overflow-hidden'
+        className='bg-ui-bg-elevated border border-ui-border rounded-2xl shadow-2xl w-full max-w-2xl my-8 overflow-hidden flex flex-col max-h-[90vh]'
         onClick={(e) => e.stopPropagation()}
       >
-        <div className='flex items-center justify-between px-5 py-3.5 border-b border-ui-border'>
-          <span className='text-sm font-semibold text-ui-text'>
-            {isEdit ? t('编辑令牌') : t('新建令牌')}
-          </span>
-          <button onClick={onClose} className='p-1 rounded text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-subtle'>
+        {/* Header */}
+        <div className='flex items-start justify-between px-7 pt-6 pb-4 border-b border-ui-border'>
+          <div>
+            <h2
+              className='text-xl font-semibold text-ui-text'
+              style={{ fontFamily: "'Space Grotesk', sans-serif", letterSpacing: '-0.015em' }}
+            >
+              {isEdit ? t('编辑令牌') : t('新建令牌')}
+            </h2>
+            <p className='text-xs text-ui-text-3 mt-1'>
+              {isEdit
+                ? t('修改此令牌的访问权限和限额配置')
+                : t('创建一个用于访问 API 的密钥令牌')}
+            </p>
+          </div>
+          <button
+            onClick={onClose}
+            className='p-1.5 -mr-1 rounded-lg text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-subtle transition-colors'
+          >
             <X size={16} />
           </button>
         </div>
 
-        <div className='p-5 space-y-4 max-h-[70vh] overflow-y-auto'>
-          <Field label={t('名称')}>
-            <input
-              type='text'
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder={t('给令牌起个名字')}
-              className={`${inputCls} placeholder:text-ui-text-3`}
-              autoFocus
-            />
-          </Field>
+        {/* Body */}
+        <div className='px-7 py-6 space-y-7 overflow-y-auto'>
+          {/* 基础信息 */}
+          <FormSection title={t('基础信息')}>
+            <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
+              <FormField label={t('名称')} required>
+                <input
+                  type='text'
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  placeholder={t('例如 my-app')}
+                  className={`${inputCls} placeholder:text-ui-text-3`}
+                  autoFocus
+                />
+              </FormField>
+              {!isEdit ? (
+                <FormField label={t('创建数量')} hint={t('最多 100')}>
+                  <input
+                    type='number'
+                    min={1}
+                    max={100}
+                    value={tokenCount}
+                    onChange={(e) => setTokenCount(e.target.value)}
+                    className={inputCls}
+                  />
+                </FormField>
+              ) : (
+                <div />
+              )}
+            </div>
 
-          {!isEdit && (
-            <Field label={t('批量创建数量')} hint={t('一次最多创建 100 个')}>
-              <input
-                type='number'
-                min={1}
-                max={100}
-                value={tokenCount}
-                onChange={(e) => setTokenCount(e.target.value)}
-                className={inputCls}
+            <FormField label={t('分组')}>
+              <Select
+                options={groupOptions}
+                value={group}
+                onChange={setGroup}
+                placeholder={t('选择分组')}
               />
-            </Field>
-          )}
+            </FormField>
 
-          <Field label={t('分组')}>
-            <Select
-              options={groupOptions}
-              value={group}
-              onChange={setGroup}
-              placeholder={t('选择分组')}
+            <SwitchRow
+              title={t('跨分组重试')}
+              description={t('仅 auto 分组生效，请求失败时尝试其他分组')}
+              checked={crossGroupRetry}
+              onChange={setCrossGroupRetry}
             />
-          </Field>
+          </FormSection>
 
-          <Switch
-            checked={crossGroupRetry}
-            onChange={setCrossGroupRetry}
-            label={t('开启跨分组重试（仅 auto 分组生效）')}
-          />
-
-          <div>
-            <Switch
+          {/* 配额与时效 */}
+          <div className='border-t border-ui-divider' />
+          <FormSection title={t('配额与时效')}>
+            <SwitchRow
+              title={t('不限额度')}
+              description={t('开启后令牌可无限制使用，不再扣减额度')}
               checked={unlimitedQuota}
               onChange={setUnlimitedQuota}
-              label={t('不限额度')}
             />
             {!unlimitedQuota && (
-              <input
-                type='number'
-                value={remainQuota}
-                onChange={(e) => setRemainQuota(e.target.value)}
-                placeholder='500000'
-                className={`${inputCls} mt-2`}
-              />
+              <FormField label={t('额度')} hint={t('单位 quota')}>
+                <input
+                  type='number'
+                  value={remainQuota}
+                  onChange={(e) => setRemainQuota(e.target.value)}
+                  placeholder='500000'
+                  className={inputCls}
+                />
+              </FormField>
             )}
-          </div>
 
-          <Field label={t('过期时间')} hint={t('留空表示永不过期')}>
-            <div className='flex gap-2'>
-              <input
-                type='datetime-local'
-                value={toLocalInput(expiredTime)}
-                onChange={(e) => setExpiredTime(toUnix(e.target.value) || -1)}
-                className={inputCls}
-              />
-              <button
-                type='button'
-                onClick={() => setExpiredTime(-1)}
-                className='px-3 py-2 text-xs rounded-lg border border-ui-border text-ui-text-2 hover:bg-ui-bg-subtle whitespace-nowrap'
-              >
-                {t('永不')}
-              </button>
-            </div>
-          </Field>
+            <FormField label={t('过期时间')} hint={t('留空或选择「永不」表示长期有效')}>
+              <div className='flex gap-2'>
+                <input
+                  type='datetime-local'
+                  value={toLocalInput(expiredTime)}
+                  onChange={(e) => setExpiredTime(toUnix(e.target.value) || -1)}
+                  className={inputCls}
+                />
+                <button
+                  type='button'
+                  onClick={() => setExpiredTime(-1)}
+                  className={`px-3 py-2 text-xs rounded-lg border whitespace-nowrap transition-colors ${
+                    expiredTime === -1
+                      ? 'border-ui-text-3 bg-ui-bg-subtle text-ui-text font-medium'
+                      : 'border-ui-border text-ui-text-2 hover:bg-ui-bg-subtle'
+                  }`}
+                >
+                  {t('永不')}
+                </button>
+              </div>
+            </FormField>
+          </FormSection>
 
-          <div>
-            <Switch
+          {/* 高级 */}
+          <div className='border-t border-ui-divider' />
+          <FormSection title={t('高级')}>
+            <SwitchRow
+              title={t('模型限制')}
+              description={t('限定该令牌只能调用指定模型')}
               checked={modelLimitsEnabled}
               onChange={setModelLimitsEnabled}
-              label={t('启用模型限制')}
-            />
-            {modelLimitsEnabled && (
-              <div className='mt-2'>
-                <MultiSelect
-                  options={modelOptions}
-                  value={modelLimits}
-                  onChange={setModelLimits}
-                  placeholder={t('未选择模型')}
-                  emptyText={t('暂无可用模型')}
-                />
-              </div>
-            )}
-          </div>
+            >
+              <MultiSelect
+                options={modelOptions}
+                value={modelLimits}
+                onChange={setModelLimits}
+                placeholder={t('选择允许的模型')}
+                emptyText={t('暂无可用模型')}
+              />
+            </SwitchRow>
 
-          <Field label={t('IP 白名单')} hint={t('每行一个 IP / CIDR，留空不限制')}>
-            <textarea
-              value={allowIps}
-              onChange={(e) => setAllowIps(e.target.value)}
-              rows={3}
-              placeholder='192.168.1.1&#10;10.0.0.0/24'
-              className={`${inputCls} placeholder:text-ui-text-3 resize-none font-mono text-xs`}
-            />
-          </Field>
+            <FormField label={t('IP 白名单')} hint={t('每行一个，支持 CIDR')}>
+              <textarea
+                value={allowIps}
+                onChange={(e) => setAllowIps(e.target.value)}
+                rows={3}
+                placeholder='192.168.1.1&#10;10.0.0.0/24'
+                className={`${inputCls} placeholder:text-ui-text-3 resize-none font-mono text-xs`}
+              />
+            </FormField>
+          </FormSection>
         </div>
 
-        <div className='flex justify-end gap-2 px-5 py-3 border-t border-ui-border'>
+        {/* Footer */}
+        <div className='flex items-center justify-end gap-2 px-7 py-4 border-t border-ui-border bg-ui-bg-subtle/30'>
           <button
             onClick={onClose}
-            className='px-3.5 py-1.5 text-sm font-medium rounded-lg border border-ui-border text-ui-text hover:bg-ui-bg-subtle transition-colors'
+            className='px-4 py-1.5 text-sm font-medium rounded-lg border border-ui-border text-ui-text hover:bg-ui-bg-elevated transition-colors'
           >
             {t('取消')}
           </button>
           <button
             onClick={submit}
             disabled={submitting}
-            className='px-3.5 py-1.5 text-sm font-semibold rounded-lg bg-ui-accent text-ui-accent-fg hover:bg-ui-accent-hover disabled:opacity-50 transition-colors'
+            className='px-4 py-1.5 text-sm font-semibold rounded-lg bg-ui-accent text-ui-accent-fg hover:bg-ui-accent-hover hover:shadow-md active:scale-95 disabled:opacity-50 disabled:hover:shadow-none disabled:active:scale-100 transition-all'
           >
-            {submitting ? t('提交中...') : t('保存')}
+            {submitting ? t('提交中...') : isEdit ? t('保存') : t('创建')}
           </button>
         </div>
       </div>
@@ -498,9 +561,9 @@ const TokensView = () => {
     if (revealed[id]) { setRevealed((r) => ({ ...r, [id]: false })); return; }
     if (keys[id]) { setRevealed((r) => ({ ...r, [id]: true })); return; }
     try {
-      const { data } = await API.get(`/api/token/key/${id}`);
-      if (data.success && data.data) {
-        setKeys((k) => ({ ...k, [id]: data.data }));
+      const { data } = await API.post(`/api/token/${id}/key`);
+      if (data.success && data.data?.key) {
+        setKeys((k) => ({ ...k, [id]: data.data.key }));
         setRevealed((r) => ({ ...r, [id]: true }));
       } else {
         showError(data.message || t('获取密钥失败'));
@@ -512,10 +575,12 @@ const TokensView = () => {
 
   const copyKey = async (token) => {
     try {
-      const { data } = await API.get(`/api/token/key/${token.id}`);
-      if (data.success && data.data) {
-        const ok = await copy(`sk-${data.data}`);
+      const { data } = await API.post(`/api/token/${token.id}/key`);
+      if (data.success && data.data?.key) {
+        const ok = await copy(`sk-${data.data.key}`);
         if (ok) showSuccess(t('已复制'));
+      } else {
+        showError(data.message || t('获取密钥失败'));
       }
     } catch (e) { showError(e.message); }
   };
@@ -523,8 +588,18 @@ const TokensView = () => {
   const removeMany = async () => {
     if (!confirm) return;
     try {
-      for (const id of confirm.ids) {
-        await API.delete(`/api/token/${id}`);
+      if (confirm.ids.length > 1) {
+        const { data } = await API.post('/api/token/batch', { ids: confirm.ids });
+        if (!data.success) {
+          showError(data.message);
+          return;
+        }
+      } else {
+        const { data } = await API.delete(`/api/token/${confirm.ids[0]}`);
+        if (!data.success) {
+          showError(data.message);
+          return;
+        }
       }
       showSuccess(t('已删除'));
       setSelected(new Set());
@@ -543,9 +618,9 @@ const TokensView = () => {
       for (const id of selected) {
         const tk = list.tokens.find((t) => t.id === id);
         if (!tk) continue;
-        const { data } = await API.get(`/api/token/key/${id}`);
-        if (data.success && data.data) {
-          content += `${tk.name}\tsk-${data.data}\n`;
+        const { data } = await API.post(`/api/token/${id}/key`);
+        if (data.success && data.data?.key) {
+          content += `${tk.name}\tsk-${data.data.key}\n`;
         }
       }
       if (content) {
@@ -570,7 +645,7 @@ const TokensView = () => {
 
   const cols = [
     '', t('名称'), t('状态'), t('密钥'), t('已用 / 总额度'),
-    t('分组'), t('创建时间'), t('最后使用'), t('过期时间'), '',
+    t('分组'), t('最后使用'), t('过期时间'), '',
   ];
 
   return (
@@ -711,9 +786,6 @@ const TokensView = () => {
                     </td>
                     <td className='px-4 py-3 text-ui-text-2 text-xs'>
                       {token.group || <span className='text-ui-text-3'>—</span>}
-                    </td>
-                    <td className='px-4 py-3 text-ui-text-2 text-xs whitespace-nowrap'>
-                      {timestamp2string(token.created_time)}
                     </td>
                     <td className='px-4 py-3 text-ui-text-2 text-xs whitespace-nowrap'>
                       {fmtTs(token.accessed_time) || <span className='text-ui-text-3'>—</span>}

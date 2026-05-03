@@ -13,14 +13,14 @@ import { UPTIME_STATUS_MAP } from '../../../constants/dashboard.constants';
 // ── primitives ──────────────────────────────────────────
 
 const Empty = ({ Icon = Inbox, text }) => (
-  <div className='flex flex-col items-center justify-center py-12 text-ui-text-3'>
+  <div className='flex flex-col items-center justify-center h-full min-h-[200px] text-ui-text-3'>
     <Icon size={20} className='mb-2' />
     <p className='text-xs'>{text}</p>
   </div>
 );
 
 const ListContainer = ({ children }) => (
-  <div className='divide-y divide-ui-divider max-h-[420px] overflow-y-auto'>
+  <div className='divide-y divide-ui-divider h-full overflow-y-auto'>
     {children}
   </div>
 );
@@ -231,6 +231,7 @@ const InfoCard = ({
 
   return (
     <Card
+      className='h-full w-full'
       title={
         <span className='text-sm font-semibold text-ui-text'>{t('信息')}</span>
       }

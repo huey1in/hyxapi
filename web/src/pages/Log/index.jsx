@@ -62,6 +62,76 @@ const PRESETS = [
   { label: '近 30 天', start: () => { const d = new Date(); d.setDate(d.getDate() - 29); d.setHours(0, 0, 0, 0); return d; } },
 ];
 
+// ── helpers for the expanded "details" row ──
+
+const FIELD_LABEL = {
+  billing_source: '计费来源',
+  cache_ratio: '缓存倍率',
+  cache_tokens: '缓存 Tokens',
+  completion_ratio: '补全倍率',
+  frt: '首字耗时 (ms)',
+  group_ratio: '分组倍率',
+  input_tokens_total: '总输入 Tokens',
+  model_price: '模型价格',
+  model_ratio: '模型倍率',
+  request_path: '请求路径',
+  request_conversion: '请求转换',
+  stream_status: '流式状态',
+  user_group_ratio: '用户分组倍率',
+  admin_info: '管理信息',
+};
+
+// 部分字段 -1 表示"未设置/使用默认值"
+const FIELDS_DEFAULT_ON_NEG_ONE = new Set([
+  'model_price',
+  'user_group_ratio',
+  'model_ratio',
+  'completion_ratio',
+  'group_ratio',
+  'cache_ratio',
+]);
+
+const formatVal = (v, key) => {
+  if (v === null || v === undefined || v === '') return '—';
+  if (typeof v === 'number' && v === -1 && key && FIELDS_DEFAULT_ON_NEG_ONE.has(key)) {
+    return '默认';
+  }
+  if (typeof v === 'boolean') return v ? 'true' : 'false';
+  if (typeof v === 'number') return String(v);
+  if (typeof v === 'string') return v;
+  if (Array.isArray(v)) return v.length === 0 ? '—' : v.join(', ');
+  if (typeof v === 'object') {
+    const entries = Object.entries(v);
+    if (entries.length === 0) return '—';
+    return entries.map(([k, val]) => `${k}: ${formatVal(val, k)}`).join(' · ');
+  }
+  return String(v);
+};
+
+const parseOther = (other) => {
+  if (!other) return null;
+  try {
+    const obj = typeof other === 'string' ? JSON.parse(other) : other;
+    if (obj && typeof obj === 'object' && !Array.isArray(obj)) return obj;
+    return null;
+  } catch {
+    return null;
+  }
+};
+
+const DetailRow = ({ label, value, mono = false }) => (
+  <div className='flex items-baseline gap-2 min-w-0'>
+    <span className='text-[11px] text-ui-text-3 flex-shrink-0 whitespace-nowrap'>
+      {label}
+    </span>
+    <span
+      className={`text-xs text-ui-text break-all ${mono ? 'font-mono' : ''}`}
+    >
+      {value}
+    </span>
+  </div>
+);
+
 const UsageLogsView = () => {
   const { t } = useTranslation();
   const [userState] = useContext(UserContext);
@@ -408,7 +478,7 @@ const UsageLogsView = () => {
                           {log.quota > 0 ? renderQuota(log.quota) : <span className='text-ui-text-3'>—</span>}
                         </td>
                         <td className='px-4 py-3'>
-                          {(log.content || log.other) && (
+                          {(log.content || log.other || log.request_id) && (
                             <button
                               onClick={() => setExpandedRow(isOpen ? null : log.id)}
                               className='p-1 rounded text-ui-text-3 hover:text-ui-text hover:bg-ui-bg-subtle transition-colors'
@@ -419,27 +489,39 @@ const UsageLogsView = () => {
                           )}
                         </td>
                       </tr>
-                      {isOpen && (log.content || log.other) && (
+                      {isOpen && (log.content || log.other || log.request_id) && (
                         <tr className='bg-ui-bg-subtle/40'>
-                          <td colSpan={11} className='px-4 py-3 text-xs text-ui-text-2'>
-                            {log.content && (
-                              <div className='mb-1.5'>
-                                <span className='text-ui-text-3'>{t('内容')}：</span>
-                                <span className='text-ui-text break-all'>{log.content}</span>
-                              </div>
-                            )}
-                            {log.other && (
-                              <div>
-                                <span className='text-ui-text-3'>{t('其他')}：</span>
-                                <code className='text-[11px] font-mono text-ui-text-2 break-all'>{log.other}</code>
-                              </div>
-                            )}
-                            {log.request_id && (
-                              <div className='mt-1.5'>
-                                <span className='text-ui-text-3'>Request ID：</span>
-                                <code className='text-[11px] font-mono text-ui-text-2'>{log.request_id}</code>
-                              </div>
-                            )}
+                          <td colSpan={11} className='px-4 py-3'>
+                            <div className='space-y-3'>
+                              {log.content && (
+                                <DetailRow label={t('内容')} value={log.content} />
+                              )}
+
+                              {(() => {
+                                const parsed = parseOther(log.other);
+                                if (parsed) {
+                                  return (
+                                    <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-1.5'>
+                                      {Object.entries(parsed).map(([k, v]) => (
+                                        <DetailRow
+                                          key={k}
+                                          label={t(FIELD_LABEL[k] || k)}
+                                          value={formatVal(v, k)}
+                                        />
+                                      ))}
+                                    </div>
+                                  );
+                                }
+                                if (log.other) {
+                                  return <DetailRow label={t('其他')} value={log.other} mono />;
+                                }
+                                return null;
+                              })()}
+
+                              {log.request_id && (
+                                <DetailRow label='Request ID' value={log.request_id} mono />
+                              )}
+                            </div>
                           </td>
                         </tr>
                       )}

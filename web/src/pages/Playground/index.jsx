@@ -12,7 +12,7 @@ import React, {
 } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { Send, Square, Trash2, ChevronDown, Bot, Users } from 'lucide-react';
+import { Send, Square, Trash2, ChevronDown, Bot, Users, RotateCcw, Copy, Check, AlertCircle, ImagePlus, X as XIcon } from 'lucide-react';
 
 import { UserContext } from '../../context/User';
 import { usePlaygroundState } from '../../hooks/playground/usePlaygroundState';
@@ -20,6 +20,8 @@ import { useApiRequest } from '../../hooks/playground/useApiRequest';
 import { useDataLoader } from '../../hooks/playground/useDataLoader';
 import {
   showWarning,
+  showSuccess,
+  copy,
   buildApiPayload,
   buildMessageContent,
   createMessage,
@@ -96,19 +98,90 @@ const SelectChip = ({
   );
 };
 
-const Bubble = ({ role, children }) => {
-  const isUser = role === MESSAGE_ROLES.USER;
+// 从消息中抽取图片 URL 列表
+const getMessageImages = (msg) => {
+  if (!msg || !Array.isArray(msg.content)) return [];
+  return msg.content
+    .filter((p) => p?.type === 'image_url' && p?.image_url?.url)
+    .map((p) => p.image_url.url);
+};
+
+const UserBubble = ({ children, images = [] }) => (
+  <div className='flex justify-end px-2'>
+    <div className='max-w-[85%] md:max-w-[75%] flex flex-col items-end gap-2'>
+      {images.length > 0 && (
+        <div className='flex flex-wrap gap-1.5 justify-end'>
+          {images.map((url, i) => (
+            <img
+              key={i}
+              src={url}
+              alt=''
+              className='max-w-[200px] max-h-[180px] rounded-xl border border-ui-border object-cover'
+            />
+          ))}
+        </div>
+      )}
+      {children && (
+        <div className='rounded-2xl rounded-br-md px-4 py-2.5 text-sm leading-relaxed break-words bg-ui-bg-subtle text-ui-text border border-ui-border'>
+          {children}
+        </div>
+      )}
+    </div>
+  </div>
+);
+
+const AssistantActionBtn = ({ onClick, title, children }) => (
+  <button
+    onClick={onClick}
+    title={title}
+    aria-label={title}
+    className='inline-flex items-center justify-center w-7 h-7 rounded-md text-ui-text-3 hover:text-ui-text hover:bg-ui-bg-subtle transition-colors'
+  >
+    {children}
+  </button>
+);
+
+const AssistantMessage = ({ msg, onRetry, t }) => {
+  const text = getTextContent(msg);
+  const isError = msg.status === 'error';
+  const [copied, setCopied] = useState(false);
+
+  const onCopy = async () => {
+    if (!text) return;
+    const ok = await copy(text);
+    if (ok) {
+      setCopied(true);
+      showSuccess(t('已复制'));
+      setTimeout(() => setCopied(false), 1500);
+    }
+  };
+
   return (
-    <div className={`flex ${isUser ? 'justify-end' : 'justify-start'} px-2`}>
-      <div
-        className={`max-w-[85%] md:max-w-[75%] rounded-2xl px-4 py-3 text-sm leading-relaxed break-words ${
-          isUser
-            ? 'bg-ui-accent text-ui-accent-fg'
-            : 'bg-ui-bg-elevated border border-ui-border text-ui-text'
-        }`}
-      >
-        {children}
-      </div>
+    <div className='flex flex-col gap-1.5 px-4'>
+      {isError ? (
+        <div className='flex items-start gap-2 text-ui-danger text-sm leading-relaxed'>
+          <AlertCircle size={15} className='flex-shrink-0 mt-0.5' />
+          <span className='whitespace-pre-wrap break-words'>{text || msg.error || t('请求失败')}</span>
+        </div>
+      ) : (
+        <div className='text-sm text-ui-text leading-relaxed'>
+          <MarkdownRenderer content={text || ''} />
+        </div>
+      )}
+      {msg.status !== 'loading' && msg.status !== 'incomplete' && (
+        <div className='flex items-center gap-0.5 -ml-1'>
+          {!isError && text && (
+            <AssistantActionBtn onClick={onCopy} title={copied ? t('已复制') : t('复制')}>
+              {copied ? <Check size={13} /> : <Copy size={13} />}
+            </AssistantActionBtn>
+          )}
+          {onRetry && (
+            <AssistantActionBtn onClick={onRetry} title={t('重新生成')}>
+              <RotateCcw size={13} />
+            </AssistantActionBtn>
+          )}
+        </div>
+      )}
     </div>
   );
 };
@@ -120,6 +193,8 @@ const Playground = () => {
   const scrollRef = useRef(null);
   const inputRef = useRef(null);
   const [draft, setDraft] = useState('');
+  const [pendingImages, setPendingImages] = useState([]);
+  const fileInputRef = useRef(null);
 
   const state = usePlaygroundState();
   const {
@@ -173,26 +248,41 @@ const Playground = () => {
     }
   }, [message]);
 
+  // Persist whenever messages settle into a terminal state (complete / error)
+  useEffect(() => {
+    if (message.length === 0) return;
+    const last = message[message.length - 1];
+    if (last.status === 'complete' || last.status === 'error') {
+      saveMessagesImmediately(message);
+    }
+  }, [message, saveMessagesImmediately]);
+
   const handleSend = () => {
     const text = draft.trim();
-    if (!text || isGenerating) return;
+    const images = pendingImages.slice();
+    if ((!text && images.length === 0) || isGenerating) return;
     if (!inputs.model) {
       showWarning('请先选择一个模型');
       return;
     }
     setDraft('');
+    setPendingImages([]);
     if (inputRef.current) inputRef.current.style.height = 'auto';
     inputRef.current?.focus();
 
     const userMessage = createMessage(
       MESSAGE_ROLES.USER,
-      buildMessageContent(text, [], false),
+      buildMessageContent(text, images, images.length > 0),
     );
     const loading = createLoadingAssistantMessage();
 
     setMessage((prev) => {
       const next = [...prev, userMessage];
-      const payload = buildApiPayload(next, null, inputs, parameterEnabled);
+      // 临时把图片塞进 inputs，让 buildApiPayload 也带上
+      const inputsWithImages = images.length > 0
+        ? { ...inputs, imageEnabled: true, imageUrls: images }
+        : inputs;
+      const payload = buildApiPayload(next, null, inputsWithImages, parameterEnabled);
       sendRequest(payload, true);
       const all = [...next, loading];
       setTimeout(() => saveMessagesImmediately(all), 0);
@@ -207,29 +297,81 @@ const Playground = () => {
     }
   };
 
+  const fileToDataUrl = (file) =>
+    new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+
+  const handleAddImages = async (files) => {
+    if (!files || files.length === 0) return;
+    const arr = Array.from(files).filter((f) => f.type.startsWith('image/'));
+    if (arr.length === 0) return;
+    try {
+      const dataUrls = await Promise.all(arr.map(fileToDataUrl));
+      setPendingImages((prev) => [...prev, ...dataUrls].slice(0, 8));
+    } catch (e) {
+      showWarning(t('图片读取失败'));
+    }
+  };
+
+  const handlePaste = (e) => {
+    const items = e.clipboardData?.items;
+    if (!items) return;
+    const files = [];
+    for (const it of items) {
+      if (it.kind === 'file' && it.type.startsWith('image/')) {
+        const f = it.getAsFile();
+        if (f) files.push(f);
+      }
+    }
+    if (files.length > 0) {
+      e.preventDefault();
+      handleAddImages(files);
+    }
+  };
+
+  const removePendingImage = (i) => {
+    setPendingImages((prev) => prev.filter((_, idx) => idx !== i));
+  };
+
   const handleClear = () => {
+    // 先中断可能正在进行的流，避免后续 chunk 又把消息塞回来
+    if (isGenerating) {
+      try { onStopGenerator(); } catch {}
+    }
     setMessage([]);
+    setPendingImages([]);
+    // 多个 tick 后再保存一次空数组，确保任何 in-flight 的 setMessage 都已结算
     setTimeout(() => saveMessagesImmediately([]), 0);
+    setTimeout(() => {
+      setMessage([]);
+      saveMessagesImmediately([]);
+    }, 200);
   };
 
-  const renderAssistantContent = (msg) => {
-    const text = getTextContent(msg);
-    if (!text && msg.status === 'loading') {
-      return (
-        <div className='flex items-center gap-1.5 text-ui-text-3'>
-          <span className='w-1.5 h-1.5 rounded-full bg-ui-text-3 animate-pulse' />
-          <span className='w-1.5 h-1.5 rounded-full bg-ui-text-3 animate-pulse' style={{ animationDelay: '0.15s' }} />
-          <span className='w-1.5 h-1.5 rounded-full bg-ui-text-3 animate-pulse' style={{ animationDelay: '0.3s' }} />
-        </div>
-      );
+  const handleRetry = (assistantIdx) => {
+    if (isGenerating) return;
+    const upTo = message.slice(0, assistantIdx);
+    if (upTo.length === 0 || upTo[upTo.length - 1].role !== MESSAGE_ROLES.USER) {
+      showWarning(t('找不到对应的用户消息'));
+      return;
     }
-    if (msg.error) {
-      return <span className='text-ui-danger'>{msg.error}</span>;
+    if (!inputs.model) {
+      showWarning(t('请先选择一个模型'));
+      return;
     }
-    return <MarkdownRenderer content={text || ''} />;
+    const loading = createLoadingAssistantMessage();
+    const next = [...upTo, loading];
+    setMessage(next);
+    const payload = buildApiPayload(upTo, null, inputs, parameterEnabled);
+    sendRequest(payload, true);
+    setTimeout(() => saveMessagesImmediately(next), 0);
   };
 
-  const canSend = !!draft.trim() && !!inputs.model;
+  const canSend = (!!draft.trim() || pendingImages.length > 0) && !!inputs.model;
 
   return (
     // 顶部留出 16(64px) 的导航栏空间，整个区块独占视口剩余高度
@@ -266,16 +408,47 @@ const Playground = () => {
             );
           })()
         ) : (
-          <div className='max-w-3xl mx-auto py-6 px-2 space-y-4'>
-            {message.map((msg) => (
-              <Bubble key={msg.id} role={msg.role}>
-                {msg.role === MESSAGE_ROLES.USER ? (
-                  <span className='whitespace-pre-wrap'>{getTextContent(msg)}</span>
-                ) : (
-                  renderAssistantContent(msg)
-                )}
-              </Bubble>
-            ))}
+          <div className='max-w-3xl mx-auto py-6 px-2 space-y-5'>
+            {message.map((msg, idx) => {
+              const isUser = msg.role === MESSAGE_ROLES.USER;
+              // loading dot 持续到真正有文字 / 失败 / 正式 complete 之前
+              const text = getTextContent(msg);
+              const isLoading =
+                !isUser &&
+                !text &&
+                msg.status !== 'error' &&
+                msg.status !== 'complete';
+
+              if (isLoading) {
+                return (
+                  <div key={msg.id} className='flex justify-start px-4 pt-1'>
+                    <span
+                      className='inline-block w-2.5 h-2.5 rounded-full bg-ui-text'
+                      style={{ animation: 'breath 1.4s ease-in-out infinite' }}
+                    />
+                  </div>
+                );
+              }
+
+              if (isUser) {
+                const imgs = getMessageImages(msg);
+                const text = getTextContent(msg);
+                return (
+                  <UserBubble key={msg.id} images={imgs}>
+                    {text && <span className='whitespace-pre-wrap'>{text}</span>}
+                  </UserBubble>
+                );
+              }
+
+              return (
+                <AssistantMessage
+                  key={msg.id}
+                  msg={msg}
+                  onRetry={() => handleRetry(idx)}
+                  t={t}
+                />
+              );
+            })}
           </div>
         )}
       </div>
@@ -284,11 +457,35 @@ const Playground = () => {
       <div className='shrink-0 px-3 md:px-4 pb-4 pt-2'>
         <div className='max-w-3xl mx-auto'>
           <div className='bg-ui-bg-elevated border border-ui-border rounded-2xl shadow-sm focus-within:border-ui-text-3 transition-colors'>
+            {/* Pending image previews */}
+            {pendingImages.length > 0 && (
+              <div className='flex flex-wrap gap-2 px-3 pt-3'>
+                {pendingImages.map((url, i) => (
+                  <div key={i} className='relative group'>
+                    <img
+                      src={url}
+                      alt=''
+                      className='w-16 h-16 rounded-lg border border-ui-border object-cover'
+                    />
+                    <button
+                      type='button'
+                      onClick={() => removePendingImage(i)}
+                      className='absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-ui-bg-elevated border border-ui-border text-ui-text-2 hover:text-ui-text hover:border-ui-text-3 transition-colors flex items-center justify-center shadow-sm'
+                      aria-label='remove'
+                    >
+                      <XIcon size={11} />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+
             <textarea
               ref={inputRef}
               value={draft}
               onChange={(e) => setDraft(e.target.value)}
               onKeyDown={handleKeyDown}
+              onPaste={handlePaste}
               rows={2}
               placeholder='发消息给模型，Enter 发送 / Shift + Enter 换行'
               className='block w-full resize-none bg-transparent border-0 outline-none focus:ring-0 px-4 pt-3.5 pb-1 text-sm text-ui-text placeholder:text-ui-text-3 rounded-t-2xl'
@@ -299,11 +496,33 @@ const Playground = () => {
               }}
             />
 
+            {/* Hidden file input */}
+            <input
+              ref={fileInputRef}
+              type='file'
+              accept='image/*'
+              multiple
+              hidden
+              onChange={(e) => {
+                handleAddImages(e.target.files);
+                e.target.value = '';
+              }}
+            />
+
             {/* Toolbar row */}
             <div className='flex items-center justify-between gap-2 px-2 pb-2'>
               <div className='flex items-center gap-1 min-w-0 flex-1 flex-wrap'>
+                <button
+                  type='button'
+                  onClick={() => fileInputRef.current?.click()}
+                  title={t('上传图片')}
+                  aria-label={t('上传图片')}
+                  className='inline-flex items-center justify-center w-8 h-8 rounded-md text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-subtle transition-colors'
+                >
+                  <ImagePlus size={15} />
+                </button>
+                <span className='text-ui-border'>·</span>
                 <SelectChip
-                  Icon={Users}
                   options={groups}
                   value={inputs.group}
                   onChange={(v) => handleInputChange('group', v)}
@@ -312,7 +531,6 @@ const Playground = () => {
                 />
                 <span className='text-ui-border'>·</span>
                 <SelectChip
-                  Icon={Bot}
                   options={models}
                   value={inputs.model}
                   onChange={(v) => handleInputChange('model', v)}

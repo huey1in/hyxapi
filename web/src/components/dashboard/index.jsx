@@ -171,7 +171,7 @@ const Dashboard = () => {
 
       {/* main grid: charts (8) + info (4) */}
       <div className='grid grid-cols-1 lg:grid-cols-12 gap-4 md:gap-6'>
-        <div className='lg:col-span-8'>
+        <div className='lg:col-span-6 flex'>
           <ChartsCard
             activeChartTab={dashboardData.activeChartTab}
             setActiveChartTab={dashboardData.setActiveChartTab}
@@ -180,12 +180,11 @@ const Dashboard = () => {
             spec_pie={dashboardCharts.spec_pie}
             spec_rank_bar={dashboardCharts.spec_rank_bar}
             spec_user_rank={dashboardCharts.spec_user_rank}
-            spec_user_trend={dashboardCharts.spec_user_trend}
             isAdminUser={dashboardData.isAdminUser}
             t={t}
           />
         </div>
-        <div className='lg:col-span-4'>
+        <div className='lg:col-span-6 flex'>
           <InfoCard
             apiInfoEnabled={dashboardData.apiInfoEnabled}
             announcementsEnabled={dashboardData.announcementsEnabled}

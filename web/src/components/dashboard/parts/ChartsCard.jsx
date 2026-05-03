@@ -15,7 +15,6 @@ const ChartsCard = ({
   spec_pie,
   spec_rank_bar,
   spec_user_rank,
-  spec_user_trend,
   isAdminUser,
   t,
 }) => {
@@ -28,10 +27,9 @@ const ChartsCard = ({
     ];
     if (isAdminUser) {
       base.push({ key: '5', label: t('用户消耗排行'), spec: spec_user_rank });
-      base.push({ key: '6', label: t('用户消耗趋势'), spec: spec_user_trend });
     }
     return base;
-  }, [t, spec_line, spec_model_line, spec_pie, spec_rank_bar, spec_user_rank, spec_user_trend, isAdminUser]);
+  }, [t, spec_line, spec_model_line, spec_pie, spec_rank_bar, spec_user_rank, isAdminUser]);
 
   const active = tabs.find((tb) => tb.key === activeChartTab) || tabs[0];
   const themedSpec = useMemo(
@@ -41,6 +39,7 @@ const ChartsCard = ({
 
   return (
     <Card
+      className='h-full w-full'
       title={
         <>
           <PieChart size={15} className='text-ui-text-3' />
@@ -48,12 +47,12 @@ const ChartsCard = ({
         </>
       }
       action={
-        <div className='flex flex-wrap gap-0.5 -mr-1'>
+        <div className='flex items-center gap-0.5 -mr-1 flex-nowrap overflow-x-auto scrollbar-hide max-w-full'>
           {tabs.map((tb) => (
             <button
               key={tb.key}
               onClick={() => setActiveChartTab(tb.key)}
-              className={`px-2.5 py-1 text-xs rounded-md transition-colors whitespace-nowrap ${
+              className={`px-2.5 py-1 text-xs rounded-md transition-colors whitespace-nowrap flex-shrink-0 ${
                 activeChartTab === tb.key
                   ? 'bg-ui-bg-subtle text-ui-text font-medium'
                   : 'text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-subtle'
@@ -66,7 +65,7 @@ const ChartsCard = ({
       }
       bodyClass='p-2'
     >
-      <div className='h-[420px]'>
+      <div className='h-full min-h-[420px]'>
         {themedSpec && <VChart spec={themedSpec} option={{ mode: 'desktop-browser' }} />}
       </div>
     </Card>

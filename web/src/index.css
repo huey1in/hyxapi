@@ -1123,6 +1123,11 @@ button.bg-black:disabled {
   animation: marquee 40s linear infinite;
 }
 
+@keyframes breath {
+  0%, 100% { opacity: 0.25; transform: scale(0.85); }
+  50%      { opacity: 1;    transform: scale(1); }
+}
+
 @keyframes blob {
   0%, 100% { transform: translate(0, 0) scale(1); }
   33%      { transform: translate(40px, -30px) scale(1.05); }
