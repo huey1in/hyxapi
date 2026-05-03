@@ -1,8 +1,17 @@
 /*
  * Confirm dialog (used for delete confirmations etc).
+ *
+ * Two ways to use:
+ *
+ * 1. Component form (controlled):
+ *      <ConfirmDialog open={...} title="..." onConfirm={...} onCancel={...} />
+ *
+ * 2. Imperative API (replacement for Semi's Modal.confirm). Mount <ConfirmHost />
+ *    once near the app root, then call showConfirm({ title, content, danger, onOk }).
  */
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
+import { AlertTriangle } from 'lucide-react';
 
 const ConfirmDialog = ({
   open,
@@ -40,7 +49,10 @@ const ConfirmDialog = ({
         onClick={(e) => e.stopPropagation()}
       >
         <div className='px-5 pt-5 pb-3'>
-          <h3 className='text-base font-semibold text-ui-text mb-1.5'>{title}</h3>
+          <h3 className='flex items-center gap-2 text-base font-semibold text-ui-text mb-1.5'>
+            {danger && <AlertTriangle size={15} className='text-ui-danger' />}
+            {title}
+          </h3>
           {description && (
             <p className='text-sm text-ui-text-2 leading-relaxed'>{description}</p>
           )}
@@ -67,6 +79,51 @@ const ConfirmDialog = ({
     </div>,
     document.body,
   );
+};
+
+// ── imperative API ──────────────────────────────────────
+
+let setHost = null;
+const buffered = [];
+
+export const showConfirm = (options) => {
+  const item = { id: Date.now() + Math.random(), ...options };
+  if (setHost) setHost((prev) => [...prev, item]);
+  else buffered.push(item);
+};
+
+export const ConfirmHost = () => {
+  const [items, setItems] = useState([]);
+
+  useEffect(() => {
+    setHost = setItems;
+    if (buffered.length) setItems((p) => [...p, ...buffered.splice(0)]);
+    return () => {
+      setHost = null;
+    };
+  }, []);
+
+  const close = (id) => setItems((p) => p.filter((x) => x.id !== id));
+
+  return items.map((it) => (
+    <ConfirmDialog
+      key={it.id}
+      open
+      title={it.title}
+      description={it.content}
+      confirmText={it.okText || '确认'}
+      cancelText={it.cancelText || '取消'}
+      danger={it.danger}
+      onCancel={() => close(it.id)}
+      onConfirm={async () => {
+        try {
+          await it.onOk?.();
+        } finally {
+          close(it.id);
+        }
+      }}
+    />
+  ));
 };
 
 export default ConfirmDialog;

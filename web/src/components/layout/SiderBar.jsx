@@ -18,7 +18,7 @@ For commercial licensing, please contact support@quantumnous.com
 */
 
 import React, { useEffect, useMemo, useState } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { getLucideIcon } from '../../helpers/render';
 import { ChevronLeft } from 'lucide-react';
@@ -47,6 +47,7 @@ const routerMap = {
 
 const SiderBar = ({ onNavigate = () => {} }) => {
   const { t } = useTranslation();
+  const navigate = useNavigate();
   const [collapsed, toggleCollapsed] = useSidebarCollapsed();
   const {
     isModuleVisible,
@@ -320,6 +321,16 @@ const SiderBar = ({ onNavigate = () => {} }) => {
             }
 
             setSelectedKeys([key.itemKey]);
+
+            // Defensive: also navigate programmatically. If for any reason
+            // the wrapping <Link> didn't fire (e.g. an event listener in
+            // the active page swallowed the click), this ensures the URL
+            // and rendered route still update.
+            const target =
+              routerMapState[key.itemKey] || routerMap[key.itemKey];
+            if (target && location.pathname !== target) {
+              navigate(target);
+            }
           }}
           openKeys={openedKeys}
           onOpenChange={(data) => {

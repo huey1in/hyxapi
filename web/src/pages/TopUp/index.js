@@ -298,13 +298,45 @@ const TopUp = () => {
   }, [searchParams]);
 
   const redeem = async () => {
-    if (!code.trim()) {
+    const key = code.trim();
+    if (!key) {
       showInfo(t('请输入兑换码'));
       return;
     }
     setRedeeming(true);
     try {
-      const { data } = await API.post('/api/user/topup', { key: code.trim() });
+      // First try subscription redemption — codes are 32-char UUID hashes
+      // and the endpoint cleanly rejects non-subscription keys with a
+      // generic "无效的兑换码" message that we fall back from.
+      let handled = false;
+      try {
+        const subRes = await API.post(
+          '/api/subscription/redeem',
+          { key },
+          { skipErrorHandler: true },
+        );
+        if (subRes.data?.success) {
+          showSuccess(
+            t('已激活订阅：') + (subRes.data.data?.plan_title || ''),
+          );
+          setCode('');
+          await refreshUser();
+          handled = true;
+        } else if (
+          subRes.data?.message &&
+          !/无效的兑换码|invalid/i.test(subRes.data.message)
+        ) {
+          // Real error (e.g., expired, plan disabled) — surface it.
+          showError(subRes.data.message);
+          handled = true;
+        }
+      } catch {
+        // Network/skipped error — fall through to quota redemption.
+      }
+
+      if (handled) return;
+
+      const { data } = await API.post('/api/user/topup', { key });
       if (data.success) {
         showSuccess(t('兑换成功！获得 ') + renderQuota(data.data));
         setCode('');

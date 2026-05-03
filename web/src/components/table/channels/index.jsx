@@ -1,32 +1,15 @@
 /*
-Copyright (C) 2025 QuantumNous
-
-This program is free software: you can redistribute it and/or modify
-it under the terms of the GNU Affero General Public License as
-published by the Free Software Foundation, either version 3 of the
-License, or (at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-GNU Affero General Public License for more details.
-
-You should have received a copy of the GNU Affero General Public License
-along with this program. If not, see <https://www.gnu.org/licenses/>.
-
-For commercial licensing, please contact support@quantumnous.com
-*/
-
+ * Channels page — minimalist token-system shell wrapping the existing table.
+ */
 import React from 'react';
-import { Banner } from '@douyinfe/semi-ui';
-import { IconAlertTriangle } from '@douyinfe/semi-icons';
-import CardPro from '../../common/ui/CardPro';
+import { AlertTriangle } from 'lucide-react';
 import ChannelsTable from './ChannelsTable';
 import ChannelsActions from './ChannelsActions';
 import ChannelsFilters from './ChannelsFilters';
 import ChannelsTabs from './ChannelsTabs';
 import { useChannelsData } from '../../../hooks/channels/useChannelsData';
 import { useIsMobile } from '../../../hooks/common/useIsMobile';
+import Pagination from '../../common/table/Pagination';
 import BatchTagModal from './modals/BatchTagModal';
 import ModelTestModal from './modals/ModelTestModal';
 import ColumnSelectorModal from './modals/ColumnSelectorModal';
@@ -34,14 +17,65 @@ import EditChannelModal from './modals/EditChannelModal';
 import EditTagModal from './modals/EditTagModal';
 import MultiKeyManageModal from './modals/MultiKeyManageModal';
 import ChannelUpstreamUpdateModal from './modals/ChannelUpstreamUpdateModal';
-import { createCardProPagination } from '../../../helpers/utils';
 
 const ChannelsPage = () => {
   const channelsData = useChannelsData();
   const isMobile = useIsMobile();
+  const t = channelsData.t;
 
   return (
-    <>
+    <div className='min-h-[calc(100vh-4rem)] mt-16 px-4 py-5 md:px-6 md:py-6 bg-ui-bg'>
+      <div className='max-w-[1400px] mx-auto'>
+        {/* Header */}
+        <div className='flex items-center justify-between gap-3 mb-5'>
+          <h1
+            className='text-2xl md:text-3xl font-medium text-ui-text'
+            style={{ fontFamily: "'Space Grotesk', sans-serif", letterSpacing: '-0.02em' }}
+          >
+            {t('渠道管理')}
+          </h1>
+        </div>
+
+        {channelsData.globalPassThroughEnabled && (
+          <div className='flex items-start gap-2 px-4 py-3 rounded-lg border border-amber-500/30 bg-amber-500/10 mb-3'>
+            <AlertTriangle size={16} className='text-amber-500 flex-shrink-0 mt-0.5' />
+            <div className='text-xs text-ui-text-2 leading-relaxed'>
+              {t('已开启全局请求透传：参数覆写、模型重定向、渠道适配等 NewAPI 内置功能将失效，非最佳实践；如因此产生问题，请勿提交 issue 反馈。')}
+            </div>
+          </div>
+        )}
+
+        {/* Filters card (top) */}
+        <div className='bg-ui-bg-elevated border border-ui-border rounded-xl p-3 mb-3 space-y-2.5'>
+          <ChannelsFilters {...channelsData} />
+          <div className='border-t border-ui-divider pt-2.5'>
+            <ChannelsActions {...channelsData} />
+          </div>
+        </div>
+
+        {/* Tabs */}
+        {!channelsData.enableTagMode && (
+          <div className='mb-3'>
+            <ChannelsTabs {...channelsData} />
+          </div>
+        )}
+
+        {/* Table card */}
+        <div className='bg-ui-bg-elevated border border-ui-border rounded-xl overflow-hidden'>
+          <ChannelsTable {...channelsData} />
+          <div className='border-t border-ui-divider'>
+            <Pagination
+              page={channelsData.activePage}
+              pageSize={channelsData.pageSize}
+              total={channelsData.channelCount}
+              pageSizeOpts={[10, 20, 50, 100]}
+              onChange={channelsData.handlePageChange}
+              onPageSizeChange={channelsData.handlePageSizeChange}
+            />
+          </div>
+        </div>
+      </div>
+
       {/* Modals */}
       <ColumnSelectorModal {...channelsData} />
       <EditTagModal
@@ -73,43 +107,7 @@ const ChannelsPage = () => {
         onConfirm={channelsData.applyUpstreamUpdates}
         onCancel={channelsData.closeUpstreamUpdateModal}
       />
-
-      {/* Main Content */}
-      {channelsData.globalPassThroughEnabled ? (
-        <Banner
-          type='warning'
-          closeIcon={null}
-          icon={
-            <IconAlertTriangle
-              size='large'
-              style={{ color: 'var(--semi-color-warning)' }}
-            />
-          }
-          description={channelsData.t(
-            '已开启全局请求透传：参数覆写、模型重定向、渠道适配等 NewAPI 内置功能将失效，非最佳实践；如因此产生问题，请勿提交 issue 反馈。',
-          )}
-          style={{ marginBottom: 12 }}
-        />
-      ) : null}
-      <CardPro
-        type='type3'
-        tabsArea={<ChannelsTabs {...channelsData} />}
-        actionsArea={<ChannelsActions {...channelsData} />}
-        searchArea={<ChannelsFilters {...channelsData} />}
-        paginationArea={createCardProPagination({
-          currentPage: channelsData.activePage,
-          pageSize: channelsData.pageSize,
-          total: channelsData.channelCount,
-          onPageChange: channelsData.handlePageChange,
-          onPageSizeChange: channelsData.handlePageSizeChange,
-          isMobile: isMobile,
-          t: channelsData.t,
-        })}
-        t={channelsData.t}
-      >
-        <ChannelsTable {...channelsData} />
-      </CardPro>
-    </>
+    </div>
   );
 };
 

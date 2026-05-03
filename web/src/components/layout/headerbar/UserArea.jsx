@@ -20,7 +20,6 @@ For commercial licensing, please contact support@quantumnous.com
 import React, { useState, useRef, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { ChevronDown, LogOut, Settings, Key, CreditCard } from 'lucide-react';
-import { stringToColor } from '../../../helpers';
 import SkeletonWrapper from '../components/SkeletonWrapper';
 
 const UserArea = ({
@@ -60,15 +59,9 @@ const UserArea = ({
       <div className='relative' ref={ref}>
         <button
           onClick={() => setOpen((o) => !o)}
-          className='flex items-center gap-1.5 px-2 py-1.5 rounded-full hover:bg-ui-bg-subtle transition-colors'
+          className='flex items-center gap-1.5 px-2.5 py-1.5 rounded-md hover:bg-ui-bg-subtle transition-colors'
         >
-          <span
-            className='flex items-center justify-center w-7 h-7 rounded-full text-xs font-semibold flex-shrink-0'
-            style={{ backgroundColor: stringToColor(userState.user.username), color: '#fff' }}
-          >
-            {userState.user.username[0].toUpperCase()}
-          </span>
-          <span className='hidden md:block text-xs font-medium text-ui-text'>
+          <span className='text-xs font-medium text-ui-text'>
             {userState.user.username}
           </span>
           <ChevronDown size={14} className='text-ui-text-3' />
@@ -113,7 +106,7 @@ const UserArea = ({
       {showRegisterButton && (
         <Link
           to='/register'
-          className='hidden md:inline-flex items-center px-4 py-1.5 text-xs font-semibold bg-ui-accent text-ui-accent-fg rounded-full transition-all duration-200 hover:bg-ui-accent-hover hover:shadow-md active:scale-95'
+          className='hidden md:inline-flex items-center px-4 py-1.5 text-xs font-semibold bg-ui-accent text-ui-accent-fg rounded-md transition-all duration-200 hover:bg-ui-accent-hover hover:shadow-md active:scale-95'
         >
           {t('注册')}
         </Link>

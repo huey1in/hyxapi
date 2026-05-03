@@ -1,38 +1,11 @@
 /*
-Copyright (C) 2025 QuantumNous
-
-This program is free software: you can redistribute it and/or modify
-it under the terms of the GNU Affero General Public License as
-published by the Free Software Foundation, either version 3 of the
-License, or (at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-GNU Affero General Public License for more details.
-
-You should have received a copy of the GNU Affero General Public License
-along with this program. If not, see <https://www.gnu.org/licenses/>.
-
-For commercial licensing, please contact support@quantumnous.com
-*/
-
+ * Single model select modal — token-system rewrite.
+ */
 import React, { useEffect, useMemo, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
+import { Search, X, ChevronDown } from 'lucide-react';
 import { useIsMobile } from '../../../../hooks/common/useIsMobile';
-import {
-  Collapse,
-  Empty,
-  Input,
-  Modal,
-  Radio,
-  Typography,
-} from '@douyinfe/semi-ui';
-import {
-  IllustrationNoResult,
-  IllustrationNoResultDark,
-} from '@douyinfe/semi-illustrations';
-import { IconSearch } from '@douyinfe/semi-icons';
 import { getModelCategories } from '../../../../helpers/render';
 
 const SingleModelSelectModal = ({
@@ -45,21 +18,31 @@ const SingleModelSelectModal = ({
   const { t } = useTranslation();
   const isMobile = useIsMobile();
 
-  const normalizeModelName = (model) => String(model ?? '').trim();
+  const normalize = (m) => String(m ?? '').trim();
   const normalizedModels = useMemo(() => {
     const list = Array.isArray(models) ? models : [];
-    return Array.from(new Set(list.map(normalizeModelName).filter(Boolean)));
+    return Array.from(new Set(list.map(normalize).filter(Boolean)));
   }, [models]);
 
   const [keyword, setKeyword] = useState('');
   const [selectedModel, setSelectedModel] = useState('');
+  const [openCategories, setOpenCategories] = useState({});
 
   useEffect(() => {
     if (visible) {
       setKeyword('');
-      setSelectedModel(normalizeModelName(selected));
+      setSelectedModel(normalize(selected));
+      setOpenCategories({});
+      const onKey = (e) => e.key === 'Escape' && onCancel?.();
+      document.addEventListener('keydown', onKey);
+      const ov = document.body.style.overflow;
+      document.body.style.overflow = 'hidden';
+      return () => {
+        document.removeEventListener('keydown', onKey);
+        document.body.style.overflow = ov;
+      };
     }
-  }, [visible, selected]);
+  }, [visible, selected, onCancel]);
 
   const filteredModels = useMemo(() => {
     const lower = keyword.trim().toLowerCase();
@@ -71,124 +54,117 @@ const SingleModelSelectModal = ({
     const categories = getModelCategories(t);
     const categorized = {};
     const uncategorized = [];
-
     filteredModels.forEach((model) => {
-      let foundCategory = false;
+      let found = false;
       for (const [key, category] of Object.entries(categories)) {
         if (key !== 'all' && category.filter({ model_name: model })) {
           if (!categorized[key]) {
-            categorized[key] = {
-              label: category.label,
-              icon: category.icon,
-              models: [],
-            };
+            categorized[key] = { label: category.label, icon: category.icon, models: [] };
           }
           categorized[key].models.push(model);
-          foundCategory = true;
+          found = true;
           break;
         }
       }
-      if (!foundCategory) {
-        uncategorized.push(model);
-      }
+      if (!found) uncategorized.push(model);
     });
-
     if (uncategorized.length > 0) {
-      categorized.other = {
-        label: t('其他'),
-        icon: null,
-        models: uncategorized,
-      };
+      categorized.other = { label: t('其他'), icon: null, models: uncategorized };
     }
-
     return categorized;
   }, [filteredModels, t]);
 
-  const categoryEntries = useMemo(
-    () => Object.entries(modelsByCategory),
-    [modelsByCategory],
-  );
+  const categoryEntries = useMemo(() => Object.entries(modelsByCategory), [modelsByCategory]);
 
-  return (
-    <Modal
-      header={
-        <div className='flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-4 py-4'>
-          <Typography.Title heading={5} className='m-0'>
-            {t('选择模型')}
-          </Typography.Title>
-        </div>
-      }
-      visible={visible}
-      onOk={() => onConfirm?.(selectedModel)}
-      onCancel={onCancel}
-      okText={t('确定')}
-      cancelText={t('取消')}
-      okButtonProps={{ disabled: !selectedModel }}
-      size={isMobile ? 'full-width' : 'large'}
-      closeOnEsc
-      maskClosable
-      centered
+  if (!visible || typeof document === 'undefined') return null;
+
+  return createPortal(
+    <div
+      className='fixed inset-0 z-[125] flex items-center justify-center p-4'
+      style={{ background: 'rgba(0,0,0,0.5)' }}
+      onClick={onCancel}
     >
-      <Input
-        prefix={<IconSearch size={14} />}
-        placeholder={t('搜索模型')}
-        value={keyword}
-        onChange={(v) => setKeyword(v)}
-        showClear
-      />
+      <div
+        className={`bg-ui-bg-elevated border border-ui-border rounded-2xl shadow-2xl w-full ${
+          isMobile ? 'max-w-full' : 'max-w-2xl'
+        } max-h-[88vh] flex flex-col overflow-hidden`}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className='flex items-center justify-between gap-3 px-5 py-3.5 border-b border-ui-border'>
+          <span className='text-sm font-semibold text-ui-text'>{t('选择模型')}</span>
+          <button onClick={onCancel} className='p-1 rounded text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-subtle'>
+            <X size={16} />
+          </button>
+        </div>
+        <div className='p-5 space-y-3 overflow-y-auto flex-1'>
+          <div className='relative'>
+            <Search size={13} className='absolute left-2.5 top-1/2 -translate-y-1/2 text-ui-text-3 pointer-events-none' />
+            <input
+              type='text'
+              placeholder={t('搜索模型')}
+              value={keyword}
+              onChange={(e) => setKeyword(e.target.value)}
+              className='w-full pl-8 pr-3 py-2 text-sm bg-ui-bg border border-ui-border rounded-md text-ui-text placeholder:text-ui-text-3 outline-none focus:border-ui-text-3'
+            />
+          </div>
 
-      <div style={{ maxHeight: 400, overflowY: 'auto', paddingRight: 8 }}>
-        {filteredModels.length === 0 ? (
-          <Empty
-            image={<IllustrationNoResult style={{ width: 150, height: 150 }} />}
-            darkModeImage={
-              <IllustrationNoResultDark style={{ width: 150, height: 150 }} />
-            }
-            description={t('暂无匹配模型')}
-            style={{ padding: 30 }}
-          />
-        ) : (
-          <Radio.Group
-            className='w-full'
-            style={{ width: '100%' }}
-            value={selectedModel}
-            onChange={(val) => {
-              const next = val && val.target ? val.target.value : val;
-              setSelectedModel(next);
-            }}
-          >
-            <Collapse
-              className='w-full'
-              style={{ width: '100%' }}
-              defaultActiveKey={[]}
-            >
-              {categoryEntries.map(([key, categoryData], index) => (
-                <Collapse.Panel
-                  key={`${key}_${index}`}
-                  itemKey={`${key}_${index}`}
-                  header={
-                    <span className='flex items-center gap-2'>
-                      {categoryData.icon}
-                      <span>
-                        {categoryData.label} ({categoryData.models.length})
+          {filteredModels.length === 0 ? (
+            <div className='py-12 text-center text-ui-text-3 text-sm'>{t('暂无匹配模型')}</div>
+          ) : (
+            <div className='space-y-1.5'>
+              {categoryEntries.map(([key, cat], idx) => {
+                const isOpen = openCategories[key] ?? idx === 0;
+                return (
+                  <div key={key} className='border border-ui-border rounded-md overflow-hidden'>
+                    <button
+                      onClick={() => setOpenCategories((p) => ({ ...p, [key]: !isOpen }))}
+                      className='flex items-center justify-between w-full px-3 py-2 bg-ui-bg-subtle hover:bg-ui-bg text-sm text-ui-text'
+                    >
+                      <span className='flex items-center gap-2'>
+                        {cat.icon}
+                        <span>
+                          {cat.label} ({cat.models.length})
+                        </span>
                       </span>
-                    </span>
-                  }
-                >
-                  <div className='grid grid-cols-2 gap-x-4'>
-                    {categoryData.models.map((model) => (
-                      <Radio key={model} value={model} className='my-1'>
-                        {model}
-                      </Radio>
-                    ))}
+                      <ChevronDown size={14} className={`text-ui-text-3 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+                    </button>
+                    {isOpen && (
+                      <div className='grid grid-cols-1 sm:grid-cols-2 gap-1 p-2'>
+                        {cat.models.map((model) => (
+                          <label key={model} className='flex items-center gap-2 px-2 py-1 text-sm text-ui-text cursor-pointer hover:bg-ui-bg-subtle rounded'>
+                            <input
+                              type='radio'
+                              name='single-model'
+                              checked={selectedModel === model}
+                              onChange={() => setSelectedModel(model)}
+                              className='w-3.5 h-3.5 cursor-pointer accent-current'
+                            />
+                            <span className='truncate'>{model}</span>
+                          </label>
+                        ))}
+                      </div>
+                    )}
                   </div>
-                </Collapse.Panel>
-              ))}
-            </Collapse>
-          </Radio.Group>
-        )}
+                );
+              })}
+            </div>
+          )}
+        </div>
+        <div className='flex justify-end gap-2 px-5 py-3 border-t border-ui-border'>
+          <button onClick={onCancel} className='inline-flex items-center px-3.5 py-1.5 text-xs font-medium rounded-md border border-ui-border text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-subtle whitespace-nowrap'>
+            {t('取消')}
+          </button>
+          <button
+            onClick={() => onConfirm?.(selectedModel)}
+            disabled={!selectedModel}
+            className='inline-flex items-center px-4 py-1.5 text-xs font-semibold rounded-md bg-ui-accent text-ui-accent-fg hover:bg-ui-accent-hover disabled:opacity-40 whitespace-nowrap'
+          >
+            {t('确定')}
+          </button>
+        </div>
       </div>
-    </Modal>
+    </div>,
+    document.body,
   );
 };
 

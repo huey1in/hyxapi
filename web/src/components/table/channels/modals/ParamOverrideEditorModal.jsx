@@ -18,6 +18,7 @@ For commercial licensing, please contact support@quantumnous.com
 */
 
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
 import {
   Button,
@@ -25,7 +26,6 @@ import {
   Col,
   Collapse,
   Input,
-  Modal,
   Row,
   Select,
   Space,
@@ -35,6 +35,7 @@ import {
   Typography,
 } from '@douyinfe/semi-ui';
 import { IconDelete, IconMenu, IconPlus } from '@douyinfe/semi-icons';
+import { X } from 'lucide-react';
 import { copy, showError, showSuccess, verifyJSON } from '../../../../helpers';
 import {
   CLAUDE_CLI_HEADER_PASSTHROUGH_TEMPLATE,
@@ -42,6 +43,90 @@ import {
 } from '../../../../constants/channel-affinity-template.constants';
 
 const { Text } = Typography;
+
+// Token-system shell that mimics Semi UI Modal's prop surface.
+// Used here so the giant ParamOverrideEditorModal body (which still uses
+// Semi Card/Button/etc internally) gets a token-style outer chrome without
+// requiring a full body rewrite.
+const Modal = ({
+  title,
+  visible,
+  width = 720,
+  bodyStyle,
+  footer: footerProp,
+  onCancel,
+  onOk,
+  okText,
+  cancelText,
+  children,
+}) => {
+  useEffect(() => {
+    if (!visible) return;
+    const onKey = (e) => e.key === 'Escape' && onCancel?.();
+    document.addEventListener('keydown', onKey);
+    const ov = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.removeEventListener('keydown', onKey);
+      document.body.style.overflow = ov;
+    };
+  }, [visible, onCancel]);
+  if (!visible || typeof document === 'undefined') return null;
+  const showDefaultFooter = footerProp === undefined && (onOk || onCancel);
+  return createPortal(
+    <div
+      className='fixed inset-0 z-[125] flex items-center justify-center p-4'
+      style={{ background: 'rgba(0,0,0,0.5)' }}
+      onClick={onCancel}
+    >
+      <div
+        className='bg-ui-bg-elevated border border-ui-border rounded-2xl shadow-2xl flex flex-col overflow-hidden'
+        style={{ width: `min(${width}px, 96vw)`, maxHeight: '90vh' }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        {title !== null && (
+          <div className='flex items-center justify-between gap-3 px-5 py-3.5 border-b border-ui-border'>
+            <span className='text-sm font-semibold text-ui-text'>{title}</span>
+            <button onClick={onCancel} className='p-1 rounded text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-subtle'>
+              <X size={16} />
+            </button>
+          </div>
+        )}
+        {title === null && (
+          <div className='flex justify-end px-3 pt-3'>
+            <button onClick={onCancel} className='p-1 rounded text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-subtle'>
+              <X size={16} />
+            </button>
+          </div>
+        )}
+        <div className='flex-1 overflow-y-auto' style={{ padding: 16, ...bodyStyle }}>
+          {children}
+        </div>
+        {footerProp ? (
+          <div className='flex justify-end gap-2 px-5 py-3 border-t border-ui-border'>{footerProp}</div>
+        ) : showDefaultFooter ? (
+          <div className='flex justify-end gap-2 px-5 py-3 border-t border-ui-border'>
+            <button
+              onClick={onCancel}
+              className='inline-flex items-center px-3.5 py-1.5 text-xs font-medium rounded-md border border-ui-border text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-subtle whitespace-nowrap'
+            >
+              {cancelText || '取消'}
+            </button>
+            {onOk && (
+              <button
+                onClick={onOk}
+                className='inline-flex items-center px-4 py-1.5 text-xs font-semibold rounded-md bg-ui-accent text-ui-accent-fg hover:bg-ui-accent-hover whitespace-nowrap'
+              >
+                {okText || '确定'}
+              </button>
+            )}
+          </div>
+        ) : null}
+      </div>
+    </div>,
+    document.body,
+  );
+};
 
 const OPERATION_MODE_OPTIONS = [
   { label: '设置字段', value: 'set' },

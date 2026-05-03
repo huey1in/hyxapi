@@ -20,6 +20,7 @@ For commercial licensing, please contact support@quantumnous.com
 import React, { lazy, Suspense, useContext, useMemo } from 'react';
 import { Route, Routes, useLocation, useParams } from 'react-router-dom';
 import Loading from './components/common/ui/Loading';
+import { ConfirmHost } from './components/common/ConfirmDialog';
 import User from './pages/User';
 import { AuthRedirect, PrivateRoute, AdminRoute } from './helpers';
 import RegisterForm from './components/auth/RegisterForm';
@@ -82,6 +83,7 @@ function App() {
 
   return (
     <SetupCheck>
+      <ConfirmHost />
       <Routes>
         <Route
           path='/'

@@ -381,3 +381,87 @@ func AdminDeleteUserSubscription(c *gin.Context) {
 	}
 	common.ApiSuccess(c, nil)
 }
+
+// ---- Subscription redemption codes ----
+
+type GenerateSubscriptionCodesRequest struct {
+	Count       int    `json:"count"`
+	Name        string `json:"name"`
+	ExpiredTime int64  `json:"expired_time"`
+}
+
+// AdminGenerateSubscriptionCodes generates N redemption codes for a plan.
+func AdminGenerateSubscriptionCodes(c *gin.Context) {
+	planId, _ := strconv.Atoi(c.Param("id"))
+	if planId <= 0 {
+		common.ApiErrorMsg(c, "无效的套餐ID")
+		return
+	}
+	var req GenerateSubscriptionCodesRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		common.ApiError(c, err)
+		return
+	}
+	if req.Count <= 0 {
+		req.Count = 1
+	}
+	codes, err := model.GenerateSubscriptionCodes(planId, req.Name, req.Count, req.ExpiredTime)
+	if err != nil {
+		common.ApiError(c, err)
+		return
+	}
+	common.ApiSuccess(c, codes)
+}
+
+// AdminListSubscriptionCodes lists all codes for a plan.
+func AdminListSubscriptionCodes(c *gin.Context) {
+	planId, _ := strconv.Atoi(c.Param("id"))
+	if planId <= 0 {
+		common.ApiErrorMsg(c, "无效的套餐ID")
+		return
+	}
+	codes, err := model.ListSubscriptionCodesByPlan(planId)
+	if err != nil {
+		common.ApiError(c, err)
+		return
+	}
+	common.ApiSuccess(c, codes)
+}
+
+// AdminDeleteSubscriptionCode removes a single code by id.
+func AdminDeleteSubscriptionCode(c *gin.Context) {
+	id, _ := strconv.Atoi(c.Param("id"))
+	if id <= 0 {
+		common.ApiErrorMsg(c, "无效的兑换码ID")
+		return
+	}
+	if err := model.DeleteSubscriptionCodeById(id); err != nil {
+		common.ApiError(c, err)
+		return
+	}
+	common.ApiSuccess(c, nil)
+}
+
+type RedeemSubscriptionCodeRequest struct {
+	Key string `json:"key"`
+}
+
+// UserRedeemSubscriptionCode lets the current user redeem a code.
+func UserRedeemSubscriptionCode(c *gin.Context) {
+	userId := c.GetInt("id")
+	if userId <= 0 {
+		common.ApiErrorMsg(c, "未登录")
+		return
+	}
+	var req RedeemSubscriptionCodeRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		common.ApiError(c, err)
+		return
+	}
+	planTitle, err := model.RedeemSubscriptionCode(req.Key, userId)
+	if err != nil {
+		common.ApiErrorMsg(c, err.Error())
+		return
+	}
+	common.ApiSuccess(c, gin.H{"plan_title": planTitle})
+}

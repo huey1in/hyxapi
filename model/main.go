@@ -262,6 +262,7 @@ func migrateDB() error {
 		&PasskeyCredential{},
 		&Option{},
 		&Redemption{},
+		&SubscriptionRedemption{},
 		&Ability{},
 		&Log{},
 		&TopUp{},
@@ -289,6 +290,9 @@ func migrateDB() error {
 		}
 	} else {
 		if err := DB.AutoMigrate(&SubscriptionPlan{}); err != nil {
+			return err
+		}
+		if err := DB.AutoMigrate(&SubscriptionRedemption{}); err != nil {
 			return err
 		}
 	}
@@ -356,6 +360,9 @@ func migrateDBFast() error {
 		}
 	} else {
 		if err := DB.AutoMigrate(&SubscriptionPlan{}); err != nil {
+			return err
+		}
+		if err := DB.AutoMigrate(&SubscriptionRedemption{}); err != nil {
 			return err
 		}
 	}

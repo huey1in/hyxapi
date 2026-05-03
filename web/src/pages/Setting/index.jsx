@@ -42,7 +42,6 @@ import RateLimitSetting from '../../components/settings/RateLimitSetting';
 import ModelSetting from '../../components/settings/ModelSetting';
 import DashboardSetting from '../../components/settings/DashboardSetting';
 import RatioSetting from '../../components/settings/RatioSetting';
-import PaymentSetting from '../../components/settings/PaymentSetting';
 import PerformanceSetting from '../../components/settings/PerformanceSetting';
 
 const Setting = () => {
@@ -72,16 +71,6 @@ const Setting = () => {
       ),
       content: <DashboardSetting />,
       itemKey: 'dashboard',
-    });
-    panes.push({
-      tab: (
-        <span style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
-          <CreditCard size={18} />
-          {t('支付设置')}
-        </span>
-      ),
-      content: <PaymentSetting />,
-      itemKey: 'payment',
     });
     panes.push({
       tab: (
