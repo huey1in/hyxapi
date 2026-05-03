@@ -79,8 +79,10 @@ const Dashboard = () => {
     initChart();
   }, []);
 
-  // ── flatten 4 groups × 2 items = 8 KPI cards ──
-  const kpiItems = (groupedStatsData || []).flatMap((g) => g.items || []);
+  // ── primary KPIs (4) + secondary mini stats (4) ──
+  const groups = groupedStatsData || [];
+  const primary = groups.map((g) => g.items?.[0]).filter(Boolean);
+  const secondary = groups.map((g) => g.items?.[1]).filter(Boolean);
 
   // ── prepare info data ──
   const apiInfoData = statusState?.status?.api_info || [];
@@ -98,7 +100,7 @@ const Dashboard = () => {
   const navigate = dashboardData.navigate;
 
   return (
-    <div className='min-h-full px-4 py-5 md:px-6 md:py-6 bg-ui-bg'>
+    <div className='min-h-[calc(100vh-4rem)] mt-16 px-4 py-5 md:px-6 md:py-6 bg-ui-bg'>
       <Header
         greeting={dashboardData.getGreeting}
         greetingVisible={dashboardData.greetingVisible}
@@ -121,9 +123,9 @@ const Dashboard = () => {
         t={t}
       />
 
-      {/* KPI grid: 8 single cards */}
-      <div className='grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 mb-6'>
-        {kpiItems.map((item, i) => (
+      {/* KPI grid: 4 primary */}
+      <div className='grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4 mb-3'>
+        {primary.map((item, i) => (
           <KPICard
             key={i}
             label={item.title}
@@ -148,6 +150,24 @@ const Dashboard = () => {
           />
         ))}
       </div>
+
+      {/* Secondary stats strip */}
+      {secondary.length > 0 && (
+        <div className='flex flex-wrap items-center gap-x-6 gap-y-2 px-1 mb-6 text-xs'>
+          {secondary.map((item, i) => (
+            <div
+              key={i}
+              className={`flex items-center gap-2 ${item.onClick ? 'cursor-pointer hover:text-ui-text' : ''}`}
+              onClick={item.onClick}
+            >
+              <span className='text-ui-text-3'>{item.title}</span>
+              <span className='text-ui-text font-medium tabular-nums'>
+                {dashboardData.loading ? '…' : item.value}
+              </span>
+            </div>
+          ))}
+        </div>
+      )}
 
       {/* main grid: charts (8) + info (4) */}
       <div className='grid grid-cols-1 lg:grid-cols-12 gap-4 md:gap-6'>
