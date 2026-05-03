@@ -1,20 +1,11 @@
+/*
+ * AutoGroupList — ordered auto-group selector.
+ * Token-system rewrite using native select.
+ */
 import React, { useState, useCallback, useMemo } from 'react';
-import {
-  Button,
-  Select,
-  Typography,
-  Popconfirm,
-  Tag,
-} from '@douyinfe/semi-ui';
-import {
-  IconPlus,
-  IconDelete,
-  IconChevronUp,
-  IconChevronDown,
-} from '@douyinfe/semi-icons';
+import { Plus, Trash2, ChevronUp, ChevronDown } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-
-const { Text } = Typography;
+import { showConfirm } from '../../../../components/common/ConfirmDialog';
 
 let _idCounter = 0;
 const uid = () => `ag_${++_idCounter}`;
@@ -24,12 +15,8 @@ function parseAutoGroups(str) {
   try {
     const parsed = JSON.parse(str);
     if (!Array.isArray(parsed)) return [];
-    return parsed
-      .filter((item) => typeof item === 'string')
-      .map((name) => ({ _id: uid(), name }));
-  } catch {
-    return [];
-  }
+    return parsed.filter((item) => typeof item === 'string').map((name) => ({ _id: uid(), name }));
+  } catch { return []; }
 }
 
 function serializeAutoGroups(items) {
@@ -39,130 +26,94 @@ function serializeAutoGroups(items) {
 
 export default function AutoGroupList({ value, groupNames = [], onChange }) {
   const { t } = useTranslation();
-
   const [items, setItems] = useState(() => parseAutoGroups(value));
 
-  const emitChange = useCallback(
-    (newItems) => {
-      setItems(newItems);
-      onChange?.(serializeAutoGroups(newItems));
-    },
-    [onChange],
-  );
-
-  const groupOptions = useMemo(
-    () => groupNames.map((n) => ({ value: n, label: n })),
-    [groupNames],
-  );
+  const emitChange = useCallback((newItems) => {
+    setItems(newItems);
+    onChange?.(serializeAutoGroups(newItems));
+  }, [onChange]);
 
   const addItem = useCallback(() => {
     emitChange([...items, { _id: uid(), name: '' }]);
   }, [items, emitChange]);
 
-  const removeItem = useCallback(
-    (id) => {
-      emitChange(items.filter((i) => i._id !== id));
-    },
-    [items, emitChange],
-  );
+  const removeItem = useCallback((id) => {
+    showConfirm({
+      title: t('确认移除？'),
+      danger: true,
+      okText: t('确认'),
+      onOk: () => emitChange(items.filter((i) => i._id !== id)),
+    });
+  }, [items, emitChange, t]);
 
-  const updateItem = useCallback(
-    (id, name) => {
-      emitChange(items.map((i) => (i._id === id ? { ...i, name } : i)));
-    },
-    [items, emitChange],
-  );
+  const updateItem = useCallback((id, name) => {
+    emitChange(items.map((i) => (i._id === id ? { ...i, name } : i)));
+  }, [items, emitChange]);
 
-  const moveUp = useCallback(
-    (index) => {
-      if (index <= 0) return;
-      const next = [...items];
-      [next[index - 1], next[index]] = [next[index], next[index - 1]];
-      emitChange(next);
-    },
-    [items, emitChange],
-  );
+  const moveUp = useCallback((index) => {
+    if (index <= 0) return;
+    const next = [...items];
+    [next[index - 1], next[index]] = [next[index], next[index - 1]];
+    emitChange(next);
+  }, [items, emitChange]);
 
-  const moveDown = useCallback(
-    (index) => {
-      if (index >= items.length - 1) return;
-      const next = [...items];
-      [next[index], next[index + 1]] = [next[index + 1], next[index]];
-      emitChange(next);
-    },
-    [items, emitChange],
-  );
+  const moveDown = useCallback((index) => {
+    if (index >= items.length - 1) return;
+    const next = [...items];
+    [next[index], next[index + 1]] = [next[index + 1], next[index]];
+    emitChange(next);
+  }, [items, emitChange]);
+
+  const selectCls = 'flex-1 rounded border border-ui-border bg-ui-bg-subtle text-ui-text text-xs px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-ui-accent/40';
 
   if (items.length === 0) {
     return (
       <div>
-        <Text type='tertiary' className='block text-center py-4'>
-          {t('暂无自动分组，点击下方按钮添加')}
-        </Text>
-        <div className='mt-2 flex justify-center'>
-          <Button icon={<IconPlus />} theme='outline' onClick={addItem}>
-            {t('添加分组')}
-          </Button>
+        <div className='text-center text-xs text-ui-text-3 py-4'>{t('暂无自动分组，点击下方按钮添加')}</div>
+        <div className='flex justify-center'>
+          <button onClick={addItem} className='inline-flex items-center gap-1 px-3 py-1.5 text-xs rounded-md border border-ui-border text-ui-text-2 hover:bg-ui-bg-hover'>
+            <Plus size={12} /> {t('添加分组')}
+          </button>
         </div>
       </div>
     );
   }
 
   return (
-    <div>
-      <div className='space-y-2'>
-        {items.map((item, index) => (
-          <div
-            key={item._id}
-            className='flex items-center gap-2'
+    <div className='space-y-2'>
+      {items.map((item, index) => (
+        <div key={item._id} className='flex items-center gap-2'>
+          <span className='inline-block w-6 h-6 text-center text-[10px] font-semibold rounded-full bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20 leading-6 shrink-0'>
+            {index + 1}
+          </span>
+          <select
+            value={item.name || ''}
+            onChange={(e) => updateItem(item._id, e.target.value)}
+            className={selectCls}
           >
-            <Tag size='small' color='blue' className='shrink-0'>
-              {index + 1}
-            </Tag>
-            <Select
-              size='small'
-              filter
-              value={item.name || undefined}
-              placeholder={t('选择分组')}
-              optionList={groupOptions}
-              onChange={(v) => updateItem(item._id, v)}
-              style={{ flex: 1 }}
-              allowCreate
-              position='bottomLeft'
-            />
-            <Button
-              icon={<IconChevronUp />}
-              theme='borderless'
-              size='small'
-              disabled={index === 0}
-              onClick={() => moveUp(index)}
-            />
-            <Button
-              icon={<IconChevronDown />}
-              theme='borderless'
-              size='small'
-              disabled={index === items.length - 1}
-              onClick={() => moveDown(index)}
-            />
-            <Popconfirm
-              title={t('确认移除？')}
-              onConfirm={() => removeItem(item._id)}
-              position='left'
-            >
-              <Button
-                icon={<IconDelete />}
-                type='danger'
-                theme='borderless'
-                size='small'
-              />
-            </Popconfirm>
-          </div>
-        ))}
-      </div>
-      <div className='mt-3 flex justify-center'>
-        <Button icon={<IconPlus />} theme='outline' onClick={addItem}>
-          {t('添加分组')}
-        </Button>
+            <option value=''>{t('选择分组')}</option>
+            {groupNames.map((n) => (
+              <option key={n} value={n}>{n}</option>
+            ))}
+          </select>
+          <button onClick={() => moveUp(index)} disabled={index === 0}
+            className='p-1 rounded text-ui-text-3 hover:text-ui-text hover:bg-ui-bg-hover disabled:opacity-30 transition-colors'>
+            <ChevronUp size={14} />
+          </button>
+          <button onClick={() => moveDown(index)} disabled={index === items.length - 1}
+            className='p-1 rounded text-ui-text-3 hover:text-ui-text hover:bg-ui-bg-hover disabled:opacity-30 transition-colors'>
+            <ChevronDown size={14} />
+          </button>
+          <button onClick={() => removeItem(item._id)}
+            className='p-1 rounded text-ui-text-3 hover:text-ui-danger hover:bg-ui-danger-bg transition-colors'>
+            <Trash2 size={13} />
+          </button>
+        </div>
+      ))}
+      <div className='flex justify-center'>
+        <button onClick={addItem} className='inline-flex items-center gap-1 px-3 py-1.5 text-xs rounded-md border border-ui-border text-ui-text-2 hover:bg-ui-bg-hover'>
+          <Plus size={12} /> {t('添加分组')}
+        </button>
       </div>
     </div>
   );

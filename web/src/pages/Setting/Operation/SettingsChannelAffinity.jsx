@@ -1,49 +1,21 @@
 /*
-Copyright (C) 2025 QuantumNous
-
-This program is free software: you can redistribute it and/or modify
-it under the terms of the GNU Affero General Public License as
-published by the Free Software Foundation, either version 3 of the
-License, or (at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-GNU Affero General Public License for more details.
-
-You should have received a copy of the GNU Affero General Public License
-along with this program. If not, see <https://www.gnu.org/licenses/>.
-
-For commercial licensing, please contact support@quantumnous.com
-*/
-
+ * 渠道亲和性设置 — token-system rewrite.
+ */
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
-  Banner,
-  Button,
-  Col,
-  Collapse,
-  Divider,
-  Form,
-  Input,
-  Modal,
-  Row,
-  Select,
-  Space,
-  Spin,
-  Table,
-  Tag,
-  Typography,
-} from '@douyinfe/semi-ui';
-import {
-  IconClose,
-  IconCode,
-  IconDelete,
-  IconEdit,
-  IconPlus,
-  IconRefresh,
-  IconSearch,
-} from '@douyinfe/semi-icons';
+  Link2,
+  Plus,
+  Edit,
+  Trash2,
+  RefreshCw,
+  Save,
+  Loader2,
+  Search,
+  Code,
+  AlertTriangle,
+  ChevronDown,
+  ChevronRight,
+} from 'lucide-react';
 import {
   API,
   compareObjects,
@@ -59,6 +31,18 @@ import {
   cloneChannelAffinityTemplate,
 } from '../../../constants/channel-affinity-template.constants';
 import ParamOverrideEditorModal from '../../../components/table/channels/modals/ParamOverrideEditorModal';
+import ModalDialog from '../../../components/common/ModalDialog';
+import {
+  SectionWithSave,
+  FieldRow,
+  ToggleField,
+  NumberField,
+  TextAreaField,
+  Notice,
+  RadioChipGroup,
+  Chip,
+} from '../../../components/common/form/Primitives';
+import { showConfirm } from '../../../components/common/ConfirmDialog';
 
 const KEY_ENABLED = 'channel_affinity_setting.enabled';
 const KEY_SWITCH_ON_SUCCESS = 'channel_affinity_setting.switch_on_success';
@@ -89,18 +73,11 @@ const RULES_JSON_PLACEHOLDER = `[
     "name": "prefer-by-conversation-id",
     "model_regex": ["^gpt-.*$"],
     "path_regex": ["/v1/chat/completions"],
-    "user_agent_include": ["curl", "PostmanRuntime"],
     "key_sources": [
       { "type": "gjson", "path": "metadata.conversation_id" },
       { "type": "context_string", "key": "conversation_id" }
     ],
-    "value_regex": "^[-0-9A-Za-z._:]{1,128}$",
     "ttl_seconds": 600,
-    "param_override_template": {
-      "operations": [
-        { "path": "temperature", "mode": "set", "value": 0.2 }
-      ]
-    },
     "skip_retry_on_failure": false,
     "include_using_group": true,
     "include_model_name": false,
@@ -108,14 +85,19 @@ const RULES_JSON_PLACEHOLDER = `[
   }
 ]`;
 
-const normalizeStringList = (text) => {
-  if (!text) return [];
-  return text
-    .split('\n')
-    .map((s) => s.trim())
-    .filter((s) => s.length > 0);
+const DEFAULTS = {
+  [KEY_ENABLED]: false,
+  [KEY_SWITCH_ON_SUCCESS]: true,
+  [KEY_MAX_ENTRIES]: 100000,
+  [KEY_DEFAULT_TTL]: 3600,
+  [KEY_RULES]: '[]',
 };
 
+const selectCls = 'rounded border border-ui-border bg-ui-bg-subtle text-ui-text text-xs px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-ui-accent/40';
+const inputCls = 'w-full rounded border border-ui-border bg-ui-bg-subtle text-ui-text text-xs px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-ui-accent/40';
+const miniTag = 'inline-block text-[10px] px-1.5 py-0.5 rounded-full border font-medium';
+
+const normalizeStringList = (text) => (text || '').split('\n').map((s) => s.trim()).filter(Boolean);
 const stringifyPretty = (v) => JSON.stringify(v, null, 2);
 const stringifyCompact = (v) => JSON.stringify(v);
 
@@ -123,42 +105,24 @@ const parseRulesJson = (jsonString) => {
   try {
     const parsed = JSON.parse(jsonString || '[]');
     if (!Array.isArray(parsed)) return [];
-    return parsed.map((rule, index) => ({
-      id: index,
-      ...(rule || {}),
-    }));
-  } catch (e) {
-    return [];
-  }
+    return parsed.map((rule, index) => ({ id: index, ...(rule || {}) }));
+  } catch { return []; }
 };
 
-const rulesToJson = (rules) => {
-  const payload = (rules || []).map((r) => {
-    const { id, ...rest } = r || {};
-    return rest;
-  });
-  return stringifyPretty(payload);
-};
+const rulesToJson = (rules) => stringifyPretty((rules || []).map(({ id, ...rest }) => rest));
 
 const normalizeKeySource = (src) => {
   const type = (src?.type || '').trim();
   const key = (src?.key || '').trim();
   const path = (src?.path || '').trim();
-
-  if (type === 'gjson') {
-    return { type, key: '', path };
-  }
-
+  if (type === 'gjson') return { type, key: '', path };
   return { type, key, path: '' };
 };
 
 const makeUniqueName = (existingNames, baseName) => {
   const base = (baseName || '').trim() || 'rule';
   if (!existingNames.has(base)) return base;
-  for (let i = 2; i < 1000; i++) {
-    const n = `${base}-${i}`;
-    if (!existingNames.has(n)) return n;
-  }
+  for (let i = 2; i < 1000; i++) { const n = `${base}-${i}`; if (!existingNames.has(n)) return n; }
   return `${base}-${Date.now()}`;
 };
 
@@ -167,1246 +131,495 @@ const tryParseRulesJsonArray = (jsonString) => {
   if (!verifyJSON(raw)) return { ok: false, message: 'Rules JSON is invalid' };
   try {
     const parsed = JSON.parse(raw);
-    if (!Array.isArray(parsed))
-      return { ok: false, message: 'Rules JSON must be an array' };
+    if (!Array.isArray(parsed)) return { ok: false, message: 'Rules JSON must be an array' };
     return { ok: true, value: parsed };
-  } catch (e) {
-    return { ok: false, message: 'Rules JSON is invalid' };
-  }
+  } catch { return { ok: false, message: 'Rules JSON is invalid' }; }
 };
 
 const parseOptionalObjectJson = (jsonString, label) => {
   const raw = (jsonString || '').trim();
   if (!raw) return { ok: true, value: null };
-  if (!verifyJSON(raw)) {
-    return { ok: false, message: `${label} JSON 格式不正确` };
-  }
+  if (!verifyJSON(raw)) return { ok: false, message: `${label} JSON 格式不正确` };
   try {
     const parsed = JSON.parse(raw);
-    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
-      return { ok: false, message: `${label} 必须是 JSON 对象` };
-    }
+    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return { ok: false, message: `${label} 必须是 JSON 对象` };
     return { ok: true, value: parsed };
-  } catch (error) {
-    return { ok: false, message: `${label} JSON 格式不正确` };
-  }
+  } catch { return { ok: false, message: `${label} JSON 格式不正确` }; }
 };
 
-const buildChannelAffinityRulePayload = ({
-  values,
-  isEdit,
-  editingRuleId,
-  rulesLength,
-  modelRegex,
-  pathRegex,
-  keySources,
-  userAgentInclude,
-  paramOverrideTemplate,
-}) => ({
-  id: isEdit ? editingRuleId : rulesLength,
-  name: (values?.name || '').trim(),
-  model_regex: modelRegex,
-  path_regex: pathRegex,
-  key_sources: keySources,
-  value_regex: (values?.value_regex || '').trim(),
-  ttl_seconds: Number(values?.ttl_seconds || 0),
-  include_using_group: !!values?.include_using_group,
-  include_model_name: !!values?.include_model_name,
-  include_rule_name: !!values?.include_rule_name,
-  skip_retry_on_failure: !!values?.skip_retry_on_failure,
-  ...(userAgentInclude.length > 0
-    ? { user_agent_include: userAgentInclude }
-    : {}),
-  ...(paramOverrideTemplate
-    ? { param_override_template: paramOverrideTemplate }
-    : {}),
-});
+function CollapsibleSection({ title, defaultOpen = false, children }) {
+  const [open, setOpen] = useState(defaultOpen);
+  return (
+    <div className='border border-ui-border rounded-md overflow-hidden'>
+      <button className='flex items-center gap-2 w-full px-3 py-2 bg-ui-bg-subtle text-left' onClick={() => setOpen(!open)}>
+        {open ? <ChevronDown size={14} className='text-ui-text-3' /> : <ChevronRight size={14} className='text-ui-text-3' />}
+        <span className='text-xs font-semibold text-ui-text'>{title}</span>
+      </button>
+      {open && <div className='p-3 space-y-3'>{children}</div>}
+    </div>
+  );
+}
 
 export default function SettingsChannelAffinity(props) {
   const { t } = useTranslation();
-  const { Text } = Typography;
   const [loading, setLoading] = useState(false);
-
   const [cacheLoading, setCacheLoading] = useState(false);
-  const [cacheStats, setCacheStats] = useState({
-    enabled: false,
-    total: 0,
-    unknown: 0,
-    by_rule_name: {},
-    cache_capacity: 0,
-    cache_algo: '',
-  });
-
-  const [inputs, setInputs] = useState({
-    [KEY_ENABLED]: false,
-    [KEY_SWITCH_ON_SUCCESS]: true,
-    [KEY_MAX_ENTRIES]: 100000,
-    [KEY_DEFAULT_TTL]: 3600,
-    [KEY_RULES]: '[]',
-  });
-  const refForm = useRef();
-  const [inputsRow, setInputsRow] = useState(inputs);
+  const [cacheStats, setCacheStats] = useState({ enabled: false, total: 0, unknown: 0, by_rule_name: {}, cache_capacity: 0, cache_algo: '' });
+  const [inputs, setInputs] = useState(DEFAULTS);
+  const [original, setOriginal] = useState(DEFAULTS);
   const [editMode, setEditMode] = useState('visual');
-  const prevEditModeRef = useRef(editMode);
-
   const [rules, setRules] = useState([]);
   const [modalVisible, setModalVisible] = useState(false);
   const [editingRule, setEditingRule] = useState(null);
   const [isEdit, setIsEdit] = useState(false);
-  const modalFormRef = useRef();
-  const [modalInitValues, setModalInitValues] = useState(null);
   const [modalFormKey, setModalFormKey] = useState(0);
-  const [modalAdvancedActiveKey, setModalAdvancedActiveKey] = useState([]);
   const [paramTemplateDraft, setParamTemplateDraft] = useState('');
-  const [paramTemplateEditorVisible, setParamTemplateEditorVisible] =
-    useState(false);
+  const [paramTemplateEditorVisible, setParamTemplateEditorVisible] = useState(false);
 
-  const effectiveDefaultTTLSeconds =
-    Number(inputs?.[KEY_DEFAULT_TTL] || 0) > 0
-      ? Number(inputs?.[KEY_DEFAULT_TTL] || 0)
-      : 3600;
+  const effectiveDefaultTTL = Number(inputs[KEY_DEFAULT_TTL] || 0) > 0 ? Number(inputs[KEY_DEFAULT_TTL] || 0) : 3600;
 
-  const buildModalFormValues = (rule) => {
-    const r = rule || {};
-    return {
-      name: r.name || '',
-      model_regex_text: (r.model_regex || []).join('\n'),
-      path_regex_text: (r.path_regex || []).join('\n'),
-      user_agent_include_text: (r.user_agent_include || []).join('\n'),
-      value_regex: r.value_regex || '',
-      ttl_seconds: Number(r.ttl_seconds || 0),
-      skip_retry_on_failure: !!r.skip_retry_on_failure,
-      include_using_group: r.include_using_group ?? true,
-      include_model_name: !!r.include_model_name,
-      include_rule_name: r.include_rule_name ?? true,
-      param_override_template_json: r.param_override_template
-        ? stringifyPretty(r.param_override_template)
-        : '',
-    };
-  };
-
-  const paramTemplatePreviewMeta = useMemo(() => {
-    const raw = (paramTemplateDraft || '').trim();
-    if (!raw) {
-      return {
-        tagLabel: t('未设置'),
-        tagColor: 'grey',
-        preview: t('当前规则未设置参数覆盖模板'),
-      };
-    }
-    if (!verifyJSON(raw)) {
-      return {
-        tagLabel: t('JSON 无效'),
-        tagColor: 'red',
-        preview: raw,
-      };
-    }
-    try {
-      return {
-        tagLabel: t('已设置'),
-        tagColor: 'orange',
-        preview: JSON.stringify(JSON.parse(raw), null, 2),
-      };
-    } catch (error) {
-      return {
-        tagLabel: t('JSON 无效'),
-        tagColor: 'red',
-        preview: raw,
-      };
-    }
-  }, [paramTemplateDraft, t]);
-
-  const updateParamTemplateDraft = (value) => {
-    const next = typeof value === 'string' ? value : '';
-    setParamTemplateDraft(next);
-    if (modalFormRef.current) {
-      modalFormRef.current.setValue('param_override_template_json', next);
-    }
-  };
-
-  const formatParamTemplateDraft = () => {
-    const raw = (paramTemplateDraft || '').trim();
-    if (!raw) return;
-    if (!verifyJSON(raw)) {
-      showError(t('参数覆盖模板 JSON 格式不正确'));
-      return;
-    }
-    try {
-      updateParamTemplateDraft(JSON.stringify(JSON.parse(raw), null, 2));
-    } catch (error) {
-      showError(t('参数覆盖模板 JSON 格式不正确'));
-    }
-  };
-
-  const openParamTemplatePreview = (rule) => {
-    const raw = rule?.param_override_template;
-    if (!raw || typeof raw !== 'object') {
-      showWarning(t('该规则未设置参数覆盖模板'));
-      return;
-    }
-    Modal.info({
-      title: t('参数覆盖模板预览'),
-      content: (
-        <div style={{ marginTop: 6, paddingBottom: 10 }}>
-          <pre
-            style={{
-              margin: 0,
-              maxHeight: 420,
-              overflow: 'auto',
-              fontSize: 12,
-              lineHeight: 1.6,
-              padding: 10,
-              borderRadius: 8,
-              background: 'var(--semi-color-fill-0)',
-              border: '1px solid var(--semi-color-border)',
-              whiteSpace: 'pre-wrap',
-              wordBreak: 'break-all',
-            }}
-          >
-            {stringifyPretty(raw)}
-          </pre>
-        </div>
-      ),
-      footer: null,
-      width: 760,
-    });
-  };
+  const set = (k) => (v) => setInputs((p) => ({ ...p, [k]: v }));
 
   const refreshCacheStats = async () => {
     try {
       setCacheLoading(true);
-      const res = await API.get('/api/option/channel_affinity_cache', {
-        disableDuplicate: true,
-      });
-      const { success, message, data } = res.data;
-      if (!success) return showError(t(message));
-      setCacheStats(data || {});
-    } catch (e) {
-      showError(t('刷新缓存统计失败'));
-    } finally {
-      setCacheLoading(false);
+      const res = await API.get('/api/option/channel_affinity_cache', { disableDuplicate: true });
+      if (res.data.success) setCacheStats(res.data.data || {});
+    } catch { showError(t('刷新缓存统计失败')); }
+    finally { setCacheLoading(false); }
+  };
+
+  useEffect(() => {
+    const next = { ...DEFAULTS };
+    for (const k of Object.keys(DEFAULTS)) {
+      if (k in (props.options || {})) {
+        const v = props.options[k];
+        if (k === KEY_ENABLED || k === KEY_SWITCH_ON_SUCCESS) next[k] = toBoolean(v);
+        else if (k === KEY_MAX_ENTRIES || k === KEY_DEFAULT_TTL) next[k] = Number(v || 0) || 0;
+        else if (k === KEY_RULES) { try { next[k] = stringifyPretty(JSON.parse(v || '[]')); } catch { next[k] = v || '[]'; } }
+        else next[k] = v;
+      }
     }
-  };
+    setInputs(next);
+    setOriginal(structuredClone(next));
+    setRules(parseRulesJson(next[KEY_RULES]));
+    refreshCacheStats();
+  }, [props.options]);
 
-  const confirmClearAllCache = () => {
-    Modal.confirm({
-      title: t('确认清空全部渠道亲和性缓存'),
-      content: (
-        <div style={{ lineHeight: '1.6' }}>
-          <Text>{t('将删除所有仍在内存中的渠道亲和性缓存条目。')}</Text>
-        </div>
-      ),
-      onOk: async () => {
-        const res = await API.delete('/api/option/channel_affinity_cache', {
-          params: { all: true },
-        });
-        const { success, message } = res.data;
-        if (!success) {
-          showError(t(message));
-          return;
-        }
-        showSuccess(t('已清空'));
-        await refreshCacheStats();
-      },
-    });
-  };
-
-  const confirmClearRuleCache = (rule) => {
-    const name = (rule?.name || '').trim();
-    if (!name) return;
-    if (!rule?.include_rule_name) {
-      showWarning(
-        t('该规则未启用“作用域：包含规则名称”，无法按规则清空缓存。'),
-      );
-      return;
-    }
-    Modal.confirm({
-      title: t('确认清空该规则缓存'),
-      content: (
-        <div style={{ lineHeight: '1.6' }}>
-          <Text>{t('规则')}：</Text> <Text strong>{name}</Text>
-        </div>
-      ),
-      onOk: async () => {
-        const res = await API.delete('/api/option/channel_affinity_cache', {
-          params: { rule_name: name },
-        });
-        const { success, message } = res.data;
-        if (!success) {
-          showError(t(message));
-          return;
-        }
-        showSuccess(t('已清空'));
-        await refreshCacheStats();
-      },
-    });
-  };
-
-  const setRulesJsonToForm = (jsonString) => {
-    if (!refForm.current) return;
-    // Use setValue instead of setValues. Semi Form's setValues assigns undefined
-    // to every registered field not included in the payload, which can wipe other inputs.
-    refForm.current.setValue(KEY_RULES, jsonString || '[]');
-  };
-
-  const switchToJsonMode = () => {
-    // Ensure a stable source of truth when entering JSON mode.
-    // Semi Form may ignore setValues() for an unmounted field, so we seed state first.
-    const jsonString = rulesToJson(rules);
-    setInputs((prev) => ({ ...(prev || {}), [KEY_RULES]: jsonString }));
-    setEditMode('json');
-  };
-
-  const switchToVisualMode = () => {
-    const validation = tryParseRulesJsonArray(inputs[KEY_RULES] || '[]');
-    if (!validation.ok) {
-      showError(t(validation.message));
-      return;
-    }
-    setEditMode('visual');
-  };
+  useEffect(() => {
+    if (editMode === 'visual') setRules(parseRulesJson(inputs[KEY_RULES]));
+  }, [inputs[KEY_RULES], editMode]);
 
   const updateRulesState = (nextRules) => {
     setRules(nextRules);
     const jsonString = rulesToJson(nextRules);
     setInputs((prev) => ({ ...prev, [KEY_RULES]: jsonString }));
-    if (refForm.current && editMode === 'json') {
-      refForm.current.setValue(KEY_RULES, jsonString);
-    }
   };
 
-  const appendCodexAndClaudeCodeTemplates = () => {
-    const doAppend = () => {
-      const existingNames = new Set(
-        (rules || [])
-          .map((r) => (r?.name || '').trim())
-          .filter((x) => x.length > 0),
-      );
-
-      const templates = [
-        CHANNEL_AFFINITY_RULE_TEMPLATES.codexCli,
-        CHANNEL_AFFINITY_RULE_TEMPLATES.claudeCli,
-      ].map((tpl) => {
-        const baseTemplate = cloneChannelAffinityTemplate(tpl);
-        const name = makeUniqueName(existingNames, tpl.name);
-        existingNames.add(name);
-        return { ...baseTemplate, name };
-      });
-
-      const next = [...(rules || []), ...templates].map((r, idx) => ({
-        ...(r || {}),
-        id: idx,
-      }));
-      updateRulesState(next);
-      showSuccess(t('已填充模版'));
-    };
-
-    if ((rules || []).length === 0) {
-      doAppend();
-      return;
-    }
-
-    Modal.confirm({
-      title: t('填充 Codex CLI / Claude CLI 模版'),
-      content: (
-        <div style={{ lineHeight: '1.6' }}>
-          <Text type='tertiary'>{t('将追加 2 条规则到现有规则列表。')}</Text>
-        </div>
-      ),
-      onOk: doAppend,
-    });
-  };
-
-  const ruleColumns = [
-    {
-      title: t('名称'),
-      dataIndex: 'name',
-      render: (text) => <Text>{text || '-'}</Text>,
-    },
-    {
-      title: t('模型正则'),
-      dataIndex: 'model_regex',
-      render: (list) =>
-        (list || []).length > 0
-          ? (list || []).slice(0, 3).map((v, idx) => (
-              <Tag key={`${v}-${idx}`} style={{ marginRight: 4 }}>
-                {v}
-              </Tag>
-            ))
-          : '-',
-    },
-    {
-      title: t('路径正则'),
-      dataIndex: 'path_regex',
-      render: (list) =>
-        (list || []).length > 0
-          ? (list || []).slice(0, 2).map((v, idx) => (
-              <Tag key={`${v}-${idx}`} style={{ marginRight: 4 }}>
-                {v}
-              </Tag>
-            ))
-          : '-',
-    },
-    {
-      title: t('Key 来源'),
-      dataIndex: 'key_sources',
-      render: (list) => {
-        const xs = list || [];
-        if (xs.length === 0) return '-';
-        return xs.slice(0, 3).map((src, idx) => {
-          const s = normalizeKeySource(src);
-          const detail = s.type === 'gjson' ? s.path : s.key;
-          return (
-            <Tag key={`${s.type}-${idx}`} style={{ marginRight: 4 }}>
-              {s.type}:{detail}
-            </Tag>
-          );
-        });
-      },
-    },
-    {
-      title: t('TTL（秒）'),
-      dataIndex: 'ttl_seconds',
-      render: (v) => <Text>{Number(v || 0) || '-'}</Text>,
-    },
-    {
-      title: t('失败后是否重试'),
-      dataIndex: 'skip_retry_on_failure',
-      render: (value) => (
-        <Tag color={value ? 'orange' : 'green'} style={{ marginRight: 4 }}>
-          {value ? t('不重试') : t('重试')}
-        </Tag>
-      ),
-    },
-    {
-      title: t('覆盖模板'),
-      render: (_, record) => {
-        if (!record?.param_override_template) {
-          return <Text type='tertiary'>-</Text>;
-        }
-        return (
-          <Button
-            size='small'
-            icon={<IconSearch />}
-            type='tertiary'
-            onClick={() => openParamTemplatePreview(record)}
-          >
-            {t('预览模板')}
-          </Button>
-        );
-      },
-    },
-    {
-      title: t('缓存条目数'),
-      render: (_, record) => {
-        const name = (record?.name || '').trim();
-        if (!name || !record?.include_rule_name) {
-          return <Text type='tertiary'>N/A</Text>;
-        }
-        const n = Number(cacheStats?.by_rule_name?.[name] || 0);
-        return <Text>{n}</Text>;
-      },
-    },
-    {
-      title: t('作用域'),
-      render: (_, record) => {
-        const tags = [];
-        if (record?.include_using_group) tags.push(t('分组'));
-        if (record?.include_model_name) tags.push(t('模型'));
-        if (record?.include_rule_name) tags.push(t('规则'));
-        if (tags.length === 0) return '-';
-        return tags.map((x) => (
-          <Tag key={x} style={{ marginRight: 4 }}>
-            {x}
-          </Tag>
-        ));
-      },
-    },
-    {
-      title: t('操作'),
-      render: (_, record) => (
-        <Space>
-          <Button
-            icon={<IconClose />}
-            theme='borderless'
-            type='warning'
-            disabled={!record?.include_rule_name}
-            title={t('清空该规则缓存')}
-            aria-label={t('清空该规则缓存')}
-            onClick={() => confirmClearRuleCache(record)}
-          />
-          <Button
-            icon={<IconEdit />}
-            theme='borderless'
-            title={t('编辑规则')}
-            aria-label={t('编辑规则')}
-            onClick={() => handleEditRule(record)}
-          />
-          <Button
-            icon={<IconDelete />}
-            theme='borderless'
-            type='danger'
-            title={t('删除规则')}
-            aria-label={t('删除规则')}
-            onClick={() => handleDeleteRule(record.id)}
-          />
-        </Space>
-      ),
-    },
-  ];
-
-  const validateKeySources = (keySources) => {
-    const xs = (keySources || []).map(normalizeKeySource).filter((x) => x.type);
-    if (xs.length === 0) return { ok: false, message: 'Key 来源不能为空' };
-    for (const x of xs) {
-      if (x.type === 'context_int' || x.type === 'context_string') {
-        if (!x.key) return { ok: false, message: 'Key 不能为空' };
-      } else if (x.type === 'gjson') {
-        if (!x.path) return { ok: false, message: 'Path 不能为空' };
-      } else {
-        return { ok: false, message: 'Key 来源类型不合法' };
-      }
-    }
-    return { ok: true, value: xs };
-  };
-
-  const openAddModal = () => {
-    const nextRule = {
-      name: '',
-      model_regex: [],
-      path_regex: [],
-      user_agent_include: [],
-      key_sources: [{ type: 'gjson', path: '' }],
-      value_regex: '',
-      ttl_seconds: 0,
-      skip_retry_on_failure: false,
-      include_using_group: true,
-      include_model_name: false,
-      include_rule_name: true,
-    };
-    setEditingRule(nextRule);
-    setIsEdit(false);
-    modalFormRef.current = null;
-    const initValues = buildModalFormValues(nextRule);
-    setModalInitValues(initValues);
-    setParamTemplateDraft(initValues.param_override_template_json || '');
-    setParamTemplateEditorVisible(false);
-    setModalAdvancedActiveKey([]);
-    setModalFormKey((k) => k + 1);
-    setModalVisible(true);
-  };
-
-  const handleEditRule = (rule) => {
-    const r = rule || {};
-    const nextRule = {
-      ...r,
-      user_agent_include: Array.isArray(r.user_agent_include)
-        ? r.user_agent_include
-        : [],
-      key_sources: (r.key_sources || []).map(normalizeKeySource),
-    };
-    setEditingRule(nextRule);
-    setIsEdit(true);
-    modalFormRef.current = null;
-    const initValues = buildModalFormValues(nextRule);
-    setModalInitValues(initValues);
-    setParamTemplateDraft(initValues.param_override_template_json || '');
-    setParamTemplateEditorVisible(false);
-    setModalAdvancedActiveKey([]);
-    setModalFormKey((k) => k + 1);
-    setModalVisible(true);
-  };
-
-  const handleDeleteRule = (id) => {
-    const next = (rules || []).filter((r) => r.id !== id);
-    updateRulesState(next.map((r, idx) => ({ ...r, id: idx })));
-    showSuccess(t('删除成功'));
-  };
-
-  const handleModalSave = async () => {
-    try {
-      const values = await modalFormRef.current.validate();
-      const modelRegex = normalizeStringList(values.model_regex_text);
-      if (modelRegex.length === 0) return showError(t('模型正则不能为空'));
-
-      const keySourcesValidation = validateKeySources(editingRule?.key_sources);
-      if (!keySourcesValidation.ok)
-        return showError(t(keySourcesValidation.message));
-
-      const userAgentInclude = normalizeStringList(
-        values.user_agent_include_text,
-      );
-      const paramTemplateValidation = parseOptionalObjectJson(
-        paramTemplateDraft,
-        '参数覆盖模板',
-      );
-      if (!paramTemplateValidation.ok) {
-        return showError(t(paramTemplateValidation.message));
-      }
-
-      const rulePayload = buildChannelAffinityRulePayload({
-        values,
-        isEdit,
-        editingRuleId: editingRule?.id,
-        rulesLength: rules.length,
-        modelRegex,
-        pathRegex: normalizeStringList(values.path_regex_text),
-        keySources: keySourcesValidation.value,
-        userAgentInclude,
-        paramOverrideTemplate: paramTemplateValidation.value,
-      });
-
-      if (!rulePayload.name) return showError(t('名称不能为空'));
-
-      const next = [...(rules || [])];
-      if (isEdit) {
-        let idx = next.findIndex((r) => r.id === editingRule?.id);
-        if (idx < 0 && editingRule?.name) {
-          idx = next.findIndex(
-            (r) => (r?.name || '').trim() === (editingRule?.name || '').trim(),
-          );
-        }
-        if (idx < 0) return showError(t('规则未找到，请刷新后重试'));
-        next[idx] = rulePayload;
-      } else {
-        next.push(rulePayload);
-      }
-      updateRulesState(next.map((r, idx) => ({ ...r, id: idx })));
-      setModalVisible(false);
-      setEditingRule(null);
-      setModalInitValues(null);
-      setParamTemplateDraft('');
-      setParamTemplateEditorVisible(false);
-      showSuccess(t('保存成功'));
-    } catch (e) {
-      showError(t('请检查输入'));
-    }
-  };
-
-  const updateKeySource = (index, patch) => {
-    const next = [...(editingRule?.key_sources || [])];
-    next[index] = normalizeKeySource({
-      ...(next[index] || {}),
-      ...(patch || {}),
-    });
-    setEditingRule((prev) => ({ ...(prev || {}), key_sources: next }));
-  };
-
-  const addKeySource = () => {
-    const next = [...(editingRule?.key_sources || [])];
-    next.push({ type: 'gjson', path: '' });
-    setEditingRule((prev) => ({ ...(prev || {}), key_sources: next }));
-  };
-
-  const removeKeySource = (index) => {
-    const next = [...(editingRule?.key_sources || [])].filter(
-      (_, i) => i !== index,
-    );
-    setEditingRule((prev) => ({ ...(prev || {}), key_sources: next }));
-  };
-
-  async function onSubmit() {
-    const updateArray = compareObjects(inputs, inputsRow);
-    if (!updateArray.length) return showWarning(t('你似乎并没有修改什么'));
-
-    if (!verifyJSON(inputs[KEY_RULES] || '[]'))
-      return showError(t('规则 JSON 格式不正确'));
+  const submit = () => {
+    const diff = compareObjects(inputs, original);
+    if (!diff.length) return showWarning(t('你似乎并没有修改什么'));
+    if (!verifyJSON(inputs[KEY_RULES] || '[]')) return showError(t('规则 JSON 格式不正确'));
     let compactRules;
-    try {
-      compactRules = stringifyCompact(JSON.parse(inputs[KEY_RULES] || '[]'));
-    } catch (e) {
-      return showError(t('规则 JSON 格式不正确'));
-    }
-
-    const requestQueue = updateArray.map((item) => {
-      let value = '';
-      if (item.key === KEY_RULES) {
-        value = compactRules;
-      } else if (typeof inputs[item.key] === 'boolean') {
-        value = String(inputs[item.key]);
-      } else {
-        value = String(inputs[item.key] ?? '');
-      }
-      return API.put('/api/option/', { key: item.key, value });
-    });
-
+    try { compactRules = stringifyCompact(JSON.parse(inputs[KEY_RULES] || '[]')); } catch { return showError(t('规则 JSON 格式不正确')); }
     setLoading(true);
-    Promise.all(requestQueue)
+    Promise.all(diff.map((item) => {
+      let value = '';
+      if (item.key === KEY_RULES) value = compactRules;
+      else if (typeof inputs[item.key] === 'boolean') value = String(inputs[item.key]);
+      else value = String(inputs[item.key] ?? '');
+      return API.put('/api/option/', { key: item.key, value });
+    }))
       .then((res) => {
-        if (requestQueue.length === 1) {
-          if (res.includes(undefined)) return;
-        } else if (requestQueue.length > 1) {
-          if (res.includes(undefined))
-            return showError(t('部分保存失败，请重试'));
-        }
+        if (res.includes(undefined)) return showError(t('部分保存失败，请重试'));
         showSuccess(t('保存成功'));
         props.refresh();
       })
       .catch(() => showError(t('保存失败，请重试')))
       .finally(() => setLoading(false));
-  }
+  };
 
-  useEffect(() => {
-    const currentInputs = { ...inputs };
-    for (let key in props.options) {
-      if (
-        ![
-          KEY_ENABLED,
-          KEY_SWITCH_ON_SUCCESS,
-          KEY_MAX_ENTRIES,
-          KEY_DEFAULT_TTL,
-          KEY_RULES,
-        ].includes(key)
-      )
-        continue;
-      if (key === KEY_ENABLED)
-        currentInputs[key] = toBoolean(props.options[key]);
-      else if (key === KEY_SWITCH_ON_SUCCESS)
-        currentInputs[key] = toBoolean(props.options[key]);
-      else if (key === KEY_MAX_ENTRIES)
-        currentInputs[key] = Number(props.options[key] || 0) || 0;
-      else if (key === KEY_DEFAULT_TTL)
-        currentInputs[key] = Number(props.options[key] || 0) || 0;
-      else if (key === KEY_RULES) {
-        try {
-          const obj = JSON.parse(props.options[key] || '[]');
-          currentInputs[key] = stringifyPretty(obj);
-        } catch (e) {
-          currentInputs[key] = props.options[key] || '[]';
-        }
-      }
+  const openAddModal = () => {
+    setEditingRule({ name: '', model_regex: [], path_regex: [], user_agent_include: [], key_sources: [{ type: 'gjson', path: '' }], value_regex: '', ttl_seconds: 0, skip_retry_on_failure: false, include_using_group: true, include_model_name: false, include_rule_name: true });
+    setIsEdit(false);
+    setParamTemplateDraft('');
+    setParamTemplateEditorVisible(false);
+    setModalFormKey((k) => k + 1);
+    setModalVisible(true);
+  };
+
+  const openEditModal = (rule) => {
+    setEditingRule({ ...rule, user_agent_include: Array.isArray(rule.user_agent_include) ? rule.user_agent_include : [], key_sources: (rule.key_sources || []).map(normalizeKeySource) });
+    setIsEdit(true);
+    setParamTemplateDraft(rule.param_override_template ? stringifyPretty(rule.param_override_template) : '');
+    setParamTemplateEditorVisible(false);
+    setModalFormKey((k) => k + 1);
+    setModalVisible(true);
+  };
+
+  const handleDeleteRule = (id) => {
+    const next = rules.filter((r) => r.id !== id);
+    updateRulesState(next.map((r, idx) => ({ ...r, id: idx })));
+    showSuccess(t('删除成功'));
+  };
+
+  const handleModalSave = () => {
+    const r = editingRule || {};
+    if (!r.name?.trim()) return showError(t('名称不能为空'));
+    const modelRegex = Array.isArray(r.model_regex) ? r.model_regex : normalizeStringList(typeof r.model_regex === 'string' ? r.model_regex : '');
+    if (modelRegex.length === 0) return showError(t('模型正则不能为空'));
+    const keySources = (r.key_sources || []).map(normalizeKeySource).filter((x) => x.type);
+    if (keySources.length === 0) return showError(t('Key 来源不能为空'));
+    for (const x of keySources) {
+      if ((x.type === 'context_int' || x.type === 'context_string') && !x.key) return showError(t('Key 不能为空'));
+      if (x.type === 'gjson' && !x.path) return showError(t('Path 不能为空'));
     }
-    setInputs(currentInputs);
-    setInputsRow(structuredClone(currentInputs));
-    if (refForm.current) refForm.current.setValues(currentInputs);
-    setRules(parseRulesJson(currentInputs[KEY_RULES]));
-    refreshCacheStats();
-  }, [props.options]);
+    const paramValidation = parseOptionalObjectJson(paramTemplateDraft, '参数覆盖模板');
+    if (!paramValidation.ok) return showError(t(paramValidation.message));
 
-  useEffect(() => {
-    const prevEditMode = prevEditModeRef.current;
-    prevEditModeRef.current = editMode;
+    const rulePayload = {
+      id: isEdit ? r.id : rules.length,
+      name: r.name.trim(),
+      model_regex: modelRegex,
+      path_regex: Array.isArray(r.path_regex) ? r.path_regex : normalizeStringList(typeof r.path_regex === 'string' ? r.path_regex : ''),
+      key_sources: keySources,
+      value_regex: (r.value_regex || '').trim(),
+      ttl_seconds: Number(r.ttl_seconds || 0),
+      include_using_group: !!r.include_using_group,
+      include_model_name: !!r.include_model_name,
+      include_rule_name: !!r.include_rule_name,
+      skip_retry_on_failure: !!r.skip_retry_on_failure,
+      ...(Array.isArray(r.user_agent_include) && r.user_agent_include.length > 0 ? { user_agent_include: r.user_agent_include } : {}),
+      ...(paramValidation.value ? { param_override_template: paramValidation.value } : {}),
+    };
 
-    // On switching from visual -> json, ensure the JSON editor is seeded.
-    // Semi Form may ignore setValues() for an unmounted field.
-    if (prevEditMode === editMode) return;
-    if (editMode !== 'json') return;
-    if (!refForm.current) return;
-    refForm.current.setValue(KEY_RULES, inputs[KEY_RULES] || '[]');
-  }, [editMode, inputs]);
-
-  useEffect(() => {
-    if (editMode === 'visual') {
-      setRules(parseRulesJson(inputs[KEY_RULES]));
+    const next = [...rules];
+    if (isEdit) {
+      const idx = next.findIndex((r) => r.id === rulePayload.id);
+      if (idx < 0) return showError(t('规则未找到'));
+      next[idx] = rulePayload;
+    } else {
+      next.push(rulePayload);
     }
-  }, [inputs[KEY_RULES], editMode]);
+    updateRulesState(next.map((r, idx) => ({ ...r, id: idx })));
+    setModalVisible(false);
+    showSuccess(t('保存成功'));
+  };
 
-  const banner = (
-    <Banner
-      fullMode={false}
-      type='info'
-      description={t(
-        '渠道亲和性会基于从请求上下文或 JSON Body 提取的 Key，优先复用上一次成功的渠道。',
-      )}
-    />
-  );
+  const appendTemplates = () => {
+    const doAppend = () => {
+      const existingNames = new Set(rules.map((r) => (r?.name || '').trim()).filter(Boolean));
+      const templates = [CHANNEL_AFFINITY_RULE_TEMPLATES.codexCli, CHANNEL_AFFINITY_RULE_TEMPLATES.claudeCli].map((tpl) => {
+        const base = cloneChannelAffinityTemplate(tpl);
+        const name = makeUniqueName(existingNames, tpl.name);
+        existingNames.add(name);
+        return { ...base, name };
+      });
+      updateRulesState([...rules, ...templates].map((r, idx) => ({ ...r, id: idx })));
+      showSuccess(t('已填充模版'));
+    };
+    if (!rules.length) { doAppend(); return; }
+    showConfirm({ title: t('填充 Codex CLI / Claude CLI 模版'), content: t('将追加 2 条规则到现有规则列表。'), onOk: doAppend });
+  };
+
+  const clearAllCache = () => {
+    showConfirm({
+      title: t('确认清空全部渠道亲和性缓存'),
+      content: t('将删除所有仍在内存中的渠道亲和性缓存条目。'),
+      danger: true,
+      okText: t('确认清空'),
+      onOk: async () => {
+        const res = await API.delete('/api/option/channel_affinity_cache', { params: { all: true } });
+        if (!res.data.success) { showError(t(res.data.message)); return; }
+        showSuccess(t('已清空'));
+        await refreshCacheStats();
+      },
+    });
+  };
+
+  const clearRuleCache = (rule) => {
+    const name = (rule?.name || '').trim();
+    if (!name) return;
+    if (!rule?.include_rule_name) return showWarning(t('该规则未启用"作用域：包含规则名称"，无法按规则清空缓存。'));
+    showConfirm({
+      title: t('确认清空该规则缓存'),
+      content: `${t('规则')}：${name}`,
+      onOk: async () => {
+        const res = await API.delete('/api/option/channel_affinity_cache', { params: { rule_name: name } });
+        if (!res.data.success) { showError(t(res.data.message)); return; }
+        showSuccess(t('已清空'));
+        await refreshCacheStats();
+      },
+    });
+  };
+
+  const updateEditing = (patch) => setEditingRule((prev) => ({ ...(prev || {}), ...patch }));
 
   return (
-    <>
-      <Spin spinning={loading}>
-        <Form
-          values={inputs}
-          getFormApi={(formAPI) => (refForm.current = formAPI)}
-          style={{ marginBottom: 15 }}
-        >
-          <Form.Section text={t('渠道亲和性')}>
-            {banner}
-            <Divider style={{ marginTop: 12, marginBottom: 12 }} />
-            <Row gutter={16}>
-              <Col xs={24} sm={12} md={8} lg={8} xl={8}>
-                <Form.Switch
-                  field={KEY_ENABLED}
-                  label={t('启用')}
-                  checkedText='|'
-                  uncheckedText='O'
-                  onChange={(value) =>
-                    setInputs({ ...inputs, [KEY_ENABLED]: value })
-                  }
-                />
-                <Text type='tertiary' size='small'>
-                  {t('启用后将优先复用上一次成功的渠道（粘滞选路）。')}
-                </Text>
-              </Col>
-              <Col xs={24} sm={12} md={8} lg={8} xl={8}>
-                <Form.InputNumber
-                  field={KEY_MAX_ENTRIES}
-                  label={t('最大条目数')}
-                  min={0}
-                  placeholder='例如 100000…'
-                  extraText={
-                    <Text type='tertiary' size='small'>
-                      {t(
-                        '内存缓存最大条目数。0 表示使用后端默认容量：100000。',
-                      )}
-                    </Text>
-                  }
-                  onChange={(value) =>
-                    setInputs({
-                      ...inputs,
-                      [KEY_MAX_ENTRIES]: Number(value || 0),
-                    })
-                  }
-                />
-              </Col>
-              <Col xs={24} sm={12} md={8} lg={8} xl={8}>
-                <Form.InputNumber
-                  field={KEY_DEFAULT_TTL}
-                  label={t('默认 TTL（秒）')}
-                  min={0}
-                  placeholder='例如 3600…'
-                  extraText={
-                    <Text type='tertiary' size='small'>
-                      {t(
-                        '规则 ttl_seconds 为 0 时使用。0 表示使用后端默认 TTL：3600 秒。',
-                      )}
-                    </Text>
-                  }
-                  onChange={(value) =>
-                    setInputs({
-                      ...inputs,
-                      [KEY_DEFAULT_TTL]: Number(value || 0),
-                    })
-                  }
-                />
-              </Col>
-            </Row>
-
-            <Row gutter={16} style={{ marginTop: 12 }}>
-              <Col xs={24} sm={12} md={8} lg={8} xl={8}>
-                <Form.Switch
-                  field={KEY_SWITCH_ON_SUCCESS}
-                  label={t('成功后切换亲和')}
-                  checkedText='|'
-                  uncheckedText='O'
-                  onChange={(value) =>
-                    setInputs({ ...inputs, [KEY_SWITCH_ON_SUCCESS]: value })
-                  }
-                />
-                <Text type='tertiary' size='small'>
-                  {t(
-                    '如果亲和到的渠道失败，重试到其他渠道成功后，将亲和更新到成功的渠道。',
-                  )}
-                </Text>
-              </Col>
-            </Row>
-
-            <Divider style={{ marginTop: 12, marginBottom: 12 }} />
-
-            <Space style={{ marginBottom: 10 }}>
-              <Button
-                type={editMode === 'visual' ? 'primary' : 'tertiary'}
-                onClick={switchToVisualMode}
-              >
-                {t('可视化')}
-              </Button>
-              <Button
-                type={editMode === 'json' ? 'primary' : 'tertiary'}
-                onClick={switchToJsonMode}
-              >
-                {t('JSON 模式')}
-              </Button>
-              <Button onClick={appendCodexAndClaudeCodeTemplates}>
-                {t('填充 Codex CLI / Claude CLI 模版')}
-              </Button>
-              <Button icon={<IconPlus />} onClick={openAddModal}>
-                {t('新增规则')}
-              </Button>
-              <Button theme='solid' onClick={onSubmit}>
-                {t('保存')}
-              </Button>
-              <Button
-                icon={<IconRefresh />}
-                loading={cacheLoading}
-                onClick={refreshCacheStats}
-              >
-                {t('刷新缓存统计')}
-              </Button>
-              <Button type='danger' onClick={confirmClearAllCache}>
-                {t('清空全部缓存')}
-              </Button>
-            </Space>
-
-            {editMode === 'visual' ? (
-              <Table
-                columns={ruleColumns}
-                dataSource={rules}
-                rowKey='id'
-                pagination={false}
-                size='small'
-              />
-            ) : (
-              <Form.TextArea
-                field={KEY_RULES}
-                label={t('规则 JSON')}
-                extraText={t(
-                  '规则为 JSON 数组；可视化与 JSON 模式共用同一份数据。',
-                )}
-                placeholder={RULES_JSON_PLACEHOLDER}
-                style={{ width: '100%' }}
-                autosize={{ minRows: 10, maxRows: 28 }}
-                rules={[
-                  {
-                    validator: (rule, value) => verifyJSON(value || '[]'),
-                  },
-                ]}
-                onChange={(value) =>
-                  setInputs({ ...inputs, [KEY_RULES]: value })
-                }
-              />
-            )}
-          </Form.Section>
-        </Form>
-      </Spin>
-
-      <Modal
-        title={isEdit ? t('编辑规则') : t('新增规则')}
-        visible={modalVisible}
-        onCancel={() => {
-          setModalVisible(false);
-          setEditingRule(null);
-          setModalInitValues(null);
-          setModalAdvancedActiveKey([]);
-          setParamTemplateDraft('');
-          setParamTemplateEditorVisible(false);
-        }}
-        onOk={handleModalSave}
-        okText={t('保存')}
-        cancelText={t('取消')}
-        width={720}
+    <div className='space-y-4'>
+      <SectionWithSave
+        title={t('渠道亲和性')}
+        hint={t('基于请求上下文或 JSON Body 提取的 Key，优先复用上一次成功的渠道（粘滞选路）')}
+        icon={Link2}
+        iconColor='indigo'
+        loading={loading}
+        onSave={submit}
       >
-        <Form
-          key={`channel-affinity-rule-form-${modalFormKey}`}
-          initValues={modalInitValues || {}}
-          getFormApi={(formAPI) => {
-            modalFormRef.current = formAPI;
-          }}
-        >
-          <Form.Input
-            field='name'
-            label={t('名称')}
-            extraText={t('规则名称（可读性更好，也会出现在管理侧日志中）。')}
-            placeholder='例如 prefer-by-conversation-id…'
-            rules={[{ required: true }]}
-            onChange={(value) =>
-              setEditingRule((prev) => ({ ...(prev || {}), name: value }))
-            }
+        <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3'>
+          <ToggleField
+            label={t('启用渠道亲和性')}
+            hint={t('启用后将优先复用上一次成功的渠道')}
+            checked={!!inputs[KEY_ENABLED]}
+            onChange={set(KEY_ENABLED)}
           />
+          <ToggleField
+            label={t('成功后切换亲和')}
+            hint={t('亲和到的渠道失败后，重试到其他渠道成功后更新亲和')}
+            checked={!!inputs[KEY_SWITCH_ON_SUCCESS]}
+            onChange={set(KEY_SWITCH_ON_SUCCESS)}
+          />
+          <FieldRow label={t('最大条目数')} hint={t('内存缓存最大条目数，0 使用后端默认 100000')}>
+            <NumberField value={inputs[KEY_MAX_ENTRIES]} onChange={(v) => set(KEY_MAX_ENTRIES)(Number(v) || 0)} min={0} step={1} />
+          </FieldRow>
+          <FieldRow label={t('默认 TTL（秒）')} hint={t('规则 ttl_seconds 为 0 时使用，0 使用后端默认 3600 秒')}>
+            <NumberField value={inputs[KEY_DEFAULT_TTL]} onChange={(v) => set(KEY_DEFAULT_TTL)(Number(v) || 0)} min={0} step={1} />
+          </FieldRow>
+        </div>
+      </SectionWithSave>
 
-          <Row gutter={16}>
-            <Col xs={24} sm={12}>
-              <Form.TextArea
-                field='model_regex_text'
-                label={t('模型正则（每行一个）')}
-                extraText={t(
-                  '必填。对请求的 model 名称进行匹配，任意一条匹配即命中该规则。',
-                )}
-                placeholder={'^gpt-4o.*$\n^claude-3.*$…'}
-                autosize={{ minRows: 4, maxRows: 10 }}
-                rules={[{ required: true }]}
-              />
-            </Col>
-            <Col xs={24} sm={12}>
-              <Form.TextArea
-                field='path_regex_text'
-                label={t('路径正则（每行一个）')}
-                extraText={t(
-                  '可选。对请求路径进行匹配；不填表示匹配所有路径。',
-                )}
-                placeholder={'/v1/chat/completions\n/v1/responses…'}
-                autosize={{ minRows: 4, maxRows: 10 }}
-              />
-            </Col>
-          </Row>
+      {/* Rule editor */}
+      <div className='space-y-3'>
+        <div className='flex flex-wrap items-center gap-2'>
+          <RadioChipGroup value={editMode} onChange={(v) => {
+            if (v === 'visual') {
+              const validation = tryParseRulesJsonArray(inputs[KEY_RULES] || '[]');
+              if (!validation.ok) { showError(t(validation.message)); return; }
+            }
+            if (v === 'json') setInputs((prev) => ({ ...prev, [KEY_RULES]: rulesToJson(rules) }));
+            setEditMode(v);
+          }} options={[{ value: 'visual', label: t('可视化') }, { value: 'json', label: t('JSON 模式') }]} />
+          <button onClick={appendTemplates} className='inline-flex items-center gap-1 px-2.5 py-1.5 text-xs rounded-md border border-ui-border text-ui-text-2 hover:bg-ui-bg-hover'>
+            {t('填充模版')}
+          </button>
+          <button onClick={openAddModal} className='inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium rounded-md bg-ui-accent text-ui-accent-fg hover:opacity-90'>
+            <Plus size={12} /> {t('新增规则')}
+          </button>
+          <button onClick={refreshCacheStats} disabled={cacheLoading} className='inline-flex items-center gap-1 px-2.5 py-1.5 text-xs rounded-md border border-ui-border text-ui-text-2 hover:bg-ui-bg-hover disabled:opacity-50'>
+            {cacheLoading ? <Loader2 size={11} className='animate-spin' /> : <RefreshCw size={11} />} {t('刷新缓存')}
+          </button>
+          <button onClick={clearAllCache} className='inline-flex items-center gap-1 px-2.5 py-1.5 text-xs rounded-md border border-ui-danger/30 text-ui-danger hover:bg-ui-danger-bg'>
+            {t('清空全部缓存')}
+          </button>
+        </div>
 
-          <Row gutter={16} style={{ marginTop: 12 }}>
-            <Col xs={24} sm={12}>
-              <Form.Switch
-                field='skip_retry_on_failure'
-                label={t('失败后不重试')}
-              />
-              <Text type='tertiary' size='small'>
-                {t('开启后，若该规则命中且请求失败，将不会切换渠道重试。')}
-              </Text>
-            </Col>
-          </Row>
+        {editMode === 'visual' ? (
+          rules.length === 0 ? (
+            <div className='text-center py-8 text-xs text-ui-text-3'>{t('暂无规则，点击「新增规则」或「填充模版」添加')}</div>
+          ) : (
+            <div className='rounded-md border border-ui-border overflow-hidden'>
+              <div className='overflow-x-auto'>
+                <table className='w-full text-xs'>
+                  <thead>
+                    <tr className='bg-ui-bg-subtle'>
+                      <th className='px-3 py-2 text-left font-semibold text-ui-text-2'>{t('名称')}</th>
+                      <th className='px-3 py-2 text-left font-semibold text-ui-text-2'>{t('模型正则')}</th>
+                      <th className='px-3 py-2 text-left font-semibold text-ui-text-2'>{t('Key 来源')}</th>
+                      <th className='px-3 py-2 text-left font-semibold text-ui-text-2'>{t('TTL')}</th>
+                      <th className='px-3 py-2 text-left font-semibold text-ui-text-2'>{t('作用域')}</th>
+                      <th className='px-3 py-2 text-left font-semibold text-ui-text-2'>{t('缓存')}</th>
+                      <th className='px-3 py-2 text-left font-semibold text-ui-text-2 w-[110px]'>{t('操作')}</th>
+                    </tr>
+                  </thead>
+                  <tbody className='divide-y divide-ui-divider'>
+                    {rules.map((rule) => (
+                      <tr key={rule.id} className='hover:bg-ui-bg-hover/50'>
+                        <td className='px-3 py-2 font-medium text-ui-text'>{rule.name || '-'}</td>
+                        <td className='px-3 py-2'>
+                          {(rule.model_regex || []).slice(0, 2).map((v, i) => (
+                            <span key={`${v}-${i}`} className={`${miniTag} mr-1 !bg-blue-500/10 !text-blue-600 dark:!text-blue-400 !border-blue-500/20`}>{v}</span>
+                          ))}
+                          {(rule.model_regex || []).length > 2 && <span className='text-ui-text-3'>+{rule.model_regex.length - 2}</span>}
+                        </td>
+                        <td className='px-3 py-2'>
+                          {(rule.key_sources || []).slice(0, 2).map((src, i) => {
+                            const s = normalizeKeySource(src);
+                            return <span key={`${s.type}-${i}`} className={`${miniTag} mr-1 !bg-purple-500/10 !text-purple-600 dark:!text-purple-400 !border-purple-500/20`}>{s.type}:{s.type === 'gjson' ? s.path : s.key}</span>;
+                          })}
+                        </td>
+                        <td className='px-3 py-2 text-ui-text-2'>{Number(rule.ttl_seconds || 0) || '-'}</td>
+                        <td className='px-3 py-2'>
+                          {[
+                            rule.include_using_group && t('分组'),
+                            rule.include_model_name && t('模型'),
+                            rule.include_rule_name && t('规则'),
+                          ].filter(Boolean).map((label) => (
+                            <span key={label} className={`${miniTag} mr-1 !bg-gray-400/10 !text-ui-text-2 !border-ui-border`}>{label}</span>
+                          ))}
+                        </td>
+                        <td className='px-3 py-2 text-ui-text-2'>
+                          {rule.include_rule_name && cacheStats.by_rule_name?.[rule.name?.trim()] != null
+                            ? cacheStats.by_rule_name[rule.name.trim()]
+                            : 'N/A'}
+                        </td>
+                        <td className='px-3 py-2'>
+                          <div className='flex items-center gap-1'>
+                            <button onClick={() => clearRuleCache(rule)} disabled={!rule.include_rule_name}
+                              className='p-1 rounded text-ui-text-3 hover:text-amber-500 hover:bg-amber-500/10 disabled:opacity-30 transition-colors' title={t('清空缓存')}>
+                              <RefreshCw size={12} />
+                            </button>
+                            <button onClick={() => openEditModal(rule)}
+                              className='p-1 rounded text-ui-text-3 hover:text-ui-text hover:bg-ui-bg-hover transition-colors' title={t('编辑')}>
+                              <Edit size={12} />
+                            </button>
+                            <button onClick={() => showConfirm({ title: t('确认删除？'), danger: true, okText: t('删除'), onOk: () => handleDeleteRule(rule.id) })}
+                              className='p-1 rounded text-ui-text-3 hover:text-ui-danger hover:bg-ui-danger-bg transition-colors' title={t('删除')}>
+                              <Trash2 size={12} />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )
+        ) : (
+          <FieldRow label={t('规则 JSON')} hint={t('规则为 JSON 数组；可视化与 JSON 模式共用同一份数据。')}>
+            <TextAreaField value={inputs[KEY_RULES]} onChange={set(KEY_RULES)} placeholder={RULES_JSON_PLACEHOLDER} rows={12} className='font-mono text-xs' />
+          </FieldRow>
+        )}
+      </div>
 
-          <Collapse
-            keepDOM
-            activeKey={modalAdvancedActiveKey}
-            onChange={(activeKey) => {
-              const keys = Array.isArray(activeKey) ? activeKey : [activeKey];
-              setModalAdvancedActiveKey(keys.filter(Boolean));
-            }}
-          >
-            <Collapse.Panel header={t('高级设置')} itemKey='advanced'>
-              <Row gutter={16}>
-                <Col xs={24}>
-                  <Form.TextArea
-                    field='user_agent_include_text'
-                    label={t('User-Agent include（每行一个，可不写）')}
-                    extraText={
-                      <Text type='tertiary' size='small'>
-                        {t(
-                          '可选。匹配入口请求的 User-Agent；任意一行作为子串匹配（忽略大小写）即命中。',
-                        )}
-                        <br />
-                        {t(
-                          'NewAPI 默认不会将入口请求的 User-Agent 透传到上游渠道；该条件仅用于识别访问本站点的客户端。',
-                        )}
-                        <br />
-                        {t(
-                          '为保证匹配准确，请确保客户端直连本站点（避免反向代理/网关改写 User-Agent）。',
-                        )}
-                      </Text>
-                    }
-                    placeholder={'curl\nPostmanRuntime\nMyApp/…'}
-                    autosize={{ minRows: 3, maxRows: 8 }}
-                  />
-                </Col>
-              </Row>
+      {/* Rule Edit Modal */}
+      <ModalDialog
+        open={modalVisible}
+        onClose={() => { setModalVisible(false); setEditingRule(null); }}
+        title={isEdit ? t('编辑规则') : t('新增规则')}
+        width={720}
+        hideFooter
+      >
+        {editingRule && (
+          <div className='space-y-3'>
+            <div>
+              <label className='text-xs font-medium text-ui-text-2 block mb-1'>{t('名称')} *</label>
+              <input value={editingRule.name || ''} onChange={(e) => updateEditing({ name: e.target.value })} placeholder='prefer-by-conversation-id' className={inputCls} />
+            </div>
+            <div className='grid grid-cols-2 gap-3'>
+              <div>
+                <label className='text-xs font-medium text-ui-text-2 block mb-1'>{t('模型正则（每行一个）')} *</label>
+                <textarea value={Array.isArray(editingRule.model_regex) ? editingRule.model_regex.join('\n') : ''} onChange={(e) => updateEditing({ model_regex: normalizeStringList(e.target.value) })} placeholder='^gpt-4o.*$' rows={3} className={inputCls + ' resize-y'} />
+              </div>
+              <div>
+                <label className='text-xs font-medium text-ui-text-2 block mb-1'>{t('路径正则（每行一个）')}</label>
+                <textarea value={Array.isArray(editingRule.path_regex) ? editingRule.path_regex.join('\n') : ''} onChange={(e) => updateEditing({ path_regex: normalizeStringList(e.target.value) })} placeholder='/v1/chat/completions' rows={3} className={inputCls + ' resize-y'} />
+              </div>
+            </div>
+            <ToggleField label={t('失败后不重试')} hint={t('开启后，若该规则命中且请求失败，将不会切换渠道重试')} checked={!!editingRule.skip_retry_on_failure} onChange={(v) => updateEditing({ skip_retry_on_failure: v })} />
 
-              <Row gutter={16}>
-                <Col xs={24} sm={12}>
-                  <Form.Input
-                    field='value_regex'
-                    label={t('Value 正则')}
-                    placeholder='^[-0-9A-Za-z._:]{1,128}$'
-                    extraText={t(
-                      '可选。对提取到的亲和 Key 做正则校验；不填表示不校验。',
-                    )}
-                  />
-                </Col>
-                <Col xs={24} sm={12}>
-                  <Form.InputNumber
-                    field='ttl_seconds'
-                    label={t('TTL（秒，0 表示默认）')}
-                    placeholder='例如 600…'
-                    min={0}
-                    extraText={
-                      <Text type='tertiary' size='small'>
-                        {t('该规则的缓存保留时长；0 表示使用默认 TTL：')}
-                        {effectiveDefaultTTLSeconds}
-                        {t(' 秒。')}
-                      </Text>
-                    }
-                  />
-                </Col>
-              </Row>
+            <CollapsibleSection title={t('高级设置')}>
+              <div>
+                <label className='text-xs font-medium text-ui-text-2 block mb-1'>{t('User-Agent include（每行一个）')}</label>
+                <textarea value={Array.isArray(editingRule.user_agent_include) ? editingRule.user_agent_include.join('\n') : ''} onChange={(e) => updateEditing({ user_agent_include: normalizeStringList(e.target.value) })} placeholder='curl\nPostmanRuntime' rows={2} className={inputCls + ' resize-y'} />
+              </div>
+              <div className='grid grid-cols-2 gap-3'>
+                <div>
+                  <label className='text-xs font-medium text-ui-text-2 block mb-1'>{t('Value 正则')}</label>
+                  <input value={editingRule.value_regex || ''} onChange={(e) => updateEditing({ value_regex: e.target.value })} placeholder='^[-0-9A-Za-z._:]{1,128}$' className={inputCls} />
+                </div>
+                <div>
+                  <label className='text-xs font-medium text-ui-text-2 block mb-1'>{t('TTL（秒，0 表示默认）')}</label>
+                  <input type='number' value={editingRule.ttl_seconds || 0} onChange={(e) => updateEditing({ ttl_seconds: parseInt(e.target.value) || 0 })} min={0} className={inputCls} />
+                  <div className='text-[11px] text-ui-text-3 mt-1'>{t('0 使用默认：')}{effectiveDefaultTTL}{t(' 秒')}</div>
+                </div>
+              </div>
 
-              <Row gutter={16}>
-                <Col xs={24}>
-                  <div style={{ marginBottom: 8 }}>
-                    <Text strong>{t('参数覆盖模板')}</Text>
+              {/* Param override template */}
+              <div>
+                <div className='flex items-center justify-between mb-2'>
+                  <label className='text-xs font-medium text-ui-text-2'>{t('参数覆盖模板')}</label>
+                  <div className='flex items-center gap-1.5'>
+                    <span className={`${miniTag} ${paramTemplateDraft ? '!bg-orange-500/10 !text-orange-600 dark:!text-orange-400 !border-orange-500/20' : '!bg-gray-400/10 !text-gray-500 !border-gray-400/20'}`}>
+                      {paramTemplateDraft ? t('已设置') : t('未设置')}
+                    </span>
+                    <button onClick={() => setParamTemplateEditorVisible(true)} className='text-[11px] px-2 py-0.5 rounded border border-ui-border text-ui-text-2 hover:bg-ui-bg-hover'>{t('可视化编辑')}</button>
+                    <button onClick={() => {
+                      const raw = (paramTemplateDraft || '').trim();
+                      if (!raw) return;
+                      if (!verifyJSON(raw)) return showError(t('JSON 格式不正确'));
+                      setParamTemplateDraft(JSON.stringify(JSON.parse(raw), null, 2));
+                    }} className='text-[11px] px-2 py-0.5 rounded border border-ui-border text-ui-text-2 hover:bg-ui-bg-hover'>{t('格式化')}</button>
+                    <button onClick={() => setParamTemplateDraft('')} className='text-[11px] px-2 py-0.5 rounded border border-ui-border text-ui-text-3 hover:bg-ui-bg-hover'>{t('清空')}</button>
                   </div>
-                  <Text type='tertiary' size='small'>
-                    {t(
-                      '命中该亲和规则后，会把此模板合并到渠道参数覆盖中（同名键由模板覆盖）。',
-                    )}
-                  </Text>
-                  <div
-                    style={{
-                      marginTop: 8,
-                      borderRadius: 10,
-                      padding: 10,
-                      background: 'var(--semi-color-fill-0)',
-                      border: '1px solid var(--semi-color-border)',
-                    }}
-                  >
-                    <div
-                      style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'space-between',
-                        marginBottom: 8,
-                        gap: 8,
-                        flexWrap: 'wrap',
-                      }}
-                    >
-                      <Tag color={paramTemplatePreviewMeta.tagColor}>
-                        {paramTemplatePreviewMeta.tagLabel}
-                      </Tag>
-                      <Space>
-                        <Button
-                          size='small'
-                          type='primary'
-                          icon={<IconCode />}
-                          onClick={() => setParamTemplateEditorVisible(true)}
-                        >
-                          {t('可视化编辑')}
-                        </Button>
-                        <Button size='small' onClick={formatParamTemplateDraft}>
-                          {t('格式化')}
-                        </Button>
-                        <Button
-                          size='small'
-                          type='tertiary'
-                          onClick={() => updateParamTemplateDraft('')}
-                        >
-                          {t('清空')}
-                        </Button>
-                      </Space>
+                </div>
+                <textarea value={paramTemplateDraft} onChange={(e) => setParamTemplateDraft(e.target.value)} placeholder='{}' rows={4} className={inputCls + ' font-mono resize-y'} />
+              </div>
+
+              <div className='grid grid-cols-3 gap-3'>
+                <ToggleField label={t('作用域：包含分组')} checked={!!editingRule.include_using_group} onChange={(v) => updateEditing({ include_using_group: v })} />
+                <ToggleField label={t('作用域：包含模型名称')} checked={!!editingRule.include_model_name} onChange={(v) => updateEditing({ include_model_name: v })} />
+                <ToggleField label={t('作用域：包含规则名称')} checked={!!editingRule.include_rule_name} onChange={(v) => updateEditing({ include_rule_name: v })} />
+              </div>
+            </CollapsibleSection>
+
+            {/* Key sources */}
+            <div>
+              <div className='flex items-center justify-between mb-2'>
+                <label className='text-xs font-medium text-ui-text-2'>{t('Key 来源')}</label>
+                <button onClick={() => updateEditing({ key_sources: [...(editingRule.key_sources || []), { type: 'gjson', path: '' }] })} className='inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded border border-ui-border text-ui-text-2 hover:bg-ui-bg-hover'>
+                  <Plus size={10} /> {t('新增')}
+                </button>
+              </div>
+              <div className='text-[11px] text-ui-text-3 mb-2'>
+                {t('常用 context key：')} {CONTEXT_KEY_PRESETS.map((p) => <span key={p.key} className={`${miniTag} mr-1 mb-1 !bg-gray-400/10 !text-ui-text-3 !border-ui-border`}>{p.label}</span>)}
+              </div>
+              <div className='space-y-2'>
+                {(editingRule.key_sources || []).map((src, idx) => {
+                  const s = normalizeKeySource(src);
+                  return (
+                    <div key={idx} className='flex items-center gap-2'>
+                      <select value={s.type} onChange={(e) => {
+                        const next = [...(editingRule.key_sources || [])];
+                        next[idx] = normalizeKeySource({ ...next[idx], type: e.target.value });
+                        updateEditing({ key_sources: next });
+                      }} className={`${selectCls} w-36`}>
+                        {KEY_SOURCE_TYPES.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+                      </select>
+                      <input value={s.type === 'gjson' ? s.path : s.key}
+                        onChange={(e) => {
+                          const next = [...(editingRule.key_sources || [])];
+                          next[idx] = normalizeKeySource({ ...next[idx], ...(s.type === 'gjson' ? { path: e.target.value } : { key: e.target.value }) });
+                          updateEditing({ key_sources: next });
+                        }}
+                        placeholder={s.type === 'gjson' ? 'metadata.conversation_id' : 'user_id'}
+                        className={inputCls + ' flex-1'} />
+                      <button onClick={() => {
+                        const next = (editingRule.key_sources || []).filter((_, i) => i !== idx);
+                        updateEditing({ key_sources: next });
+                      }} className='p-1 rounded text-ui-text-3 hover:text-ui-danger hover:bg-ui-danger-bg transition-colors'>
+                        <Trash2 size={12} />
+                      </button>
                     </div>
-                    <pre
-                      style={{
-                        margin: 0,
-                        maxHeight: 220,
-                        overflow: 'auto',
-                        fontSize: 12,
-                        lineHeight: 1.6,
-                        whiteSpace: 'pre-wrap',
-                        wordBreak: 'break-all',
-                      }}
-                    >
-                      {paramTemplatePreviewMeta.preview}
-                    </pre>
-                  </div>
-                </Col>
-              </Row>
+                  );
+                })}
+              </div>
+            </div>
 
-              <Row gutter={16}>
-                <Col xs={24} sm={8}>
-                  <Form.Switch
-                    field='include_using_group'
-                    label={t('作用域：包含分组')}
-                  />
-                  <Text type='tertiary' size='small'>
-                    {t(
-                      '开启后，using_group 会参与 cache key（不同分组隔离）。',
-                    )}
-                  </Text>
-                </Col>
-                <Col xs={24} sm={8}>
-                  <Form.Switch
-                    field='include_model_name'
-                    label={t('作用域：包含模型名称')}
-                  />
-                  <Text type='tertiary' size='small'>
-                    {t('开启后，模型名称会参与 cache key（不同模型隔离）。')}
-                  </Text>
-                </Col>
-                <Col xs={24} sm={8}>
-                  <Form.Switch
-                    field='include_rule_name'
-                    label={t('作用域：包含规则名称')}
-                  />
-                  <Text type='tertiary' size='small'>
-                    {t('开启后，规则名称会参与 cache key（不同规则隔离）。')}
-                  </Text>
-                </Col>
-              </Row>
-            </Collapse.Panel>
-          </Collapse>
-
-          <Divider style={{ marginTop: 12, marginBottom: 12 }} />
-          <Space style={{ marginBottom: 10 }}>
-            <Text>{t('Key 来源')}</Text>
-            <Button icon={<IconPlus />} onClick={addKeySource}>
-              {t('新增 Key 来源')}
-            </Button>
-          </Space>
-          <Text type='tertiary' size='small'>
-            {t(
-              'context_int/context_string 从请求上下文读取；gjson 从入口请求的 JSON body 按 gjson path 读取。',
-            )}
-          </Text>
-          <div style={{ marginTop: 8, marginBottom: 8 }}>
-            <Text type='tertiary' size='small'>
-              {t('常用上下文 Key（用于 context_*）')}：
-            </Text>
-            <div style={{ marginTop: 6 }}>
-              {(CONTEXT_KEY_PRESETS || []).map((x) => (
-                <Tag key={x.key} style={{ marginRight: 6, marginBottom: 6 }}>
-                  {x.label}
-                </Tag>
-              ))}
+            {/* Footer */}
+            <div className='flex justify-end gap-2 pt-3 border-t border-ui-divider'>
+              <button onClick={() => { setModalVisible(false); setEditingRule(null); }} className='px-3.5 py-1.5 text-xs rounded-md border border-ui-border text-ui-text-2 hover:bg-ui-bg-subtle'>{t('取消')}</button>
+              <button onClick={handleModalSave} className='px-3.5 py-1.5 text-xs font-semibold rounded-md bg-ui-accent text-ui-accent-fg hover:opacity-90'>{t('保存')}</button>
             </div>
           </div>
-
-          <Table
-            columns={[
-              {
-                title: t('类型'),
-                render: (_, __, idx) => (
-                  <Select
-                    style={{ width: 160 }}
-                    optionList={KEY_SOURCE_TYPES}
-                    value={(
-                      editingRule?.key_sources?.[idx]?.type || 'gjson'
-                    ).trim()}
-                    aria-label={t('Key 来源类型')}
-                    onChange={(value) => updateKeySource(idx, { type: value })}
-                  />
-                ),
-              },
-              {
-                title: t('Key 或 Path'),
-                render: (_, __, idx) => {
-                  const src = normalizeKeySource(
-                    editingRule?.key_sources?.[idx],
-                  );
-                  const isGjson = src.type === 'gjson';
-                  return (
-                    <Input
-                      placeholder={
-                        isGjson ? 'metadata.conversation_id' : 'user_id'
-                      }
-                      aria-label={t('Key 或 Path')}
-                      value={isGjson ? src.path : src.key}
-                      onChange={(value) =>
-                        updateKeySource(
-                          idx,
-                          isGjson ? { path: value } : { key: value },
-                        )
-                      }
-                    />
-                  );
-                },
-              },
-              {
-                title: t('操作'),
-                width: 90,
-                render: (_, __, idx) => (
-                  <Button
-                    icon={<IconDelete />}
-                    theme='borderless'
-                    type='danger'
-                    title={t('删除 Key 来源')}
-                    aria-label={t('删除 Key 来源')}
-                    onClick={() => removeKeySource(idx)}
-                  />
-                ),
-              },
-            ]}
-            dataSource={(editingRule?.key_sources || []).map((x, idx) => ({
-              id: idx,
-              ...x,
-            }))}
-            rowKey='id'
-            pagination={false}
-            size='small'
-          />
-        </Form>
-      </Modal>
+        )}
+      </ModalDialog>
 
       <ParamOverrideEditorModal
         visible={paramTemplateEditorVisible}
         value={paramTemplateDraft || ''}
-        onSave={(nextValue) => {
-          updateParamTemplateDraft(nextValue || '');
-          setParamTemplateEditorVisible(false);
-        }}
+        onSave={(nextValue) => { setParamTemplateDraft(nextValue || ''); setParamTemplateEditorVisible(false); }}
         onCancel={() => setParamTemplateEditorVisible(false)}
       />
-    </>
+    </div>
   );
 }

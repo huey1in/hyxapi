@@ -1,40 +1,20 @@
 /*
-Copyright (C) 2025 QuantumNous
-
-This program is free software: you can redistribute it and/or modify
-it under the terms of the GNU Affero General Public License as
-published by the Free Software Foundation, either version 3 of the
-License, or (at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-GNU Affero General Public License for more details.
-
-You should have received a copy of the GNU Affero General Public License
-along with this program. If not, see <https://www.gnu.org/licenses/>.
-
-For commercial licensing, please contact support@quantumnous.com
-*/
-
-import React from 'react';
-import CardPro from '../../common/ui/CardPro';
+ * User admin page — token-system rewrite.
+ */
+import React, { useEffect, useState } from 'react';
+import { Plus, RefreshCw, Search, X } from 'lucide-react';
+import { useUsersData } from '../../../hooks/users/useUsersData';
+import Pagination from '../../common/table/Pagination';
 import UsersTable from './UsersTable';
-import UsersActions from './UsersActions';
-import UsersFilters from './UsersFilters';
-import UsersDescription from './UsersDescription';
 import AddUserModal from './modals/AddUserModal';
 import EditUserModal from './modals/EditUserModal';
-import { useUsersData } from '../../../hooks/users/useUsersData';
-import { useIsMobile } from '../../../hooks/common/useIsMobile';
-import { createCardProPagination } from '../../../helpers/utils';
+
+const inputCls =
+  'w-full pl-8 pr-7 py-1.5 text-xs bg-ui-bg border border-ui-border rounded-md text-ui-text placeholder:text-ui-text-3 outline-none focus:border-ui-text-3 transition-colors';
 
 const UsersPage = () => {
-  const usersData = useUsersData();
-  const isMobile = useIsMobile();
-
+  const data = useUsersData();
   const {
-    // Modal state
     showAddUser,
     showEditUser,
     editingUser,
@@ -42,82 +22,161 @@ const UsersPage = () => {
     closeAddUser,
     closeEditUser,
     refresh,
-
-    // Form state
-    formInitValues,
-    setFormApi,
     searchUsers,
     loadUsers,
     activePage,
     pageSize,
+    userCount,
+    handlePageChange,
+    handlePageSizeChange,
     groupOptions,
     loading,
     searching,
-
-    // Description state
-    compactMode,
-    setCompactMode,
-
-    // Translation
+    setFormApi,
     t,
-  } = usersData;
+  } = data;
+
+  const [keyword, setKeyword] = useState('');
+  const [group, setGroup] = useState('');
+
+  // Stable formApi shim (depends only on local state + the stable setter)
+  useEffect(() => {
+    setFormApi({
+      getValues: () => ({ searchKeyword: keyword, searchGroup: group }),
+      reset: () => {
+        setKeyword('');
+        setGroup('');
+      },
+      setValue: (f, v) => {
+        if (f === 'searchKeyword') setKeyword(v || '');
+        if (f === 'searchGroup') setGroup(v || '');
+      },
+    });
+  }, [keyword, group, setFormApi]);
+
+  const onSearch = (e) => {
+    e?.preventDefault?.();
+    searchUsers(1, pageSize);
+  };
+
+  const onReset = () => {
+    setKeyword('');
+    setGroup('');
+    setTimeout(() => loadUsers(1, pageSize), 0);
+  };
 
   return (
-    <>
-      <AddUserModal
-        refresh={refresh}
-        visible={showAddUser}
-        handleClose={closeAddUser}
-      />
+    <div className='min-h-[calc(100vh-4rem)] mt-16 px-4 py-5 md:px-6 md:py-6 bg-ui-bg'>
+      <div className='max-w-[1400px] mx-auto'>
+        {/* Header */}
+        <div className='flex items-center justify-between gap-3 mb-5'>
+          <h1
+            className='text-2xl md:text-3xl font-medium text-ui-text'
+            style={{ fontFamily: "'Space Grotesk', sans-serif", letterSpacing: '-0.02em' }}
+          >
+            {t('用户管理')}
+          </h1>
+        </div>
 
+        {/* Filter + actions card */}
+        <div className='bg-ui-bg-elevated border border-ui-border rounded-xl p-3 mb-3 flex flex-col md:flex-row md:items-center justify-between gap-2'>
+          <div className='flex items-center gap-1.5'>
+            <button
+              onClick={() => setShowAddUser(true)}
+              className='inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-md bg-ui-accent text-ui-accent-fg hover:bg-ui-accent-hover active:scale-95 transition-all whitespace-nowrap'
+            >
+              <Plus size={12} />
+              {t('添加用户')}
+            </button>
+            <button
+              onClick={refresh}
+              disabled={loading || searching}
+              className='inline-flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-md border border-ui-border text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-subtle disabled:opacity-50 transition-colors whitespace-nowrap'
+            >
+              <RefreshCw size={12} className={loading || searching ? 'animate-spin' : ''} />
+              {t('刷新')}
+            </button>
+          </div>
+
+          <form onSubmit={onSearch} className='flex flex-wrap items-center gap-1.5'>
+            <div className='relative w-full md:w-64'>
+              <Search size={12} className='absolute left-2.5 top-1/2 -translate-y-1/2 text-ui-text-3 pointer-events-none' />
+              <input
+                type='text'
+                value={keyword}
+                onChange={(e) => setKeyword(e.target.value)}
+                placeholder={t('ID / 用户名 / 显示名 / 邮箱')}
+                className={inputCls}
+              />
+              {keyword && (
+                <button
+                  type='button'
+                  onClick={() => setKeyword('')}
+                  className='absolute right-1.5 top-1/2 -translate-y-1/2 p-0.5 rounded text-ui-text-3 hover:text-ui-text hover:bg-ui-bg-subtle'
+                >
+                  <X size={11} />
+                </button>
+              )}
+            </div>
+            <select
+              value={group}
+              onChange={(e) => {
+                const v = e.target.value;
+                setGroup(v);
+                setTimeout(() => searchUsers(1, pageSize), 0);
+              }}
+              className='px-2.5 py-1.5 text-xs bg-ui-bg border border-ui-border rounded-md text-ui-text outline-none focus:border-ui-text-3 cursor-pointer w-full md:w-36'
+            >
+              <option value=''>{t('全部分组')}</option>
+              {(groupOptions || []).map((g) => (
+                <option key={String(g.value ?? g)} value={g.value ?? g}>
+                  {g.label ?? g}
+                </option>
+              ))}
+            </select>
+            <button
+              type='submit'
+              disabled={loading || searching}
+              className='inline-flex items-center px-3 py-1.5 text-xs rounded-md border border-ui-border text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-subtle disabled:opacity-50 whitespace-nowrap'
+            >
+              {searching ? t('查询中...') : t('查询')}
+            </button>
+            <button
+              type='button'
+              onClick={onReset}
+              className='inline-flex items-center px-3 py-1.5 text-xs rounded-md border border-ui-border text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-subtle whitespace-nowrap'
+            >
+              {t('重置')}
+            </button>
+          </form>
+        </div>
+
+        {/* Table card */}
+        <div className='bg-ui-bg-elevated border border-ui-border rounded-xl overflow-hidden'>
+          <UsersTable {...data} />
+          {userCount > 0 && (
+            <div className='border-t border-ui-divider'>
+              <Pagination
+                page={activePage}
+                pageSize={pageSize}
+                total={userCount}
+                pageSizeOpts={[10, 20, 50, 100]}
+                onChange={handlePageChange}
+                onPageSizeChange={handlePageSizeChange}
+              />
+            </div>
+          )}
+        </div>
+      </div>
+
+      <AddUserModal refresh={refresh} visible={showAddUser} handleClose={closeAddUser} />
       <EditUserModal
         refresh={refresh}
         visible={showEditUser}
         handleClose={closeEditUser}
         editingUser={editingUser}
       />
-
-      <CardPro
-        type='type1'
-        descriptionArea={
-          <UsersDescription
-            compactMode={compactMode}
-            setCompactMode={setCompactMode}
-            t={t}
-          />
-        }
-        actionsArea={
-          <div className='flex flex-col md:flex-row justify-between items-center gap-2 w-full'>
-            <UsersActions setShowAddUser={setShowAddUser} t={t} />
-
-            <UsersFilters
-              formInitValues={formInitValues}
-              setFormApi={setFormApi}
-              searchUsers={searchUsers}
-              loadUsers={loadUsers}
-              activePage={activePage}
-              pageSize={pageSize}
-              groupOptions={groupOptions}
-              loading={loading}
-              searching={searching}
-              t={t}
-            />
-          </div>
-        }
-        paginationArea={createCardProPagination({
-          currentPage: usersData.activePage,
-          pageSize: usersData.pageSize,
-          total: usersData.userCount,
-          onPageChange: usersData.handlePageChange,
-          onPageSizeChange: usersData.handlePageSizeChange,
-          isMobile: isMobile,
-          t: usersData.t,
-        })}
-        t={usersData.t}
-      >
-        <UsersTable {...usersData} />
-      </CardPro>
-    </>
+    </div>
   );
 };
 

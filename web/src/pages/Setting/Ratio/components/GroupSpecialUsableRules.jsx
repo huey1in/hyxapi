@@ -1,40 +1,11 @@
 /*
-Copyright (C) 2025 QuantumNous
-
-This program is free software: you can redistribute it and/or modify
-it under the terms of the GNU Affero General Public License as
-published by the Free Software Foundation, either version 3 of the
-License, or (at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-GNU Affero General Public License for more details.
-
-You should have received a copy of the GNU Affero General Public License
-along with this program. If not, see <https://www.gnu.org/licenses/>.
-
-For commercial licensing, please contact support@quantumnous.com
-*/
+ * GroupSpecialUsableRules — per-user-group usable group overrides.
+ * Token-system rewrite using native inputs.
+ */
 import React, { useState, useCallback, useMemo } from 'react';
-import {
-  Button,
-  Collapsible,
-  Input,
-  Select,
-  Tag,
-  Typography,
-  Popconfirm,
-} from '@douyinfe/semi-ui';
-import {
-  IconPlus,
-  IconDelete,
-  IconChevronDown,
-  IconChevronUp,
-} from '@douyinfe/semi-icons';
+import { Plus, Trash2, ChevronDown, ChevronUp } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-
-const { Text } = Typography;
+import { showConfirm } from '../../../../components/common/ConfirmDialog';
 
 let _idCounter = 0;
 const uid = () => `gsu_${++_idCounter}`;
@@ -67,10 +38,7 @@ function flattenRules(nested) {
     for (const [rawKey, desc] of Object.entries(inner)) {
       const { op, groupName } = parsePrefix(rawKey);
       rules.push({
-        _id: uid(),
-        userGroup,
-        op,
-        targetGroup: groupName,
+        _id: uid(), userGroup, op, targetGroup: groupName,
         description: op === OP_REMOVE ? 'remove' : (typeof desc === 'string' ? desc : ''),
       });
     }
@@ -93,198 +61,120 @@ export function serializeGroupSpecialUsable(rules) {
   return Object.keys(nested).length === 0 ? '' : JSON.stringify(nested, null, 2);
 }
 
-const OP_TAG_MAP = {
-  [OP_ADD]: { color: 'green', label: '添加 (+:)' },
-  [OP_REMOVE]: { color: 'red', label: '移除 (-:)' },
-  [OP_APPEND]: { color: 'blue', label: '追加' },
+const OP_COLORS = {
+  [OP_ADD]: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20',
+  [OP_REMOVE]: 'bg-red-500/10 text-red-600 dark:text-red-400 border-red-500/20',
+  [OP_APPEND]: 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20',
 };
 
-function UsableGroupSection({ groupName, items, opOptions, onUpdate, onRemove, onAdd, t }) {
+const OP_LABELS = {
+  [OP_ADD]: '添加 (+:)',
+  [OP_REMOVE]: '移除 (-:)',
+  [OP_APPEND]: '追加',
+};
+
+const selectCls = 'rounded border border-ui-border bg-ui-bg-subtle text-ui-text text-xs px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-ui-accent/40';
+const inputCls = 'flex-1 rounded border border-ui-border bg-ui-bg-subtle text-ui-text text-xs px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-ui-accent/40';
+
+function UsableGroupSection({ groupName, items, onUpdate, onRemove, onAdd, t }) {
   const [open, setOpen] = useState(false);
 
   return (
-    <div
-      style={{
-        border: '1px solid var(--semi-color-border)',
-        borderRadius: 8,
-        overflow: 'hidden',
-      }}
-    >
-      <div
-        className='flex items-center justify-between cursor-pointer'
-        style={{
-          padding: '8px 12px',
-          background: 'var(--semi-color-fill-0)',
-        }}
-        onClick={() => setOpen(!open)}
-      >
+    <div className='rounded-md border border-ui-border overflow-hidden'>
+      <div className='flex items-center justify-between px-3 py-2 bg-ui-bg-subtle cursor-pointer' onClick={() => setOpen(!open)}>
         <div className='flex items-center gap-2'>
-          {open ? <IconChevronUp size='small' /> : <IconChevronDown size='small' />}
-          <Text strong>{groupName}</Text>
-          <Tag size='small' color='blue'>{items.length} {t('条规则')}</Tag>
+          {open ? <ChevronUp size={14} className='text-ui-text-3' /> : <ChevronDown size={14} className='text-ui-text-3' />}
+          <span className='text-xs font-semibold text-ui-text'>{groupName}</span>
+          <span className='inline-block text-[10px] px-1.5 py-0.5 rounded-full bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20'>
+            {items.length} {t('条规则')}
+          </span>
         </div>
         <div className='flex items-center gap-1' onClick={(e) => e.stopPropagation()}>
-          <Button
-            icon={<IconPlus />}
-            size='small'
-            theme='borderless'
-            onClick={() => onAdd(groupName)}
-          />
-          <Popconfirm
-            title={t('确认删除该分组的所有规则？')}
-            onConfirm={() => items.forEach((item) => onRemove(item._id))}
-            position='left'
+          <button onClick={() => onAdd(groupName)} className='p-1 rounded text-ui-text-3 hover:text-ui-text hover:bg-ui-bg-hover transition-colors'>
+            <Plus size={13} />
+          </button>
+          <button
+            onClick={() => showConfirm({
+              title: t('确认删除该分组的所有规则？'), danger: true, okText: t('确认'),
+              onOk: () => items.forEach((item) => onRemove(item._id)),
+            })}
+            className='p-1 rounded text-ui-text-3 hover:text-ui-danger hover:bg-ui-danger-bg transition-colors'
           >
-            <Button
-              icon={<IconDelete />}
-              size='small'
-              type='danger'
-              theme='borderless'
-            />
-          </Popconfirm>
+            <Trash2 size={13} />
+          </button>
         </div>
       </div>
-      <Collapsible isOpen={open} keepDOM>
-        <div style={{ padding: '8px 12px' }}>
+      {open && (
+        <div className='px-3 py-2 space-y-2 border-t border-ui-divider'>
           {items.map((rule) => (
-            <div
-              key={rule._id}
-              className='flex items-center gap-2'
-              style={{ marginBottom: 6 }}
-            >
-              <Select
-                size='small'
-                value={rule.op}
-                optionList={opOptions}
-                onChange={(v) => onUpdate(rule._id, 'op', v)}
-                style={{ width: 120 }}
-                renderSelectedItem={(optionNode) => {
-                  const info = OP_TAG_MAP[optionNode.value] || {};
-                  return <Tag size='small' color={info.color}>{optionNode.label}</Tag>;
-                }}
-              />
-              <Input
-                size='small'
-                value={rule.targetGroup}
-                placeholder={t('分组名称')}
-                onChange={(v) => onUpdate(rule._id, 'targetGroup', v)}
-                style={{ flex: 1 }}
-              />
+            <div key={rule._id} className='flex items-center gap-2'>
+              <select value={rule.op} onChange={(e) => onUpdate(rule._id, 'op', e.target.value)} className={`${selectCls} w-28`}>
+                <option value={OP_ADD}>{t('添加 (+:)')}</option>
+                <option value={OP_REMOVE}>{t('移除 (-:)')}</option>
+                <option value={OP_APPEND}>{t('追加')}</option>
+              </select>
+              <span className={`inline-block text-[10px] px-1.5 py-0.5 rounded-full border shrink-0 ${OP_COLORS[rule.op] || OP_COLORS[OP_APPEND]}`}>
+                {OP_LABELS[rule.op]}
+              </span>
+              <input value={rule.targetGroup} placeholder={t('分组名称')} onChange={(e) => onUpdate(rule._id, 'targetGroup', e.target.value)} className={inputCls} />
               {rule.op !== OP_REMOVE ? (
-                <Input
-                  size='small'
-                  value={rule.description}
-                  placeholder={t('分组描述')}
-                  onChange={(v) => onUpdate(rule._id, 'description', v)}
-                  style={{ flex: 1 }}
-                />
+                <input value={rule.description} placeholder={t('分组描述')} onChange={(e) => onUpdate(rule._id, 'description', e.target.value)} className={inputCls} />
               ) : (
-                <div style={{ flex: 1 }}>
-                  <Text type='tertiary' size='small'>-</Text>
-                </div>
+                <div className='flex-1 text-xs text-ui-text-3'>-</div>
               )}
-              <Popconfirm
-                title={t('确认删除该规则？')}
-                onConfirm={() => onRemove(rule._id)}
-                position='left'
-              >
-                <Button
-                  icon={<IconDelete />}
-                  type='danger'
-                  theme='borderless'
-                  size='small'
-                />
-              </Popconfirm>
+              <button onClick={() => onRemove(rule._id)}
+                className='p-1 rounded text-ui-text-3 hover:text-ui-danger hover:bg-ui-danger-bg transition-colors'>
+                <Trash2 size={13} />
+              </button>
             </div>
           ))}
         </div>
-      </Collapsible>
+      )}
     </div>
   );
 }
 
-export default function GroupSpecialUsableRules({
-  value,
-  groupNames = [],
-  onChange,
-}) {
+export default function GroupSpecialUsableRules({ value, groupNames = [], onChange }) {
   const { t } = useTranslation();
   const [rules, setRules] = useState(() => flattenRules(parseJSON(value)));
   const [newGroupName, setNewGroupName] = useState('');
 
-  const emitChange = useCallback(
-    (newRules) => {
-      setRules(newRules);
-      onChange?.(serializeGroupSpecialUsable(newRules));
-    },
-    [onChange],
-  );
+  const emitChange = useCallback((newRules) => {
+    setRules(newRules);
+    onChange?.(serializeGroupSpecialUsable(newRules));
+  }, [onChange]);
 
-  const updateRule = useCallback(
-    (id, field, val) => {
-      emitChange(
-        rules.map((r) => {
-          if (r._id !== id) return r;
-          const updated = { ...r, [field]: val };
-          if (field === 'op' && val === OP_REMOVE) updated.description = 'remove';
-          else if (field === 'op' && r.op === OP_REMOVE && val !== OP_REMOVE) {
-            if (updated.description === 'remove') updated.description = '';
-          }
-          return updated;
-        }),
-      );
-    },
-    [rules, emitChange],
-  );
+  const updateRule = useCallback((id, field, val) => {
+    emitChange(rules.map((r) => {
+      if (r._id !== id) return r;
+      const updated = { ...r, [field]: val };
+      if (field === 'op' && val === OP_REMOVE) updated.description = 'remove';
+      else if (field === 'op' && r.op === OP_REMOVE && val !== OP_REMOVE && updated.description === 'remove') updated.description = '';
+      return updated;
+    }));
+  }, [rules, emitChange]);
 
-  const removeRule = useCallback(
-    (id) => emitChange(rules.filter((r) => r._id !== id)),
-    [rules, emitChange],
-  );
+  const removeRule = useCallback((id) => emitChange(rules.filter((r) => r._id !== id)), [rules, emitChange]);
 
-  const addRuleToGroup = useCallback(
-    (groupName) => {
-      emitChange([
-        ...rules,
-        { _id: uid(), userGroup: groupName, op: OP_APPEND, targetGroup: '', description: '' },
-      ]);
-    },
-    [rules, emitChange],
-  );
+  const addRuleToGroup = useCallback((groupName) => {
+    emitChange([...rules, { _id: uid(), userGroup: groupName, op: OP_APPEND, targetGroup: '', description: '' }]);
+  }, [rules, emitChange]);
 
   const addNewGroup = useCallback(() => {
     const name = newGroupName.trim();
     if (!name) return;
-    emitChange([
-      ...rules,
-      { _id: uid(), userGroup: name, op: OP_APPEND, targetGroup: '', description: '' },
-    ]);
+    emitChange([...rules, { _id: uid(), userGroup: name, op: OP_APPEND, targetGroup: '', description: '' }]);
     setNewGroupName('');
   }, [rules, emitChange, newGroupName]);
 
-  const groupOptions = useMemo(
-    () => groupNames.map((n) => ({ value: n, label: n })),
-    [groupNames],
-  );
-
-  const opOptions = useMemo(
-    () => [
-      { value: OP_ADD, label: t('添加 (+:)') },
-      { value: OP_REMOVE, label: t('移除 (-:)') },
-      { value: OP_APPEND, label: t('追加') },
-    ],
-    [t],
-  );
+  const groupOptions = useMemo(() => groupNames.map((n) => ({ value: n, label: n })), [groupNames]);
 
   const grouped = useMemo(() => {
     const map = {};
     const order = [];
     rules.forEach((r) => {
       if (!r.userGroup) return;
-      if (!map[r.userGroup]) {
-        map[r.userGroup] = [];
-        order.push(r.userGroup);
-      }
+      if (!map[r.userGroup]) { map[r.userGroup] = []; order.push(r.userGroup); }
       map[r.userGroup].push(r);
     });
     return order.map((name) => ({ name, items: map[name] }));
@@ -293,24 +183,16 @@ export default function GroupSpecialUsableRules({
   if (grouped.length === 0 && rules.length === 0) {
     return (
       <div>
-        <Text type='tertiary' className='block text-center py-4'>
-          {t('暂无规则，点击下方按钮添加')}
-        </Text>
-        <div className='mt-2 flex justify-center gap-2'>
-          <Select
-            size='small'
-            filter
-            allowCreate
-            placeholder={t('选择用户分组')}
-            optionList={groupOptions}
-            value={newGroupName || undefined}
-            onChange={setNewGroupName}
-            style={{ width: 200 }}
-            position='bottomLeft'
-          />
-          <Button icon={<IconPlus />} theme='outline' onClick={addNewGroup}>
-            {t('添加分组规则')}
-          </Button>
+        <div className='text-center text-xs text-ui-text-3 py-4'>{t('暂无规则，点击下方按钮添加')}</div>
+        <div className='flex justify-center gap-2'>
+          <select value={newGroupName || ''} onChange={(e) => setNewGroupName(e.target.value)}
+            className='w-48 rounded border border-ui-border bg-ui-bg-subtle text-ui-text text-xs px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-ui-accent/40'>
+            <option value=''>{t('选择用户分组')}</option>
+            {groupOptions.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+          </select>
+          <button onClick={addNewGroup} className='inline-flex items-center gap-1 px-3 py-1.5 text-xs rounded-md border border-ui-border text-ui-text-2 hover:bg-ui-bg-hover'>
+            <Plus size={12} /> {t('添加分组规则')}
+          </button>
         </div>
       </div>
     );
@@ -319,32 +201,18 @@ export default function GroupSpecialUsableRules({
   return (
     <div className='space-y-2'>
       {grouped.map((group) => (
-        <UsableGroupSection
-          key={group.name}
-          groupName={group.name}
-          items={group.items}
-          opOptions={opOptions}
-          onUpdate={updateRule}
-          onRemove={removeRule}
-          onAdd={addRuleToGroup}
-          t={t}
-        />
+        <UsableGroupSection key={group.name} groupName={group.name} items={group.items}
+          onUpdate={updateRule} onRemove={removeRule} onAdd={addRuleToGroup} t={t} />
       ))}
-      <div className='mt-3 flex justify-center gap-2'>
-        <Select
-          size='small'
-          filter
-          allowCreate
-          placeholder={t('选择用户分组')}
-          optionList={groupOptions}
-          value={newGroupName || undefined}
-          onChange={setNewGroupName}
-          style={{ width: 200 }}
-          position='bottomLeft'
-        />
-        <Button icon={<IconPlus />} theme='outline' onClick={addNewGroup}>
-          {t('添加分组规则')}
-        </Button>
+      <div className='flex justify-center gap-2'>
+        <select value={newGroupName || ''} onChange={(e) => setNewGroupName(e.target.value)}
+          className='w-48 rounded border border-ui-border bg-ui-bg-subtle text-ui-text text-xs px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-ui-accent/40'>
+          <option value=''>{t('选择用户分组')}</option>
+          {groupOptions.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+        </select>
+        <button onClick={addNewGroup} className='inline-flex items-center gap-1 px-3 py-1.5 text-xs rounded-md border border-ui-border text-ui-text-2 hover:bg-ui-bg-hover'>
+          <Plus size={12} /> {t('添加分组规则')}
+        </button>
       </div>
     </div>
   );

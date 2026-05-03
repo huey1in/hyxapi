@@ -1,24 +1,9 @@
 /*
-Copyright (C) 2025 QuantumNous
-
-This program is free software: you can redistribute it and/or modify
-it under the terms of the GNU Affero General Public License as
-published by the Free Software Foundation, either version 3 of the
-License, or (at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-GNU Affero General Public License for more details.
-
-You should have received a copy of the GNU Affero General Public License
-along with this program. If not, see <https://www.gnu.org/licenses/>.
-
-For commercial licensing, please contact support@quantumnous.com
-*/
+ * 性能 wrapper — token shell.
+ */
 
 import React, { useEffect, useState } from 'react';
-import { Card, Spin } from '@douyinfe/semi-ui';
+import { Loader2 } from 'lucide-react';
 import SettingsPerformance from '../../pages/Setting/Performance/SettingsPerformance';
 import { API, showError, toBoolean } from '../../helpers';
 
@@ -66,14 +51,16 @@ const PerformanceSetting = () => {
   }, []);
 
   return (
-    <>
-      <Spin spinning={loading} size='large'>
-        {/* 性能设置 */}
-        <Card style={{ marginTop: '10px' }}>
-          <SettingsPerformance options={inputs} refresh={onRefresh} />
-        </Card>
-      </Spin>
-    </>
+    <div className='relative'>
+      {loading && (
+        <div className='absolute inset-0 z-10 flex items-center justify-center bg-ui-bg/60'>
+          <Loader2 size={20} className='animate-spin text-ui-text-3' />
+        </div>
+      )}
+      <div className='bg-ui-bg-elevated border border-ui-border rounded-xl p-5'>
+        <SettingsPerformance options={inputs} refresh={onRefresh} />
+      </div>
+    </div>
   );
 };
 

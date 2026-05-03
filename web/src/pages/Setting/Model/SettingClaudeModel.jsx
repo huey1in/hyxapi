@@ -1,24 +1,9 @@
 /*
-Copyright (C) 2025 QuantumNous
-
-This program is free software: you can redistribute it and/or modify
-it under the terms of the GNU Affero General Public License as
-published by the Free Software Foundation, either version 3 of the
-License, or (at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-GNU Affero General Public License for more details.
-
-You should have received a copy of the GNU Affero General Public License
-along with this program. If not, see <https://www.gnu.org/licenses/>.
-
-For commercial licensing, please contact support@quantumnous.com
-*/
-
-import React, { useEffect, useState, useRef } from 'react';
-import { Button, Col, Form, Row, Spin } from '@douyinfe/semi-ui';
+ * Claude 设置 — token-system rewrite.
+ */
+import React, { useEffect, useState, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
+import { Sparkles } from 'lucide-react';
 import {
   compareObjects,
   API,
@@ -27,27 +12,19 @@ import {
   showWarning,
   verifyJSON,
 } from '../../../helpers';
-import { useTranslation } from 'react-i18next';
-import Text from '@douyinfe/semi-ui/lib/es/typography/text';
+import {
+  SectionWithSave,
+  FieldRow,
+  ToggleField,
+  NumberField,
+  TextAreaField,
+} from '../../../components/common/form/Primitives';
 
 const CLAUDE_HEADER = {
   'claude-3-7-sonnet-20250219-thinking': {
-    'anthropic-beta': [
-      'output-128k-2025-02-19',
-      'token-efficient-tools-2025-02-19',
-    ],
+    'anthropic-beta': ['output-128k-2025-02-19', 'token-efficient-tools-2025-02-19'],
   },
 };
-
-const CLAUDE_HEADER_APPEND_CONFIG = {
-  'claude-3-7-sonnet-20250219-thinking': {
-    'anthropic-beta': ['token-efficient-tools-2025-02-19'],
-  },
-};
-
-const CLAUDE_HEADER_APPEND_BEFORE = `anthropic-beta: output-128k-2025-02-19`;
-
-const CLAUDE_HEADER_APPEND_AFTER = `anthropic-beta: output-128k-2025-02-19,token-efficient-tools-2025-02-19`;
 
 const CLAUDE_DEFAULT_MAX_TOKENS = {
   default: 8192,
@@ -56,195 +33,118 @@ const CLAUDE_DEFAULT_MAX_TOKENS = {
   'claude-3-7-sonnet-20250219-thinking': 8192,
 };
 
+const DEFAULTS = {
+  'claude.model_headers_settings': '',
+  'claude.thinking_adapter_enabled': true,
+  'claude.default_max_tokens': '',
+  'claude.thinking_adapter_budget_tokens_percentage': 0.8,
+};
+
 export default function SettingClaudeModel(props) {
   const { t } = useTranslation();
-
+  const [inputs, setInputs] = useState(DEFAULTS);
+  const [original, setOriginal] = useState(DEFAULTS);
   const [loading, setLoading] = useState(false);
-  const [inputs, setInputs] = useState({
-    'claude.model_headers_settings': '',
-    'claude.thinking_adapter_enabled': true,
-    'claude.default_max_tokens': '',
-    'claude.thinking_adapter_budget_tokens_percentage': 0.8,
-  });
-  const refForm = useRef();
-  const [inputsRow, setInputsRow] = useState(inputs);
 
-  function onSubmit() {
-    const updateArray = compareObjects(inputs, inputsRow);
-    if (!updateArray.length) return showWarning(t('你似乎并没有修改什么'));
-    const requestQueue = updateArray.map((item) => {
-      let value = String(inputs[item.key]);
+  useEffect(() => {
+    const next = { ...DEFAULTS };
+    for (const k of Object.keys(DEFAULTS)) {
+      if (k in (props.options || {})) next[k] = props.options[k];
+    }
+    setInputs(next);
+    setOriginal(structuredClone(next));
+  }, [props.options]);
 
-      return API.put('/api/option/', {
-        key: item.key,
-        value,
-      });
-    });
+  const set = (k) => (v) => setInputs((p) => ({ ...p, [k]: v }));
+
+  const headersError = useMemo(() => {
+    const v = inputs['claude.model_headers_settings'];
+    if (!v || !v.trim()) return '';
+    return verifyJSON(v) ? '' : t('不是合法的 JSON 字符串');
+  }, [inputs, t]);
+  const maxTokensError = useMemo(() => {
+    const v = inputs['claude.default_max_tokens'];
+    if (!v || !v.trim()) return '';
+    return verifyJSON(v) ? '' : t('不是合法的 JSON 字符串');
+  }, [inputs, t]);
+
+  const submit = () => {
+    if (headersError) return showError(headersError);
+    if (maxTokensError) return showError(maxTokensError);
+    const diff = compareObjects(inputs, original);
+    if (!diff.length) return showWarning(t('你似乎并没有修改什么'));
     setLoading(true);
-    Promise.all(requestQueue)
-      .then((res) => {
-        if (requestQueue.length === 1) {
-          if (res.includes(undefined)) return;
-        } else if (requestQueue.length > 1) {
-          if (res.includes(undefined))
-            return showError(t('部分保存失败，请重试'));
-        }
+    Promise.all(
+      diff.map((item) =>
+        API.put('/api/option/', {
+          key: item.key,
+          value: String(inputs[item.key]),
+        }),
+      ),
+    )
+      .then(() => {
         showSuccess(t('保存成功'));
         props.refresh();
       })
-      .catch(() => {
-        showError(t('保存失败，请重试'));
-      })
-      .finally(() => {
-        setLoading(false);
-      });
-  }
-
-  useEffect(() => {
-    const currentInputs = {};
-    for (let key in props.options) {
-      if (Object.keys(inputs).includes(key)) {
-        currentInputs[key] = props.options[key];
-      }
-    }
-    setInputs(currentInputs);
-    setInputsRow(structuredClone(currentInputs));
-    refForm.current.setValues(currentInputs);
-  }, [props.options]);
+      .catch(() => showError(t('保存失败，请重试')))
+      .finally(() => setLoading(false));
+  };
 
   return (
-    <>
-      <Spin spinning={loading}>
-        <Form
-          values={inputs}
-          getFormApi={(formAPI) => (refForm.current = formAPI)}
-          style={{ marginBottom: 15 }}
-        >
-          <Form.Section text={t('Claude设置')}>
-            <Row>
-              <Col xs={24} sm={12} md={8} lg={8} xl={8}>
-                <Form.TextArea
-                  label={t('Claude请求头追加')}
-                  field={'claude.model_headers_settings'}
-                  placeholder={
-                    t('为一个 JSON 文本，例如：') +
-                    '\n' +
-                    JSON.stringify(CLAUDE_HEADER, null, 2)
-                  }
-                  extraText={
-                    <div>
-                      <div>
-                        {t(
-                          'Claude会在原有请求头基础上追加这些值，不会覆盖已有同名请求头；重复值会自动忽略。',
-                        )}
-                      </div>
-                      <div className='mt-2 whitespace-pre-wrap font-mono text-xs'>
-                        {`${t('前：')}\n${CLAUDE_HEADER_APPEND_BEFORE}\n\n${t('配置：')}\n${JSON.stringify(
-                          CLAUDE_HEADER_APPEND_CONFIG,
-                          null,
-                          2,
-                        )}\n\n${t('后：')}\n${CLAUDE_HEADER_APPEND_AFTER}`}
-                      </div>
-                    </div>
-                  }
-                  autosize={{ minRows: 6, maxRows: 12 }}
-                  trigger='blur'
-                  stopValidateWithError
-                  rules={[
-                    {
-                      validator: (rule, value) => verifyJSON(value),
-                      message: t('不是合法的 JSON 字符串'),
-                    },
-                  ]}
-                  onChange={(value) =>
-                    setInputs({
-                      ...inputs,
-                      'claude.model_headers_settings': value,
-                    })
-                  }
-                />
-              </Col>
-            </Row>
-            <Row>
-              <Col xs={24} sm={12} md={8} lg={8} xl={8}>
-                <Form.TextArea
-                  label={t('缺省 MaxTokens')}
-                  field={'claude.default_max_tokens'}
-                  placeholder={
-                    t('为一个 JSON 文本，例如：') +
-                    '\n' +
-                    JSON.stringify(CLAUDE_DEFAULT_MAX_TOKENS, null, 2)
-                  }
-                  extraText={
-                    t('示例') +
-                    '\n' +
-                    JSON.stringify(CLAUDE_DEFAULT_MAX_TOKENS, null, 2)
-                  }
-                  autosize={{ minRows: 6, maxRows: 12 }}
-                  trigger='blur'
-                  stopValidateWithError
-                  rules={[
-                    {
-                      validator: (rule, value) => verifyJSON(value),
-                      message: t('不是合法的 JSON 字符串'),
-                    },
-                  ]}
-                  onChange={(value) =>
-                    setInputs({ ...inputs, 'claude.default_max_tokens': value })
-                  }
-                />
-              </Col>
-            </Row>
-            <Row>
-              <Col span={16}>
-                <Form.Switch
-                  label={t('启用Claude思考适配（-thinking后缀）')}
-                  field={'claude.thinking_adapter_enabled'}
-                  onChange={(value) =>
-                    setInputs({
-                      ...inputs,
-                      'claude.thinking_adapter_enabled': value,
-                    })
-                  }
-                />
-              </Col>
-            </Row>
-            <Row>
-              <Col span={16}>
-                {/*//展示MaxTokens和BudgetTokens的计算公式, 并展示实际数字*/}
-                <Text>
-                  {t(
-                    'Claude思考适配 BudgetTokens = MaxTokens * BudgetTokens 百分比',
-                  )}
-                </Text>
-              </Col>
-            </Row>
-            <Row>
-              <Col xs={24} sm={12} md={8} lg={8} xl={8}>
-                <Form.InputNumber
-                  label={t('思考适配 BudgetTokens 百分比')}
-                  field={'claude.thinking_adapter_budget_tokens_percentage'}
-                  initValue={''}
-                  extraText={t('0.1以上的小数')}
-                  min={0.1}
-                  onChange={(value) =>
-                    setInputs({
-                      ...inputs,
-                      'claude.thinking_adapter_budget_tokens_percentage': value,
-                    })
-                  }
-                />
-              </Col>
-            </Row>
-
-            <Row>
-              <Button size='default' onClick={onSubmit}>
-                {t('保存')}
-              </Button>
-            </Row>
-          </Form.Section>
-        </Form>
-      </Spin>
-    </>
+    <SectionWithSave
+      title={t('Claude 设置')}
+      hint={t('请求头覆盖、缺省 MaxTokens、思考适配')}
+      icon={Sparkles}
+      iconColor='purple'
+      loading={loading}
+      onSave={submit}
+    >
+      <FieldRow
+        label={t('请求头追加（JSON）')}
+        hint={t(
+          'Claude 会在原请求头基础上追加这些值，不会覆盖已有同名头；重复值自动忽略。',
+        )}
+        error={headersError}
+      >
+        <TextAreaField
+          value={inputs['claude.model_headers_settings']}
+          onChange={set('claude.model_headers_settings')}
+          placeholder={JSON.stringify(CLAUDE_HEADER, null, 2)}
+          rows={6}
+          className='font-mono text-xs'
+        />
+      </FieldRow>
+      <FieldRow
+        label={t('缺省 MaxTokens（JSON）')}
+        hint={t('按模型设置默认 max_tokens。default 为兜底值。')}
+        error={maxTokensError}
+      >
+        <TextAreaField
+          value={inputs['claude.default_max_tokens']}
+          onChange={set('claude.default_max_tokens')}
+          placeholder={JSON.stringify(CLAUDE_DEFAULT_MAX_TOKENS, null, 2)}
+          rows={6}
+          className='font-mono text-xs'
+        />
+      </FieldRow>
+      <ToggleField
+        label={t('启用 Claude 思考适配（-thinking 后缀）')}
+        checked={!!inputs['claude.thinking_adapter_enabled']}
+        onChange={set('claude.thinking_adapter_enabled')}
+      />
+      <FieldRow
+        label={t('思考 BudgetTokens 百分比')}
+        hint={t('BudgetTokens = MaxTokens × 此百分比；建议 ≥ 0.1')}
+      >
+        <NumberField
+          value={inputs['claude.thinking_adapter_budget_tokens_percentage']}
+          onChange={set('claude.thinking_adapter_budget_tokens_percentage')}
+          min={0.1}
+          max={1}
+          step={0.05}
+          disabled={!inputs['claude.thinking_adapter_enabled']}
+        />
+      </FieldRow>
+    </SectionWithSave>
   );
 }

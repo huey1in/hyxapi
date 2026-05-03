@@ -8,7 +8,7 @@
  * the standard label/extra-text layout that Semi's Form provided.
  */
 import React, { useEffect, useRef, useState } from 'react';
-import { Search, X, ChevronDown } from 'lucide-react';
+import { Search, X, ChevronDown, Save, Loader2 } from 'lucide-react';
 
 // ── shared classes ──────────────────────────────────────
 
@@ -488,3 +488,175 @@ export function createFormApiAdapter(getInputs, setInputs) {
     submitForm: () => {},
   };
 }
+
+// ── DateTimeField ─────────────────────────────────────
+
+export const DateTimeField = ({ value, onChange, disabled, min, max }) => (
+  <input
+    type='datetime-local'
+    value={value || ''}
+    min={min}
+    max={max}
+    disabled={disabled}
+    onChange={(e) => onChange?.(e.target.value)}
+    className={inputCls}
+  />
+);
+
+// ── DateField (date-only) ─────────────────────────────
+
+export const DateField = ({ value, onChange, disabled, min, max }) => (
+  <input
+    type='date'
+    value={value || ''}
+    min={min}
+    max={max}
+    disabled={disabled}
+    onChange={(e) => onChange?.(e.target.value)}
+    className={inputCls}
+  />
+);
+
+// ── ColorField ────────────────────────────────────────
+
+export const ColorField = ({ value, onChange, disabled }) => (
+  <div className='flex items-center gap-2'>
+    <input
+      type='color'
+      value={value || '#3b82f6'}
+      disabled={disabled}
+      onChange={(e) => onChange?.(e.target.value)}
+      className='w-9 h-9 rounded-md border border-ui-border bg-ui-bg cursor-pointer disabled:opacity-50'
+      style={{ padding: 2 }}
+    />
+    <input
+      type='text'
+      value={value || ''}
+      disabled={disabled}
+      onChange={(e) => onChange?.(e.target.value)}
+      placeholder='#3b82f6'
+      className={`${inputCls} flex-1 font-mono text-xs`}
+    />
+  </div>
+);
+
+// ── RangeSlider ───────────────────────────────────────
+
+export const RangeSlider = ({
+  value,
+  onChange,
+  min = 0,
+  max = 100,
+  step = 1,
+  disabled,
+  formatValue,
+}) => (
+  <div className='flex items-center gap-3'>
+    <input
+      type='range'
+      min={min}
+      max={max}
+      step={step}
+      value={value ?? min}
+      disabled={disabled}
+      onChange={(e) => onChange?.(Number(e.target.value))}
+      className='flex-1 accent-current cursor-pointer disabled:opacity-50'
+    />
+    <span className='inline-flex items-center min-w-[60px] justify-end text-xs tabular-nums text-ui-text-2'>
+      {formatValue ? formatValue(value ?? min) : value ?? min}
+    </span>
+  </div>
+);
+
+// ── RadioChipGroup ────────────────────────────────────
+// Segmented-button radio replacement (was Semi RadioGroup type='button').
+
+export const RadioChipGroup = ({ value, onChange, options = [], disabled }) => (
+  <div className='inline-flex items-center gap-0.5 p-0.5 bg-ui-bg-subtle rounded-md border border-ui-border'>
+    {options.map((o) => {
+      const v = typeof o === 'object' ? o.value : o;
+      const label = typeof o === 'object' ? o.label : o;
+      const active = v === value;
+      return (
+        <button
+          key={String(v)}
+          type='button'
+          disabled={disabled}
+          onClick={() => onChange?.(v)}
+          className={`px-3 py-1 text-xs rounded transition-colors whitespace-nowrap disabled:opacity-50 ${
+            active
+              ? 'bg-ui-bg-elevated text-ui-text font-semibold shadow-sm'
+              : 'text-ui-text-2 hover:text-ui-text'
+          }`}
+        >
+          {label}
+        </button>
+      );
+    })}
+  </div>
+);
+
+// ── SectionWithSave ───────────────────────────────────
+// Standard wrapper used by every leaf settings page:
+//   - SectionHeader (icon, title, hint)
+//   - Children (FieldRow rows)
+//   - SaveBar (right-aligned save button, disabled when not dirty)
+
+export const SectionWithSave = ({
+  title,
+  hint,
+  icon: Icon,
+  iconColor = 'blue',
+  children,
+  loading,
+  dirty = true,
+  onSave,
+  onSaveLabel,
+  extraActions,
+}) => {
+  const ICON_COLOR_MAP = {
+    blue: 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20',
+    green: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20',
+    orange: 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20',
+    purple: 'bg-violet-500/10 text-violet-600 dark:text-violet-400 border-violet-500/20',
+    rose: 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20',
+    cyan: 'bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 border-cyan-500/20',
+  };
+  const iconCls = ICON_COLOR_MAP[iconColor] || ICON_COLOR_MAP.blue;
+
+  return (
+    <div className='space-y-4'>
+      {(title || Icon) && (
+        <div className='flex items-center gap-2'>
+          {Icon && (
+            <div className={`w-8 h-8 rounded-md inline-flex items-center justify-center border ${iconCls}`}>
+              <Icon size={15} />
+            </div>
+          )}
+          <div className='flex-1 min-w-0'>
+            {title && <div className='text-sm font-semibold text-ui-text'>{title}</div>}
+            {hint && <div className='text-[11px] text-ui-text-3 mt-0.5'>{hint}</div>}
+          </div>
+        </div>
+      )}
+
+      <div className='space-y-3'>{children}</div>
+
+      {(onSave || extraActions) && (
+        <div className='flex items-center justify-end gap-2 pt-2 border-t border-ui-divider'>
+          {extraActions}
+          {onSave && (
+            <button
+              onClick={onSave}
+              disabled={loading || !dirty}
+              className='inline-flex items-center gap-1.5 px-4 py-1.5 text-xs font-semibold rounded-md bg-ui-accent text-ui-accent-fg hover:bg-ui-accent-hover hover:shadow-md active:scale-95 disabled:opacity-50 disabled:hover:shadow-none disabled:active:scale-100 transition-all whitespace-nowrap'
+            >
+              {loading ? <Loader2 size={11} className='animate-spin' /> : <Save size={11} />}
+              {onSaveLabel || (loading ? '保存中...' : '保存')}
+            </button>
+          )}
+        </div>
+      )}
+    </div>
+  );
+};

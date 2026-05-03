@@ -47,15 +47,14 @@ export function isRoot() {
 }
 
 export function getSystemName() {
-  let system_name = localStorage.getItem('system_name');
-  if (!system_name) return 'TokenC';
-  return system_name;
+  // Brand is hardcoded for the TokenC build — do not read from server-side
+  // Option/SystemName, which other operators may have set to "New API" etc.
+  return 'TokenC';
 }
 
 export function getLogo() {
-  let logo = localStorage.getItem('logo');
-  if (!logo) return '/logo.png';
-  return logo;
+  // Brand is hardcoded for the TokenC build.
+  return '/logo.png';
 }
 
 export function getUserIdFromLocalStorage() {
@@ -66,7 +65,9 @@ export function getUserIdFromLocalStorage() {
 }
 
 export function getFooterHTML() {
-  return localStorage.getItem('footer_html');
+  // Brand is hardcoded for the TokenC build — fall through to the default
+  // "基于 New API" footer rendered in components/layout/Footer.jsx.
+  return null;
 }
 
 export async function copy(text) {

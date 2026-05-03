@@ -1,25 +1,9 @@
 /*
-Copyright (C) 2025 QuantumNous
-
-This program is free software: you can redistribute it and/or modify
-it under the terms of the GNU Affero General Public License as
-published by the Free Software Foundation, either version 3 of the
-License, or (at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-GNU Affero General Public License for more details.
-
-You should have received a copy of the GNU Affero General Public License
-along with this program. If not, see <https://www.gnu.org/licenses/>.
-
-For commercial licensing, please contact support@quantumnous.com
-*/
-
-import React, { useEffect, useState, useRef } from 'react';
-import { Button, Col, Form, Row, Spin } from '@douyinfe/semi-ui';
+ * 用户额度设置 — token-system rewrite.
+ */
+import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { Coins } from 'lucide-react';
 import {
   compareObjects,
   API,
@@ -27,172 +11,116 @@ import {
   showSuccess,
   showWarning,
 } from '../../../helpers';
+import {
+  SectionWithSave,
+  FieldRow,
+  ToggleField,
+  NumberField,
+} from '../../../components/common/form/Primitives';
+
+const DEFAULTS = {
+  QuotaForNewUser: '',
+  PreConsumedQuota: '',
+  QuotaForInviter: '',
+  QuotaForInvitee: '',
+  'quota_setting.enable_free_model_pre_consume': true,
+};
 
 export default function SettingsCreditLimit(props) {
   const { t } = useTranslation();
+  const [inputs, setInputs] = useState(DEFAULTS);
+  const [original, setOriginal] = useState(DEFAULTS);
   const [loading, setLoading] = useState(false);
-  const [inputs, setInputs] = useState({
-    QuotaForNewUser: '',
-    PreConsumedQuota: '',
-    QuotaForInviter: '',
-    QuotaForInvitee: '',
-    'quota_setting.enable_free_model_pre_consume': true,
-  });
-  const refForm = useRef();
-  const [inputsRow, setInputsRow] = useState(inputs);
 
-  function onSubmit() {
-    const updateArray = compareObjects(inputs, inputsRow);
-    if (!updateArray.length) return showWarning(t('你似乎并没有修改什么'));
-    const requestQueue = updateArray.map((item) => {
-      let value = '';
-      if (typeof inputs[item.key] === 'boolean') {
-        value = String(inputs[item.key]);
-      } else {
-        value = inputs[item.key];
-      }
-      return API.put('/api/option/', {
-        key: item.key,
-        value,
-      });
-    });
+  useEffect(() => {
+    const next = { ...DEFAULTS };
+    for (const k of Object.keys(DEFAULTS)) {
+      if (k in (props.options || {})) next[k] = props.options[k];
+    }
+    setInputs(next);
+    setOriginal(structuredClone(next));
+  }, [props.options]);
+
+  const set = (k) => (v) => setInputs((p) => ({ ...p, [k]: v }));
+
+  const submit = () => {
+    const diff = compareObjects(inputs, original);
+    if (!diff.length) return showWarning(t('你似乎并没有修改什么'));
     setLoading(true);
-    Promise.all(requestQueue)
+    Promise.all(
+      diff.map((item) =>
+        API.put('/api/option/', {
+          key: item.key,
+          value:
+            typeof inputs[item.key] === 'boolean'
+              ? String(inputs[item.key])
+              : String(inputs[item.key] ?? ''),
+        }),
+      ),
+    )
       .then((res) => {
-        if (requestQueue.length === 1) {
-          if (res.includes(undefined)) return;
-        } else if (requestQueue.length > 1) {
-          if (res.includes(undefined))
-            return showError(t('部分保存失败，请重试'));
+        if (res.includes(undefined) && diff.length > 1) {
+          return showError(t('部分保存失败，请重试'));
         }
         showSuccess(t('保存成功'));
         props.refresh();
       })
-      .catch(() => {
-        showError(t('保存失败，请重试'));
-      })
-      .finally(() => {
-        setLoading(false);
-      });
-  }
+      .catch(() => showError(t('保存失败，请重试')))
+      .finally(() => setLoading(false));
+  };
 
-  useEffect(() => {
-    const currentInputs = {};
-    for (let key in props.options) {
-      if (Object.keys(inputs).includes(key)) {
-        currentInputs[key] = props.options[key];
-      }
-    }
-    setInputs(currentInputs);
-    setInputsRow(structuredClone(currentInputs));
-    refForm.current.setValues(currentInputs);
-  }, [props.options]);
   return (
-    <>
-      <Spin spinning={loading}>
-        <Form
-          values={inputs}
-          getFormApi={(formAPI) => (refForm.current = formAPI)}
-          style={{ marginBottom: 15 }}
+    <SectionWithSave
+      title={t('额度设置')}
+      hint={t('用户初始 / 预扣费 / 邀请奖励 等')}
+      icon={Coins}
+      iconColor='orange'
+      loading={loading}
+      onSave={submit}
+    >
+      <div className='grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3'>
+        <FieldRow label={t('新用户初始额度')}>
+          <NumberField
+            value={Number(inputs.QuotaForNewUser) || 0}
+            onChange={(v) => set('QuotaForNewUser')(String(v))}
+            min={0}
+            step={1}
+          />
+        </FieldRow>
+        <FieldRow
+          label={t('请求预扣费额度')}
+          hint={t('请求结束后多退少补')}
         >
-          <Form.Section text={t('额度设置')}>
-            <Row gutter={16}>
-              <Col xs={24} sm={12} md={8} lg={8} xl={8}>
-                <Form.InputNumber
-                  label={t('新用户初始额度')}
-                  field={'QuotaForNewUser'}
-                  step={1}
-                  min={0}
-                  suffix={'Token'}
-                  placeholder={''}
-                  onChange={(value) =>
-                    setInputs({
-                      ...inputs,
-                      QuotaForNewUser: String(value),
-                    })
-                  }
-                />
-              </Col>
-              <Col xs={24} sm={12} md={8} lg={8} xl={8}>
-                <Form.InputNumber
-                  label={t('请求预扣费额度')}
-                  field={'PreConsumedQuota'}
-                  step={1}
-                  min={0}
-                  suffix={'Token'}
-                  extraText={t('请求结束后多退少补')}
-                  placeholder={''}
-                  onChange={(value) =>
-                    setInputs({
-                      ...inputs,
-                      PreConsumedQuota: String(value),
-                    })
-                  }
-                />
-              </Col>
-              <Col xs={24} sm={12} md={8} lg={8} xl={8}>
-                <Form.InputNumber
-                  label={t('邀请新用户奖励额度')}
-                  field={'QuotaForInviter'}
-                  step={1}
-                  min={0}
-                  suffix={'Token'}
-                  extraText={''}
-                  placeholder={t('例如：2000')}
-                  onChange={(value) =>
-                    setInputs({
-                      ...inputs,
-                      QuotaForInviter: String(value),
-                    })
-                  }
-                />
-              </Col>
-            </Row>
-            <Row>
-              <Col xs={24} sm={12} md={8} lg={8} xl={6}>
-                <Form.InputNumber
-                  label={t('新用户使用邀请码奖励额度')}
-                  field={'QuotaForInvitee'}
-                  step={1}
-                  min={0}
-                  suffix={'Token'}
-                  extraText={''}
-                  placeholder={t('例如：1000')}
-                  onChange={(value) =>
-                    setInputs({
-                      ...inputs,
-                      QuotaForInvitee: String(value),
-                    })
-                  }
-                />
-              </Col>
-            </Row>
-            <Row>
-              <Col>
-                <Form.Switch
-                  label={t('对免费模型启用预消耗')}
-                  field={'quota_setting.enable_free_model_pre_consume'}
-                  extraText={t(
-                    '开启后，对免费模型（倍率为0，或者价格为0）的模型也会预消耗额度',
-                  )}
-                  onChange={(value) =>
-                    setInputs({
-                      ...inputs,
-                      'quota_setting.enable_free_model_pre_consume': value,
-                    })
-                  }
-                />
-              </Col>
-            </Row>
-
-            <Row>
-              <Button size='default' onClick={onSubmit}>
-                {t('保存额度设置')}
-              </Button>
-            </Row>
-          </Form.Section>
-        </Form>
-      </Spin>
-    </>
+          <NumberField
+            value={Number(inputs.PreConsumedQuota) || 0}
+            onChange={(v) => set('PreConsumedQuota')(String(v))}
+            min={0}
+            step={1}
+          />
+        </FieldRow>
+        <FieldRow label={t('邀请新用户奖励额度')}>
+          <NumberField
+            value={Number(inputs.QuotaForInviter) || 0}
+            onChange={(v) => set('QuotaForInviter')(String(v))}
+            min={0}
+            step={1}
+          />
+        </FieldRow>
+        <FieldRow label={t('新用户使用邀请码奖励额度')}>
+          <NumberField
+            value={Number(inputs.QuotaForInvitee) || 0}
+            onChange={(v) => set('QuotaForInvitee')(String(v))}
+            min={0}
+            step={1}
+          />
+        </FieldRow>
+      </div>
+      <ToggleField
+        label={t('对免费模型启用预消耗')}
+        hint={t('开启后，对免费模型（倍率为0，或者价格为0）的模型也会预消耗额度')}
+        checked={!!inputs['quota_setting.enable_free_model_pre_consume']}
+        onChange={set('quota_setting.enable_free_model_pre_consume')}
+      />
+    </SectionWithSave>
   );
 }

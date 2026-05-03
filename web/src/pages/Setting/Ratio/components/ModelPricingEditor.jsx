@@ -1,45 +1,9 @@
 /*
-Copyright (C) 2025 QuantumNous
-
-This program is free software: you can redistribute it and/or modify
-it under the terms of the GNU Affero General Public License as
-published by the Free Software Foundation, either version 3 of the
-License, or (at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-GNU Affero General Public License for more details.
-
-You should have received a copy of the GNU Affero General Public License
-along with this program. If not, see <https://www.gnu.org/licenses/>.
-
-For commercial licensing, please contact support@quantumnous.com
-*/
-
+ * ModelPricingEditor — visual model pricing editor.
+ * Token-system rewrite using native inputs.
+ */
 import React, { useMemo, useState } from 'react';
-import {
-  Banner,
-  Button,
-  Card,
-  Checkbox,
-  Empty,
-  Input,
-  Modal,
-  Radio,
-  RadioGroup,
-  Space,
-  Switch,
-  Table,
-  Tag,
-  Typography,
-} from '@douyinfe/semi-ui';
-import {
-  IconDelete,
-  IconPlus,
-  IconSave,
-  IconSearch,
-} from '@douyinfe/semi-icons';
+import { Plus, Save, Search, Trash2, Loader2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import {
   PAGE_SIZE,
@@ -48,41 +12,72 @@ import {
   hasValue,
   useModelPricingEditorState,
 } from '../hooks/useModelPricingEditorState';
-import { useIsMobile } from '../../../../hooks/common/useIsMobile';
+import { Notice, RadioChipGroup } from '../../../../components/common/form/Primitives';
+import Pagination from '../../../../components/common/table/Pagination';
+import ModalDialog from '../../../../components/common/ModalDialog';
 
-const { Text } = Typography;
 const EMPTY_CANDIDATE_MODEL_NAMES = [];
 
-const PriceInput = ({
-  label,
-  value,
-  placeholder,
-  onChange,
-  suffix = PRICE_SUFFIX,
-  disabled = false,
-  extraText = '',
-  headerAction = null,
-  hidden = false,
-}) => (
-  <div style={{ marginBottom: 16 }}>
-    <div className='mb-1 font-medium text-gray-700 flex items-center justify-between gap-3'>
-      <span>{label}</span>
-      {headerAction}
+const inputCls = 'w-full rounded-md border border-ui-border bg-ui-bg-subtle text-ui-text text-xs px-3 py-2 focus:outline-none focus:ring-1 focus:ring-ui-accent/40 disabled:opacity-50';
+
+function PriceInput({
+  label, value, placeholder, onChange, suffix = PRICE_SUFFIX,
+  disabled = false, extraText = '', headerAction = null, hidden = false,
+}) {
+  if (hidden) return null;
+  return (
+    <div className='mb-3'>
+      <div className='flex items-center justify-between gap-3 mb-1'>
+        <label className='text-xs font-medium text-ui-text-2'>{label}</label>
+        {headerAction}
+      </div>
+      <div className='flex items-center gap-1'>
+        <input
+          type='text'
+          value={value || ''}
+          placeholder={placeholder}
+          onChange={(e) => onChange(e.target.value)}
+          disabled={disabled}
+          className={inputCls}
+        />
+        {suffix && (
+          <span className='text-[10px] text-ui-text-3 whitespace-nowrap'>{suffix}</span>
+        )}
+      </div>
+      {extraText && <div className='mt-1 text-[11px] text-ui-text-3'>{extraText}</div>}
     </div>
-    {!hidden ? (
-      <Input
-        value={value}
-        placeholder={placeholder}
-        onChange={onChange}
-        suffix={suffix}
-        disabled={disabled}
-      />
-    ) : null}
-    {extraText ? (
-      <div className='mt-1 text-xs text-gray-500'>{extraText}</div>
-    ) : null}
-  </div>
-);
+  );
+}
+
+function ToggleSmall({ checked, onChange, disabled = false }) {
+  return (
+    <button
+      type='button'
+      role='switch'
+      disabled={disabled}
+      onClick={() => onChange(!checked)}
+      className={`relative inline-flex h-4 w-7 items-center rounded-full transition-colors disabled:opacity-50 ${checked ? 'bg-ui-accent' : 'bg-ui-bg-subtle border border-ui-border'}`}
+    >
+      <span className={`inline-block h-3 w-3 rounded-full bg-white shadow transition-transform ${checked ? 'translate-x-3.5' : 'translate-x-0.5'}`} />
+    </button>
+  );
+}
+
+const TAG_COLORS = {
+  green: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20',
+  red: 'bg-red-500/10 text-red-600 dark:text-red-400 border-red-500/20',
+  blue: 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20',
+  teal: 'bg-teal-500/10 text-teal-600 dark:text-teal-400 border-teal-500/20',
+  violet: 'bg-violet-500/10 text-violet-600 dark:text-violet-400 border-violet-500/20',
+};
+
+function MiniTag({ color = 'blue', children }) {
+  return (
+    <span className={`inline-block text-[10px] px-1.5 py-0.5 rounded-full border font-medium ${TAG_COLORS[color] || TAG_COLORS.blue}`}>
+      {children}
+    </span>
+  );
+}
 
 export default function ModelPricingEditor({
   options,
@@ -97,123 +92,22 @@ export default function ModelPricingEditor({
   emptyDescription = '',
 }) {
   const { t } = useTranslation();
-  const isMobile = useIsMobile();
   const [addVisible, setAddVisible] = useState(false);
   const [batchVisible, setBatchVisible] = useState(false);
   const [newModelName, setNewModelName] = useState('');
 
   const {
-    selectedModel,
-    selectedModelName,
-    selectedModelNames,
-    setSelectedModelName,
-    setSelectedModelNames,
-    searchText,
-    setSearchText,
-    currentPage,
-    setCurrentPage,
-    loading,
-    conflictOnly,
-    setConflictOnly,
-    filteredModels,
-    pagedData,
-    selectedWarnings,
-    previewRows,
-    isOptionalFieldEnabled,
-    handleOptionalFieldToggle,
-    handleNumericFieldChange,
-    handleBillingModeChange,
-    handleSubmit,
-    addModel,
-    deleteModel,
-    applySelectedModelPricing,
+    selectedModel, selectedModelName, selectedModelNames,
+    setSelectedModelName, setSelectedModelNames,
+    searchText, setSearchText, currentPage, setCurrentPage,
+    loading, conflictOnly, setConflictOnly,
+    filteredModels, pagedData, selectedWarnings, previewRows,
+    isOptionalFieldEnabled, handleOptionalFieldToggle,
+    handleNumericFieldChange, handleBillingModeChange,
+    handleSubmit, addModel, deleteModel, applySelectedModelPricing,
   } = useModelPricingEditorState({
-    options,
-    refresh,
-    t,
-    candidateModelNames,
-    filterMode,
+    options, refresh, t, candidateModelNames, filterMode,
   });
-
-  const columns = useMemo(
-    () => [
-      {
-        title: t('模型名称'),
-        dataIndex: 'name',
-        key: 'name',
-        render: (text, record) => (
-          <Space>
-            <Button
-              theme='borderless'
-              type='tertiary'
-              onClick={() => setSelectedModelName(record.name)}
-              style={{
-                padding: 0,
-                color:
-                  record.name === selectedModelName
-                    ? 'var(--semi-color-primary)'
-                    : undefined,
-              }}
-            >
-              {text}
-            </Button>
-            {selectedModelNames.includes(record.name) ? (
-              <Tag color='green' shape='circle'>
-                {t('已勾选')}
-              </Tag>
-            ) : null}
-            {record.hasConflict ? (
-              <Tag color='red' shape='circle'>
-                {t('矛盾')}
-              </Tag>
-            ) : null}
-          </Space>
-        ),
-      },
-      {
-        title: t('计费方式'),
-        dataIndex: 'billingMode',
-        key: 'billingMode',
-        render: (_, record) => (
-          <Tag color={record.billingMode === 'per-request' ? 'teal' : 'violet'}>
-            {record.billingMode === 'per-request'
-              ? t('按次计费')
-              : t('按量计费')}
-          </Tag>
-        ),
-      },
-      {
-        title: t('价格摘要'),
-        dataIndex: 'summary',
-        key: 'summary',
-        render: (_, record) => buildSummaryText(record, t),
-      },
-      {
-        title: t('操作'),
-        key: 'action',
-        render: (_, record) => (
-          <Space>
-            {allowDeleteModel ? (
-              <Button
-                size='small'
-                type='danger'
-                icon={<IconDelete />}
-                onClick={() => deleteModel(record.name)}
-              />
-            ) : null}
-          </Space>
-        ),
-      },
-    ],
-    [
-      allowDeleteModel,
-      deleteModel,
-      selectedModelName,
-      selectedModelNames,
-      setSelectedModelName,
-      t,
-    ],
-  );
 
   const handleAddModel = () => {
     if (addModel(newModelName)) {
@@ -222,189 +116,187 @@ export default function ModelPricingEditor({
     }
   };
 
-  const rowSelection = {
-    selectedRowKeys: selectedModelNames,
-    onChange: (selectedRowKeys) => setSelectedModelNames(selectedRowKeys),
+  const allSelected = pagedData.length > 0 && pagedData.every((m) => selectedModelNames.includes(m.name));
+  const toggleAll = () => {
+    if (allSelected) setSelectedModelNames([]);
+    else setSelectedModelNames(pagedData.map((m) => m.name));
+  };
+  const toggleRow = (name) => {
+    setSelectedModelNames(
+      selectedModelNames.includes(name)
+        ? selectedModelNames.filter((n) => n !== name)
+        : [...selectedModelNames, name],
+    );
   };
 
   return (
-    <>
-      <Space vertical align='start' style={{ width: '100%' }}>
-        <Space wrap className='mt-2'>
-          {allowAddModel ? (
-            <Button
-              icon={<IconPlus />}
-              onClick={() => setAddVisible(true)}
-              style={isMobile ? { width: '100%' } : undefined}
-            >
-              {t('添加模型')}
-            </Button>
-          ) : null}
-          <Button
-            type='primary'
-            icon={<IconSave />}
-            loading={loading}
-            onClick={handleSubmit}
-            style={isMobile ? { width: '100%' } : undefined}
-          >
-            {t('应用更改')}
-          </Button>
-          <Button
-            disabled={!selectedModel || selectedModelNames.length === 0}
-            onClick={() => setBatchVisible(true)}
-            style={isMobile ? { width: '100%' } : undefined}
-          >
-            {t('批量应用当前模型价格')}
-            {selectedModelNames.length > 0 ? ` (${selectedModelNames.length})` : ''}
-          </Button>
-          <Input
-            prefix={<IconSearch />}
-            placeholder={t('搜索模型名称')}
+    <div className='space-y-4'>
+      {/* Toolbar */}
+      <div className='flex flex-wrap items-center gap-2'>
+        {allowAddModel && (
+          <button onClick={() => setAddVisible(true)}
+            className='inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium rounded-md bg-ui-accent text-ui-accent-fg hover:opacity-90'>
+            <Plus size={12} /> {t('添加模型')}
+          </button>
+        )}
+        <button onClick={handleSubmit} disabled={loading}
+          className='inline-flex items-center gap-1 px-3 py-1.5 text-xs font-semibold rounded-md bg-ui-accent text-ui-accent-fg hover:opacity-90 disabled:opacity-50'>
+          {loading ? <Loader2 size={11} className='animate-spin' /> : <Save size={11} />}
+          {t('应用更改')}
+        </button>
+        <button disabled={!selectedModel || selectedModelNames.length === 0}
+          onClick={() => setBatchVisible(true)}
+          className='inline-flex items-center gap-1 px-3 py-1.5 text-xs rounded-md border border-ui-border text-ui-text-2 hover:bg-ui-bg-hover disabled:opacity-40'>
+          {t('批量应用当前模型价格')}
+          {selectedModelNames.length > 0 ? ` (${selectedModelNames.length})` : ''}
+        </button>
+        <div className='relative flex-1 min-w-[180px] max-w-[220px]'>
+          <Search size={13} className='absolute left-2.5 top-1/2 -translate-y-1/2 text-ui-text-3' />
+          <input
+            type='text'
             value={searchText}
-            onChange={(value) => setSearchText(value)}
-            style={{ width: isMobile ? '100%' : 220 }}
-            showClear
+            onChange={(e) => setSearchText(e.target.value)}
+            placeholder={t('搜索模型名称')}
+            className='w-full rounded-md border border-ui-border bg-ui-bg-subtle text-ui-text text-xs pl-8 pr-3 py-1.5 focus:outline-none focus:ring-1 focus:ring-ui-accent/40'
           />
-          {showConflictFilter ? (
-            <Checkbox
-              checked={conflictOnly}
-              onChange={(event) => setConflictOnly(event.target.checked)}
-            >
-              {t('仅显示矛盾倍率')}
-            </Checkbox>
-          ) : null}
-        </Space>
+        </div>
+        {showConflictFilter && (
+          <label className='flex items-center gap-1.5 text-xs text-ui-text-2 cursor-pointer'>
+            <input type='checkbox' checked={conflictOnly} onChange={(e) => setConflictOnly(e.target.checked)}
+              className='rounded border-ui-border text-ui-accent focus:ring-ui-accent/40' />
+            {t('仅显示矛盾倍率')}
+          </label>
+        )}
+      </div>
 
-        {listDescription ? (
-          <div className='text-sm text-gray-500'>{listDescription}</div>
-        ) : null}
-        {selectedModelNames.length > 0 ? (
-          <div
-            style={{
-              width: '100%',
-              padding: '10px 12px',
-              borderRadius: 8,
-              background: 'var(--semi-color-primary-light-default)',
-              border: '1px solid var(--semi-color-primary)',
-              color: 'var(--semi-color-primary)',
-              fontWeight: 600,
-            }}
-          >
-            {t('已勾选 {{count}} 个模型', { count: selectedModelNames.length })}
+      {listDescription && <div className='text-xs text-ui-text-3'>{listDescription}</div>}
+
+      {selectedModelNames.length > 0 && (
+        <div className='px-3 py-2 rounded-md border border-blue-500/30 bg-blue-500/5 text-xs font-semibold text-blue-600 dark:text-blue-400'>
+          {t('已勾选 {{count}} 个模型', { count: selectedModelNames.length })}
+        </div>
+      )}
+
+      {/* Main grid: table + editor */}
+      <div className='grid gap-4 lg:grid-cols-[minmax(360px,1.1fr)_minmax(420px,1fr)]'>
+        {/* Table */}
+        <div className='rounded-md border border-ui-border overflow-hidden order-2 lg:order-1'>
+          <div className='overflow-x-auto'>
+            <table className='w-full text-xs'>
+              <thead>
+                <tr className='bg-ui-bg-subtle'>
+                  <th className='w-9 px-3 py-2 text-left'>
+                    <input type='checkbox' checked={allSelected} onChange={toggleAll}
+                      className='rounded border-ui-border text-ui-accent focus:ring-ui-accent/40' />
+                  </th>
+                  <th className='px-3 py-2 text-left font-semibold text-ui-text-2'>{t('模型名称')}</th>
+                  <th className='px-3 py-2 text-left font-semibold text-ui-text-2 w-[100px]'>{t('计费方式')}</th>
+                  <th className='px-3 py-2 text-left font-semibold text-ui-text-2'>{t('价格摘要')}</th>
+                  {allowDeleteModel && <th className='w-10'></th>}
+                </tr>
+              </thead>
+              <tbody className='divide-y divide-ui-divider'>
+                {pagedData.length === 0 ? (
+                  <tr><td colSpan={5} className='px-3 py-8 text-center text-ui-text-3'>{emptyTitle || t('暂无模型')}</td></tr>
+                ) : (
+                  pagedData.map((record) => {
+                    const isSelected = selectedModelNames.includes(record.name);
+                    const isActive = record.name === selectedModelName;
+                    return (
+                      <tr key={record.name}
+                        onClick={() => setSelectedModelName(record.name)}
+                        className={`cursor-pointer transition-colors ${isActive ? 'bg-blue-500/5' : 'hover:bg-ui-bg-hover/50'} ${isSelected ? 'bg-emerald-500/5' : ''}`}
+                        style={{
+                          borderLeft: isSelected ? '3px solid rgb(16,185,129)' : isActive ? '3px solid rgb(59,130,246)' : '3px solid transparent',
+                        }}
+                      >
+                        <td className='px-3 py-2'>
+                          <input type='checkbox' checked={isSelected} onChange={() => toggleRow(record.name)}
+                            onClick={(e) => e.stopPropagation()}
+                            className='rounded border-ui-border text-ui-accent focus:ring-ui-accent/40' />
+                        </td>
+                        <td className='px-3 py-2'>
+                          <div className='flex items-center gap-1.5'>
+                            <button
+                              onClick={(e) => { e.stopPropagation(); setSelectedModelName(record.name); }}
+                              className={`text-xs hover:underline bg-transparent border-none p-0 cursor-pointer ${isActive ? 'text-blue-600 dark:text-blue-400 font-semibold' : 'text-ui-text'}`}
+                            >
+                              {record.name}
+                            </button>
+                            {isSelected && <MiniTag color='green'>{t('已勾选')}</MiniTag>}
+                            {record.hasConflict && <MiniTag color='red'>{t('矛盾')}</MiniTag>}
+                          </div>
+                        </td>
+                        <td className='px-3 py-2'>
+                          <MiniTag color={record.billingMode === 'per-request' ? 'teal' : 'violet'}>
+                            {record.billingMode === 'per-request' ? t('按次计费') : t('按量计费')}
+                          </MiniTag>
+                        </td>
+                        <td className='px-3 py-2 text-ui-text-2'>{buildSummaryText(record, t)}</td>
+                        {allowDeleteModel && (
+                          <td className='px-3 py-2'>
+                            <button onClick={(e) => { e.stopPropagation(); deleteModel(record.name); }}
+                              className='p-1 rounded text-ui-text-3 hover:text-ui-danger hover:bg-ui-danger-bg transition-colors'>
+                              <Trash2 size={13} />
+                            </button>
+                          </td>
+                        )}
+                      </tr>
+                    );
+                  })
+                )}
+              </tbody>
+            </table>
           </div>
-        ) : null}
+          {filteredModels.length > PAGE_SIZE && (
+            <Pagination page={currentPage} pageSize={PAGE_SIZE} total={filteredModels.length} onChange={setCurrentPage} />
+          )}
+        </div>
 
-        <div
-          style={{
-            width: '100%',
-            display: 'grid',
-            gap: 16,
-            gridTemplateColumns: isMobile
-              ? 'minmax(0, 1fr)'
-              : 'minmax(360px, 1.1fr) minmax(420px, 1fr)',
-          }}
-        >
-          <Card
-            bodyStyle={{ padding: 0 }}
-            style={isMobile ? { order: 2 } : undefined}
-          >
-            <div style={{ overflowX: 'auto' }}>
-              <Table
-                columns={columns}
-                dataSource={pagedData}
-                rowKey='name'
-                rowSelection={rowSelection}
-                pagination={{
-                  currentPage,
-                  pageSize: PAGE_SIZE,
-                  total: filteredModels.length,
-                  onPageChange: (page) => setCurrentPage(page),
-                  showTotal: true,
-                  showSizeChanger: false,
-                }}
-                empty={
-                  <div style={{ textAlign: 'center', padding: '20px' }}>
-                    {emptyTitle || t('暂无模型')}
-                  </div>
-                }
-                onRow={(record) => ({
-                  style: {
-                    background: selectedModelNames.includes(record.name)
-                      ? 'var(--semi-color-success-light-default)'
-                      : record.name === selectedModelName
-                        ? 'var(--semi-color-primary-light-default)'
-                        : undefined,
-                    boxShadow: selectedModelNames.includes(record.name)
-                      ? 'inset 4px 0 0 var(--semi-color-success)'
-                      : record.name === selectedModelName
-                        ? 'inset 4px 0 0 var(--semi-color-primary)'
-                        : undefined,
-                    transition: 'background 0.2s ease, box-shadow 0.2s ease',
-                  },
-                  onClick: () => setSelectedModelName(record.name),
-                })}
-                scroll={isMobile ? { x: 720 } : undefined}
-              />
+        {/* Editor panel */}
+        <div className='rounded-md border border-ui-border order-1 lg:order-2'>
+          <div className='px-4 py-3 border-b border-ui-divider flex items-center gap-2'>
+            <div className='text-sm font-semibold text-ui-text'>
+              {selectedModel ? selectedModel.name : t('模型计费编辑器')}
             </div>
-          </Card>
-
-          <Card
-            style={isMobile ? { order: 1 } : undefined}
-            title={selectedModel ? selectedModel.name : t('模型计费编辑器')}
-            headerExtraContent={
-              selectedModel ? (
-                <Tag color='blue'>
-                  {selectedModel.billingMode === 'per-request'
-                    ? t('按次计费')
-                    : t('按量计费')}
-                </Tag>
-              ) : null
-            }
-          >
+            {selectedModel && (
+              <MiniTag color={selectedModel.billingMode === 'per-request' ? 'teal' : 'violet'}>
+                {selectedModel.billingMode === 'per-request' ? t('按次计费') : t('按量计费')}
+              </MiniTag>
+            )}
+          </div>
+          <div className='p-4'>
             {!selectedModel ? (
-              <Empty
-                title={emptyTitle || t('暂无模型')}
-                description={
-                  emptyDescription || t('请先新增模型或从左侧列表选择一个模型')
-                }
-              />
+              <div className='text-center py-8 text-ui-text-3 text-xs'>
+                {emptyTitle || t('暂无模型')}
+                <div className='mt-1'>{emptyDescription || t('请先新增模型或从左侧列表选择一个模型')}</div>
+              </div>
             ) : (
-              <div>
-                <div className='mb-4'>
-                  <div className='mb-2 font-medium text-gray-700'>
-                    {t('计费方式')}
-                  </div>
-                  <RadioGroup
-                    type='button'
+              <div className='space-y-4'>
+                {/* Billing mode */}
+                <div>
+                  <label className='text-xs font-medium text-ui-text-2 block mb-2'>{t('计费方式')}</label>
+                  <RadioChipGroup
                     value={selectedModel.billingMode}
-                    onChange={(event) => handleBillingModeChange(event.target.value)}
-                  >
-                    <Radio value='per-token'>{t('按量计费')}</Radio>
-                    <Radio value='per-request'>{t('按次计费')}</Radio>
-                  </RadioGroup>
-                  <div className='mt-2 text-xs text-gray-500'>
-                    {t(
-                      '这个界面默认按价格填写，保存时会自动换算回后端需要的倍率 JSON。',
-                    )}
+                    onChange={handleBillingModeChange}
+                    options={[
+                      { value: 'per-token', label: t('按量计费') },
+                      { value: 'per-request', label: t('按次计费') },
+                    ]}
+                  />
+                  <div className='mt-1.5 text-[11px] text-ui-text-3'>
+                    {t('这个界面默认按价格填写，保存时会自动换算回后端需要的倍率 JSON。')}
                   </div>
                 </div>
 
-                {selectedWarnings.length > 0 ? (
-                  <Card
-                    bodyStyle={{ padding: 12 }}
-                    style={{
-                      marginBottom: 16,
-                      background: 'var(--semi-color-warning-light-default)',
-                    }}
-                  >
-                    <div className='font-medium mb-2'>{t('当前提示')}</div>
-                    {selectedWarnings.map((warning) => (
-                      <div key={warning} className='text-sm text-gray-700 mb-1'>
-                        {warning}
-                      </div>
-                    ))}
-                  </Card>
-                ) : null}
+                {/* Warnings */}
+                {selectedWarnings.length > 0 && (
+                  <Notice kind='warning'>
+                    <div className='space-y-1'>
+                      {selectedWarnings.map((w) => <div key={w}>{w}</div>)}
+                    </div>
+                  </Notice>
+                )}
 
                 {selectedModel.billingMode === 'per-request' ? (
                   <PriceInput
@@ -412,328 +304,146 @@ export default function ModelPricingEditor({
                     value={selectedModel.fixedPrice}
                     placeholder={t('输入每次调用价格')}
                     suffix={t('$/次')}
-                    onChange={(value) => handleNumericFieldChange('fixedPrice', value)}
+                    onChange={(v) => handleNumericFieldChange('fixedPrice', v)}
                     extraText={t('适合 MJ / 任务类等按次收费模型。')}
                   />
                 ) : (
                   <>
-                    <Card
-                      bodyStyle={{ padding: 16 }}
-                      style={{
-                        marginBottom: 16,
-                        background: 'var(--semi-color-fill-0)',
-                      }}
-                    >
-                      <div className='font-medium mb-3'>{t('基础价格')}</div>
-                      <PriceInput
-                        label={t('输入价格')}
-                        value={selectedModel.inputPrice}
+                    {/* Base pricing */}
+                    <div className='rounded-md border border-ui-border bg-ui-bg-subtle p-3 space-y-1'>
+                      <div className='text-xs font-semibold text-ui-text mb-2'>{t('基础价格')}</div>
+                      <PriceInput label={t('输入价格')} value={selectedModel.inputPrice}
                         placeholder={t('输入 $/1M tokens')}
-                        onChange={(value) => handleNumericFieldChange('inputPrice', value)}
-                      />
-                      {selectedModel.completionRatioLocked ? (
-                        <Banner
-                          type='warning'
-                          bordered
-                          fullMode={false}
-                          closeIcon={null}
-                          style={{ marginBottom: 12 }}
-                          title={t('补全价格已锁定')}
-                          description={t(
-                            '该模型补全倍率由后端固定为 {{ratio}}。补全价格不能在这里修改。',
-                            {
-                              ratio: selectedModel.lockedCompletionRatio || '-',
-                            },
-                          )}
-                        />
-                      ) : null}
-                      <PriceInput
-                        label={t('补全价格')}
-                        value={selectedModel.completionPrice}
+                        onChange={(v) => handleNumericFieldChange('inputPrice', v)} />
+                      {selectedModel.completionRatioLocked && (
+                        <Notice kind='warning'>
+                          {t('该模型补全倍率由后端固定为 {{ratio}}。补全价格不能在这里修改。', { ratio: selectedModel.lockedCompletionRatio || '-' })}
+                        </Notice>
+                      )}
+                      <PriceInput label={t('补全价格')} value={selectedModel.completionPrice}
                         placeholder={t('输入 $/1M tokens')}
-                        onChange={(value) =>
-                          handleNumericFieldChange('completionPrice', value)
-                        }
-                        headerAction={
-                          <Switch
-                            size='small'
-                            checked={isOptionalFieldEnabled(
-                              selectedModel,
-                              'completionPrice',
-                            )}
-                            disabled={selectedModel.completionRatioLocked}
-                            onChange={(checked) =>
-                              handleOptionalFieldToggle('completionPrice', checked)
-                            }
-                          />
-                        }
-                        hidden={
-                          !isOptionalFieldEnabled(selectedModel, 'completionPrice')
-                        }
-                        disabled={
-                          !hasValue(selectedModel.inputPrice) ||
-                          selectedModel.completionRatioLocked
-                        }
-                        extraText={
-                          selectedModel.completionRatioLocked
-                            ? t(
-                                '后端固定倍率：{{ratio}}。该字段仅展示换算后的价格。',
-                                {
-                                  ratio: selectedModel.lockedCompletionRatio || '-',
-                                },
-                              )
-                            : !isOptionalFieldEnabled(
-                                  selectedModel,
-                                  'completionPrice',
-                                )
-                              ? t('当前未启用，需要时再打开即可。')
-                              : ''
-                        }
-                      />
-                      <PriceInput
-                        label={t('缓存读取价格')}
-                        value={selectedModel.cachePrice}
+                        onChange={(v) => handleNumericFieldChange('completionPrice', v)}
+                        headerAction={<ToggleSmall checked={isOptionalFieldEnabled(selectedModel, 'completionPrice')} disabled={selectedModel.completionRatioLocked} onChange={(c) => handleOptionalFieldToggle('completionPrice', c)} />}
+                        hidden={!isOptionalFieldEnabled(selectedModel, 'completionPrice')}
+                        disabled={!hasValue(selectedModel.inputPrice) || selectedModel.completionRatioLocked}
+                        extraText={selectedModel.completionRatioLocked ? t('后端固定倍率：{{ratio}}。该字段仅展示换算后的价格。', { ratio: selectedModel.lockedCompletionRatio || '-' }) : !isOptionalFieldEnabled(selectedModel, 'completionPrice') ? t('当前未启用，需要时再打开即可。') : ''} />
+                      <PriceInput label={t('缓存读取价格')} value={selectedModel.cachePrice}
                         placeholder={t('输入 $/1M tokens')}
-                        onChange={(value) => handleNumericFieldChange('cachePrice', value)}
-                        headerAction={
-                          <Switch
-                            size='small'
-                            checked={isOptionalFieldEnabled(selectedModel, 'cachePrice')}
-                            onChange={(checked) =>
-                              handleOptionalFieldToggle('cachePrice', checked)
-                            }
-                          />
-                        }
+                        onChange={(v) => handleNumericFieldChange('cachePrice', v)}
+                        headerAction={<ToggleSmall checked={isOptionalFieldEnabled(selectedModel, 'cachePrice')} onChange={(c) => handleOptionalFieldToggle('cachePrice', c)} />}
                         hidden={!isOptionalFieldEnabled(selectedModel, 'cachePrice')}
                         disabled={!hasValue(selectedModel.inputPrice)}
-                        extraText={
-                          !isOptionalFieldEnabled(selectedModel, 'cachePrice')
-                            ? t('当前未启用，需要时再打开即可。')
-                            : ''
-                        }
-                      />
-                      <PriceInput
-                        label={t('缓存创建价格')}
-                        value={selectedModel.createCachePrice}
+                        extraText={!isOptionalFieldEnabled(selectedModel, 'cachePrice') ? t('当前未启用，需要时再打开即可。') : ''} />
+                      <PriceInput label={t('缓存创建价格')} value={selectedModel.createCachePrice}
                         placeholder={t('输入 $/1M tokens')}
-                        onChange={(value) =>
-                          handleNumericFieldChange('createCachePrice', value)
-                        }
-                        headerAction={
-                          <Switch
-                            size='small'
-                            checked={isOptionalFieldEnabled(
-                              selectedModel,
-                              'createCachePrice',
-                            )}
-                            onChange={(checked) =>
-                              handleOptionalFieldToggle('createCachePrice', checked)
-                            }
-                          />
-                        }
-                        hidden={
-                          !isOptionalFieldEnabled(selectedModel, 'createCachePrice')
-                        }
+                        onChange={(v) => handleNumericFieldChange('createCachePrice', v)}
+                        headerAction={<ToggleSmall checked={isOptionalFieldEnabled(selectedModel, 'createCachePrice')} onChange={(c) => handleOptionalFieldToggle('createCachePrice', c)} />}
+                        hidden={!isOptionalFieldEnabled(selectedModel, 'createCachePrice')}
                         disabled={!hasValue(selectedModel.inputPrice)}
-                        extraText={
-                          !isOptionalFieldEnabled(
-                            selectedModel,
-                            'createCachePrice',
-                          )
-                            ? t('当前未启用，需要时再打开即可。')
-                            : ''
-                        }
-                      />
-                    </Card>
+                        extraText={!isOptionalFieldEnabled(selectedModel, 'createCachePrice') ? t('当前未启用，需要时再打开即可。') : ''} />
+                    </div>
 
-                    <Card
-                      bodyStyle={{ padding: 16 }}
-                      style={{
-                        marginBottom: 16,
-                        background: 'var(--semi-color-fill-0)',
-                      }}
-                    >
-                      <div className='mb-3'>
-                        <div className='font-medium'>{t('扩展价格')}</div>
-                        <div className='text-xs text-gray-500 mt-1'>
-                          {t('这些价格都是可选项，不填也可以。')}
-                        </div>
-                      </div>
-                      <PriceInput
-                        label={t('图片输入价格')}
-                        value={selectedModel.imagePrice}
+                    {/* Extended pricing */}
+                    <div className='rounded-md border border-ui-border bg-ui-bg-subtle p-3 space-y-1'>
+                      <div className='text-xs font-semibold text-ui-text mb-0.5'>{t('扩展价格')}</div>
+                      <div className='text-[11px] text-ui-text-3 mb-2'>{t('这些价格都是可选项，不填也可以。')}</div>
+                      <PriceInput label={t('图片输入价格')} value={selectedModel.imagePrice}
                         placeholder={t('输入 $/1M tokens')}
-                        onChange={(value) => handleNumericFieldChange('imagePrice', value)}
-                        headerAction={
-                          <Switch
-                            size='small'
-                            checked={isOptionalFieldEnabled(selectedModel, 'imagePrice')}
-                            onChange={(checked) =>
-                              handleOptionalFieldToggle('imagePrice', checked)
-                            }
-                          />
-                        }
+                        onChange={(v) => handleNumericFieldChange('imagePrice', v)}
+                        headerAction={<ToggleSmall checked={isOptionalFieldEnabled(selectedModel, 'imagePrice')} onChange={(c) => handleOptionalFieldToggle('imagePrice', c)} />}
                         hidden={!isOptionalFieldEnabled(selectedModel, 'imagePrice')}
                         disabled={!hasValue(selectedModel.inputPrice)}
-                        extraText={
-                          !isOptionalFieldEnabled(selectedModel, 'imagePrice')
-                            ? t('当前未启用，需要时再打开即可。')
-                            : ''
-                        }
-                      />
-                      <PriceInput
-                        label={t('音频输入价格')}
-                        value={selectedModel.audioInputPrice}
+                        extraText={!isOptionalFieldEnabled(selectedModel, 'imagePrice') ? t('当前未启用，需要时再打开即可。') : ''} />
+                      <PriceInput label={t('音频输入价格')} value={selectedModel.audioInputPrice}
                         placeholder={t('输入 $/1M tokens')}
-                        onChange={(value) =>
-                          handleNumericFieldChange('audioInputPrice', value)
-                        }
-                        headerAction={
-                          <Switch
-                            size='small'
-                            checked={isOptionalFieldEnabled(
-                              selectedModel,
-                              'audioInputPrice',
-                            )}
-                            onChange={(checked) =>
-                              handleOptionalFieldToggle('audioInputPrice', checked)
-                            }
-                          />
-                        }
+                        onChange={(v) => handleNumericFieldChange('audioInputPrice', v)}
+                        headerAction={<ToggleSmall checked={isOptionalFieldEnabled(selectedModel, 'audioInputPrice')} onChange={(c) => handleOptionalFieldToggle('audioInputPrice', c)} />}
                         hidden={!isOptionalFieldEnabled(selectedModel, 'audioInputPrice')}
                         disabled={!hasValue(selectedModel.inputPrice)}
-                        extraText={
-                          !isOptionalFieldEnabled(
-                            selectedModel,
-                            'audioInputPrice',
-                          )
-                            ? t('当前未启用，需要时再打开即可。')
-                            : ''
-                        }
-                      />
-                      <PriceInput
-                        label={t('音频补全价格')}
-                        value={selectedModel.audioOutputPrice}
+                        extraText={!isOptionalFieldEnabled(selectedModel, 'audioInputPrice') ? t('当前未启用，需要时再打开即可。') : ''} />
+                      <PriceInput label={t('音频补全价格')} value={selectedModel.audioOutputPrice}
                         placeholder={t('输入 $/1M tokens')}
-                        onChange={(value) =>
-                          handleNumericFieldChange('audioOutputPrice', value)
-                        }
-                        headerAction={
-                          <Switch
-                            size='small'
-                            checked={isOptionalFieldEnabled(
-                              selectedModel,
-                              'audioOutputPrice',
-                            )}
-                            disabled={!isOptionalFieldEnabled(
-                              selectedModel,
-                              'audioInputPrice',
-                            )}
-                            onChange={(checked) =>
-                              handleOptionalFieldToggle('audioOutputPrice', checked)
-                            }
-                          />
-                        }
-                        hidden={
-                          !isOptionalFieldEnabled(selectedModel, 'audioOutputPrice')
-                        }
+                        onChange={(v) => handleNumericFieldChange('audioOutputPrice', v)}
+                        headerAction={<ToggleSmall checked={isOptionalFieldEnabled(selectedModel, 'audioOutputPrice')} disabled={!isOptionalFieldEnabled(selectedModel, 'audioInputPrice')} onChange={(c) => handleOptionalFieldToggle('audioOutputPrice', c)} />}
+                        hidden={!isOptionalFieldEnabled(selectedModel, 'audioOutputPrice')}
                         disabled={!hasValue(selectedModel.audioInputPrice)}
-                        extraText={
-                          !isOptionalFieldEnabled(
-                            selectedModel,
-                            'audioInputPrice',
-                          )
-                            ? t('请先开启并填写音频输入价格。')
-                            : !isOptionalFieldEnabled(
-                                  selectedModel,
-                                  'audioOutputPrice',
-                                )
-                              ? t('当前未启用，需要时再打开即可。')
-                              : ''
-                        }
-                      />
-                    </Card>
+                        extraText={!isOptionalFieldEnabled(selectedModel, 'audioInputPrice') ? t('请先开启并填写音频输入价格。') : !isOptionalFieldEnabled(selectedModel, 'audioOutputPrice') ? t('当前未启用，需要时再打开即可。') : ''} />
+                    </div>
                   </>
                 )}
 
-                <Card
-                  bodyStyle={{ padding: 16 }}
-                  style={{ background: 'var(--semi-color-fill-0)' }}
-                >
-                  <div className='font-medium mb-3'>{t('保存预览')}</div>
-                  <div className='text-xs text-gray-500 mb-3'>
-                    {t(
-                      '下面展示这个模型保存后会写入哪些后端字段，便于和原始 JSON 编辑框保持一致。',
-                    )}
-                  </div>
-                  <div
-                    style={{
-                      display: 'grid',
-                      gridTemplateColumns: 'minmax(140px, 180px) 1fr',
-                      gap: 8,
-                    }}
-                  >
+                {/* Preview */}
+                <div className='rounded-md border border-ui-border bg-ui-bg-subtle p-3'>
+                  <div className='text-xs font-semibold text-ui-text mb-2'>{t('保存预览')}</div>
+                  <div className='text-[11px] text-ui-text-3 mb-3'>{t('下面展示这个模型保存后会写入哪些后端字段，便于和原始 JSON 编辑框保持一致。')}</div>
+                  <div className='grid grid-cols-[minmax(140px,180px)_1fr] gap-1'>
                     {previewRows.map((row) => (
                       <React.Fragment key={row.key}>
-                        <Text strong>{row.label}</Text>
-                        <Text>{row.value}</Text>
+                        <span className='text-xs font-semibold text-ui-text-2'>{row.label}</span>
+                        <span className='text-xs text-ui-text'>{row.value}</span>
                       </React.Fragment>
                     ))}
                   </div>
-                </Card>
+                </div>
               </div>
             )}
-          </Card>
+          </div>
         </div>
-      </Space>
+      </div>
 
-      {allowAddModel ? (
-        <Modal
+      {/* Add model modal */}
+      {allowAddModel && (
+        <ModalDialog
+          open={addVisible}
+          onClose={() => { setAddVisible(false); setNewModelName(''); }}
           title={t('添加模型')}
-          visible={addVisible}
-          onCancel={() => {
-            setAddVisible(false);
-            setNewModelName('');
-          }}
-          onOk={handleAddModel}
-        >
-          <Input
-            value={newModelName}
-            placeholder={t('输入模型名称，例如 gpt-4.1')}
-            onChange={(value) => setNewModelName(value)}
-          />
-        </Modal>
-      ) : null}
-
-      <Modal
-        title={t('批量应用当前模型价格')}
-        visible={batchVisible}
-        onCancel={() => setBatchVisible(false)}
-        onOk={() => {
-          if (applySelectedModelPricing()) {
-            setBatchVisible(false);
+          width={400}
+          footer={
+            <div className='flex justify-end gap-2'>
+              <button onClick={() => { setAddVisible(false); setNewModelName(''); }}
+                className='px-3.5 py-1.5 text-xs rounded-md border border-ui-border text-ui-text-2 hover:bg-ui-bg-subtle'>{t('取消')}</button>
+              <button onClick={handleAddModel}
+                className='px-3.5 py-1.5 text-xs font-semibold rounded-md bg-ui-accent text-ui-accent-fg hover:opacity-90'>{t('确定')}</button>
+            </div>
           }
-        }}
+        >
+          <input type='text' value={newModelName}
+            onChange={(e) => setNewModelName(e.target.value)}
+            placeholder={t('输入模型名称，例如 gpt-4.1')}
+            className={inputCls}
+            onKeyDown={(e) => e.key === 'Enter' && handleAddModel()} />
+        </ModalDialog>
+      )}
+
+      {/* Batch apply modal */}
+      <ModalDialog
+        open={batchVisible}
+        onClose={() => setBatchVisible(false)}
+        title={t('批量应用当前模型价格')}
+        width={500}
+        footer={
+          <div className='flex justify-end gap-2'>
+            <button onClick={() => setBatchVisible(false)}
+              className='px-3.5 py-1.5 text-xs rounded-md border border-ui-border text-ui-text-2 hover:bg-ui-bg-subtle'>{t('取消')}</button>
+            <button onClick={() => { if (applySelectedModelPricing()) setBatchVisible(false); }}
+              className='px-3.5 py-1.5 text-xs font-semibold rounded-md bg-ui-accent text-ui-accent-fg hover:opacity-90'>{t('确定')}</button>
+          </div>
+        }
       >
-        <div className='text-sm text-gray-600'>
+        <div className='text-xs text-ui-text-2'>
           {selectedModel
-            ? t(
-                '将把当前编辑中的模型 {{name}} 的价格配置，批量应用到已勾选的 {{count}} 个模型。',
-                {
-                  name: selectedModel.name,
-                  count: selectedModelNames.length,
-                },
-              )
+            ? t('将把当前编辑中的模型 {{name}} 的价格配置，批量应用到已勾选的 {{count}} 个模型。', {
+                name: selectedModel.name,
+                count: selectedModelNames.length,
+              })
             : t('请先选择一个作为模板的模型')}
         </div>
-        {selectedModel ? (
-          <div className='text-xs text-gray-500 mt-3'>
-            {t(
-              '适合同系列模型一起定价，例如把 gpt-5.1 的价格批量同步到 gpt-5.1-high、gpt-5.1-low 等模型。',
-            )}
+        {selectedModel && (
+          <div className='text-[11px] text-ui-text-3 mt-2'>
+            {t('适合同系列模型一起定价，例如把 gpt-5.1 的价格批量同步到 gpt-5.1-high、gpt-5.1-low 等模型。')}
           </div>
-        ) : null}
-      </Modal>
-    </>
+        )}
+      </ModalDialog>
+    </div>
   );
 }

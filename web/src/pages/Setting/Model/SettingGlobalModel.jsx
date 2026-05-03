@@ -1,33 +1,9 @@
 /*
-Copyright (C) 2025 QuantumNous
-
-This program is free software: you can redistribute it and/or modify
-it under the terms of the GNU Affero General Public License as
-published by the Free Software Foundation, either version 3 of the
-License, or (at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-GNU Affero General Public License for more details.
-
-You should have received a copy of the GNU Affero General Public License
-along with this program. If not, see <https://www.gnu.org/licenses/>.
-
-For commercial licensing, please contact support@quantumnous.com
-*/
-
-import React, { useEffect, useState, useRef } from 'react';
-import {
-  Button,
-  Col,
-  Form,
-  Row,
-  Spin,
-  Banner,
-  Tag,
-  Divider,
-} from '@douyinfe/semi-ui';
+ * 全局模型设置 — token-system rewrite.
+ */
+import React, { useEffect, useState, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
+import { Globe, Activity, FlaskConical } from 'lucide-react';
 import {
   compareObjects,
   API,
@@ -36,15 +12,22 @@ import {
   showWarning,
   verifyJSON,
 } from '../../../helpers';
-import { useTranslation } from 'react-i18next';
+import {
+  SectionWithSave,
+  FieldRow,
+  ToggleField,
+  NumberField,
+  TextAreaField,
+  Notice,
+  Chip,
+} from '../../../components/common/form/Primitives';
 
 const thinkingExample = JSON.stringify(
   ['moonshotai/kimi-k2-thinking', 'kimi-k2-thinking'],
   null,
   2,
 );
-
-const chatCompletionsToResponsesPolicyExample = JSON.stringify(
+const policyExample = JSON.stringify(
   {
     enabled: true,
     all_channels: false,
@@ -55,8 +38,7 @@ const chatCompletionsToResponsesPolicyExample = JSON.stringify(
   null,
   2,
 );
-
-const chatCompletionsToResponsesPolicyAllChannelsExample = JSON.stringify(
+const policyAllChannelsExample = JSON.stringify(
   {
     enabled: true,
     all_channels: true,
@@ -66,7 +48,9 @@ const chatCompletionsToResponsesPolicyAllChannelsExample = JSON.stringify(
   2,
 );
 
-const defaultGlobalSettingInputs = {
+const POLICY_KEY = 'global.chat_completions_to_responses_policy';
+
+const DEFAULTS = {
   'global.pass_through_request_enabled': false,
   'global.thinking_model_blacklist': '[]',
   'global.chat_completions_to_responses_policy': '{}',
@@ -76,341 +60,218 @@ const defaultGlobalSettingInputs = {
 
 export default function SettingGlobalModel(props) {
   const { t } = useTranslation();
-
+  const [inputs, setInputs] = useState(DEFAULTS);
+  const [original, setOriginal] = useState(DEFAULTS);
   const [loading, setLoading] = useState(false);
-  const [inputs, setInputs] = useState(defaultGlobalSettingInputs);
-  const refForm = useRef();
-  const [inputsRow, setInputsRow] = useState(defaultGlobalSettingInputs);
-  const chatCompletionsToResponsesPolicyKey =
-    'global.chat_completions_to_responses_policy';
 
-  const setChatCompletionsToResponsesPolicyValue = (value) => {
-    setInputs((prev) => ({
-      ...prev,
-      [chatCompletionsToResponsesPolicyKey]: value,
-    }));
-    if (refForm.current) {
-      refForm.current.setValue(chatCompletionsToResponsesPolicyKey, value);
+  useEffect(() => {
+    const next = { ...DEFAULTS };
+    for (const key of Object.keys(DEFAULTS)) {
+      if (props.options?.[key] !== undefined) {
+        let value = props.options[key];
+        if (
+          key === 'global.thinking_model_blacklist' ||
+          key === POLICY_KEY
+        ) {
+          try {
+            value =
+              value && String(value).trim() !== ''
+                ? JSON.stringify(JSON.parse(value), null, 2)
+                : DEFAULTS[key];
+          } catch {
+            value = DEFAULTS[key];
+          }
+        }
+        next[key] = value;
+      }
     }
-  };
+    setInputs(next);
+    setOriginal(structuredClone(next));
+  }, [props.options]);
 
-  const normalizeValueBeforeSave = (key, value) => {
+  const set = (k) => (v) => setInputs((p) => ({ ...p, [k]: v }));
+
+  const blacklistError = useMemo(() => {
+    const v = inputs['global.thinking_model_blacklist'];
+    if (!v || !String(v).trim()) return '';
+    return verifyJSON(v) ? '' : t('不是合法的 JSON 字符串');
+  }, [inputs['global.thinking_model_blacklist'], t]);
+
+  const policyError = useMemo(() => {
+    const v = inputs[POLICY_KEY];
+    if (!v || !String(v).trim()) return '';
+    return verifyJSON(v) ? '' : t('不是合法的 JSON 字符串');
+  }, [inputs[POLICY_KEY], t]);
+
+  const normalize = (key, value) => {
     if (key === 'global.thinking_model_blacklist') {
-      const text = typeof value === 'string' ? value.trim() : '';
-      return text === '' ? '[]' : value;
+      return typeof value === 'string' && value.trim() === '' ? '[]' : value;
     }
-    if (key === 'global.chat_completions_to_responses_policy') {
-      const text = typeof value === 'string' ? value.trim() : '';
-      return text === '' ? '{}' : value;
+    if (key === POLICY_KEY) {
+      return typeof value === 'string' && value.trim() === '' ? '{}' : value;
     }
     return value;
   };
 
-  function onSubmit() {
-    const updateArray = compareObjects(inputs, inputsRow);
-    if (!updateArray.length) return showWarning(t('你似乎并没有修改什么'));
-    const requestQueue = updateArray.map((item) => {
-      const normalizedValue = normalizeValueBeforeSave(
-        item.key,
-        inputs[item.key],
-      );
-      let value = String(normalizedValue);
-
-      return API.put('/api/option/', {
-        key: item.key,
-        value,
-      });
-    });
+  const submit = () => {
+    if (blacklistError || policyError) return showError(t('请检查输入'));
+    const diff = compareObjects(inputs, original);
+    if (!diff.length) return showWarning(t('你似乎并没有修改什么'));
     setLoading(true);
-    Promise.all(requestQueue)
+    Promise.all(
+      diff.map((item) => {
+        const v = normalize(item.key, inputs[item.key]);
+        return API.put('/api/option/', {
+          key: item.key,
+          value: typeof v === 'boolean' ? String(v) : String(v ?? ''),
+        });
+      }),
+    )
       .then((res) => {
-        if (requestQueue.length === 1) {
-          if (res.includes(undefined)) return;
-        } else if (requestQueue.length > 1) {
-          if (res.includes(undefined))
-            return showError(t('部分保存失败，请重试'));
+        if (res.includes(undefined) && diff.length > 1) {
+          return showError(t('部分保存失败，请重试'));
         }
         showSuccess(t('保存成功'));
         props.refresh();
       })
-      .catch(() => {
-        showError(t('保存失败，请重试'));
-      })
-      .finally(() => {
-        setLoading(false);
-      });
-  }
+      .catch(() => showError(t('保存失败，请重试')))
+      .finally(() => setLoading(false));
+  };
 
-  useEffect(() => {
-    const currentInputs = {};
-    for (const key of Object.keys(defaultGlobalSettingInputs)) {
-      if (props.options[key] !== undefined) {
-        let value = props.options[key];
-        if (key === 'global.thinking_model_blacklist') {
-          try {
-            value =
-              value && String(value).trim() !== ''
-                ? JSON.stringify(JSON.parse(value), null, 2)
-                : defaultGlobalSettingInputs[key];
-          } catch (error) {
-            value = defaultGlobalSettingInputs[key];
-          }
-        }
-        if (key === 'global.chat_completions_to_responses_policy') {
-          try {
-            value =
-              value && String(value).trim() !== ''
-                ? JSON.stringify(JSON.parse(value), null, 2)
-                : defaultGlobalSettingInputs[key];
-          } catch (error) {
-            value = defaultGlobalSettingInputs[key];
-          }
-        }
-        currentInputs[key] = value;
-      } else {
-        currentInputs[key] = defaultGlobalSettingInputs[key];
-      }
+  const formatPolicy = () => {
+    const raw = inputs[POLICY_KEY];
+    if (!raw || String(raw).trim() === '') return;
+    try {
+      set(POLICY_KEY)(JSON.stringify(JSON.parse(raw), null, 2));
+    } catch {
+      showError(t('不是合法的 JSON 字符串'));
     }
-
-    setInputs(currentInputs);
-    setInputsRow(structuredClone(currentInputs));
-    if (refForm.current) {
-      refForm.current.setValues(currentInputs);
-    }
-  }, [props.options]);
+  };
 
   return (
-    <>
-      <Spin spinning={loading}>
-        <Form
-          values={inputs}
-          getFormApi={(formAPI) => (refForm.current = formAPI)}
-          style={{ marginBottom: 15 }}
+    <div className='space-y-6'>
+      <SectionWithSave
+        title={t('全局设置')}
+        hint={t('请求透传 / 思考模型黑名单')}
+        icon={Globe}
+        iconColor='blue'
+        loading={loading}
+        onSave={submit}
+      >
+        <ToggleField
+          label={t('启用请求透传')}
+          hint={t('开启后，所有请求将直接透传给上游，重定向和渠道适配将失效；请谨慎开启')}
+          checked={!!inputs['global.pass_through_request_enabled']}
+          onChange={set('global.pass_through_request_enabled')}
+        />
+        <FieldRow
+          label={t('禁用思考处理的模型列表')}
+          hint={t('列出的模型不会自动添加或移除 -thinking / -nothinking 后缀')}
+          error={blacklistError}
         >
-          <Form.Section text={t('全局设置')}>
-            <Row>
-              <Col xs={24} sm={12} md={8} lg={8} xl={8}>
-                <Form.Switch
-                  label={t('启用请求透传')}
-                  field={'global.pass_through_request_enabled'}
-                  onChange={(value) =>
-                    setInputs({
-                      ...inputs,
-                      'global.pass_through_request_enabled': value,
-                    })
-                  }
-                  extraText={t(
-                    '开启后，所有请求将直接透传给上游，不会进行任何处理（重定向和渠道适配也将失效）,请谨慎开启',
-                  )}
-                />
-              </Col>
-            </Row>
-            <Row>
-              <Col span={24}>
-                <Form.TextArea
-                  label={t('禁用思考处理的模型列表')}
-                  field={'global.thinking_model_blacklist'}
-                  placeholder={t('例如：') + '\n' + thinkingExample}
-                  rows={4}
-                  rules={[
-                    {
-                      validator: (rule, value) => {
-                        if (!value || value.trim() === '') return true;
-                        return verifyJSON(value);
-                      },
-                      message: t('不是合法的 JSON 字符串'),
-                    },
-                  ]}
-                  extraText={t(
-                    '列出的模型将不会自动添加或移除-thinking/-nothinking 后缀',
-                  )}
-                  onChange={(value) =>
-                    setInputs({
-                      ...inputs,
-                      'global.thinking_model_blacklist': value,
-                    })
-                  }
-                />
-              </Col>
-            </Row>
+          <TextAreaField
+            value={inputs['global.thinking_model_blacklist']}
+            onChange={set('global.thinking_model_blacklist')}
+            placeholder={t('例如：') + '\n' + thinkingExample}
+            rows={4}
+            className='font-mono text-xs'
+          />
+        </FieldRow>
+      </SectionWithSave>
 
-            <Form.Section
-              text={
-                <span
-                  style={{
-                    fontSize: 14,
-                    fontWeight: 600,
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    gap: 8,
-                    flexWrap: 'wrap',
-                  }}
-                >
-                  {t('ChatCompletions→Responses 兼容配置')}
-                  <Tag color='orange' size='small'>
-                    测试版
-                  </Tag>
-                </span>
+      <div className='space-y-3'>
+        <div className='flex items-center gap-2'>
+          <div className='w-8 h-8 rounded-md inline-flex items-center justify-center border bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20'>
+            <FlaskConical size={15} />
+          </div>
+          <div className='flex-1 min-w-0'>
+            <div className='text-sm font-semibold text-ui-text inline-flex items-center gap-2'>
+              {t('ChatCompletions → Responses 兼容配置')}
+              <Chip className='!bg-amber-500/10 !text-amber-600 dark:!text-amber-400 !border-amber-500/30'>{t('测试版')}</Chip>
+            </div>
+            <div className='text-[11px] text-ui-text-3 mt-0.5'>
+              {t('该功能为测试版，未来配置结构与行为可能变更，请勿在生产环境使用')}
+            </div>
+          </div>
+        </div>
+        <Notice kind='warning'>
+          {t('提示：该功能为测试版，未来配置结构与功能行为可能发生变更，请勿在生产环境使用。')}
+        </Notice>
+        <FieldRow
+          label={t('参数配置')}
+          hint={t('JSON 格式，可使用下方按钮填充模板或格式化')}
+          error={policyError}
+        >
+          <TextAreaField
+            value={inputs[POLICY_KEY]}
+            onChange={set(POLICY_KEY)}
+            placeholder={
+              t('例如（指定渠道）：') +
+              '\n' +
+              policyExample +
+              '\n\n' +
+              t('例如（全渠道）：') +
+              '\n' +
+              policyAllChannelsExample
+            }
+            rows={8}
+            className='font-mono text-xs'
+          />
+        </FieldRow>
+        <div className='flex flex-wrap items-center gap-2'>
+          <button
+            type='button'
+            onClick={() => set(POLICY_KEY)(policyExample)}
+            className='px-2.5 py-1 text-[11px] rounded-md border border-ui-border text-ui-text-2 hover:bg-ui-bg-hover'
+          >
+            {t('填充模板（指定渠道）')}
+          </button>
+          <button
+            type='button'
+            onClick={() => set(POLICY_KEY)(policyAllChannelsExample)}
+            className='px-2.5 py-1 text-[11px] rounded-md border border-ui-border text-ui-text-2 hover:bg-ui-bg-hover'
+          >
+            {t('填充模板（全渠道）')}
+          </button>
+          <button
+            type='button'
+            onClick={formatPolicy}
+            className='px-2.5 py-1 text-[11px] rounded-md border border-ui-border text-ui-text-2 hover:bg-ui-bg-hover'
+          >
+            {t('格式化 JSON')}
+          </button>
+        </div>
+      </div>
+
+      <SectionWithSave
+        title={t('连接保活设置')}
+        hint={t('开启后定期发送 ping 数据，保持上游连接活跃')}
+        icon={Activity}
+        iconColor='emerald'
+      >
+        <Notice kind='warning'>
+          {t('警告：启用保活后，如果已写入保活数据后渠道出错，系统无法重试；若必须开启，请使用尽可能大的 Ping 间隔。')}
+        </Notice>
+        <div className='grid grid-cols-1 sm:grid-cols-2 gap-3'>
+          <ToggleField
+            label={t('启用 Ping 间隔')}
+            hint={t('开启后定期发送 ping 数据保持连接活跃')}
+            checked={!!inputs['general_setting.ping_interval_enabled']}
+            onChange={set('general_setting.ping_interval_enabled')}
+          />
+          <FieldRow label={t('Ping 间隔（秒）')}>
+            <NumberField
+              value={Number(inputs['general_setting.ping_interval_seconds']) || 60}
+              onChange={(v) =>
+                set('general_setting.ping_interval_seconds')(Number(v))
               }
-            >
-              <Row style={{ marginTop: 10 }}>
-                <Col span={24}>
-                  <Banner
-                    type='warning'
-                    description={t(
-                      '提示：该功能为测试版，未来配置结构与功能行为可能发生变更，请勿在生产环境使用。',
-                    )}
-                  />
-                </Col>
-              </Row>
-
-              <Row style={{ marginTop: 10 }}>
-                <Col span={24}>
-                  <Form.TextArea
-                    label={t('参数配置')}
-                    field={chatCompletionsToResponsesPolicyKey}
-                    placeholder={
-                      t('例如（指定渠道）：') +
-                      '\n' +
-                      chatCompletionsToResponsesPolicyExample +
-                      '\n\n' +
-                      t('例如（全渠道）：') +
-                      '\n' +
-                      chatCompletionsToResponsesPolicyAllChannelsExample
-                    }
-                    rows={8}
-                    rules={[
-                      {
-                        validator: (rule, value) => {
-                          if (!value || value.trim() === '') return true;
-                          return verifyJSON(value);
-                        },
-                        message: t('不是合法的 JSON 字符串'),
-                      },
-                    ]}
-                    onChange={(value) =>
-                      setInputs((prev) => ({
-                        ...prev,
-                        [chatCompletionsToResponsesPolicyKey]: value,
-                      }))
-                    }
-                  />
-                </Col>
-              </Row>
-
-              <Row style={{ marginTop: 10, marginBottom: 16 }}>
-                <Col span={24}>
-                  <div
-                    style={{
-                      display: 'flex',
-                      gap: 8,
-                      flexWrap: 'wrap',
-                      alignItems: 'center',
-                    }}
-                  >
-                    <Button
-                      type='secondary'
-                      size='small'
-                      onClick={() =>
-                        setChatCompletionsToResponsesPolicyValue(
-                          chatCompletionsToResponsesPolicyExample,
-                        )
-                      }
-                    >
-                      {t('填充模板（指定渠道）')}
-                    </Button>
-                    <Button
-                      type='secondary'
-                      size='small'
-                      onClick={() =>
-                        setChatCompletionsToResponsesPolicyValue(
-                          chatCompletionsToResponsesPolicyAllChannelsExample,
-                        )
-                      }
-                    >
-                      {t('填充模板（全渠道）')}
-                    </Button>
-                    <Button
-                      type='secondary'
-                      size='small'
-                      onClick={() => {
-                        const raw = inputs[chatCompletionsToResponsesPolicyKey];
-                        if (!raw || String(raw).trim() === '') return;
-                        try {
-                          const formatted = JSON.stringify(
-                            JSON.parse(raw),
-                            null,
-                            2,
-                          );
-                          setChatCompletionsToResponsesPolicyValue(formatted);
-                        } catch (error) {
-                          showError(t('不是合法的 JSON 字符串'));
-                        }
-                      }}
-                    >
-                      {t('格式化 JSON')}
-                    </Button>
-                  </div>
-                </Col>
-              </Row>
-            </Form.Section>
-
-            <Form.Section
-              text={
-                <span style={{ fontSize: 14, fontWeight: 600 }}>
-                  {t('连接保活设置')}
-                </span>
-              }
-            >
-              <Row style={{ marginTop: 10 }}>
-                <Col span={24}>
-                  <Banner
-                    type='warning'
-                    description={t(
-                      '警告：启用保活后，如果已经写入保活数据后渠道出错，系统无法重试，如果必须开启，推荐设置尽可能大的Ping间隔',
-                    )}
-                  />
-                </Col>
-              </Row>
-              <Row>
-                <Col xs={24} sm={12} md={8} lg={8} xl={8}>
-                  <Form.Switch
-                    label={t('启用Ping间隔')}
-                    field={'general_setting.ping_interval_enabled'}
-                    onChange={(value) =>
-                      setInputs({
-                        ...inputs,
-                        'general_setting.ping_interval_enabled': value,
-                      })
-                    }
-                    extraText={t('开启后，将定期发送ping数据保持连接活跃')}
-                  />
-                </Col>
-                <Col xs={24} sm={12} md={8} lg={8} xl={8}>
-                  <Form.InputNumber
-                    label={t('Ping间隔（秒）')}
-                    field={'general_setting.ping_interval_seconds'}
-                    onChange={(value) =>
-                      setInputs({
-                        ...inputs,
-                        'general_setting.ping_interval_seconds': value,
-                      })
-                    }
-                    min={1}
-                    disabled={!inputs['general_setting.ping_interval_enabled']}
-                  />
-                </Col>
-              </Row>
-            </Form.Section>
-
-            <Row>
-              <Button size='default' onClick={onSubmit}>
-                {t('保存')}
-              </Button>
-            </Row>
-          </Form.Section>
-        </Form>
-      </Spin>
-    </>
+              min={1}
+              step={1}
+              disabled={!inputs['general_setting.ping_interval_enabled']}
+            />
+          </FieldRow>
+        </div>
+      </SectionWithSave>
+    </div>
   );
 }

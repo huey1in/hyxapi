@@ -1,24 +1,12 @@
 /*
-Copyright (C) 2025 QuantumNous
-
-This program is free software: you can redistribute it and/or modify
-it under the terms of the GNU Affero General Public License as
-published by the Free Software Foundation, either version 3 of the
-License, or (at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-GNU Affero General Public License for more details.
-
-You should have received a copy of the GNU Affero General Public License
-along with this program. If not, see <https://www.gnu.org/licenses/>.
-
-For commercial licensing, please contact support@quantumnous.com
-*/
-
-import React, { useEffect, useState, useRef } from 'react';
+ * Edit user — token-system rewrite (SlideOver + primitives + adjust quota
+ * portal). Drops the third-party social ID fields (rarely used after the
+ * Stripe/Creem payment flow was removed).
+ */
+import React, { useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
+import { User, Users, Edit3, X, Loader2 } from 'lucide-react';
 import {
   API,
   showError,
@@ -31,539 +19,399 @@ import {
   displayAmountToQuota,
 } from '../../../../helpers/quota';
 import { useIsMobile } from '../../../../hooks/common/useIsMobile';
+import SlideOver from '../../../common/SlideOver';
 import {
-  Button,
-  Modal,
-  SideSheet,
-  Space,
-  Spin,
-  Typography,
-  Card,
-  Tag,
-  Form,
-  Avatar,
-  Row,
-  Col,
-  InputNumber,
-  RadioGroup,
-  Radio,
-} from '@douyinfe/semi-ui';
-import {
-  IconUser,
-  IconSave,
-  IconClose,
-  IconLink,
-  IconUserGroup,
-  IconEdit,
-} from '@douyinfe/semi-icons';
-import UserBindingManagementModal from './UserBindingManagementModal';
+  TextField,
+  NumberField,
+  NativeSelect,
+  FieldRow,
+} from '../../../common/form/Primitives';
 
-const { Text, Title } = Typography;
+const SectionHeader = ({ icon: Icon, title, hint, color = 'blue' }) => {
+  const cls = {
+    blue: 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20',
+    green: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20',
+  }[color];
+  return (
+    <div className='flex items-center gap-2 mb-3'>
+      <div className={`w-8 h-8 rounded-md inline-flex items-center justify-center border ${cls}`}>
+        <Icon size={15} />
+      </div>
+      <div>
+        <div className='text-sm font-semibold text-ui-text'>{title}</div>
+        {hint && <div className='text-[11px] text-ui-text-3'>{hint}</div>}
+      </div>
+    </div>
+  );
+};
+
+const DEFAULTS = () => ({
+  username: '',
+  display_name: '',
+  password: '',
+  email: '',
+  quota: 0,
+  group: 'default',
+  remark: '',
+});
 
 const EditUserModal = (props) => {
   const { t } = useTranslation();
-  const userId = props.editingUser.id;
-  const [loading, setLoading] = useState(true);
-  const [adjustModalOpen, setAdjustModalOpen] = useState(false);
-  const [adjustQuotaLocal, setAdjustQuotaLocal] = useState('');
-  const [adjustAmountLocal, setAdjustAmountLocal] = useState('');
-  const [adjustMode, setAdjustMode] = useState('add');
-  const [adjustLoading, setAdjustLoading] = useState(false);
-  const isMobile = useIsMobile();
-  const [groupOptions, setGroupOptions] = useState([]);
-  const [bindingModalVisible, setBindingModalVisible] = useState(false);
-  const formApiRef = useRef(null);
-  const [showAdjustQuotaRaw, setShowAdjustQuotaRaw] = useState(false);
-  const [showQuotaInput, setShowQuotaInput] = useState(false);
-  const [inputs, setInputs] = useState(null);
-
+  const userId = props.editingUser?.id;
   const isEdit = Boolean(userId);
+  const isMobile = useIsMobile();
 
-  const getInitValues = () => ({
-    username: '',
-    display_name: '',
-    password: '',
-    github_id: '',
-    oidc_id: '',
-    discord_id: '',
-    wechat_id: '',
-    telegram_id: '',
-    linux_do_id: '',
-    email: '',
-    quota: 0,
-    quota_amount: 0,
-    group: 'default',
-    remark: '',
-  });
+  const [loading, setLoading] = useState(false);
+  const [values, setValues] = useState(DEFAULTS());
+  const [groupOptions, setGroupOptions] = useState([]);
+  const [adjustOpen, setAdjustOpen] = useState(false);
+  const [adjustMode, setAdjustMode] = useState('add');
+  const [adjustAmount, setAdjustAmount] = useState('');
+  const [adjustLoading, setAdjustLoading] = useState(false);
+
+  const set = (k, v) => setValues((p) => ({ ...p, [k]: v }));
 
   const fetchGroups = async () => {
     try {
-      let res = await API.get(`/api/group/`);
-      setGroupOptions(res.data.data.map((g) => ({ label: g, value: g })));
+      const res = await API.get('/api/group/');
+      setGroupOptions(res.data?.data || []);
     } catch (e) {
       showError(e.message);
     }
   };
-
-  const handleCancel = () => props.handleClose();
 
   const loadUser = async () => {
     setLoading(true);
-    const url = userId ? `/api/user/${userId}` : `/api/user/self`;
-    const res = await API.get(url);
-    const { success, message, data } = res.data;
-    if (success) {
-      data.password = '';
-      data.quota_amount = Number(
-        quotaToDisplayAmount(data.quota || 0).toFixed(6),
-      );
-      setInputs({ ...getInitValues(), ...data });
-    } else {
-      showError(message);
-    }
-    setLoading(false);
-  };
-
-  useEffect(() => {
-    if (inputs && formApiRef.current) {
-      formApiRef.current.setValues(inputs);
-    }
-  }, [inputs]);
-
-  useEffect(() => {
-    loadUser();
-    if (userId) fetchGroups();
-    setBindingModalVisible(false);
-  }, [props.editingUser.id]);
-
-  const openBindingModal = () => {
-    setBindingModalVisible(true);
-  };
-
-  const closeBindingModal = () => {
-    setBindingModalVisible(false);
-  };
-
-  /* ----------------------- submit ----------------------- */
-  const submit = async (values) => {
-    setLoading(true);
-    let payload = { ...values };
-    delete payload.quota;
-    delete payload.quota_amount;
-    if (userId) {
-      payload.id = parseInt(userId);
-    }
-    const url = userId ? `/api/user/` : `/api/user/self`;
-    const res = await API.put(url, payload);
-    const { success, message } = res.data;
-    if (success) {
-      showSuccess(t('用户信息更新成功！'));
-      props.refresh();
-      props.handleClose();
-    } else {
-      showError(message);
-    }
-    setLoading(false);
-  };
-
-  /* --------------------- atomic quota adjust -------------------- */
-  const adjustQuota = async () => {
-    const quotaVal = parseInt(adjustQuotaLocal) || 0;
-    if (quotaVal <= 0 && adjustMode !== 'override') return;
-    if (adjustMode === 'override' && (adjustQuotaLocal === '' || adjustQuotaLocal == null)) return;
-    setAdjustLoading(true);
     try {
-      const res = await API.post('/api/user/manage', {
-        id: parseInt(userId),
-        action: 'add_quota',
-        mode: adjustMode,
-        value: adjustMode === 'override' ? quotaVal : Math.abs(quotaVal),
-      });
-      const { success, message } = res.data;
-      if (success) {
-        showSuccess(t('调整额度成功'));
-        setAdjustModalOpen(false);
-        setAdjustQuotaLocal('');
-        setAdjustAmountLocal('');
-        const userRes = await API.get(`/api/user/${userId}`);
-        if (userRes.data.success) {
-          const data = userRes.data.data;
-          data.password = '';
-          data.quota_amount = Number(
-            quotaToDisplayAmount(data.quota || 0).toFixed(6),
-          );
-          setInputs({ ...getInitValues(), ...data });
-        }
-        props.refresh();
+      const url = userId ? `/api/user/${userId}` : '/api/user/self';
+      const { data } = await API.get(url);
+      if (data.success) {
+        setValues({
+          ...DEFAULTS(),
+          ...data.data,
+          password: '',
+          quota: data.data.quota || 0,
+        });
       } else {
-        showError(message);
+        showError(data.message);
       }
     } catch (e) {
       showError(e.message);
-    }
-    setAdjustLoading(false);
-  };
-
-  const getPreviewText = () => {
-    const current = formApiRef.current?.getValue('quota') || 0;
-    const val = parseInt(adjustQuotaLocal) || 0;
-    let result;
-    switch (adjustMode) {
-      case 'add':
-        result = current + Math.abs(val);
-        return `${t('当前额度')}：${renderQuota(current)}，+${renderQuota(Math.abs(val))} = ${renderQuota(result)}`;
-      case 'subtract':
-        result = current - Math.abs(val);
-        return `${t('当前额度')}：${renderQuota(current)}，-${renderQuota(Math.abs(val))} = ${renderQuota(result)}`;
-      case 'override':
-        return `${t('当前额度')}：${renderQuota(current)} → ${renderQuota(val)}`;
-      default:
-        return '';
+    } finally {
+      setLoading(false);
     }
   };
 
-  /* --------------------------- UI --------------------------- */
+  useEffect(() => {
+    if (!props.visible) return;
+    fetchGroups();
+    if (userId !== undefined) loadUser();
+    else setValues(DEFAULTS());
+  }, [props.visible, userId]); // eslint-disable-line
+
+  const submit = async () => {
+    if (!values.username) return showError(t('请输入用户名'));
+    setLoading(true);
+    try {
+      const payload = { ...values };
+      delete payload.quota;
+      delete payload.used_quota;
+      delete payload.aff_count;
+      delete payload.aff_history_quota;
+      if (userId) payload.id = parseInt(userId);
+      const url = userId ? '/api/user/' : '/api/user/self';
+      const { data } = await API.put(url, payload);
+      if (data.success) {
+        showSuccess(t('用户信息更新成功！'));
+        props.refresh();
+        props.handleClose();
+      } else {
+        showError(data.message);
+      }
+    } catch (e) {
+      showError(e.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Adjust-quota modal state
+  const adjustQuotaValue = parseFloat(adjustAmount || 0) || 0;
+  const adjustQuotaInQuota =
+    adjustMode === 'override'
+      ? displayAmountToQuota(adjustQuotaValue)
+      : displayAmountToQuota(Math.abs(adjustQuotaValue));
+
+  const previewText = () => {
+    const cur = values.quota || 0;
+    if (adjustMode === 'add') return `${renderQuota(cur)} + ${renderQuota(adjustQuotaInQuota)} = ${renderQuota(cur + adjustQuotaInQuota)}`;
+    if (adjustMode === 'subtract') return `${renderQuota(cur)} − ${renderQuota(adjustQuotaInQuota)} = ${renderQuota(cur - adjustQuotaInQuota)}`;
+    return `${renderQuota(cur)} → ${renderQuota(adjustQuotaInQuota)}`;
+  };
+
+  const submitAdjust = async () => {
+    if (!adjustAmount && adjustMode !== 'override') return showError(t('请输入金额'));
+    setAdjustLoading(true);
+    try {
+      const { data } = await API.post('/api/user/manage', {
+        id: parseInt(userId),
+        action: 'add_quota',
+        mode: adjustMode,
+        value:
+          adjustMode === 'override'
+            ? adjustQuotaInQuota
+            : Math.abs(adjustQuotaInQuota),
+      });
+      if (data.success) {
+        showSuccess(t('调整额度成功'));
+        setAdjustOpen(false);
+        setAdjustAmount('');
+        await loadUser();
+        props.refresh();
+      } else {
+        showError(data.message);
+      }
+    } catch (e) {
+      showError(e.message);
+    } finally {
+      setAdjustLoading(false);
+    }
+  };
+
   return (
     <>
-      <SideSheet
+      <SlideOver
+        open={!!props.visible}
+        onClose={props.handleClose}
         placement='right'
+        width={isMobile ? window.innerWidth : 600}
         title={
-          <Space>
-            <Tag color='blue' shape='circle'>
-              {t(isEdit ? '编辑' : '新建')}
-            </Tag>
-            <Title heading={4} className='m-0'>
+          <>
+            <span className='inline-flex items-center px-2 py-0.5 text-[11px] font-medium rounded-md bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20'>
+              {isEdit ? t('编辑') : t('新建')}
+            </span>
+            <span className='text-base font-semibold text-ui-text truncate'>
               {isEdit ? t('编辑用户') : t('创建用户')}
-            </Title>
-          </Space>
+            </span>
+          </>
         }
-        bodyStyle={{ padding: 0 }}
-        visible={props.visible}
-        width={isMobile ? '100%' : 600}
         footer={
-          <div className='flex justify-end bg-white'>
-            <Space>
-              <Button
-                theme='solid'
-                onClick={() => formApiRef.current?.submitForm()}
-                icon={<IconSave />}
-                loading={loading}
-              >
-                {t('提交')}
-              </Button>
-              <Button
-                theme='light'
-                type='primary'
-                onClick={handleCancel}
-                icon={<IconClose />}
-              >
-                {t('取消')}
-              </Button>
-            </Space>
-          </div>
+          <>
+            <button
+              onClick={props.handleClose}
+              className='inline-flex items-center px-3.5 py-1.5 text-xs font-medium rounded-md border border-ui-border text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-subtle whitespace-nowrap'
+            >
+              {t('取消')}
+            </button>
+            <button
+              onClick={submit}
+              disabled={loading}
+              className='inline-flex items-center px-4 py-1.5 text-xs font-semibold rounded-md bg-ui-accent text-ui-accent-fg hover:bg-ui-accent-hover disabled:opacity-50 whitespace-nowrap'
+            >
+              {loading ? t('提交中...') : t('提交')}
+            </button>
+          </>
         }
-        closeIcon={null}
-        onCancel={handleCancel}
+        bodyClass='p-5 space-y-6'
       >
-        <Spin spinning={loading}>
-          <Form
-            initValues={getInitValues()}
-            getFormApi={(api) => (formApiRef.current = api)}
-            onSubmit={submit}
-          >
-            {({ values }) => (
-              <div className='p-2 space-y-3'>
-                {/* 基本信息 */}
-                <Card className='!rounded-2xl shadow-sm border-0'>
-                  <div className='flex items-center mb-2'>
-                    <Avatar
-                      size='small'
-                      color='blue'
-                      className='mr-2 shadow-md'
-                    >
-                      <IconUser size={16} />
-                    </Avatar>
-                    <div>
-                      <Text className='text-lg font-medium'>
-                        {t('基本信息')}
-                      </Text>
-                      <div className='text-xs text-gray-600'>
-                        {t('用户的基本账户信息')}
-                      </div>
-                    </div>
-                  </div>
+        {loading ? (
+          <div className='py-12 text-center text-ui-text-3 text-sm flex items-center justify-center gap-2'>
+            <Loader2 size={14} className='animate-spin' />
+            {t('加载中...')}
+          </div>
+        ) : (
+          <>
+            {/* Basic info */}
+            <div>
+              <SectionHeader
+                icon={User}
+                title={t('基本信息')}
+                hint={t('用户的基本账户信息')}
+                color='blue'
+              />
+              <div className='space-y-3'>
+                <FieldRow label={t('用户名')} required>
+                  <TextField
+                    value={values.username}
+                    onChange={(v) => set('username', v)}
+                    placeholder={t('请输入用户名')}
+                  />
+                </FieldRow>
+                <FieldRow label={t('密码')} hint={isEdit ? t('留空保持不变') : undefined}>
+                  <TextField
+                    type='password'
+                    value={values.password}
+                    onChange={(v) => set('password', v)}
+                    placeholder={t('请输入新的密码，最短 8 位')}
+                    autoComplete='new-password'
+                  />
+                </FieldRow>
+                <FieldRow label={t('显示名称')}>
+                  <TextField
+                    value={values.display_name}
+                    onChange={(v) => set('display_name', v)}
+                    placeholder={t('请输入显示名称')}
+                  />
+                </FieldRow>
+                <FieldRow label={t('邮箱')}>
+                  <TextField
+                    type='email'
+                    value={values.email}
+                    onChange={(v) => set('email', v)}
+                    placeholder='you@example.com'
+                  />
+                </FieldRow>
+                <FieldRow label={t('备注')} hint={t('仅管理员可见')}>
+                  <TextField
+                    value={values.remark}
+                    onChange={(v) => set('remark', v)}
+                    placeholder={t('请输入备注')}
+                  />
+                </FieldRow>
+              </div>
+            </div>
 
-                  <Row gutter={12}>
-                    <Col span={24}>
-                      <Form.Input
-                        field='username'
-                        label={t('用户名')}
-                        placeholder={t('请输入新的用户名')}
-                        rules={[{ required: true, message: t('请输入用户名') }]}
-                        showClear
-                      />
-                    </Col>
-
-                    <Col span={24}>
-                      <Form.Input
-                        field='password'
-                        label={t('密码')}
-                        placeholder={t('请输入新的密码，最短 8 位')}
-                        mode='password'
-                        showClear
-                      />
-                    </Col>
-
-                    <Col span={24}>
-                      <Form.Input
-                        field='display_name'
-                        label={t('显示名称')}
-                        placeholder={t('请输入新的显示名称')}
-                        showClear
-                      />
-                    </Col>
-
-                    <Col span={24}>
-                      <Form.Input
-                        field='remark'
-                        label={t('备注')}
-                        placeholder={t('请输入备注（仅管理员可见）')}
-                        showClear
-                      />
-                    </Col>
-                  </Row>
-                </Card>
-
-                {/* 权限设置 */}
-                {userId && (
-                  <Card className='!rounded-2xl shadow-sm border-0'>
-                    <div className='flex items-center mb-2'>
-                      <Avatar
-                        size='small'
-                        color='green'
-                        className='mr-2 shadow-md'
+            {/* Group + quota */}
+            {isEdit && (
+              <div>
+                <SectionHeader
+                  icon={Users}
+                  title={t('权限设置')}
+                  hint={t('用户分组和额度管理')}
+                  color='green'
+                />
+                <div className='space-y-3'>
+                  <FieldRow label={t('分组')}>
+                    <NativeSelect
+                      value={values.group || 'default'}
+                      onChange={(v) => set('group', v)}
+                      options={
+                        groupOptions.length === 0 || !groupOptions.includes(values.group)
+                          ? [
+                              ...(values.group ? [{ value: values.group, label: values.group }] : []),
+                              ...groupOptions.map((g) => ({ value: g, label: g })),
+                            ].filter(
+                              (o, i, arr) => arr.findIndex((x) => x.value === o.value) === i,
+                            )
+                          : groupOptions.map((g) => ({ value: g, label: g }))
+                      }
+                    />
+                  </FieldRow>
+                  <FieldRow label={t('当前额度')}>
+                    <div className='flex items-center justify-between gap-3 px-3 py-2 rounded-md border border-ui-border bg-ui-bg-subtle'>
+                      <span className='text-sm text-ui-text tabular-nums'>
+                        {renderQuota(values.quota || 0)}
+                        <span className='ml-2 text-xs text-ui-text-3'>
+                          {getCurrencyConfig().symbol}
+                          {Number(quotaToDisplayAmount(values.quota || 0).toFixed(6))}
+                        </span>
+                      </span>
+                      <button
+                        type='button'
+                        onClick={() => {
+                          setAdjustMode('add');
+                          setAdjustAmount('');
+                          setAdjustOpen(true);
+                        }}
+                        className='inline-flex items-center gap-1 px-2.5 py-1 text-[11px] rounded-md border border-ui-border text-ui-text-2 hover:text-ui-text hover:bg-ui-bg whitespace-nowrap'
                       >
-                        <IconUserGroup size={16} />
-                      </Avatar>
-                      <div>
-                        <Text className='text-lg font-medium'>
-                          {t('权限设置')}
-                        </Text>
-                        <div className='text-xs text-gray-600'>
-                          {t('用户分组和额度管理')}
-                        </div>
-                      </div>
+                        <Edit3 size={11} />
+                        {t('调整额度')}
+                      </button>
                     </div>
-
-                    <Row gutter={12}>
-                      <Col span={24}>
-                        <Form.Select
-                          field='group'
-                          label={t('分组')}
-                          placeholder={t('请选择分组')}
-                          optionList={groupOptions}
-                          allowAdditions
-                          search
-                          rules={[{ required: true, message: t('请选择分组') }]}
-                        />
-                      </Col>
-
-                      <Col span={10}>
-                        <Form.InputNumber
-                          field='quota_amount'
-                          label={t('金额')}
-                          prefix={getCurrencyConfig().symbol}
-                          precision={6}
-                          step={0.000001}
-                          style={{ width: '100%' }}
-                          readonly
-                        />
-                      </Col>
-
-                      <Col span={14}>
-                        <Form.Slot label={t('调整额度')}>
-                          <Button
-                            icon={<IconEdit />}
-                            onClick={() => setAdjustModalOpen(true)}
-                          >
-                            {t('调整额度')}
-                          </Button>
-                        </Form.Slot>
-                      </Col>
-
-                      <Col span={24}>
-                        <div
-                          className='text-xs cursor-pointer'
-                          style={{ color: 'var(--semi-color-text-2)' }}
-                          onClick={() => setShowQuotaInput((v) => !v)}
-                        >
-                          {showQuotaInput
-                            ? `▾ ${t('收起原生额度输入')}`
-                            : `▸ ${t('使用原生额度输入')}`}
-                        </div>
-                        <div style={{ display: showQuotaInput ? 'block' : 'none' }} className='mt-2'>
-                          <Form.InputNumber
-                            field='quota'
-                            label={t('额度')}
-                            placeholder={t('请输入额度')}
-                            style={{ width: '100%' }}
-                            readonly
-                          />
-                        </div>
-                      </Col>
-                    </Row>
-                  </Card>
-                )}
-
-                {/* 绑定信息入口 */}
-                {userId && (
-                  <Card className='!rounded-2xl shadow-sm border-0'>
-                    <div className='flex items-center justify-between gap-3'>
-                      <div className='flex items-center min-w-0'>
-                        <Avatar
-                          size='small'
-                          color='purple'
-                          className='mr-2 shadow-md'
-                        >
-                          <IconLink size={16} />
-                        </Avatar>
-                        <div className='min-w-0'>
-                          <Text className='text-lg font-medium'>
-                            {t('绑定信息')}
-                          </Text>
-                          <div className='text-xs text-gray-600'>
-                            {t('管理用户已绑定的第三方账户，支持筛选与解绑')}
-                          </div>
-                        </div>
-                      </div>
-                      <Button
-                        type='primary'
-                        theme='outline'
-                        onClick={openBindingModal}
-                      >
-                        {t('管理绑定')}
-                      </Button>
-                    </div>
-                  </Card>
-                )}
+                  </FieldRow>
+                </div>
               </div>
             )}
-          </Form>
-        </Spin>
-      </SideSheet>
+          </>
+        )}
+      </SlideOver>
 
-      <UserBindingManagementModal
-        visible={bindingModalVisible}
-        onCancel={closeBindingModal}
-        userId={userId}
-        isMobile={isMobile}
-        formApiRef={formApiRef}
-      />
-
-      {/* 调整额度模态框 */}
-      <Modal
-        centered
-        visible={adjustModalOpen}
-        onOk={adjustQuota}
-        onCancel={() => {
-          setAdjustModalOpen(false);
-          setAdjustQuotaLocal('');
-          setAdjustAmountLocal('');
-          setAdjustMode('add');
-        }}
-        confirmLoading={adjustLoading}
-        closable={null}
-        title={
-          <div className='flex items-center'>
-            <IconEdit className='mr-2' />
-            {t('调整额度')}
-          </div>
-        }
-      >
-        <div className='mb-4'>
-          <Text type='secondary' className='block mb-2'>
-            {getPreviewText()}
-          </Text>
-        </div>
-        <div className='mb-3'>
-          <div className='mb-1'>
-            <Text size='small'>{t('操作')}</Text>
-          </div>
-          <RadioGroup
-            type='button'
-            value={adjustMode}
-            onChange={(e) => {
-              setAdjustMode(e.target.value);
-              setAdjustQuotaLocal('');
-              setAdjustAmountLocal('');
-            }}
-            style={{ width: '100%' }}
+      {/* Adjust quota inner modal */}
+      {adjustOpen &&
+        createPortal(
+          <div
+            className='fixed inset-0 z-[130] flex items-center justify-center p-4'
+            style={{ background: 'rgba(0,0,0,0.5)' }}
+            onClick={adjustLoading ? undefined : () => setAdjustOpen(false)}
           >
-            <Radio value='add'>{t('添加')}</Radio>
-            <Radio value='subtract'>{t('减少')}</Radio>
-            <Radio value='override'>{t('覆盖')}</Radio>
-          </RadioGroup>
-        </div>
-        <div className='mb-3'>
-          <div className='mb-1'>
-            <Text size='small'>{t('金额')}</Text>
-          </div>
-          <InputNumber
-            prefix={getCurrencyConfig().symbol}
-            placeholder={t('输入金额')}
-            value={adjustAmountLocal}
-            precision={6}
-            min={adjustMode === 'override' ? undefined : 0}
-            step={0.000001}
-            onChange={(val) => {
-              const amount = val === '' || val == null ? '' : val;
-              setAdjustAmountLocal(amount);
-              setAdjustQuotaLocal(
-                amount === ''
-                  ? ''
-                  : adjustMode === 'override'
-                    ? displayAmountToQuota(amount)
-                    : displayAmountToQuota(Math.abs(amount)),
-              );
-            }}
-            style={{ width: '100%' }}
-            showClear
-          />
-        </div>
-        <div
-          className='text-xs cursor-pointer mt-2'
-          style={{ color: 'var(--semi-color-text-2)' }}
-          onClick={() => setShowAdjustQuotaRaw((v) => !v)}
-        >
-          {showAdjustQuotaRaw
-            ? `▾ ${t('收起原生额度输入')}`
-            : `▸ ${t('使用原生额度输入')}`}
-        </div>
-        <div style={{ display: showAdjustQuotaRaw ? 'block' : 'none' }} className='mt-2'>
-          <div className='mb-1'>
-            <Text size='small'>{t('额度')}</Text>
-          </div>
-          <InputNumber
-            placeholder={t('输入额度')}
-            value={adjustQuotaLocal}
-            min={adjustMode === 'override' ? undefined : 0}
-            onChange={(val) => {
-              const quota = val === '' || val == null ? '' : val;
-              setAdjustQuotaLocal(quota);
-              setAdjustAmountLocal(
-                quota === ''
-                  ? ''
-                  : adjustMode === 'override'
-                    ? Number(quotaToDisplayAmount(quota).toFixed(6))
-                    : Number(quotaToDisplayAmount(Math.abs(quota)).toFixed(6)),
-              );
-            }}
-            style={{ width: '100%' }}
-            showClear
-            step={500000}
-          />
-        </div>
-      </Modal>
+            <div
+              className='bg-ui-bg-elevated border border-ui-border rounded-2xl shadow-2xl w-full max-w-md overflow-hidden'
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className='flex items-center justify-between gap-3 px-5 py-3.5 border-b border-ui-border'>
+                <span className='flex items-center gap-2 text-sm font-semibold text-ui-text'>
+                  <Edit3 size={14} />
+                  {t('调整额度')}
+                </span>
+                <button
+                  onClick={() => setAdjustOpen(false)}
+                  disabled={adjustLoading}
+                  className='p-1 rounded text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-subtle disabled:opacity-40'
+                >
+                  <X size={16} />
+                </button>
+              </div>
+              <div className='p-5 space-y-3'>
+                <p className='text-xs text-ui-text-3'>{previewText()}</p>
+                <FieldRow label={t('操作')}>
+                  <div className='flex items-center gap-1'>
+                    {[
+                      { v: 'add', l: t('添加') },
+                      { v: 'subtract', l: t('减少') },
+                      { v: 'override', l: t('覆盖') },
+                    ].map((m) => (
+                      <button
+                        key={m.v}
+                        onClick={() => {
+                          setAdjustMode(m.v);
+                          setAdjustAmount('');
+                        }}
+                        className={`flex-1 px-2.5 py-1.5 text-xs rounded-md transition-colors ${
+                          adjustMode === m.v
+                            ? 'bg-ui-bg-subtle text-ui-text font-semibold border border-ui-text-3'
+                            : 'border border-ui-border text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-subtle'
+                        }`}
+                      >
+                        {m.l}
+                      </button>
+                    ))}
+                  </div>
+                </FieldRow>
+                <FieldRow label={t('金额')}>
+                  <TextField
+                    type='number'
+                    step='0.000001'
+                    value={adjustAmount}
+                    onChange={(v) => setAdjustAmount(v)}
+                    placeholder={t('输入金额')}
+                    prefix={
+                      <span className='text-ui-text-3 text-xs'>{getCurrencyConfig().symbol}</span>
+                    }
+                  />
+                </FieldRow>
+              </div>
+              <div className='flex justify-end gap-2 px-5 py-3 border-t border-ui-border'>
+                <button
+                  onClick={() => setAdjustOpen(false)}
+                  disabled={adjustLoading}
+                  className='inline-flex items-center px-3.5 py-1.5 text-xs font-medium rounded-md border border-ui-border text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-subtle disabled:opacity-40 whitespace-nowrap'
+                >
+                  {t('取消')}
+                </button>
+                <button
+                  onClick={submitAdjust}
+                  disabled={adjustLoading}
+                  className='inline-flex items-center gap-1.5 px-4 py-1.5 text-xs font-semibold rounded-md bg-ui-accent text-ui-accent-fg hover:bg-ui-accent-hover disabled:opacity-50 whitespace-nowrap'
+                >
+                  {adjustLoading && <Loader2 size={11} className='animate-spin' />}
+                  {t('确认调整')}
+                </button>
+              </div>
+            </div>
+          </div>,
+          document.body,
+        )}
     </>
   );
 };

@@ -1,39 +1,18 @@
 /*
-Copyright (C) 2025 QuantumNous
-
-This program is free software: you can redistribute it and/or modify
-it under the terms of the GNU Affero General Public License as
-published by the Free Software Foundation, either version 3 of the
-License, or (at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-GNU Affero General Public License for more details.
-
-You should have received a copy of the GNU Affero General Public License
-along with this program. If not, see <https://www.gnu.org/licenses/>.
-
-For commercial licensing, please contact support@quantumnous.com
-*/
-
-import React, { useEffect, useState, useRef } from 'react';
+ * 性能设置 — token-system rewrite.
+ */
+import React, { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
-  Banner,
-  Button,
-  Col,
-  Form,
-  InputNumber,
-  Row,
-  Spin,
-  Progress,
-  Descriptions,
-  Tag,
-  Popconfirm,
-  RadioGroup,
-  Radio,
-  Typography,
-} from '@douyinfe/semi-ui';
+  Cpu,
+  HardDrive,
+  Server,
+  RefreshCw,
+  Trash2,
+  Zap,
+  Loader2,
+  AlertTriangle,
+} from 'lucide-react';
 import {
   compareObjects,
   API,
@@ -41,13 +20,19 @@ import {
   showSuccess,
   showWarning,
 } from '../../../helpers';
-import { useTranslation } from 'react-i18next';
+import {
+  SectionWithSave,
+  FieldRow,
+  TextField,
+  ToggleField,
+  NumberField,
+  Notice,
+  RadioChipGroup,
+} from '../../../components/common/form/Primitives';
+import { showConfirm } from '../../../components/common/ConfirmDialog';
 
-const { Text } = Typography;
-
-// 格式化字节大小
 function formatBytes(bytes, decimals = 2) {
-  if (bytes === null || bytes === undefined || isNaN(bytes)) return '0 Bytes';
+  if (bytes == null || isNaN(bytes)) return '0 Bytes';
   if (bytes === 0) return '0 Bytes';
   if (bytes < 0) return '-' + formatBytes(-bytes, decimals);
   const k = 1024;
@@ -58,679 +43,441 @@ function formatBytes(bytes, decimals = 2) {
   return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
 }
 
+function ProgressBar({ percent, color = 'blue' }) {
+  const colorClasses = {
+    blue: 'bg-blue-500',
+    green: 'bg-emerald-500',
+    amber: 'bg-amber-500',
+    red: 'bg-red-500',
+  };
+  return (
+    <div className='w-full h-2 rounded-full bg-ui-bg-subtle overflow-hidden'>
+      <div
+        className={`h-full rounded-full transition-all duration-300 ${colorClasses[color] || colorClasses.blue}`}
+        style={{ width: `${Math.min(100, Math.max(0, percent))}%` }}
+      />
+    </div>
+  );
+}
+
+function StatCard({ label, value, unit }) {
+  return (
+    <div className='rounded-md border border-ui-border bg-ui-bg-subtle px-3 py-2'>
+      <div className='text-[11px] text-ui-text-3 mb-0.5'>{label}</div>
+      <div className='text-sm font-semibold text-ui-text tabular-nums'>
+        {value}
+        {unit && <span className='text-ui-text-3 text-xs font-normal ml-1'>{unit}</span>}
+      </div>
+    </div>
+  );
+}
+
+const DEFAULTS = {
+  'performance_setting.disk_cache_enabled': false,
+  'performance_setting.disk_cache_threshold_mb': 10,
+  'performance_setting.disk_cache_max_size_mb': 1024,
+  'performance_setting.disk_cache_path': '',
+  'performance_setting.monitor_enabled': false,
+  'performance_setting.monitor_cpu_threshold': 90,
+  'performance_setting.monitor_memory_threshold': 90,
+  'performance_setting.monitor_disk_threshold': 95,
+};
+
 export default function SettingsPerformance(props) {
   const { t } = useTranslation();
+  const [inputs, setInputs] = useState(DEFAULTS);
+  const [original, setOriginal] = useState(DEFAULTS);
   const [loading, setLoading] = useState(false);
   const [statsLoading, setStatsLoading] = useState(false);
   const [stats, setStats] = useState(null);
-  const [inputs, setInputs] = useState({
-    'performance_setting.disk_cache_enabled': false,
-    'performance_setting.disk_cache_threshold_mb': 10,
-    'performance_setting.disk_cache_max_size_mb': 1024,
-    'performance_setting.disk_cache_path': '',
-    'performance_setting.monitor_enabled': false,
-    'performance_setting.monitor_cpu_threshold': 90,
-    'performance_setting.monitor_memory_threshold': 90,
-    'performance_setting.monitor_disk_threshold': 95,
-  });
-  const refForm = useRef();
-  const [inputsRow, setInputsRow] = useState(inputs);
   const [logInfo, setLogInfo] = useState(null);
   const [logCleanupMode, setLogCleanupMode] = useState('by_count');
   const [logCleanupValue, setLogCleanupValue] = useState(10);
   const [logCleanupLoading, setLogCleanupLoading] = useState(false);
 
-  function handleFieldChange(fieldName) {
-    return (value) => {
-      setInputs((inputs) => ({ ...inputs, [fieldName]: value }));
-    };
-  }
-
-  function onSubmit() {
-    const updateArray = compareObjects(inputs, inputsRow);
-    if (!updateArray.length) return showWarning(t('你似乎并没有修改什么'));
-    const requestQueue = updateArray.map((item) => {
-      let value = '';
-      if (typeof inputs[item.key] === 'boolean') {
-        value = String(inputs[item.key]);
-      } else {
-        value = String(inputs[item.key]);
+  useEffect(() => {
+    const next = { ...DEFAULTS };
+    for (const k of Object.keys(DEFAULTS)) {
+      if (k in (props.options || {})) {
+        const v = props.options[k];
+        if (typeof DEFAULTS[k] === 'boolean') next[k] = v === 'true' || v === true;
+        else if (typeof DEFAULTS[k] === 'number') next[k] = parseInt(v) || DEFAULTS[k];
+        else next[k] = v;
       }
-      return API.put('/api/option/', {
-        key: item.key,
-        value,
-      });
-    });
+    }
+    setInputs(next);
+    setOriginal(structuredClone(next));
+    fetchStats();
+    fetchLogInfo();
+  }, [props.options]);
+
+  const set = (k) => (v) => setInputs((p) => ({ ...p, [k]: v }));
+
+  const diskEnabled = inputs['performance_setting.disk_cache_enabled'];
+  const monitorEnabled = inputs['performance_setting.monitor_enabled'];
+
+  const submit = () => {
+    const diff = compareObjects(inputs, original);
+    if (!diff.length) return showWarning(t('你似乎并没有修改什么'));
     setLoading(true);
-    Promise.all(requestQueue)
+    Promise.all(
+      diff.map((item) =>
+        API.put('/api/option/', {
+          key: item.key,
+          value: String(inputs[item.key]),
+        }),
+      ),
+    )
       .then((res) => {
-        if (requestQueue.length === 1) {
-          if (res.includes(undefined)) return;
-        } else if (requestQueue.length > 1) {
-          if (res.includes(undefined))
-            return showError(t('部分保存失败，请重试'));
-        }
+        if (res.includes(undefined) && diff.length > 1)
+          return showError(t('部分保存失败，请重试'));
         showSuccess(t('保存成功'));
         props.refresh();
         fetchStats();
       })
-      .catch(() => {
-        showError(t('保存失败，请重试'));
-      })
-      .finally(() => {
-        setLoading(false);
-      });
-  }
+      .catch(() => showError(t('保存失败，请重试')))
+      .finally(() => setLoading(false));
+  };
 
   async function fetchStats() {
     setStatsLoading(true);
     try {
       const res = await API.get('/api/performance/stats');
-      if (res.data.success) {
-        setStats(res.data.data);
-      }
-    } catch (error) {
-      console.error('Failed to fetch performance stats:', error);
-    } finally {
-      setStatsLoading(false);
-    }
-  }
-
-  async function clearDiskCache() {
-    try {
-      const res = await API.delete('/api/performance/disk_cache');
-      if (res.data.success) {
-        showSuccess(t('磁盘缓存已清理'));
-        fetchStats();
-      } else {
-        showError(res.data.message || t('清理失败'));
-      }
-    } catch (error) {
-      showError(t('清理失败'));
-    }
-  }
-
-  async function resetStats() {
-    try {
-      const res = await API.post('/api/performance/reset_stats');
-      if (res.data.success) {
-        showSuccess(t('统计已重置'));
-        fetchStats();
-      }
-    } catch (error) {
-      showError(t('重置失败'));
-    }
-  }
-
-  async function forceGC() {
-    try {
-      const res = await API.post('/api/performance/gc');
-      if (res.data.success) {
-        showSuccess(t('GC 已执行'));
-        fetchStats();
-      }
-    } catch (error) {
-      showError(t('GC 执行失败'));
-    }
+      if (res.data.success) setStats(res.data.data);
+    } catch {} finally { setStatsLoading(false); }
   }
 
   async function fetchLogInfo() {
     try {
       const res = await API.get('/api/performance/logs');
-      if (res.data.success) {
-        setLogInfo(res.data.data);
-      }
-    } catch (error) {
-      console.error('Failed to fetch log info:', error);
-    }
+      if (res.data.success) setLogInfo(res.data.data);
+    } catch {}
+  }
+
+  async function clearDiskCache() {
+    try {
+      const res = await API.delete('/api/performance/disk_cache');
+      if (res.data.success) { showSuccess(t('磁盘缓存已清理')); fetchStats(); }
+      else showError(res.data.message || t('清理失败'));
+    } catch { showError(t('清理失败')); }
+  }
+
+  async function resetStats() {
+    try {
+      const res = await API.post('/api/performance/reset_stats');
+      if (res.data.success) { showSuccess(t('统计已重置')); fetchStats(); }
+    } catch { showError(t('重置失败')); }
+  }
+
+  async function forceGC() {
+    try {
+      const res = await API.post('/api/performance/gc');
+      if (res.data.success) { showSuccess(t('GC 已执行')); fetchStats(); }
+    } catch { showError(t('GC 执行失败')); }
   }
 
   async function cleanupLogFiles() {
     if (logCleanupValue == null || isNaN(logCleanupValue) || logCleanupValue < 1) {
-      showError(t('请输入有效的数值'));
-      return;
+      return showError(t('请输入有效的数值'));
     }
-    setLogCleanupLoading(true);
-    try {
-      const res = await API.delete(
-        `/api/performance/logs?mode=${logCleanupMode}&value=${logCleanupValue}`,
-      );
-      if (res.data.success) {
-        const { deleted_count, freed_bytes } = res.data.data;
-        showSuccess(
-          t('已清理 {{count}} 个日志文件，释放 {{size}}', {
-            count: deleted_count,
-            size: formatBytes(freed_bytes),
-          }),
-        );
-      } else {
-        showError(res.data.message || t('清理失败'));
-      }
-      fetchLogInfo();
-    } catch (error) {
-      showError(t('清理失败'));
-    } finally {
-      setLogCleanupLoading(false);
-    }
+    showConfirm({
+      title: t('确认清理日志文件？'),
+      content:
+        logCleanupMode === 'by_count'
+          ? t('将只保留最近 {{value}} 个日志文件，其余将被删除。', { value: logCleanupValue })
+          : t('将删除 {{value}} 天前的日志文件。', { value: logCleanupValue }),
+      danger: true,
+      okText: t('确认清理'),
+      onOk: async () => {
+        setLogCleanupLoading(true);
+        try {
+          const res = await API.delete(
+            `/api/performance/logs?mode=${logCleanupMode}&value=${logCleanupValue}`,
+          );
+          if (res.data.success) {
+            const { deleted_count, freed_bytes } = res.data.data;
+            showSuccess(
+              t('已清理 {{count}} 个日志文件，释放 {{size}}', {
+                count: deleted_count,
+                size: formatBytes(freed_bytes),
+              }),
+            );
+          } else showError(res.data.message || t('清理失败'));
+          fetchLogInfo();
+        } catch { showError(t('清理失败')); }
+        finally { setLogCleanupLoading(false); }
+      },
+    });
   }
-
-  useEffect(() => {
-    const currentInputs = {};
-    for (let key in props.options) {
-      if (Object.keys(inputs).includes(key)) {
-        if (typeof inputs[key] === 'boolean') {
-          currentInputs[key] =
-            props.options[key] === 'true' || props.options[key] === true;
-        } else if (typeof inputs[key] === 'number') {
-          currentInputs[key] = parseInt(props.options[key]) || inputs[key];
-        } else {
-          currentInputs[key] = props.options[key];
-        }
-      }
-    }
-    setInputs({ ...inputs, ...currentInputs });
-    setInputsRow({ ...inputs, ...currentInputs });
-    if (refForm.current) {
-      refForm.current.setValues({ ...inputs, ...currentInputs });
-    }
-    fetchStats();
-    fetchLogInfo();
-  }, [props.options]);
 
   const diskCacheUsagePercent =
     stats?.cache_stats?.disk_cache_max_bytes > 0
-      ? (
-          (stats.cache_stats.current_disk_usage_bytes /
-            stats.cache_stats.disk_cache_max_bytes) *
-          100
-        ).toFixed(1)
+      ? ((stats.cache_stats.current_disk_usage_bytes / stats.cache_stats.disk_cache_max_bytes) * 100).toFixed(1)
       : 0;
 
   return (
-    <>
-      <Spin spinning={loading}>
-        <Form
-          values={inputs}
-          getFormApi={(formAPI) => (refForm.current = formAPI)}
-          style={{ marginBottom: 15 }}
-        >
-          <Form.Section text={t('磁盘缓存设置（磁盘换内存）')}>
-            <Banner
-              type='info'
-              description={t(
-                '启用磁盘缓存后，大请求体将临时存储到磁盘而非内存，可显著降低内存占用，适用于处理包含大量图片/文件的请求。建议在 SSD 环境下使用。',
-              )}
-              style={{ marginBottom: 16 }}
+    <div className='space-y-6'>
+      <SectionWithSave
+        title={t('磁盘缓存设置')}
+        hint={t('磁盘换内存：大请求体临时存储到磁盘而非内存，降低内存占用；建议在 SSD 环境下使用')}
+        icon={HardDrive}
+        iconColor='cyan'
+        loading={loading}
+        onSave={submit}
+        onSaveLabel={t('保存性能设置')}
+      >
+        <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3'>
+          <ToggleField
+            label={t('启用磁盘缓存')}
+            hint={t('将大请求体临时存储到磁盘')}
+            checked={diskEnabled}
+            onChange={set('performance_setting.disk_cache_enabled')}
+          />
+          <FieldRow label={t('磁盘缓存阈值 (MB)')} hint={t('请求体超过此大小时使用磁盘缓存')}>
+            <NumberField
+              value={Number(inputs['performance_setting.disk_cache_threshold_mb']) || 10}
+              onChange={(v) => set('performance_setting.disk_cache_threshold_mb')(parseInt(v) || 10)}
+              min={1} max={1024} step={1} disabled={!diskEnabled}
             />
-            <Row gutter={16}>
-              <Col xs={24} sm={12} md={8} lg={8} xl={8}>
-                <Form.Switch
-                  field={'performance_setting.disk_cache_enabled'}
-                  label={t('启用磁盘缓存')}
-                  extraText={t('将大请求体临时存储到磁盘')}
-                  size='default'
-                  checkedText='｜'
-                  uncheckedText='〇'
-                  onChange={handleFieldChange(
-                    'performance_setting.disk_cache_enabled',
-                  )}
-                />
-              </Col>
-              <Col xs={24} sm={12} md={8} lg={8} xl={8}>
-                <Form.InputNumber
-                  field={'performance_setting.disk_cache_threshold_mb'}
-                  label={t('磁盘缓存阈值 (MB)')}
-                  extraText={t('请求体超过此大小时使用磁盘缓存')}
-                  min={1}
-                  max={1024}
-                  onChange={handleFieldChange(
-                    'performance_setting.disk_cache_threshold_mb',
-                  )}
-                  disabled={!inputs['performance_setting.disk_cache_enabled']}
-                />
-              </Col>
-              <Col xs={24} sm={12} md={8} lg={8} xl={8}>
-                <Form.InputNumber
-                  field={'performance_setting.disk_cache_max_size_mb'}
-                  label={t('磁盘缓存最大总量 (MB)')}
-                  extraText={
-                    stats?.disk_space_info?.total > 0
-                      ? t('可用空间: {{free}} / 总空间: {{total}}', {
-                          free: formatBytes(stats.disk_space_info.free),
-                          total: formatBytes(stats.disk_space_info.total),
-                        })
-                      : t('磁盘缓存占用的最大空间')
-                  }
-                  min={100}
-                  max={102400}
-                  onChange={handleFieldChange(
-                    'performance_setting.disk_cache_max_size_mb',
-                  )}
-                  disabled={!inputs['performance_setting.disk_cache_enabled']}
-                />
-              </Col>
-              {/* 只在非容器环境显示缓存目录配置 */}
-              {!stats?.config?.is_running_in_container && (
-                <Col xs={24} sm={12} md={8} lg={8} xl={8}>
-                  <Form.Input
-                    field={'performance_setting.disk_cache_path'}
-                    label={t('缓存目录')}
-                    extraText={t('留空使用系统临时目录')}
-                    placeholder={t('例如 /var/cache/new-api')}
-                    onChange={handleFieldChange(
-                      'performance_setting.disk_cache_path',
-                    )}
-                    showClear
-                    disabled={!inputs['performance_setting.disk_cache_enabled']}
-                  />
-                </Col>
-              )}
-            </Row>
-          </Form.Section>
-
-          <Form.Section text={t('系统性能监控')}>
-            <Banner
-              type='info'
-              description={t(
-                '启用性能监控后，当系统资源使用率超过设定阈值时，将拒绝新的 Relay 请求 (/v1, /v1beta 等)，以保护系统稳定性。',
-              )}
-              style={{ marginBottom: 16 }}
+          </FieldRow>
+          <FieldRow
+            label={t('磁盘缓存最大总量 (MB)')}
+            hint={
+              stats?.disk_space_info?.total > 0
+                ? `${t('可用空间')}: ${formatBytes(stats.disk_space_info.free)} / ${t('总空间')}: ${formatBytes(stats.disk_space_info.total)}`
+                : t('磁盘缓存占用的最大空间')
+            }
+          >
+            <NumberField
+              value={Number(inputs['performance_setting.disk_cache_max_size_mb']) || 1024}
+              onChange={(v) => set('performance_setting.disk_cache_max_size_mb')(parseInt(v) || 1024)}
+              min={100} max={102400} step={1} disabled={!diskEnabled}
             />
-            <Row gutter={16}>
-              <Col xs={24} sm={12} md={6} lg={6} xl={6}>
-                <Form.Switch
-                  field={'performance_setting.monitor_enabled'}
-                  label={t('启用性能监控')}
-                  extraText={t('超过阈值时拒绝新请求')}
-                  size='default'
-                  checkedText='｜'
-                  uncheckedText='〇'
-                  onChange={handleFieldChange(
-                    'performance_setting.monitor_enabled',
-                  )}
-                />
-              </Col>
-              <Col xs={24} sm={12} md={6} lg={6} xl={6}>
-                <Form.InputNumber
-                  field={'performance_setting.monitor_cpu_threshold'}
-                  label={t('CPU 阈值 (%)')}
-                  extraText={t('CPU 使用率超过此值时拒绝请求')}
-                  min={0}
-                  onChange={handleFieldChange(
-                    'performance_setting.monitor_cpu_threshold',
-                  )}
-                  disabled={!inputs['performance_setting.monitor_enabled']}
-                />
-              </Col>
-              <Col xs={24} sm={12} md={6} lg={6} xl={6}>
-                <Form.InputNumber
-                  field={'performance_setting.monitor_memory_threshold'}
-                  label={t('内存 阈值 (%)')}
-                  extraText={t('内存使用率超过此值时拒绝请求')}
-                  min={0}
-                  max={100}
-                  onChange={handleFieldChange(
-                    'performance_setting.monitor_memory_threshold',
-                  )}
-                  disabled={!inputs['performance_setting.monitor_enabled']}
-                />
-              </Col>
-              <Col xs={24} sm={12} md={6} lg={6} xl={6}>
-                <Form.InputNumber
-                  field={'performance_setting.monitor_disk_threshold'}
-                  label={t('磁盘 阈值 (%)')}
-                  extraText={t('磁盘使用率超过此值时拒绝请求')}
-                  min={0}
-                  max={100}
-                  onChange={handleFieldChange(
-                    'performance_setting.monitor_disk_threshold',
-                  )}
-                  disabled={!inputs['performance_setting.monitor_enabled']}
-                />
-              </Col>
-            </Row>
-            <Row>
-              <Button size='default' onClick={onSubmit}>
-                {t('保存性能设置')}
-              </Button>
-            </Row>
-          </Form.Section>
-        </Form>
-      </Spin>
-
-      {/* 服务器日志管理 */}
-      <Form.Section text={t('服务器日志管理')}>
-        <Banner
-          type='info'
-          description={t(
-            '管理服务器运行日志文件。日志文件会随运行时间不断累积，建议定期清理以释放磁盘空间。',
+          </FieldRow>
+          {!stats?.config?.is_running_in_container && (
+            <FieldRow label={t('缓存目录')} hint={t('留空使用系统临时目录')}>
+              <TextField
+                value={inputs['performance_setting.disk_cache_path'] || ''}
+                onChange={set('performance_setting.disk_cache_path')}
+                placeholder={t('例如 /var/cache/new-api')}
+                disabled={!diskEnabled}
+              />
+            </FieldRow>
           )}
-          style={{ marginBottom: 16 }}
-        />
+        </div>
+      </SectionWithSave>
+
+      <SectionWithSave
+        title={t('系统性能监控')}
+        hint={t('当系统资源使用率超过阈值时，拒绝新的 Relay 请求 (/v1, /v1beta 等)')}
+        icon={Cpu}
+        iconColor='amber'
+      >
+        <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3'>
+          <ToggleField
+            label={t('启用性能监控')}
+            hint={t('超过阈值时拒绝新请求')}
+            checked={monitorEnabled}
+            onChange={set('performance_setting.monitor_enabled')}
+          />
+          <FieldRow label={t('CPU 阈值 (%)')} hint={t('CPU 使用率超过此值时拒绝请求')}>
+            <NumberField
+              value={Number(inputs['performance_setting.monitor_cpu_threshold']) || 90}
+              onChange={(v) => set('performance_setting.monitor_cpu_threshold')(parseInt(v) || 90)}
+              min={0} max={100} step={1} disabled={!monitorEnabled}
+            />
+          </FieldRow>
+          <FieldRow label={t('内存阈值 (%)')} hint={t('内存使用率超过此值时拒绝请求')}>
+            <NumberField
+              value={Number(inputs['performance_setting.monitor_memory_threshold']) || 90}
+              onChange={(v) => set('performance_setting.monitor_memory_threshold')(parseInt(v) || 90)}
+              min={0} max={100} step={1} disabled={!monitorEnabled}
+            />
+          </FieldRow>
+          <FieldRow label={t('磁盘阈值 (%)')} hint={t('磁盘使用率超过此值时拒绝请求')}>
+            <NumberField
+              value={Number(inputs['performance_setting.monitor_disk_threshold']) || 95}
+              onChange={(v) => set('performance_setting.monitor_disk_threshold')(parseInt(v) || 95)}
+              min={0} max={100} step={1} disabled={!monitorEnabled}
+            />
+          </FieldRow>
+        </div>
+      </SectionWithSave>
+
+      {/* 日志管理 */}
+      <div className='space-y-3'>
+        <div className='flex items-center gap-2'>
+          <div className='w-8 h-8 rounded-md inline-flex items-center justify-center border bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20'>
+            <Server size={15} />
+          </div>
+          <div className='flex-1 min-w-0'>
+            <div className='text-sm font-semibold text-ui-text'>{t('服务器日志管理')}</div>
+            <div className='text-[11px] text-ui-text-3 mt-0.5'>
+              {t('管理服务器运行日志文件；日志文件会随运行时间累积，建议定期清理')}
+            </div>
+          </div>
+        </div>
+
         {logInfo === null ? null : logInfo.enabled ? (
           <>
-            <Descriptions
-              data={[
-                { key: t('日志目录'), value: logInfo.log_dir },
-                {
-                  key: t('日志文件数'),
-                  value: logInfo.file_count,
-                },
-                {
-                  key: t('日志总大小'),
-                  value: formatBytes(logInfo.total_size),
-                },
-                ...(logInfo.oldest_time && logInfo.newest_time
-                  ? [
-                      {
-                        key: t('日志时间范围'),
-                        value: `${new Date(logInfo.oldest_time).toLocaleDateString()} ~ ${new Date(logInfo.newest_time).toLocaleDateString()}`,
-                      },
-                    ]
-                  : []),
-              ]}
-              style={{ marginBottom: 16 }}
-            />
-            <Row gutter={16} style={{ marginBottom: 16 }}>
-              <Col xs={24} sm={12} md={8}>
-                <div style={{ marginBottom: 12 }}>
-                  <Text strong style={{ display: 'block', marginBottom: 8 }}>
-                    {t('清理方式')}
-                  </Text>
-                  <RadioGroup
-                    value={logCleanupMode}
-                    onChange={(e) => setLogCleanupMode(e.target.value)}
-                  >
-                    <Radio value='by_count'>{t('保留最近N个文件')}</Radio>
-                    <Radio value='by_days'>{t('保留最近N天')}</Radio>
-                  </RadioGroup>
-                </div>
-              </Col>
-              <Col xs={24} sm={12} md={8}>
-                <div style={{ marginBottom: 12 }}>
-                  <Text strong style={{ display: 'block', marginBottom: 8 }}>
-                    {logCleanupMode === 'by_count'
-                      ? t('保留文件数')
-                      : t('保留天数')}
-                  </Text>
-                  <InputNumber
-                    value={logCleanupValue}
-                    min={1}
-                    max={logCleanupMode === 'by_count' ? 1000 : 3650}
-                    onChange={(value) => setLogCleanupValue(value)}
-                    style={{ width: '100%' }}
-                  />
-                </div>
-              </Col>
-              <Col xs={24} sm={12} md={8}>
-                <div style={{ marginBottom: 12 }}>
-                  <Text
-                    strong
-                    style={{
-                      display: 'block',
-                      marginBottom: 8,
-                      visibility: 'hidden',
-                    }}
-                  >
-                    &nbsp;
-                  </Text>
-                <Popconfirm
-                  title={t('确认清理日志文件？')}
-                  content={
-                    logCleanupMode === 'by_count'
-                      ? t(
-                          '将只保留最近 {{value}} 个日志文件，其余将被删除。',
-                          { value: logCleanupValue },
-                        )
-                      : t('将删除 {{value}} 天前的日志文件。', {
-                          value: logCleanupValue,
-                        })
-                  }
-                  onConfirm={cleanupLogFiles}
+            <div className='grid grid-cols-2 sm:grid-cols-4 gap-3'>
+              <StatCard label={t('日志目录')} value={logInfo.log_dir} />
+              <StatCard label={t('日志文件数')} value={logInfo.file_count} />
+              <StatCard label={t('日志总大小')} value={formatBytes(logInfo.total_size)} />
+              {logInfo.oldest_time && logInfo.newest_time && (
+                <StatCard
+                  label={t('日志时间范围')}
+                  value={`${new Date(logInfo.oldest_time).toLocaleDateString()} ~ ${new Date(logInfo.newest_time).toLocaleDateString()}`}
+                />
+              )}
+            </div>
+            <div className='grid grid-cols-1 sm:grid-cols-3 gap-3'>
+              <FieldRow label={t('清理方式')}>
+                <RadioChipGroup
+                  value={logCleanupMode}
+                  onChange={setLogCleanupMode}
+                  options={[
+                    { value: 'by_count', label: t('保留最近 N 个文件') },
+                    { value: 'by_days', label: t('保留最近 N 天') },
+                  ]}
+                />
+              </FieldRow>
+              <FieldRow label={logCleanupMode === 'by_count' ? t('保留文件数') : t('保留天数')}>
+                <NumberField
+                  value={logCleanupValue}
+                  onChange={setLogCleanupValue}
+                  min={1} max={logCleanupMode === 'by_count' ? 1000 : 3650} step={1}
+                />
+              </FieldRow>
+              <FieldRow label=' '>
+                <button
+                  type='button'
+                  onClick={cleanupLogFiles}
+                  disabled={logCleanupLoading}
+                  className='inline-flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-md border border-ui-danger/30 text-ui-danger hover:bg-ui-danger-bg disabled:opacity-50'
                 >
-                  <Button type='danger' loading={logCleanupLoading}>
-                    {t('清理日志文件')}
-                  </Button>
-                </Popconfirm>
-                </div>
-              </Col>
-            </Row>
+                  {logCleanupLoading ? <Loader2 size={11} className='animate-spin' /> : <Trash2 size={11} />}
+                  {t('清理日志文件')}
+                </button>
+              </FieldRow>
+            </div>
           </>
         ) : (
-          <Banner
-            type='warning'
-            description={t('服务器日志功能未启用（未配置日志目录）')}
-          />
+          <Notice kind='warning'>
+            {t('服务器日志功能未启用（未配置日志目录）')}
+          </Notice>
         )}
-      </Form.Section>
+      </div>
 
       {/* 性能统计 */}
-      <Spin spinning={statsLoading}>
-        <Form.Section text={t('性能监控')}>
-          <Row gutter={16} style={{ marginBottom: 16 }}>
-            <Col span={24}>
-              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                <Button onClick={fetchStats}>{t('刷新统计')}</Button>
-                <Popconfirm
-                  title={t('确认清理不活跃的磁盘缓存？')}
-                  content={t('这将删除超过 10 分钟未使用的临时缓存文件')}
-                  onConfirm={clearDiskCache}
-                >
-                  <Button type='warning'>{t('清理不活跃缓存')}</Button>
-                </Popconfirm>
-                <Button onClick={resetStats}>{t('重置统计')}</Button>
-                <Button onClick={forceGC}>{t('执行 GC')}</Button>
+      <div className='space-y-3'>
+        <div className='flex items-center gap-2'>
+          <div className='w-8 h-8 rounded-md inline-flex items-center justify-center border bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-500/20'>
+            <Zap size={15} />
+          </div>
+          <div className='flex-1 min-w-0'>
+            <div className='text-sm font-semibold text-ui-text'>{t('性能监控')}</div>
+          </div>
+          <div className='flex items-center gap-2'>
+            <button onClick={fetchStats} className='inline-flex items-center gap-1 px-2.5 py-1.5 text-xs rounded-md border border-ui-border text-ui-text-2 hover:bg-ui-bg-hover'>
+              <RefreshCw size={11} /> {t('刷新')}
+            </button>
+            <button
+              onClick={() =>
+                showConfirm({
+                  title: t('确认清理不活跃的磁盘缓存？'),
+                  content: t('这将删除超过 10 分钟未使用的临时缓存文件'),
+                  danger: true,
+                  okText: t('确认清理'),
+                  onOk: clearDiskCache,
+                })
+              }
+              className='inline-flex items-center gap-1 px-2.5 py-1.5 text-xs rounded-md border border-ui-border text-ui-text-2 hover:bg-ui-bg-hover'
+            >
+              <Trash2 size={11} /> {t('清理缓存')}
+            </button>
+            <button onClick={resetStats} className='inline-flex items-center gap-1 px-2.5 py-1.5 text-xs rounded-md border border-ui-border text-ui-text-2 hover:bg-ui-bg-hover'>
+              {t('重置统计')}
+            </button>
+            <button onClick={forceGC} className='inline-flex items-center gap-1 px-2.5 py-1.5 text-xs rounded-md border border-ui-border text-ui-text-2 hover:bg-ui-bg-hover'>
+              {t('执行 GC')}
+            </button>
+          </div>
+        </div>
+
+        {statsLoading ? (
+          <div className='flex items-center justify-center py-8 text-ui-text-3'>
+            <Loader2 size={16} className='animate-spin mr-2' />
+            {t('加载中...')}
+          </div>
+        ) : stats ? (
+          <>
+            <div className='grid grid-cols-1 md:grid-cols-2 gap-3'>
+              {/* 磁盘缓存 */}
+              <div className='rounded-md border border-ui-border bg-ui-bg-subtle p-3 space-y-2'>
+                <div className='text-xs font-semibold text-ui-text'>{t('请求体磁盘缓存')}</div>
+                <ProgressBar percent={parseFloat(diskCacheUsagePercent)} color={parseFloat(diskCacheUsagePercent) > 80 ? 'red' : 'blue'} />
+                <div className='flex justify-between text-[11px] text-ui-text-3'>
+                  <span>{formatBytes(stats.cache_stats.current_disk_usage_bytes)} / {formatBytes(stats.cache_stats.disk_cache_max_bytes)}</span>
+                  <span>{t('活跃文件')}: {stats.cache_stats.active_disk_files}</span>
+                </div>
+                <span className='inline-block text-[10px] px-2 py-0.5 rounded-full bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20'>
+                  {t('磁盘命中')}: {stats.cache_stats.disk_cache_hits}
+                </span>
               </div>
-            </Col>
-          </Row>
 
-          {stats && (
-            <>
-              {/* 缓存使用情况 */}
-              <Row
-                gutter={16}
-                style={{
-                  marginBottom: 16,
-                  display: 'flex',
-                  alignItems: 'stretch',
-                }}
-              >
-                <Col xs={24} md={12} style={{ display: 'flex' }}>
-                  <div
-                    style={{
-                      padding: 16,
-                      background: 'var(--semi-color-fill-0)',
-                      borderRadius: 8,
-                      flex: 1,
-                      display: 'flex',
-                      flexDirection: 'column',
-                    }}
-                  >
-                    <Text strong style={{ marginBottom: 8, display: 'block' }}>
-                      {t('请求体磁盘缓存')}
-                    </Text>
-                    <Progress
-                      percent={parseFloat(diskCacheUsagePercent)}
-                      showInfo
-                      style={{ marginBottom: 8 }}
-                      stroke={
-                        parseFloat(diskCacheUsagePercent) > 80
-                          ? 'var(--semi-color-danger)'
-                          : 'var(--semi-color-primary)'
-                      }
-                    />
-                    <div
-                      style={{
-                        display: 'flex',
-                        justifyContent: 'space-between',
-                        marginBottom: 8,
-                      }}
-                    >
-                      <Text type='tertiary'>
-                        {formatBytes(
-                          stats.cache_stats.current_disk_usage_bytes,
-                        )}{' '}
-                        / {formatBytes(stats.cache_stats.disk_cache_max_bytes)}
-                      </Text>
-                      <Text type='tertiary'>
-                        {t('活跃文件')}: {stats.cache_stats.active_disk_files}
-                      </Text>
-                    </div>
-                    <div style={{ marginTop: 'auto' }}>
-                      <Tag color='blue'>
-                        {t('磁盘命中')}: {stats.cache_stats.disk_cache_hits}
-                      </Tag>
-                    </div>
-                  </div>
-                </Col>
-                <Col xs={24} md={12} style={{ display: 'flex' }}>
-                  <div
-                    style={{
-                      padding: 16,
-                      background: 'var(--semi-color-fill-0)',
-                      borderRadius: 8,
-                      flex: 1,
-                      display: 'flex',
-                      flexDirection: 'column',
-                    }}
-                  >
-                    <Text strong style={{ marginBottom: 8, display: 'block' }}>
-                      {t('请求体内存缓存')}
-                    </Text>
-                    <div
-                      style={{
-                        display: 'flex',
-                        justifyContent: 'space-between',
-                        marginBottom: 8,
-                      }}
-                    >
-                      <Text>
-                        {t('当前缓存大小')}:{' '}
-                        {formatBytes(
-                          stats.cache_stats.current_memory_usage_bytes,
-                        )}
-                      </Text>
-                      <Text>
-                        {t('活跃缓存数')}:{' '}
-                        {stats.cache_stats.active_memory_buffers}
-                      </Text>
-                    </div>
-                    <div style={{ marginTop: 'auto' }}>
-                      <Tag color='green'>
-                        {t('内存命中')}: {stats.cache_stats.memory_cache_hits}
-                      </Tag>
-                    </div>
-                  </div>
-                </Col>
-              </Row>
+              {/* 内存缓存 */}
+              <div className='rounded-md border border-ui-border bg-ui-bg-subtle p-3 space-y-2'>
+                <div className='text-xs font-semibold text-ui-text'>{t('请求体内存缓存')}</div>
+                <div className='flex justify-between text-[11px] text-ui-text'>
+                  <span>{t('当前缓存大小')}: {formatBytes(stats.cache_stats.current_memory_usage_bytes)}</span>
+                  <span>{t('活跃缓存数')}: {stats.cache_stats.active_memory_buffers}</span>
+                </div>
+                <span className='inline-block text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20'>
+                  {t('内存命中')}: {stats.cache_stats.memory_cache_hits}
+                </span>
+              </div>
+            </div>
 
-              {/* 缓存目录磁盘空间 */}
-              {stats.disk_space_info?.total > 0 && (
-                <Row gutter={16} style={{ marginBottom: 16 }}>
-                  <Col span={24}>
-                    <div
-                      style={{
-                        padding: 16,
-                        background: 'var(--semi-color-fill-0)',
-                        borderRadius: 8,
-                      }}
-                    >
-                      <Text
-                        strong
-                        style={{ marginBottom: 8, display: 'block' }}
-                      >
-                        {t('缓存目录磁盘空间')}
-                      </Text>
-                      <Progress
-                        percent={parseFloat(
-                          stats.disk_space_info.used_percent.toFixed(1),
-                        )}
-                        showInfo
-                        style={{ marginBottom: 8 }}
-                        stroke={
-                          stats.disk_space_info.used_percent > 90
-                            ? 'var(--semi-color-danger)'
-                            : stats.disk_space_info.used_percent > 70
-                              ? 'var(--semi-color-warning)'
-                              : 'var(--semi-color-primary)'
-                        }
-                      />
-                      <div
-                        style={{
-                          display: 'flex',
-                          justifyContent: 'space-between',
-                          flexWrap: 'wrap',
-                          gap: 8,
-                        }}
-                      >
-                        <Text type='tertiary'>
-                          {t('已用')}: {formatBytes(stats.disk_space_info.used)}
-                        </Text>
-                        <Text type='tertiary'>
-                          {t('可用')}: {formatBytes(stats.disk_space_info.free)}
-                        </Text>
-                        <Text type='tertiary'>
-                          {t('总计')}:{' '}
-                          {formatBytes(stats.disk_space_info.total)}
-                        </Text>
-                      </div>
-                      {stats.disk_space_info.free <
-                        inputs['performance_setting.disk_cache_max_size_mb'] *
-                          1024 *
-                          1024 && (
-                        <Banner
-                          type='warning'
-                          description={t('磁盘可用空间小于缓存最大总量设置')}
-                          style={{ marginTop: 8 }}
-                        />
-                      )}
-                    </div>
-                  </Col>
-                </Row>
-              )}
+            {/* 磁盘空间 */}
+            {stats.disk_space_info?.total > 0 && (
+              <div className='rounded-md border border-ui-border bg-ui-bg-subtle p-3 space-y-2'>
+                <div className='text-xs font-semibold text-ui-text'>{t('缓存目录磁盘空间')}</div>
+                <ProgressBar
+                  percent={parseFloat(stats.disk_space_info.used_percent.toFixed(1))}
+                  color={
+                    stats.disk_space_info.used_percent > 90 ? 'red'
+                      : stats.disk_space_info.used_percent > 70 ? 'amber' : 'green'
+                  }
+                />
+                <div className='flex flex-wrap justify-between text-[11px] text-ui-text-3 gap-2'>
+                  <span>{t('已用')}: {formatBytes(stats.disk_space_info.used)}</span>
+                  <span>{t('可用')}: {formatBytes(stats.disk_space_info.free)}</span>
+                  <span>{t('总计')}: {formatBytes(stats.disk_space_info.total)}</span>
+                </div>
+                {stats.disk_space_info.free < inputs['performance_setting.disk_cache_max_size_mb'] * 1024 * 1024 && (
+                  <Notice kind='warning'>
+                    <AlertTriangle size={12} className='mr-1 inline' />
+                    {t('磁盘可用空间小于缓存最大总量设置')}
+                  </Notice>
+                )}
+              </div>
+            )}
 
-              {/* 系统内存统计 */}
-              <Row gutter={16}>
-                <Col span={24}>
-                  <Descriptions
-                    data={[
-                      {
-                        key: t('已分配内存'),
-                        value: formatBytes(stats.memory_stats.alloc),
-                      },
-                      {
-                        key: t('总分配内存'),
-                        value: formatBytes(stats.memory_stats.total_alloc),
-                      },
-                      {
-                        key: t('系统内存'),
-                        value: formatBytes(stats.memory_stats.sys),
-                      },
-                      { key: t('GC 次数'), value: stats.memory_stats.num_gc },
-                      {
-                        key: t('Goroutine 数'),
-                        value: stats.memory_stats.num_goroutine,
-                      },
-                      {
-                        key: t('缓存目录'),
-                        value: stats.disk_cache_info.path,
-                      },
-                      {
-                        key: t('目录文件数'),
-                        value: stats.disk_cache_info.file_count,
-                      },
-                      {
-                        key: t('目录总大小'),
-                        value: formatBytes(stats.disk_cache_info.total_size),
-                      },
-                    ]}
-                  />
-                </Col>
-              </Row>
-            </>
-          )}
-        </Form.Section>
-      </Spin>
-    </>
+            {/* 系统内存统计 */}
+            <div className='grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3'>
+              <StatCard label={t('已分配内存')} value={formatBytes(stats.memory_stats.alloc)} />
+              <StatCard label={t('总分配内存')} value={formatBytes(stats.memory_stats.total_alloc)} />
+              <StatCard label={t('系统内存')} value={formatBytes(stats.memory_stats.sys)} />
+              <StatCard label={t('GC 次数')} value={stats.memory_stats.num_gc} />
+              <StatCard label={t('Goroutine 数')} value={stats.memory_stats.num_goroutine} />
+              <StatCard label={t('缓存目录')} value={stats.disk_cache_info.path} />
+              <StatCard label={t('目录文件数')} value={stats.disk_cache_info.file_count} />
+              <StatCard label={t('目录总大小')} value={formatBytes(stats.disk_cache_info.total_size)} />
+            </div>
+          </>
+        ) : null}
+      </div>
+    </div>
   );
 }

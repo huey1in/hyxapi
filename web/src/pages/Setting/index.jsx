@@ -1,169 +1,124 @@
 /*
 Copyright (C) 2025 QuantumNous
 
-This program is free software: you can redistribute it and/or modify
-it under the terms of the GNU Affero General Public License as
-published by the Free Software Foundation, either version 3 of the
-License, or (at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-GNU Affero General Public License for more details.
-
-You should have received a copy of the GNU Affero General Public License
-along with this program. If not, see <https://www.gnu.org/licenses/>.
-
-For commercial licensing, please contact support@quantumnous.com
+System settings — token-system page shell + 6-tab navigation.
+Tabs render as horizontal pills (consistent with channels/pricing/etc).
+Sub-tabs within each section use their own internal nav.
 */
 
 import React, { useEffect, useState } from 'react';
-import { Layout, TabPane, Tabs } from '@douyinfe/semi-ui';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import {
-  Settings,
+  Globe,
   Calculator,
-  Gauge,
-  Shapes,
-  Cog,
-  MoreHorizontal,
+  ShieldCheck,
   LayoutDashboard,
-  CreditCard,
-  Server,
+  ShieldAlert,
   Activity,
 } from 'lucide-react';
 
 import SystemSetting from '../../components/settings/SystemSetting';
 import { isRoot } from '../../helpers';
-import OtherSetting from '../../components/settings/OtherSetting';
 import OperationSetting from '../../components/settings/OperationSetting';
-import RateLimitSetting from '../../components/settings/RateLimitSetting';
-import ModelSetting from '../../components/settings/ModelSetting';
+import LimitsSetting from '../../components/settings/LimitsSetting';
 import DashboardSetting from '../../components/settings/DashboardSetting';
 import RatioSetting from '../../components/settings/RatioSetting';
 import PerformanceSetting from '../../components/settings/PerformanceSetting';
+
+const TABS = [
+  { key: 'platform', icon: Globe, label: '平台设置' },
+  { key: 'models', icon: Calculator, label: '模型与定价' },
+  { key: 'limits', icon: ShieldAlert, label: '限制与监控' },
+  { key: 'dashboard', icon: LayoutDashboard, label: '仪表盘内容' },
+  { key: 'auth', icon: ShieldCheck, label: '用户认证' },
+  { key: 'performance', icon: Activity, label: '性能' },
+];
+
+const LEGACY_KEY_MAP = {
+  operation: 'platform',
+  ratio: 'models',
+  ratelimit: 'limits',
+  system: 'auth',
+  other: 'platform',
+};
 
 const Setting = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const location = useLocation();
-  const [tabActiveKey, setTabActiveKey] = useState('1');
-  let panes = [];
+  const [active, setActive] = useState('platform');
 
-  if (isRoot()) {
-    panes.push({
-      tab: (
-        <span style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
-          <Settings size={18} />
-          {t('运营设置')}
-        </span>
-      ),
-      content: <OperationSetting />,
-      itemKey: 'operation',
-    });
-    panes.push({
-      tab: (
-        <span style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
-          <LayoutDashboard size={18} />
-          {t('仪表盘设置')}
-        </span>
-      ),
-      content: <DashboardSetting />,
-      itemKey: 'dashboard',
-    });
-    panes.push({
-      tab: (
-        <span style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
-          <Calculator size={18} />
-          {t('分组与模型定价设置')}
-        </span>
-      ),
-      content: <RatioSetting />,
-      itemKey: 'ratio',
-    });
-    panes.push({
-      tab: (
-        <span style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
-          <Gauge size={18} />
-          {t('速率限制设置')}
-        </span>
-      ),
-      content: <RateLimitSetting />,
-      itemKey: 'ratelimit',
-    });
-    panes.push({
-      tab: (
-        <span style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
-          <Shapes size={18} />
-          {t('模型相关设置')}
-        </span>
-      ),
-      content: <ModelSetting />,
-      itemKey: 'models',
-    });
-    panes.push({
-      tab: (
-        <span style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
-          <Activity size={18} />
-          {t('性能设置')}
-        </span>
-      ),
-      content: <PerformanceSetting />,
-      itemKey: 'performance',
-    });
-    panes.push({
-      tab: (
-        <span style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
-          <Cog size={18} />
-          {t('系统设置')}
-        </span>
-      ),
-      content: <SystemSetting />,
-      itemKey: 'system',
-    });
-    panes.push({
-      tab: (
-        <span style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
-          <MoreHorizontal size={18} />
-          {t('其他设置')}
-        </span>
-      ),
-      content: <OtherSetting />,
-      itemKey: 'other',
-    });
-  }
-  const onChangeTab = (key) => {
-    setTabActiveKey(key);
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const tab = params.get('tab');
+    setActive(LEGACY_KEY_MAP[tab] || tab || 'platform');
+  }, [location.search]);
+
+  const onChange = (key) => {
+    setActive(key);
     navigate(`?tab=${key}`);
   };
-  useEffect(() => {
-    const searchParams = new URLSearchParams(window.location.search);
-    const tab = searchParams.get('tab');
-    if (tab) {
-      setTabActiveKey(tab);
-    } else {
-      onChangeTab('operation');
-    }
-  }, [location.search]);
+
+  if (!isRoot()) {
+    return (
+      <div className='min-h-[calc(100vh-4rem)] mt-16 px-4 py-5 md:px-6 md:py-6 bg-ui-bg'>
+        <div className='max-w-[1400px] mx-auto py-16 text-center text-ui-text-3 text-sm'>
+          {t('需要超级管理员权限')}
+        </div>
+      </div>
+    );
+  }
+
+  const Active = TABS.find((t) => t.key === active) || TABS[0];
+
   return (
-    <div className='mt-[60px] px-2'>
-      <Layout>
-        <Layout.Content>
-          <Tabs
-            type='card'
-            collapsible
-            activeKey={tabActiveKey}
-            onChange={(key) => onChangeTab(key)}
+    <div className='min-h-[calc(100vh-4rem)] mt-16 px-4 py-5 md:px-6 md:py-6 bg-ui-bg'>
+      <div className='max-w-[1400px] mx-auto'>
+        {/* Header */}
+        <div className='flex items-center justify-between gap-3 mb-5'>
+          <h1
+            className='text-2xl md:text-3xl font-medium text-ui-text'
+            style={{ fontFamily: "'Space Grotesk', sans-serif", letterSpacing: '-0.02em' }}
           >
-            {panes.map((pane) => (
-              <TabPane itemKey={pane.itemKey} tab={pane.tab} key={pane.itemKey}>
-                {tabActiveKey === pane.itemKey && pane.content}
-              </TabPane>
-            ))}
-          </Tabs>
-        </Layout.Content>
-      </Layout>
+            {t('系统设置')}
+          </h1>
+        </div>
+
+        {/* Tabs */}
+        <div className='bg-ui-bg-elevated border border-ui-border rounded-xl p-1 mb-3 overflow-x-auto'>
+          <div className='flex items-center gap-1 min-w-max'>
+            {TABS.map((tb) => {
+              const Icon = tb.icon;
+              const isActive = active === tb.key;
+              return (
+                <button
+                  key={tb.key}
+                  onClick={() => onChange(tb.key)}
+                  className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-md whitespace-nowrap transition-colors flex-shrink-0 ${
+                    isActive
+                      ? 'bg-ui-bg-subtle text-ui-text font-semibold border border-ui-text-3'
+                      : 'border border-transparent text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-subtle'
+                  }`}
+                >
+                  <Icon size={13} />
+                  {t(tb.label)}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Content */}
+        <div>
+          {active === 'platform' && <OperationSetting />}
+          {active === 'models' && <RatioSetting />}
+          {active === 'limits' && <LimitsSetting />}
+          {active === 'dashboard' && <DashboardSetting />}
+          {active === 'auth' && <SystemSetting />}
+          {active === 'performance' && <PerformanceSetting />}
+        </div>
+      </div>
     </div>
   );
 };

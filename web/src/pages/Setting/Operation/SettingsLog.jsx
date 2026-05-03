@@ -1,35 +1,10 @@
 /*
-Copyright (C) 2025 QuantumNous
-
-This program is free software: you can redistribute it and/or modify
-it under the terms of the GNU Affero General Public License as
-published by the Free Software Foundation, either version 3 of the
-License, or (at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-GNU Affero General Public License for more details.
-
-You should have received a copy of the GNU Affero General Public License
-along with this program. If not, see <https://www.gnu.org/licenses/>.
-
-For commercial licensing, please contact support@quantumnous.com
-*/
-
-import React, { useEffect, useState, useRef } from 'react';
-import {
-  Button,
-  Col,
-  Form,
-  Row,
-  Spin,
-  DatePicker,
-  Typography,
-  Modal,
-} from '@douyinfe/semi-ui';
-import dayjs from 'dayjs';
+ * 日志设置 — token-system rewrite (token confirm + native datetime).
+ */
+import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import dayjs from 'dayjs';
+import { ScrollText, Trash2, Loader2, AlertTriangle } from 'lucide-react';
 import {
   compareObjects,
   API,
@@ -37,225 +12,150 @@ import {
   showSuccess,
   showWarning,
 } from '../../../helpers';
+import {
+  SectionWithSave,
+  FieldRow,
+  ToggleField,
+  DateTimeField,
+} from '../../../components/common/form/Primitives';
+import { showConfirm } from '../../../components/common/ConfirmDialog';
 
-const { Text } = Typography;
+const DEFAULTS = {
+  LogConsumeEnabled: false,
+};
+
+const initialDate = () => {
+  const d = dayjs().subtract(1, 'month');
+  return d.format('YYYY-MM-DDTHH:mm');
+};
 
 export default function SettingsLog(props) {
   const { t } = useTranslation();
+  const [inputs, setInputs] = useState(DEFAULTS);
+  const [original, setOriginal] = useState(DEFAULTS);
+  const [historyAt, setHistoryAt] = useState(initialDate());
   const [loading, setLoading] = useState(false);
-  const [loadingCleanHistoryLog, setLoadingCleanHistoryLog] = useState(false);
-  const [inputs, setInputs] = useState({
-    LogConsumeEnabled: false,
-    historyTimestamp: dayjs().subtract(1, 'month').toDate(),
-  });
-  const refForm = useRef();
-  const [inputsRow, setInputsRow] = useState(inputs);
+  const [cleaning, setCleaning] = useState(false);
 
-  function onSubmit() {
-    const updateArray = compareObjects(inputs, inputsRow).filter(
-      (item) => item.key !== 'historyTimestamp',
-    );
+  useEffect(() => {
+    const next = { ...DEFAULTS };
+    for (const k of Object.keys(DEFAULTS)) {
+      if (k in (props.options || {})) next[k] = props.options[k];
+    }
+    setInputs(next);
+    setOriginal(structuredClone(next));
+  }, [props.options]);
 
-    if (!updateArray.length) return showWarning(t('你似乎并没有修改什么'));
-    const requestQueue = updateArray.map((item) => {
-      let value = '';
-      if (typeof inputs[item.key] === 'boolean') {
-        value = String(inputs[item.key]);
-      } else {
-        value = inputs[item.key];
-      }
-      return API.put('/api/option/', {
-        key: item.key,
-        value,
-      });
-    });
+  const submit = () => {
+    const diff = compareObjects(inputs, original);
+    if (!diff.length) return showWarning(t('你似乎并没有修改什么'));
     setLoading(true);
-    Promise.all(requestQueue)
-      .then((res) => {
-        if (requestQueue.length === 1) {
-          if (res.includes(undefined)) return;
-        } else if (requestQueue.length > 1) {
-          if (res.includes(undefined))
-            return showError(t('部分保存失败，请重试'));
-        }
+    Promise.all(
+      diff.map((item) =>
+        API.put('/api/option/', {
+          key: item.key,
+          value: String(inputs[item.key]),
+        }),
+      ),
+    )
+      .then(() => {
         showSuccess(t('保存成功'));
         props.refresh();
       })
-      .catch(() => {
-        showError(t('保存失败，请重试'));
-      })
-      .finally(() => {
-        setLoading(false);
-      });
-  }
-  async function onCleanHistoryLog() {
-    if (!inputs.historyTimestamp) {
-      showError(t('请选择日志记录时间'));
-      return;
-    }
+      .catch(() => showError(t('保存失败，请重试')))
+      .finally(() => setLoading(false));
+  };
 
-    const now = dayjs();
-    const targetDate = dayjs(inputs.historyTimestamp);
-    const targetTime = targetDate.format('YYYY-MM-DD HH:mm:ss');
-    const currentTime = now.format('YYYY-MM-DD HH:mm:ss');
-    const daysDiff = now.diff(targetDate, 'day');
-
-    Modal.confirm({
+  const cleanHistory = () => {
+    if (!historyAt) return showError(t('请选择日志记录时间'));
+    const target = dayjs(historyAt);
+    if (!target.isValid()) return showError(t('请选择有效的时间'));
+    const targetStr = target.format('YYYY-MM-DD HH:mm:ss');
+    const days = dayjs().diff(target, 'day');
+    showConfirm({
       title: t('确认清除历史日志'),
       content: (
-        <div style={{ lineHeight: '1.8' }}>
-          <p>
-            <Text>{t('当前时间')}：</Text>
-            <Text strong style={{ color: '#52c41a' }}>
-              {currentTime}
-            </Text>
-          </p>
-          <p>
-            <Text>{t('选择时间')}：</Text>
-            <Text strong type='danger'>
-              {targetTime}
-            </Text>
-            {daysDiff > 0 && (
-              <Text type='tertiary'>
-                {' '}
-                ({t('约')} {daysDiff} {t('天前')})
-              </Text>
-            )}
-          </p>
-          <div
-            style={{
-              background: '#fff7e6',
-              border: '1px solid #ffd591',
-              padding: '12px',
-              borderRadius: '4px',
-              marginTop: '12px',
-              color: '#333',
-            }}
-          >
-            <Text strong style={{ color: '#d46b08' }}>
-              ⚠️ {t('注意')}：
-            </Text>
-            <Text style={{ color: '#333' }}>{t('将删除')} </Text>
-            <Text strong style={{ color: '#cf1322' }}>
-              {targetTime}
-            </Text>
-            {daysDiff > 0 && (
-              <Text style={{ color: '#8c8c8c' }}>
-                {' '}
-                ({t('约')} {daysDiff} {t('天前')})
-              </Text>
-            )}
-            <Text style={{ color: '#333' }}> {t('之前的所有日志')}</Text>
+        <div className='space-y-2 text-sm'>
+          <div className='text-ui-text-2'>
+            <span className='text-ui-text-3'>{t('当前时间')}: </span>
+            <span className='text-emerald-600 dark:text-emerald-400 font-semibold'>
+              {dayjs().format('YYYY-MM-DD HH:mm:ss')}
+            </span>
           </div>
-          <p style={{ marginTop: '12px' }}>
-            <Text type='danger'>
-              {t('此操作不可恢复，请仔细确认时间后再操作！')}
-            </Text>
-          </p>
+          <div className='text-ui-text-2'>
+            <span className='text-ui-text-3'>{t('选择时间')}: </span>
+            <span className='text-ui-danger font-semibold'>{targetStr}</span>
+            {days > 0 && (
+              <span className='text-ui-text-3 text-xs ml-1'>
+                ({t('约')} {days} {t('天前')})
+              </span>
+            )}
+          </div>
+          <div className='flex items-start gap-2 px-3 py-2 rounded-md border border-amber-500/30 bg-amber-500/5'>
+            <AlertTriangle size={14} className='text-amber-500 flex-shrink-0 mt-0.5' />
+            <div className='text-xs text-ui-text-2 leading-relaxed'>
+              {t('将删除')}{' '}
+              <span className='text-ui-danger font-semibold'>{targetStr}</span>{' '}
+              {t('之前的所有日志')}。{t('此操作不可恢复，请仔细确认。')}
+            </div>
+          </div>
         </div>
       ),
       okText: t('确认删除'),
-      cancelText: t('取消'),
-      okType: 'danger',
+      danger: true,
       onOk: async () => {
+        setCleaning(true);
         try {
-          setLoadingCleanHistoryLog(true);
-          const res = await API.delete(
-            `/api/log/?target_timestamp=${Date.parse(inputs.historyTimestamp) / 1000}`,
-          );
+          const ts = Math.floor(target.toDate().getTime() / 1000);
+          const res = await API.delete(`/api/log/?target_timestamp=${ts}`);
           const { success, message, data } = res.data;
           if (success) {
             showSuccess(`${data} ${t('条日志已清理！')}`);
-            return;
           } else {
             throw new Error(t('日志清理失败：') + message);
           }
-        } catch (error) {
-          showError(error.message);
+        } catch (e) {
+          showError(e.message);
         } finally {
-          setLoadingCleanHistoryLog(false);
+          setCleaning(false);
         }
       },
     });
-  }
+  };
 
-  useEffect(() => {
-    const currentInputs = {};
-    for (let key in props.options) {
-      if (Object.keys(inputs).includes(key)) {
-        currentInputs[key] = props.options[key];
-      }
-    }
-    currentInputs['historyTimestamp'] = inputs.historyTimestamp;
-    setInputs(Object.assign(inputs, currentInputs));
-    setInputsRow(structuredClone(currentInputs));
-    refForm.current.setValues(currentInputs);
-  }, [props.options]);
   return (
-    <>
-      <Spin spinning={loading}>
-        <Form
-          values={inputs}
-          getFormApi={(formAPI) => (refForm.current = formAPI)}
-          style={{ marginBottom: 15 }}
-        >
-          <Form.Section text={t('日志设置')}>
-            <Row gutter={16}>
-              <Col xs={24} sm={12} md={8} lg={8} xl={8}>
-                <Form.Switch
-                  field={'LogConsumeEnabled'}
-                  label={t('启用额度消费日志记录')}
-                  size='default'
-                  checkedText='｜'
-                  uncheckedText='〇'
-                  onChange={(value) => {
-                    setInputs({
-                      ...inputs,
-                      LogConsumeEnabled: value,
-                    });
-                  }}
-                />
-              </Col>
-              <Col xs={24} sm={12} md={8} lg={8} xl={8}>
-                <Spin spinning={loadingCleanHistoryLog}>
-                  <Form.DatePicker
-                    label={t('清除历史日志')}
-                    field={'historyTimestamp'}
-                    type='dateTime'
-                    inputReadOnly={true}
-                    onChange={(value) => {
-                      setInputs({
-                        ...inputs,
-                        historyTimestamp: value,
-                      });
-                    }}
-                  />
-                  <Text
-                    type='tertiary'
-                    size='small'
-                    style={{ display: 'block', marginTop: 4, marginBottom: 8 }}
-                  >
-                    {t('将清除选定时间之前的所有日志')}
-                  </Text>
-                  <Button
-                    size='default'
-                    type='danger'
-                    onClick={onCleanHistoryLog}
-                  >
-                    {t('清除历史日志')}
-                  </Button>
-                </Spin>
-              </Col>
-            </Row>
+    <SectionWithSave
+      title={t('日志设置')}
+      hint={t('开关消费日志记录，并支持按时间清理历史日志')}
+      icon={ScrollText}
+      iconColor='cyan'
+      loading={loading}
+      onSave={submit}
+    >
+      <ToggleField
+        label={t('启用额度消费日志记录')}
+        checked={!!inputs.LogConsumeEnabled}
+        onChange={(v) => setInputs((p) => ({ ...p, LogConsumeEnabled: v }))}
+      />
 
-            <Row>
-              <Button size='default' onClick={onSubmit}>
-                {t('保存日志设置')}
-              </Button>
-            </Row>
-          </Form.Section>
-        </Form>
-      </Spin>
-    </>
+      <div className='border-t border-ui-divider pt-3'>
+        <FieldRow
+          label={t('清除历史日志')}
+          hint={t('将清除选定时间之前的所有日志')}
+          extra={
+            <button
+              onClick={cleanHistory}
+              disabled={cleaning}
+              className='inline-flex items-center gap-1 px-2.5 py-1 text-[11px] rounded-md border border-ui-danger/30 text-ui-danger hover:bg-ui-danger-bg disabled:opacity-50 whitespace-nowrap'
+            >
+              {cleaning ? <Loader2 size={11} className='animate-spin' /> : <Trash2 size={11} />}
+              {t('清除历史日志')}
+            </button>
+          }
+        >
+          <DateTimeField value={historyAt} onChange={setHistoryAt} />
+        </FieldRow>
+      </div>
+    </SectionWithSave>
   );
 }
