@@ -1,22 +1,575 @@
 /*
 Copyright (C) 2025 QuantumNous
 
-This program is free software: you can redistribute it and/or modify
-it under the terms of the GNU Affero General Public License as
-published by the Free Software Foundation, either version 3 of the
-License, or (at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-GNU Affero General Public License for more details.
-
-You should have received a copy of the GNU Affero General Public License
-along with this program. If not, see <https://www.gnu.org/licenses/>.
-
-For commercial licensing, please contact support@quantumnous.com
+Modern minimalist wallet page.
 */
 
-import TopUp from '../../components/topup';
+import React, { useContext, useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import { useSearchParams } from 'react-router-dom';
+import {
+  Wallet, RefreshCw, Send, Gift, History, Copy, Check,
+  ArrowRight, Users, Sparkles, X,
+} from 'lucide-react';
+import { createPortal } from 'react-dom';
+import {
+  API,
+  showError,
+  showSuccess,
+  showInfo,
+  copy,
+  renderQuota,
+  timestamp2string,
+} from '../../helpers';
+import { UserContext } from '../../context/User';
+import { StatusContext } from '../../context/Status';
+import Pagination from '../../components/common/table/Pagination';
+
+// ── small atoms ────────────────────────────────────────
+
+const Card = ({ title, action, children, className = '', bodyClass = 'p-5' }) => (
+  <div className={`bg-ui-bg-elevated border border-ui-border rounded-xl ${className}`}>
+    {(title || action) && (
+      <div className='flex items-center justify-between gap-3 px-5 py-3.5 border-b border-ui-border'>
+        {title && <div className='text-sm font-semibold text-ui-text'>{title}</div>}
+        {action}
+      </div>
+    )}
+    <div className={bodyClass}>{children}</div>
+  </div>
+);
+
+const inputCls =
+  'w-full px-3 py-2 text-sm bg-ui-bg border border-ui-border rounded-lg text-ui-text placeholder:text-ui-text-3 outline-none focus:border-ui-text-3 transition-colors';
+
+const PrimaryBtn = ({ children, ...props }) => (
+  <button
+    {...props}
+    className={`inline-flex items-center justify-center gap-1.5 px-4 py-2 text-sm font-semibold rounded-lg bg-ui-accent text-ui-accent-fg hover:bg-ui-accent-hover hover:shadow-md active:scale-95 disabled:opacity-50 disabled:hover:shadow-none disabled:active:scale-100 transition-all ${props.className || ''}`}
+  >
+    {children}
+  </button>
+);
+
+const GhostBtn = ({ children, ...props }) => (
+  <button
+    {...props}
+    className={`inline-flex items-center justify-center gap-1.5 px-4 py-2 text-sm font-medium rounded-lg border border-ui-border text-ui-text hover:bg-ui-bg-subtle transition-colors ${props.className || ''}`}
+  >
+    {children}
+  </button>
+);
+
+// ── topup history modal ─────────────────────────────────
+
+const TYPE_LABELS = {
+  1: { label: '充值', color: '#22c55e' },
+  2: { label: '消费', color: '#3b82f6' },
+  6: { label: '退款', color: '#f59e0b' },
+};
+
+const HistoryModal = ({ open, onClose, t }) => {
+  const [items, setItems] = useState([]);
+  const [page, setPage] = useState(1);
+  const [total, setTotal] = useState(0);
+  const [loading, setLoading] = useState(false);
+
+  const load = async (p = 1) => {
+    setLoading(true);
+    try {
+      const params = new URLSearchParams({
+        p: String(p),
+        size: '15',
+        type: '1', // 充值类型
+      });
+      const { data } = await API.get(`/api/log/self/?${params.toString()}`);
+      if (data.success) {
+        setItems(data.data.items || []);
+        setTotal(data.data.total || 0);
+        setPage(data.data.page || p);
+      }
+    } catch (e) {
+      showError(e.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (open) load(1);
+  }, [open]);
+
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e) => e.key === 'Escape' && onClose();
+    const original = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    document.addEventListener('keydown', onKey);
+    return () => {
+      document.body.style.overflow = original;
+      document.removeEventListener('keydown', onKey);
+    };
+  }, [open, onClose]);
+
+  if (!open) return null;
+  if (typeof document === 'undefined') return null;
+
+  return createPortal(
+    <div
+      className='fixed inset-0 z-[100] flex items-center justify-center p-4'
+      style={{ background: 'rgba(0,0,0,0.5)' }}
+      onClick={onClose}
+    >
+      <div
+        className='bg-ui-bg-elevated border border-ui-border rounded-2xl shadow-2xl w-full max-w-2xl max-h-[85vh] flex flex-col overflow-hidden'
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className='flex items-center justify-between px-5 py-3.5 border-b border-ui-border'>
+          <span className='text-sm font-semibold text-ui-text'>{t('充值记录')}</span>
+          <button
+            onClick={onClose}
+            className='p-1 rounded text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-subtle'
+          >
+            <X size={16} />
+          </button>
+        </div>
+        <div className='flex-1 overflow-y-auto'>
+          {loading && items.length === 0 ? (
+            <div className='py-12 text-center text-ui-text-3 text-sm'>{t('加载中...')}</div>
+          ) : items.length === 0 ? (
+            <div className='py-12 text-center text-ui-text-3 text-sm'>{t('暂无记录')}</div>
+          ) : (
+            <table className='w-full text-sm'>
+              <thead>
+                <tr className='border-b border-ui-border bg-ui-bg-subtle/50 text-[11px] uppercase tracking-wider text-ui-text-3'>
+                  <th className='text-left px-5 py-2.5 font-medium'>{t('时间')}</th>
+                  <th className='text-left px-5 py-2.5 font-medium'>{t('内容')}</th>
+                  <th className='text-right px-5 py-2.5 font-medium'>{t('额度')}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {items.map((log, i) => (
+                  <tr key={log.id || i} className='border-b border-ui-divider last:border-b-0'>
+                    <td className='px-5 py-3 text-xs text-ui-text-2 whitespace-nowrap'>
+                      {timestamp2string(log.created_at)}
+                    </td>
+                    <td className='px-5 py-3 text-ui-text'>
+                      {log.content || '—'}
+                    </td>
+                    <td className='px-5 py-3 text-right tabular-nums text-ui-text font-medium'>
+                      {log.quota > 0 ? renderQuota(log.quota) : '—'}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </div>
+        {items.length > 0 && (
+          <Pagination page={page} pageSize={15} total={total} onChange={load} />
+        )}
+      </div>
+    </div>,
+    document.body,
+  );
+};
+
+// ── transfer modal ──────────────────────────────────────
+
+const TransferModal = ({ open, max, onClose, onConfirm, t }) => {
+  const [amount, setAmount] = useState(0);
+  useEffect(() => {
+    if (open) setAmount(0);
+  }, [open]);
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e) => e.key === 'Escape' && onClose();
+    const ov = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    document.addEventListener('keydown', onKey);
+    return () => {
+      document.body.style.overflow = ov;
+      document.removeEventListener('keydown', onKey);
+    };
+  }, [open, onClose]);
+
+  if (!open) return null;
+  if (typeof document === 'undefined') return null;
+
+  return createPortal(
+    <div
+      className='fixed inset-0 z-[100] flex items-center justify-center p-4'
+      style={{ background: 'rgba(0,0,0,0.5)' }}
+      onClick={onClose}
+    >
+      <div
+        className='bg-ui-bg-elevated border border-ui-border rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden'
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className='flex items-center justify-between px-5 py-3.5 border-b border-ui-border'>
+          <span className='text-sm font-semibold text-ui-text'>{t('划转邀请额度')}</span>
+          <button onClick={onClose} className='p-1 rounded text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-subtle'>
+            <X size={16} />
+          </button>
+        </div>
+        <div className='p-5 space-y-3'>
+          <div>
+            <label className='block text-xs font-medium text-ui-text-2 mb-1.5'>
+              {t('划转额度')}
+            </label>
+            <input
+              type='number'
+              min={0}
+              max={max}
+              value={amount}
+              onChange={(e) => setAmount(Number(e.target.value))}
+              className={inputCls}
+            />
+            <p className='mt-1 text-[11px] text-ui-text-3'>
+              {t('可划转：')} {renderQuota(max)}
+            </p>
+          </div>
+        </div>
+        <div className='flex justify-end gap-2 px-5 py-3 border-t border-ui-border'>
+          <GhostBtn onClick={onClose}>{t('取消')}</GhostBtn>
+          <PrimaryBtn onClick={() => onConfirm(amount)}>{t('确认')}</PrimaryBtn>
+        </div>
+      </div>
+    </div>,
+    document.body,
+  );
+};
+
+// ── main ────────────────────────────────────────────────
+
+const TopUp = () => {
+  const { t } = useTranslation();
+  const [searchParams] = useSearchParams();
+  const [userState, userDispatch] = useContext(UserContext);
+  const [statusState] = useContext(StatusContext);
+
+  const [code, setCode] = useState('');
+  const [redeeming, setRedeeming] = useState(false);
+
+  const [topUpCount, setTopUpCount] = useState(statusState?.status?.min_topup || 1);
+  const [paying, setPaying] = useState(false);
+
+  const [affLink, setAffLink] = useState('');
+  const [copyingAff, setCopyingAff] = useState(false);
+
+  const [showHistory, setShowHistory] = useState(false);
+  const [showTransfer, setShowTransfer] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
+
+  const minTopUp = statusState?.status?.min_topup || 1;
+  const topUpLink = statusState?.status?.top_up_link || '';
+
+  const refreshUser = async () => {
+    setRefreshing(true);
+    try {
+      const { data } = await API.get('/api/user/self');
+      if (data.success) userDispatch({ type: 'login', payload: data.data });
+    } catch (e) {
+      showError(e.message);
+    } finally {
+      setRefreshing(false);
+    }
+  };
+
+  const loadAff = async () => {
+    try {
+      const { data } = await API.get('/api/user/aff');
+      if (data.success) {
+        const base = statusState?.status?.server_address || window.location.origin;
+        setAffLink(`${base}/register?aff=${data.data}`);
+      }
+    } catch {}
+  };
+
+  useEffect(() => {
+    refreshUser();
+    loadAff();
+  }, []);
+
+  // 兑换码 query 参数
+  useEffect(() => {
+    const c = searchParams.get('code');
+    if (c) setCode(c);
+  }, [searchParams]);
+
+  const redeem = async () => {
+    if (!code.trim()) {
+      showInfo(t('请输入兑换码'));
+      return;
+    }
+    setRedeeming(true);
+    try {
+      const { data } = await API.post('/api/user/topup', { key: code.trim() });
+      if (data.success) {
+        showSuccess(t('兑换成功！获得 ') + renderQuota(data.data));
+        setCode('');
+        if (userState.user) {
+          userDispatch({
+            type: 'login',
+            payload: { ...userState.user, quota: userState.user.quota + data.data },
+          });
+        }
+      } else {
+        showError(data.message);
+      }
+    } catch (e) {
+      showError(e.message);
+    } finally {
+      setRedeeming(false);
+    }
+  };
+
+  const goRecharge = () => {
+    if (topUpLink) {
+      window.open(topUpLink, '_blank');
+    } else {
+      showInfo(t('管理员未配置充值链接'));
+    }
+  };
+
+  const copyAff = async () => {
+    if (!affLink) return;
+    const ok = await copy(affLink);
+    if (ok) {
+      setCopyingAff(true);
+      showSuccess(t('已复制邀请链接'));
+      setTimeout(() => setCopyingAff(false), 1500);
+    }
+  };
+
+  const transferAff = async (amount) => {
+    if (!amount || amount <= 0) {
+      showError(t('请输入有效金额'));
+      return;
+    }
+    try {
+      const { data } = await API.post('/api/user/aff_transfer', { quota: amount });
+      if (data.success) {
+        showSuccess(t('划转成功'));
+        setShowTransfer(false);
+        refreshUser();
+      } else {
+        showError(data.message);
+      }
+    } catch (e) {
+      showError(e.message);
+    }
+  };
+
+  const u = userState?.user || {};
+  const quota = u.quota || 0;
+  const usedQuota = u.used_quota || 0;
+  const affQuota = u.aff_quota || 0;
+  const affCount = u.aff_count || 0;
+  const affHistoryQuota = u.aff_history_quota || 0;
+
+  return (
+    <div className='min-h-[calc(100vh-4rem)] mt-16 px-4 py-5 md:px-6 md:py-6 bg-ui-bg'>
+      <div className='max-w-5xl mx-auto'>
+        {/* Header */}
+        <div className='flex items-center justify-between gap-3 mb-5'>
+          <h1
+            className='text-2xl md:text-3xl font-medium text-ui-text'
+            style={{ fontFamily: "'Space Grotesk', sans-serif", letterSpacing: '-0.02em' }}
+          >
+            {t('钱包管理')}
+          </h1>
+          <div className='flex items-center gap-1'>
+            <button
+              onClick={() => setShowHistory(true)}
+              title={t('充值记录')}
+              className='inline-flex items-center justify-center w-9 h-9 rounded-lg text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-subtle transition-colors'
+            >
+              <History size={14} />
+            </button>
+            <button
+              onClick={refreshUser}
+              title={t('刷新')}
+              className='inline-flex items-center justify-center w-9 h-9 rounded-lg text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-subtle transition-colors'
+            >
+              <RefreshCw size={14} className={refreshing ? 'animate-spin' : ''} />
+            </button>
+          </div>
+        </div>
+
+        {/* Balance hero */}
+        <div className='relative overflow-hidden bg-ui-bg-elevated border border-ui-border rounded-2xl p-6 md:p-8 mb-5'>
+          {/* brand glow */}
+          <div
+            className='absolute -z-0 -top-32 -right-32 w-64 h-64 rounded-full opacity-20 blur-3xl pointer-events-none'
+            style={{ background: 'var(--ui-brand)' }}
+          />
+          <div className='relative z-10 grid grid-cols-1 md:grid-cols-3 gap-6'>
+            <div className='md:col-span-2'>
+              <div className='flex items-center gap-2 text-ui-text-3 text-xs uppercase tracking-widest mb-3'>
+                <Wallet size={14} />
+                {t('当前余额')}
+              </div>
+              <div
+                className='text-4xl md:text-5xl font-medium text-ui-text tabular-nums'
+                style={{ fontFamily: "'Space Grotesk', sans-serif", letterSpacing: '-0.02em' }}
+              >
+                {renderQuota(quota)}
+              </div>
+              <p className='mt-2 text-sm text-ui-text-3'>
+                {t('累计已使用')} {renderQuota(usedQuota)}
+              </p>
+            </div>
+            <div className='flex flex-col justify-end gap-2'>
+              <PrimaryBtn onClick={goRecharge}>
+                {t('立即充值')}
+                <ArrowRight size={14} />
+              </PrimaryBtn>
+              <GhostBtn onClick={() => setShowHistory(true)}>
+                <History size={14} />
+                {t('查看记录')}
+              </GhostBtn>
+            </div>
+          </div>
+        </div>
+
+        {/* Two-column: redeem code + recharge */}
+        <div className='grid grid-cols-1 md:grid-cols-2 gap-4 mb-5'>
+          {/* Redeem code */}
+          <Card
+            title={
+              <span className='flex items-center gap-2'>
+                <Gift size={15} className='text-ui-text-3' />
+                {t('兑换码')}
+              </span>
+            }
+          >
+            <p className='text-xs text-ui-text-3 mb-3'>
+              {t('输入管理员发放的兑换码，立即获得对应额度')}
+            </p>
+            <div className='flex gap-2'>
+              <input
+                type='text'
+                value={code}
+                onChange={(e) => setCode(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && redeem()}
+                placeholder='XXXX-XXXX-XXXX-XXXX'
+                className={`${inputCls} font-mono`}
+              />
+              <PrimaryBtn onClick={redeem} disabled={redeeming || !code.trim()} className='whitespace-nowrap flex-shrink-0'>
+                {redeeming ? t('兑换中...') : t('兑换')}
+              </PrimaryBtn>
+            </div>
+          </Card>
+
+          {/* Recharge amount */}
+          <Card
+            title={
+              <span className='flex items-center gap-2'>
+                <Sparkles size={15} className='text-ui-text-3' />
+                {t('快捷充值')}
+              </span>
+            }
+          >
+            <p className='text-xs text-ui-text-3 mb-3'>
+              {t('支持多种支付方式，跳转到充值页面完成支付')}
+            </p>
+            <div className='flex flex-wrap gap-1.5 mb-3'>
+              {[10, 50, 100, 500].map((amt) => (
+                <button
+                  key={amt}
+                  onClick={() => setTopUpCount(amt)}
+                  className={`px-3 py-1.5 text-xs rounded-md transition-colors ${
+                    topUpCount === amt
+                      ? 'bg-ui-bg-subtle text-ui-text font-semibold border border-ui-text-3'
+                      : 'border border-ui-border text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-subtle'
+                  }`}
+                >
+                  ${amt}
+                </button>
+              ))}
+              <input
+                type='number'
+                min={minTopUp}
+                value={topUpCount}
+                onChange={(e) => setTopUpCount(Number(e.target.value))}
+                className='w-24 px-3 py-1.5 text-xs bg-ui-bg border border-ui-border rounded-md text-ui-text outline-none focus:border-ui-text-3'
+              />
+            </div>
+            <PrimaryBtn className='w-full' onClick={goRecharge} disabled={paying}>
+              {paying ? t('处理中...') : t('前往充值')}
+              <ArrowRight size={14} />
+            </PrimaryBtn>
+          </Card>
+        </div>
+
+        {/* Affiliate */}
+        <Card
+          title={
+            <span className='flex items-center gap-2'>
+              <Users size={15} className='text-ui-text-3' />
+              {t('邀请奖励')}
+            </span>
+          }
+          action={
+            <button
+              onClick={() => setShowTransfer(true)}
+              disabled={affQuota <= 0}
+              className='inline-flex items-center gap-1.5 px-2.5 py-1 text-xs rounded-md text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-subtle disabled:opacity-40 disabled:hover:bg-transparent transition-colors'
+            >
+              <Send size={12} />
+              {t('划转到余额')}
+            </button>
+          }
+        >
+          <div className='grid grid-cols-3 gap-4 mb-4'>
+            <div>
+              <div className='text-[11px] uppercase tracking-wider text-ui-text-3 mb-1'>
+                {t('邀请人数')}
+              </div>
+              <div className='text-2xl font-medium text-ui-text tabular-nums'>{affCount}</div>
+            </div>
+            <div>
+              <div className='text-[11px] uppercase tracking-wider text-ui-text-3 mb-1'>
+                {t('可用奖励')}
+              </div>
+              <div className='text-2xl font-medium text-ui-text tabular-nums'>{renderQuota(affQuota)}</div>
+            </div>
+            <div>
+              <div className='text-[11px] uppercase tracking-wider text-ui-text-3 mb-1'>
+                {t('累计奖励')}
+              </div>
+              <div className='text-2xl font-medium text-ui-text-2 tabular-nums'>{renderQuota(affHistoryQuota)}</div>
+            </div>
+          </div>
+
+          {affLink && (
+            <div className='flex items-center gap-2 p-2 bg-ui-bg-subtle border border-ui-border rounded-lg'>
+              <code className='flex-1 text-[12px] font-mono text-ui-text-2 truncate select-all'>
+                {affLink}
+              </code>
+              <button
+                onClick={copyAff}
+                className='inline-flex items-center justify-center w-8 h-8 rounded-md text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-elevated transition-colors flex-shrink-0'
+              >
+                {copyingAff ? <Check size={14} className='text-ui-brand' /> : <Copy size={14} />}
+              </button>
+            </div>
+          )}
+        </Card>
+      </div>
+
+      {/* Modals */}
+      <HistoryModal open={showHistory} onClose={() => setShowHistory(false)} t={t} />
+      <TransferModal
+        open={showTransfer}
+        max={affQuota}
+        onClose={() => setShowTransfer(false)}
+        onConfirm={transferAff}
+        t={t}
+      />
+    </div>
+  );
+};
 
 export default TopUp;

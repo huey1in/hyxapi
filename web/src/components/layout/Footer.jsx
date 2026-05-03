@@ -197,7 +197,7 @@ const FooterBar = () => {
 
           <div className='text-sm'>
             <span className='!text-semi-color-text-1'>
-              {t('设计与开发由')}{' '}
+              {t('基于')}{' '}
             </span>
             <a
               href='https://github.com/QuantumNous/new-api'
