@@ -194,6 +194,7 @@ const Playground = () => {
   const inputRef = useRef(null);
   const [draft, setDraft] = useState('');
   const [pendingImages, setPendingImages] = useState([]);
+  const [chatVersion, setChatVersion] = useState(0);
   const fileInputRef = useRef(null);
 
   const state = usePlaygroundState();
@@ -344,11 +345,17 @@ const Playground = () => {
     }
     setMessage([]);
     setPendingImages([]);
+    // 强制 chat 区域整体重新挂载，绕过 MarkdownContent 等 React.memo 缓存
+    setChatVersion((v) => v + 1);
     // 多个 tick 后再保存一次空数组，确保任何 in-flight 的 setMessage 都已结算
-    setTimeout(() => saveMessagesImmediately([]), 0);
     setTimeout(() => {
       setMessage([]);
       saveMessagesImmediately([]);
+    }, 0);
+    setTimeout(() => {
+      setMessage([]);
+      saveMessagesImmediately([]);
+      setChatVersion((v) => v + 1);
     }, 200);
   };
 
@@ -408,7 +415,7 @@ const Playground = () => {
             );
           })()
         ) : (
-          <div className='max-w-3xl mx-auto py-6 px-2 space-y-5'>
+          <div key={`chat-${chatVersion}`} className='max-w-3xl mx-auto py-6 px-2 space-y-5'>
             {message.map((msg, idx) => {
               const isUser = msg.role === MESSAGE_ROLES.USER;
               // loading dot 持续到真正有文字 / 失败 / 正式 complete 之前

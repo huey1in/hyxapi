@@ -4,55 +4,14 @@
  */
 import React from 'react';
 import {
-  Globe,
   Github,
   MessageCircle,
   Terminal,
-  Smartphone,
   Send,
 } from 'lucide-react';
 import { FieldRow, TextField, Notice } from '../../common/form/Primitives';
 
 const inputCls = 'w-full rounded border border-ui-border bg-ui-bg-subtle text-ui-text text-xs px-3 py-2 focus:outline-none focus:ring-1 focus:ring-ui-accent/40';
-
-export function OIDCCard({ inputs, setInputs, submitOIDCSettings, t }) {
-  return (
-    <div className='space-y-3'>
-      <div className='flex items-center gap-2'>
-        <div className='w-7 h-7 rounded-md inline-flex items-center justify-center border bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20'>
-          <Globe size={13} />
-        </div>
-        <span className='text-sm font-semibold text-ui-text'>{t('配置 OIDC')}</span>
-      </div>
-      <p className='text-xs text-ui-text-3'>{t('用以支持通过 OIDC 登录，例如 Okta、Auth0 等')}</p>
-      <Notice kind='info'>
-        {t('主页链接填')} {inputs.ServerAddress || t('网站地址')}，{t('重定向 URL 填')} {inputs.ServerAddress || t('网站地址')}/oauth/oidc
-      </Notice>
-      <p className='text-xs text-ui-text-3'>{t('若你的 OIDC Provider 支持 Discovery Endpoint，你可以仅填写 Well-Known URL')}</p>
-      <div className='grid grid-cols-1 sm:grid-cols-2 gap-3'>
-        <FieldRow label={t('Well-Known URL')}>
-          <input value={inputs['oidc.well_known'] || ''} onChange={(e) => setInputs((prev) => ({ ...prev, 'oidc.well_known': e.target.value }))} placeholder={t('请输入 OIDC 的 Well-Known URL')} className={inputCls} />
-        </FieldRow>
-        <FieldRow label={t('Client ID')}>
-          <input value={inputs['oidc.client_id'] || ''} onChange={(e) => setInputs((prev) => ({ ...prev, 'oidc.client_id': e.target.value }))} className={inputCls} />
-        </FieldRow>
-        <FieldRow label={t('Client Secret')}>
-          <input type='password' value={inputs['oidc.client_secret'] || ''} onChange={(e) => setInputs((prev) => ({ ...prev, 'oidc.client_secret': e.target.value }))} placeholder={t('敏感信息不会发送到前端显示')} className={inputCls} />
-        </FieldRow>
-        <FieldRow label={t('Authorization Endpoint')}>
-          <input value={inputs['oidc.authorization_endpoint'] || ''} onChange={(e) => setInputs((prev) => ({ ...prev, 'oidc.authorization_endpoint': e.target.value }))} className={inputCls} />
-        </FieldRow>
-        <FieldRow label={t('Token Endpoint')}>
-          <input value={inputs['oidc.token_endpoint'] || ''} onChange={(e) => setInputs((prev) => ({ ...prev, 'oidc.token_endpoint': e.target.value }))} className={inputCls} />
-        </FieldRow>
-        <FieldRow label={t('User Info Endpoint')}>
-          <input value={inputs['oidc.user_info_endpoint'] || ''} onChange={(e) => setInputs((prev) => ({ ...prev, 'oidc.user_info_endpoint': e.target.value }))} className={inputCls} />
-        </FieldRow>
-      </div>
-      <button onClick={submitOIDCSettings} className='px-3 py-1.5 text-xs font-semibold rounded-md bg-ui-accent text-ui-accent-fg hover:opacity-90'>{t('保存 OIDC 设置')}</button>
-    </div>
-  );
-}
 
 export function GitHubOAuthCard({ inputs, setInputs, submitGitHubOAuth, t }) {
   return (
@@ -133,32 +92,6 @@ export function LinuxDOOAuthCard({ inputs, setInputs, submitLinuxDOOAuth, t }) {
         </FieldRow>
       </div>
       <button onClick={submitLinuxDOOAuth} className='px-3 py-1.5 text-xs font-semibold rounded-md bg-ui-accent text-ui-accent-fg hover:opacity-90'>{t('保存 Linux DO OAuth 设置')}</button>
-    </div>
-  );
-}
-
-export function WeChatCard({ inputs, setInputs, submitWeChat, t }) {
-  return (
-    <div className='space-y-3'>
-      <div className='flex items-center gap-2'>
-        <div className='w-7 h-7 rounded-md inline-flex items-center justify-center border bg-green-500/10 text-green-600 dark:text-green-400 border-green-500/20'>
-          <Smartphone size={13} />
-        </div>
-        <span className='text-sm font-semibold text-ui-text'>{t('配置 WeChat Server')}</span>
-      </div>
-      <p className='text-xs text-ui-text-3'>{t('用以支持通过微信进行登录注册')}</p>
-      <div className='grid grid-cols-1 sm:grid-cols-3 gap-3'>
-        <FieldRow label={t('WeChat Server 服务器地址')}>
-          <input value={inputs.WeChatServerAddress || ''} onChange={(e) => setInputs((prev) => ({ ...prev, WeChatServerAddress: e.target.value }))} className={inputCls} />
-        </FieldRow>
-        <FieldRow label={t('WeChat Server 访问凭证')}>
-          <input type='password' value={inputs.WeChatServerToken || ''} onChange={(e) => setInputs((prev) => ({ ...prev, WeChatServerToken: e.target.value }))} placeholder={t('敏感信息不会发送到前端显示')} className={inputCls} />
-        </FieldRow>
-        <FieldRow label={t('微信公众号二维码图片链接')}>
-          <input value={inputs.WeChatAccountQRCodeImageURL || ''} onChange={(e) => setInputs((prev) => ({ ...prev, WeChatAccountQRCodeImageURL: e.target.value }))} className={inputCls} />
-        </FieldRow>
-      </div>
-      <button onClick={submitWeChat} className='px-3 py-1.5 text-xs font-semibold rounded-md bg-ui-accent text-ui-accent-fg hover:opacity-90'>{t('保存 WeChat Server 设置')}</button>
     </div>
   );
 }

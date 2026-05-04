@@ -19,324 +19,144 @@ For commercial licensing, please contact support@quantumnous.com
 
 import ReactMarkdown from 'react-markdown';
 import 'katex/dist/katex.min.css';
-import 'highlight.js/styles/github.css';
+import 'highlight.js/styles/atom-one-dark.css';
 import './markdown.css';
 import RemarkMath from 'remark-math';
 import RemarkBreaks from 'remark-breaks';
 import RehypeKatex from 'rehype-katex';
 import RemarkGfm from 'remark-gfm';
 import RehypeHighlight from 'rehype-highlight';
-import { useRef, useState, useEffect, useMemo } from 'react';
-import mermaid from 'mermaid';
+import { useRef, useState, useMemo } from 'react';
 import React from 'react';
-import { useDebouncedCallback } from 'use-debounce';
 import clsx from 'clsx';
-import { Button, Tooltip, Toast } from '@douyinfe/semi-ui';
+import { Check, Copy } from 'lucide-react';
 import { copy, rehypeSplitWordsIntoSpans } from '../../../helpers';
-import { IconCopy } from '@douyinfe/semi-icons';
 import { useTranslation } from 'react-i18next';
 
-mermaid.initialize({
-  startOnLoad: false,
-  theme: 'default',
-  securityLevel: 'loose',
-});
+// Wrap-friendly languages — let lines break inside the code block.
+const WRAP_LANGUAGES = new Set([
+  '',
+  'md',
+  'markdown',
+  'text',
+  'txt',
+  'plaintext',
+  'tex',
+  'latex',
+]);
 
-export function Mermaid(props) {
-  const ref = useRef(null);
-  const [hasError, setHasError] = useState(false);
+// Friendly display names for common languages.
+const LANG_DISPLAY = {
+  js: 'JavaScript',
+  jsx: 'JSX',
+  ts: 'TypeScript',
+  tsx: 'TSX',
+  py: 'Python',
+  go: 'Go',
+  rs: 'Rust',
+  java: 'Java',
+  kt: 'Kotlin',
+  c: 'C',
+  cpp: 'C++',
+  cs: 'C#',
+  rb: 'Ruby',
+  php: 'PHP',
+  html: 'HTML',
+  css: 'CSS',
+  scss: 'SCSS',
+  json: 'JSON',
+  yaml: 'YAML',
+  yml: 'YAML',
+  toml: 'TOML',
+  xml: 'XML',
+  md: 'Markdown',
+  markdown: 'Markdown',
+  sh: 'Shell',
+  bash: 'Bash',
+  zsh: 'Zsh',
+  sql: 'SQL',
+  graphql: 'GraphQL',
+  dockerfile: 'Dockerfile',
+};
 
-  useEffect(() => {
-    if (props.code && ref.current) {
-      mermaid
-        .run({
-          nodes: [ref.current],
-          suppressErrors: true,
-        })
-        .catch((e) => {
-          setHasError(true);
-          console.error('[Mermaid] ', e.message);
-        });
-    }
-  }, [props.code]);
-
-  function viewSvgInNewWindow() {
-    const svg = ref.current?.querySelector('svg');
-    if (!svg) return;
-    const text = new XMLSerializer().serializeToString(svg);
-    const blob = new Blob([text], { type: 'image/svg+xml' });
-    const url = URL.createObjectURL(blob);
-    window.open(url, '_blank');
-  }
-
-  if (hasError) {
-    return null;
-  }
-
-  return (
-    <div
-      className={clsx('mermaid-container')}
-      style={{
-        cursor: 'pointer',
-        overflow: 'auto',
-        padding: '12px',
-        border: '1px solid var(--semi-color-border)',
-        borderRadius: '8px',
-        backgroundColor: 'var(--semi-color-bg-1)',
-        margin: '12px 0',
-      }}
-      ref={ref}
-      onClick={() => viewSvgInNewWindow()}
-    >
-      {props.code}
-    </div>
+const getLangFromChildren = (children) => {
+  // ReactMarkdown renders <pre><code class="language-xxx">…</code></pre>
+  const child = React.Children.toArray(children).find(
+    (c) => React.isValidElement(c) && c.props?.className,
   );
-}
+  if (!child) return '';
+  const m = String(child.props.className || '').match(/language-([\w-]+)/);
+  return m ? m[1].toLowerCase() : '';
+};
 
-function SandboxedHtmlPreview({ code }) {
-  const iframeRef = useRef(null);
-  const [iframeHeight, setIframeHeight] = useState(150);
+const getCodeText = (children) => {
+  let out = '';
+  React.Children.forEach(children, (c) => {
+    if (typeof c === 'string') out += c;
+    else if (typeof c === 'number') out += String(c);
+    else if (React.isValidElement(c)) out += getCodeText(c.props.children);
+  });
+  return out;
+};
 
-  useEffect(() => {
-    const iframe = iframeRef.current;
-    if (!iframe) return;
-
-    const handleLoad = () => {
-      try {
-        const doc = iframe.contentDocument || iframe.contentWindow?.document;
-        if (doc) {
-          const height =
-            doc.documentElement.scrollHeight || doc.body.scrollHeight;
-          setIframeHeight(Math.min(Math.max(height + 16, 60), 600));
-        }
-      } catch {
-        // sandbox restrictions may prevent access, that's fine
-      }
-    };
-
-    iframe.addEventListener('load', handleLoad);
-    return () => iframe.removeEventListener('load', handleLoad);
-  }, [code]);
-
-  return (
-    <iframe
-      ref={iframeRef}
-      sandbox='allow-same-origin'
-      srcDoc={code}
-      title='HTML Preview'
-      style={{
-        width: '100%',
-        height: `${iframeHeight}px`,
-        border: 'none',
-        overflow: 'auto',
-        backgroundColor: '#fff',
-        borderRadius: '4px',
-      }}
-    />
-  );
-}
-
-export function PreCode(props) {
-  const ref = useRef(null);
-  const [mermaidCode, setMermaidCode] = useState('');
-  const [htmlCode, setHtmlCode] = useState('');
+export function PreCode({ children, ...rest }) {
   const { t } = useTranslation();
+  const [copied, setCopied] = useState(false);
+  const lang = getLangFromChildren(children);
+  const display = LANG_DISPLAY[lang] || (lang ? lang : 'plain');
+  const wrap = WRAP_LANGUAGES.has(lang);
 
-  const renderArtifacts = useDebouncedCallback(() => {
-    if (!ref.current) return;
-    const mermaidDom = ref.current.querySelector('code.language-mermaid');
-    if (mermaidDom) {
-      setMermaidCode(mermaidDom.innerText);
+  const handleCopy = async (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const text = getCodeText(children);
+    const ok = await copy(text);
+    if (ok) {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1600);
     }
-    const htmlDom = ref.current.querySelector('code.language-html');
-    const refText = ref.current.querySelector('code')?.innerText;
-    if (htmlDom) {
-      setHtmlCode(htmlDom.innerText);
-    } else if (
-      refText?.startsWith('<!DOCTYPE') ||
-      refText?.startsWith('<svg') ||
-      refText?.startsWith('<?xml')
-    ) {
-      setHtmlCode(refText);
-    }
-  }, 600);
-
-  // 处理代码块的换行
-  useEffect(() => {
-    if (ref.current) {
-      const codeElements = ref.current.querySelectorAll('code');
-      const wrapLanguages = [
-        '',
-        'md',
-        'markdown',
-        'text',
-        'txt',
-        'plaintext',
-        'tex',
-        'latex',
-      ];
-      codeElements.forEach((codeElement) => {
-        let languageClass = codeElement.className.match(/language-(\w+)/);
-        let name = languageClass ? languageClass[1] : '';
-        if (wrapLanguages.includes(name)) {
-          codeElement.style.whiteSpace = 'pre-wrap';
-        }
-      });
-      setTimeout(renderArtifacts, 1);
-    }
-  }, []);
+  };
 
   return (
-    <>
+    <div className='code-block'>
+      <div className='code-block-header'>
+        <span className='code-block-lang'>{display}</span>
+        <button
+          type='button'
+          onClick={handleCopy}
+          className='code-block-copy'
+          aria-label={t('复制代码')}
+        >
+          {copied ? <Check size={12} /> : <Copy size={12} />}
+          <span>{copied ? t('已复制') : t('复制')}</span>
+        </button>
+      </div>
       <pre
-        ref={ref}
-        style={{
-          position: 'relative',
-          backgroundColor: 'var(--semi-color-fill-0)',
-          border: '1px solid var(--semi-color-border)',
-          borderRadius: '6px',
-          padding: '12px',
-          margin: '12px 0',
-          overflow: 'auto',
-          fontSize: '14px',
-          lineHeight: '1.4',
-        }}
+        {...rest}
+        className={clsx('code-block-pre', wrap && 'code-block-wrap')}
       >
-        <div
-          className='copy-code-button'
-          style={{
-            position: 'absolute',
-            top: '8px',
-            right: '8px',
-            display: 'flex',
-            gap: '4px',
-            zIndex: 10,
-            opacity: 0,
-            transition: 'opacity 0.2s ease',
-          }}
-        >
-          <Tooltip content={t('复制代码')}>
-            <Button
-              size='small'
-              theme='borderless'
-              icon={<IconCopy />}
-              onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                if (ref.current) {
-                  const codeElement = ref.current.querySelector('code');
-                  const code = codeElement?.textContent ?? '';
-                  copy(code).then((success) => {
-                    if (success) {
-                      Toast.success(t('代码已复制到剪贴板'));
-                    } else {
-                      Toast.error(t('复制失败，请手动复制'));
-                    }
-                  });
-                }
-              }}
-              style={{
-                padding: '4px',
-                backgroundColor: 'var(--semi-color-bg-2)',
-                borderRadius: '4px',
-                cursor: 'pointer',
-                border: '1px solid var(--semi-color-border)',
-                boxShadow: '0 1px 2px rgba(0, 0, 0, 0.1)',
-              }}
-            />
-          </Tooltip>
-        </div>
-        {props.children}
+        {children}
       </pre>
-      {mermaidCode.length > 0 && (
-        <Mermaid code={mermaidCode} key={mermaidCode} />
-      )}
-      {htmlCode.length > 0 && (
-        <div
-          style={{
-            border: '1px solid var(--semi-color-border)',
-            borderRadius: '8px',
-            padding: '16px',
-            margin: '12px 0',
-            backgroundColor: 'var(--semi-color-bg-1)',
-          }}
-        >
-          <div
-            style={{
-              marginBottom: '8px',
-              fontSize: '12px',
-              color: 'var(--semi-color-text-2)',
-            }}
-          >
-            HTML预览:
-          </div>
-          <SandboxedHtmlPreview code={htmlCode} />
-        </div>
-      )}
-    </>
+    </div>
   );
 }
 
 function CustomCode(props) {
-  const ref = useRef(null);
-  const [collapsed, setCollapsed] = useState(true);
-  const [showToggle, setShowToggle] = useState(false);
-  const { t } = useTranslation();
-
-  useEffect(() => {
-    if (ref.current) {
-      const codeHeight = ref.current.scrollHeight;
-      setShowToggle(codeHeight > 400);
-      ref.current.scrollTop = ref.current.scrollHeight;
-    }
-  }, [props.children]);
-
-  const toggleCollapsed = () => {
-    setCollapsed((collapsed) => !collapsed);
-  };
-
-  const renderShowMoreButton = () => {
-    if (showToggle && collapsed) {
-      return (
-        <div
-          style={{
-            position: 'absolute',
-            bottom: '8px',
-            right: '8px',
-            left: '8px',
-            display: 'flex',
-            justifyContent: 'center',
-          }}
-        >
-          <Button size='small' onClick={toggleCollapsed} theme='solid'>
-            {t('显示更多')}
-          </Button>
-        </div>
-      );
-    }
-    return null;
-  };
-
-  return (
-    <div style={{ position: 'relative' }}>
-      <code
-        className={clsx(props?.className)}
-        ref={ref}
-        style={{
-          maxHeight: collapsed ? '400px' : 'none',
-          overflowY: 'hidden',
-          display: 'block',
-          padding: '8px 12px',
-          backgroundColor: 'var(--semi-color-fill-0)',
-          borderRadius: '4px',
-          fontSize: '13px',
-          lineHeight: '1.4',
-        }}
-      >
-        {props.children}
+  // Inline code (no parent <pre>) gets a subtle pill style.
+  // Block code is handled by PreCode wrapper above; just render the <code> as-is so highlight.js can colorize it.
+  const { className, children, ...rest } = props;
+  const isBlock = /language-/.test(className || '');
+  if (isBlock) {
+    return (
+      <code className={className} {...rest}>
+        {children}
       </code>
-      {renderShowMoreButton()}
-    </div>
+    );
+  }
+  return (
+    <code {...rest} className={clsx('inline-code', className)}>
+      {children}
+    </code>
   );
 }
 
@@ -358,24 +178,142 @@ function escapeBrackets(text) {
   );
 }
 
-function tryWrapHtmlCode(text) {
-  // 尝试包装HTML代码
-  if (text.includes('```')) {
-    return text;
+// 把没用代码栅栏包裹的 HTML / XML / SVG 文档（包括 LLM 工具调用风格的多行块）
+// 自动包成 ```html 代码块，避免被 markdown 当作 inline HTML 解析后被空行切碎。
+//
+// 对于 LLM 工具调用包装（如 <write_to_file>），会智能识别 <path> 扩展名，
+// 把 <content> 内部按合适的语言渲染（.md 直接当 markdown，.html/.svg 用 html 高亮等）。
+function autoFenceRawDocs(text) {
+  if (!text) return text;
+
+  const EXT_TO_LANG = {
+    md: 'markdown',
+    markdown: 'markdown',
+    html: 'html',
+    htm: 'html',
+    xml: 'xml',
+    svg: 'html',
+    js: 'javascript',
+    mjs: 'javascript',
+    cjs: 'javascript',
+    jsx: 'jsx',
+    ts: 'typescript',
+    tsx: 'tsx',
+    py: 'python',
+    rb: 'ruby',
+    go: 'go',
+    rs: 'rust',
+    java: 'java',
+    kt: 'kotlin',
+    c: 'c',
+    cpp: 'cpp',
+    cc: 'cpp',
+    h: 'c',
+    hpp: 'cpp',
+    cs: 'csharp',
+    php: 'php',
+    css: 'css',
+    scss: 'scss',
+    sass: 'sass',
+    less: 'less',
+    json: 'json',
+    yaml: 'yaml',
+    yml: 'yaml',
+    toml: 'toml',
+    sh: 'bash',
+    bash: 'bash',
+    zsh: 'bash',
+    sql: 'sql',
+    graphql: 'graphql',
+    gql: 'graphql',
+    dockerfile: 'dockerfile',
+    vue: 'html',
+    svelte: 'html',
+  };
+
+  const TOOL_WRAPPER_RE =
+    /<([a-z][a-z0-9]*(?:_[a-z0-9]+)+)\b[^>]*>\s*\n([\s\S]*?)\n\s*<\/\1\s*>/i;
+  const HTML_DOC_RE = /<!DOCTYPE\s+html[\s\S]*?<\/html\s*>/i;
+  const XML_DOC_RE = /<\?xml[\s\S]*?<\/[\w:-]+\s*>/i;
+  const SVG_RE = /<svg\b[\s\S]*?<\/svg\s*>/i;
+
+  // 已存在的代码栅栏 / 行内代码识别
+  const codeFence = /(```[\s\S]*?```|`[^`]*`)/;
+
+  // 从工具调用 wrapper 内部抽取 <path>...</path> 和 <content>...</content>
+  // 然后用 path 的扩展名决定渲染方式。如果不能识别，整段当 text 代码块。
+  const transformToolWrapper = (block, _tagName, inner) => {
+    const pathMatch = inner.match(/<path>\s*([^<]+?)\s*<\/path>/i);
+    const contentMatch = inner.match(/<content>\s*\n([\s\S]*?)\n\s*<\/content>/i);
+    if (contentMatch) {
+      const innerContent = contentMatch[1];
+      let lang = 'text';
+      if (pathMatch) {
+        const pathStr = pathMatch[1].trim();
+        const dot = pathStr.lastIndexOf('.');
+        if (dot >= 0) {
+          const ext = pathStr.slice(dot + 1).toLowerCase();
+          lang = EXT_TO_LANG[ext] || ext || 'text';
+        }
+      }
+      // markdown 文件直接还原为 markdown 文本，让外层渲染器去处理
+      if (lang === 'markdown') {
+        return `\n${innerContent}\n`;
+      }
+      return `\n\`\`\`${lang}\n${innerContent}\n\`\`\`\n`;
+    }
+    // 没有 <content>，整段保留作为代码块
+    return `\n\`\`\`text\n${block}\n\`\`\`\n`;
+  };
+
+  let out = '';
+  let rest = text;
+  while (rest.length > 0) {
+    // 找最近的代码栅栏
+    const fenceMatch = codeFence.exec(rest);
+    const fenceIdx = fenceMatch ? fenceMatch.index : -1;
+
+    // 找最近的裸文档块
+    const candidates = [
+      { re: TOOL_WRAPPER_RE, kind: 'tool' },
+      { re: HTML_DOC_RE, kind: 'html' },
+      { re: XML_DOC_RE, kind: 'html' },
+      { re: SVG_RE, kind: 'html' },
+    ];
+    let docIdx = -1;
+    let docMatch = null;
+    let docKind = null;
+    for (const { re, kind } of candidates) {
+      const m = re.exec(rest);
+      if (m && (docIdx < 0 || m.index < docIdx)) {
+        docIdx = m.index;
+        docMatch = m;
+        docKind = kind;
+      }
+    }
+
+    // 代码栅栏在裸文档块之前（或后者不存在），先吃掉栅栏
+    if (fenceIdx >= 0 && (docIdx < 0 || fenceIdx <= docIdx)) {
+      out += rest.slice(0, fenceIdx + fenceMatch[0].length);
+      rest = rest.slice(fenceIdx + fenceMatch[0].length);
+      continue;
+    }
+
+    if (docMatch) {
+      out += rest.slice(0, docIdx);
+      if (docKind === 'tool') {
+        out += transformToolWrapper(docMatch[0], docMatch[1], docMatch[2]);
+      } else {
+        out += `\n\`\`\`html\n${docMatch[0]}\n\`\`\`\n`;
+      }
+      rest = rest.slice(docIdx + docMatch[0].length);
+      continue;
+    }
+
+    out += rest;
+    break;
   }
-  return text
-    .replace(
-      /([`]*?)(\w*?)([\n\r]*?)(<!DOCTYPE html>)/g,
-      (match, quoteStart, lang, newLine, doctype) => {
-        return !quoteStart ? '\n```html\n' + doctype : match;
-      },
-    )
-    .replace(
-      /(<\/body>)([\r\n\s]*?)(<\/html>)([\n\r]*)([`]*)([\n\r]*?)/g,
-      (match, bodyEnd, space, htmlEnd, newLine, quoteEnd) => {
-        return !quoteEnd ? bodyEnd + space + htmlEnd + '\n```\n' : match;
-      },
-    );
+  return out;
 }
 
 function _MarkdownContent(props) {
@@ -387,7 +325,7 @@ function _MarkdownContent(props) {
   } = props;
 
   const escapedContent = useMemo(() => {
-    return tryWrapHtmlCode(escapeBrackets(content));
+    return escapeBrackets(autoFenceRawDocs(content));
   }, [content]);
 
   // 判断是否为用户消息

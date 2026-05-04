@@ -28,9 +28,9 @@ const MobileMenuButton = ({
   onToggle,
   t,
 }) => {
-  if (!isConsoleRoute || !isMobile) return null;
+  if (!isConsoleRoute) return null;
 
-  const isOpen = isMobile ? drawerOpen : collapsed;
+  const isOpen = isMobile ? drawerOpen : !collapsed;
 
   return (
     <button
@@ -38,7 +38,7 @@ const MobileMenuButton = ({
       aria-label={isOpen ? t('关闭侧边栏') : t('打开侧边栏')}
       className='inline-flex items-center justify-center w-9 h-9 rounded-lg text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-subtle active:scale-90 transition-all duration-150'
     >
-      {isOpen ? <X size={20} /> : <Menu size={20} />}
+      {isMobile && drawerOpen ? <X size={20} /> : <Menu size={20} />}
     </button>
   );
 };

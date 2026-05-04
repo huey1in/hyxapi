@@ -16,7 +16,7 @@
 /* ==================== 全局基础样式 ==================== */
 :root {
   --sidebar-width: 180px;
-  --sidebar-width-collapsed: 60px;
+  --sidebar-width-collapsed: 0px;
   --sidebar-current-width: var(--sidebar-width);
 
   /* ── 自定义设计 token ── */

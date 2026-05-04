@@ -9,7 +9,6 @@ import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { createPortal } from 'react-dom';
 import {
-  User as UserIcon, Mail, Lock, Key, Trash2, Globe,
   Copy, Check, RefreshCw, X, ChevronRight, ShieldAlert,
 } from 'lucide-react';
 import {
@@ -303,14 +302,6 @@ const PersonalSetting = () => {
                 <span className='inline-flex items-center px-2 py-0.5 text-[11px] font-medium rounded-md bg-ui-bg-subtle border border-ui-border text-ui-text-2'>
                   {roleLabel}
                 </span>
-                <span className='inline-flex items-center px-2 py-0.5 text-[11px] font-medium rounded-md bg-ui-bg-subtle border border-ui-border text-ui-text-2 tabular-nums'>
-                  ID: {u.id}
-                </span>
-                {u.group && (
-                  <span className='inline-flex items-center px-2 py-0.5 text-[11px] font-medium rounded-md bg-ui-bg-subtle border border-ui-border text-ui-text-2'>
-                    {t('分组')}: {u.group}
-                  </span>
-                )}
               </div>
             </div>
             <div className='flex items-center gap-6 md:border-l md:border-ui-divider md:pl-6'>
@@ -327,7 +318,7 @@ const PersonalSetting = () => {
         </div>
 
         <div className='space-y-4'>
-          <Card title={t('账户管理')} icon={UserIcon} bodyClass='p-0'>
+          <Card title={t('账户管理')} bodyClass='p-0'>
             <Row title={t('邮箱地址')} desc={u.email || t('未绑定')}>
               <GhostBtn onClick={() => setShowEmail(true)}>
                 {u.email ? t('更换') : t('绑定')}
@@ -359,7 +350,7 @@ const PersonalSetting = () => {
             </Row>
           </Card>
 
-          <Card title={t('偏好设置')} icon={Globe} bodyClass='p-0'>
+          <Card title={t('偏好设置')} bodyClass='p-0'>
             <Row title={t('界面语言')} desc={t('设置自动同步到所有设备')}>
               <select
                 value={currentLanguage}

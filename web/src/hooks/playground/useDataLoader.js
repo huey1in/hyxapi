@@ -33,7 +33,8 @@ export const useDataLoader = (
 
   const loadModels = useCallback(async () => {
     try {
-      const res = await API.get(API_ENDPOINTS.USER_MODELS);
+      const params = inputs.group ? `?group=${encodeURIComponent(inputs.group)}` : '';
+      const res = await API.get(`${API_ENDPOINTS.USER_MODELS}${params}`);
       const { success, message, data } = res.data;
 
       if (success) {
@@ -52,7 +53,7 @@ export const useDataLoader = (
     } catch (error) {
       showError(t('加载模型失败'));
     }
-  }, [inputs.model, handleInputChange, setModels, t]);
+  }, [inputs.group, inputs.model, handleInputChange, setModels, t]);
 
   const loadGroups = useCallback(async () => {
     try {
@@ -80,13 +81,21 @@ export const useDataLoader = (
     }
   }, [userState, inputs.group, handleInputChange, setGroups, t]);
 
-  // 自动加载数据
+  // Load groups once when user becomes available.
+  useEffect(() => {
+    if (userState?.user) {
+      loadGroups();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [userState?.user]);
+
+  // Reload models whenever the selected group changes.
   useEffect(() => {
     if (userState?.user) {
       loadModels();
-      loadGroups();
     }
-  }, [userState?.user, loadModels, loadGroups]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [userState?.user, inputs.group]);
 
   return {
     loadModels,

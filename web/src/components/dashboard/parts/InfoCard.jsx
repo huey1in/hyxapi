@@ -215,10 +215,10 @@ const InfoCard = ({
 }) => {
   const tabs = useMemo(() => {
     const out = [];
-    if (apiInfoEnabled) out.push({ key: 'api', label: t('API'), Icon: Globe });
-    if (announcementsEnabled) out.push({ key: 'news', label: t('公告'), Icon: Inbox });
-    if (faqEnabled) out.push({ key: 'faq', label: t('FAQ'), Icon: HelpCircle });
-    if (uptimeEnabled) out.push({ key: 'uptime', label: t('状态'), Icon: Activity });
+    if (apiInfoEnabled) out.push({ key: 'api', label: t('API') });
+    if (announcementsEnabled) out.push({ key: 'news', label: t('公告') });
+    if (faqEnabled) out.push({ key: 'faq', label: t('FAQ') });
+    if (uptimeEnabled) out.push({ key: 'uptime', label: t('状态') });
     return out;
   }, [apiInfoEnabled, announcementsEnabled, faqEnabled, uptimeEnabled, t]);
 
@@ -237,17 +237,16 @@ const InfoCard = ({
       }
       action={
         <div className='flex items-center gap-0.5 -mr-1'>
-          {tabs.map(({ key, label, Icon }) => (
+          {tabs.map(({ key, label }) => (
             <button
               key={key}
               onClick={() => setActive(key)}
-              className={`flex items-center gap-1 px-2.5 py-1 text-xs rounded-md transition-colors ${
+              className={`px-2.5 py-1 text-xs rounded-md transition-colors ${
                 active === key
                   ? 'bg-ui-bg-subtle text-ui-text font-medium'
                   : 'text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-subtle'
               }`}
             >
-              <Icon size={12} />
               {label}
             </button>
           ))}

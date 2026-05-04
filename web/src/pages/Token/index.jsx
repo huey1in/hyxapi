@@ -256,7 +256,6 @@ const TokenFormModal = ({ open, token, onClose, onSaved, t }) => {
   const [remainQuota, setRemainQuota] = useState(500000);
   const [expiredTime, setExpiredTime] = useState(-1);
   const [group, setGroup] = useState('');
-  const [crossGroupRetry, setCrossGroupRetry] = useState(false);
   const [modelLimitsEnabled, setModelLimitsEnabled] = useState(false);
   const [modelLimits, setModelLimits] = useState([]);
   const [allowIps, setAllowIps] = useState('');
@@ -273,7 +272,6 @@ const TokenFormModal = ({ open, token, onClose, onSaved, t }) => {
     setRemainQuota(token?.remain_quota ?? 500000);
     setExpiredTime(token?.expired_time ?? -1);
     setGroup(token?.group || '');
-    setCrossGroupRetry(token?.cross_group_retry || false);
     setModelLimitsEnabled(token?.model_limits_enabled || false);
     setModelLimits(token?.model_limits ? token.model_limits.split(',').filter(Boolean) : []);
     setAllowIps(token?.allow_ips || '');
@@ -321,7 +319,6 @@ const TokenFormModal = ({ open, token, onClose, onSaved, t }) => {
         remain_quota: unlimitedQuota ? 0 : Number(remainQuota) || 0,
         expired_time: Number(expiredTime) || -1,
         group,
-        cross_group_retry: crossGroupRetry,
         model_limits_enabled: modelLimitsEnabled,
         model_limits: modelLimits.join(','),
         allow_ips: allowIps,
@@ -424,13 +421,6 @@ const TokenFormModal = ({ open, token, onClose, onSaved, t }) => {
                 placeholder={t('选择分组')}
               />
             </FormField>
-
-            <SwitchRow
-              title={t('跨分组重试')}
-              description={t('仅 auto 分组生效，请求失败时尝试其他分组')}
-              checked={crossGroupRetry}
-              onChange={setCrossGroupRetry}
-            />
           </FormSection>
 
           {/* 配额与时效 */}

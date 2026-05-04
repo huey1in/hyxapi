@@ -1020,7 +1020,7 @@ const EditChannelModal = (props) => {
     } else {
       // 如果是新建模式，通过后端代理获取模型列表
       if (!inputs?.['key']) {
-        showError(t('请填写密钥'));
+        if (!silent) showError(t('请填写密钥'));
         err = true;
       } else {
         try {
@@ -1055,7 +1055,7 @@ const EditChannelModal = (props) => {
       setLoading(false);
       return uniqueModels;
     } else {
-      showError(t('获取模型列表失败'));
+      if (!silent) showError(t('获取模型列表失败'));
     }
     setLoading(false);
     return null;

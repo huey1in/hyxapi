@@ -8,7 +8,6 @@ import { useTranslation } from 'react-i18next';
 
 import ModelPricingCombined from '../../pages/Setting/Ratio/ModelPricingCombined';
 import GroupRatioSettings from '../../pages/Setting/Ratio/GroupRatioSettings';
-import ModelRatioNotSetEditor from '../../pages/Setting/Ratio/ModelRationNotSetEditor';
 import UpstreamRatioSync from '../../pages/Setting/Ratio/UpstreamRatioSync';
 import SettingsChannelAffinity from '../../pages/Setting/Operation/SettingsChannelAffinity';
 import SettingGlobalModel from '../../pages/Setting/Model/SettingGlobalModel';
@@ -21,7 +20,6 @@ import { API, showError, toBoolean } from '../../helpers';
 const SUB_TABS = [
   { key: 'pricing', label: '模型定价', Comp: ModelPricingCombined },
   { key: 'group', label: '分组', Comp: GroupRatioSettings },
-  { key: 'unset_models', label: '未设置价格', Comp: ModelRatioNotSetEditor },
   { key: 'upstream_sync', label: '上游倍率同步', Comp: UpstreamRatioSync },
   { key: 'global_model', label: '全局模型', Comp: SettingGlobalModel },
   { key: 'channel_affinity', label: '渠道亲和性', Comp: SettingsChannelAffinity },

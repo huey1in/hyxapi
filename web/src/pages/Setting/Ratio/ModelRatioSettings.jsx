@@ -21,25 +21,19 @@ import {
 import { showConfirm } from '../../../components/common/ConfirmDialog';
 
 const JSON_FIELDS = [
-  'ModelPrice',
   'ModelRatio',
   'CacheRatio',
   'CreateCacheRatio',
   'CompletionRatio',
   'ImageRatio',
-  'AudioRatio',
-  'AudioCompletionRatio',
 ];
 
 const DEFAULTS = {
-  ModelPrice: '',
   ModelRatio: '',
   CacheRatio: '',
   CreateCacheRatio: '',
   CompletionRatio: '',
   ImageRatio: '',
-  AudioRatio: '',
-  AudioCompletionRatio: '',
   ExposeRatioEnabled: false,
 };
 
@@ -126,11 +120,6 @@ export default function ModelRatioSettings(props) {
   };
 
   const fields = [
-    {
-      key: 'ModelPrice',
-      label: t('模型固定价格'),
-      hint: t('一次调用消耗多少刀，优先级大于模型倍率；键为模型名称，值为金额'),
-    },
     { key: 'ModelRatio', label: t('模型倍率'), hint: t('键为模型名称，值为倍率') },
     { key: 'CacheRatio', label: t('提示缓存倍率'), hint: t('键为模型名称，值为倍率') },
     {
@@ -148,22 +137,12 @@ export default function ModelRatioSettings(props) {
       label: t('图片输入倍率'),
       hint: t('图片输入相关的倍率设置，仅部分模型支持该计费；键为模型名称，值为倍率'),
     },
-    {
-      key: 'AudioRatio',
-      label: t('音频倍率'),
-      hint: t('音频输入相关的倍率设置，仅部分模型支持该计费'),
-    },
-    {
-      key: 'AudioCompletionRatio',
-      label: t('音频补全倍率'),
-      hint: t('音频输出补全相关的倍率设置，键为模型名称，值为倍率'),
-    },
   ];
 
   return (
     <SectionWithSave
       title={t('模型倍率设置')}
-      hint={t('各类模型倍率 / 固定价格 / 补全倍率')}
+      hint={t('各类模型倍率 / 补全倍率 / 缓存倍率')}
       icon={SlidersHorizontal}
       iconColor='orange'
       loading={loading}

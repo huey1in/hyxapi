@@ -17,26 +17,43 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 
 const KEY = 'default_collapse_sidebar';
 
+// Module-level pub/sub so all hook instances stay in sync within the same tab.
+const listeners = new Set();
+const readInitial = () => localStorage.getItem(KEY) === 'true';
+let currentValue = typeof localStorage !== 'undefined' ? readInitial() : false;
+
+const broadcast = (next) => {
+  currentValue = next;
+  listeners.forEach((fn) => fn(next));
+};
+
 export const useSidebarCollapsed = () => {
-  const [collapsed, setCollapsed] = useState(
-    () => localStorage.getItem(KEY) === 'true',
-  );
+  const [collapsed, setCollapsedLocal] = useState(currentValue);
+
+  useEffect(() => {
+    const fn = (next) => setCollapsedLocal(next);
+    listeners.add(fn);
+    // Sync to current shared value in case it changed before mount.
+    if (collapsed !== currentValue) setCollapsedLocal(currentValue);
+    return () => {
+      listeners.delete(fn);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const toggle = useCallback(() => {
-    setCollapsed((prev) => {
-      const next = !prev;
-      localStorage.setItem(KEY, next.toString());
-      return next;
-    });
+    const next = !currentValue;
+    localStorage.setItem(KEY, next.toString());
+    broadcast(next);
   }, []);
 
   const set = useCallback((value) => {
-    setCollapsed(value);
     localStorage.setItem(KEY, value.toString());
+    broadcast(value);
   }, []);
 
   return [collapsed, toggle, set];

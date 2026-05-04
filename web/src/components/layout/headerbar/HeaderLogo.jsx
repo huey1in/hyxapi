@@ -42,9 +42,9 @@ const HeaderLogo = ({
             className='text-2xl font-bold text-ui-text transition-opacity group-hover:opacity-80'
             style={{ fontFamily: "'Space Grotesk', sans-serif", letterSpacing: '-0.03em' }}
           >
-            {systemName === 'TokenC' ? (
+            {systemName === 'Routify' ? (
               <>
-                Token<span className='text-ui-brand'>C</span>
+                Rout<span className='text-ui-brand'>ify</span>
               </>
             ) : (
               systemName

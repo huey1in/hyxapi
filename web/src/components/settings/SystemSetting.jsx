@@ -2,7 +2,7 @@
  * SystemSetting — token-system rewrite.
  * Composes auth sub-components from auth/*.jsx.
  */
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Loader2 } from 'lucide-react';
 import {
   API,
@@ -11,13 +11,11 @@ import {
   showSuccess,
   toBoolean,
 } from '../../helpers';
-import axios from 'axios';
 import { useTranslation } from 'react-i18next';
-import CustomOAuthSetting from './CustomOAuthSetting';
 import { ServerCard, SSRFCard } from './auth/ServerAndSSRF';
 import LoginRegisterCard from './auth/LoginRegister';
 import { PasskeyCard, EmailWhitelistCard, SMTPCard, TurnstileCard } from './auth/PasskeyAndMisc';
-import { OIDCCard, GitHubOAuthCard, DiscordOAuthCard, LinuxDOOAuthCard, WeChatCard, TelegramCard } from './auth/OAuthProviders';
+import { GitHubOAuthCard, DiscordOAuthCard, LinuxDOOAuthCard, TelegramCard } from './auth/OAuthProviders';
 
 const SystemSetting = () => {
   const { t } = useTranslation();
@@ -31,13 +29,6 @@ const SystemSetting = () => {
     'discord.enabled': '',
     'discord.client_id': '',
     'discord.client_secret': '',
-    'oidc.enabled': '',
-    'oidc.client_id': '',
-    'oidc.client_secret': '',
-    'oidc.well_known': '',
-    'oidc.authorization_endpoint': '',
-    'oidc.token_endpoint': '',
-    'oidc.user_info_endpoint': '',
     Notice: '',
     SMTPServer: '',
     SMTPPort: '',
@@ -45,10 +36,6 @@ const SystemSetting = () => {
     SMTPFrom: '',
     SMTPToken: '',
     Footer: '',
-    WeChatAuthEnabled: '',
-    WeChatServerAddress: '',
-    WeChatServerToken: '',
-    WeChatAccountQRCodeImageURL: '',
     TurnstileCheckEnabled: '',
     TurnstileSiteKey: '',
     TurnstileSecretKey: '',
@@ -96,10 +83,10 @@ const SystemSetting = () => {
 
   const booleanKeys = [
     'PasswordLoginEnabled', 'PasswordRegisterEnabled', 'EmailVerificationEnabled',
-    'GitHubOAuthEnabled', 'WeChatAuthEnabled', 'TelegramOAuthEnabled',
+    'GitHubOAuthEnabled', 'TelegramOAuthEnabled',
     'RegisterEnabled', 'TurnstileCheckEnabled', 'EmailDomainRestrictionEnabled',
     'EmailAliasRestrictionEnabled', 'SMTPSSLEnabled', 'SMTPForceAuthLogin',
-    'LinuxDOOAuthEnabled', 'discord.enabled', 'oidc.enabled',
+    'LinuxDOOAuthEnabled', 'discord.enabled',
     'passkey.enabled', 'passkey.allow_insecure_origin',
     'fetch_setting.enable_ssrf_protection', 'fetch_setting.allow_private_ip',
     'fetch_setting.domain_filter_mode', 'fetch_setting.ip_filter_mode',
@@ -198,19 +185,6 @@ const SystemSetting = () => {
     if (opts.length > 0) await updateOptions(opts);
   };
 
-  const submitEmailDomainWhitelist = async () => {
-    if (Array.isArray(emailDomainWhitelist)) await updateOptions([{ key: 'EmailDomainWhitelist', value: emailDomainWhitelist.join(',') }]);
-    else showError(t('邮箱域名白名单格式不正确'));
-  };
-
-  const submitWeChat = async () => {
-    const opts = [];
-    if (originInputs.WeChatServerAddress !== inputs.WeChatServerAddress) opts.push({ key: 'WeChatServerAddress', value: removeTrailingSlash(inputs.WeChatServerAddress) });
-    if (originInputs.WeChatAccountQRCodeImageURL !== inputs.WeChatAccountQRCodeImageURL) opts.push({ key: 'WeChatAccountQRCodeImageURL', value: inputs.WeChatAccountQRCodeImageURL });
-    if (originInputs.WeChatServerToken !== inputs.WeChatServerToken && inputs.WeChatServerToken !== '') opts.push({ key: 'WeChatServerToken', value: inputs.WeChatServerToken });
-    if (opts.length > 0) await updateOptions(opts);
-  };
-
   const submitGitHubOAuth = async () => {
     const opts = [];
     if (originInputs.GitHubClientId !== inputs.GitHubClientId) opts.push({ key: 'GitHubClientId', value: inputs.GitHubClientId });
@@ -222,32 +196,6 @@ const SystemSetting = () => {
     const opts = [];
     if (originInputs['discord.client_id'] !== inputs['discord.client_id']) opts.push({ key: 'discord.client_id', value: inputs['discord.client_id'] });
     if (originInputs['discord.client_secret'] !== inputs['discord.client_secret'] && inputs['discord.client_secret'] !== '') opts.push({ key: 'discord.client_secret', value: inputs['discord.client_secret'] });
-    if (opts.length > 0) await updateOptions(opts);
-  };
-
-  const submitOIDCSettings = async () => {
-    if (inputs['oidc.well_known']?.trim()) {
-      if (!inputs['oidc.well_known'].startsWith('http://') && !inputs['oidc.well_known'].startsWith('https://')) {
-        showError(t('Well-Known URL 必须以 http:// 或 https:// 开头'));
-        return;
-      }
-      try {
-        const res = await axios.create().get(inputs['oidc.well_known']);
-        inputs['oidc.authorization_endpoint'] = res.data['authorization_endpoint'];
-        inputs['oidc.token_endpoint'] = res.data['token_endpoint'];
-        inputs['oidc.user_info_endpoint'] = res.data['userinfo_endpoint'];
-        showSuccess(t('获取 OIDC 配置成功！'));
-      } catch {
-        showError(t('获取 OIDC 配置失败，请检查网络状况和 Well-Known URL 是否正确'));
-        return;
-      }
-    }
-    const opts = [];
-    for (const key of ['oidc.well_known', 'oidc.client_id', 'oidc.client_secret', 'oidc.authorization_endpoint', 'oidc.token_endpoint', 'oidc.user_info_endpoint']) {
-      if (originInputs[key] !== inputs[key] && (key.includes('secret') ? inputs[key] !== '' : true)) {
-        opts.push({ key, value: inputs[key] });
-      }
-    }
     if (opts.length > 0) await updateOptions(opts);
   };
 
@@ -320,16 +268,11 @@ const SystemSetting = () => {
       {sectionGap}
       <SMTPCard inputs={inputs} setInputs={setInputs} submitSMTP={submitSMTP} t={t} />
       {sectionGap}
-      <OIDCCard inputs={inputs} setInputs={setInputs} submitOIDCSettings={submitOIDCSettings} t={t} />
-      {sectionGap}
       <GitHubOAuthCard inputs={inputs} setInputs={setInputs} submitGitHubOAuth={submitGitHubOAuth} t={t} />
       {sectionGap}
       <DiscordOAuthCard inputs={inputs} setInputs={setInputs} submitDiscordOAuth={submitDiscordOAuth} t={t} />
       {sectionGap}
       <LinuxDOOAuthCard inputs={inputs} setInputs={setInputs} submitLinuxDOOAuth={submitLinuxDOOAuth} t={t} />
-      <CustomOAuthSetting serverAddress={inputs.ServerAddress} />
-      {sectionGap}
-      <WeChatCard inputs={inputs} setInputs={setInputs} submitWeChat={submitWeChat} t={t} />
       {sectionGap}
       <TelegramCard inputs={inputs} setInputs={setInputs} submitTelegramSettings={submitTelegramSettings} t={t} />
       {sectionGap}

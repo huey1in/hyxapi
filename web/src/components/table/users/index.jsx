@@ -29,7 +29,6 @@ const UsersPage = () => {
     userCount,
     handlePageChange,
     handlePageSizeChange,
-    groupOptions,
     loading,
     searching,
     setFormApi,
@@ -37,22 +36,16 @@ const UsersPage = () => {
   } = data;
 
   const [keyword, setKeyword] = useState('');
-  const [group, setGroup] = useState('');
 
-  // Stable formApi shim (depends only on local state + the stable setter)
   useEffect(() => {
     setFormApi({
-      getValues: () => ({ searchKeyword: keyword, searchGroup: group }),
-      reset: () => {
-        setKeyword('');
-        setGroup('');
-      },
+      getValues: () => ({ searchKeyword: keyword }),
+      reset: () => setKeyword(''),
       setValue: (f, v) => {
         if (f === 'searchKeyword') setKeyword(v || '');
-        if (f === 'searchGroup') setGroup(v || '');
       },
     });
-  }, [keyword, group, setFormApi]);
+  }, [keyword, setFormApi]);
 
   const onSearch = (e) => {
     e?.preventDefault?.();
@@ -61,7 +54,6 @@ const UsersPage = () => {
 
   const onReset = () => {
     setKeyword('');
-    setGroup('');
     setTimeout(() => loadUsers(1, pageSize), 0);
   };
 
@@ -118,22 +110,6 @@ const UsersPage = () => {
                 </button>
               )}
             </div>
-            <select
-              value={group}
-              onChange={(e) => {
-                const v = e.target.value;
-                setGroup(v);
-                setTimeout(() => searchUsers(1, pageSize), 0);
-              }}
-              className='px-2.5 py-1.5 text-xs bg-ui-bg border border-ui-border rounded-md text-ui-text outline-none focus:border-ui-text-3 cursor-pointer w-full md:w-36'
-            >
-              <option value=''>{t('全部分组')}</option>
-              {(groupOptions || []).map((g) => (
-                <option key={String(g.value ?? g)} value={g.value ?? g}>
-                  {g.label ?? g}
-                </option>
-              ))}
-            </select>
             <button
               type='submit'
               disabled={loading || searching}

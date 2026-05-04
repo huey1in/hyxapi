@@ -197,49 +197,157 @@
   transform: translateY(-1px);
 }
 
-/* 代码块样式增强 */
-pre {
-  position: relative;
-  font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
-  transition: all 0.2s ease;
+/* ===== 代码块（纯黑背景 + 白字 + 语法高亮） ===== */
+.code-block {
+  margin: 12px 0;
+  border-radius: 8px;
+  overflow: hidden;
+  background: #000000;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  font-family: 'JetBrains Mono', 'Fira Code', 'Consolas', 'Monaco', 'Courier New', monospace;
 }
 
-pre:hover {
-  border-color: var(--semi-color-primary) !important;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+.code-block-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 12px;
+  background: #000000;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  font-size: 12px;
+  user-select: none;
 }
 
-pre:hover .copy-code-button {
-  opacity: 1 !important;
+.code-block-lang {
+  color: #d1d5db;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.02em;
 }
 
-.copy-code-button {
-  opacity: 0;
-  transition: opacity 0.2s ease;
-  z-index: 10;
-  pointer-events: auto;
+.code-block-copy {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 8px;
+  background: transparent;
+  color: #d1d5db;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 11px;
+  font-family: inherit;
+  transition: background-color 0.15s ease, color 0.15s ease;
 }
 
-.copy-code-button:hover {
-  opacity: 1 !important;
+.code-block-copy:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #ffffff;
 }
 
-.copy-code-button button {
-  pointer-events: auto !important;
-  cursor: pointer !important;
+.code-block-copy:active {
+  background: rgba(255, 255, 255, 0.15);
 }
 
-/* 确保按钮可点击 */
-.copy-code-button .semi-button {
-  pointer-events: auto !important;
-  cursor: pointer !important;
-  transition: all 0.2s ease;
+.code-block-pre {
+  margin: 0 !important;
+  padding: 12px 14px !important;
+  background: #000000 !important;
+  border: none !important;
+  border-radius: 0 !important;
+  overflow-x: auto;
+  font-size: 13px;
+  line-height: 1.55;
+  color: #ffffff;
 }
 
-.copy-code-button .semi-button:hover {
-  background-color: var(--semi-color-fill-1) !important;
-  border-color: var(--semi-color-primary) !important;
-  transform: scale(1.05);
+.code-block-pre code {
+  background: transparent !important;
+  padding: 0 !important;
+  font-size: inherit !important;
+  font-family: inherit !important;
+  color: #ffffff;
+}
+
+.code-block-wrap code {
+  white-space: pre-wrap !important;
+  word-break: break-word;
+}
+
+/* highlight.js 在纯黑背景下的颜色覆盖 — 高对比度语法高亮 */
+.code-block-pre .hljs {
+  background: transparent !important;
+  color: #ffffff !important;
+}
+.code-block-pre .hljs-comment,
+.code-block-pre .hljs-quote {
+  color: #6b7280 !important;
+  font-style: italic;
+}
+.code-block-pre .hljs-keyword,
+.code-block-pre .hljs-selector-tag,
+.code-block-pre .hljs-literal,
+.code-block-pre .hljs-section,
+.code-block-pre .hljs-link {
+  color: #c084fc !important;
+}
+.code-block-pre .hljs-function .hljs-keyword {
+  color: #c084fc !important;
+}
+.code-block-pre .hljs-subst {
+  color: #ffffff !important;
+}
+.code-block-pre .hljs-string,
+.code-block-pre .hljs-title,
+.code-block-pre .hljs-name,
+.code-block-pre .hljs-type,
+.code-block-pre .hljs-attribute,
+.code-block-pre .hljs-symbol,
+.code-block-pre .hljs-bullet,
+.code-block-pre .hljs-built_in,
+.code-block-pre .hljs-addition,
+.code-block-pre .hljs-variable,
+.code-block-pre .hljs-template-tag,
+.code-block-pre .hljs-template-variable {
+  color: #86efac !important;
+}
+.code-block-pre .hljs-number,
+.code-block-pre .hljs-regexp {
+  color: #fbbf24 !important;
+}
+.code-block-pre .hljs-meta,
+.code-block-pre .hljs-meta-keyword {
+  color: #60a5fa !important;
+}
+.code-block-pre .hljs-tag {
+  color: #f87171 !important;
+}
+.code-block-pre .hljs-attr {
+  color: #fbbf24 !important;
+}
+.code-block-pre .hljs-deletion {
+  color: #f87171 !important;
+}
+.code-block-pre .hljs-emphasis {
+  font-style: italic;
+}
+.code-block-pre .hljs-strong {
+  font-weight: bold;
+}
+
+/* 行内代码 */
+.inline-code {
+  background: rgba(127, 127, 127, 0.15);
+  color: var(--semi-color-text-0);
+  padding: 1px 6px;
+  border-radius: 4px;
+  font-size: 0.9em;
+  font-family: 'JetBrains Mono', 'Fira Code', 'Consolas', 'Monaco', 'Courier New', monospace;
+}
+
+.user-message .inline-code {
+  background: rgba(255, 255, 255, 0.18);
+  color: #ffffff;
 }
 
 /* 表格响应式 */

@@ -4,7 +4,6 @@ import (
 	"fmt"
 
 	"github.com/QuantumNous/new-api/common"
-	"github.com/QuantumNous/new-api/logger"
 	"github.com/QuantumNous/new-api/model"
 	relaycommon "github.com/QuantumNous/new-api/relay/common"
 	"github.com/QuantumNous/new-api/setting/operation_setting"
@@ -32,33 +31,12 @@ func modelPriceNotConfiguredError(modelName string, userId int) error {
 // https://docs.claude.com/en/docs/build-with-claude/prompt-caching#1-hour-cache-duration
 const claudeCacheCreation1hMultiplier = 6 / 3.75
 
-// HandleGroupRatio checks for "auto_group" in the context and updates the group ratio and relayInfo.UsingGroup if present
-func HandleGroupRatio(ctx *gin.Context, relayInfo *relaycommon.RelayInfo) types.GroupRatioInfo {
-	groupRatioInfo := types.GroupRatioInfo{
-		GroupRatio:        1.0, // default ratio
+// HandleGroupRatio returns the group ratio info for the relay request.
+func HandleGroupRatio(_ *gin.Context, relayInfo *relaycommon.RelayInfo) types.GroupRatioInfo {
+	return types.GroupRatioInfo{
+		GroupRatio:        ratio_setting.GetGroupRatio(relayInfo.UsingGroup),
 		GroupSpecialRatio: -1,
 	}
-
-	// check auto group
-	autoGroup, exists := ctx.Get("auto_group")
-	if exists {
-		logger.LogDebug(ctx, fmt.Sprintf("final group: %s", autoGroup))
-		relayInfo.UsingGroup = autoGroup.(string)
-	}
-
-	// check user group special ratio
-	userGroupRatio, ok := ratio_setting.GetGroupGroupRatio(relayInfo.UserGroup, relayInfo.UsingGroup)
-	if ok {
-		// user group special ratio
-		groupRatioInfo.GroupSpecialRatio = userGroupRatio
-		groupRatioInfo.GroupRatio = userGroupRatio
-		groupRatioInfo.HasSpecialRatio = true
-	} else {
-		// normal group ratio
-		groupRatioInfo.GroupRatio = ratio_setting.GetGroupRatio(relayInfo.UsingGroup)
-	}
-
-	return groupRatioInfo
 }
 
 func ModelPriceHelper(c *gin.Context, info *relaycommon.RelayInfo, promptTokens int, meta *types.TokenCountMeta) (types.PriceData, error) {

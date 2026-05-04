@@ -16,7 +16,6 @@ import (
 	"github.com/QuantumNous/new-api/logger"
 	"github.com/QuantumNous/new-api/model"
 	"github.com/QuantumNous/new-api/service"
-	"github.com/QuantumNous/new-api/setting"
 
 	"github.com/QuantumNous/new-api/constant"
 
@@ -214,9 +213,6 @@ func Register(c *gin.Context) {
 			RemainQuota:        500000, // 示例额度
 			UnlimitedQuota:     true,
 			ModelLimitsEnabled: false,
-		}
-		if setting.DefaultUseAutoGroup {
-			token.Group = "auto"
 		}
 		if err := token.Insert(); err != nil {
 			common.ApiErrorI18n(c, i18n.MsgCreateDefaultTokenErr)
@@ -524,12 +520,24 @@ func GetUserModels(c *gin.Context) {
 		common.ApiError(c, err)
 		return
 	}
-	groups := service.GetUserUsableGroups(user.Group)
+	groupFilter := c.Query("group")
+	usable := service.GetUserUsableGroups(user.Group)
 	var models []string
-	for group := range groups {
-		for _, g := range model.GetGroupEnabledModels(group) {
-			if !common.StringsContains(models, g) {
-				models = append(models, g)
+	if groupFilter != "" {
+		// Only return models for the requested group, after verifying the user can access it.
+		if _, ok := usable[groupFilter]; ok {
+			for _, g := range model.GetGroupEnabledModels(groupFilter) {
+				if !common.StringsContains(models, g) {
+					models = append(models, g)
+				}
+			}
+		}
+	} else {
+		for group := range usable {
+			for _, g := range model.GetGroupEnabledModels(group) {
+				if !common.StringsContains(models, g) {
+					models = append(models, g)
+				}
 			}
 		}
 	}

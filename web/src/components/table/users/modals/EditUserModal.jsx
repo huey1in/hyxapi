@@ -23,7 +23,6 @@ import SlideOver from '../../../common/SlideOver';
 import {
   TextField,
   NumberField,
-  NativeSelect,
   FieldRow,
 } from '../../../common/form/Primitives';
 
@@ -51,7 +50,6 @@ const DEFAULTS = () => ({
   password: '',
   email: '',
   quota: 0,
-  group: 'default',
   remark: '',
 });
 
@@ -63,22 +61,12 @@ const EditUserModal = (props) => {
 
   const [loading, setLoading] = useState(false);
   const [values, setValues] = useState(DEFAULTS());
-  const [groupOptions, setGroupOptions] = useState([]);
   const [adjustOpen, setAdjustOpen] = useState(false);
   const [adjustMode, setAdjustMode] = useState('add');
   const [adjustAmount, setAdjustAmount] = useState('');
   const [adjustLoading, setAdjustLoading] = useState(false);
 
   const set = (k, v) => setValues((p) => ({ ...p, [k]: v }));
-
-  const fetchGroups = async () => {
-    try {
-      const res = await API.get('/api/group/');
-      setGroupOptions(res.data?.data || []);
-    } catch (e) {
-      showError(e.message);
-    }
-  };
 
   const loadUser = async () => {
     setLoading(true);
@@ -104,7 +92,6 @@ const EditUserModal = (props) => {
 
   useEffect(() => {
     if (!props.visible) return;
-    fetchGroups();
     if (userId !== undefined) loadUser();
     else setValues(DEFAULTS());
   }, [props.visible, userId]); // eslint-disable-line
@@ -271,32 +258,16 @@ const EditUserModal = (props) => {
               </div>
             </div>
 
-            {/* Group + quota */}
+            {/* Quota */}
             {isEdit && (
               <div>
                 <SectionHeader
                   icon={Users}
                   title={t('权限设置')}
-                  hint={t('用户分组和额度管理')}
+                  hint={t('用户额度管理')}
                   color='green'
                 />
                 <div className='space-y-3'>
-                  <FieldRow label={t('分组')}>
-                    <NativeSelect
-                      value={values.group || 'default'}
-                      onChange={(v) => set('group', v)}
-                      options={
-                        groupOptions.length === 0 || !groupOptions.includes(values.group)
-                          ? [
-                              ...(values.group ? [{ value: values.group, label: values.group }] : []),
-                              ...groupOptions.map((g) => ({ value: g, label: g })),
-                            ].filter(
-                              (o, i, arr) => arr.findIndex((x) => x.value === o.value) === i,
-                            )
-                          : groupOptions.map((g) => ({ value: g, label: g }))
-                      }
-                    />
-                  </FieldRow>
                   <FieldRow label={t('当前额度')}>
                     <div className='flex items-center justify-between gap-3 px-3 py-2 rounded-md border border-ui-border bg-ui-bg-subtle'>
                       <span className='text-sm text-ui-text tabular-nums'>

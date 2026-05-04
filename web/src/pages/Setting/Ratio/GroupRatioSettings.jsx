@@ -8,9 +8,6 @@ import {
   Users,
   HelpCircle,
   Layers,
-  Shuffle,
-  Sparkles,
-  ShieldCheck,
   BookOpen,
   ChevronDown,
   ChevronRight,
@@ -28,24 +25,16 @@ import {
 } from '../../../helpers';
 import {
   FieldRow,
-  ToggleField,
   TextAreaField,
   Notice,
   RadioChipGroup,
 } from '../../../components/common/form/Primitives';
 import { createPortal } from 'react-dom';
 import GroupTable from './components/GroupTable';
-import AutoGroupList from './components/AutoGroupList';
-import GroupGroupRatioRules from './components/GroupGroupRatioRules';
-import GroupSpecialUsableRules from './components/GroupSpecialUsableRules';
 
 const OPTION_KEYS = [
   'GroupRatio',
   'UserUsableGroups',
-  'GroupGroupRatio',
-  'group_ratio_setting.group_special_usable_group',
-  'AutoGroups',
-  'DefaultUseAutoGroup',
 ];
 
 function parseJSONSafe(str, fallback) {
@@ -100,10 +89,7 @@ function GuideSideSheet({ open, onClose, t }) {
 
   const tabs = [
     { key: 'overview', label: t('概览') },
-    { key: 'groups', label: t('分组管理') },
-    { key: 'auto', label: t('自动分组') },
-    { key: 'ratios', label: t('特殊倍率') },
-    { key: 'usable', label: t('可用分组') },
+    { key: 'groups', label: t('套餐管理') },
   ];
 
   const CodeBlock = ({ children }) => (
@@ -135,21 +121,19 @@ function GuideSideSheet({ open, onClose, t }) {
         <div className='flex-1 overflow-y-auto px-5 py-4 space-y-4 text-xs text-ui-text-2 leading-relaxed'>
           {tab === 'overview' && (
             <>
-              <h3 className='text-sm font-semibold text-ui-text'>{t('什么是分组？')}</h3>
-              <p>{t('分组是用于控制计费倍率和模型访问权限的核心概念。每个用户属于一个分组，每个令牌也可以指定使用某个分组。')}</p>
-              <p>{t('通过分组可以实现不同用户等级的差异化定价，例如 VIP 用户享受更低的 API 调用费用。')}</p>
+              <h3 className='text-sm font-semibold text-ui-text'>{t('什么是定价套餐？')}</h3>
+              <p>{t('套餐是用于控制 API 计费倍率的核心概念。每个令牌可以选择一个定价套餐，决定该令牌的计费倍率。')}</p>
+              <p>{t('通过配置不同的套餐倍率，为不同场景提供差异化定价，例如标准套餐和高级套餐。')}</p>
               <div className='rounded-md border border-ui-border bg-ui-bg-subtle p-3 space-y-2'>
-                <div><strong>{t('用户分组')}</strong> — {t('由管理员分配，决定用户身份等级（如 default、vip）。')}</div>
-                <div><strong>{t('令牌分组')}</strong> — {t('用户创建令牌时选择的分组，决定该令牌的实际计费倍率。')}</div>
-                <div><strong>{t('倍率')}</strong> — {t('计费乘数，倍率越低费用越低。例如倍率 0.5 表示半价。')}</div>
-                <div><strong>{t('用户可选')}</strong> — {t('勾选后，该分组会出现在用户创建令牌时的下拉菜单中。')}</div>
-                <div><strong>{t('自动分组')}</strong> — {t('令牌分组设为 auto 时，系统按优先级顺序自动选择一个可用分组。')}</div>
+                <div><strong>{t('套餐倍率')}</strong> — {t('计费乘数，倍率越低费用越低。例如倍率 0.5 表示半价。')}</div>
+                <div><strong>{t('用户可选')}</strong> — {t('勾选后，该套餐会出现在用户创建令牌时的下拉菜单中。')}</div>
+                <div><strong>{t('自动分组')}</strong> — {t('令牌分组设为 auto 时，系统按优先级顺序自动选择一个可用套餐。')}</div>
               </div>
             </>
           )}
           {tab === 'groups' && (
             <>
-              <h3 className='text-sm font-semibold text-ui-text'>{t('创建和管理分组')}</h3>
+              <h3 className='text-sm font-semibold text-ui-text'>{t('创建和管理定价套餐')}</h3>
               <p>{t('每个分组代表一个价格档位。管理员创建分组后，可以选择哪些档位对用户开放自选。')}</p>
               <CodeBlock>
                 {`${t('分组名')}      ${t('倍率')}    ${t('用户可选')}    ${t('说明')}\n──────────────────────────────────────\nstandard  1.0     ${t('是')}        ${t('标准价格')}\npremium   0.5     ${t('是')}        ${t('高级套餐，半价优惠')}`}
@@ -160,50 +144,6 @@ function GuideSideSheet({ open, onClose, t }) {
                 <CodeBlock>{`{"default": 1, "vip": 0.5, "standard": 1, "premium": 0.5}`}</CodeBlock>
                 <div className='mt-2'><strong>UserUsableGroups</strong> — {t('用户可选分组的名称和描述')}</div>
                 <CodeBlock>{`{"standard": "${t('标准价格')}", "premium": "${t('高级套餐，半价优惠')}"}`}</CodeBlock>
-              </div>
-            </>
-          )}
-          {tab === 'auto' && (
-            <>
-              <h3 className='text-sm font-semibold text-ui-text'>{t('自动分组选择')}</h3>
-              <p>{t('当令牌分组设为 auto 时，系统按列表顺序依次选择可用分组。排在前面的优先级更高。')}</p>
-              <CodeBlock>{`1. default    ${t('最高优先级')}\n2. vip`}</CodeBlock>
-              <p>{t('开启「默认使用 auto 分组」后，新建令牌和初始令牌都会自动设为 auto。')}</p>
-              <div className='rounded-md border border-ui-border bg-ui-bg-subtle p-3'>
-                <strong>AutoGroups</strong> — {t('有序字符串数组')}
-                <CodeBlock>{`["default", "vip"]`}</CodeBlock>
-              </div>
-            </>
-          )}
-          {tab === 'ratios' && (
-            <>
-              <h3 className='text-sm font-semibold text-ui-text'>{t('跨分组特殊倍率')}</h3>
-              <p>{t('正常情况下，令牌的计费倍率由令牌所选的分组决定。特殊倍率可以根据「用户所在分组」进一步覆盖这个倍率。')}</p>
-              <p>{t('简单来说：同一个令牌分组，不同等级的用户可以享受不同的价格。')}</p>
-              <CodeBlock>
-                {`${t('用户分组')}    ${t('使用分组')}    ${t('倍率')}\n────────────────────────────\nvip       standard   0.8\nvip       premium    0.3`}
-              </CodeBlock>
-              <div className='rounded-md border border-ui-border bg-ui-bg-subtle p-3'>
-                <strong>GroupGroupRatio</strong> — {t('嵌套映射：用户分组 → 使用分组 → 倍率')}
-                <CodeBlock>{`{\n  "vip": {\n    "standard": 0.8,\n    "premium": 0.3\n  }\n}`}</CodeBlock>
-              </div>
-            </>
-          )}
-          {tab === 'usable' && (
-            <>
-              <h3 className='text-sm font-semibold text-ui-text'>{t('特殊可用分组规则')}</h3>
-              <p>{t('默认情况下，所有用户创建令牌时看到的可选分组列表是一样的。通过此功能，可以根据用户所在分组展示不同的可选列表。')}</p>
-              <CodeBlock>
-                {`${t('用户分组')}    ${t('操作')}        ${t('目标分组')}    ${t('说明')}\n──────────────────────────────────────────\nvip       ${t('添加')} (+:)   exclusive   ${t('专属分组')}\nvip       ${t('移除')} (-:)   standard    -`}
-              </CodeBlock>
-              <div className='rounded-md border border-ui-border bg-ui-bg-subtle p-3 space-y-1'>
-                <div><strong>{t('添加')} (+:)</strong> — {t('在默认列表基础上新增一个分组')}</div>
-                <div><strong>{t('移除')} (-:)</strong> — {t('从默认列表中去掉一个分组')}</div>
-                <div><strong>{t('追加')}</strong> — {t('直接追加（和添加类似，但无前缀）')}</div>
-              </div>
-              <div className='rounded-md border border-ui-border bg-ui-bg-subtle p-3'>
-                <strong>group_special_usable_group</strong>
-                <CodeBlock>{`{\n  "vip": {\n    "+:exclusive": "${t('专属分组')}",\n    "-:standard": "remove"\n  }\n}`}</CodeBlock>
               </div>
             </>
           )}
@@ -223,10 +163,6 @@ export default function GroupRatioSettings(props) {
   const [inputs, setInputs] = useState({
     GroupRatio: '',
     UserUsableGroups: '',
-    GroupGroupRatio: '',
-    'group_ratio_setting.group_special_usable_group': '',
-    AutoGroups: '',
-    DefaultUseAutoGroup: false,
   });
   const refForm = useRef();
   const [inputsRow, setInputsRow] = useState(inputs);
@@ -249,7 +185,7 @@ export default function GroupRatioSettings(props) {
 
   const submit = async () => {
     if (editMode === 'manual') {
-      for (const k of ['GroupRatio', 'UserUsableGroups', 'GroupGroupRatio', 'group_ratio_setting.group_special_usable_group']) {
+      for (const k of ['GroupRatio', 'UserUsableGroups']) {
         const v = inputs[k];
         if (v && !verifyJSON(v)) return showError(t('请检查输入'));
       }
@@ -280,26 +216,11 @@ export default function GroupRatioSettings(props) {
     setInputs((prev) => ({ ...prev, GroupRatio, UserUsableGroups }));
   }, []);
 
-  const handleAutoGroupsChange = useCallback((value) => {
-    setInputs((prev) => ({ ...prev, AutoGroups: value }));
-  }, []);
-
-  const handleGroupGroupRatioChange = useCallback((value) => {
-    setInputs((prev) => ({ ...prev, GroupGroupRatio: value }));
-  }, []);
-
-  const handleSpecialUsableChange = useCallback((value) => {
-    setInputs((prev) => ({ ...prev, 'group_ratio_setting.group_special_usable_group': value }));
-  }, []);
-
   const dv = dataVersionRef.current;
 
   const jsonFields = [
-    { key: 'GroupRatio', label: t('分组倍率'), hint: t('键为分组名称，值为倍率；如 {"vip": 0.5}') },
-    { key: 'UserUsableGroups', label: t('用户可选分组'), hint: t('键为分组名称，值为分组描述') },
-    { key: 'GroupGroupRatio', label: t('分组特殊倍率'), hint: t('嵌套映射：用户分组 → 使用分组 → 倍率') },
-    { key: 'group_ratio_setting.group_special_usable_group', label: t('分组特殊可用分组'), hint: t('键为用户分组，值为操作映射（+: 添加，-: 移除，无前缀追加）') },
-    { key: 'AutoGroups', label: t('自动分组'), hint: t('有序字符串数组，如 ["default","vip"]') },
+    { key: 'GroupRatio', label: t('定价套餐倍率'), hint: t('键为套餐名称，值为倍率；如 {"standard": 1, "premium": 0.5}') },
+    { key: 'UserUsableGroups', label: t('用户可选套餐'), hint: t('键为套餐名称，值为套餐描述，出现在令牌创建下拉框中') },
   ];
 
   return (
@@ -311,8 +232,8 @@ export default function GroupRatioSettings(props) {
             <Users size={15} />
           </div>
           <div className='flex-1 min-w-0'>
-            <div className='text-sm font-semibold text-ui-text'>{t('分组倍率设置')}</div>
-            <div className='text-[11px] text-ui-text-3 mt-0.5'>{t('管理用户分组、倍率、自动分组及跨分组规则')}</div>
+            <div className='text-sm font-semibold text-ui-text'>{t('定价套餐设置')}</div>
+            <div className='text-[11px] text-ui-text-3 mt-0.5'>{t('管理令牌可选的定价套餐与自动分组')}</div>
           </div>
         </div>
         <div className='flex items-center gap-2'>
@@ -337,30 +258,9 @@ export default function GroupRatioSettings(props) {
 
       {editMode === 'visual' ? (
         <div className='space-y-4'>
-          <Collapsible title={t('分组管理')} icon={Layers} iconColor='blue' defaultOpen>
-            <p className='text-xs text-ui-text-3'>{t('倍率用于计费乘数，勾选「用户可选」后用户可在创建令牌时选择该分组')}</p>
+          <Collapsible title={t('定价套餐管理')} icon={Layers} iconColor='blue' defaultOpen>
+            <p className='text-xs text-ui-text-3'>{t('每个套餐对应一个计费倍率，勾选「用户可选」后用户可在创建令牌时选择该套餐')}</p>
             <GroupTable key={`gt_${dv}`} groupRatio={inputs.GroupRatio} userUsableGroups={inputs.UserUsableGroups} onChange={handleGroupTableChange} />
-          </Collapsible>
-
-          <Collapsible title={t('自动分组')} icon={Shuffle} iconColor='emerald'>
-            <p className='text-xs text-ui-text-3'>{t('令牌分组设为 auto 时，按以下顺序依次尝试选择可用分组，排在前面的优先级更高')}</p>
-            <ToggleField
-              label={t('默认使用 auto 分组')}
-              hint={t('开启后创建令牌默认选择 auto 分组，初始令牌也将设为 auto')}
-              checked={!!inputs.DefaultUseAutoGroup}
-              onChange={(v) => setInputs((prev) => ({ ...prev, DefaultUseAutoGroup: v }))}
-            />
-            <AutoGroupList key={`ag_${dv}`} value={inputs.AutoGroups} groupNames={groupNames} onChange={handleAutoGroupsChange} />
-          </Collapsible>
-
-          <Collapsible title={t('分组特殊倍率')} icon={Sparkles} iconColor='purple'>
-            <p className='text-xs text-ui-text-3'>{t('当某个分组的用户使用另一个分组的令牌时，可设置特殊倍率覆盖基础倍率')}</p>
-            <GroupGroupRatioRules key={`ggr_${dv}`} value={inputs.GroupGroupRatio} groupNames={groupNames} onChange={handleGroupGroupRatioChange} />
-          </Collapsible>
-
-          <Collapsible title={t('分组特殊可用分组')} icon={ShieldCheck} iconColor='amber'>
-            <p className='text-xs text-ui-text-3'>{t('为特定用户分组配置可用分组的增减规则。「添加」为该分组新增可用分组，「移除」移除默认可用分组，「追加」直接追加分组')}</p>
-            <GroupSpecialUsableRules key={`gsu_${dv}`} value={inputs['group_ratio_setting.group_special_usable_group']} groupNames={groupNames} onChange={handleSpecialUsableChange} />
           </Collapsible>
         </div>
       ) : (
@@ -379,12 +279,6 @@ export default function GroupRatioSettings(props) {
               </FieldRow>
             );
           })}
-          <ToggleField
-            label={t('创建令牌默认选择 auto 分组')}
-            hint={t('开启后初始令牌也将设为 auto')}
-            checked={!!inputs.DefaultUseAutoGroup}
-            onChange={(v) => setInputs((prev) => ({ ...prev, DefaultUseAutoGroup: v }))}
-          />
         </div>
       )}
 

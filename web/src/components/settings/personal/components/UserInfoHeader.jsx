@@ -32,7 +32,7 @@ import {
   renderQuota,
   stringToColor,
 } from '../../../../helpers';
-import { Coins, BarChart2, Users } from 'lucide-react';
+import { Coins, BarChart2 } from 'lucide-react';
 
 const UserInfoHeader = ({ t, userState }) => {
   const getUsername = () => {
@@ -105,9 +105,6 @@ const UserInfoHeader = ({ t, userState }) => {
                         {t('普通用户')}
                       </Tag>
                     )}
-                    <Tag size='large' shape='circle' style={{ color: 'white' }}>
-                      ID: {userState?.user?.id}
-                    </Tag>
                   </div>
                 </div>
               </div>
@@ -152,16 +149,6 @@ const UserInfoHeader = ({ t, userState }) => {
                   {userState.user?.request_count || 0}
                 </Typography.Text>
               </div>
-              <Divider layout='vertical' />
-              <div className='flex items-center gap-2'>
-                <Users size={16} />
-                <Typography.Text size='small' type='tertiary'>
-                  {t('用户分组')}
-                </Typography.Text>
-                <Typography.Text size='small' type='tertiary' strong>
-                  {userState?.user?.group || t('默认')}
-                </Typography.Text>
-              </div>
             </div>
           </Card>
         </div>
@@ -196,18 +183,6 @@ const UserInfoHeader = ({ t, userState }) => {
               </div>
               <Typography.Text size='small' type='tertiary' strong>
                 {userState.user?.request_count || 0}
-              </Typography.Text>
-            </div>
-            <Divider margin='8px' />
-            <div className='flex items-center justify-between'>
-              <div className='flex items-center gap-2'>
-                <Users size={16} />
-                <Typography.Text size='small' type='tertiary'>
-                  {t('用户分组')}
-                </Typography.Text>
-              </div>
-              <Typography.Text size='small' type='tertiary' strong>
-                {userState?.user?.group || t('默认')}
               </Typography.Text>
             </div>
           </div>

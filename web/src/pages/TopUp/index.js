@@ -8,8 +8,7 @@ import React, { useContext, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useSearchParams } from 'react-router-dom';
 import {
-  Wallet, RefreshCw, Send, Gift, History, Copy, Check,
-  ArrowRight, Users, Sparkles, X,
+  RefreshCw, History, Copy, Check, X,
 } from 'lucide-react';
 import { createPortal } from 'react-dom';
 import {
@@ -438,8 +437,7 @@ const TopUp = () => {
           />
           <div className='relative z-10 grid grid-cols-1 md:grid-cols-3 gap-6'>
             <div className='md:col-span-2'>
-              <div className='flex items-center gap-2 text-ui-text-3 text-xs uppercase tracking-widest mb-3'>
-                <Wallet size={14} />
+              <div className='text-ui-text-3 text-xs uppercase tracking-widest mb-3'>
                 {t('当前余额')}
               </div>
               <div
@@ -453,29 +451,17 @@ const TopUp = () => {
               </p>
             </div>
             <div className='flex flex-col justify-end gap-2'>
-              <PrimaryBtn onClick={goRecharge}>
-                {t('立即充值')}
-                <ArrowRight size={14} />
-              </PrimaryBtn>
               <GhostBtn onClick={() => setShowHistory(true)}>
-                <History size={14} />
                 {t('查看记录')}
               </GhostBtn>
             </div>
           </div>
         </div>
 
-        {/* Two-column: redeem code + recharge */}
-        <div className='grid grid-cols-1 md:grid-cols-2 gap-4 mb-5'>
+        {/* Two-column: redeem code + recharge (recharge only when top-up link is configured) */}
+        <div className={`grid grid-cols-1 ${topUpLink ? 'md:grid-cols-2' : ''} gap-4 mb-5`}>
           {/* Redeem code */}
-          <Card
-            title={
-              <span className='flex items-center gap-2'>
-                <Gift size={15} className='text-ui-text-3' />
-                {t('兑换码')}
-              </span>
-            }
-          >
+          <Card title={<span>{t('兑换码')}</span>}>
             <p className='text-xs text-ui-text-3 mb-3'>
               {t('输入管理员发放的兑换码，立即获得对应额度')}
             </p>
@@ -495,14 +481,8 @@ const TopUp = () => {
           </Card>
 
           {/* Recharge amount */}
-          <Card
-            title={
-              <span className='flex items-center gap-2'>
-                <Sparkles size={15} className='text-ui-text-3' />
-                {t('快捷充值')}
-              </span>
-            }
-          >
+          {topUpLink && (
+          <Card title={<span>{t('快捷充值')}</span>}>
             <p className='text-xs text-ui-text-3 mb-3'>
               {t('支持多种支付方式，跳转到充值页面完成支付')}
             </p>
@@ -530,26 +510,20 @@ const TopUp = () => {
             </div>
             <PrimaryBtn className='w-full' onClick={goRecharge} disabled={paying}>
               {paying ? t('处理中...') : t('前往充值')}
-              <ArrowRight size={14} />
             </PrimaryBtn>
           </Card>
+          )}
         </div>
 
         {/* Affiliate */}
         <Card
-          title={
-            <span className='flex items-center gap-2'>
-              <Users size={15} className='text-ui-text-3' />
-              {t('邀请奖励')}
-            </span>
-          }
+          title={<span>{t('邀请奖励')}</span>}
           action={
             <button
               onClick={() => setShowTransfer(true)}
               disabled={affQuota <= 0}
-              className='inline-flex items-center gap-1.5 px-2.5 py-1 text-xs rounded-md text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-subtle disabled:opacity-40 disabled:hover:bg-transparent transition-colors'
+              className='inline-flex items-center px-2.5 py-1 text-xs rounded-md text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-subtle disabled:opacity-40 disabled:hover:bg-transparent transition-colors'
             >
-              <Send size={12} />
               {t('划转到余额')}
             </button>
           }

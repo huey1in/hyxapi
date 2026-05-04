@@ -255,7 +255,6 @@ const UsersTable = (usersData) => {
               <th className='text-left px-3 py-2.5 font-medium min-w-[160px]'>{t('用户')}</th>
               <th className='text-left px-3 py-2.5 font-medium min-w-[100px]'>{t('状态')}</th>
               <th className='text-left px-3 py-2.5 font-medium min-w-[160px]'>{t('剩余 / 总额度')}</th>
-              <th className='text-left px-3 py-2.5 font-medium min-w-[100px]'>{t('分组')}</th>
               <th className='text-left px-3 py-2.5 font-medium min-w-[110px]'>{t('角色')}</th>
               <th className='text-left px-3 py-2.5 font-medium min-w-[220px]'>{t('邀请')}</th>
               <th className='text-right px-3 py-2.5 font-medium sticky right-0 bg-ui-bg-subtle/80 backdrop-blur-sm min-w-[280px]'>
@@ -295,15 +294,6 @@ const UsersTable = (usersData) => {
                   </td>
                   <td className='px-3 py-3 align-middle'>
                     <QuotaUsage user={u} t={t} />
-                  </td>
-                  <td className='px-3 py-3 align-middle text-xs text-ui-text-2'>
-                    {u.group ? (
-                      <span className='inline-flex items-center px-1.5 py-0.5 rounded bg-ui-bg-subtle border border-ui-border'>
-                        {u.group}
-                      </span>
-                    ) : (
-                      <span className='text-ui-text-3'>—</span>
-                    )}
                   </td>
                   <td className='px-3 py-3 align-middle'>
                     <RoleChip role={u.role} t={t} />

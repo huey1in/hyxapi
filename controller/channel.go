@@ -1038,9 +1038,9 @@ func FetchModels(c *gin.Context) {
 
 	request, err := http.NewRequest("GET", url, nil)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
+		c.JSON(http.StatusOK, gin.H{
 			"success": false,
-			"message": err.Error(),
+			"message": fmt.Sprintf("构建请求失败: %s", err.Error()),
 		})
 		return
 	}
@@ -1049,17 +1049,17 @@ func FetchModels(c *gin.Context) {
 
 	response, err := client.Do(request)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
+		c.JSON(http.StatusOK, gin.H{
 			"success": false,
-			"message": err.Error(),
+			"message": fmt.Sprintf("请求上游失败: %s", err.Error()),
 		})
 		return
 	}
 	//check status code
 	if response.StatusCode != http.StatusOK {
-		c.JSON(http.StatusInternalServerError, gin.H{
+		c.JSON(http.StatusOK, gin.H{
 			"success": false,
-			"message": "Failed to fetch models",
+			"message": fmt.Sprintf("上游返回状态码 %d", response.StatusCode),
 		})
 		return
 	}
@@ -1072,9 +1072,9 @@ func FetchModels(c *gin.Context) {
 	}
 
 	if err := json.NewDecoder(response.Body).Decode(&result); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
+		c.JSON(http.StatusOK, gin.H{
 			"success": false,
-			"message": err.Error(),
+			"message": fmt.Sprintf("解析上游响应失败: %s", err.Error()),
 		})
 		return
 	}

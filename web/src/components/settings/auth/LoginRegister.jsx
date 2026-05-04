@@ -43,9 +43,7 @@ export default function LoginRegisterCard({ inputs, updateOptions, t }) {
           <ToggleField label={t('允许 GitHub 账户登录 & 注册')} checked={!!inputs.GitHubOAuthEnabled} onChange={toggle('GitHubOAuthEnabled')} />
           <ToggleField label={t('允许 Discord 账户登录 & 注册')} checked={!!inputs['discord.enabled']} onChange={toggle('discord.enabled')} />
           <ToggleField label={t('允许 Linux DO 账户登录 & 注册')} checked={!!inputs.LinuxDOOAuthEnabled} onChange={toggle('LinuxDOOAuthEnabled')} />
-          <ToggleField label={t('允许微信登录 & 注册')} checked={!!inputs.WeChatAuthEnabled} onChange={toggle('WeChatAuthEnabled')} />
           <ToggleField label={t('允许 Telegram 登录')} checked={!!inputs.TelegramOAuthEnabled} onChange={toggle('TelegramOAuthEnabled')} />
-          <ToggleField label={t('允许 OIDC 登录')} checked={!!inputs['oidc.enabled']} onChange={toggle('oidc.enabled')} />
           <ToggleField label={t('允许 Passkey 登录')} checked={!!inputs['passkey.enabled']} onChange={toggle('passkey.enabled')} />
         </div>
       </div>
