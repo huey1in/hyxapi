@@ -9,7 +9,7 @@ import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { createPortal } from 'react-dom';
 import {
-  Copy, Check, RefreshCw, X, ChevronRight,
+  Copy, Check, RefreshCw, X, ChevronRight, ShieldAlert,
 } from 'lucide-react';
 import {
   API, copy, showError, showInfo, showSuccess,
