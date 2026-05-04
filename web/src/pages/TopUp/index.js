@@ -259,6 +259,8 @@ const TopUp = () => {
   const [showHistory, setShowHistory] = useState(false);
   const [showTransfer, setShowTransfer] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
+  const [subscriptions, setSubscriptions] = useState([]);
+  const [planMap, setPlanMap] = useState({});
 
   const minTopUp = statusState?.status?.min_topup || 1;
   const topUpLink = statusState?.status?.top_up_link || '';
@@ -275,6 +277,26 @@ const TopUp = () => {
     }
   };
 
+  const loadSubscriptions = async () => {
+    try {
+      const [selfRes, plansRes] = await Promise.all([
+        API.get('/api/subscription/self', { skipErrorHandler: true }),
+        API.get('/api/subscription/plans', { skipErrorHandler: true }),
+      ]);
+      if (selfRes?.data?.success) {
+        setSubscriptions(selfRes.data.data?.subscriptions || []);
+      }
+      if (plansRes?.data?.success) {
+        const m = {};
+        (plansRes.data.data || []).forEach((p) => {
+          const id = p?.plan?.id;
+          if (id) m[id] = p?.plan || {};
+        });
+        setPlanMap(m);
+      }
+    } catch {}
+  };
+
   const loadAff = async () => {
     try {
       const { data } = await API.get('/api/user/aff');
@@ -288,6 +310,7 @@ const TopUp = () => {
   useEffect(() => {
     refreshUser();
     loadAff();
+    loadSubscriptions();
   }, []);
 
   // 兑换码 query 参数
@@ -320,6 +343,7 @@ const TopUp = () => {
           );
           setCode('');
           await refreshUser();
+          await loadSubscriptions();
           handled = true;
         } else if (
           subRes.data?.message &&
@@ -457,6 +481,176 @@ const TopUp = () => {
             </div>
           </div>
         </div>
+
+        {/* My subscriptions */}
+        {subscriptions.length > 0 && (
+          <Card title={<span>{t('我的订阅')}</span>} className='mb-5'>
+            <div className='space-y-3'>
+              {subscriptions.map((row) => {
+                const sub = row?.subscription || {};
+                const plan = planMap[sub.plan_id] || {};
+                const planTitle = plan.title || (sub.plan_id ? `#${sub.plan_id}` : '—');
+                const planSubtitle = plan.subtitle || '';
+                const total = Number(sub.amount_total || 0);
+                const used = Number(sub.amount_used || 0);
+                const remaining = Math.max(0, total - used);
+                const usagePct = total > 0 ? Math.min(100, (used / total) * 100) : 0;
+                const unlimited = total === 0;
+                const now = Date.now() / 1000;
+                const expired = (sub.end_time || 0) > 0 && (sub.end_time || 0) < now;
+                const cancelled = sub.status === 'cancelled';
+                const active = sub.status === 'active' && !expired && !cancelled;
+                const daysLeft = active && sub.end_time
+                  ? Math.max(0, Math.ceil((sub.end_time - now) / 86400))
+                  : 0;
+                const nextResetDays = active && sub.next_reset_time && sub.next_reset_time > now
+                  ? Math.max(0, Math.ceil((sub.next_reset_time - now) / 86400))
+                  : 0;
+                const durationLabel = (() => {
+                  if (!plan.duration_unit) return '';
+                  const v = plan.duration_value;
+                  const unit = plan.duration_unit;
+                  if (unit === 'year') return `${v} ${t('年')}`;
+                  if (unit === 'month') return `${v} ${t('月')}`;
+                  if (unit === 'day') return `${v} ${t('天')}`;
+                  if (unit === 'hour') return `${v} ${t('小时')}`;
+                  if (unit === 'custom') return t('自定义');
+                  return '';
+                })();
+                const resetLabel = (() => {
+                  const p = plan.quota_reset_period;
+                  if (!p || p === 'never') return t('不重置');
+                  if (p === 'daily') return t('每日');
+                  if (p === 'weekly') return t('每周');
+                  if (p === 'monthly') return t('每月');
+                  if (p === 'custom') return t('自定义');
+                  return p;
+                })();
+                return (
+                  <div
+                    key={sub.id}
+                    className='border border-ui-border rounded-lg p-4 bg-ui-bg'
+                  >
+                    {/* Header */}
+                    <div className='flex flex-wrap items-start justify-between gap-2 mb-3'>
+                      <div className='min-w-0 flex-1'>
+                        <div className='flex items-center gap-2 flex-wrap'>
+                          <span className='text-sm font-semibold text-ui-text truncate'>
+                            {planTitle}
+                          </span>
+                          <span
+                            className={`text-[10px] px-1.5 py-0.5 rounded-full border font-medium whitespace-nowrap ${
+                              active
+                                ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20'
+                                : cancelled
+                                  ? 'bg-gray-500/10 text-gray-500 border-gray-500/20'
+                                  : 'bg-red-500/10 text-red-600 dark:text-red-400 border-red-500/20'
+                            }`}
+                          >
+                            {active ? t('生效中') : cancelled ? t('已取消') : t('已过期')}
+                          </span>
+                        </div>
+                        {planSubtitle && (
+                          <div className='text-[11px] text-ui-text-3 mt-0.5'>{planSubtitle}</div>
+                        )}
+                      </div>
+                      {active && daysLeft > 0 && (
+                        <div className='text-right flex-shrink-0'>
+                          <div className='text-xs font-semibold text-ui-text tabular-nums'>
+                            {daysLeft}
+                          </div>
+                          <div className='text-[10px] text-ui-text-3'>{t('天剩余')}</div>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Quota usage */}
+                    {unlimited ? (
+                      <div className='flex items-center justify-between text-xs text-ui-text-2 mb-3 px-3 py-2 rounded-md bg-ui-bg-subtle'>
+                        <span>{t('额度用量')}</span>
+                        <span className='font-semibold text-ui-text'>{t('不限额度')}</span>
+                      </div>
+                    ) : (
+                      <div className='mb-3'>
+                        <div className='flex items-center justify-between text-[11px] text-ui-text-3 mb-1.5 tabular-nums'>
+                          <span>
+                            {t('已用')}{' '}
+                            <span className='text-ui-text font-semibold'>{renderQuota(used)}</span>
+                            {' / '}{renderQuota(total)}
+                          </span>
+                          <span>
+                            {t('剩余')}{' '}
+                            <span className='text-ui-text font-semibold'>{renderQuota(remaining)}</span>
+                          </span>
+                        </div>
+                        <div className='w-full h-2 rounded-full bg-ui-bg-subtle overflow-hidden'>
+                          <div
+                            className='h-full rounded-full transition-all'
+                            style={{
+                              width: `${usagePct}%`,
+                              background:
+                                usagePct >= 90
+                                  ? 'rgb(239, 68, 68)'
+                                  : usagePct >= 70
+                                    ? 'rgb(245, 158, 11)'
+                                    : 'var(--ui-brand)',
+                            }}
+                          />
+                        </div>
+                        <div className='flex items-center justify-between text-[10px] text-ui-text-3 mt-1 tabular-nums'>
+                          <span>{usagePct.toFixed(1)}%</span>
+                          {nextResetDays > 0 && (
+                            <span>
+                              {t('额度重置剩余')} {nextResetDays} {t('天')}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Detail grid */}
+                    <div className='grid grid-cols-2 sm:grid-cols-4 gap-3 text-[11px] tabular-nums pt-3 border-t border-ui-divider'>
+                      <div>
+                        <div className='text-[10px] uppercase tracking-wider text-ui-text-3 mb-0.5'>
+                          {t('开始日期')}
+                        </div>
+                        <div className='text-ui-text-2'>
+                          {sub.start_time
+                            ? new Date(sub.start_time * 1000).toLocaleDateString()
+                            : '—'}
+                        </div>
+                      </div>
+                      <div>
+                        <div className='text-[10px] uppercase tracking-wider text-ui-text-3 mb-0.5'>
+                          {t('到期日期')}
+                        </div>
+                        <div className='text-ui-text-2'>
+                          {sub.end_time
+                            ? new Date(sub.end_time * 1000).toLocaleDateString()
+                            : '—'}
+                        </div>
+                      </div>
+                      {durationLabel && (
+                        <div>
+                          <div className='text-[10px] uppercase tracking-wider text-ui-text-3 mb-0.5'>
+                            {t('套餐时长')}
+                          </div>
+                          <div className='text-ui-text-2'>{durationLabel}</div>
+                        </div>
+                      )}
+                      <div>
+                        <div className='text-[10px] uppercase tracking-wider text-ui-text-3 mb-0.5'>
+                          {t('额度重置')}
+                        </div>
+                        <div className='text-ui-text-2'>{resetLabel}</div>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </Card>
+        )}
 
         {/* Two-column: redeem code + recharge (recharge only when top-up link is configured) */}
         <div className={`grid grid-cols-1 ${topUpLink ? 'md:grid-cols-2' : ''} gap-4 mb-5`}>

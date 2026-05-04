@@ -20,7 +20,6 @@ For commercial licensing, please contact support@quantumnous.com
 import React, { useEffect, useMemo, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { getLucideIcon } from '../../helpers/render';
 import { ChevronLeft } from 'lucide-react';
 import { useSidebarCollapsed } from '../../hooks/common/useSidebarCollapsed';
 import { useSidebar } from '../../hooks/common/useSidebar';
@@ -214,11 +213,6 @@ const SiderBar = ({ onNavigate = () => {} }) => {
             {item.text}
           </span>
         }
-        icon={
-          <div className='sidebar-icon-container flex-shrink-0'>
-            {getLucideIcon(item.itemKey, isSelected)}
-          </div>
-        }
         className={item.className}
       />
     );
@@ -241,11 +235,6 @@ const SiderBar = ({ onNavigate = () => {} }) => {
             >
               {item.text}
             </span>
-          }
-          icon={
-            <div className='sidebar-icon-container flex-shrink-0'>
-              {getLucideIcon(item.itemKey, isSelected)}
-            </div>
           }
         >
           {item.items.map((subItem) => {
