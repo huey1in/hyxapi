@@ -48,13 +48,9 @@ function Collapsible({ title, icon: Icon, children, defaultOpen = false, iconCol
         className='flex items-center gap-2 w-full text-left group'
         onClick={() => setOpen(!open)}
       >
-        {Icon && (
-          <div className={`w-7 h-7 rounded-md inline-flex items-center justify-center border ${iconCls}`}>
-            </div>
-        )}
         <div className='flex-1 min-w-0 text-sm font-semibold text-ui-text'>{title}</div>
       </button>
-      {open && <div className='pl-9 space-y-3'>{children}</div>}
+      {open && <div className='space-y-3'>{children}</div>}
     </div>
   );
 }
@@ -211,8 +207,6 @@ export default function GroupRatioSettings(props) {
       {/* Header with mode toggle */}
       <div className='flex flex-col sm:flex-row sm:items-center gap-3'>
         <div className='flex items-center gap-2 flex-1 min-w-0'>
-          <div className='w-8 h-8 rounded-md inline-flex items-center justify-center border bg-orange-500/10 text-orange-600 dark:text-orange-400 border-orange-500/20'>
-            </div>
           <div className='flex-1 min-w-0'>
             <div className='text-sm font-semibold text-ui-text'>{t('定价套餐设置')}</div>
             <div className='text-[11px] text-ui-text-3 mt-0.5'>{t('管理令牌可选的定价套餐与自动分组')}</div>

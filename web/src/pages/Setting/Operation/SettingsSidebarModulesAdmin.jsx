@@ -127,8 +127,6 @@ export default function SettingsSidebarModulesAdmin(props) {
   return (
     <div className='space-y-6'>
       <div className='flex items-center gap-2'>
-        <div className='w-8 h-8 rounded-md inline-flex items-center justify-center border bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-500/20'>
-          </div>
         <div className='flex-1 min-w-0'>
           <div className='text-sm font-semibold text-ui-text'>
             {t('侧边栏管理（全局控制）')}

@@ -160,8 +160,6 @@ const OtherSetting = () => {
     <div className='space-y-6'>
       <div className='space-y-4'>
         <div className='flex items-center gap-2'>
-          <div className='w-8 h-8 rounded-md inline-flex items-center justify-center border bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20'>
-            </div>
           <div className='flex-1 min-w-0'>
             <div className='text-sm font-semibold text-ui-text'>{t('通用设置')}</div>
             <div className='text-[11px] text-ui-text-3 mt-0.5'>{t('公告 / 用户协议 / 隐私政策')}</div>

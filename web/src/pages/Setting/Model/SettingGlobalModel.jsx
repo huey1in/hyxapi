@@ -177,8 +177,6 @@ export default function SettingGlobalModel(props) {
 
       <div className='space-y-3'>
         <div className='flex items-center gap-2'>
-          <div className='w-8 h-8 rounded-md inline-flex items-center justify-center border bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20'>
-            </div>
           <div className='flex-1 min-w-0'>
             <div className='text-sm font-semibold text-ui-text inline-flex items-center gap-2'>
               {t('ChatCompletions → Responses 兼容配置')}

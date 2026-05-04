@@ -291,8 +291,6 @@ export default function SettingsPerformance(props) {
       {/* 日志管理 */}
       <div className='space-y-3'>
         <div className='flex items-center gap-2'>
-          <div className='w-8 h-8 rounded-md inline-flex items-center justify-center border bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20'>
-            </div>
           <div className='flex-1 min-w-0'>
             <div className='text-sm font-semibold text-ui-text'>{t('服务器日志管理')}</div>
             <div className='text-[11px] text-ui-text-3 mt-0.5'>
@@ -354,8 +352,6 @@ export default function SettingsPerformance(props) {
       {/* 性能统计 */}
       <div className='space-y-3'>
         <div className='flex items-center gap-2'>
-          <div className='w-8 h-8 rounded-md inline-flex items-center justify-center border bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-500/20'>
-            </div>
           <div className='flex-1 min-w-0'>
             <div className='text-sm font-semibold text-ui-text'>{t('性能监控')}</div>
           </div>
