@@ -3,7 +3,6 @@
  * Composes auth sub-components from auth/*.jsx.
  */
 import React, { useEffect, useState } from 'react';
-import { Loader2 } from 'lucide-react';
 import {
   API,
   removeTrailingSlash,
@@ -234,8 +233,7 @@ const SystemSetting = () => {
   if (!isLoaded) {
     return (
       <div className='flex items-center justify-center h-64'>
-        <Loader2 size={24} className='animate-spin text-ui-text-3' />
-      </div>
+        </div>
     );
   }
 

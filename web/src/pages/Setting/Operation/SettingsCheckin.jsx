@@ -3,7 +3,6 @@
  */
 import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { CalendarCheck } from 'lucide-react';
 import {
   compareObjects,
   API,
@@ -69,10 +68,7 @@ export default function SettingsCheckin(props) {
   return (
     <SectionWithSave
       title={t('签到设置')}
-      hint={t('签到功能允许用户每日签到获取随机额度奖励')}
-      icon={CalendarCheck}
-      iconColor='green'
-      loading={loading}
+      hint={t('签到功能允许用户每日签到获取随机额度奖励')}loading={loading}
       onSave={submit}
     >
       <ToggleField

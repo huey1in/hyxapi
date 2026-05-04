@@ -30,16 +30,7 @@ import {
   Popover,
   Modal,
 } from '@douyinfe/semi-ui';
-import {
-  IconMail,
-  IconShield,
-  IconGithubLogo,
-  IconKey,
-  IconLock,
-  IconDelete,
-} from '@douyinfe/semi-icons';
 import { SiTelegram, SiWechat, SiLinux, SiDiscord } from 'react-icons/si';
-import { UserPlus, ShieldCheck } from 'lucide-react';
 import TelegramLoginButton from 'react-telegram-login';
 import {
   API,
@@ -173,8 +164,7 @@ const AccountManagement = ({
       {/* 卡片头部 */}
       <div className='flex items-center mb-4'>
         <Avatar size='small' color='teal' className='mr-3 shadow-md'>
-          <UserPlus size={16} />
-        </Avatar>
+          </Avatar>
         <div>
           <Typography.Text className='text-lg font-medium'>
             {t('账户管理')}
@@ -190,7 +180,6 @@ const AccountManagement = ({
         <TabPane
           tab={
             <div className='flex items-center'>
-              <UserPlus size={16} className='mr-2' />
               {t('账户绑定')}
             </div>
           }
@@ -240,11 +229,7 @@ const AccountManagement = ({
                 <div className='flex items-center justify-between gap-3'>
                   <div className='flex items-center flex-1 min-w-0'>
                     <div className='w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-700 flex items-center justify-center mr-3 flex-shrink-0'>
-                      <SiWechat
-                        size={20}
-                        className='text-slate-600 dark:text-slate-300'
-                      />
-                    </div>
+                      </div>
                     <div className='flex-1 min-w-0'>
                       <div className='font-medium text-gray-900'>
                         {t('微信')}
@@ -322,11 +307,7 @@ const AccountManagement = ({
                 <div className='flex items-center justify-between gap-3'>
                   <div className='flex items-center flex-1 min-w-0'>
                     <div className='w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-700 flex items-center justify-center mr-3 flex-shrink-0'>
-                      <SiDiscord
-                        size={20}
-                        className='text-slate-600 dark:text-slate-300'
-                      />
-                    </div>
+                      </div>
                     <div className='flex-1 min-w-0'>
                       <div className='font-medium text-gray-900'>
                         {t('Discord')}
@@ -406,11 +387,7 @@ const AccountManagement = ({
                 <div className='flex items-center justify-between gap-3'>
                   <div className='flex items-center flex-1 min-w-0'>
                     <div className='w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-700 flex items-center justify-center mr-3 flex-shrink-0'>
-                      <SiTelegram
-                        size={20}
-                        className='text-slate-600 dark:text-slate-300'
-                      />
-                    </div>
+                      </div>
                     <div className='flex-1 min-w-0'>
                       <div className='font-medium text-gray-900'>
                         {t('Telegram')}
@@ -481,11 +458,7 @@ const AccountManagement = ({
                 <div className='flex items-center justify-between gap-3'>
                   <div className='flex items-center flex-1 min-w-0'>
                     <div className='w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-700 flex items-center justify-center mr-3 flex-shrink-0'>
-                      <SiLinux
-                        size={20}
-                        className='text-slate-600 dark:text-slate-300'
-                      />
-                    </div>
+                      </div>
                     <div className='flex-1 min-w-0'>
                       <div className='font-medium text-gray-900'>
                         {t('LinuxDO')}
@@ -582,7 +555,6 @@ const AccountManagement = ({
         <TabPane
           tab={
             <div className='flex items-center'>
-              <ShieldCheck size={16} className='mr-2' />
               {t('安全设置')}
             </div>
           }
@@ -622,9 +594,7 @@ const AccountManagement = ({
                       type='primary'
                       theme='solid'
                       onClick={generateAccessToken}
-                      className='!bg-slate-600 hover:!bg-slate-700 w-full sm:w-auto'
-                      icon={<IconKey />}
-                    >
+                      className='!bg-slate-600 hover:!bg-slate-700 w-full sm:w-auto'>
                       {systemToken ? t('重新生成') : t('生成令牌')}
                     </Button>
                   </div>
@@ -650,9 +620,7 @@ const AccountManagement = ({
                       type='primary'
                       theme='solid'
                       onClick={() => setShowChangePasswordModal(true)}
-                      className='!bg-slate-600 hover:!bg-slate-700 w-full sm:w-auto'
-                      icon={<IconLock />}
-                    >
+                      className='!bg-slate-600 hover:!bg-slate-700 w-full sm:w-auto'>
                       {t('修改密码')}
                     </Button>
                   </div>
@@ -715,9 +683,7 @@ const AccountManagement = ({
                             }
                           : onPasskeyRegister
                       }
-                      className={`w-full sm:w-auto ${passkeyEnabled ? '!bg-slate-500 hover:!bg-slate-600' : ''}`}
-                      icon={<IconKey />}
-                      disabled={!passkeySupported && !passkeyEnabled}
+                      className={`w-full sm:w-auto ${passkeyEnabled ? '!bg-slate-500 hover:!bg-slate-600' : ''}`}disabled={!passkeySupported && !passkeyEnabled}
                       loading={
                         passkeyEnabled
                           ? passkeyDeleteLoading
@@ -755,9 +721,7 @@ const AccountManagement = ({
                       type='danger'
                       theme='solid'
                       onClick={() => setShowAccountDeleteModal(true)}
-                      className='w-full sm:w-auto !bg-slate-500 hover:!bg-slate-600'
-                      icon={<IconDelete />}
-                    >
+                      className='w-full sm:w-auto !bg-slate-500 hover:!bg-slate-600'>
                       {t('删除账户')}
                     </Button>
                   </div>

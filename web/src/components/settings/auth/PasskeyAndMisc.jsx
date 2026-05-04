@@ -2,7 +2,6 @@
  * Passkey / 邮箱白名单 / SMTP / Turnstile — token-system rewrite.
  */
 import React from 'react';
-import { KeyRound, Mail, Server, Shield } from 'lucide-react';
 import {
   FieldRow,
   TextField,
@@ -17,12 +16,7 @@ const inputCls = 'w-full rounded border border-ui-border bg-ui-bg-subtle text-ui
 export function PasskeyCard({ inputs, setInputs, submitPasskeySettings, t }) {
   return (
     <div className='space-y-3'>
-      <div className='flex items-center gap-2'>
-        <div className='w-7 h-7 rounded-md inline-flex items-center justify-center border bg-violet-500/10 text-violet-600 dark:text-violet-400 border-violet-500/20'>
-          <KeyRound size={13} />
-        </div>
-        <span className='text-sm font-semibold text-ui-text'>{t('配置 Passkey')}</span>
-      </div>
+      <span className='text-sm font-semibold text-ui-text'>{t('配置 Passkey')}</span>
       <Notice kind='info'>
         {t('Passkey 是基于 WebAuthn 标准的无密码身份验证方法，支持指纹、面容、硬件密钥等认证方式')}
       </Notice>
@@ -80,12 +74,7 @@ export function EmailWhitelistCard({ inputs, updateOptions, emailDomainWhitelist
 
   return (
     <div className='space-y-3'>
-      <div className='flex items-center gap-2'>
-        <div className='w-7 h-7 rounded-md inline-flex items-center justify-center border bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20'>
-          <Mail size={13} />
-        </div>
-        <span className='text-sm font-semibold text-ui-text'>{t('配置邮箱域名白名单')}</span>
-      </div>
+      <span className='text-sm font-semibold text-ui-text'>{t('配置邮箱域名白名单')}</span>
       <p className='text-xs text-ui-text-3'>{t('用以防止恶意用户利用临时邮箱批量注册')}</p>
       <div className='grid grid-cols-1 sm:grid-cols-2 gap-3'>
         <ToggleField label={t('启用邮箱域名白名单')} checked={!!inputs.EmailDomainRestrictionEnabled} onChange={(v) => updateOptions([{ key: 'EmailDomainRestrictionEnabled', value: v }])} />
@@ -106,12 +95,7 @@ export function EmailWhitelistCard({ inputs, updateOptions, emailDomainWhitelist
 export function SMTPCard({ inputs, setInputs, submitSMTP, t }) {
   return (
     <div className='space-y-3'>
-      <div className='flex items-center gap-2'>
-        <div className='w-7 h-7 rounded-md inline-flex items-center justify-center border bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 border-cyan-500/20'>
-          <Server size={13} />
-        </div>
-        <span className='text-sm font-semibold text-ui-text'>{t('配置 SMTP')}</span>
-      </div>
+      <span className='text-sm font-semibold text-ui-text'>{t('配置 SMTP')}</span>
       <p className='text-xs text-ui-text-3'>{t('用以支持系统的邮件发送')}</p>
       <div className='grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3'>
         <FieldRow label={t('SMTP 服务器地址')}>
@@ -144,12 +128,7 @@ export function SMTPCard({ inputs, setInputs, submitSMTP, t }) {
 export function TurnstileCard({ inputs, setInputs, submitTurnstile, t }) {
   return (
     <div className='space-y-3'>
-      <div className='flex items-center gap-2'>
-        <div className='w-7 h-7 rounded-md inline-flex items-center justify-center border bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20'>
-          <Shield size={13} />
-        </div>
-        <span className='text-sm font-semibold text-ui-text'>{t('配置 Turnstile')}</span>
-      </div>
+      <span className='text-sm font-semibold text-ui-text'>{t('配置 Turnstile')}</span>
       <p className='text-xs text-ui-text-3'>{t('用以支持用户校验')}</p>
       <div className='grid grid-cols-1 sm:grid-cols-2 gap-3'>
         <FieldRow label={t('Turnstile Site Key')}>

@@ -19,7 +19,6 @@ For commercial licensing, please contact support@quantumnous.com
 
 import React from 'react';
 import { Banner, Input, Modal, Typography } from '@douyinfe/semi-ui';
-import { IconDelete, IconUser } from '@douyinfe/semi-icons';
 import Turnstile from 'react-turnstile';
 
 const AccountDeleteModal = ({

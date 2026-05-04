@@ -3,7 +3,6 @@
  */
 import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Coins } from 'lucide-react';
 import {
   compareObjects,
   API,
@@ -72,10 +71,7 @@ export default function SettingsCreditLimit(props) {
   return (
     <SectionWithSave
       title={t('额度设置')}
-      hint={t('用户初始 / 预扣费 / 邀请奖励 等')}
-      icon={Coins}
-      iconColor='orange'
-      loading={loading}
+      hint={t('用户初始 / 预扣费 / 邀请奖励 等')}loading={loading}
       onSave={submit}
     >
       <div className='grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3'>

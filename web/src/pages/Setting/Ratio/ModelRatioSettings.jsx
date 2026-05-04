@@ -3,7 +3,6 @@
  */
 import React, { useEffect, useState, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { SlidersHorizontal, RotateCcw } from 'lucide-react';
 import {
   compareObjects,
   API,
@@ -142,10 +141,7 @@ export default function ModelRatioSettings(props) {
   return (
     <SectionWithSave
       title={t('模型倍率设置')}
-      hint={t('各类模型倍率 / 补全倍率 / 缓存倍率')}
-      icon={SlidersHorizontal}
-      iconColor='orange'
-      loading={loading}
+      hint={t('各类模型倍率 / 补全倍率 / 缓存倍率')}loading={loading}
       onSave={submit}
       onSaveLabel={t('保存模型倍率设置')}
       extraActions={
@@ -154,7 +150,6 @@ export default function ModelRatioSettings(props) {
           onClick={resetModelRatio}
           className='inline-flex items-center gap-1 px-2.5 py-1.5 text-xs rounded-md border border-ui-danger/30 text-ui-danger hover:bg-ui-danger-bg'
         >
-          <RotateCcw size={11} />
           {t('重置模型倍率')}
         </button>
       }

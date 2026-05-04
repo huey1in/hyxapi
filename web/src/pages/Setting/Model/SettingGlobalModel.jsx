@@ -3,7 +3,6 @@
  */
 import React, { useEffect, useState, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Globe, Activity, FlaskConical } from 'lucide-react';
 import {
   compareObjects,
   API,
@@ -152,10 +151,7 @@ export default function SettingGlobalModel(props) {
     <div className='space-y-6'>
       <SectionWithSave
         title={t('全局设置')}
-        hint={t('请求透传 / 思考模型黑名单')}
-        icon={Globe}
-        iconColor='blue'
-        loading={loading}
+        hint={t('请求透传 / 思考模型黑名单')}loading={loading}
         onSave={submit}
       >
         <ToggleField
@@ -182,8 +178,7 @@ export default function SettingGlobalModel(props) {
       <div className='space-y-3'>
         <div className='flex items-center gap-2'>
           <div className='w-8 h-8 rounded-md inline-flex items-center justify-center border bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20'>
-            <FlaskConical size={15} />
-          </div>
+            </div>
           <div className='flex-1 min-w-0'>
             <div className='text-sm font-semibold text-ui-text inline-flex items-center gap-2'>
               {t('ChatCompletions → Responses 兼容配置')}
@@ -245,10 +240,7 @@ export default function SettingGlobalModel(props) {
 
       <SectionWithSave
         title={t('连接保活设置')}
-        hint={t('开启后定期发送 ping 数据，保持上游连接活跃')}
-        icon={Activity}
-        iconColor='emerald'
-      >
+        hint={t('开启后定期发送 ping 数据，保持上游连接活跃')}>
         <Notice kind='warning'>
           {t('警告：启用保活后，如果已写入保活数据后渠道出错，系统无法重试；若必须开启，请使用尽可能大的 Ping 间隔。')}
         </Notice>

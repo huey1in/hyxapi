@@ -3,7 +3,6 @@
  */
 import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Globe, Edit, Trash2 } from 'lucide-react';
 import { API, showError, showSuccess } from '../../../helpers';
 import { NativeSelect } from '../../../components/common/form/Primitives';
 import CrudSection from '../../../components/common/table/CrudSection';
@@ -138,10 +137,10 @@ const SettingsAPIInfo = ({ options, refresh }) => {
       render: (_, row) => (
         <div className='flex items-center gap-1'>
           <button onClick={() => openEdit(row)} className='inline-flex items-center gap-1 px-2 py-1 text-[11px] rounded-md border border-ui-border text-ui-text-2 hover:bg-ui-bg-hover'>
-            <Edit size={11} /> {t('编辑')}
+            {t('编辑')}
           </button>
           <button onClick={() => handleDelete(row)} className='inline-flex items-center gap-1 px-2 py-1 text-[11px] rounded-md border border-ui-danger/30 text-ui-danger hover:bg-ui-danger-bg'>
-            <Trash2 size={11} /> {t('删除')}
+            {t('删除')}
           </button>
         </div>
       ),
@@ -152,10 +151,7 @@ const SettingsAPIInfo = ({ options, refresh }) => {
     <>
       <CrudSection
         title={t('API 信息管理')}
-        hint={t('可以配置多个 API 地址用于状态展示和负载均衡（最多 50 个）')}
-        icon={Globe}
-        iconColor='cyan'
-        columns={columns}
+        hint={t('可以配置多个 API 地址用于状态展示和负载均衡（最多 50 个）')}columns={columns}
         dataSource={paged}
         loading={loading}
         page={page}

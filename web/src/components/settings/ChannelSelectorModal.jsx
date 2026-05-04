@@ -2,7 +2,6 @@
  * 渠道选择弹窗 — token-system rewrite.
  */
 import React, { useState, useEffect, forwardRef, useImperativeHandle } from 'react';
-import { Search } from 'lucide-react';
 import ModalDialog from '../common/ModalDialog';
 import Pagination from '../common/table/Pagination';
 
@@ -114,7 +113,6 @@ const ChannelSelectorModal = forwardRef(
       >
         <div className='space-y-3'>
           <div className='relative'>
-            <Search size={13} className='absolute left-2.5 top-1/2 -translate-y-1/2 text-ui-text-3' />
             <input
               type='text' value={searchText} onChange={(e) => { setSearchText(e.target.value); setCurrentPage(1); }}
               placeholder={t('搜索渠道名称或地址')}

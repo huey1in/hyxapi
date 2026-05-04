@@ -3,7 +3,6 @@
  */
 import React, { useEffect, useState, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Settings } from 'lucide-react';
 import {
   compareObjects,
   API,
@@ -180,10 +179,7 @@ export default function GeneralSettings(props) {
   return (
     <SectionWithSave
       title={t('通用设置')}
-      hint={t('链接 / 额度展示 / 重试 / 站点模式')}
-      icon={Settings}
-      iconColor='blue'
-      loading={loading}
+      hint={t('链接 / 额度展示 / 重试 / 站点模式')}loading={loading}
       onSave={submit}
       onSaveLabel={t('保存通用设置')}
     >

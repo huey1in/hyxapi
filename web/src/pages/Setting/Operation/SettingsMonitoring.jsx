@@ -3,7 +3,6 @@
  */
 import React, { useEffect, useState, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Activity } from 'lucide-react';
 import {
   compareObjects,
   API,
@@ -106,10 +105,7 @@ export default function SettingsMonitoring(props) {
   return (
     <SectionWithSave
       title={t('监控设置')}
-      hint={t('通道健康检测、自动启用 / 禁用、状态码与关键词规则')}
-      icon={Activity}
-      iconColor='emerald'
-      loading={loading}
+      hint={t('通道健康检测、自动启用 / 禁用、状态码与关键词规则')}loading={loading}
       onSave={submit}
       onSaveLabel={t('保存监控设置')}
     >

@@ -3,7 +3,6 @@
  * Token-system rewrite using native inputs.
  */
 import React, { useState, useCallback, useMemo, useRef } from 'react';
-import { Plus, Trash2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { showConfirm } from '../../../../components/common/ConfirmDialog';
 
@@ -160,8 +159,7 @@ export default function GroupTable({ groupRatio, userUsableGroups, onChange }) {
                         className='p-1 rounded text-ui-text-3 hover:text-ui-danger hover:bg-ui-danger-bg transition-colors'
                         title={t('删除')}
                       >
-                        <Trash2 size={13} />
-                      </button>
+                        </button>
                     </td>
                   </tr>
                 ))
@@ -175,7 +173,7 @@ export default function GroupTable({ groupRatio, userUsableGroups, onChange }) {
           onClick={addRow}
           className='inline-flex items-center gap-1 px-3 py-1.5 text-xs rounded-md border border-ui-border text-ui-text-2 hover:bg-ui-bg-hover'
         >
-          <Plus size={12} /> {t('添加分组')}
+          {t('添加分组')}
         </button>
       </div>
       {duplicateNames.size > 0 && (

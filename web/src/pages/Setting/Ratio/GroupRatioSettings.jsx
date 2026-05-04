@@ -5,17 +5,6 @@
 import React, { useEffect, useState, useRef, useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
-  Users,
-  HelpCircle,
-  Layers,
-  BookOpen,
-  ChevronDown,
-  ChevronRight,
-  Save,
-  Loader2,
-  X,
-} from 'lucide-react';
-import {
   compareObjects,
   API,
   showError,
@@ -61,13 +50,9 @@ function Collapsible({ title, icon: Icon, children, defaultOpen = false, iconCol
       >
         {Icon && (
           <div className={`w-7 h-7 rounded-md inline-flex items-center justify-center border ${iconCls}`}>
-            <Icon size={13} />
-          </div>
+            </div>
         )}
         <div className='flex-1 min-w-0 text-sm font-semibold text-ui-text'>{title}</div>
-        {open
-          ? <ChevronDown size={14} className='text-ui-text-3 group-hover:text-ui-text transition-colors' />
-          : <ChevronRight size={14} className='text-ui-text-3 group-hover:text-ui-text transition-colors' />}
       </button>
       {open && <div className='pl-9 space-y-3'>{children}</div>}
     </div>
@@ -103,12 +88,10 @@ function GuideSideSheet({ open, onClose, t }) {
       <div className='w-full max-w-[560px] bg-ui-bg-elevated border-l border-ui-border shadow-2xl h-full flex flex-col' onClick={(e) => e.stopPropagation()}>
         <div className='flex items-center justify-between px-5 py-4 border-b border-ui-divider'>
           <div className='flex items-center gap-2'>
-            <BookOpen size={16} className='text-ui-accent' />
             <span className='text-sm font-semibold text-ui-text'>{t('分组设置使用说明')}</span>
           </div>
           <button onClick={onClose} className='w-7 h-7 inline-flex items-center justify-center rounded-md text-ui-text-3 hover:text-ui-text hover:bg-ui-bg-subtle'>
-            <X size={14} />
-          </button>
+            </button>
         </div>
         <div className='flex gap-0 px-5 border-b border-ui-divider overflow-x-auto'>
           {tabs.map((tb) => (
@@ -229,8 +212,7 @@ export default function GroupRatioSettings(props) {
       <div className='flex flex-col sm:flex-row sm:items-center gap-3'>
         <div className='flex items-center gap-2 flex-1 min-w-0'>
           <div className='w-8 h-8 rounded-md inline-flex items-center justify-center border bg-orange-500/10 text-orange-600 dark:text-orange-400 border-orange-500/20'>
-            <Users size={15} />
-          </div>
+            </div>
           <div className='flex-1 min-w-0'>
             <div className='text-sm font-semibold text-ui-text'>{t('定价套餐设置')}</div>
             <div className='text-[11px] text-ui-text-3 mt-0.5'>{t('管理令牌可选的定价套餐与自动分组')}</div>
@@ -241,7 +223,7 @@ export default function GroupRatioSettings(props) {
             onClick={() => setShowGuide(true)}
             className='inline-flex items-center gap-1 px-2.5 py-1.5 text-xs rounded-md border border-ui-border text-ui-text-2 hover:bg-ui-bg-hover'
           >
-            <HelpCircle size={12} /> {t('使用说明')}
+            {t('使用说明')}
           </button>
         </div>
       </div>
@@ -258,7 +240,7 @@ export default function GroupRatioSettings(props) {
 
       {editMode === 'visual' ? (
         <div className='space-y-4'>
-          <Collapsible title={t('定价套餐管理')} icon={Layers} iconColor='blue' defaultOpen>
+          <Collapsible title={t('定价套餐管理')}defaultOpen>
             <p className='text-xs text-ui-text-3'>{t('每个套餐对应一个计费倍率，勾选「用户可选」后用户可在创建令牌时选择该套餐')}</p>
             <GroupTable key={`gt_${dv}`} groupRatio={inputs.GroupRatio} userUsableGroups={inputs.UserUsableGroups} onChange={handleGroupTableChange} />
           </Collapsible>
@@ -289,7 +271,6 @@ export default function GroupRatioSettings(props) {
           disabled={loading}
           className='inline-flex items-center gap-1.5 px-4 py-1.5 text-xs font-semibold rounded-md bg-ui-accent text-ui-accent-fg hover:opacity-90 disabled:opacity-50'
         >
-          {loading ? <Loader2 size={11} className='animate-spin' /> : <Save size={11} />}
           {t('保存分组相关设置')}
         </button>
       </div>

@@ -3,7 +3,6 @@
  */
 import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { LineChart } from 'lucide-react';
 import {
   compareObjects,
   API,
@@ -71,10 +70,7 @@ export default function DataDashboard(props) {
   return (
     <SectionWithSave
       title={t('数据看板设置')}
-      hint={t('实验性数据看板的更新间隔与默认时间粒度')}
-      icon={LineChart}
-      iconColor='blue'
-      loading={loading}
+      hint={t('实验性数据看板的更新间隔与默认时间粒度')}loading={loading}
       onSave={submit}
     >
       <ToggleField

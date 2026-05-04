@@ -3,7 +3,6 @@
  */
 
 import React, { useEffect, useState } from 'react';
-import { Loader2 } from 'lucide-react';
 import SettingsPerformance from '../../pages/Setting/Performance/SettingsPerformance';
 import { API, showError, toBoolean } from '../../helpers';
 
@@ -54,8 +53,7 @@ const PerformanceSetting = () => {
     <div className='relative'>
       {loading && (
         <div className='absolute inset-0 z-10 flex items-center justify-center bg-ui-bg/60'>
-          <Loader2 size={20} className='animate-spin text-ui-text-3' />
-        </div>
+          </div>
       )}
       <div className='bg-ui-bg-elevated border border-ui-border rounded-xl p-5'>
         <SettingsPerformance options={inputs} refresh={onRefresh} />

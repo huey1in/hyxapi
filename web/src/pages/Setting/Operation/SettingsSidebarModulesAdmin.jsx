@@ -3,7 +3,6 @@
  */
 import React, { useState, useEffect, useContext } from 'react';
 import { useTranslation } from 'react-i18next';
-import { LayoutPanelLeft, RotateCcw, Save, Loader2 } from 'lucide-react';
 import { API, showSuccess, showError } from '../../../helpers';
 import { StatusContext } from '../../../context/Status';
 import { Toggle } from '../../../components/common/form/Primitives';
@@ -129,8 +128,7 @@ export default function SettingsSidebarModulesAdmin(props) {
     <div className='space-y-6'>
       <div className='flex items-center gap-2'>
         <div className='w-8 h-8 rounded-md inline-flex items-center justify-center border bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-500/20'>
-          <LayoutPanelLeft size={15} />
-        </div>
+          </div>
         <div className='flex-1 min-w-0'>
           <div className='text-sm font-semibold text-ui-text'>
             {t('侧边栏管理（全局控制）')}
@@ -192,7 +190,6 @@ export default function SettingsSidebarModulesAdmin(props) {
           onClick={reset}
           className='inline-flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-md border border-ui-border text-ui-text-2 hover:bg-ui-bg-hover'
         >
-          <RotateCcw size={11} />
           {t('重置为默认')}
         </button>
         <button
@@ -201,7 +198,6 @@ export default function SettingsSidebarModulesAdmin(props) {
           disabled={loading}
           className='inline-flex items-center gap-1.5 px-4 py-1.5 text-xs font-semibold rounded-md bg-ui-accent text-ui-accent-fg hover:opacity-90 disabled:opacity-50'
         >
-          {loading ? <Loader2 size={11} className='animate-spin' /> : <Save size={11} />}
           {t('保存设置')}
         </button>
       </div>

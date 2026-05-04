@@ -3,7 +3,6 @@
  */
 import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Megaphone, Edit, Trash2, Maximize2 } from 'lucide-react';
 import {
   API,
   showError,
@@ -195,10 +194,10 @@ const SettingsAnnouncements = ({ options, refresh }) => {
       render: (_, row) => (
         <div className='flex items-center gap-1'>
           <button onClick={() => openEdit(row)} className='inline-flex items-center gap-1 px-2 py-1 text-[11px] rounded-md border border-ui-border text-ui-text-2 hover:bg-ui-bg-hover'>
-            <Edit size={11} /> {t('编辑')}
+            {t('编辑')}
           </button>
           <button onClick={() => handleDelete(row)} className='inline-flex items-center gap-1 px-2 py-1 text-[11px] rounded-md border border-ui-danger/30 text-ui-danger hover:bg-ui-danger-bg'>
-            <Trash2 size={11} /> {t('删除')}
+            {t('删除')}
           </button>
         </div>
       ),
@@ -209,10 +208,7 @@ const SettingsAnnouncements = ({ options, refresh }) => {
     <>
       <CrudSection
         title={t('系统公告管理')}
-        hint={t('可以发布系统通知和重要消息（最多 100 个，前端显示最新 20 条）')}
-        icon={Megaphone}
-        iconColor='blue'
-        columns={columns}
+        hint={t('可以发布系统通知和重要消息（最多 100 个，前端显示最新 20 条）')}columns={columns}
         dataSource={paged}
         loading={loading}
         page={page}
@@ -261,8 +257,7 @@ const SettingsAnnouncements = ({ options, refresh }) => {
             className='absolute right-2 top-2 text-ui-text-3 hover:text-ui-text'
             title={t('放大编辑')}
           >
-            <Maximize2 size={13} />
-          </button>
+            </button>
         </div>
         <div className='grid grid-cols-2 gap-3'>
           <div>

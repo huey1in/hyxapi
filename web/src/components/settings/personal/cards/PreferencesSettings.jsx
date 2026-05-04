@@ -19,7 +19,6 @@ For commercial licensing, please contact support@quantumnous.com
 
 import React, { useState, useEffect, useContext } from "react";
 import { Card, Select, Typography, Avatar } from "@douyinfe/semi-ui";
-import { Languages } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { API, showSuccess, showError } from "../../../../helpers";
 import { UserContext } from "../../../../context/User";
@@ -124,8 +123,7 @@ const PreferencesSettings = ({ t }) => {
 			{/* Card Header */}
 			<div className="flex items-center mb-4">
 				<Avatar size="small" color="violet" className="mr-3 shadow-md">
-					<Languages size={16} />
-				</Avatar>
+					</Avatar>
 				<div>
 					<Typography.Text className="text-lg font-medium">
 						{t("偏好设置")}
@@ -140,11 +138,7 @@ const PreferencesSettings = ({ t }) => {
 				<div className="flex flex-col sm:flex-row items-start sm:items-center sm:justify-between gap-4">
 					<div className="flex items-start w-full sm:w-auto">
 						<div className="w-12 h-12 rounded-full bg-violet-50 dark:bg-violet-900/30 flex items-center justify-center mr-4 flex-shrink-0">
-							<Languages
-								size={20}
-								className="text-violet-600 dark:text-violet-400"
-							/>
-						</div>
+							</div>
 						<div>
 							<Typography.Title heading={6} className="mb-1">
 								{t("语言偏好")}

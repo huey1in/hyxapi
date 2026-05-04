@@ -9,14 +9,6 @@ Sub-tabs within each section use their own internal nav.
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import {
-  Globe,
-  Calculator,
-  ShieldCheck,
-  LayoutDashboard,
-  ShieldAlert,
-  Activity,
-} from 'lucide-react';
 
 import SystemSetting from '../../components/settings/SystemSetting';
 import { isRoot } from '../../helpers';
@@ -27,12 +19,12 @@ import RatioSetting from '../../components/settings/RatioSetting';
 import PerformanceSetting from '../../components/settings/PerformanceSetting';
 
 const TABS = [
-  { key: 'platform', icon: Globe, label: '平台设置' },
-  { key: 'models', icon: Calculator, label: '模型与定价' },
-  { key: 'limits', icon: ShieldAlert, label: '限制与监控' },
-  { key: 'dashboard', icon: LayoutDashboard, label: '仪表盘内容' },
-  { key: 'auth', icon: ShieldCheck, label: '用户认证' },
-  { key: 'performance', icon: Activity, label: '性能' },
+  { key: 'platform', label: '平台设置' },
+  { key: 'models', label: '模型与定价' },
+  { key: 'limits', label: '限制与监控' },
+  { key: 'dashboard', label: '仪表盘内容' },
+  { key: 'auth', label: '用户认证' },
+  { key: 'performance', label: '性能' },
 ];
 
 const LEGACY_KEY_MAP = {
@@ -89,7 +81,6 @@ const Setting = () => {
         <div className='bg-ui-bg-elevated border border-ui-border rounded-xl p-1 mb-3 overflow-x-auto'>
           <div className='flex items-center gap-1 min-w-max'>
             {TABS.map((tb) => {
-              const Icon = tb.icon;
               const isActive = active === tb.key;
               return (
                 <button
@@ -101,7 +92,6 @@ const Setting = () => {
                       : 'border border-transparent text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-subtle'
                   }`}
                 >
-                  <Icon size={13} />
                   {t(tb.label)}
                 </button>
               );

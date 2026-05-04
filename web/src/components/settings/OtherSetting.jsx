@@ -4,14 +4,6 @@
  */
 import React, { useContext, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import {
-  FileText,
-  Loader2,
-  Save,
-  RefreshCw,
-  ExternalLink,
-  X,
-} from 'lucide-react';
 import { API, showError, showSuccess, timestamp2string } from '../../helpers';
 import { marked } from 'marked';
 import { useTranslation } from 'react-i18next';
@@ -54,8 +46,7 @@ function UpdateModal({ open, onClose, tagName, content, t }) {
             onClick={onClose}
             className='w-7 h-7 inline-flex items-center justify-center rounded-md text-ui-text-3 hover:text-ui-text hover:bg-ui-bg-subtle transition-colors'
           >
-            <X size={14} />
-          </button>
+            </button>
         </div>
         <div
           className='flex-1 overflow-y-auto px-5 py-4 text-xs text-ui-text-2 leading-relaxed prose prose-xs dark:prose-invert max-w-none'
@@ -74,7 +65,6 @@ function UpdateModal({ open, onClose, tagName, content, t }) {
             rel='noreferrer'
             className='inline-flex items-center gap-1 px-3.5 py-1.5 text-xs font-semibold rounded-md bg-ui-accent text-ui-accent-fg hover:opacity-90'
           >
-            <ExternalLink size={11} />
             {t('详情')}
           </a>
         </div>
@@ -171,8 +161,7 @@ const OtherSetting = () => {
       <div className='space-y-4'>
         <div className='flex items-center gap-2'>
           <div className='w-8 h-8 rounded-md inline-flex items-center justify-center border bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20'>
-            <FileText size={15} />
-          </div>
+            </div>
           <div className='flex-1 min-w-0'>
             <div className='text-sm font-semibold text-ui-text'>{t('通用设置')}</div>
             <div className='text-[11px] text-ui-text-3 mt-0.5'>{t('公告 / 用户协议 / 隐私政策')}</div>
@@ -182,7 +171,6 @@ const OtherSetting = () => {
             disabled={!!loadingKeys.CheckUpdate}
             className='inline-flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-md border border-ui-border text-ui-text-2 hover:bg-ui-bg-hover disabled:opacity-50'
           >
-            {loadingKeys.CheckUpdate ? <Loader2 size={11} className='animate-spin' /> : <RefreshCw size={11} />}
             {t('检查更新')}
           </button>
         </div>
@@ -204,7 +192,6 @@ const OtherSetting = () => {
                 disabled={!!loadingKeys[f.key]}
                 className='inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-md bg-ui-accent text-ui-accent-fg hover:opacity-90 disabled:opacity-50'
               >
-                {loadingKeys[f.key] ? <Loader2 size={11} className='animate-spin' /> : <Save size={11} />}
                 {t('保存')}
               </button>
             </div>

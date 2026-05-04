@@ -32,8 +32,6 @@ import {
   renderQuota,
   stringToColor,
 } from '../../../../helpers';
-import { Coins, BarChart2 } from 'lucide-react';
-
 const UserInfoHeader = ({ t, userState }) => {
   const getUsername = () => {
     if (userState.user) {
@@ -131,7 +129,6 @@ const UserInfoHeader = ({ t, userState }) => {
           >
             <div className='flex items-center gap-4'>
               <div className='flex items-center gap-2'>
-                <Coins size={16} />
                 <Typography.Text size='small' type='tertiary'>
                   {t('历史消耗')}
                 </Typography.Text>
@@ -141,7 +138,6 @@ const UserInfoHeader = ({ t, userState }) => {
               </div>
               <Divider layout='vertical' />
               <div className='flex items-center gap-2'>
-                <BarChart2 size={16} />
                 <Typography.Text size='small' type='tertiary'>
                   {t('请求次数')}
                 </Typography.Text>
@@ -164,7 +160,6 @@ const UserInfoHeader = ({ t, userState }) => {
           <div className='space-y-3'>
             <div className='flex items-center justify-between'>
               <div className='flex items-center gap-2'>
-                <Coins size={16} />
                 <Typography.Text size='small' type='tertiary'>
                   {t('历史消耗')}
                 </Typography.Text>
@@ -176,7 +171,6 @@ const UserInfoHeader = ({ t, userState }) => {
             <Divider margin='8px' />
             <div className='flex items-center justify-between'>
               <div className='flex items-center gap-2'>
-                <BarChart2 size={16} />
                 <Typography.Text size='small' type='tertiary'>
                   {t('请求次数')}
                 </Typography.Text>

@@ -6,7 +6,6 @@
  *        submitServerAddress, submitSSRF, t
  */
 import React from 'react';
-import { Server, ShieldCheck } from 'lucide-react';
 import {
   FieldRow,
   TextField,
@@ -19,12 +18,7 @@ import {
 export function ServerCard({ inputs, setInputs, submitServerAddress, t }) {
   return (
     <div className='space-y-3'>
-      <div className='flex items-center gap-2'>
-        <div className='w-7 h-7 rounded-md inline-flex items-center justify-center border bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20'>
-          <Server size={13} />
-        </div>
-        <span className='text-sm font-semibold text-ui-text'>{t('通用设置')}</span>
-      </div>
+      <span className='text-sm font-semibold text-ui-text'>{t('通用设置')}</span>
       <FieldRow label={t('服务器地址')} hint={t('该服务器地址将影响支付回调地址以及默认首页展示的地址，请确保正确配置')}>
         <div className='flex gap-2'>
           <input
@@ -54,12 +48,7 @@ export function SSRFCard({
 }) {
   return (
     <div className='space-y-3'>
-      <div className='flex items-center gap-2'>
-        <div className='w-7 h-7 rounded-md inline-flex items-center justify-center border bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20'>
-          <ShieldCheck size={13} />
-        </div>
-        <span className='text-sm font-semibold text-ui-text'>{t('SSRF 防护设置')}</span>
-      </div>
+      <span className='text-sm font-semibold text-ui-text'>{t('SSRF 防护设置')}</span>
       <Notice kind='info'>{t('配置服务器端请求伪造 (SSRF) 防护，用于保护内网资源安全')}</Notice>
       <ToggleField
         label={t('启用 SSRF 防护（推荐开启）')}

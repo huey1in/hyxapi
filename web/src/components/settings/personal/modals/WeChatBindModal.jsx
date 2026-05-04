@@ -19,7 +19,6 @@ For commercial licensing, please contact support@quantumnous.com
 
 import React from 'react';
 import { Button, Input, Modal, Image } from '@douyinfe/semi-ui';
-import { IconKey } from '@douyinfe/semi-icons';
 import { SiWechat } from 'react-icons/si';
 
 const WeChatBindModal = ({
@@ -35,7 +34,6 @@ const WeChatBindModal = ({
     <Modal
       title={
         <div className='flex items-center'>
-          <SiWechat className='mr-2 text-green-500' size={20} />
           {t('绑定微信账户')}
         </div>
       }
@@ -67,8 +65,7 @@ const WeChatBindModal = ({
           theme='solid'
           size='large'
           onClick={bindWeChat}
-          className='!rounded-lg w-full !bg-slate-600 hover:!bg-slate-700'
-          icon={<SiWechat size={16} />}
+          className='!rounded-lg w-full !bg-slate-600 hover:!bg-slate-700'/>}
         >
           {t('绑定')}
         </Button>

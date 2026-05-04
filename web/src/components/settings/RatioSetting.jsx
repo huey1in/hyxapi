@@ -3,7 +3,6 @@
  */
 
 import React, { useEffect, useState } from 'react';
-import { Loader2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
 import ModelPricingCombined from '../../pages/Setting/Ratio/ModelPricingCombined';
@@ -122,8 +121,7 @@ const RatioSetting = () => {
     <div className='bg-ui-bg-elevated border border-ui-border rounded-xl overflow-hidden relative'>
       {loading && (
         <div className='absolute inset-0 z-10 flex items-center justify-center bg-ui-bg/60'>
-          <Loader2 size={20} className='animate-spin text-ui-text-3' />
-        </div>
+          </div>
       )}
       {/* Sub-tab bar */}
       <div className='border-b border-ui-border bg-ui-bg-subtle/40 px-2 py-1.5 overflow-x-auto'>

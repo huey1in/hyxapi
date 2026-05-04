@@ -9,7 +9,6 @@
  * inside (see Phase 3 of settings rewrite roadmap).
  */
 import React, { useEffect, useState } from 'react';
-import { Loader2 } from 'lucide-react';
 import SettingsGeneral from '../../pages/Setting/Operation/SettingsGeneral';
 import SettingsHeaderNavModules from '../../pages/Setting/Operation/SettingsHeaderNavModules';
 import SettingsSidebarModulesAdmin from '../../pages/Setting/Operation/SettingsSidebarModulesAdmin';
@@ -78,8 +77,7 @@ const OperationSetting = () => {
     <div className='space-y-3 relative'>
       {loading && (
         <div className='absolute inset-0 z-10 flex items-center justify-center bg-ui-bg/60'>
-          <Loader2 size={20} className='animate-spin text-ui-text-3' />
-        </div>
+          </div>
       )}
       <TokenCard>
         <SettingsGeneral options={inputs} refresh={onRefresh} />

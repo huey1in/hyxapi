@@ -4,16 +4,6 @@
 import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
-  Cpu,
-  HardDrive,
-  Server,
-  RefreshCw,
-  Trash2,
-  Zap,
-  Loader2,
-  AlertTriangle,
-} from 'lucide-react';
-import {
   compareObjects,
   API,
   showError,
@@ -219,10 +209,7 @@ export default function SettingsPerformance(props) {
     <div className='space-y-6'>
       <SectionWithSave
         title={t('磁盘缓存设置')}
-        hint={t('磁盘换内存：大请求体临时存储到磁盘而非内存，降低内存占用；建议在 SSD 环境下使用')}
-        icon={HardDrive}
-        iconColor='cyan'
-        loading={loading}
+        hint={t('磁盘换内存：大请求体临时存储到磁盘而非内存，降低内存占用；建议在 SSD 环境下使用')}loading={loading}
         onSave={submit}
         onSaveLabel={t('保存性能设置')}
       >
@@ -269,10 +256,7 @@ export default function SettingsPerformance(props) {
 
       <SectionWithSave
         title={t('系统性能监控')}
-        hint={t('当系统资源使用率超过阈值时，拒绝新的 Relay 请求 (/v1, /v1beta 等)')}
-        icon={Cpu}
-        iconColor='amber'
-      >
+        hint={t('当系统资源使用率超过阈值时，拒绝新的 Relay 请求 (/v1, /v1beta 等)')}>
         <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3'>
           <ToggleField
             label={t('启用性能监控')}
@@ -308,8 +292,7 @@ export default function SettingsPerformance(props) {
       <div className='space-y-3'>
         <div className='flex items-center gap-2'>
           <div className='w-8 h-8 rounded-md inline-flex items-center justify-center border bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20'>
-            <Server size={15} />
-          </div>
+            </div>
           <div className='flex-1 min-w-0'>
             <div className='text-sm font-semibold text-ui-text'>{t('服务器日志管理')}</div>
             <div className='text-[11px] text-ui-text-3 mt-0.5'>
@@ -356,7 +339,6 @@ export default function SettingsPerformance(props) {
                   disabled={logCleanupLoading}
                   className='inline-flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-md border border-ui-danger/30 text-ui-danger hover:bg-ui-danger-bg disabled:opacity-50'
                 >
-                  {logCleanupLoading ? <Loader2 size={11} className='animate-spin' /> : <Trash2 size={11} />}
                   {t('清理日志文件')}
                 </button>
               </FieldRow>
@@ -373,14 +355,13 @@ export default function SettingsPerformance(props) {
       <div className='space-y-3'>
         <div className='flex items-center gap-2'>
           <div className='w-8 h-8 rounded-md inline-flex items-center justify-center border bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-500/20'>
-            <Zap size={15} />
-          </div>
+            </div>
           <div className='flex-1 min-w-0'>
             <div className='text-sm font-semibold text-ui-text'>{t('性能监控')}</div>
           </div>
           <div className='flex items-center gap-2'>
             <button onClick={fetchStats} className='inline-flex items-center gap-1 px-2.5 py-1.5 text-xs rounded-md border border-ui-border text-ui-text-2 hover:bg-ui-bg-hover'>
-              <RefreshCw size={11} /> {t('刷新')}
+              {t('刷新')}
             </button>
             <button
               onClick={() =>
@@ -394,7 +375,7 @@ export default function SettingsPerformance(props) {
               }
               className='inline-flex items-center gap-1 px-2.5 py-1.5 text-xs rounded-md border border-ui-border text-ui-text-2 hover:bg-ui-bg-hover'
             >
-              <Trash2 size={11} /> {t('清理缓存')}
+              {t('清理缓存')}
             </button>
             <button onClick={resetStats} className='inline-flex items-center gap-1 px-2.5 py-1.5 text-xs rounded-md border border-ui-border text-ui-text-2 hover:bg-ui-bg-hover'>
               {t('重置统计')}
@@ -407,7 +388,6 @@ export default function SettingsPerformance(props) {
 
         {statsLoading ? (
           <div className='flex items-center justify-center py-8 text-ui-text-3'>
-            <Loader2 size={16} className='animate-spin mr-2' />
             {t('加载中...')}
           </div>
         ) : stats ? (
@@ -457,7 +437,6 @@ export default function SettingsPerformance(props) {
                 </div>
                 {stats.disk_space_info.free < inputs['performance_setting.disk_cache_max_size_mb'] * 1024 * 1024 && (
                   <Notice kind='warning'>
-                    <AlertTriangle size={12} className='mr-1 inline' />
                     {t('磁盘可用空间小于缓存最大总量设置')}
                   </Notice>
                 )}

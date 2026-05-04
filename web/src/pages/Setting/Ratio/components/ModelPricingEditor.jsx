@@ -3,7 +3,6 @@
  * Token-system rewrite. Per-request and audio billing removed.
  */
 import React, { useState } from 'react';
-import { Plus, Save, Search, Trash2, Loader2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import {
   PAGE_SIZE,
@@ -113,11 +112,10 @@ export default function ModelPricingEditor({
       <div className='flex flex-wrap items-center gap-2'>
         {allowAddModel && (
           <button onClick={() => setAddVisible(true)} className='inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium rounded-md bg-ui-accent text-ui-accent-fg hover:opacity-90'>
-            <Plus size={12} /> {t('添加模型')}
+            {t('添加模型')}
           </button>
         )}
         <button onClick={handleSubmit} disabled={loading} className='inline-flex items-center gap-1 px-3 py-1.5 text-xs font-semibold rounded-md bg-ui-accent text-ui-accent-fg hover:opacity-90 disabled:opacity-50'>
-          {loading ? <Loader2 size={11} className='animate-spin' /> : <Save size={11} />}
           {t('应用更改')}
         </button>
         <button disabled={!selectedModel || selectedModelNames.length === 0} onClick={() => setBatchVisible(true)}
@@ -125,7 +123,6 @@ export default function ModelPricingEditor({
           {t('批量应用当前模型价格')}{selectedModelNames.length > 0 ? ` (${selectedModelNames.length})` : ''}
         </button>
         <div className='relative flex-1 min-w-[180px] max-w-[220px]'>
-          <Search size={13} className='absolute left-2.5 top-1/2 -translate-y-1/2 text-ui-text-3' />
           <input type='text' value={searchText} onChange={(e) => setSearchText(e.target.value)} placeholder={t('搜索模型名称')}
             className='w-full rounded-md border border-ui-border bg-ui-bg-subtle text-ui-text text-xs pl-8 pr-3 py-1.5 focus:outline-none focus:ring-1 focus:ring-ui-accent/40' />
         </div>
@@ -188,8 +185,7 @@ export default function ModelPricingEditor({
                         <td className='px-3 py-2'>
                           <button onClick={(e) => { e.stopPropagation(); deleteModel(record.name); }}
                             className='p-1 rounded text-ui-text-3 hover:text-ui-danger hover:bg-ui-danger-bg transition-colors'>
-                            <Trash2 size={13} />
-                          </button>
+                            </button>
                         </td>
                       )}
                     </tr>

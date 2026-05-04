@@ -3,7 +3,6 @@
  */
 import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ShieldAlert } from 'lucide-react';
 import {
   compareObjects,
   API,
@@ -71,8 +70,6 @@ export default function SettingsSensitiveWords(props) {
     <SectionWithSave
       title={t('屏蔽词过滤设置')}
       hint={t('配置敏感词列表，命中词的请求将被拒绝')}
-      icon={ShieldAlert}
-      iconColor='rose'
       loading={loading}
       onSave={submit}
     >

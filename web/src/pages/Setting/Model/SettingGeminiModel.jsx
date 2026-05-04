@@ -3,7 +3,6 @@
  */
 import React, { useEffect, useState, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Sparkles, Brain } from 'lucide-react';
 import {
   compareObjects,
   API,
@@ -102,10 +101,7 @@ export default function SettingGeminiModel(props) {
     <div className='space-y-6'>
       <SectionWithSave
         title={t('Gemini 设置')}
-        hint={t('安全策略 / 版本路由 / 图像模型支持')}
-        icon={Sparkles}
-        iconColor='blue'
-        loading={loading}
+        hint={t('安全策略 / 版本路由 / 图像模型支持')}loading={loading}
         onSave={submit}
       >
         <FieldRow
@@ -176,10 +172,7 @@ export default function SettingGeminiModel(props) {
         title={t('Gemini 思考适配设置')}
         hint={t(
           '默认情况下 Gemini 思考模型会自动决定是否思考；如需计费，推荐将无后缀模型按思考价格设置。支持 gemini-2.5-pro-preview-06-05-thinking-128 格式精确传递预算。',
-        )}
-        icon={Brain}
-        iconColor='purple'
-      >
+        )}>
         <ToggleField
           label={t('启用 Gemini 思考后缀适配')}
           hint={t('适配 -thinking、-thinking-预算数字 和 -nothinking 后缀')}

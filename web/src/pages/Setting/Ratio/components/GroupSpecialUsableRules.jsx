@@ -3,7 +3,6 @@
  * Token-system rewrite using native inputs.
  */
 import React, { useState, useCallback, useMemo } from 'react';
-import { Plus, Trash2, ChevronDown, ChevronUp } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { showConfirm } from '../../../../components/common/ConfirmDialog';
 
@@ -83,7 +82,6 @@ function UsableGroupSection({ groupName, items, onUpdate, onRemove, onAdd, t }) 
     <div className='rounded-md border border-ui-border overflow-hidden'>
       <div className='flex items-center justify-between px-3 py-2 bg-ui-bg-subtle cursor-pointer' onClick={() => setOpen(!open)}>
         <div className='flex items-center gap-2'>
-          {open ? <ChevronUp size={14} className='text-ui-text-3' /> : <ChevronDown size={14} className='text-ui-text-3' />}
           <span className='text-xs font-semibold text-ui-text'>{groupName}</span>
           <span className='inline-block text-[10px] px-1.5 py-0.5 rounded-full bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20'>
             {items.length} {t('条规则')}
@@ -91,8 +89,7 @@ function UsableGroupSection({ groupName, items, onUpdate, onRemove, onAdd, t }) 
         </div>
         <div className='flex items-center gap-1' onClick={(e) => e.stopPropagation()}>
           <button onClick={() => onAdd(groupName)} className='p-1 rounded text-ui-text-3 hover:text-ui-text hover:bg-ui-bg-hover transition-colors'>
-            <Plus size={13} />
-          </button>
+            </button>
           <button
             onClick={() => showConfirm({
               title: t('确认删除该分组的所有规则？'), danger: true, okText: t('确认'),
@@ -100,8 +97,7 @@ function UsableGroupSection({ groupName, items, onUpdate, onRemove, onAdd, t }) 
             })}
             className='p-1 rounded text-ui-text-3 hover:text-ui-danger hover:bg-ui-danger-bg transition-colors'
           >
-            <Trash2 size={13} />
-          </button>
+            </button>
         </div>
       </div>
       {open && (
@@ -124,8 +120,7 @@ function UsableGroupSection({ groupName, items, onUpdate, onRemove, onAdd, t }) 
               )}
               <button onClick={() => onRemove(rule._id)}
                 className='p-1 rounded text-ui-text-3 hover:text-ui-danger hover:bg-ui-danger-bg transition-colors'>
-                <Trash2 size={13} />
-              </button>
+                </button>
             </div>
           ))}
         </div>
@@ -191,7 +186,7 @@ export default function GroupSpecialUsableRules({ value, groupNames = [], onChan
             {groupOptions.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
           </select>
           <button onClick={addNewGroup} className='inline-flex items-center gap-1 px-3 py-1.5 text-xs rounded-md border border-ui-border text-ui-text-2 hover:bg-ui-bg-hover'>
-            <Plus size={12} /> {t('添加分组规则')}
+            {t('添加分组规则')}
           </button>
         </div>
       </div>
@@ -211,7 +206,7 @@ export default function GroupSpecialUsableRules({ value, groupNames = [], onChan
           {groupOptions.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
         </select>
         <button onClick={addNewGroup} className='inline-flex items-center gap-1 px-3 py-1.5 text-xs rounded-md border border-ui-border text-ui-text-2 hover:bg-ui-bg-hover'>
-          <Plus size={12} /> {t('添加分组规则')}
+          {t('添加分组规则')}
         </button>
       </div>
     </div>

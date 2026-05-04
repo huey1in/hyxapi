@@ -3,14 +3,6 @@
  */
 import React, { useState, useCallback, useMemo, useEffect } from 'react';
 import {
-  RefreshCcw,
-  CheckSquare,
-  AlertTriangle,
-  CheckCircle,
-  Search,
-  Loader2,
-} from 'lucide-react';
-import {
   API,
   showError,
   showSuccess,
@@ -291,14 +283,13 @@ export default function UpstreamRatioSync(props) {
       <div className='flex flex-wrap items-center gap-2'>
         <button onClick={() => { setModalVisible(true); if (!allChannels.length) fetchAllChannels(); }}
           className='inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium rounded-md border border-ui-border text-ui-text-2 hover:bg-ui-bg-hover'>
-          <RefreshCcw size={12} /> {t('选择同步渠道')}
+          {t('选择同步渠道')}
         </button>
         <button onClick={applySync} disabled={!Object.keys(resolutions).length}
           className='inline-flex items-center gap-1 px-3 py-1.5 text-xs font-semibold rounded-md bg-ui-accent text-ui-accent-fg hover:opacity-90 disabled:opacity-40'>
-          <CheckSquare size={12} /> {t('应用同步')}
+          {t('应用同步')}
         </button>
         <div className='relative flex-1 min-w-[180px] max-w-[220px]'>
-          <Search size={13} className='absolute left-2.5 top-1/2 -translate-y-1/2 text-ui-text-3' />
           <input type='text' value={searchKeyword} onChange={(e) => setSearchKeyword(e.target.value)}
             placeholder={t('搜索模型名称')}
             className='w-full rounded-md border border-ui-border bg-ui-bg-subtle text-ui-text text-xs pl-8 pr-3 py-1.5 focus:outline-none focus:ring-1 focus:ring-ui-accent/40' />
@@ -311,7 +302,6 @@ export default function UpstreamRatioSync(props) {
           <option value='cache_ratio'>{t('缓存倍率')}</option>
           <option value='model_price'>{t('固定价格')}</option>
         </select>
-        {(loading || syncLoading) && <Loader2 size={14} className='animate-spin text-ui-text-3' />}
       </div>
 
       {/* Table */}
@@ -346,18 +336,17 @@ export default function UpstreamRatioSync(props) {
                         <span className={`${miniTag} !bg-blue-500/10 !text-blue-600 dark:!text-blue-400 !border-blue-500/20`}>{typeLabel}</span>
                         {row.billingConflict && (
                           <span title={t('该模型存在固定价格与倍率计费方式冲突，请确认选择')} className='ml-1'>
-                            <AlertTriangle size={12} className='inline text-amber-500' />
-                          </span>
+                            </span>
                         )}
                       </td>
                       <td className='px-3 py-2'>
                         {allConfident ? (
                           <span className={`${miniTag} !bg-emerald-500/10 !text-emerald-600 dark:!text-emerald-400 !border-emerald-500/20`}>
-                            <CheckCircle size={10} className='inline mr-0.5' /> {t('可信')}
+                            {t('可信')}
                           </span>
                         ) : (
                           <span className={`${miniTag} !bg-amber-500/10 !text-amber-600 dark:!text-amber-400 !border-amber-500/20`}>
-                            <AlertTriangle size={10} className='inline mr-0.5' /> {t('谨慎')}
+                            {t('谨慎')}
                           </span>
                         )}
                       </td>
@@ -386,7 +375,6 @@ export default function UpstreamRatioSync(props) {
                                 });
                               }} className='rounded border-ui-border text-ui-accent focus:ring-ui-accent/40' />
                               <span>{String(upstreamVal)}</span>
-                              {!isConfident && <AlertTriangle size={12} className='text-amber-500' />}
                             </label>
                           </td>
                         );

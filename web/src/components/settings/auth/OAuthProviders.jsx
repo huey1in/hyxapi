@@ -3,12 +3,6 @@
  * OIDC / GitHub / Discord / LinuxDO / WeChat / Telegram
  */
 import React from 'react';
-import {
-  Github,
-  MessageCircle,
-  Terminal,
-  Send,
-} from 'lucide-react';
 import { FieldRow, TextField, Notice } from '../../common/form/Primitives';
 
 const inputCls = 'w-full rounded border border-ui-border bg-ui-bg-subtle text-ui-text text-xs px-3 py-2 focus:outline-none focus:ring-1 focus:ring-ui-accent/40';
@@ -16,12 +10,7 @@ const inputCls = 'w-full rounded border border-ui-border bg-ui-bg-subtle text-ui
 export function GitHubOAuthCard({ inputs, setInputs, submitGitHubOAuth, t }) {
   return (
     <div className='space-y-3'>
-      <div className='flex items-center gap-2'>
-        <div className='w-7 h-7 rounded-md inline-flex items-center justify-center border bg-gray-500/10 text-gray-600 dark:text-gray-400 border-gray-500/20'>
-          <Github size={13} />
-        </div>
-        <span className='text-sm font-semibold text-ui-text'>{t('配置 GitHub OAuth App')}</span>
-      </div>
+      <span className='text-sm font-semibold text-ui-text'>{t('配置 GitHub OAuth App')}</span>
       <Notice kind='info'>
         {t('Homepage URL 填')} {inputs.ServerAddress || t('网站地址')}，{t('Authorization callback URL 填')} {inputs.ServerAddress || t('网站地址')}/oauth/github
       </Notice>
@@ -41,12 +30,7 @@ export function GitHubOAuthCard({ inputs, setInputs, submitGitHubOAuth, t }) {
 export function DiscordOAuthCard({ inputs, setInputs, submitDiscordOAuth, t }) {
   return (
     <div className='space-y-3'>
-      <div className='flex items-center gap-2'>
-        <div className='w-7 h-7 rounded-md inline-flex items-center justify-center border bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border-indigo-500/20'>
-          <MessageCircle size={13} />
-        </div>
-        <span className='text-sm font-semibold text-ui-text'>{t('配置 Discord OAuth')}</span>
-      </div>
+      <span className='text-sm font-semibold text-ui-text'>{t('配置 Discord OAuth')}</span>
       <Notice kind='info'>
         {t('Homepage URL 填')} {inputs.ServerAddress || t('网站地址')}，{t('Authorization callback URL 填')} {inputs.ServerAddress || t('网站地址')}/oauth/discord
       </Notice>
@@ -66,12 +50,7 @@ export function DiscordOAuthCard({ inputs, setInputs, submitDiscordOAuth, t }) {
 export function LinuxDOOAuthCard({ inputs, setInputs, submitLinuxDOOAuth, t }) {
   return (
     <div className='space-y-3'>
-      <div className='flex items-center gap-2'>
-        <div className='w-7 h-7 rounded-md inline-flex items-center justify-center border bg-green-500/10 text-green-600 dark:text-green-400 border-green-500/20'>
-          <Terminal size={13} />
-        </div>
-        <span className='text-sm font-semibold text-ui-text'>{t('配置 Linux DO OAuth')}</span>
-      </div>
+      <span className='text-sm font-semibold text-ui-text'>{t('配置 Linux DO OAuth')}</span>
       <p className='text-xs text-ui-text-3'>
         {t('用以支持通过 Linux DO 进行登录注册')}{' '}
         <a href='https://connect.linux.do/' target='_blank' rel='noreferrer' className='text-ui-accent hover:underline'>{t('点击此处')}</a>
@@ -99,12 +78,7 @@ export function LinuxDOOAuthCard({ inputs, setInputs, submitLinuxDOOAuth, t }) {
 export function TelegramCard({ inputs, setInputs, submitTelegramSettings, t }) {
   return (
     <div className='space-y-3'>
-      <div className='flex items-center gap-2'>
-        <div className='w-7 h-7 rounded-md inline-flex items-center justify-center border bg-sky-500/10 text-sky-600 dark:text-sky-400 border-sky-500/20'>
-          <Send size={13} />
-        </div>
-        <span className='text-sm font-semibold text-ui-text'>{t('配置 Telegram 登录')}</span>
-      </div>
+      <span className='text-sm font-semibold text-ui-text'>{t('配置 Telegram 登录')}</span>
       <p className='text-xs text-ui-text-3'>{t('用以支持通过 Telegram 进行登录注册')}</p>
       <div className='grid grid-cols-1 sm:grid-cols-2 gap-3'>
         <FieldRow label={t('Telegram Bot Token')}>

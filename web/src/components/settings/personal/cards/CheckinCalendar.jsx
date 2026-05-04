@@ -29,13 +29,6 @@ import {
   Collapsible,
   Modal,
 } from '@douyinfe/semi-ui';
-import {
-  CalendarCheck,
-  Gift,
-  Check,
-  ChevronDown,
-  ChevronUp,
-} from 'lucide-react';
 import Turnstile from 'react-turnstile';
 import { API, showError, showSuccess, renderQuota } from '../../../../helpers';
 
@@ -194,8 +187,7 @@ const CheckinCalendar = ({ t, status, turnstileEnabled, turnstileSiteKey }) => {
         >
           <div className='absolute inset-0 flex flex-col items-center justify-center cursor-pointer'>
             <div className='w-6 h-6 rounded-full bg-green-500 flex items-center justify-center mb-0.5 shadow-sm'>
-              <Check size={14} className='text-white' strokeWidth={3} />
-            </div>
+              </div>
             <div className='text-[10px] font-medium text-green-600 dark:text-green-400 leading-none'>
               {renderQuota(quotaAwarded)}
             </div>
@@ -245,18 +237,15 @@ const CheckinCalendar = ({ t, status, turnstileEnabled, turnstileSiteKey }) => {
           onClick={() => setIsCollapsed(!isCollapsed)}
         >
           <Avatar size='small' color='green' className='mr-3 shadow-md'>
-            <CalendarCheck size={16} />
-          </Avatar>
+            </Avatar>
           <div className='flex-1'>
             <div className='flex items-center gap-2'>
               <Typography.Text className='text-lg font-medium'>
                 {t('每日签到')}
               </Typography.Text>
               {isCollapsed ? (
-                <ChevronDown size={16} className='text-gray-400' />
-              ) : (
-                <ChevronUp size={16} className='text-gray-400' />
-              )}
+                ) : (
+                )}
             </div>
             <div className='text-xs text-gray-500 dark:text-gray-400'>
               {!initialLoaded
@@ -271,8 +260,7 @@ const CheckinCalendar = ({ t, status, turnstileEnabled, turnstileSiteKey }) => {
         </div>
         <Button
           type='primary'
-          theme='solid'
-          icon={<Gift size={16} />}
+          theme='solid'/>}
           onClick={() => doCheckin()}
           loading={checkinLoading || !initialLoaded}
           disabled={!initialLoaded || checkinData.stats?.checked_in_today}

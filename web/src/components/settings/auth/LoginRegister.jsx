@@ -4,7 +4,6 @@
  *        handlePasswordLoginConfirm, t
  */
 import React from 'react';
-import { LogIn } from 'lucide-react';
 import { ToggleField, Notice } from '../../common/form/Primitives';
 import { showConfirm } from '../../common/ConfirmDialog';
 
@@ -25,12 +24,7 @@ export default function LoginRegisterCard({ inputs, updateOptions, t }) {
 
   return (
     <div className='space-y-3'>
-      <div className='flex items-center gap-2'>
-        <div className='w-7 h-7 rounded-md inline-flex items-center justify-center border bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20'>
-          <LogIn size={13} />
-        </div>
-        <span className='text-sm font-semibold text-ui-text'>{t('配置登录注册')}</span>
-      </div>
+      <span className='text-sm font-semibold text-ui-text'>{t('配置登录注册')}</span>
       <div className='grid grid-cols-1 sm:grid-cols-2 gap-3'>
         <div className='space-y-2'>
           <ToggleField label={t('允许通过密码进行登录')} checked={!!inputs.PasswordLoginEnabled} onChange={toggle('PasswordLoginEnabled')} />

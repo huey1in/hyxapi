@@ -3,7 +3,6 @@
  */
 import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { HelpCircle, Edit, Trash2 } from 'lucide-react';
 import { API, showError, showSuccess } from '../../../helpers';
 import CrudSection from '../../../components/common/table/CrudSection';
 import ModalDialog from '../../../components/common/ModalDialog';
@@ -108,10 +107,10 @@ const SettingsFAQ = ({ options, refresh }) => {
       render: (_, row) => (
         <div className='flex items-center gap-1'>
           <button onClick={() => openEdit(row)} className='inline-flex items-center gap-1 px-2 py-1 text-[11px] rounded-md border border-ui-border text-ui-text-2 hover:bg-ui-bg-hover'>
-            <Edit size={11} /> {t('编辑')}
+            {t('编辑')}
           </button>
           <button onClick={() => handleDelete(row)} className='inline-flex items-center gap-1 px-2 py-1 text-[11px] rounded-md border border-ui-danger/30 text-ui-danger hover:bg-ui-danger-bg'>
-            <Trash2 size={11} /> {t('删除')}
+            {t('删除')}
           </button>
         </div>
       ),
@@ -122,10 +121,7 @@ const SettingsFAQ = ({ options, refresh }) => {
     <>
       <CrudSection
         title={t('常见问答管理')}
-        hint={t('为用户提供常见问题的答案（最多 50 个，前端显示最新 20 条）')}
-        icon={HelpCircle}
-        iconColor='purple'
-        columns={columns}
+        hint={t('为用户提供常见问题的答案（最多 50 个，前端显示最新 20 条）')}columns={columns}
         dataSource={paged}
         loading={loading}
         page={page}

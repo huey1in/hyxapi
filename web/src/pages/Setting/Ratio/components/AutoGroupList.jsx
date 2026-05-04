@@ -3,7 +3,6 @@
  * Token-system rewrite using native select.
  */
 import React, { useState, useCallback, useMemo } from 'react';
-import { Plus, Trash2, ChevronUp, ChevronDown } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { showConfirm } from '../../../../components/common/ConfirmDialog';
 
@@ -72,7 +71,7 @@ export default function AutoGroupList({ value, groupNames = [], onChange }) {
         <div className='text-center text-xs text-ui-text-3 py-4'>{t('暂无自动分组，点击下方按钮添加')}</div>
         <div className='flex justify-center'>
           <button onClick={addItem} className='inline-flex items-center gap-1 px-3 py-1.5 text-xs rounded-md border border-ui-border text-ui-text-2 hover:bg-ui-bg-hover'>
-            <Plus size={12} /> {t('添加分组')}
+            {t('添加分组')}
           </button>
         </div>
       </div>
@@ -98,21 +97,18 @@ export default function AutoGroupList({ value, groupNames = [], onChange }) {
           </select>
           <button onClick={() => moveUp(index)} disabled={index === 0}
             className='p-1 rounded text-ui-text-3 hover:text-ui-text hover:bg-ui-bg-hover disabled:opacity-30 transition-colors'>
-            <ChevronUp size={14} />
-          </button>
+            </button>
           <button onClick={() => moveDown(index)} disabled={index === items.length - 1}
             className='p-1 rounded text-ui-text-3 hover:text-ui-text hover:bg-ui-bg-hover disabled:opacity-30 transition-colors'>
-            <ChevronDown size={14} />
-          </button>
+            </button>
           <button onClick={() => removeItem(item._id)}
             className='p-1 rounded text-ui-text-3 hover:text-ui-danger hover:bg-ui-danger-bg transition-colors'>
-            <Trash2 size={13} />
-          </button>
+            </button>
         </div>
       ))}
       <div className='flex justify-center'>
         <button onClick={addItem} className='inline-flex items-center gap-1 px-3 py-1.5 text-xs rounded-md border border-ui-border text-ui-text-2 hover:bg-ui-bg-hover'>
-          <Plus size={12} /> {t('添加分组')}
+          {t('添加分组')}
         </button>
       </div>
     </div>

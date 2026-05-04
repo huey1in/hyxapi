@@ -4,7 +4,6 @@
 import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import dayjs from 'dayjs';
-import { ScrollText, Trash2, Loader2, AlertTriangle } from 'lucide-react';
 import {
   compareObjects,
   API,
@@ -92,7 +91,6 @@ export default function SettingsLog(props) {
             )}
           </div>
           <div className='flex items-start gap-2 px-3 py-2 rounded-md border border-amber-500/30 bg-amber-500/5'>
-            <AlertTriangle size={14} className='text-amber-500 flex-shrink-0 mt-0.5' />
             <div className='text-xs text-ui-text-2 leading-relaxed'>
               {t('将删除')}{' '}
               <span className='text-ui-danger font-semibold'>{targetStr}</span>{' '}
@@ -126,10 +124,7 @@ export default function SettingsLog(props) {
   return (
     <SectionWithSave
       title={t('日志设置')}
-      hint={t('开关消费日志记录，并支持按时间清理历史日志')}
-      icon={ScrollText}
-      iconColor='cyan'
-      loading={loading}
+      hint={t('开关消费日志记录，并支持按时间清理历史日志')}loading={loading}
       onSave={submit}
     >
       <ToggleField
@@ -148,7 +143,6 @@ export default function SettingsLog(props) {
               disabled={cleaning}
               className='inline-flex items-center gap-1 px-2.5 py-1 text-[11px] rounded-md border border-ui-danger/30 text-ui-danger hover:bg-ui-danger-bg disabled:opacity-50 whitespace-nowrap'
             >
-              {cleaning ? <Loader2 size={11} className='animate-spin' /> : <Trash2 size={11} />}
               {t('清除历史日志')}
             </button>
           }

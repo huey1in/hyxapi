@@ -3,7 +3,6 @@
  */
 
 import React, { useEffect, useState, useMemo } from 'react';
-import { Loader2 } from 'lucide-react';
 import { API, showError, showSuccess, toBoolean } from '../../helpers';
 import { showConfirm } from '../common/ConfirmDialog';
 import SettingsAPIInfo from '../../pages/Setting/Dashboard/SettingsAPIInfo';
@@ -108,8 +107,7 @@ const DashboardSetting = () => {
     <div className='space-y-3 relative'>
       {loading && (
         <div className='absolute inset-0 z-10 flex items-center justify-center bg-ui-bg/60'>
-          <Loader2 size={20} className='animate-spin text-ui-text-3' />
-        </div>
+          </div>
       )}
 
       <TokenCard>

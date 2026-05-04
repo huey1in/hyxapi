@@ -3,7 +3,6 @@
  */
 import React, { useEffect, useState, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Sparkles } from 'lucide-react';
 import {
   compareObjects,
   API,
@@ -93,10 +92,7 @@ export default function SettingClaudeModel(props) {
   return (
     <SectionWithSave
       title={t('Claude 设置')}
-      hint={t('请求头覆盖、缺省 MaxTokens、思考适配')}
-      icon={Sparkles}
-      iconColor='purple'
-      loading={loading}
+      hint={t('请求头覆盖、缺省 MaxTokens、思考适配')}loading={loading}
       onSave={submit}
     >
       <FieldRow

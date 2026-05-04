@@ -3,7 +3,6 @@
  */
 import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Activity, Edit, Trash2 } from 'lucide-react';
 import { API, showError, showSuccess } from '../../../helpers';
 import CrudSection from '../../../components/common/table/CrudSection';
 import ModalDialog from '../../../components/common/ModalDialog';
@@ -114,10 +113,10 @@ const SettingsUptimeKuma = ({ options, refresh }) => {
       render: (_, row) => (
         <div className='flex items-center gap-1'>
           <button onClick={() => openEdit(row)} className='inline-flex items-center gap-1 px-2 py-1 text-[11px] rounded-md border border-ui-border text-ui-text-2 hover:bg-ui-bg-hover'>
-            <Edit size={11} /> {t('编辑')}
+            {t('编辑')}
           </button>
           <button onClick={() => handleDelete(row)} className='inline-flex items-center gap-1 px-2 py-1 text-[11px] rounded-md border border-ui-danger/30 text-ui-danger hover:bg-ui-danger-bg'>
-            <Trash2 size={11} /> {t('删除')}
+            {t('删除')}
           </button>
         </div>
       ),
@@ -128,10 +127,7 @@ const SettingsUptimeKuma = ({ options, refresh }) => {
     <>
       <CrudSection
         title={t('Uptime Kuma 监控分类管理')}
-        hint={t('可以配置多个监控分类用于服务状态展示（最多 20 个）')}
-        icon={Activity}
-        iconColor='emerald'
-        columns={columns}
+        hint={t('可以配置多个监控分类用于服务状态展示（最多 20 个）')}columns={columns}
         dataSource={paged}
         loading={loading}
         page={page}

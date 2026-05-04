@@ -3,20 +3,6 @@
  */
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
-  Link2,
-  Plus,
-  Edit,
-  Trash2,
-  RefreshCw,
-  Save,
-  Loader2,
-  Search,
-  Code,
-  AlertTriangle,
-  ChevronDown,
-  ChevronRight,
-} from 'lucide-react';
-import {
   API,
   compareObjects,
   showError,
@@ -152,7 +138,6 @@ function CollapsibleSection({ title, defaultOpen = false, children }) {
   return (
     <div className='border border-ui-border rounded-md overflow-hidden'>
       <button className='flex items-center gap-2 w-full px-3 py-2 bg-ui-bg-subtle text-left' onClick={() => setOpen(!open)}>
-        {open ? <ChevronDown size={14} className='text-ui-text-3' /> : <ChevronRight size={14} className='text-ui-text-3' />}
         <span className='text-xs font-semibold text-ui-text'>{title}</span>
       </button>
       {open && <div className='p-3 space-y-3'>{children}</div>}
@@ -359,10 +344,7 @@ export default function SettingsChannelAffinity(props) {
     <div className='space-y-4'>
       <SectionWithSave
         title={t('渠道亲和性')}
-        hint={t('基于请求上下文或 JSON Body 提取的 Key，优先复用上一次成功的渠道（粘滞选路）')}
-        icon={Link2}
-        iconColor='indigo'
-        loading={loading}
+        hint={t('基于请求上下文或 JSON Body 提取的 Key，优先复用上一次成功的渠道（粘滞选路）')}loading={loading}
         onSave={submit}
       >
         <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3'>
@@ -402,10 +384,10 @@ export default function SettingsChannelAffinity(props) {
             {t('填充模版')}
           </button>
           <button onClick={openAddModal} className='inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium rounded-md bg-ui-accent text-ui-accent-fg hover:opacity-90'>
-            <Plus size={12} /> {t('新增规则')}
+            {t('新增规则')}
           </button>
           <button onClick={refreshCacheStats} disabled={cacheLoading} className='inline-flex items-center gap-1 px-2.5 py-1.5 text-xs rounded-md border border-ui-border text-ui-text-2 hover:bg-ui-bg-hover disabled:opacity-50'>
-            {cacheLoading ? <Loader2 size={11} className='animate-spin' /> : <RefreshCw size={11} />} {t('刷新缓存')}
+            {t('刷新缓存')}
           </button>
           <button onClick={clearAllCache} className='inline-flex items-center gap-1 px-2.5 py-1.5 text-xs rounded-md border border-ui-danger/30 text-ui-danger hover:bg-ui-danger-bg'>
             {t('清空全部缓存')}
@@ -465,16 +447,13 @@ export default function SettingsChannelAffinity(props) {
                           <div className='flex items-center gap-1'>
                             <button onClick={() => clearRuleCache(rule)} disabled={!rule.include_rule_name}
                               className='p-1 rounded text-ui-text-3 hover:text-amber-500 hover:bg-amber-500/10 disabled:opacity-30 transition-colors' title={t('清空缓存')}>
-                              <RefreshCw size={12} />
-                            </button>
+                              </button>
                             <button onClick={() => openEditModal(rule)}
                               className='p-1 rounded text-ui-text-3 hover:text-ui-text hover:bg-ui-bg-hover transition-colors' title={t('编辑')}>
-                              <Edit size={12} />
-                            </button>
+                              </button>
                             <button onClick={() => showConfirm({ title: t('确认删除？'), danger: true, okText: t('删除'), onOk: () => handleDeleteRule(rule.id) })}
                               className='p-1 rounded text-ui-text-3 hover:text-ui-danger hover:bg-ui-danger-bg transition-colors' title={t('删除')}>
-                              <Trash2 size={12} />
-                            </button>
+                              </button>
                           </div>
                         </td>
                       </tr>
@@ -567,7 +546,7 @@ export default function SettingsChannelAffinity(props) {
               <div className='flex items-center justify-between mb-2'>
                 <label className='text-xs font-medium text-ui-text-2'>{t('Key 来源')}</label>
                 <button onClick={() => updateEditing({ key_sources: [...(editingRule.key_sources || []), { type: 'gjson', path: '' }] })} className='inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded border border-ui-border text-ui-text-2 hover:bg-ui-bg-hover'>
-                  <Plus size={10} /> {t('新增')}
+                  {t('新增')}
                 </button>
               </div>
               <div className='text-[11px] text-ui-text-3 mb-2'>
@@ -597,8 +576,7 @@ export default function SettingsChannelAffinity(props) {
                         const next = (editingRule.key_sources || []).filter((_, i) => i !== idx);
                         updateEditing({ key_sources: next });
                       }} className='p-1 rounded text-ui-text-3 hover:text-ui-danger hover:bg-ui-danger-bg transition-colors'>
-                        <Trash2 size={12} />
-                      </button>
+                        </button>
                     </div>
                   );
                 })}

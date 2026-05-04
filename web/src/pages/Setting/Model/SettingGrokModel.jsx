@@ -3,7 +3,6 @@
  */
 import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Bot } from 'lucide-react';
 import {
   API,
   compareObjects,
@@ -79,10 +78,7 @@ export default function SettingGrokModel(props) {
   return (
     <SectionWithSave
       title={t('Grok 设置')}
-      hint={t('xAI Grok 模型违规扣费')}
-      icon={Bot}
-      iconColor='cyan'
-      loading={loading}
+      hint={t('xAI Grok 模型违规扣费')}loading={loading}
       onSave={submit}
     >
       <ToggleField

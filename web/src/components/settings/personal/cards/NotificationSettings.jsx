@@ -32,8 +32,6 @@ import {
   Row,
   Col,
 } from '@douyinfe/semi-ui';
-import { IconMail, IconKey, IconBell, IconLink } from '@douyinfe/semi-icons';
-import { ShieldCheck, Bell, DollarSign, Settings } from 'lucide-react';
 import {
   renderQuotaWithPrompt,
   API,
@@ -387,8 +385,7 @@ const NotificationSettings = ({
       {/* 卡片头部 */}
       <div className='flex items-center mb-4'>
         <Avatar size='small' color='blue' className='mr-3 shadow-md'>
-          <Bell size={16} />
-        </Avatar>
+          </Avatar>
         <div>
           <Typography.Text className='text-lg font-medium'>
             {t('其他设置')}
@@ -414,7 +411,6 @@ const NotificationSettings = ({
             <TabPane
               tab={
                 <div className='flex items-center'>
-                  <Bell size={16} className='mr-2' />
                   {t('通知配置')}
                 </div>
               }
@@ -751,7 +747,6 @@ const NotificationSettings = ({
             <TabPane
               tab={
                 <div className='flex items-center'>
-                  <DollarSign size={16} className='mr-2' />
                   {t('价格设置')}
                 </div>
               }
@@ -777,7 +772,6 @@ const NotificationSettings = ({
             <TabPane
               tab={
                 <div className='flex items-center'>
-                  <ShieldCheck size={16} className='mr-2' />
                   {t('隐私设置')}
                 </div>
               }
@@ -802,7 +796,6 @@ const NotificationSettings = ({
               <TabPane
                 tab={
                   <div className='flex items-center'>
-                    <Settings size={16} className='mr-2' />
                     {t('边栏设置')}
                   </div>
                 }

@@ -3,7 +3,6 @@
  */
 import React, { useEffect, useState, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Gauge } from 'lucide-react';
 import {
   compareObjects,
   API,
@@ -83,10 +82,7 @@ export default function RequestRateLimit(props) {
   return (
     <SectionWithSave
       title={t('模型请求速率限制')}
-      hint={t('针对每个用户限制单位时间内的模型调用次数')}
-      icon={Gauge}
-      iconColor='orange'
-      loading={loading}
+      hint={t('针对每个用户限制单位时间内的模型调用次数')}loading={loading}
       onSave={submit}
     >
       <ToggleField

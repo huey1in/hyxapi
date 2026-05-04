@@ -31,12 +31,6 @@ import {
   Space,
   Badge,
 } from '@douyinfe/semi-ui';
-import {
-  IconShield,
-  IconAlertTriangle,
-  IconRefresh,
-  IconCopy,
-} from '@douyinfe/semi-icons';
 import React, { useEffect, useState } from 'react';
 
 import { QRCodeSVG } from 'qrcode.react';
@@ -237,9 +231,7 @@ const TwoFASetting = ({ t }) => {
           <Divider margin={12} />
           <Button
             type='primary'
-            theme='solid'
-            icon={<IconCopy />}
-            onClick={onCopy}
+            theme='solid'onClick={onCopy}
             className='!rounded-lg !bg-slate-600 hover:!bg-slate-700 w-full'
           >
             {t('复制所有代码')}
@@ -419,9 +411,7 @@ const TwoFASetting = ({ t }) => {
                 size='default'
                 onClick={handleSetup2FA}
                 loading={loading}
-                className='!rounded-lg !bg-slate-600 hover:!bg-slate-700'
-                icon={<IconShield />}
-              >
+                className='!rounded-lg !bg-slate-600 hover:!bg-slate-700'>
                 {t('启用验证')}
               </Button>
             ) : (
@@ -431,9 +421,7 @@ const TwoFASetting = ({ t }) => {
                   theme='solid'
                   size='default'
                   onClick={() => setDisableModalVisible(true)}
-                  className='!rounded-lg !bg-slate-500 hover:!bg-slate-600'
-                  icon={<IconAlertTriangle />}
-                >
+                  className='!rounded-lg !bg-slate-500 hover:!bg-slate-600'>
                   {t('禁用两步验证')}
                 </Button>
                 <Button
@@ -441,9 +429,7 @@ const TwoFASetting = ({ t }) => {
                   theme='solid'
                   size='default'
                   onClick={() => setBackupModalVisible(true)}
-                  className='!rounded-lg'
-                  icon={<IconRefresh />}
-                >
+                  className='!rounded-lg'>
                   {t('重新生成备用码')}
                 </Button>
               </div>
@@ -500,8 +486,7 @@ const TwoFASetting = ({ t }) => {
                   </Paragraph>
                   <div className='flex justify-center mb-4'>
                     <div className='bg-white p-4 rounded-lg shadow-sm'>
-                      <QRCodeSVG value={setupData.qr_code_data} size={180} />
-                    </div>
+                      </div>
                   </div>
                   <div className='bg-blue-50 dark:bg-blue-900 rounded-lg p-3'>
                     <Text className='text-blue-800 dark:text-blue-200 text-sm'>
