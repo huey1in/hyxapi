@@ -51,13 +51,13 @@ import { useTranslation } from 'react-i18next';
 import { SiDiscord } from 'react-icons/si';
 
 const inputClass =
-  'w-full px-4 py-3 text-sm border border-ui-border rounded-lg outline-none focus:ring-2 focus:ring-ui-accent bg-ui-bg text-ui-text placeholder:text-ui-text-3';
+  'w-full px-4 py-2.5 text-sm border border-ui-border rounded-lg outline-none focus:ring-2 focus:ring-ui-accent bg-ui-bg text-ui-text placeholder:text-ui-text-3';
 
 const OAuthButton = ({ onClick, loading, disabled, children, icon }) => (
   <button
     onClick={onClick}
     disabled={loading || disabled}
-    className='w-full flex items-center justify-center gap-3 px-4 py-3 text-sm font-medium border border-ui-border rounded-lg bg-ui-bg-elevated hover:bg-ui-bg-subtle text-ui-text transition-colors disabled:opacity-50 disabled:cursor-not-allowed'
+    className='w-full flex items-center justify-center gap-3 px-4 py-2.5 text-sm font-medium border border-ui-border rounded-lg bg-ui-bg-elevated hover:bg-ui-bg-subtle text-ui-text transition-colors disabled:opacity-50 disabled:cursor-not-allowed'
   >
     {loading ? (
       <span className='w-4 h-4 border-2 border-ui-text-3 border-t-transparent rounded-full animate-spin' />
@@ -327,36 +327,38 @@ const LoginForm = () => {
   );
 
   const renderOAuthOptions = () => (
-    <div className='space-y-3'>
+    <div className='space-y-2.5'>
+      {renderTerms()}
+
       {status.wechat_login && (
-        <OAuthButton onClick={onWeChatLoginClicked} loading={wechatLoading} icon={<WeChatIcon style={{ width: 18, height: 18, color: '#07C160' }} />}>
+        <OAuthButton onClick={onWeChatLoginClicked} loading={wechatLoading} disabled={(hasUserAgreement || hasPrivacyPolicy) && !agreedToTerms} icon={<WeChatIcon style={{ width: 18, height: 18, color: '#07C160' }} />}>
           {t('使用 微信 继续')}
         </OAuthButton>
       )}
       {status.github_oauth && (
-        <OAuthButton onClick={handleGitHubClick} loading={githubLoading} disabled={githubButtonDisabled}
+        <OAuthButton onClick={handleGitHubClick} loading={githubLoading} disabled={githubButtonDisabled || ((hasUserAgreement || hasPrivacyPolicy) && !agreedToTerms)}
           icon={<svg viewBox='0 0 24 24' className='w-5 h-5' fill='currentColor'><path d='M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z'/></svg>}>
           {githubButtonText}
         </OAuthButton>
       )}
       {status.discord_oauth && (
-        <OAuthButton onClick={handleDiscordClick} loading={discordLoading}
+        <OAuthButton onClick={handleDiscordClick} loading={discordLoading} disabled={(hasUserAgreement || hasPrivacyPolicy) && !agreedToTerms}
           icon={<SiDiscord style={{ color: '#5865F2', width: 18, height: 18 }} />}>
           {t('使用 Discord 继续')}
         </OAuthButton>
       )}
       {status.oidc_enabled && (
-        <OAuthButton onClick={handleOIDCClick} loading={oidcLoading} icon={<OIDCIcon style={{ width: 18, height: 18 }} />}>
+        <OAuthButton onClick={handleOIDCClick} loading={oidcLoading} disabled={(hasUserAgreement || hasPrivacyPolicy) && !agreedToTerms} icon={<OIDCIcon style={{ width: 18, height: 18 }} />}>
           {t('使用 OIDC 继续')}
         </OAuthButton>
       )}
       {status.linuxdo_oauth && (
-        <OAuthButton onClick={handleLinuxDOClick} loading={linuxdoLoading} icon={<LinuxDoIcon style={{ width: 18, height: 18, color: '#E95420' }} />}>
+        <OAuthButton onClick={handleLinuxDOClick} loading={linuxdoLoading} disabled={(hasUserAgreement || hasPrivacyPolicy) && !agreedToTerms} icon={<LinuxDoIcon style={{ width: 18, height: 18, color: '#E95420' }} />}>
           {t('使用 LinuxDO 继续')}
         </OAuthButton>
       )}
       {status.custom_oauth_providers && status.custom_oauth_providers.map((provider) => (
-        <OAuthButton key={provider.slug} onClick={() => handleCustomOAuthClick(provider)} loading={customOAuthLoading[provider.slug]}
+        <OAuthButton key={provider.slug} onClick={() => handleCustomOAuthClick(provider)} loading={customOAuthLoading[provider.slug]} disabled={(hasUserAgreement || hasPrivacyPolicy) && !agreedToTerms}
           icon={getOAuthProviderIcon(provider.icon || '', 18)}>
           {t('使用 {{name}} 继续', { name: provider.name })}
         </OAuthButton>
@@ -367,7 +369,7 @@ const LoginForm = () => {
         </div>
       )}
       {status.passkey_login && passkeySupported && (
-        <OAuthButton onClick={handlePasskeyLogin} loading={passkeyLoading}
+        <OAuthButton onClick={handlePasskeyLogin} loading={passkeyLoading} disabled={(hasUserAgreement || hasPrivacyPolicy) && !agreedToTerms}
           icon={<svg viewBox='0 0 24 24' className='w-5 h-5' fill='none' stroke='currentColor' strokeWidth='2'><path strokeLinecap='round' strokeLinejoin='round' d='M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z'/></svg>}>
           {t('使用 Passkey 登录')}
         </OAuthButton>
@@ -381,7 +383,7 @@ const LoginForm = () => {
 
       <button
         onClick={() => { setEmailLoginLoading(true); setShowEmailLogin(true); setEmailLoginLoading(false); }}
-        className='w-full py-3 text-sm font-medium rounded-lg transition-colors bg-ui-accent text-ui-accent-fg hover:bg-ui-accent-hover'
+        className='w-full py-2.5 text-sm font-medium rounded-lg transition-colors bg-ui-accent text-ui-accent-fg hover:bg-ui-accent-hover'
       >
         {t('使用 邮箱或用户名 登录')}
       </button>
@@ -389,7 +391,7 @@ const LoginForm = () => {
   );
 
   const renderEmailLoginForm = () => (
-    <div className='space-y-4'>
+    <div className='space-y-3'>
       {status.passkey_login && passkeySupported && (
         <OAuthButton onClick={handlePasskeyLogin} loading={passkeyLoading}
           icon={<svg viewBox='0 0 24 24' className='w-5 h-5' fill='none' stroke='currentColor' strokeWidth='2'><path strokeLinecap='round' strokeLinejoin='round' d='M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z'/></svg>}>
@@ -398,7 +400,7 @@ const LoginForm = () => {
       )}
 
       <div>
-        <label className='block mb-2 text-sm font-medium text-ui-text'>{t('用户名或邮箱')}</label>
+        <label className='block mb-1.5 text-sm font-medium text-ui-text'>{t('用户名或邮箱')}</label>
         <input
           type='text'
           placeholder={t('请输入您的用户名或邮箱地址')}
@@ -409,7 +411,7 @@ const LoginForm = () => {
       </div>
 
       <div>
-        <label className='block mb-2 text-sm font-medium text-ui-text'>{t('密码')}</label>
+        <label className='block mb-1.5 text-sm font-medium text-ui-text'>{t('密码')}</label>
         <input
           type='password'
           placeholder={t('请输入您的密码')}
@@ -425,7 +427,7 @@ const LoginForm = () => {
       <button
         onClick={handleSubmit}
         disabled={loginLoading || ((hasUserAgreement || hasPrivacyPolicy) && !agreedToTerms)}
-        className='w-full py-3 text-sm font-medium rounded-lg transition-colors bg-ui-accent text-ui-accent-fg hover:bg-ui-accent-hover disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2'
+        className='w-full py-2.5 text-sm font-medium rounded-lg transition-colors bg-ui-accent text-ui-accent-fg hover:bg-ui-accent-hover disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2'
       >
         {loginLoading && <span className='w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin' />}
         {t('继续')}
@@ -433,7 +435,7 @@ const LoginForm = () => {
 
       <button
         onClick={() => { setResetPasswordLoading(true); navigate('/reset'); setResetPasswordLoading(false); }}
-        className='w-full py-2 text-sm text-ui-text-2 hover:text-ui-text transition-colors'
+        className='w-full py-1.5 text-sm text-ui-text-2 hover:text-ui-text transition-colors'
       >
         {t('忘记密码？')}
       </button>
@@ -447,7 +449,7 @@ const LoginForm = () => {
           </div>
           <button
             onClick={() => { setOtherLoginOptionsLoading(true); setShowEmailLogin(false); setOtherLoginOptionsLoading(false); }}
-            className='w-full py-3 text-sm font-medium border border-ui-border rounded-lg bg-ui-bg-elevated hover:bg-ui-bg-subtle text-ui-text transition-colors'
+            className='w-full py-2.5 text-sm font-medium border border-ui-border rounded-lg bg-ui-bg-elevated hover:bg-ui-bg-subtle text-ui-text transition-colors'
           >
             {t('其他登录选项')}
           </button>
@@ -460,13 +462,13 @@ const LoginForm = () => {
     <div className='min-h-[calc(100vh-4rem)] flex items-start sm:items-center justify-center px-0 sm:px-4 pt-24 pb-12'>
       <div className='w-full max-w-sm sm:mt-[60px]'>
         {/* 卡片 */}
-        <div className='p-6 sm:bg-ui-bg-elevated sm:rounded-2xl sm:border sm:border-ui-border sm:p-8'>
-          <h2 className='text-2xl font-semibold text-ui-text mb-6'>{t('登录')}</h2>
+        <div className='p-5 sm:bg-ui-bg-elevated sm:rounded-2xl sm:border sm:border-ui-border sm:p-6'>
+          <h2 className='text-2xl font-semibold text-ui-text mb-5'>{t('登录')}</h2>
 
           {showEmailLogin || !hasOAuthLoginOptions ? renderEmailLoginForm() : renderOAuthOptions()}
 
           {!status.self_use_mode_enabled && (
-            <p className='mt-6 text-center text-sm text-ui-text-2'>
+            <p className='mt-5 text-center text-sm text-ui-text-2'>
               {t('没有账户？')}{' '}
               <Link to='/register' className='text-ui-text font-medium underline'>{t('注册')}</Link>
             </p>
