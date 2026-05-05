@@ -9,7 +9,7 @@ import { useTranslation } from 'react-i18next';
 import { usePageTitle } from '../../hooks/common/usePageTitle';
 import {
   Search, RefreshCw, Copy, Check, User, Server, ChevronDown,
-  ArrowDownToLine, ArrowUpFromLine, SlidersHorizontal, ArrowLeft,
+  ArrowDownToLine, ArrowUpFromLine,
 } from 'lucide-react';
 import { useSearchParams } from 'react-router-dom';
 import * as LobeIcons from '@lobehub/icons';
@@ -133,7 +133,6 @@ const PricingPage = () => {
   const [endpointFilter, setEndpointFilter] = useState('all');
   const [group, setGroup] = useState('default');
   const [copied, setCopied] = useState(null);
-  const [showMobileFilters, setShowMobileFilters] = useState(false);
   const [vendorsExpanded, setVendorsExpanded] = useState(false);
 
   const load = async () => {
@@ -337,17 +336,6 @@ const PricingPage = () => {
             </p>
           </div>
           <div className='flex items-center gap-2'>
-            {/* Mobile filter button in header */}
-            <button
-              onClick={() => setShowMobileFilters(true)}
-              className='lg:hidden inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[13px] border border-ui-border bg-ui-bg-elevated text-ui-text-2 hover:text-ui-text transition-colors'
-            >
-              <SlidersHorizontal size={13} />
-              {t('筛选')}
-              {(vendorFilter !== 'all' || endpointFilter !== 'all') && (
-                <span className='w-1.5 h-1.5 rounded-full bg-ui-accent' />
-              )}
-            </button>
             <div className='relative w-44 sm:w-56 hidden sm:block'>
               <Search size={14} className='absolute left-3 top-1/2 -translate-y-1/2 text-ui-text-3' />
               <input
@@ -370,7 +358,7 @@ const PricingPage = () => {
         </div>
 
         {/* Mobile search */}
-        <div className='sm:hidden px-4 pb-3'>
+        <div className='sm:hidden px-4 pb-2'>
           <div className='relative'>
             <Search size={14} className='absolute left-3 top-1/2 -translate-y-1/2 text-ui-text-3' />
             <input
@@ -381,6 +369,49 @@ const PricingPage = () => {
               className='w-full pl-9 pr-3 py-2 text-[13px] bg-ui-bg-elevated border border-ui-border rounded-lg text-ui-text placeholder:text-ui-text-3 outline-none focus:border-ui-text-3'
             />
           </div>
+        </div>
+
+        {/* Mobile horizontal chip filters */}
+        <div className='lg:hidden flex gap-2 px-4 pb-3 overflow-x-auto no-scrollbar'>
+          {/* Vendor chips */}
+          <button
+            onClick={() => setVendorFilter('all')}
+            className={`inline-flex items-center whitespace-nowrap px-3 py-1.5 rounded-full text-xs font-medium border transition-colors shrink-0 ${
+              vendorFilter === 'all'
+                ? 'bg-ui-text text-ui-bg border-ui-text'
+                : 'bg-ui-bg-elevated border-ui-border text-ui-text-2'
+            }`}
+          >
+            {t('全部品牌')}
+          </button>
+          {sortedVendors.slice(0, 8).map((v) => (
+            <button
+              key={v.id}
+              onClick={() => setVendorFilter(String(vendorFilter) === String(v.id) ? 'all' : v.id)}
+              className={`inline-flex items-center gap-1.5 whitespace-nowrap px-3 py-1.5 rounded-full text-xs font-medium border transition-colors shrink-0 ${
+                String(vendorFilter) === String(v.id)
+                  ? 'bg-ui-text text-ui-bg border-ui-text'
+                  : 'bg-ui-bg-elevated border-ui-border text-ui-text-2'
+              }`}
+            >
+              <VendorAvatar name={v.name} icon={v.icon} size={12} />
+              {v.name}
+            </button>
+          ))}
+          {/* Endpoint chips */}
+          {endpointTypes.map((ep) => (
+            <button
+              key={ep}
+              onClick={() => setEndpointFilter(endpointFilter === ep ? 'all' : ep)}
+              className={`inline-flex items-center whitespace-nowrap px-3 py-1.5 rounded-full text-xs font-medium border transition-colors shrink-0 ${
+                endpointFilter === ep
+                  ? 'bg-ui-accent text-ui-accent-fg border-ui-accent'
+                  : 'bg-ui-bg-elevated border-ui-border text-ui-text-2'
+              }`}
+            >
+              {endpointLabel(ep)}
+            </button>
+          ))}
         </div>
       </div>
 
@@ -400,40 +431,6 @@ const PricingPage = () => {
         />
       ) : (
         <div className='max-w-[1400px] mx-auto flex'>
-
-        {/* Mobile filter bottom sheet */}
-        {showMobileFilters && (
-          <div className='lg:hidden fixed inset-0 z-50 flex flex-col justify-end'>
-            {/* Backdrop */}
-            <div
-              className='absolute inset-0 bg-black/40'
-              onClick={() => setShowMobileFilters(false)}
-            />
-            {/* Sheet */}
-            <div className='relative bg-ui-bg rounded-t-2xl border-t border-ui-border max-h-[75vh] flex flex-col'>
-              <div className='flex items-center justify-between px-5 py-4 border-b border-ui-border'>
-                <span className='text-sm font-semibold text-ui-text'>{t('筛选')}</span>
-                <button
-                  onClick={() => setShowMobileFilters(false)}
-                  className='w-7 h-7 flex items-center justify-center rounded-md text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-subtle transition-colors'
-                >
-                  <ArrowLeft size={14} />
-                </button>
-              </div>
-              <div className='overflow-y-auto px-5 py-3 flex-1'>
-                {sidebarContent}
-              </div>
-              <div className='px-5 py-4 border-t border-ui-border'>
-                <button
-                  onClick={() => setShowMobileFilters(false)}
-                  className='w-full py-2.5 rounded-lg bg-ui-accent text-ui-accent-fg text-sm font-medium'
-                >
-                  {t('完成')}
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
 
         {/* Desktop Sidebar */}
         <aside className='hidden lg:block bg-ui-bg-subtle/50 lg:bg-transparent pl-6 pt-5 border-r border-ui-border'>

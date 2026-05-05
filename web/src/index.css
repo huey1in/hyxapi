@@ -1137,3 +1137,7 @@ button.bg-black:disabled {
   animation: blob 18s ease-in-out infinite;
 }
 
+/* Hide scrollbar but keep scrolling */
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
