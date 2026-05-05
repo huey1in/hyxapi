@@ -131,7 +131,7 @@ const PricingPage = () => {
   const [search, setSearch] = useState('');
   const [vendorFilter, setVendorFilter] = useState('all');
   const [endpointFilter, setEndpointFilter] = useState('all');
-  const [group, setGroup] = useState('default');
+  const [group, setGroup] = useState('all');
   const [copied, setCopied] = useState(null);
   const [showMobileFilters, setShowMobileFilters] = useState(false);
   const [vendorsExpanded, setVendorsExpanded] = useState(false);
@@ -152,9 +152,7 @@ const PricingPage = () => {
       const usable = data.usable_group || {};
       setUsableGroups(usable);
       setEndpointMap(data.supported_endpoint || {});
-      if (Object.keys(usable).length > 0 && !usable[group]) {
-        setGroup(Object.keys(usable)[0]);
-      }
+      // 不再强制选中第一个分组
     } catch (e) {
       showError(e.message);
     } finally {
@@ -276,7 +274,7 @@ const PricingPage = () => {
             label={v.name}
             count={vendorCounts[v.id] || 0}
             active={String(vendorFilter) === String(v.id)}
-            onClick={() => setVendorFilter(v.id)}
+            onClick={() => setVendorFilter(String(vendorFilter) === String(v.id) ? 'all' : v.id)}
           />
         ))}
         {sortedVendors.length > 6 && (
@@ -289,31 +287,25 @@ const PricingPage = () => {
         )}
       </FilterGroup>
 
-      <FilterGroup Icon={Server} label={t('协议')}>
-        <FilterItem
-          label={t('全部')}
-          count={endpointTypes.reduce((a, e) => a + (endpointCounts[e] || 0), 0) || models.length}
-          active={endpointFilter === 'all'}
-          onClick={() => setEndpointFilter('all')}
-        />
+      <FilterGroup Icon={Server} label={t('协议')} defaultOpen={false}>
         {endpointTypes.map((ep) => (
           <FilterItem
             key={ep}
             label={endpointLabel(ep)}
             count={endpointCounts[ep] || 0}
             active={endpointFilter === ep}
-            onClick={() => setEndpointFilter(ep)}
+            onClick={() => setEndpointFilter(endpointFilter === ep ? 'all' : ep)}
           />
         ))}
       </FilterGroup>
 
-      <FilterGroup Icon={ArrowDownToLine} label={t('分组')}>
+      <FilterGroup Icon={ArrowDownToLine} label={t('分组')} defaultOpen={false}>
         {Object.entries(usableGroups).map(([key, info]) => (
           <FilterItem
             key={key}
             label={`${info?.desc || key}${groupRatio[key] != null ? ` ×${groupRatio[key]}` : ''}`}
             active={group === key}
-            onClick={() => setGroup(key)}
+            onClick={() => setGroup(group === key ? 'all' : key)}
           />
         ))}
       </FilterGroup>
