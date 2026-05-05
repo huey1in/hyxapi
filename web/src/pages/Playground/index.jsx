@@ -489,30 +489,22 @@ const Playground = () => {
               </div>
             )}
 
-            {/* Filters row - mobile-friendly native selects */}
+            {/* Filters row - above input on mobile */}
             <div className='flex items-center gap-2 px-3 pt-3 pb-2 border-b border-ui-border/50'>
-              <select
+              <SelectChip
+                options={groups}
                 value={inputs.group}
-                onChange={(e) => handleInputChange('group', e.target.value)}
-                className='flex-1 px-3 py-2 text-sm border border-ui-border rounded-lg bg-ui-bg text-ui-text focus:outline-none focus:ring-2 focus:ring-ui-accent/40'
-              >
-                <option value=''>{t('选择分组')}</option>
-                {groups.map((g) => {
-                  const opt = typeof g === 'string' ? { label: g, value: g } : g;
-                  return <option key={opt.value} value={opt.value}>{opt.label}</option>;
-                })}
-              </select>
-              <select
+                onChange={(v) => handleInputChange('group', v)}
+                placeholder='分组'
+                emptyText='暂无可用分组'
+              />
+              <SelectChip
+                options={models}
                 value={inputs.model}
-                onChange={(e) => handleInputChange('model', e.target.value)}
-                className='flex-1 px-3 py-2 text-sm border border-ui-border rounded-lg bg-ui-bg text-ui-text focus:outline-none focus:ring-2 focus:ring-ui-accent/40'
-              >
-                <option value=''>{t('选择模型')}</option>
-                {models.map((m) => {
-                  const opt = typeof m === 'string' ? { label: m, value: m } : m;
-                  return <option key={opt.value} value={opt.value}>{opt.label}</option>;
-                })}
-              </select>
+                onChange={(v) => handleInputChange('model', v)}
+                placeholder='选择模型'
+                emptyText='暂无可用模型'
+              />
             </div>
 
             <textarea

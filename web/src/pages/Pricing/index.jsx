@@ -87,17 +87,17 @@ const FilterGroup = ({ Icon, label, children, defaultOpen = true }) => {
     <div>
       <button
         onClick={() => setOpen((o) => !o)}
-        className='flex items-center gap-2 w-full py-2 text-sm font-medium text-ui-text hover:text-ui-accent transition-colors rounded-md hover:bg-ui-bg-subtle px-2'
+        className='flex items-center gap-2.5 w-full py-2.5 text-[14px] font-medium text-ui-text/85 hover:text-ui-text transition-colors'
       >
-        <Icon size={16} className='text-ui-text-3 shrink-0' />
+        <Icon size={18} className='text-ui-text-3 shrink-0' />
         <span className='flex-1 text-left'>{label}</span>
         <ChevronDown
-          size={13}
+          size={14}
           className={`text-ui-text-3 shrink-0 transition-transform ${open ? '' : '-rotate-90'}`}
         />
       </button>
       {open && (
-        <div className='mt-1 mb-2 space-y-0.5'>
+        <div className='ml-[13px] border-l border-ui-border pl-4 pb-1 space-y-px'>
           {children}
         </div>
       )}
@@ -108,18 +108,12 @@ const FilterGroup = ({ Icon, label, children, defaultOpen = true }) => {
 const FilterItem = ({ label, count, active, onClick }) => (
   <button
     onClick={onClick}
-    className={`flex items-center justify-between w-full py-1.5 px-2 text-xs transition-colors text-left rounded-md ${
-      active
-        ? 'text-ui-text font-medium bg-ui-bg-subtle'
-        : 'text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-hover'
+    className={`flex items-center justify-between w-full py-1.5 text-[13.5px] transition-colors text-left ${
+      active ? 'text-ui-text font-semibold' : 'text-ui-text-2/65 hover:text-ui-text'
     }`}
   >
     <span className='truncate flex-1'>{label}</span>
-    {count != null && (
-      <span className={`text-xs ml-2 shrink-0 ${active ? 'text-ui-text-3' : 'text-ui-text-3/60'}`}>
-        {count}
-      </span>
-    )}
+    {count != null && <span className='text-ui-text-3 text-xs ml-2'>{count}</span>}
   </button>
 );
 
@@ -268,7 +262,7 @@ const PricingPage = () => {
   const visibleVendors = vendorsExpanded ? sortedVendors : sortedVendors.slice(0, 6);
 
   const sidebarContent = (
-    <nav className='space-y-1'>
+    <nav className='space-y-0.5'>
       <FilterGroup Icon={User} label={t('品牌')}>
         <FilterItem
           label={t('全部')}
@@ -343,6 +337,17 @@ const PricingPage = () => {
             </p>
           </div>
           <div className='flex items-center gap-2'>
+            {/* Mobile filter button in header */}
+            <button
+              onClick={() => setShowMobileFilters(true)}
+              className='lg:hidden inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[13px] border border-ui-border bg-ui-bg-elevated text-ui-text-2 hover:text-ui-text transition-colors'
+            >
+              <SlidersHorizontal size={13} />
+              {t('筛选')}
+              {(vendorFilter !== 'all' || endpointFilter !== 'all') && (
+                <span className='w-1.5 h-1.5 rounded-full bg-ui-accent' />
+              )}
+            </button>
             <div className='relative w-44 sm:w-56 hidden sm:block'>
               <Search size={14} className='absolute left-3 top-1/2 -translate-y-1/2 text-ui-text-3' />
               <input
@@ -395,23 +400,45 @@ const PricingPage = () => {
         />
       ) : (
         <div className='max-w-[1400px] mx-auto flex'>
-        {/* Mobile filter toggle */}
-        <button
-          onClick={() => setShowMobileFilters((s) => !s)}
-          className='lg:hidden inline-flex items-center gap-2 px-3.5 py-2 mx-4 mt-4 mb-2 rounded-lg text-[13px] transition-colors self-start text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-subtle'
-        >
-          <SlidersHorizontal size={14} />
-          {t('筛选')}
-        </button>
 
-        {/* Sidebar */}
-        <aside
-          className={`${
-            showMobileFilters ? 'block' : 'hidden'
-          } lg:block bg-ui-bg-subtle/50 lg:bg-transparent pl-4 lg:pl-6 pt-4 lg:pt-5 border-r border-ui-border`}
-        >
+        {/* Mobile filter bottom sheet */}
+        {showMobileFilters && (
+          <div className='lg:hidden fixed inset-0 z-50 flex flex-col justify-end'>
+            {/* Backdrop */}
+            <div
+              className='absolute inset-0 bg-black/40'
+              onClick={() => setShowMobileFilters(false)}
+            />
+            {/* Sheet */}
+            <div className='relative bg-ui-bg rounded-t-2xl border-t border-ui-border max-h-[75vh] flex flex-col'>
+              <div className='flex items-center justify-between px-5 py-4 border-b border-ui-border'>
+                <span className='text-sm font-semibold text-ui-text'>{t('筛选')}</span>
+                <button
+                  onClick={() => setShowMobileFilters(false)}
+                  className='w-7 h-7 flex items-center justify-center rounded-md text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-subtle transition-colors'
+                >
+                  <ArrowLeft size={14} />
+                </button>
+              </div>
+              <div className='overflow-y-auto px-5 py-3 flex-1'>
+                {sidebarContent}
+              </div>
+              <div className='px-5 py-4 border-t border-ui-border'>
+                <button
+                  onClick={() => setShowMobileFilters(false)}
+                  className='w-full py-2.5 rounded-lg bg-ui-accent text-ui-accent-fg text-sm font-medium'
+                >
+                  {t('完成')}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Desktop Sidebar */}
+        <aside className='hidden lg:block bg-ui-bg-subtle/50 lg:bg-transparent pl-6 pt-5 border-r border-ui-border'>
           <div className='lg:sticky lg:top-20'>
-            <div className='w-full lg:w-52 shrink-0 pr-4 lg:pr-5'>
+            <div className='w-56 shrink-0 pr-6'>
               {sidebarContent}
             </div>
           </div>
