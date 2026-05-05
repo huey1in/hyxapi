@@ -87,17 +87,17 @@ const FilterGroup = ({ Icon, label, children, defaultOpen = true }) => {
     <div>
       <button
         onClick={() => setOpen((o) => !o)}
-        className='flex items-center gap-2.5 w-full py-2.5 text-[14px] font-medium text-ui-text/85 hover:text-ui-text transition-colors'
+        className='flex items-center gap-2 w-full py-2 text-sm font-medium text-ui-text hover:text-ui-accent transition-colors rounded-md hover:bg-ui-bg-subtle px-2'
       >
-        <Icon size={18} className='text-ui-text-3 shrink-0' />
+        <Icon size={16} className='text-ui-text-3 shrink-0' />
         <span className='flex-1 text-left'>{label}</span>
         <ChevronDown
-          size={14}
+          size={13}
           className={`text-ui-text-3 shrink-0 transition-transform ${open ? '' : '-rotate-90'}`}
         />
       </button>
       {open && (
-        <div className='ml-[13px] border-l border-ui-border pl-4 pb-1 space-y-px'>
+        <div className='mt-1 mb-2 space-y-0.5'>
           {children}
         </div>
       )}
@@ -108,12 +108,18 @@ const FilterGroup = ({ Icon, label, children, defaultOpen = true }) => {
 const FilterItem = ({ label, count, active, onClick }) => (
   <button
     onClick={onClick}
-    className={`flex items-center justify-between w-full py-1.5 text-[13.5px] transition-colors text-left ${
-      active ? 'text-ui-text font-semibold' : 'text-ui-text-2/65 hover:text-ui-text'
+    className={`flex items-center justify-between w-full py-1.5 px-2 text-xs transition-colors text-left rounded-md ${
+      active
+        ? 'text-ui-text font-medium bg-ui-bg-subtle'
+        : 'text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-hover'
     }`}
   >
     <span className='truncate flex-1'>{label}</span>
-    {count != null && <span className='text-ui-text-3 text-xs ml-2'>{count}</span>}
+    {count != null && (
+      <span className={`text-xs ml-2 shrink-0 ${active ? 'text-ui-text-3' : 'text-ui-text-3/60'}`}>
+        {count}
+      </span>
+    )}
   </button>
 );
 
@@ -262,7 +268,7 @@ const PricingPage = () => {
   const visibleVendors = vendorsExpanded ? sortedVendors : sortedVendors.slice(0, 6);
 
   const sidebarContent = (
-    <nav className='space-y-0.5'>
+    <nav className='space-y-1'>
       <FilterGroup Icon={User} label={t('品牌')}>
         <FilterItem
           label={t('全部')}
@@ -405,7 +411,7 @@ const PricingPage = () => {
           } lg:block bg-ui-bg-subtle/50 lg:bg-transparent pl-4 lg:pl-6 pt-4 lg:pt-5 border-r border-ui-border`}
         >
           <div className='lg:sticky lg:top-20'>
-            <div className='w-full lg:w-56 shrink-0 pr-5 lg:pr-6'>
+            <div className='w-full lg:w-52 shrink-0 pr-4 lg:pr-5'>
               {sidebarContent}
             </div>
           </div>
