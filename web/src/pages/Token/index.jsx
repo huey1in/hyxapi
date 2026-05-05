@@ -19,6 +19,7 @@ import {
   renderQuota,
   timestamp2string,
 } from '../../helpers';
+import { usePageTitle } from '../../hooks/common/usePageTitle';
 import Pagination from '../../components/common/table/Pagination';
 import ConfirmDialog from '../../components/common/ConfirmDialog';
 
@@ -522,6 +523,7 @@ const TokenFormModal = ({ open, token, onClose, onSaved, t }) => {
 // ── main view ───────────────────────────────────────────
 const TokensView = () => {
   const { t } = useTranslation();
+  usePageTitle(t('令牌管理'));
   const list = useTokensList();
   const [revealed, setRevealed] = useState({});
   const [keys, setKeys] = useState({});

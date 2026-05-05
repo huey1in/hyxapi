@@ -18,6 +18,7 @@ For commercial licensing, please contact support@quantumnous.com
 */
 
 import React from 'react';
+import { usePageTitle } from '../../hooks/common/usePageTitle';
 import Dashboard from '../../components/dashboard';
 
 const Detail = () => (

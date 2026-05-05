@@ -12,6 +12,7 @@ import React, {
 } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import { usePageTitle } from '../../hooks/common/usePageTitle';
 import { Send, Square, Trash2, ChevronDown, Bot, Users, RotateCcw, Copy, Check, AlertCircle, ImagePlus, X as XIcon } from 'lucide-react';
 
 import { UserContext } from '../../context/User';
@@ -188,6 +189,7 @@ const AssistantMessage = ({ msg, onRetry, t }) => {
 
 const Playground = () => {
   const { t } = useTranslation();
+  usePageTitle(t('操练场'));
   const [userState] = useContext(UserContext);
   const [searchParams] = useSearchParams();
   const scrollRef = useRef(null);
@@ -487,6 +489,24 @@ const Playground = () => {
               </div>
             )}
 
+            {/* Filters row - above input on mobile */}
+            <div className='flex items-center gap-2 px-3 pt-3 pb-2 border-b border-ui-border/50'>
+              <SelectChip
+                options={groups}
+                value={inputs.group}
+                onChange={(v) => handleInputChange('group', v)}
+                placeholder='分组'
+                emptyText='暂无可用分组'
+              />
+              <SelectChip
+                options={models}
+                value={inputs.model}
+                onChange={(v) => handleInputChange('model', v)}
+                placeholder='选择模型'
+                emptyText='暂无可用模型'
+              />
+            </div>
+
             <textarea
               ref={inputRef}
               value={draft}
@@ -495,7 +515,7 @@ const Playground = () => {
               onPaste={handlePaste}
               rows={2}
               placeholder='发消息给模型，Enter 发送 / Shift + Enter 换行'
-              className='block w-full resize-none bg-transparent border-0 outline-none focus:ring-0 px-4 pt-3.5 pb-1 text-sm text-ui-text placeholder:text-ui-text-3 rounded-t-2xl'
+              className='block w-full resize-none bg-transparent border-0 outline-none focus:ring-0 px-4 pt-3.5 pb-1 text-sm text-ui-text placeholder:text-ui-text-3'
               style={{ minHeight: '60px', maxHeight: '200px' }}
               onInput={(e) => {
                 e.target.style.height = 'auto';
@@ -518,7 +538,7 @@ const Playground = () => {
 
             {/* Toolbar row */}
             <div className='flex items-center justify-between gap-2 px-2 pb-2'>
-              <div className='flex items-center gap-1 min-w-0 flex-1 flex-wrap'>
+              <div className='flex items-center gap-1'>
                 <button
                   type='button'
                   onClick={() => fileInputRef.current?.click()}
@@ -528,22 +548,6 @@ const Playground = () => {
                 >
                   <ImagePlus size={15} />
                 </button>
-                <span className='text-ui-border'>·</span>
-                <SelectChip
-                  options={groups}
-                  value={inputs.group}
-                  onChange={(v) => handleInputChange('group', v)}
-                  placeholder='分组'
-                  emptyText='暂无可用分组'
-                />
-                <span className='text-ui-border'>·</span>
-                <SelectChip
-                  options={models}
-                  value={inputs.model}
-                  onChange={(v) => handleInputChange('model', v)}
-                  placeholder='选择模型'
-                  emptyText='暂无可用模型'
-                />
               </div>
               <div className='flex items-center gap-1 flex-shrink-0'>
                 {message.length > 0 && (

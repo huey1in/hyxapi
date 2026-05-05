@@ -9,6 +9,7 @@ Sub-tabs within each section use their own internal nav.
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import { usePageTitle } from '../../hooks/common/usePageTitle';
 
 import SystemSetting from '../../components/settings/SystemSetting';
 import { isRoot } from '../../helpers';
@@ -37,6 +38,7 @@ const LEGACY_KEY_MAP = {
 
 const Setting = () => {
   const { t } = useTranslation();
+  usePageTitle(t('系统设置'));
   const navigate = useNavigate();
   const location = useLocation();
   const [active, setActive] = useState('platform');

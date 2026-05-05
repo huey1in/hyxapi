@@ -6,6 +6,7 @@ Usage logs — clean modern table with rich filters.
 
 import React, { useEffect, useState, useContext } from 'react';
 import { useTranslation } from 'react-i18next';
+import { usePageTitle } from '../../hooks/common/usePageTitle';
 import { Search, RefreshCw, Filter, ChevronDown, ChevronUp } from 'lucide-react';
 import {
   API,
@@ -134,6 +135,7 @@ const DetailRow = ({ label, value, mono = false }) => (
 
 const UsageLogsView = () => {
   const { t } = useTranslation();
+  usePageTitle(t('使用日志'));
   const [userState] = useContext(UserContext);
   const isAdminUser = isAdmin();
 

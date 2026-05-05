@@ -6,6 +6,7 @@ Modern minimalist wallet page.
 
 import React, { useContext, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { usePageTitle } from '../../hooks/common/usePageTitle';
 import { useSearchParams } from 'react-router-dom';
 import {
   RefreshCw, History, Copy, Check, X,
@@ -243,6 +244,7 @@ const TransferModal = ({ open, max, onClose, onConfirm, t }) => {
 
 const TopUp = () => {
   const { t } = useTranslation();
+  usePageTitle(t('钱包管理'));
   const [searchParams] = useSearchParams();
   const [userState, userDispatch] = useContext(UserContext);
   const [statusState] = useContext(StatusContext);

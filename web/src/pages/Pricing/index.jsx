@@ -6,6 +6,7 @@ Model marketplace — sidebar filters + dense card grid.
 
 import React, { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { usePageTitle } from '../../hooks/common/usePageTitle';
 import {
   Search, RefreshCw, Copy, Check, User, Server, ChevronDown,
   ArrowDownToLine, ArrowUpFromLine, SlidersHorizontal, ArrowLeft,
@@ -118,6 +119,7 @@ const FilterItem = ({ label, count, active, onClick }) => (
 
 const PricingPage = () => {
   const { t } = useTranslation();
+  usePageTitle(t('定价套餐'));
   const [searchParams, setSearchParams] = useSearchParams();
   const [loading, setLoading] = useState(false);
   const [models, setModels] = useState([]);
