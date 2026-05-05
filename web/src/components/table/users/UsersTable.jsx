@@ -2,7 +2,8 @@
  * Users table — token-system rewrite. Cell renderers + small confirm
  * dialogs inlined; replaces the previous CardTable + ColumnDefs setup.
  */
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { Loader2, Edit2, ArrowUp, ArrowDown, Power, MoreHorizontal, Trash2 } from 'lucide-react';
 import { renderQuota, renderNumber } from '../../../helpers';
 import { showConfirm } from '../../common/ConfirmDialog';
@@ -107,28 +108,43 @@ const ActionBtn = ({ children, onClick, danger, disabled, title }) => (
 
 const RowMenu = ({ items }) => {
   const [open, setOpen] = useState(false);
-  const ref = React.useRef(null);
-  React.useEffect(() => {
+  const [pos, setPos] = useState({ top: 0, left: 0 });
+  const btnRef = useRef(null);
+  const menuRef = useRef(null);
+
+  useEffect(() => {
     if (!open) return;
     const onClick = (e) => {
-      if (ref.current && !ref.current.contains(e.target)) setOpen(false);
+      if (menuRef.current && !menuRef.current.contains(e.target) &&
+          btnRef.current && !btnRef.current.contains(e.target)) setOpen(false);
     };
     document.addEventListener('mousedown', onClick);
     return () => document.removeEventListener('mousedown', onClick);
   }, [open]);
+
+  const handleOpen = (e) => {
+    e.stopPropagation();
+    if (!open && btnRef.current) {
+      const rect = btnRef.current.getBoundingClientRect();
+      setPos({ top: rect.bottom + window.scrollY + 4, left: rect.right + window.scrollX });
+    }
+    setOpen((p) => !p);
+  };
+
   return (
-    <div className='relative' ref={ref}>
+    <div className='relative' ref={btnRef}>
       <button
-        onClick={(e) => {
-          e.stopPropagation();
-          setOpen((p) => !p);
-        }}
+        onClick={handleOpen}
         className='inline-flex items-center justify-center w-7 h-7 rounded text-ui-text-3 hover:text-ui-text hover:bg-ui-bg-subtle'
       >
         <MoreHorizontal size={14} />
       </button>
-      {open && (
-        <div className='absolute right-0 mt-1 z-30 min-w-[180px] bg-ui-bg-elevated border border-ui-border rounded-lg shadow-lg overflow-hidden'>
+      {open && createPortal(
+        <div
+          ref={menuRef}
+          style={{ position: 'absolute', top: pos.top, right: 'auto', left: pos.left - 180, zIndex: 9999 }}
+          className='min-w-[180px] bg-ui-bg-elevated border border-ui-border rounded-lg shadow-lg overflow-hidden'
+        >
           {items.map((it, i) =>
             it.divider ? (
               <div key={`d${i}`} className='border-t border-ui-divider' />
@@ -148,7 +164,8 @@ const RowMenu = ({ items }) => {
               </button>
             ),
           )}
-        </div>
+        </div>,
+        document.body,
       )}
     </div>
   );

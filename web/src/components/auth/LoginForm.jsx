@@ -53,6 +53,27 @@ import { SiDiscord } from 'react-icons/si';
 const inputClass =
   'w-full px-4 py-2.5 text-sm border border-ui-border rounded-lg outline-none focus:ring-2 focus:ring-ui-accent bg-ui-bg text-ui-text placeholder:text-ui-text-3';
 
+const baiFontStyle = {
+  fontFamily:
+    "'Space Grotesk', Season-Sans, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
+};
+
+// BAI-style 2-column OAuth tile with icon + name
+const OAuthTile = ({ onClick, loading, disabled, name, icon }) => (
+  <button
+    onClick={onClick}
+    disabled={loading || disabled}
+    className='h-12 w-full flex items-center justify-center gap-3 px-4 text-[15px] font-medium border border-black/10 rounded-xl bg-white hover:bg-black/[0.03] text-black transition-colors disabled:opacity-50 disabled:cursor-not-allowed'
+  >
+    {loading ? (
+      <span className='w-5 h-5 border-2 border-black/40 border-t-transparent rounded-full animate-spin' />
+    ) : (
+      <span className='flex items-center justify-center w-[22px] h-[22px]'>{icon}</span>
+    )}
+    <span>{name}</span>
+  </button>
+);
+
 const OAuthButton = ({ onClick, loading, disabled, children, icon }) => (
   <button
     onClick={onClick}
@@ -66,8 +87,15 @@ const OAuthButton = ({ onClick, loading, disabled, children, icon }) => (
   </button>
 );
 
-const LoginForm = () => {
+const LoginForm = ({ embedded = false, onSuccess }) => {
   let navigate = useNavigate();
+  const handleAuthed = (data, defaultPath = '/console') => {
+    if (typeof onSuccess === 'function') {
+      onSuccess(data);
+    } else {
+      navigate(defaultPath);
+    }
+  };
   const { t } = useTranslation();
   const githubButtonTextKeyByState = {
     idle: '使用 GitHub 继续',
@@ -162,9 +190,9 @@ const LoginForm = () => {
         localStorage.setItem('user', JSON.stringify(data));
         setUserData(data);
         updateAPI();
-        navigate('/');
         showSuccess('登录成功！');
         setShowWeChatLoginModal(false);
+        handleAuthed(data, '/');
       } else showError(message);
     } catch { showError('登录失败，请重试'); }
     finally { setWechatCodeSubmitLoading(false); }
@@ -192,7 +220,7 @@ const LoginForm = () => {
           if (username === 'root' && password === '123456') {
             Modal.error({ title: '您正在使用默认密码！', content: '请立刻修改默认密码！', centered: true });
           }
-          navigate('/console');
+          handleAuthed(data, '/console');
         } else showError(message);
       } else showError('请输入用户名和密码！');
     } catch { showError('登录失败，请重试'); }
@@ -213,7 +241,7 @@ const LoginForm = () => {
         showSuccess('登录成功！');
         setUserData(data);
         updateAPI();
-        navigate('/');
+        handleAuthed(data, '/');
       } else showError(message);
     } catch { showError('登录失败，请重试'); }
   };
@@ -282,7 +310,7 @@ const LoginForm = () => {
         setUserData(finish.data);
         updateAPI();
         showSuccess('登录成功！');
-        navigate('/console');
+        handleAuthed(finish.data, '/console');
       } else showError(finish.message || 'Passkey 登录失败，请重试');
     } catch (error) {
       if (error?.name === 'AbortError') showInfo('已取消 Passkey 登录');
@@ -295,7 +323,7 @@ const LoginForm = () => {
     setUserData(data);
     updateAPI();
     showSuccess('登录成功！');
-    navigate('/console');
+    handleAuthed(data, '/console');
   };
 
   const handleBackToLogin = () => {
@@ -326,69 +354,82 @@ const LoginForm = () => {
     )
   );
 
-  const renderOAuthOptions = () => (
-    <div className='space-y-2.5'>
-      {renderTerms()}
+  const renderOAuthOptions = () => {
+    const tiles = [];
+    const termsBlocked = (hasUserAgreement || hasPrivacyPolicy) && !agreedToTerms;
+    if (status.wechat_login)
+      tiles.push(
+        <OAuthTile key='wechat' onClick={onWeChatLoginClicked} loading={wechatLoading} disabled={termsBlocked}
+          name={t('微信')} icon={<WeChatIcon style={{ width: 22, height: 22, color: '#07C160' }} />} />
+      );
+    if (status.github_oauth)
+      tiles.push(
+        <OAuthTile key='github' onClick={handleGitHubClick} loading={githubLoading} disabled={githubButtonDisabled || termsBlocked}
+          name='GitHub' icon={<svg viewBox='0 0 24 24' className='w-[22px] h-[22px]' fill='currentColor'><path d='M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z' /></svg>} />
+      );
+    if (status.discord_oauth)
+      tiles.push(
+        <OAuthTile key='discord' onClick={handleDiscordClick} loading={discordLoading} disabled={termsBlocked}
+          name='Discord' icon={<SiDiscord style={{ color: '#5865F2', width: 22, height: 22 }} />} />
+      );
+    if (status.oidc_enabled)
+      tiles.push(
+        <OAuthTile key='oidc' onClick={handleOIDCClick} loading={oidcLoading} disabled={termsBlocked}
+          name='OIDC' icon={<OIDCIcon style={{ width: 22, height: 22 }} />} />
+      );
+    if (status.linuxdo_oauth)
+      tiles.push(
+        <OAuthTile key='linuxdo' onClick={handleLinuxDOClick} loading={linuxdoLoading} disabled={termsBlocked}
+          name='LinuxDO' icon={<LinuxDoIcon style={{ width: 22, height: 22, color: '#E95420' }} />} />
+      );
+    if (status.custom_oauth_providers)
+      status.custom_oauth_providers.forEach((provider) => {
+        tiles.push(
+          <OAuthTile key={provider.slug} onClick={() => handleCustomOAuthClick(provider)}
+            loading={customOAuthLoading[provider.slug]} disabled={termsBlocked}
+            name={provider.name} icon={getOAuthProviderIcon(provider.icon || '', 22)} />
+        );
+      });
+    if (status.passkey_login && passkeySupported)
+      tiles.push(
+        <OAuthTile key='passkey' onClick={handlePasskeyLogin} loading={passkeyLoading} disabled={termsBlocked}
+          name={t('Passkey')} icon={<svg viewBox='0 0 24 24' className='w-[22px] h-[22px]' fill='none' stroke='currentColor' strokeWidth='2'><path strokeLinecap='round' strokeLinejoin='round' d='M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z' /></svg>} />
+      );
 
-      {status.wechat_login && (
-        <OAuthButton onClick={onWeChatLoginClicked} loading={wechatLoading} disabled={(hasUserAgreement || hasPrivacyPolicy) && !agreedToTerms} icon={<WeChatIcon style={{ width: 18, height: 18, color: '#07C160' }} />}>
-          {t('使用 微信 继续')}
-        </OAuthButton>
-      )}
-      {status.github_oauth && (
-        <OAuthButton onClick={handleGitHubClick} loading={githubLoading} disabled={githubButtonDisabled || ((hasUserAgreement || hasPrivacyPolicy) && !agreedToTerms)}
-          icon={<svg viewBox='0 0 24 24' className='w-5 h-5' fill='currentColor'><path d='M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z'/></svg>}>
-          {githubButtonText}
-        </OAuthButton>
-      )}
-      {status.discord_oauth && (
-        <OAuthButton onClick={handleDiscordClick} loading={discordLoading} disabled={(hasUserAgreement || hasPrivacyPolicy) && !agreedToTerms}
-          icon={<SiDiscord style={{ color: '#5865F2', width: 18, height: 18 }} />}>
-          {t('使用 Discord 继续')}
-        </OAuthButton>
-      )}
-      {status.oidc_enabled && (
-        <OAuthButton onClick={handleOIDCClick} loading={oidcLoading} disabled={(hasUserAgreement || hasPrivacyPolicy) && !agreedToTerms} icon={<OIDCIcon style={{ width: 18, height: 18 }} />}>
-          {t('使用 OIDC 继续')}
-        </OAuthButton>
-      )}
-      {status.linuxdo_oauth && (
-        <OAuthButton onClick={handleLinuxDOClick} loading={linuxdoLoading} disabled={(hasUserAgreement || hasPrivacyPolicy) && !agreedToTerms} icon={<LinuxDoIcon style={{ width: 18, height: 18, color: '#E95420' }} />}>
-          {t('使用 LinuxDO 继续')}
-        </OAuthButton>
-      )}
-      {status.custom_oauth_providers && status.custom_oauth_providers.map((provider) => (
-        <OAuthButton key={provider.slug} onClick={() => handleCustomOAuthClick(provider)} loading={customOAuthLoading[provider.slug]} disabled={(hasUserAgreement || hasPrivacyPolicy) && !agreedToTerms}
-          icon={getOAuthProviderIcon(provider.icon || '', 18)}>
-          {t('使用 {{name}} 继续', { name: provider.name })}
-        </OAuthButton>
-      ))}
-      {status.telegram_oauth && (
-        <div className='flex justify-center'>
-          <TelegramLoginButton dataOnauth={onTelegramLoginClicked} botName={status.telegram_bot_name} />
-        </div>
-      )}
-      {status.passkey_login && passkeySupported && (
-        <OAuthButton onClick={handlePasskeyLogin} loading={passkeyLoading} disabled={(hasUserAgreement || hasPrivacyPolicy) && !agreedToTerms}
-          icon={<svg viewBox='0 0 24 24' className='w-5 h-5' fill='none' stroke='currentColor' strokeWidth='2'><path strokeLinecap='round' strokeLinejoin='round' d='M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z'/></svg>}>
-          {t('使用 Passkey 登录')}
-        </OAuthButton>
-      )}
+    return (
+      <div className='space-y-4'>
+        {tiles.length > 0 && (
+          <div className='grid grid-cols-2 gap-3'>{tiles}</div>
+        )}
 
-      <div className='flex items-center gap-3 my-2'>
-        <div className='flex-1 h-px bg-gray-200' />
-        <span className='text-xs text-ui-text-3'>{t('或')}</span>
-        <div className='flex-1 h-px bg-gray-200' />
+        {status.telegram_oauth && (
+          <div className='flex justify-center'>
+            <TelegramLoginButton dataOnauth={onTelegramLoginClicked} botName={status.telegram_bot_name} />
+          </div>
+        )}
+
+        {renderTerms()}
+
+        {tiles.length > 0 && (
+          <div className='flex items-center gap-3'>
+            <div className='flex-1 h-px bg-black/10' />
+            <span className='text-xs text-ui-text-3'>{t('或')}</span>
+            <div className='flex-1 h-px bg-black/10' />
+          </div>
+        )}
+
+        <button
+          onClick={() => { setEmailLoginLoading(true); setShowEmailLogin(true); setEmailLoginLoading(false); }}
+          className='w-full h-12 text-[15px] font-medium rounded-xl border border-black/10 bg-white hover:bg-black/[0.03] text-black transition-colors flex items-center justify-center gap-2'
+        >
+          <svg viewBox='0 0 24 24' className='w-5 h-5' fill='none' stroke='currentColor' strokeWidth='2'>
+            <path strokeLinecap='round' strokeLinejoin='round' d='M3 8l9 6 9-6M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z' />
+          </svg>
+          {t('使用 邮箱或用户名 登录')}
+        </button>
       </div>
-
-      <button
-        onClick={() => { setEmailLoginLoading(true); setShowEmailLogin(true); setEmailLoginLoading(false); }}
-        className='w-full py-2.5 text-sm font-medium rounded-lg transition-colors bg-ui-accent text-ui-accent-fg hover:bg-ui-accent-hover'
-      >
-        {t('使用 邮箱或用户名 登录')}
-      </button>
-    </div>
-  );
+    );
+  };
 
   const renderEmailLoginForm = () => (
     <div className='space-y-3'>
@@ -458,67 +499,106 @@ const LoginForm = () => {
     </div>
   );
 
-  return (
-    <div className='min-h-[calc(100vh-4rem)] flex items-start sm:items-center justify-center px-0 sm:px-4 pt-24 pb-12'>
-      <div className='w-full max-w-sm sm:mt-[60px]'>
-        {/* 卡片 */}
-        <div className='p-5 sm:bg-ui-bg-elevated sm:rounded-2xl sm:border sm:border-ui-border sm:p-6'>
-          <h2 className='text-2xl font-semibold text-ui-text mb-5'>{t('登录')}</h2>
-
-          {showEmailLogin || !hasOAuthLoginOptions ? renderEmailLoginForm() : renderOAuthOptions()}
-
-          {!status.self_use_mode_enabled && (
-            <p className='mt-5 text-center text-sm text-ui-text-2'>
-              {t('没有账户？')}{' '}
-              <Link to='/register' className='text-ui-text font-medium underline'>{t('注册')}</Link>
-            </p>
-          )}
+  const cardContent = (
+    <>
+      <div className='flex flex-col items-center text-center mb-6'>
+        <h2
+          className='text-[26px] font-medium text-black leading-[1.3]'
+          style={baiFontStyle}
+        >
+          {t('登录')} {systemName}
+        </h2>
+        <div
+          className='mt-3 inline-flex items-center gap-1.5 px-3 py-1 text-[13px] text-ui-text-2 rounded-full'
+          style={{ background: 'rgba(0,0,0,0.04)' }}
+        >
+          <svg viewBox='0 0 24 24' className='w-4 h-4' fill='none' stroke='currentColor' strokeWidth='2'>
+            <path strokeLinecap='round' strokeLinejoin='round' d='M12 8v13m0-13V6a2 2 0 112 2h-2zm0 0V5.5A2.5 2.5 0 109.5 8H12zm-7 4h14M5 21h14a1 1 0 001-1v-8H4v8a1 1 0 001 1z' />
+          </svg>
+          <span>{t('新用户注册即享专属积分赠送')}</span>
         </div>
-
-        {turnstileEnabled && (
-          <div className='flex justify-center mt-6'>
-            <Turnstile sitekey={turnstileSiteKey} onVerify={(token) => setTurnstileToken(token)} />
-          </div>
-        )}
       </div>
 
-      {/* 微信登录弹窗 */}
-      <Modal
-        title={t('微信扫码登录')}
-        visible={showWeChatLoginModal}
-        maskClosable={true}
-        onOk={onSubmitWeChatVerificationCode}
-        onCancel={() => setShowWeChatLoginModal(false)}
-        okText={t('登录')}
-        centered={true}
-        okButtonProps={{ loading: wechatCodeSubmitLoading }}
-      >
-        <div className='flex flex-col items-center'>
-          <img src={status.wechat_qrcode} alt='微信二维码' className='mb-4' />
-        </div>
-        <p className='text-center text-sm text-ui-text-2 mb-4'>
-          {t('微信扫码关注公众号，输入「验证码」获取验证码（三分钟内有效）')}
-        </p>
-        <input
-          type='text'
-          placeholder={t('验证码')}
-          value={inputs.wechat_verification_code}
-          onChange={(e) => handleChange('wechat_verification_code', e.target.value)}
-          className={inputClass}
-        />
-      </Modal>
+      {showEmailLogin || !hasOAuthLoginOptions ? renderEmailLoginForm() : renderOAuthOptions()}
 
-      {/* 2FA弹窗 */}
-      <Modal
-        title='两步验证'
-        visible={showTwoFA}
-        onCancel={handleBackToLogin}
-        footer={null}
-        width={450}
-        centered
-      >
-        <TwoFAVerification onSuccess={handle2FASuccess} onBack={handleBackToLogin} isModal={true} />
-      </Modal>
+      {!status.self_use_mode_enabled && (
+        <p className='mt-5 text-center text-sm text-ui-text-2'>
+          {t('没有账户？')}{' '}
+          <Link to='/register' className='text-black font-medium underline'>{t('注册')}</Link>
+        </p>
+      )}
+    </>
+  );
+
+  const turnstileNode = turnstileEnabled && (
+    <div className='flex justify-center mt-6'>
+      <Turnstile sitekey={turnstileSiteKey} onVerify={(token) => setTurnstileToken(token)} />
+    </div>
+  );
+
+  const wechatModalNode = (
+    <Modal
+      title={t('微信扫码登录')}
+      visible={showWeChatLoginModal}
+      maskClosable={true}
+      onOk={onSubmitWeChatVerificationCode}
+      onCancel={() => setShowWeChatLoginModal(false)}
+      okText={t('登录')}
+      centered={true}
+      okButtonProps={{ loading: wechatCodeSubmitLoading }}
+    >
+      <div className='flex flex-col items-center'>
+        <img src={status.wechat_qrcode} alt='微信二维码' className='mb-4' />
+      </div>
+      <p className='text-center text-sm text-ui-text-2 mb-4'>
+        {t('微信扫码关注公众号，输入「验证码」获取验证码（三分钟内有效）')}
+      </p>
+      <input
+        type='text'
+        placeholder={t('验证码')}
+        value={inputs.wechat_verification_code}
+        onChange={(e) => handleChange('wechat_verification_code', e.target.value)}
+        className={inputClass}
+      />
+    </Modal>
+  );
+
+  const twoFAModalNode = (
+    <Modal
+      title='两步验证'
+      visible={showTwoFA}
+      onCancel={handleBackToLogin}
+      footer={null}
+      width={450}
+      centered
+    >
+      <TwoFAVerification onSuccess={handle2FASuccess} onBack={handleBackToLogin} isModal={true} />
+    </Modal>
+  );
+
+  if (embedded) {
+    return (
+      <>
+        {cardContent}
+        {turnstileNode}
+        {wechatModalNode}
+        {twoFAModalNode}
+      </>
+    );
+  }
+
+  return (
+    <div className='min-h-[calc(100vh-4rem)] flex items-start sm:items-center justify-center px-0 sm:px-4 pt-24 pb-12'>
+      <div className='w-full max-w-md sm:mt-[40px]'>
+        <div className='p-6 sm:bg-white sm:rounded-2xl sm:border sm:border-black/5 sm:p-8 sm:shadow-sm'>
+          {cardContent}
+        </div>
+
+        {turnstileNode}
+      </div>
+
+      {wechatModalNode}
+      {twoFAModalNode}
     </div>
   );
 };

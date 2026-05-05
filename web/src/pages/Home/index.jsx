@@ -332,7 +332,7 @@ const Home = () => {
   const heading = { fontFamily: "'Space Grotesk', sans-serif", letterSpacing: '-0.025em' };
 
   return (
-    <div className='w-full overflow-x-hidden bg-ui-bg'>
+    <div className='w-full overflow-x-hidden' style={{ backgroundColor: '#f8f8f6' }}>
       <NoticeModal
         visible={noticeVisible}
         onClose={() => setNoticeVisible(false)}

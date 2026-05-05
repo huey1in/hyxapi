@@ -819,6 +819,7 @@ export const getChannelsColumns = ({
                   <Dropdown
                     trigger='click'
                     position='bottomRight'
+                    getPopupContainer={() => document.body}
                     menu={[
                       {
                         node: 'item',
@@ -853,6 +854,7 @@ export const getChannelsColumns = ({
               <Dropdown
                 trigger='click'
                 position='bottomRight'
+                getPopupContainer={() => document.body}
                 menu={moreMenuItems}
               >
                 <Button icon={<IconMore />} type='tertiary' size='small' />

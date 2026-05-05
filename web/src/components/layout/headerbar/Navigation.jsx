@@ -20,6 +20,7 @@ For commercial licensing, please contact support@quantumnous.com
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import SkeletonWrapper from '../components/SkeletonWrapper';
+import { useLoginModal } from '../../../context/LoginModal';
 
 const Navigation = ({
   mainNavLinks,
@@ -27,10 +28,12 @@ const Navigation = ({
   isLoading,
   userState,
   pricingRequireAuth,
+  variant = 'pill',
 }) => {
   const location = useLocation();
   const containerRef = useRef(null);
   const [indicator, setIndicator] = useState({ left: 0, width: 0, opacity: 0 });
+  const { openLoginModal } = useLoginModal();
 
   const activeKey = useMemo(() => {
     const link = mainNavLinks.find((l) => {
@@ -56,10 +59,23 @@ const Navigation = ({
     }
   }, [activeKey, mainNavLinks, isMobile]);
 
-  const linkClass = (isActive) =>
-    `relative z-10 ${isMobile ? 'px-2.5 py-1' : 'px-3.5 py-1.5'} text-xs font-medium rounded-full transition-colors whitespace-nowrap ${
+  const linkClass = (isActive) => {
+    if (variant === 'flat') {
+      return `group flex items-center gap-1 text-[15px] font-medium text-black transition-colors py-2 px-1 whitespace-nowrap cursor-pointer font-['Season-Sans','-apple-system','BlinkMacSystemFont','Segoe_UI','Roboto','Oxygen','Ubuntu','Cantarell','Fira_Sans','Droid_Sans','Helvetica_Neue',sans-serif] ${
+        isActive ? 'underline underline-offset-[5px] decoration-black' : ''
+      }`;
+    }
+    return `relative z-10 ${isMobile ? 'px-2.5 py-1' : 'px-3.5 py-1.5'} text-xs font-medium rounded-full transition-colors whitespace-nowrap ${
       isActive ? 'text-ui-text' : 'text-ui-text-2 hover:text-ui-text'
     }`;
+  };
+
+  const renderLabel = (text) => {
+    if (variant === 'flat') {
+      return <span className='underline-offset-[5px] decoration-black group-hover:underline'>{text}</span>;
+    }
+    return text;
+  };
 
   const renderLinks = () =>
     mainNavLinks.map((link) => {
@@ -75,15 +91,29 @@ const Navigation = ({
             rel='noopener noreferrer'
             className={linkClass(isActive)}
           >
-            {link.text}
+            {renderLabel(link.text)}
           </a>
         );
       }
 
       let targetPath = link.to;
-      if (link.itemKey === 'console' && !userState.user) targetPath = '/login';
-      if (link.itemKey === 'pricing' && pricingRequireAuth && !userState.user)
-        targetPath = '/login';
+      const needsLogin =
+        (link.itemKey === 'console' && !userState.user) ||
+        (link.itemKey === 'pricing' && pricingRequireAuth && !userState.user);
+
+      if (needsLogin) {
+        return (
+          <button
+            key={link.itemKey}
+            data-key={link.itemKey}
+            type='button'
+            onClick={openLoginModal}
+            className={`${linkClass(isActive)} bg-transparent border-0`}
+          >
+            {renderLabel(link.text)}
+          </button>
+        );
+      }
 
       return (
         <Link
@@ -92,7 +122,7 @@ const Navigation = ({
           to={targetPath}
           className={linkClass(isActive)}
         >
-          {link.text}
+          {renderLabel(link.text)}
         </Link>
       );
     });
@@ -107,6 +137,11 @@ const Navigation = ({
         height={16}
         isMobile={isMobile}
       >
+        {variant === 'flat' ? (
+          <div ref={containerRef} className='inline-flex items-center gap-4'>
+            {renderLinks()}
+          </div>
+        ) : (
         <div
           ref={containerRef}
           className='relative inline-flex items-center bg-ui-bg-subtle rounded-full p-1'
@@ -122,6 +157,7 @@ const Navigation = ({
           />
           {renderLinks()}
         </div>
+        )}
       </SkeletonWrapper>
     </nav>
   );

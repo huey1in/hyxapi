@@ -25,6 +25,8 @@ import { UserProvider } from './context/User';
 import 'react-toastify/dist/ReactToastify.css';
 import { StatusProvider } from './context/Status';
 import { ThemeProvider } from './context/Theme';
+import { LoginModalProvider } from './context/LoginModal';
+import LoginModal from './components/auth/LoginModal';
 import PageLayout from './components/layout/PageLayout';
 import { ToastContainer } from './components/common/Toast';
 import './i18n/i18n';
@@ -68,7 +70,10 @@ root.render(
         >
           <ThemeProvider>
             <SemiLocaleWrapper>
-              <PageLayout />
+              <LoginModalProvider>
+                <PageLayout />
+                <LoginModal />
+              </LoginModalProvider>
               <ToastContainer />
             </SemiLocaleWrapper>
           </ThemeProvider>

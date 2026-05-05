@@ -6,8 +6,8 @@ Mobile slide-in drawer with public navigation links.
 
 import React, { useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { Link, useLocation } from 'react-router-dom';
-import { X } from 'lucide-react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { useLoginModal } from '../../../context/LoginModal';
 
 const MobileNavDrawer = ({
   open,
@@ -15,8 +15,11 @@ const MobileNavDrawer = ({
   mainNavLinks,
   userState,
   pricingRequireAuth,
+  systemName,
 }) => {
   const location = useLocation();
+  const navigate = useNavigate();
+  const { openLoginModal } = useLoginModal();
 
   useEffect(() => {
     if (!open) return;
@@ -32,83 +35,124 @@ const MobileNavDrawer = ({
 
   if (typeof document === 'undefined') return null;
 
+  const navigateLink = (link) => {
+    if (link.isExternal) {
+      window.open(link.externalLink, '_blank', 'noopener,noreferrer');
+      onClose();
+      return;
+    }
+    if (link.itemKey === 'console' && !userState.user) {
+      onClose();
+      openLoginModal();
+      return;
+    }
+    if (link.itemKey === 'pricing' && pricingRequireAuth && !userState.user) {
+      onClose();
+      openLoginModal();
+      return;
+    }
+    navigate(link.to);
+    onClose();
+  };
+
+  const itemFontStyle = {
+    fontFamily:
+      "Season-Sans, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif",
+  };
+
   return createPortal(
-    <>
-      {/* Backdrop */}
-      <div
-        onClick={onClose}
-        aria-hidden
-        className={`fixed inset-0 z-[80] transition-opacity duration-200 ${open ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}
-        style={{ background: 'rgba(0,0,0,0.4)' }}
-      />
-
-      {/* Panel */}
-      <aside
-        role='dialog'
-        aria-label='navigation'
-        className={`fixed top-0 left-0 bottom-0 z-[90] w-64 bg-ui-bg-elevated border-r border-ui-border shadow-2xl transition-transform duration-250 ease-out ${open ? 'translate-x-0' : '-translate-x-full'}`}
-      >
-        <div className='flex items-center justify-between px-5 h-16 border-b border-ui-border'>
-          <span className='text-sm font-semibold text-ui-text-2 uppercase tracking-widest'>
-            导航
-          </span>
-          <button
-            onClick={onClose}
-            aria-label='close'
-            className='inline-flex items-center justify-center w-9 h-9 rounded-lg text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-subtle active:scale-90 transition-all duration-150'
+    <div
+      className={`fixed inset-0 z-[100] flex flex-col transition-transform duration-300 ease-in-out ${
+        open ? 'translate-x-0' : 'translate-x-full'
+      }`}
+      style={{ backgroundColor: '#F5F3EC', ...itemFontStyle }}
+      role='dialog'
+      aria-label='navigation'
+    >
+      <div className='flex items-center justify-between px-[20px] pt-[18px] pb-[10px]'>
+        <button
+          type='button'
+          onClick={() => {
+            onClose();
+            navigate('/');
+          }}
+          className='p-0 border-0 bg-transparent cursor-pointer'
+          aria-label='Home'
+        >
+          <span
+            className='text-[22px] font-bold text-black'
+            style={{ fontFamily: "'Space Grotesk', sans-serif", letterSpacing: '-0.03em' }}
           >
-            <X size={20} />
-          </button>
-        </div>
+            {systemName === 'Routify' ? (
+              <>
+                Rout<span style={{ color: 'var(--ui-brand)' }}>ify</span>
+              </>
+            ) : (
+              systemName || 'Routify'
+            )}
+          </span>
+        </button>
+        <button
+          onClick={onClose}
+          aria-label='Close menu'
+          className='w-[40px] h-[40px] rounded-full bg-black flex items-center justify-center cursor-pointer flex-shrink-0'
+        >
+          <svg width='14' height='14' viewBox='0 0 14 14' fill='none'>
+            <path
+              d='M1 1L13 13M13 1L1 13'
+              stroke='white'
+              strokeWidth='1.8'
+              strokeLinecap='round'
+            />
+          </svg>
+        </button>
+      </div>
 
-        <nav className='py-3'>
-          {mainNavLinks.map((link) => {
-            const isActive =
-              !link.isExternal &&
-              (link.to === '/'
-                ? location.pathname === '/'
-                : location.pathname.startsWith(link.to));
-
-            const cls = `block px-5 py-3 text-sm font-medium transition-colors ${
-              isActive
-                ? 'text-ui-brand bg-ui-bg-subtle'
-                : 'text-ui-text hover:bg-ui-bg-subtle'
-            }`;
-
-            if (link.isExternal) {
-              return (
-                <a
-                  key={link.itemKey}
-                  href={link.externalLink}
-                  target='_blank'
-                  rel='noopener noreferrer'
-                  className={cls}
-                  onClick={onClose}
-                >
-                  {link.text}
-                </a>
-              );
-            }
-
-            let targetPath = link.to;
-            if (link.itemKey === 'console' && !userState.user) targetPath = '/login';
-            if (link.itemKey === 'pricing' && pricingRequireAuth && !userState.user)
-              targetPath = '/login';
-
-            return (
-              <Link
-                key={link.itemKey}
-                to={targetPath}
-                className={cls}
-                onClick={onClose}
+      <nav className='flex-1 overflow-y-auto px-[20px] mt-2'>
+        {mainNavLinks.map((link) => {
+          const isActive =
+            !link.isExternal &&
+            (link.to === '/'
+              ? location.pathname === '/'
+              : location.pathname.startsWith(link.to));
+          return (
+            <div key={link.itemKey} style={{ borderBottom: '1px solid rgba(0,0,0,0.06)' }}>
+              <button
+                onClick={() => navigateLink(link)}
+                className={`w-full flex items-center justify-between py-[18px] text-[15px] font-medium bg-transparent cursor-pointer ${
+                  isActive ? 'text-black' : 'text-black'
+                }`}
               >
-                {link.text}
-              </Link>
-            );
-          })}
-        </nav>
-      </aside>
-    </>,
+                <span>{link.text}</span>
+              </button>
+            </div>
+          );
+        })}
+      </nav>
+
+      <div className='p-[20px] flex gap-3'>
+        <button
+          onClick={() => {
+            onClose();
+            if (userState?.user) navigate('/console');
+            else openLoginModal();
+          }}
+          className='flex-1 h-[52px] rounded-full border text-[15px] font-semibold text-black bg-transparent cursor-pointer'
+          style={{ borderColor: 'rgb(192, 190, 181)' }}
+        >
+          {userState?.user ? '控制台' : '登录'}
+        </button>
+        <button
+          onClick={() => {
+            onClose();
+            navigate(userState?.user ? '/console' : '/register');
+          }}
+          className='flex-1 h-[52px] rounded-full bg-black text-[15px] font-semibold text-white cursor-pointer'
+        >
+          {userState?.user ? '进入' : '注册'}
+        </button>
+      </div>
+    </div>,
     document.body,
   );
 };

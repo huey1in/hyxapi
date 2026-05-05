@@ -143,6 +143,7 @@ const renderTokenKey = (
             <Dropdown
               trigger='click'
               position='bottomRight'
+              getPopupContainer={() => document.body}
               clickToHide
               menu={[
                 {

@@ -21,6 +21,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { ChevronDown, LogOut, Settings, Key, CreditCard } from 'lucide-react';
 import SkeletonWrapper from '../components/SkeletonWrapper';
+import { useLoginModal } from '../../../context/LoginModal';
 
 const UserArea = ({
   userState,
@@ -33,6 +34,7 @@ const UserArea = ({
 }) => {
   const [open, setOpen] = useState(false);
   const ref = useRef(null);
+  const { openLoginModal } = useLoginModal();
 
   useEffect(() => {
     const handler = (e) => {
@@ -97,12 +99,13 @@ const UserArea = ({
 
   return (
     <div className='flex items-center gap-2'>
-      <Link
-        to='/login'
-        className='px-3 py-1.5 text-xs font-medium text-ui-text-2 hover:text-ui-text transition-colors'
+      <button
+        type='button'
+        onClick={openLoginModal}
+        className='px-3 py-1.5 text-xs font-medium text-ui-text-2 hover:text-ui-text transition-colors cursor-pointer bg-transparent'
       >
         {t('登录')}
-      </Link>
+      </button>
       {showRegisterButton && (
         <Link
           to='/register'
