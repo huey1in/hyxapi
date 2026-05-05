@@ -9,7 +9,7 @@ import { useTranslation } from 'react-i18next';
 import { usePageTitle } from '../../hooks/common/usePageTitle';
 import {
   Search, RefreshCw, Copy, Check, User, Server, ChevronDown,
-  ArrowDownToLine, ArrowUpFromLine,
+  ArrowDownToLine, ArrowUpFromLine, SlidersHorizontal,
 } from 'lucide-react';
 import { useSearchParams } from 'react-router-dom';
 import * as LobeIcons from '@lobehub/icons';
@@ -133,6 +133,7 @@ const PricingPage = () => {
   const [endpointFilter, setEndpointFilter] = useState('all');
   const [group, setGroup] = useState('default');
   const [copied, setCopied] = useState(null);
+  const [showMobileFilters, setShowMobileFilters] = useState(false);
   const [vendorsExpanded, setVendorsExpanded] = useState(false);
 
   const load = async () => {
@@ -336,6 +337,21 @@ const PricingPage = () => {
             </p>
           </div>
           <div className='flex items-center gap-2'>
+            {/* Mobile filter toggle */}
+            <button
+              onClick={() => setShowMobileFilters((v) => !v)}
+              className={`lg:hidden inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[13px] border transition-colors ${
+                showMobileFilters
+                  ? 'bg-ui-bg-subtle border-ui-text-3 text-ui-text'
+                  : 'bg-ui-bg-elevated border-ui-border text-ui-text-2'
+              }`}
+            >
+              <SlidersHorizontal size={13} />
+              {t('筛选')}
+              {(vendorFilter !== 'all' || endpointFilter !== 'all') && (
+                <span className='w-1.5 h-1.5 rounded-full bg-ui-accent' />
+              )}
+            </button>
             <div className='relative w-44 sm:w-56 hidden sm:block'>
               <Search size={14} className='absolute left-3 top-1/2 -translate-y-1/2 text-ui-text-3' />
               <input
@@ -371,48 +387,12 @@ const PricingPage = () => {
           </div>
         </div>
 
-        {/* Mobile horizontal chip filters */}
-        <div className='lg:hidden flex gap-2 px-4 pb-3 overflow-x-auto no-scrollbar'>
-          {/* Vendor chips */}
-          <button
-            onClick={() => setVendorFilter('all')}
-            className={`inline-flex items-center whitespace-nowrap px-3 py-1.5 rounded-full text-xs font-medium border transition-colors shrink-0 ${
-              vendorFilter === 'all'
-                ? 'bg-ui-text text-ui-bg border-ui-text'
-                : 'bg-ui-bg-elevated border-ui-border text-ui-text-2'
-            }`}
-          >
-            {t('全部品牌')}
-          </button>
-          {sortedVendors.slice(0, 8).map((v) => (
-            <button
-              key={v.id}
-              onClick={() => setVendorFilter(String(vendorFilter) === String(v.id) ? 'all' : v.id)}
-              className={`inline-flex items-center gap-1.5 whitespace-nowrap px-3 py-1.5 rounded-full text-xs font-medium border transition-colors shrink-0 ${
-                String(vendorFilter) === String(v.id)
-                  ? 'bg-ui-text text-ui-bg border-ui-text'
-                  : 'bg-ui-bg-elevated border-ui-border text-ui-text-2'
-              }`}
-            >
-              <VendorAvatar name={v.name} icon={v.icon} size={12} />
-              {v.name}
-            </button>
-          ))}
-          {/* Endpoint chips */}
-          {endpointTypes.map((ep) => (
-            <button
-              key={ep}
-              onClick={() => setEndpointFilter(endpointFilter === ep ? 'all' : ep)}
-              className={`inline-flex items-center whitespace-nowrap px-3 py-1.5 rounded-full text-xs font-medium border transition-colors shrink-0 ${
-                endpointFilter === ep
-                  ? 'bg-ui-accent text-ui-accent-fg border-ui-accent'
-                  : 'bg-ui-bg-elevated border-ui-border text-ui-text-2'
-              }`}
-            >
-              {endpointLabel(ep)}
-            </button>
-          ))}
-        </div>
+        {/* Mobile expandable filter drawer */}
+        {showMobileFilters && (
+          <div className='lg:hidden border-t border-ui-border bg-ui-bg px-4 py-4'>
+            {sidebarContent}
+          </div>
+        )}
       </div>
 
       {/* Body: sidebar + main 或 详情视图 */}
