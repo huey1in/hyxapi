@@ -30,7 +30,6 @@ import { useSidebarCollapsed } from '../../hooks/common/useSidebarCollapsed';
 import { useTranslation } from 'react-i18next';
 import {
   API,
-  getLogo,
   getSystemName,
   showError,
   setStatusData,
@@ -40,6 +39,37 @@ import { StatusContext } from '../../context/Status';
 import { useLocation } from 'react-router-dom';
 import { normalizeLanguage } from '../../i18n/language';
 const { Sider, Content, Header } = Layout;
+
+const PAGE_TITLES = [
+  { match: (p) => p === '/', name: '首页' },
+  { match: (p) => p === '/pricing', name: '模型广场' },
+  { match: (p) => p === '/login', name: '登录' },
+  { match: (p) => p === '/register', name: '注册' },
+  { match: (p) => p === '/reset' || p === '/user/reset', name: '重置密码' },
+  { match: (p) => p === '/setup', name: '初始化' },
+  { match: (p) => p === '/forbidden', name: '无权限' },
+  { match: (p) => p === '/user-agreement', name: '用户协议' },
+  { match: (p) => p === '/privacy-policy', name: '隐私政策' },
+  { match: (p) => p.startsWith('/oauth/'), name: 'OAuth 授权' },
+  { match: (p) => p === '/console', name: '控制台' },
+  { match: (p) => p === '/console/channel', name: '渠道管理' },
+  { match: (p) => p === '/console/token', name: '令牌管理' },
+  { match: (p) => p === '/console/redemption', name: '兑换码' },
+  { match: (p) => p === '/console/topup', name: '钱包管理' },
+  { match: (p) => p === '/console/log', name: '日志' },
+  { match: (p) => p === '/console/midjourney', name: 'Midjourney' },
+  { match: (p) => p === '/console/task', name: '任务' },
+  { match: (p) => p === '/console/playground', name: 'Playground' },
+  { match: (p) => p === '/console/personal', name: '个人设置' },
+  { match: (p) => p === '/console/setting', name: '系统设置' },
+  { match: (p) => p === '/console/user', name: '用户管理' },
+  { match: (p) => p === '/console/subscription', name: '订阅' },
+];
+
+const getPageName = (pathname) => {
+  const hit = PAGE_TITLES.find((entry) => entry.match(pathname));
+  return hit ? hit.name : '';
+};
 
 const PageLayout = () => {
   const [userState, userDispatch] = useContext(UserContext);
@@ -104,18 +134,13 @@ const PageLayout = () => {
   useEffect(() => {
     loadUser();
     loadStatus().catch(console.error);
-    let systemName = getSystemName();
-    if (systemName) {
-      document.title = systemName;
-    }
-    let logo = getLogo();
-    if (logo) {
-      let linkElement = document.querySelector("link[rel~='icon']");
-      if (linkElement) {
-        linkElement.href = logo;
-      }
-    }
   }, []);
+
+  useEffect(() => {
+    const systemName = getSystemName() || 'Routify';
+    const pageName = getPageName(location.pathname);
+    document.title = pageName ? `${systemName} - ${pageName}` : systemName;
+  }, [location.pathname]);
 
   useEffect(() => {
     let preferredLang;

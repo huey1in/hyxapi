@@ -55,9 +55,9 @@ const UserArea = ({
 
   if (userState.user) {
     const menuItems = [
-      { icon: <SlidersIcon size={15} />, label: t('个人设置'), path: '/console/personal' },
-      { icon: <KeyIcon size={15} />, label: t('令牌管理'), path: '/console/token' },
-      { icon: <WalletIcon size={15} />, label: t('钱包管理'), path: '/console/topup' },
+      { label: t('个人设置'), path: '/console/personal' },
+      { label: t('令牌管理'), path: '/console/token' },
+      { label: t('钱包管理'), path: '/console/topup' },
     ];
 
     return (
@@ -73,25 +73,30 @@ const UserArea = ({
         </button>
 
         {open && (
-          <div className='absolute right-0 mt-2 w-44 bg-ui-bg-elevated border border-ui-border rounded-xl shadow-lg py-1 z-50 animate-dropdown'>
-            {menuItems.map((item) => (
+          <div className='absolute right-0 mt-3 w-52 bg-ui-bg-elevated border border-ui-border rounded-2xl shadow-xl overflow-hidden z-50 animate-dropdown'>
+            <div className='px-3 pt-3 pb-1.5'>
+              <p className='text-[11px] font-semibold text-ui-text-3 uppercase tracking-widest'>
+                {t('账户')}
+              </p>
+            </div>
+            <div className='px-2 pb-2 flex flex-col gap-0.5'>
+              {menuItems.map((item) => (
+                <button
+                  key={item.label}
+                  onClick={() => { navigate(item.path); setOpen(false); }}
+                  className='flex items-center w-full px-3 py-2.5 rounded-xl text-sm text-ui-text hover:bg-ui-bg-subtle transition-colors'
+                >
+                  <span>{item.label}</span>
+                </button>
+              ))}
+              <div className='my-1 mx-1 border-t border-ui-divider' />
               <button
-                key={item.label}
-                onClick={() => { navigate(item.path); setOpen(false); }}
-                className='flex items-center gap-2.5 w-full px-3 py-2 text-sm text-ui-text hover:bg-ui-bg-subtle transition-colors'
+                onClick={() => { logout(); setOpen(false); }}
+                className='flex items-center w-full px-3 py-2.5 rounded-xl text-sm text-ui-danger hover:bg-ui-danger-bg transition-colors'
               >
-                <span className='text-ui-text-3 flex-shrink-0'>{item.icon}</span>
-                {item.label}
+                <span>{t('退出')}</span>
               </button>
-            ))}
-            <div className='my-1 border-t border-ui-divider' />
-            <button
-              onClick={() => { logout(); setOpen(false); }}
-              className='flex items-center gap-2.5 w-full px-3 py-2 text-sm text-ui-danger hover:bg-ui-danger-bg transition-colors'
-            >
-              <LogOutIcon size={15} className='flex-shrink-0' />
-              {t('退出')}
-            </button>
+            </div>
           </div>
         )}
       </div>
