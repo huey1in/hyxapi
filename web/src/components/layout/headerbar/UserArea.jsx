@@ -19,7 +19,11 @@ For commercial licensing, please contact support@quantumnous.com
 
 import React, { useState, useRef, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { ChevronDown, LogOut, Settings, Key, CreditCard } from 'lucide-react';
+import ChevronDownIcon from './icons/ChevronDownIcon';
+import SlidersIcon from './icons/SlidersIcon';
+import KeyIcon from './icons/KeyIcon';
+import WalletIcon from './icons/WalletIcon';
+import LogOutIcon from './icons/LogOutIcon';
 import SkeletonWrapper from '../components/SkeletonWrapper';
 import { useLoginModal } from '../../../context/LoginModal';
 
@@ -52,9 +56,9 @@ const UserArea = ({
 
   if (userState.user) {
     const menuItems = [
-      { icon: <Settings size={15} />, label: t('个人设置'), path: '/console/personal' },
-      { icon: <Key size={15} />, label: t('令牌管理'), path: '/console/token' },
-      { icon: <CreditCard size={15} />, label: t('钱包管理'), path: '/console/topup' },
+      { icon: <SlidersIcon size={15} />, label: t('个人设置'), path: '/console/personal' },
+      { icon: <KeyIcon size={15} />, label: t('令牌管理'), path: '/console/token' },
+      { icon: <WalletIcon size={15} />, label: t('钱包管理'), path: '/console/topup' },
     ];
 
     return (
@@ -66,7 +70,7 @@ const UserArea = ({
           <span className='text-xs font-medium text-ui-text'>
             {userState.user.username}
           </span>
-          <ChevronDown size={14} className='text-ui-text-3' />
+          <ChevronDownIcon size={14} className='text-ui-text-3' />
         </button>
 
         {open && (
@@ -86,7 +90,7 @@ const UserArea = ({
               onClick={() => { logout(); setOpen(false); }}
               className='flex items-center gap-2.5 w-full px-3 py-2 text-sm text-ui-danger hover:bg-ui-danger-bg transition-colors'
             >
-              <LogOut size={15} className='flex-shrink-0' />
+              <LogOutIcon size={15} className='flex-shrink-0' />
               {t('退出')}
             </button>
           </div>
@@ -102,14 +106,14 @@ const UserArea = ({
       <button
         type='button'
         onClick={openLoginModal}
-        className='px-3 py-1.5 text-xs font-medium text-ui-text-2 hover:text-ui-text transition-colors cursor-pointer bg-transparent'
+        className='px-4 py-2 text-sm font-medium text-ui-text-2 hover:text-ui-text transition-colors cursor-pointer bg-transparent'
       >
         {t('登录')}
       </button>
       {showRegisterButton && (
         <Link
           to='/register'
-          className='hidden md:inline-flex items-center px-4 py-1.5 text-xs font-semibold bg-ui-accent text-ui-accent-fg rounded-md transition-all duration-200 hover:bg-ui-accent-hover hover:shadow-md active:scale-95'
+          className='hidden md:inline-flex items-center px-5 py-2 text-sm font-semibold bg-ui-accent text-ui-accent-fg rounded-lg transition-all duration-200 hover:bg-ui-accent-hover hover:shadow-md active:scale-95'
         >
           {t('注册')}
         </Link>

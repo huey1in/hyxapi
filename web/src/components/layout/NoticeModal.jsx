@@ -21,9 +21,11 @@ import React, { useEffect, useState, useContext, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
 import { marked } from 'marked';
-import { Bell, Megaphone, Inbox, X, Loader2 } from 'lucide-react';
+import { Bell, Megaphone, X, Loader2 } from 'lucide-react';
 import { API, showError, getRelativeTime } from '../../helpers';
 import { StatusContext } from '../../context/Status';
+import NotificationEmptyIcon from './icons/NotificationEmptyIcon';
+import AnnouncementEmptyIcon from './icons/AnnouncementEmptyIcon';
 
 const TYPE_COLOR = {
   success: '#22c55e',
@@ -31,7 +33,7 @@ const TYPE_COLOR = {
   error: '#ef4444',
 };
 
-const EmptyState = ({ icon: Icon = Inbox, description }) => (
+const EmptyState = ({ icon: Icon, description }) => (
   <div className='flex flex-col items-center justify-center py-16 text-ui-text-3'>
     <div className='w-16 h-16 rounded-full bg-ui-bg-subtle flex items-center justify-center mb-3'>
       <Icon size={28} />
@@ -136,7 +138,7 @@ const NoticeModal = ({
       );
     }
     if (!noticeContent) {
-      return <EmptyState description={t('暂无公告')} />;
+      return <EmptyState icon={NotificationEmptyIcon} description={t('暂无公告')} />;
     }
     return (
       <div
@@ -148,7 +150,7 @@ const NoticeModal = ({
 
   const renderAnnouncementTimeline = () => {
     if (processedAnnouncements.length === 0) {
-      return <EmptyState description={t('暂无系统公告')} />;
+      return <EmptyState icon={AnnouncementEmptyIcon} description={t('暂无系统公告')} />;
     }
     return (
       <div className='max-h-[55vh] overflow-y-auto pr-2'>

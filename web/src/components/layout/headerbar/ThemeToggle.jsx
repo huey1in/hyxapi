@@ -18,10 +18,11 @@ For commercial licensing, please contact support@quantumnous.com
 */
 
 import React from 'react';
-import { Sun, Moon, Monitor } from 'lucide-react';
+import SunIcon from './icons/SunIcon';
+import MoonIcon from './icons/MoonIcon';
 
-const CYCLE = ['light', 'dark', 'auto'];
-const ICONS = { light: Sun, dark: Moon, auto: Monitor };
+const CYCLE = ['light', 'dark'];
+const ICONS = { light: SunIcon, dark: MoonIcon };
 
 const ThemeToggle = ({ theme, onThemeToggle, t }) => {
   const handleClick = (e) => {
@@ -29,17 +30,17 @@ const ThemeToggle = ({ theme, onThemeToggle, t }) => {
     onThemeToggle(next, e);
   };
 
-  const Icon = ICONS[theme] ?? Monitor;
-  const label = theme === 'light' ? t('浅色模式') : theme === 'dark' ? t('深色模式') : t('自动模式');
+  const Icon = ICONS[theme] ?? SunIcon;
+  const label = theme === 'light' ? t('浅色模式') : t('深色模式');
 
   return (
     <button
       onClick={handleClick}
       aria-label={label}
       title={label}
-      className='inline-flex items-center justify-center w-9 h-9 rounded-lg text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-subtle active:scale-90 transition-all duration-150'
+      className='inline-flex items-center justify-center w-11 h-11 rounded-xl text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-subtle active:scale-90 transition-all duration-150'
     >
-      <Icon size={18} />
+      <Icon size={22} />
     </button>
   );
 };

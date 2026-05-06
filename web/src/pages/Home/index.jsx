@@ -332,7 +332,7 @@ const Home = () => {
   const heading = { fontFamily: "'Space Grotesk', sans-serif", letterSpacing: '-0.025em' };
 
   return (
-    <div className='w-full overflow-x-hidden' style={{ backgroundColor: '#f8f8f6' }}>
+    <div className='w-full overflow-x-hidden bg-[#f8f8f6] dark:bg-[#1a1a18]'>
       <NoticeModal
         visible={noticeVisible}
         onClose={() => setNoticeVisible(false)}
@@ -509,7 +509,7 @@ const Home = () => {
           </section>
 
           {/* ─── Final visual ─── */}
-          <section className='px-6 py-20 bg-ui-bg'>
+          <section className='px-6 py-20'>
             <div className='max-w-5xl mx-auto'>
               <div className='mb-10 text-center'>
                 <p className='font-mono text-xs text-ui-text-3 tracking-widest uppercase mb-3'>

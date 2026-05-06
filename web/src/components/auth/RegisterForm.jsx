@@ -60,7 +60,7 @@ const OAuthButton = ({ onClick, loading, disabled, children, icon }) => (
   </button>
 );
 
-const RegisterForm = () => {
+const RegisterForm = ({ embedded = false, onSuccess, onSwitchToLogin }) => {
   let navigate = useNavigate();
   const { t } = useTranslation();
   const githubButtonTextKeyByState = {
@@ -163,8 +163,12 @@ const RegisterForm = () => {
       const res = await API.post(`/api/user/register?turnstile=${turnstileToken}`, inputs);
       const { success, message } = res.data;
       if (success) {
-        navigate('/login');
         showSuccess('注册成功！');
+        if (embedded && onSwitchToLogin) {
+          onSwitchToLogin();
+        } else {
+          navigate('/login');
+        }
       } else {
         showError(message);
       }
@@ -333,10 +337,10 @@ const RegisterForm = () => {
         </div>
       )}
 
-      <div className='flex items-center gap-3 my-2'>
-        <div className='flex-1 h-px bg-gray-200' />
+      <div className='flex items-center gap-3'>
+        <div className='flex-1 h-px bg-ui-border' />
         <span className='text-xs text-ui-text-3'>{t('或')}</span>
-        <div className='flex-1 h-px bg-gray-200' />
+        <div className='flex-1 h-px bg-ui-border' />
       </div>
 
       <button
@@ -426,78 +430,99 @@ const RegisterForm = () => {
       <button
         onClick={handleSubmit}
         disabled={registerLoading || ((hasUserAgreement || hasPrivacyPolicy) && !agreedToTerms)}
-        className='w-full py-2.5 text-sm font-medium rounded-lg transition-colors bg-ui-accent text-ui-accent-fg hover:bg-ui-accent-hover disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2'
+        className='w-full h-11 text-sm font-medium rounded-xl transition-colors bg-ui-accent text-ui-accent-fg hover:bg-ui-accent-hover disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2'
       >
         {registerLoading && <span className='w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin' />}
         {t('注册')}
       </button>
 
       {hasOAuthRegisterOptions && (
-        <>
-          <div className='flex items-center gap-3'>
-            <div className='flex-1 h-px bg-gray-200' />
-            <span className='text-xs text-ui-text-3'>{t('或')}</span>
-            <div className='flex-1 h-px bg-gray-200' />
-          </div>
-          <button
-            onClick={() => { setOtherRegisterOptionsLoading(true); setShowEmailRegister(false); setOtherRegisterOptionsLoading(false); }}
-            className='w-full py-2.5 text-sm font-medium border border-ui-border rounded-lg bg-ui-bg-elevated hover:bg-ui-bg-subtle text-ui-text transition-colors'
-          >
-            {t('其他注册选项')}
-          </button>
-        </>
+        <button
+          onClick={() => { setOtherRegisterOptionsLoading(true); setShowEmailRegister(false); setOtherRegisterOptionsLoading(false); }}
+          className='w-full h-10 text-sm border border-ui-border rounded-xl text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-subtle transition-all duration-150'
+        >
+          {t('其他注册选项')}
+        </button>
       )}
     </div>
   );
+
+  const wechatModal = (
+    <Modal
+      title={t('微信扫码登录')}
+      visible={showWeChatLoginModal}
+      maskClosable={true}
+      onOk={onSubmitWeChatVerificationCode}
+      onCancel={() => setShowWeChatLoginModal(false)}
+      okText={t('登录')}
+      centered={true}
+      okButtonProps={{ loading: wechatCodeSubmitLoading }}
+    >
+      <div className='flex flex-col items-center'>
+        <img src={status.wechat_qrcode} alt='微信二维码' className='mb-4' />
+      </div>
+      <p className='text-center text-sm text-ui-text-2 mb-4'>
+        {t('微信扫码关注公众号，输入「验证码」获取验证码（三分钟内有效）')}
+      </p>
+      <input
+        type='text'
+        placeholder={t('验证码')}
+        value={inputs.wechat_verification_code}
+        onChange={(e) => handleChange('wechat_verification_code', e.target.value)}
+        className={inputClass}
+      />
+    </Modal>
+  );
+
+  const formContent = (
+    <>
+      <div className='mb-6'>
+        <h2 className='text-xl font-semibold text-ui-text'>{t('注册')}</h2>
+        <p className='text-[13px] text-ui-text-3 mt-0.5'>{t('创建你的账户')}</p>
+      </div>
+      {showEmailRegister || !hasOAuthRegisterOptions
+        ? renderEmailRegisterForm()
+        : renderOAuthOptions()}
+      <p className='mt-5 pt-4 border-t border-ui-border text-[13px] text-ui-text-3'>
+        {t('已有账户？')}{' '}
+        {embedded && onSwitchToLogin ? (
+          <button onClick={onSwitchToLogin} className='text-ui-text font-medium hover:underline bg-transparent cursor-pointer'>
+            {t('登录')}
+          </button>
+        ) : (
+          <Link to='/login' className='text-ui-text font-medium hover:underline'>{t('登录')}</Link>
+        )}
+      </p>
+    </>
+  );
+
+  if (embedded) {
+    return (
+      <>
+        {formContent}
+        {turnstileEnabled && (
+          <div className='flex justify-center mt-6'>
+            <Turnstile sitekey={turnstileSiteKey} onVerify={(token) => setTurnstileToken(token)} />
+          </div>
+        )}
+        {wechatModal}
+      </>
+    );
+  }
 
   return (
     <div className='min-h-[calc(100vh-4rem)] flex items-start sm:items-center justify-center px-0 sm:px-4 pt-24 pb-12'>
       <div className='w-full max-w-sm sm:mt-[60px]'>
         <div className='p-5 sm:bg-ui-bg-elevated sm:rounded-2xl sm:border sm:border-ui-border sm:p-6'>
-          <h2 className='text-2xl font-semibold text-ui-text mb-5'>{t('注册')}</h2>
-
-          {showEmailRegister || !hasOAuthRegisterOptions
-            ? renderEmailRegisterForm()
-            : renderOAuthOptions()}
-
-          <p className='mt-5 text-center text-sm text-ui-text-2'>
-            {t('已有账户？')}{' '}
-            <Link to='/login' className='text-ui-text font-medium underline'>{t('登录')}</Link>
-          </p>
+          {formContent}
         </div>
-
         {turnstileEnabled && (
           <div className='flex justify-center mt-6'>
             <Turnstile sitekey={turnstileSiteKey} onVerify={(token) => setTurnstileToken(token)} />
           </div>
         )}
       </div>
-
-      {/* 微信登录弹窗 */}
-      <Modal
-        title={t('微信扫码登录')}
-        visible={showWeChatLoginModal}
-        maskClosable={true}
-        onOk={onSubmitWeChatVerificationCode}
-        onCancel={() => setShowWeChatLoginModal(false)}
-        okText={t('登录')}
-        centered={true}
-        okButtonProps={{ loading: wechatCodeSubmitLoading }}
-      >
-        <div className='flex flex-col items-center'>
-          <img src={status.wechat_qrcode} alt='微信二维码' className='mb-4' />
-        </div>
-        <p className='text-center text-sm text-ui-text-2 mb-4'>
-          {t('微信扫码关注公众号，输入「验证码」获取验证码（三分钟内有效）')}
-        </p>
-        <input
-          type='text'
-          placeholder={t('验证码')}
-          value={inputs.wechat_verification_code}
-          onChange={(e) => handleChange('wechat_verification_code', e.target.value)}
-          className={inputClass}
-        />
-      </Modal>
+      {wechatModal}
     </div>
   );
 };

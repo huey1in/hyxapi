@@ -63,12 +63,12 @@ const OAuthTile = ({ onClick, loading, disabled, name, icon }) => (
   <button
     onClick={onClick}
     disabled={loading || disabled}
-    className='h-12 w-full flex items-center justify-center gap-3 px-4 text-[15px] font-medium border border-black/10 rounded-xl bg-white hover:bg-black/[0.03] text-black transition-colors disabled:opacity-50 disabled:cursor-not-allowed'
+    className='h-11 w-full flex items-center gap-3 px-4 text-sm font-medium border border-ui-border rounded-xl bg-ui-bg-elevated hover:bg-ui-bg-subtle text-ui-text transition-all duration-150 disabled:opacity-50 disabled:cursor-not-allowed'
   >
     {loading ? (
-      <span className='w-5 h-5 border-2 border-black/40 border-t-transparent rounded-full animate-spin' />
+      <span className='w-4 h-4 border-2 border-ui-text-3 border-t-transparent rounded-full animate-spin' />
     ) : (
-      <span className='flex items-center justify-center w-[22px] h-[22px]'>{icon}</span>
+      <span className='flex items-center justify-center w-5 h-5 flex-shrink-0'>{icon}</span>
     )}
     <span>{name}</span>
   </button>
@@ -87,14 +87,13 @@ const OAuthButton = ({ onClick, loading, disabled, children, icon }) => (
   </button>
 );
 
-const LoginForm = ({ embedded = false, onSuccess }) => {
+const LoginForm = ({ embedded = false, onSuccess, onSwitchToRegister, onSwitchToReset }) => {
   let navigate = useNavigate();
   const handleAuthed = (data, defaultPath = '/console') => {
     if (typeof onSuccess === 'function') {
       onSuccess(data);
-    } else {
-      navigate(defaultPath);
     }
+    navigate(defaultPath);
   };
   const { t } = useTranslation();
   const githubButtonTextKeyByState = {
@@ -397,10 +396,10 @@ const LoginForm = ({ embedded = false, onSuccess }) => {
       );
 
     return (
-      <div className='space-y-4'>
-        {tiles.length > 0 && (
-          <div className='grid grid-cols-2 gap-3'>{tiles}</div>
-        )}
+      <div className='space-y-2.5'>
+        {renderTerms()}
+
+        {tiles.length > 0 && tiles}
 
         {status.telegram_oauth && (
           <div className='flex justify-center'>
@@ -408,21 +407,19 @@ const LoginForm = ({ embedded = false, onSuccess }) => {
           </div>
         )}
 
-        {renderTerms()}
-
         {tiles.length > 0 && (
           <div className='flex items-center gap-3'>
-            <div className='flex-1 h-px bg-black/10' />
+            <div className='flex-1 h-px bg-ui-border' />
             <span className='text-xs text-ui-text-3'>{t('或')}</span>
-            <div className='flex-1 h-px bg-black/10' />
+            <div className='flex-1 h-px bg-ui-border' />
           </div>
         )}
 
         <button
           onClick={() => { setEmailLoginLoading(true); setShowEmailLogin(true); setEmailLoginLoading(false); }}
-          className='w-full h-12 text-[15px] font-medium rounded-xl border border-black/10 bg-white hover:bg-black/[0.03] text-black transition-colors flex items-center justify-center gap-2'
+          className='h-11 w-full flex items-center gap-3 px-4 text-sm font-medium border border-ui-border rounded-xl bg-ui-bg-elevated hover:bg-ui-bg-subtle text-ui-text transition-all duration-150'
         >
-          <svg viewBox='0 0 24 24' className='w-5 h-5' fill='none' stroke='currentColor' strokeWidth='2'>
+          <svg viewBox='0 0 24 24' className='w-5 h-5 flex-shrink-0' fill='none' stroke='currentColor' strokeWidth='1.75'>
             <path strokeLinecap='round' strokeLinejoin='round' d='M3 8l9 6 9-6M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z' />
           </svg>
           {t('使用 邮箱或用户名 登录')}
@@ -452,7 +449,19 @@ const LoginForm = ({ embedded = false, onSuccess }) => {
       </div>
 
       <div>
-        <label className='block mb-1.5 text-sm font-medium text-ui-text'>{t('密码')}</label>
+        <div className='flex items-center justify-between mb-1.5'>
+          <label className='text-sm font-medium text-ui-text'>{t('密码')}</label>
+          <button
+            type='button'
+            onClick={() => {
+              if (embedded && onSwitchToReset) { onSwitchToReset(); }
+              else { setResetPasswordLoading(true); navigate('/reset'); setResetPasswordLoading(false); }
+            }}
+            className='text-xs text-ui-text-3 hover:text-ui-text transition-colors'
+          >
+            {t('忘记密码？')}
+          </button>
+        </div>
         <input
           type='password'
           placeholder={t('请输入您的密码')}
@@ -468,63 +477,44 @@ const LoginForm = ({ embedded = false, onSuccess }) => {
       <button
         onClick={handleSubmit}
         disabled={loginLoading || ((hasUserAgreement || hasPrivacyPolicy) && !agreedToTerms)}
-        className='w-full py-2.5 text-sm font-medium rounded-lg transition-colors bg-ui-accent text-ui-accent-fg hover:bg-ui-accent-hover disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2'
+        className='w-full h-11 text-sm font-medium rounded-xl transition-colors bg-ui-accent text-ui-accent-fg hover:bg-ui-accent-hover disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2'
       >
         {loginLoading && <span className='w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin' />}
         {t('继续')}
       </button>
 
-      <button
-        onClick={() => { setResetPasswordLoading(true); navigate('/reset'); setResetPasswordLoading(false); }}
-        className='w-full py-1.5 text-sm text-ui-text-2 hover:text-ui-text transition-colors'
-      >
-        {t('忘记密码？')}
-      </button>
-
       {hasOAuthLoginOptions && (
-        <>
-          <div className='flex items-center gap-3'>
-            <div className='flex-1 h-px bg-gray-200' />
-            <span className='text-xs text-ui-text-3'>{t('或')}</span>
-            <div className='flex-1 h-px bg-gray-200' />
-          </div>
-          <button
-            onClick={() => { setOtherLoginOptionsLoading(true); setShowEmailLogin(false); setOtherLoginOptionsLoading(false); }}
-            className='w-full py-2.5 text-sm font-medium border border-ui-border rounded-lg bg-ui-bg-elevated hover:bg-ui-bg-subtle text-ui-text transition-colors'
-          >
-            {t('其他登录选项')}
-          </button>
-        </>
+        <button
+          onClick={() => { setOtherLoginOptionsLoading(true); setShowEmailLogin(false); setOtherLoginOptionsLoading(false); }}
+          className='w-full h-10 text-sm border border-ui-border rounded-xl text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-subtle transition-all duration-150'
+        >
+          {t('其他登录选项')}
+        </button>
       )}
     </div>
   );
 
   const cardContent = (
     <>
-      <div className='flex flex-col items-center text-center mb-6'>
-        <h2
-          className='text-[26px] font-medium text-black leading-[1.3]'
-          style={baiFontStyle}
-        >
-          {t('登录')} {systemName}
+      <div className='mb-6'>
+        <h2 className='text-xl font-semibold text-ui-text' style={baiFontStyle}>
+          {t('登录')}
         </h2>
-        <div
-          className='mt-3 inline-flex items-center gap-1.5 px-3 py-1 text-[13px] text-ui-text-2 rounded-full'
-          style={{ background: 'rgba(0,0,0,0.04)' }}
-        >
-          <svg viewBox='0 0 24 24' className='w-4 h-4' fill='none' stroke='currentColor' strokeWidth='2'>
-            <path strokeLinecap='round' strokeLinejoin='round' d='M12 8v13m0-13V6a2 2 0 112 2h-2zm0 0V5.5A2.5 2.5 0 109.5 8H12zm-7 4h14M5 21h14a1 1 0 001-1v-8H4v8a1 1 0 001 1z' />
-          </svg>
-          <span>{t('新用户注册即享专属积分赠送')}</span>
-        </div>
+        <p className='text-[13px] text-ui-text-3 mt-0.5'>{systemName}</p>
       </div>
 
       {showEmailLogin || !hasOAuthLoginOptions ? renderEmailLoginForm() : renderOAuthOptions()}
 
       {!status.self_use_mode_enabled && (
-        <p className='mt-5 text-center text-sm text-ui-text-2'>
+        <p className='mt-5 pt-4 border-t border-ui-border text-[13px] text-ui-text-3'>
           {t('没有账户？')}{' '}
-          <Link to='/register' className='text-black font-medium underline'>{t('注册')}</Link>
+          {embedded && onSwitchToRegister ? (
+            <button onClick={onSwitchToRegister} className='text-ui-text font-medium hover:underline bg-transparent cursor-pointer'>
+              {t('注册')}
+            </button>
+          ) : (
+            <Link to='/register' className='text-ui-text font-medium hover:underline'>{t('注册')}</Link>
+          )}
         </p>
       )}
     </>

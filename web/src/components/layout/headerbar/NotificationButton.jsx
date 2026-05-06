@@ -18,16 +18,16 @@ For commercial licensing, please contact support@quantumnous.com
 */
 
 import React from 'react';
-import { Bell } from 'lucide-react';
+import BellIcon from './icons/BellIcon';
 
 const NotificationButton = ({ unreadCount, onNoticeOpen, t }) => {
   return (
     <button
       onClick={onNoticeOpen}
       aria-label={t('系统公告')}
-      className='relative inline-flex items-center justify-center w-9 h-9 rounded-lg text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-subtle active:scale-90 transition-all duration-150'
+      className='relative inline-flex items-center justify-center w-11 h-11 rounded-xl text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-subtle active:scale-90 transition-all duration-150'
     >
-      <Bell size={18} />
+      <BellIcon size={22} />
       {unreadCount > 0 && (
         <span className='absolute top-0.5 right-0.5 min-w-[16px] h-4 px-1 flex items-center justify-center text-[10px] font-bold bg-ui-badge text-ui-badge-fg rounded-full leading-none'>
           {unreadCount > 99 ? '99+' : unreadCount}
