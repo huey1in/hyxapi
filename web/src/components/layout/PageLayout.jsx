@@ -59,7 +59,7 @@ const PAGE_TITLES = [
   { match: (p) => p === '/console/log', name: '日志' },
   { match: (p) => p === '/console/midjourney', name: 'Midjourney' },
   { match: (p) => p === '/console/task', name: '任务' },
-  { match: (p) => p === '/console/playground', name: 'Playground' },
+  { match: (p) => p === '/console/playground', name: '对话' },
   { match: (p) => p === '/console/personal', name: '个人设置' },
   { match: (p) => p === '/console/setting', name: '系统设置' },
   { match: (p) => p === '/console/user', name: '用户管理' },

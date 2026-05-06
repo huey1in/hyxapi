@@ -1288,6 +1288,7 @@
     "密钥预览": "Key preview",
     "对于官方渠道，new-api已经内置地址，除非是第三方代理站点或者Azure的特殊接入地址，否则不需要填写": "For official channels, the new-api has a built-in address. Unless it is a third-party proxy site or a special Azure access address, there is no need to fill it in",
     "对免费模型启用预消耗": "Enable pre-consumption for free models",
+    "对话": "Chat",
     "对域名启用 IP 过滤（推荐开启）": "Enable IP filtering for domains (recommended)",
     "对外运营模式": "Default mode",
     "对比：不勾选「用户可选」的场景": "Comparison: groups without \"User Selectable\"",

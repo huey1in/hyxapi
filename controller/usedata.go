@@ -14,6 +14,8 @@ func GetAllQuotaDates(c *gin.Context) {
 	startTimestamp, _ := strconv.ParseInt(c.Query("start_timestamp"), 10, 64)
 	endTimestamp, _ := strconv.ParseInt(c.Query("end_timestamp"), 10, 64)
 	username := c.Query("username")
+	// Flush in-memory cache first so freshly-logged calls show up immediately.
+	model.SaveQuotaDataCache()
 	dates, err := model.GetAllQuotaDates(startTimestamp, endTimestamp, username)
 	if err != nil {
 		common.ApiError(c, err)
@@ -24,12 +26,12 @@ func GetAllQuotaDates(c *gin.Context) {
 		"message": "",
 		"data":    dates,
 	})
-	return
 }
 
 func GetQuotaDatesByUser(c *gin.Context) {
 	startTimestamp, _ := strconv.ParseInt(c.Query("start_timestamp"), 10, 64)
 	endTimestamp, _ := strconv.ParseInt(c.Query("end_timestamp"), 10, 64)
+	model.SaveQuotaDataCache()
 	dates, err := model.GetQuotaDataGroupByUser(startTimestamp, endTimestamp)
 	if err != nil {
 		common.ApiError(c, err)
@@ -54,6 +56,7 @@ func GetUserQuotaDates(c *gin.Context) {
 		})
 		return
 	}
+	model.SaveQuotaDataCache()
 	dates, err := model.GetQuotaDataByUserId(userId, startTimestamp, endTimestamp)
 	if err != nil {
 		common.ApiError(c, err)
@@ -64,5 +67,4 @@ func GetUserQuotaDates(c *gin.Context) {
 		"message": "",
 		"data":    dates,
 	})
-	return
 }

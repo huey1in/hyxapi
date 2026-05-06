@@ -60,7 +60,7 @@ const SiderBar = ({ onNavigate = () => {} }) => {
 
   const workspaceItems = useMemo(() => [
     { itemKey: 'detail', text: t('概览') },
-    { itemKey: 'playground', text: t('操练场') },
+    { itemKey: 'playground', text: t('对话') },
     { itemKey: 'token', text: t('令牌管理') },
     { itemKey: 'log', text: t('使用日志') },
   ].filter((item) => isModuleVisible('console', item.itemKey)), [t, isModuleVisible]);
@@ -129,7 +129,7 @@ const SiderBar = ({ onNavigate = () => {} }) => {
           collapsed={collapsed}
           showAdmin={isAdmin()}
         >
-          <nav className='flex-1 overflow-y-auto py-3 scrollbar-hide'>
+          <nav className='flex-1 overflow-y-auto pt-5 pb-3 scrollbar-hide'>
             {hasSectionVisibleModules('console') && (
               <div>
                 <SectionLabel label={t('控制台')} />

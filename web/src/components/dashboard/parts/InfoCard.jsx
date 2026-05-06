@@ -3,11 +3,7 @@
  */
 import React, { useEffect, useMemo, useState } from 'react';
 import { Loader2 } from 'lucide-react';
-import GlobeIcon from '../../layout/headerbar/icons/GlobeIcon';
 import ChevronDownIcon from '../../layout/headerbar/icons/ChevronDownIcon';
-import MegaphoneIcon from '../../layout/icons/MegaphoneIcon';
-import HelpIcon from '../../layout/icons/HelpIcon';
-import PulseIcon from '../../layout/icons/PulseIcon';
 import CopyIcon from '../../layout/icons/CopyIcon';
 import SpeedIcon from '../../layout/icons/SpeedIcon';
 import {
@@ -20,12 +16,15 @@ import { UPTIME_STATUS_MAP } from '../../../constants/dashboard.constants';
 
 // ── primitives ──────────────────────────────────────────
 
-const Empty = ({ Icon = MegaphoneIcon, text }) => (
+const Empty = ({ text }) => (
   <div className='flex flex-col items-center justify-center h-full min-h-[220px] py-8 text-ui-text-3'>
-    <div className='w-10 h-10 rounded-full bg-ui-bg-subtle flex items-center justify-center mb-2'>
-      <Icon size={16} />
-    </div>
     <p className='text-xs'>{text}</p>
+  </div>
+);
+
+const LoadingState = () => (
+  <div className='flex items-center justify-center h-full min-h-[220px] py-8 text-ui-text-3'>
+    <Loader2 size={20} className='animate-spin' />
   </div>
 );
 
@@ -44,8 +43,9 @@ const TYPE_DOT = {
 
 // ── ApiInfo ─────────────────────────────────────────────
 
-const ApiInfoList = ({ items, t }) => {
-  if (!items?.length) return <Empty Icon={GlobeIcon} text={t('暂无 API 信息')} />;
+const ApiInfoList = ({ items, loading, t }) => {
+  if (loading && (!items || items.length === 0)) return <LoadingState />;
+  if (!items?.length) return <Empty text={t('暂无 API 信息')} />;
   return (
     <ListContainer>
       {items.map((item, i) => (
@@ -92,8 +92,9 @@ const ApiInfoList = ({ items, t }) => {
 
 // ── Announcements ──────────────────────────────────────
 
-const AnnouncementsList = ({ items, t }) => {
-  if (!items?.length) return <Empty Icon={MegaphoneIcon} text={t('暂无公告')} />;
+const AnnouncementsList = ({ items, loading, t }) => {
+  if (loading && (!items || items.length === 0)) return <LoadingState />;
+  if (!items?.length) return <Empty text={t('暂无公告')} />;
   return (
     <ListContainer>
       {items.slice(0, 30).map((item, i) => {
@@ -145,8 +146,9 @@ const FaqRow = ({ q, a }) => {
   );
 };
 
-const FaqList = ({ items, t }) => {
-  if (!items?.length) return <Empty Icon={HelpIcon} text={t('暂无问答')} />;
+const FaqList = ({ items, loading, t }) => {
+  if (loading && (!items || items.length === 0)) return <LoadingState />;
+  if (!items?.length) return <Empty text={t('暂无问答')} />;
   return (
     <ListContainer>
       {items.map((item, i) => (
@@ -159,14 +161,8 @@ const FaqList = ({ items, t }) => {
 // ── Uptime ─────────────────────────────────────────────
 
 const UptimeList = ({ data, loading, activeGroup, setActiveGroup, t }) => {
-  if (loading) {
-    return (
-      <div className='flex items-center justify-center py-16 text-ui-text-3'>
-        <Loader2 size={18} className='animate-spin' />
-      </div>
-    );
-  }
-  if (!data?.length) return <Empty Icon={PulseIcon} text={t('暂无服务')} />;
+  if (loading) return <LoadingState />;
+  if (!data?.length) return <Empty text={t('暂无服务')} />;
 
   const groups = data.map((g, i) => ({ key: String(i), label: g.categoryName }));
   const current = data[Number(activeGroup) || 0];
@@ -192,7 +188,7 @@ const UptimeList = ({ data, loading, activeGroup, setActiveGroup, t }) => {
         </div>
       )}
       {monitors.length === 0 ? (
-        <Empty Icon={PulseIcon} text={t('暂无监控')} />
+        <Empty text={t('暂无监控')} />
       ) : (
         <div className='flex-1 min-h-0 overflow-y-auto'>
           <ul className='divide-y divide-ui-divider'>
@@ -236,10 +232,10 @@ const UptimeList = ({ data, loading, activeGroup, setActiveGroup, t }) => {
 // ── Main InfoCard ──────────────────────────────────────
 
 const TAB_META = {
-  api: { label: '接入点', icon: GlobeIcon },
-  news: { label: '公告', icon: MegaphoneIcon },
-  faq: { label: '常见问题', icon: HelpIcon },
-  uptime: { label: '服务状态', icon: PulseIcon },
+  api: { label: '接入点' },
+  news: { label: '公告' },
+  faq: { label: '常见问题' },
+  uptime: { label: '服务状态' },
 };
 
 const InfoCard = ({
@@ -252,6 +248,7 @@ const InfoCard = ({
   faqData,
   uptimeData,
   uptimeLoading,
+  loading,
   activeUptimeTab,
   setActiveUptimeTab,
   t,
@@ -273,22 +270,24 @@ const InfoCard = ({
   if (tabs.length === 0) return null;
 
   return (
-    <div className='h-full flex flex-col bg-ui-bg-elevated border border-ui-border rounded-2xl overflow-hidden'>
+    <div
+      className='h-full flex flex-col border border-ui-border rounded-2xl overflow-hidden'
+      style={{ backgroundColor: 'var(--page-bg)' }}
+    >
       {/* Tab bar */}
       <div className='flex items-center gap-0.5 px-2 pt-2 pb-2 border-b border-ui-border overflow-x-auto scrollbar-hide flex-shrink-0'>
-        {tabs.map(({ key, label, icon: Icon }) => {
+        {tabs.map(({ key, label }) => {
           const isActive = active === key;
           return (
             <button
               key={key}
               onClick={() => setActive(key)}
-              className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[12px] font-medium transition-colors whitespace-nowrap ${
+              className={`inline-flex items-center px-2.5 py-1.5 rounded-lg text-[12px] font-medium transition-colors whitespace-nowrap ${
                 isActive
                   ? 'bg-ui-bg-subtle text-ui-text'
                   : 'text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-subtle/60'
               }`}
             >
-              <Icon size={13} />
               {t(label)}
             </button>
           );
@@ -297,9 +296,9 @@ const InfoCard = ({
 
       {/* Body */}
       <div className='flex-1 min-h-0 overflow-hidden'>
-        {active === 'api' && <ApiInfoList items={apiInfoData} t={t} />}
-        {active === 'news' && <AnnouncementsList items={announcementData} t={t} />}
-        {active === 'faq' && <FaqList items={faqData} t={t} />}
+        {active === 'api' && <ApiInfoList items={apiInfoData} loading={loading} t={t} />}
+        {active === 'news' && <AnnouncementsList items={announcementData} loading={loading} t={t} />}
+        {active === 'faq' && <FaqList items={faqData} loading={loading} t={t} />}
         {active === 'uptime' && (
           <UptimeList
             data={uptimeData}

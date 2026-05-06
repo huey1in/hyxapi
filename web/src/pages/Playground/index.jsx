@@ -7,13 +7,16 @@ Simplified chat-style playground (no params/debug panel).
 import React, {
   useContext,
   useEffect,
+  useLayoutEffect,
   useRef,
   useState,
 } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import { createPortal } from 'react-dom';
 import { usePageTitle } from '../../hooks/common/usePageTitle';
-import { Send, Square, Trash2, ChevronDown, Bot, Users, RotateCcw, Copy, Check, AlertCircle, ImagePlus, X as XIcon } from 'lucide-react';
+import { Send, Square, Trash2, RotateCcw, Copy, Check, AlertCircle, ImagePlus, X as XIcon } from 'lucide-react';
+import ChevronDownIcon from '../../components/layout/headerbar/icons/ChevronDownIcon';
 
 import { UserContext } from '../../context/User';
 import { usePlaygroundState } from '../../hooks/playground/usePlaygroundState';
@@ -32,9 +35,8 @@ import {
 import { MESSAGE_ROLES } from '../../constants/playground.constants';
 import MarkdownRenderer from '../../components/common/markdown/MarkdownRenderer';
 
-// 紧凑的内嵌选择器（chip 样式）
+// 紧凑的内嵌选择器（参考 LanguageSelector 的下拉菜单风格，popup 通过 portal 渲染避免被卡片裁切）
 const SelectChip = ({
-  Icon,
   options,
   value,
   onChange,
@@ -42,15 +44,27 @@ const SelectChip = ({
   emptyText,
 }) => {
   const [open, setOpen] = useState(false);
+  const [pos, setPos] = useState({ left: 0, bottom: 0 });
   const ref = useRef(null);
+  const btnRef = useRef(null);
 
   useEffect(() => {
     const handler = (e) => {
-      if (ref.current && !ref.current.contains(e.target)) setOpen(false);
+      if (ref.current && !ref.current.contains(e.target)) {
+        const popup = document.getElementById('playground-select-chip-popup');
+        if (popup && popup.contains(e.target)) return;
+        setOpen(false);
+      }
     };
     document.addEventListener('mousedown', handler);
     return () => document.removeEventListener('mousedown', handler);
   }, []);
+
+  useLayoutEffect(() => {
+    if (!open || !btnRef.current) return;
+    const r = btnRef.current.getBoundingClientRect();
+    setPos({ left: r.left, bottom: window.innerHeight - r.top + 8 });
+  }, [open]);
 
   const list = (options || []).map((m) =>
     typeof m === 'string' ? { label: m, value: m } : m,
@@ -60,40 +74,67 @@ const SelectChip = ({
   return (
     <div className='relative' ref={ref}>
       <button
+        ref={btnRef}
         onClick={() => setOpen((o) => !o)}
-        className='inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-xs text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-subtle transition-colors max-w-[180px]'
+        className='inline-flex items-center gap-1.5 h-9 px-3 rounded-xl text-[13px] font-medium text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-subtle transition-colors max-w-[180px]'
       >
-        {Icon && <Icon size={13} className='flex-shrink-0' />}
-        <span className='truncate'>
-          {current?.label || value || placeholder}
-        </span>
-        <ChevronDown size={12} className='text-ui-text-3 flex-shrink-0' />
+        <span className='truncate'>{current?.label || placeholder}</span>
+        <ChevronDownIcon
+          size={13}
+          className={`text-ui-text-3 transition-transform flex-shrink-0 ${open ? 'rotate-180' : ''}`}
+        />
       </button>
-      {open && (
-        <div className='absolute left-0 bottom-full mb-2 w-56 max-h-72 overflow-y-auto bg-ui-bg-elevated border border-ui-border rounded-xl shadow-lg py-1 z-30 animate-dropdown'>
-          {list.length === 0 ? (
-            <div className='px-4 py-5 text-center text-xs text-ui-text-3'>
-              {emptyText}
-            </div>
-          ) : (
-            list.map((m) => (
-              <button
-                key={m.value}
-                onClick={() => {
-                  onChange(m.value);
-                  setOpen(false);
-                }}
-                className={`flex w-full px-3 py-1.5 text-xs transition-colors text-left ${
-                  value === m.value
-                    ? 'bg-ui-bg-subtle text-ui-text font-semibold'
-                    : 'text-ui-text-2 hover:bg-ui-bg-subtle hover:text-ui-text'
-                }`}
-              >
-                {m.label}
-              </button>
-            ))
-          )}
-        </div>
+
+      {open && createPortal(
+        <div
+          id='playground-select-chip-popup'
+          className='fixed w-56 bg-ui-bg-elevated border border-ui-border rounded-2xl shadow-xl overflow-hidden z-[200] animate-dropdown'
+          style={{ left: pos.left, bottom: pos.bottom }}
+        >
+          <div className='px-2 py-2 flex flex-col gap-0.5 max-h-72 overflow-y-auto'>
+            {list.length === 0 ? (
+              <div className='px-3 py-4 text-center text-xs text-ui-text-3'>
+                {emptyText}
+              </div>
+            ) : (
+              list.map((m) => {
+                const selected = value === m.value;
+                return (
+                  <button
+                    key={m.value}
+                    onClick={() => {
+                      onChange(m.value);
+                      setOpen(false);
+                    }}
+                    className={`flex items-center justify-between w-full px-3 py-2.5 rounded-xl text-sm transition-colors ${
+                      selected
+                        ? 'bg-ui-bg-subtle text-ui-text font-medium'
+                        : 'text-ui-text hover:bg-ui-bg-subtle'
+                    }`}
+                  >
+                    <span className='truncate'>{m.label}</span>
+                    {selected && (
+                      <svg
+                        width='14'
+                        height='14'
+                        viewBox='0 0 14 14'
+                        fill='none'
+                        stroke='currentColor'
+                        strokeWidth='2'
+                        strokeLinecap='round'
+                        strokeLinejoin='round'
+                        className='flex-shrink-0'
+                      >
+                        <path d='M2 7l3.5 3.5 6.5-7' />
+                      </svg>
+                    )}
+                  </button>
+                );
+              })
+            )}
+          </div>
+        </div>,
+        document.body,
       )}
     </div>
   );
@@ -142,6 +183,35 @@ const AssistantActionBtn = ({ onClick, title, children }) => (
   </button>
 );
 
+const TOPIC_POOL = [
+  '帮我写一段 Python 网络爬虫的示例代码',
+  '用 30 秒 pitch 一家做向量数据库的初创公司',
+  '推荐 5 部值得二刷的科幻电影',
+  '用通俗的语言解释 Transformer 模型',
+  '给我一份学习 Rust 的两周计划',
+  '如何用 React 实现一个虚拟列表？',
+  '解释 OAuth 2.0 授权码流程',
+  '总结《人类简史》的核心论点',
+  '整理我去东京 5 天的行程草稿',
+  '对比 PostgreSQL 与 MySQL 的差异',
+  '用 Go 实现一个 LRU 缓存',
+  '讲讲快排算法的最坏情况',
+  '帮我写一份会议纪要的模板',
+  '把这段话翻译成简洁的英文：……',
+  '写一首关于深夜调试代码的现代诗',
+  '设计一份番茄工作法每日计划',
+];
+
+const sampleTopics = (n) => {
+  const arr = [...TOPIC_POOL];
+  const out = [];
+  while (out.length < n && arr.length) {
+    const idx = Math.floor(Math.random() * arr.length);
+    out.push(arr.splice(idx, 1)[0]);
+  }
+  return out;
+};
+
 const AssistantMessage = ({ msg, onRetry, t }) => {
   const text = getTextContent(msg);
   const isError = msg.status === 'error';
@@ -189,7 +259,7 @@ const AssistantMessage = ({ msg, onRetry, t }) => {
 
 const Playground = () => {
   const { t } = useTranslation();
-  usePageTitle(t('操练场'));
+  usePageTitle(t('对话'));
   const [userState] = useContext(UserContext);
   const [searchParams] = useSearchParams();
   const scrollRef = useRef(null);
@@ -382,9 +452,25 @@ const Playground = () => {
 
   const canSend = (!!draft.trim() || pendingImages.length > 0) && !!inputs.model;
 
+  const [topics] = useState(() => sampleTopics(4));
+
+  const handlePickTopic = (text) => {
+    setDraft(text);
+    requestAnimationFrame(() => {
+      const el = inputRef.current;
+      if (!el) return;
+      el.focus();
+      el.style.height = 'auto';
+      el.style.height = `${Math.min(el.scrollHeight, 260)}px`;
+    });
+  };
+
   return (
-    // 顶部留出 16(64px) 的导航栏空间，整个区块独占视口剩余高度
-    <div className='fixed left-0 right-0 top-16 bottom-0 flex flex-col bg-ui-bg'>
+    // 撑满 PageLayout 的 Content 区（已扣除 header 与 sidebar），不再用 fixed 以免缩窗时盖住导航
+    <div
+      className='absolute inset-0 flex flex-col'
+      style={{ backgroundColor: 'var(--page-bg)' }}
+    >
       {/* Messages */}
       <div ref={scrollRef} className='flex-1 overflow-y-auto'>
         {message.length === 0 ? (
@@ -410,14 +496,26 @@ const Playground = () => {
                     </>
                   )}
                 </h2>
-                <p className='text-ui-text-2 text-sm md:text-base'>
+                <p className='text-ui-text-2 text-sm md:text-base mb-8'>
                   今天想聊点什么？
                 </p>
+                <div className='w-full max-w-2xl grid grid-cols-1 sm:grid-cols-2 gap-3'>
+                  {topics.map((text) => (
+                    <button
+                      key={text}
+                      onClick={() => handlePickTopic(text)}
+                      className='text-left px-4 py-3 rounded-2xl border border-ui-border hover:bg-ui-bg-subtle text-[14px] leading-relaxed text-ui-text transition-colors'
+                      style={{ backgroundColor: 'var(--page-bg)' }}
+                    >
+                      {text}
+                    </button>
+                  ))}
+                </div>
               </div>
             );
           })()
         ) : (
-          <div key={`chat-${chatVersion}`} className='max-w-3xl mx-auto py-6 px-2 space-y-5'>
+          <div key={`chat-${chatVersion}`} className='max-w-3xl mx-auto pt-10 pb-6 px-2 space-y-5'>
             {message.map((msg, idx) => {
               const isUser = msg.role === MESSAGE_ROLES.USER;
               // loading dot 持续到真正有文字 / 失败 / 正式 complete 之前
@@ -465,16 +563,16 @@ const Playground = () => {
       {/* Input area: single integrated card */}
       <div className='shrink-0 px-3 md:px-4 pb-4 pt-2'>
         <div className='max-w-3xl mx-auto'>
-          <div className='bg-ui-bg-elevated border border-ui-border rounded-2xl shadow-sm focus-within:border-ui-text-3 transition-colors'>
+          <div className='bg-ui-bg-elevated border border-ui-border rounded-[28px] shadow-sm overflow-hidden focus-within:border-ui-text-3 transition-colors'>
             {/* Pending image previews */}
             {pendingImages.length > 0 && (
-              <div className='flex flex-wrap gap-2 px-3 pt-3'>
+              <div className='flex flex-wrap gap-2 px-4 pt-4'>
                 {pendingImages.map((url, i) => (
                   <div key={i} className='relative group'>
                     <img
                       src={url}
                       alt=''
-                      className='w-16 h-16 rounded-lg border border-ui-border object-cover'
+                      className='w-16 h-16 rounded-xl border border-ui-border object-cover'
                     />
                     <button
                       type='button'
@@ -489,41 +587,22 @@ const Playground = () => {
               </div>
             )}
 
-            {/* Filters row - above input on mobile */}
-            <div className='flex items-center gap-2 px-3 pt-3 pb-2 border-b border-ui-border/50'>
-              <SelectChip
-                options={groups}
-                value={inputs.group}
-                onChange={(v) => handleInputChange('group', v)}
-                placeholder='分组'
-                emptyText='暂无可用分组'
-              />
-              <SelectChip
-                options={models}
-                value={inputs.model}
-                onChange={(v) => handleInputChange('model', v)}
-                placeholder='选择模型'
-                emptyText='暂无可用模型'
-              />
-            </div>
-
             <textarea
               ref={inputRef}
               value={draft}
               onChange={(e) => setDraft(e.target.value)}
               onKeyDown={handleKeyDown}
               onPaste={handlePaste}
-              rows={2}
-              placeholder='发消息给模型，Enter 发送 / Shift + Enter 换行'
-              className='block w-full resize-none bg-transparent border-0 outline-none focus:ring-0 px-4 pt-3.5 pb-1 text-sm text-ui-text placeholder:text-ui-text-3'
-              style={{ minHeight: '60px', maxHeight: '200px' }}
+              rows={1}
+              placeholder={t('发消息给模型，Enter 发送 / Shift + Enter 换行')}
+              className='block w-full resize-none bg-transparent border-0 outline-none focus:ring-0 px-5 pt-4 pb-1 text-[15px] leading-relaxed text-ui-text placeholder:text-ui-text-3'
+              style={{ minHeight: '92px', maxHeight: '260px' }}
               onInput={(e) => {
                 e.target.style.height = 'auto';
-                e.target.style.height = `${Math.min(e.target.scrollHeight, 200)}px`;
+                e.target.style.height = `${Math.min(e.target.scrollHeight, 260)}px`;
               }}
             />
 
-            {/* Hidden file input */}
             <input
               ref={fileInputRef}
               type='file'
@@ -536,53 +615,67 @@ const Playground = () => {
               }}
             />
 
-            {/* Toolbar row */}
-            <div className='flex items-center justify-between gap-2 px-2 pb-2'>
+            {/* Bottom toolbar */}
+            <div className='flex items-center justify-between gap-2 px-3 pb-3'>
               <div className='flex items-center gap-1'>
                 <button
                   type='button'
                   onClick={() => fileInputRef.current?.click()}
                   title={t('上传图片')}
                   aria-label={t('上传图片')}
-                  className='inline-flex items-center justify-center w-8 h-8 rounded-md text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-subtle transition-colors'
+                  className='inline-flex items-center justify-center w-9 h-9 rounded-xl text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-subtle transition-colors'
                 >
-                  <ImagePlus size={15} />
+                  <ImagePlus size={16} />
                 </button>
+                <SelectChip
+                  options={groups}
+                  value={inputs.group}
+                  onChange={(v) => handleInputChange('group', v)}
+                  placeholder={t('分组')}
+                  emptyText={t('暂无可用分组')}
+                />
+                <SelectChip
+                  options={models}
+                  value={inputs.model}
+                  onChange={(v) => handleInputChange('model', v)}
+                  placeholder={t('选择模型')}
+                  emptyText={t('暂无可用模型')}
+                />
               </div>
-              <div className='flex items-center gap-1 flex-shrink-0'>
+              <div className='flex items-center gap-1.5 flex-shrink-0'>
                 {message.length > 0 && (
                   <button
                     onClick={handleClear}
-                    title='新对话'
+                    title={t('新对话')}
                     aria-label='clear'
-                    className='inline-flex items-center justify-center w-8 h-8 rounded-lg text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-subtle transition-colors'
+                    className='inline-flex items-center justify-center w-9 h-9 rounded-xl text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-subtle transition-colors'
                   >
-                    <Trash2 size={14} />
+                    <Trash2 size={15} />
                   </button>
                 )}
                 {isGenerating ? (
                   <button
                     onClick={onStopGenerator}
                     aria-label='stop'
-                    className='inline-flex items-center justify-center w-8 h-8 rounded-lg bg-ui-bg-subtle text-ui-text hover:bg-ui-border transition-colors'
+                    className='inline-flex items-center justify-center w-10 h-10 rounded-xl bg-ui-bg-subtle text-ui-text hover:bg-ui-border transition-colors'
                   >
-                    <Square size={13} fill='currentColor' />
+                    <Square size={14} fill='currentColor' />
                   </button>
                 ) : (
                   <button
                     onClick={handleSend}
                     disabled={!canSend}
                     aria-label='send'
-                    className='inline-flex items-center justify-center w-8 h-8 rounded-lg bg-ui-accent text-ui-accent-fg hover:bg-ui-accent-hover disabled:opacity-30 disabled:hover:bg-ui-accent transition-colors'
+                    className='inline-flex items-center justify-center w-10 h-10 rounded-xl bg-ui-accent text-ui-accent-fg hover:bg-ui-accent-hover disabled:opacity-30 disabled:hover:bg-ui-accent transition-all duration-150 active:scale-95'
                   >
-                    <Send size={13} />
+                    <Send size={15} />
                   </button>
                 )}
               </div>
             </div>
           </div>
           <p className='mt-2 text-center text-[11px] text-ui-text-3'>
-            模型可能产生不准确的信息，请核实重要内容
+            {t('模型可能产生不准确的信息，请核实重要内容')}
           </p>
         </div>
       </div>

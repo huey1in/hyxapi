@@ -163,8 +163,9 @@ const Dashboard = () => {
 
   return (
     <div className='min-h-full px-4 pt-8 pb-6 md:px-6 md:pt-10 md:pb-8'>
-      {/* Header */}
-      <div className='flex items-center justify-between mb-6'>
+      <div className='max-w-[960px] mx-auto'>
+        {/* Header */}
+        <div className='flex items-center justify-between mb-6'>
         <h1
           className='text-2xl font-semibold text-ui-text'
           style={{ fontFamily: "'Space Grotesk', sans-serif", letterSpacing: '-0.02em' }}
@@ -206,7 +207,10 @@ const Dashboard = () => {
       <SectionLabel>{t('用量')}</SectionLabel>
       <div className='grid grid-cols-1 lg:grid-cols-2 gap-3 md:gap-4 mb-8'>
         {/* 账户 */}
-        <div className='relative bg-ui-bg-elevated border border-ui-border rounded-2xl p-5'>
+        <div
+          className='relative border border-ui-border rounded-2xl p-5'
+          style={{ backgroundColor: 'var(--page-bg)' }}
+        >
           <div className='flex items-center justify-between mb-1'>
             <div className='flex items-center gap-2 text-[13px] text-ui-text-2'>
               <Wallet size={16} className='text-ui-text-3' />
@@ -233,7 +237,10 @@ const Dashboard = () => {
         </div>
 
         {/* 当前周期 */}
-        <div className='bg-ui-bg-elevated border border-ui-border rounded-2xl p-5'>
+        <div
+          className='border border-ui-border rounded-2xl p-5'
+          style={{ backgroundColor: 'var(--page-bg)' }}
+        >
           <div className='flex items-center gap-2 text-[13px] text-ui-text-2 mb-1'>
             <TrendingUp size={16} className='text-ui-text-3' />
             <span>{t('当前周期消耗')}</span>
@@ -259,57 +266,54 @@ const Dashboard = () => {
         </div>
       </div>
 
-      {/* 图表区 + 信息区 */}
-      <div className='grid grid-cols-1 lg:grid-cols-5 gap-4 md:gap-6 mb-8'>
-        {/* 左：图表 tab 切换 */}
-        <div className='lg:col-span-3'>
-          <div className='flex items-center justify-between mb-3'>
-            <span className='text-[11px] font-semibold uppercase tracking-widest text-ui-text-3'>
-              {t('数据分析')}
-            </span>
-            <div className='flex items-center gap-0.5'>
-              {chartTabs.map((tb) => (
-                <button
-                  key={tb.key}
-                  onClick={() => setChartTab(tb.key)}
-                  className={`px-2.5 py-1 text-[11px] rounded-md transition-colors whitespace-nowrap ${
-                    chartTab === tb.key
-                      ? 'bg-ui-bg-subtle text-ui-text font-medium'
-                      : 'text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-subtle'
-                  }`}
-                >
-                  {tb.label}
-                </button>
-              ))}
-            </div>
-          </div>
-          <div className='bg-ui-bg-elevated border border-ui-border rounded-2xl p-5 min-h-[280px] flex flex-col'>
-            <div className='flex-1'>{renderChartContent()}</div>
+      {/* 图表区 — 独占一行 */}
+      <div className='mb-8'>
+        <div className='flex items-center justify-between mb-3'>
+          <span className='text-[11px] font-semibold uppercase tracking-widest text-ui-text-3'>
+            {t('数据分析')}
+          </span>
+          <div className='flex items-center gap-0.5'>
+            {chartTabs.map((tb) => (
+              <button
+                key={tb.key}
+                onClick={() => setChartTab(tb.key)}
+                className={`px-2.5 py-1 text-[11px] rounded-md transition-colors whitespace-nowrap ${
+                  chartTab === tb.key
+                    ? 'bg-ui-bg-subtle text-ui-text font-medium'
+                    : 'text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-subtle'
+                }`}
+              >
+                {tb.label}
+              </button>
+            ))}
           </div>
         </div>
+        <div
+          className='border border-ui-border rounded-2xl p-5'
+          style={{ backgroundColor: 'var(--page-bg)' }}
+        >
+          {renderChartContent()}
+        </div>
+      </div>
 
-        {/* 右：InfoCard tab（API / 公告 / FAQ / Uptime） */}
-        <div className='lg:col-span-2 flex flex-col'>
-          <div className='text-[11px] font-semibold uppercase tracking-widest text-ui-text-3 mb-3'>
-            {t('信息')}
-          </div>
-          <div className='flex-1 min-h-[280px]'>
-            <InfoCard
-              apiInfoEnabled={dashboardData.apiInfoEnabled}
-              announcementsEnabled={dashboardData.announcementsEnabled}
-              faqEnabled={dashboardData.faqEnabled}
-              uptimeEnabled={dashboardData.uptimeEnabled}
-              apiInfoData={apiInfoData}
-              announcementData={announcementData}
-              faqData={faqData}
-              uptimeData={dashboardData.uptimeData}
-              uptimeLoading={dashboardData.uptimeLoading}
-              activeUptimeTab={dashboardData.activeUptimeTab}
-              setActiveUptimeTab={dashboardData.setActiveUptimeTab}
-              t={t}
-            />
-          </div>
-        </div>
+      {/* 信息区 — 独占一行 */}
+      <div className='mb-8'>
+        <InfoCard
+          apiInfoEnabled={dashboardData.apiInfoEnabled}
+          announcementsEnabled={dashboardData.announcementsEnabled}
+          faqEnabled={dashboardData.faqEnabled}
+          uptimeEnabled={dashboardData.uptimeEnabled}
+          apiInfoData={apiInfoData}
+          announcementData={announcementData}
+          faqData={faqData}
+          uptimeData={dashboardData.uptimeData}
+          uptimeLoading={dashboardData.uptimeLoading}
+          loading={loading}
+          activeUptimeTab={dashboardData.activeUptimeTab}
+          setActiveUptimeTab={dashboardData.setActiveUptimeTab}
+          t={t}
+        />
+      </div>
       </div>
     </div>
   );

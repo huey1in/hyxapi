@@ -1,9 +1,11 @@
 /*
  * Search modal — uses native datetime-local inputs to drop semi-ui Form/DatePicker.
  */
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { X } from 'lucide-react';
+import ChevronDownIcon from '../../layout/headerbar/icons/ChevronDownIcon';
+import SquircleBox from '../../common/ui/SquircleBox';
 
 const toLocalDateTime = (v) => {
   if (!v) return '';
@@ -11,6 +13,71 @@ const toLocalDateTime = (v) => {
   if (isNaN(d.getTime())) return '';
   const pad = (n) => String(n).padStart(2, '0');
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+};
+
+const Dropdown = ({ value, options = [], onChange, placeholder }) => {
+  const [open, setOpen] = useState(false);
+  const ref = useRef(null);
+
+  useEffect(() => {
+    const handler = (e) => {
+      if (ref.current && !ref.current.contains(e.target)) setOpen(false);
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, []);
+
+  const current = options.find((opt) => opt.value === value);
+
+  return (
+    <div className='relative' ref={ref}>
+      <button
+        type='button'
+        onClick={() => setOpen((o) => !o)}
+        className='w-full flex items-center justify-between gap-2 px-3 py-2 text-sm bg-transparent border border-ui-border rounded-xl text-ui-text hover:border-ui-text-3 transition-colors'
+      >
+        <span className={current ? '' : 'text-ui-text-3'}>
+          {current ? current.label : (placeholder || '')}
+        </span>
+        <ChevronDownIcon
+          size={14}
+          className={`text-ui-text-3 transition-transform ${open ? 'rotate-180' : ''}`}
+        />
+      </button>
+
+      {open && (
+        <div className='absolute left-0 right-0 mt-2 bg-ui-bg-elevated border border-ui-border rounded-2xl shadow-xl overflow-hidden z-50 animate-dropdown'>
+          <div className='px-2 py-2 flex flex-col gap-0.5 max-h-64 overflow-y-auto'>
+            {options.map((opt) => {
+              const selected = opt.value === value;
+              return (
+                <button
+                  key={opt.value}
+                  type='button'
+                  onClick={() => {
+                    onChange(opt.value);
+                    setOpen(false);
+                  }}
+                  className={`flex items-center justify-between w-full px-3 py-2.5 rounded-xl text-sm transition-colors ${
+                    selected
+                      ? 'bg-ui-bg-subtle text-ui-text font-medium'
+                      : 'text-ui-text hover:bg-ui-bg-subtle'
+                  }`}
+                >
+                  <span>{opt.label}</span>
+                  {selected && (
+                    <svg width='14' height='14' viewBox='0 0 14 14' fill='none' stroke='currentColor' strokeWidth='2' strokeLinecap='round' strokeLinejoin='round'>
+                      <path d='M2 7l3.5 3.5 6.5-7' />
+                    </svg>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
+    </div>
+  );
 };
 
 const SearchModal = ({
@@ -25,6 +92,8 @@ const SearchModal = ({
   handleInputChange,
   t,
 }) => {
+  const downOnMaskRef = useRef(false);
+
   useEffect(() => {
     if (!searchModalVisible) return;
     const onKey = (e) => e.key === 'Escape' && handleCloseModal();
@@ -41,7 +110,8 @@ const SearchModal = ({
   if (typeof document === 'undefined') return null;
 
   const inputClass =
-    'w-full px-3 py-2 text-sm bg-ui-bg border border-ui-border rounded-lg text-ui-text outline-none focus:border-ui-text-3 transition-colors';
+    'w-full px-3 py-2 text-sm border border-ui-border rounded-xl text-ui-text outline-none focus:border-ui-text-3 transition-colors';
+  const transparentBg = { backgroundColor: 'transparent', colorScheme: 'light' };
 
   const onChange = (key) => (e) => handleInputChange(e.target.value, key);
 
@@ -49,15 +119,23 @@ const SearchModal = ({
     <div
       className='fixed inset-0 z-[100] flex items-center justify-center p-4'
       style={{ background: 'rgba(0,0,0,0.5)' }}
-      onClick={handleCloseModal}
+      onMouseDown={(e) => {
+        downOnMaskRef.current = e.target === e.currentTarget;
+      }}
+      onMouseUp={(e) => {
+        if (downOnMaskRef.current && e.target === e.currentTarget) {
+          handleCloseModal();
+        }
+        downOnMaskRef.current = false;
+      }}
     >
-      <div
-        className={`bg-ui-bg-elevated border border-ui-border rounded-2xl shadow-2xl flex flex-col overflow-hidden w-full ${
-          isMobile ? 'max-w-none' : 'max-w-md'
-        }`}
-        onClick={(e) => e.stopPropagation()}
+      <SquircleBox
+        radius={40}
+        smoothing={0.9}
+        className={`w-full ${isMobile ? 'max-w-none' : 'max-w-md'} shadow-2xl`}
       >
-        <div className='flex items-center justify-between px-5 py-3.5 border-b border-ui-border'>
+        <div onMouseDown={(e) => e.stopPropagation()}>
+        <div className='flex items-center justify-between px-5 py-3.5'>
           <span className='text-sm font-semibold text-ui-text'>
             {t('搜索条件')}
           </span>
@@ -70,65 +148,65 @@ const SearchModal = ({
           </button>
         </div>
 
-        <div className='p-5 space-y-4'>
-          <div>
-            <label className='block text-xs font-medium text-ui-text-2 mb-1.5'>
-              {t('起始时间')}
-            </label>
-            <input
-              type='datetime-local'
-              value={toLocalDateTime(inputs.start_timestamp)}
-              onChange={onChange('start_timestamp')}
-              className={inputClass}
-            />
-          </div>
-
-          <div>
-            <label className='block text-xs font-medium text-ui-text-2 mb-1.5'>
-              {t('结束时间')}
-            </label>
-            <input
-              type='datetime-local'
-              value={toLocalDateTime(inputs.end_timestamp)}
-              onChange={onChange('end_timestamp')}
-              className={inputClass}
-            />
-          </div>
-
-          <div>
-            <label className='block text-xs font-medium text-ui-text-2 mb-1.5'>
-              {t('时间粒度')}
-            </label>
-            <select
-              value={dataExportDefaultTime || ''}
-              onChange={onChange('data_export_default_time')}
-              className={inputClass}
-            >
-              {(timeOptions || []).map((opt) => (
-                <option key={opt.value} value={opt.value}>
-                  {opt.label}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {isAdminUser && (
+        <div className='px-5 py-5'>
+          <div className='space-y-4 max-w-[340px] mx-auto'>
             <div>
               <label className='block text-xs font-medium text-ui-text-2 mb-1.5'>
-                {t('用户名称')}
+                {t('起始时间')}
               </label>
               <input
-                type='text'
-                value={inputs.username || ''}
-                onChange={onChange('username')}
-                placeholder={t('可选值')}
-                className={`${inputClass} placeholder:text-ui-text-3`}
+                type='datetime-local'
+                value={toLocalDateTime(inputs.start_timestamp)}
+                onChange={onChange('start_timestamp')}
+                className={inputClass}
+                style={transparentBg}
               />
             </div>
-          )}
+
+            <div>
+              <label className='block text-xs font-medium text-ui-text-2 mb-1.5'>
+                {t('结束时间')}
+              </label>
+              <input
+                type='datetime-local'
+                value={toLocalDateTime(inputs.end_timestamp)}
+                onChange={onChange('end_timestamp')}
+                className={inputClass}
+                style={transparentBg}
+              />
+            </div>
+
+            <div>
+              <label className='block text-xs font-medium text-ui-text-2 mb-1.5'>
+                {t('时间粒度')}
+              </label>
+              <Dropdown
+                value={dataExportDefaultTime || ''}
+                options={timeOptions || []}
+                onChange={(v) => handleInputChange(v, 'data_export_default_time')}
+                placeholder={t('请选择')}
+              />
+            </div>
+
+            {isAdminUser && (
+              <div>
+                <label className='block text-xs font-medium text-ui-text-2 mb-1.5'>
+                  {t('用户名称')}
+                </label>
+                <input
+                  type='text'
+                  value={inputs.username || ''}
+                  onChange={onChange('username')}
+                  placeholder={t('可选值')}
+                  className={`${inputClass} placeholder:text-ui-text-3`}
+                  style={transparentBg}
+                />
+              </div>
+            )}
+          </div>
         </div>
 
-        <div className='flex justify-end gap-2 px-5 py-3 border-t border-ui-border'>
+        <div className='flex justify-end gap-2 px-5 py-3'>
           <button
             onClick={handleCloseModal}
             className='px-4 py-1.5 text-sm font-medium rounded-lg border border-ui-border text-ui-text hover:bg-ui-bg-subtle transition-colors'
@@ -142,7 +220,8 @@ const SearchModal = ({
             {t('确定')}
           </button>
         </div>
-      </div>
+        </div>
+      </SquircleBox>
     </div>,
     document.body,
   );

@@ -39,7 +39,7 @@ import {
 
 // ========== 时间相关工具函数 ==========
 export const getDefaultTime = () => {
-  return localStorage.getItem(STORAGE_KEYS.DATA_EXPORT_DEFAULT_TIME) || 'hour';
+  return localStorage.getItem(STORAGE_KEYS.DATA_EXPORT_DEFAULT_TIME) || 'day';
 };
 
 export const getTimeInterval = (timeType, isSeconds = false) => {
@@ -57,6 +57,8 @@ export const getInitialTimestamp = () => {
       return timestamp2string(now - 86400);
     case 'week':
       return timestamp2string(now - 86400 * 30);
+    case 'day':
+      return timestamp2string(now - 86400 * 7);
     default:
       return timestamp2string(now - 86400 * 7);
   }
