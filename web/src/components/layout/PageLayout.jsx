@@ -101,6 +101,8 @@ const PageLayout = () => {
   const isConsoleRoute = location.pathname.startsWith('/console');
   const showSider = isConsoleRoute;
   const headerOffset = isConsoleRoute ? '64px' : 'var(--header-height)';
+  // align sidebar + main with the centred 1420px header container
+  const consoleGutter = 'max(0px, calc((100vw - 1420px) / 2))';
 
   useEffect(() => {
     if (isMobile && drawerOpen && collapsed) {
@@ -176,6 +178,7 @@ const PageLayout = () => {
         display: 'flex',
         flexDirection: 'column',
         overflow: isMobile ? 'visible' : 'hidden',
+        backgroundColor: 'var(--page-bg)',
       }}
     >
       <Header
@@ -226,7 +229,7 @@ const PageLayout = () => {
               className='app-sider'
               style={{
                 position: 'fixed',
-                left: 0,
+                left: isMobile ? 0 : consoleGutter,
                 top: headerOffset,
                 zIndex: 99,
                 border: 'none',
@@ -249,8 +252,9 @@ const PageLayout = () => {
             marginLeft: isMobile
               ? '0'
               : isConsoleRoute
-                ? 'var(--sidebar-current-width)'
+                ? `calc(${consoleGutter} + var(--sidebar-current-width))`
                 : '0',
+            marginRight: isMobile || !isConsoleRoute ? '0' : consoleGutter,
             flex: '1 1 auto',
             display: 'flex',
             flexDirection: 'column',

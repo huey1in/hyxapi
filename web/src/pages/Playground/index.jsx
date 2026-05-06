@@ -76,7 +76,7 @@ const SelectChip = ({
       <button
         ref={btnRef}
         onClick={() => setOpen((o) => !o)}
-        className='inline-flex items-center gap-1.5 h-9 px-3 rounded-xl text-[13px] font-medium text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-subtle transition-colors max-w-[180px]'
+        className='inline-flex items-center gap-1.5 h-9 px-3 rounded-xl text-[13px] font-medium text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-subtle transition-colors max-w-[150px] min-w-0'
       >
         <span className='truncate'>{current?.label || placeholder}</span>
         <ChevronDownIcon
@@ -472,7 +472,7 @@ const Playground = () => {
       style={{ backgroundColor: 'var(--page-bg)' }}
     >
       {/* Messages */}
-      <div ref={scrollRef} className='flex-1 overflow-y-auto'>
+      <div ref={scrollRef} className='flex-1 overflow-y-auto scrollbar-hide'>
         {message.length === 0 ? (
           (() => {
             const username = userState?.user?.username || '';
@@ -616,14 +616,14 @@ const Playground = () => {
             />
 
             {/* Bottom toolbar */}
-            <div className='flex items-center justify-between gap-2 px-3 pb-3'>
-              <div className='flex items-center gap-1'>
+            <div className='flex items-center justify-between gap-2 px-3 pb-3 min-w-0'>
+              <div className='flex items-center gap-1 min-w-0 flex-1 overflow-hidden'>
                 <button
                   type='button'
                   onClick={() => fileInputRef.current?.click()}
                   title={t('上传图片')}
                   aria-label={t('上传图片')}
-                  className='inline-flex items-center justify-center w-9 h-9 rounded-xl text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-subtle transition-colors'
+                  className='inline-flex items-center justify-center w-9 h-9 rounded-xl text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-subtle transition-colors flex-shrink-0'
                 >
                   <ImagePlus size={16} />
                 </button>

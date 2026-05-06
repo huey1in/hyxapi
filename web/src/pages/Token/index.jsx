@@ -681,7 +681,7 @@ const Tokens = () => {
 
   return (
     <div
-      className='min-h-[calc(100vh-4rem)] mt-16 px-4 py-6 md:px-6 md:py-8'
+      className='min-h-[calc(100vh-4rem)] px-4 py-6 md:px-6 md:py-8'
       style={{ backgroundColor: 'var(--page-bg)' }}
     >
       <div className='max-w-[960px] mx-auto'>

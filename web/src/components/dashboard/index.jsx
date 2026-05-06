@@ -167,7 +167,7 @@ const Dashboard = () => {
         {/* Header */}
         <div className='flex items-center justify-between mb-6'>
         <h1
-          className='text-2xl font-semibold text-ui-text'
+          className='text-2xl md:text-3xl font-medium text-ui-text'
           style={{ fontFamily: "'Space Grotesk', sans-serif", letterSpacing: '-0.02em' }}
         >
           {t('概览')}
@@ -268,16 +268,16 @@ const Dashboard = () => {
 
       {/* 图表区 — 独占一行 */}
       <div className='mb-8'>
-        <div className='flex items-center justify-between mb-3'>
-          <span className='text-[11px] font-semibold uppercase tracking-widest text-ui-text-3'>
+        <div className='flex items-center justify-between mb-3 gap-3'>
+          <span className='text-[11px] font-semibold uppercase tracking-widest text-ui-text-3 flex-shrink-0'>
             {t('数据分析')}
           </span>
-          <div className='flex items-center gap-0.5'>
+          <div className='flex items-center gap-0.5 overflow-x-auto scrollbar-hide -mx-1 px-1'>
             {chartTabs.map((tb) => (
               <button
                 key={tb.key}
                 onClick={() => setChartTab(tb.key)}
-                className={`px-2.5 py-1 text-[11px] rounded-md transition-colors whitespace-nowrap ${
+                className={`px-2.5 py-1 text-[11px] rounded-md transition-colors whitespace-nowrap flex-shrink-0 ${
                   chartTab === tb.key
                     ? 'bg-ui-bg-subtle text-ui-text font-medium'
                     : 'text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-subtle'

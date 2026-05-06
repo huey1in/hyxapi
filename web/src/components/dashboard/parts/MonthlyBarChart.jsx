@@ -5,7 +5,7 @@ import React, { useMemo, useState } from 'react';
 import { renderQuota } from '../../../helpers';
 
 const PLOT_HEIGHT = 240;
-const Y_AXIS_WIDTH = 32;
+const Y_AXIS_WIDTH = 40;
 const Y_TICKS = 6; // 7 labels (top..bottom)
 
 const MonthlyBarChart = ({ data = [], loading, t, valueLabel = 'quota' }) => {
@@ -49,7 +49,7 @@ const MonthlyBarChart = ({ data = [], loading, t, valueLabel = 'quota' }) => {
         {/* Y 轴刻度 */}
         <div
           className='flex flex-col justify-between text-[11px] text-ui-text-3 tabular-nums text-right'
-          style={{ width: Y_AXIS_WIDTH, paddingRight: 6 }}
+          style={{ width: Y_AXIS_WIDTH, paddingRight: 10 }}
         >
           {tickValues.map((v, i) => (
             <div key={i} style={{ lineHeight: 1 }}>
@@ -91,7 +91,7 @@ const MonthlyBarChart = ({ data = [], loading, t, valueLabel = 'quota' }) => {
                   <div
                     className='absolute z-10 px-2 py-1 rounded-md bg-ui-text text-ui-bg text-[11px] font-medium tabular-nums whitespace-nowrap shadow-md pointer-events-none'
                     style={{
-                      bottom: 'calc(100% - 4px)',
+                      bottom: `calc(${pct}% + 8px)`,
                       left: '50%',
                       transform: 'translateX(-50%)',
                     }}
@@ -110,13 +110,13 @@ const MonthlyBarChart = ({ data = [], loading, t, valueLabel = 'quota' }) => {
       <div className='flex' style={{ marginTop: 8 }}>
         <div style={{ width: Y_AXIS_WIDTH }} />
         <div
-          className='flex-1 flex gap-1.5'
+          className='flex-1 flex gap-1.5 min-w-0'
           style={{ paddingInline: 4 }}
         >
           {data.map((d, i) => (
             <div
               key={i}
-              className='flex-1 text-center text-[11px] text-ui-text-3 tabular-nums truncate'
+              className='flex-1 min-w-0 text-center text-[11px] text-ui-text-3 tabular-nums truncate'
             >
               {d.time}
             </div>

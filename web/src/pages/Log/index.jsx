@@ -273,12 +273,11 @@ const LogsView = () => {
     ...(isAdminUser ? [t('用户'), t('渠道')] : []),
     t('消耗'),
     t('用时'),
-    '',
   ];
 
   return (
     <div
-      className='min-h-[calc(100vh-4rem)] mt-16 px-4 py-6 md:px-6 md:py-8'
+      className='min-h-[calc(100vh-4rem)] px-4 py-6 md:px-6 md:py-8'
       style={{ backgroundColor: 'var(--page-bg)' }}
     >
       <div className='max-w-[1080px] mx-auto'>
@@ -453,7 +452,14 @@ const LogsView = () => {
                     const expandable = !!(log.content || parsed || log.request_id);
                     return (
                       <React.Fragment key={log.id || i}>
-                        <tr className='border-b border-ui-divider last:border-b-0 hover:bg-ui-bg-subtle/70 transition-colors'>
+                        <tr
+                          onClick={() => expandable && setExpandedRow(isOpen ? null : log.id)}
+                          className={`border-b border-ui-divider last:border-b-0 transition-colors ${
+                            expandable
+                              ? 'cursor-pointer hover:bg-ui-bg-subtle/70'
+                              : 'hover:bg-ui-bg-subtle/50'
+                          }`}
+                        >
                           <td className='px-4 py-3 text-ui-text text-[13px] tabular-nums whitespace-nowrap'>
                             {timestamp2string(log.created_at)}
                           </td>
@@ -495,17 +501,6 @@ const LogsView = () => {
                           </td>
                           <td className='px-4 py-3 text-ui-text-2 text-[13px] tabular-nums whitespace-nowrap'>
                             {formatDuration(log.use_time)}
-                          </td>
-                          <td className='px-4 py-3 w-8'>
-                            {expandable && (
-                              <button
-                                onClick={() => setExpandedRow(isOpen ? null : log.id)}
-                                className='p-1 rounded text-ui-text-3 hover:text-ui-text hover:bg-ui-bg-subtle transition-colors'
-                                title={t('详情')}
-                              >
-                                {isOpen ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
-                              </button>
-                            )}
                           </td>
                         </tr>
                         {isOpen && expandable && (

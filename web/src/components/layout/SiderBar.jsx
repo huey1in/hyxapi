@@ -105,7 +105,7 @@ const SiderBar = ({ onNavigate = () => {} }) => {
 
   return (
     <div
-      className='h-full flex flex-col border-r border-ui-border relative'
+      className='h-full flex flex-col relative'
       style={{
         width: 'var(--sidebar-current-width)',
         transition: 'width 0.35s cubic-bezier(0.16, 1, 0.3, 1)',
