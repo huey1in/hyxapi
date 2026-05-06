@@ -69,7 +69,7 @@ const PageLayout = () => {
     location.pathname !== '/console/playground';
 
   const isConsoleRoute = location.pathname.startsWith('/console');
-  const showSider = isConsoleRoute && (!isMobile || drawerOpen);
+  const showSider = isConsoleRoute;
 
   useEffect(() => {
     if (isMobile && drawerOpen && collapsed) {
@@ -173,38 +173,62 @@ const PageLayout = () => {
           overflow: isMobile ? 'visible' : 'auto',
           display: 'flex',
           flexDirection: 'column',
+          paddingTop: 'var(--header-height)',
         }}
       >
         {showSider && (
-          <Sider
-            className='app-sider'
-            style={{
-              position: 'fixed',
-              left: 0,
-              top: 'var(--header-height)',
-              zIndex: 99,
-              border: 'none',
-              paddingRight: '0',
-              width: 'var(--sidebar-current-width)',
-            }}
-          >
-            <SiderBar
-              onNavigate={() => {
-                if (isMobile) setDrawerOpen(false);
+          <>
+            {/* 移动端遮罩 */}
+            {isMobile && (
+              <div
+                onClick={() => setDrawerOpen(false)}
+                style={{
+                  position: 'fixed',
+                  inset: 0,
+                  top: 'var(--header-height)',
+                  zIndex: 98,
+                  backgroundColor: 'rgba(0,0,0,0.45)',
+                  backdropFilter: 'blur(3px)',
+                  WebkitBackdropFilter: 'blur(3px)',
+                  opacity: drawerOpen ? 1 : 0,
+                  pointerEvents: drawerOpen ? 'auto' : 'none',
+                  transition: 'opacity 0.3s ease',
+                }}
+              />
+            )}
+            <Sider
+              className='app-sider'
+              style={{
+                position: 'fixed',
+                left: 0,
+                top: 'var(--header-height)',
+                zIndex: 99,
+                border: 'none',
+                paddingRight: '0',
+                width: isMobile ? 'var(--sidebar-width)' : 'var(--sidebar-current-width)',
+                transform: isMobile && !drawerOpen ? 'translateX(-100%)' : 'translateX(0)',
+                transition: 'transform 0.35s cubic-bezier(0.16, 1, 0.3, 1)',
               }}
-            />
-          </Sider>
+            >
+              <SiderBar
+                onNavigate={() => {
+                  if (isMobile) setDrawerOpen(false);
+                }}
+              />
+            </Sider>
+          </>
         )}
         <Layout
           style={{
             marginLeft: isMobile
               ? '0'
-              : showSider
+              : isConsoleRoute
                 ? 'var(--sidebar-current-width)'
                 : '0',
             flex: '1 1 auto',
             display: 'flex',
             flexDirection: 'column',
+            transition: 'margin-left 0.35s cubic-bezier(0.16, 1, 0.3, 1)',
           }}
         >
           <Content
@@ -212,7 +236,7 @@ const PageLayout = () => {
               flex: '1 0 auto',
               overflowY: isMobile ? 'visible' : 'hidden',
               WebkitOverflowScrolling: 'touch',
-              padding: shouldInnerPadding ? (isMobile ? '5px' : '24px') : '0',
+              padding: shouldInnerPadding ? (isMobile ? '5px' : '0 24px 24px') : '0',
               position: 'relative',
               backgroundColor: 'var(--page-bg)',
             }}

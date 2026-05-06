@@ -241,13 +241,15 @@ const HeaderBar = ({ onMobileMenuToggle, drawerOpen }) => {
             navigate={navigate}
             t={t}
           />
-          <button
-            onClick={() => setMobileNavOpen(true)}
-            aria-label='open menu'
-            className='w-[40px] h-[40px] rounded-full bg-black flex items-center justify-center cursor-pointer flex-shrink-0'
-          >
-            <Menu size={18} color='white' />
-          </button>
+          {!isConsoleRoute && (
+            <button
+              onClick={() => setMobileNavOpen(true)}
+              aria-label='open menu'
+              className='w-[40px] h-[40px] rounded-full bg-black flex items-center justify-center cursor-pointer flex-shrink-0'
+            >
+              <Menu size={18} color='white' />
+            </button>
+          )}
         </div>
       </div>
     </header>

@@ -350,7 +350,7 @@ const Home = () => {
       ) : (
         <>
           {/* ─── Hero ─── */}
-          <section className='relative overflow-hidden border-b border-ui-border min-h-[calc(100vh-4rem)] flex items-center'>
+          <section className='relative overflow-hidden border-b border-ui-border flex items-center' style={{ minHeight: 'calc(100vh - var(--header-height))' }}>
             <div
               className='absolute inset-0 -z-10 opacity-40'
               style={{

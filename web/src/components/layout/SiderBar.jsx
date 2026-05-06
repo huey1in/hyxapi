@@ -108,13 +108,21 @@ const SiderBar = ({ onNavigate = () => {} }) => {
       className='h-full flex flex-col border-r border-ui-border relative'
       style={{
         width: 'var(--sidebar-current-width)',
-        transition: 'width 0.2s ease',
+        transition: 'width 0.35s cubic-bezier(0.16, 1, 0.3, 1)',
         backgroundColor: 'var(--page-bg)',
         overflow: 'visible',
       }}
     >
       {/* 内容区独立裁剪，不受 overflow:visible 影响 */}
-      <div className='h-full flex flex-col overflow-hidden w-full'>
+      <div
+        className='h-full flex flex-col overflow-hidden w-full'
+        style={{
+          opacity: collapsed ? 0 : 1,
+          transition: collapsed
+            ? 'opacity 0.12s ease'
+            : 'opacity 0.2s ease 0.15s',
+        }}
+      >
         <SkeletonWrapper
           loading={showSkeleton}
           type='sidebar'

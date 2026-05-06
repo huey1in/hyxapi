@@ -313,7 +313,7 @@ const PricingPage = () => {
   );
 
   return (
-    <div className='min-h-[calc(100vh-4rem)] mt-16 bg-ui-bg'>
+    <div className='min-h-screen bg-ui-bg'>
       {/* Page header */}
       <div className='border-b border-ui-border'>
         <div className='max-w-[1400px] mx-auto px-4 lg:px-6 py-5 flex items-center justify-between gap-3'>
