@@ -18,12 +18,11 @@ For commercial licensing, please contact support@quantumnous.com
 */
 
 import React, { lazy, Suspense, useContext, useMemo } from 'react';
-import { Route, Routes, useLocation, useParams } from 'react-router-dom';
+import { Navigate, Route, Routes, useLocation, useParams } from 'react-router-dom';
 import Loading from './components/common/ui/Loading';
 import { ConfirmHost } from './components/common/ConfirmDialog';
 import User from './pages/User';
 import { AuthRedirect, PrivateRoute, AdminRoute } from './helpers';
-import NotFound from './pages/NotFound';
 import Forbidden from './pages/Forbidden';
 import Setting from './pages/Setting';
 import { StatusContext } from './context/Status';
@@ -50,6 +49,12 @@ const PrivacyPolicy = lazy(() => import('./pages/PrivacyPolicy'));
 function DynamicOAuth2Callback() {
   const { provider } = useParams();
   return <OAuth2Callback type={provider} />;
+}
+
+function NotFoundRedirect() {
+  let isLoggedIn = false;
+  try { isLoggedIn = !!localStorage.getItem('user'); } catch {}
+  return <Navigate to={isLoggedIn ? '/console' : '/'} replace />;
 }
 
 function App() {
@@ -278,7 +283,7 @@ function App() {
             </Suspense>
           }
         />
-        <Route path='*' element={<NotFound />} />
+        <Route path='*' element={<NotFoundRedirect />} />
       </Routes>
     </SetupCheck>
   );

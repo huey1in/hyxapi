@@ -21,9 +21,12 @@ import { normalizeLanguage } from '../../i18n/language';
 // ── atoms ───────────────────────────────────────────────
 
 const Card = ({ title, icon: Icon, action, children, className = '', bodyClass = 'p-5' }) => (
-  <div className={`bg-ui-bg-elevated border border-ui-border rounded-xl ${className}`}>
+  <div
+    className={`border border-ui-border rounded-[28px] ${className}`}
+    style={{ backgroundColor: 'var(--page-bg)' }}
+  >
     {(title || action) && (
-      <div className='flex items-center justify-between gap-3 px-5 py-3.5 border-b border-ui-border'>
+      <div className='flex items-center justify-between gap-3 px-5 py-3.5'>
         {title && (
           <div className='flex items-center gap-2 text-sm font-semibold text-ui-text'>
             {Icon && <Icon size={15} className='text-ui-text-3' />}
@@ -38,7 +41,7 @@ const Card = ({ title, icon: Icon, action, children, className = '', bodyClass =
 );
 
 const inputCls =
-  'w-full px-3 py-2 text-sm bg-ui-bg border border-ui-border rounded-lg text-ui-text placeholder:text-ui-text-3 outline-none focus:border-ui-text-3 transition-colors';
+  'w-full px-3 py-2 text-sm bg-transparent border border-ui-border rounded-xl text-ui-text placeholder:text-ui-text-3 outline-none focus:border-ui-text-3 transition-colors';
 
 const PrimaryBtn = ({ children, ...props }) => (
   <button
@@ -114,10 +117,11 @@ const ModalShell = ({ open, title, onClose, children, footer, max = 'max-w-md' }
       onClick={onClose}
     >
       <div
-        className={`bg-ui-bg-elevated border border-ui-border rounded-2xl shadow-2xl w-full ${max} overflow-hidden`}
+        className={`border border-ui-border rounded-2xl shadow-2xl w-full ${max} overflow-hidden`}
+        style={{ backgroundColor: 'var(--page-bg)' }}
         onClick={(e) => e.stopPropagation()}
       >
-        <div className='flex items-center justify-between px-5 py-3.5 border-b border-ui-border'>
+        <div className='flex items-center justify-between px-5 py-3.5'>
           <span className='text-sm font-semibold text-ui-text'>{title}</span>
           <button onClick={onClose} className='p-1 rounded text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-subtle'>
             <X size={16} />
@@ -125,7 +129,7 @@ const ModalShell = ({ open, title, onClose, children, footer, max = 'max-w-md' }
         </div>
         <div className='p-5'>{children}</div>
         {footer && (
-          <div className='flex justify-end gap-2 px-5 py-3 border-t border-ui-border'>{footer}</div>
+          <div className='flex justify-end gap-2 px-5 py-3'>{footer}</div>
         )}
       </div>
     </div>,
@@ -272,8 +276,11 @@ const PersonalSetting = () => {
   const roleLabel = isRoot() ? t('超级管理员') : isAdmin() ? t('管理员') : t('普通用户');
 
   return (
-    <div className='min-h-[calc(100vh-4rem)] mt-16 px-4 py-5 md:px-6 md:py-6 bg-ui-bg'>
-      <div className='max-w-3xl mx-auto'>
+    <div
+      className='min-h-[calc(100vh-4rem)] px-4 py-6 md:px-6 md:py-8'
+      style={{ backgroundColor: 'var(--page-bg)' }}
+    >
+      <div className='max-w-[960px] mx-auto'>
         {/* Header */}
         <div className='flex items-center justify-between gap-3 mb-5'>
           <h1
@@ -285,11 +292,10 @@ const PersonalSetting = () => {
         </div>
 
         {/* Hero */}
-        <div className='relative overflow-hidden bg-ui-bg-elevated border border-ui-border rounded-2xl p-6 md:p-7 mb-5'>
-          <div
-            className='absolute -z-0 -top-32 -right-32 w-64 h-64 rounded-full opacity-20 blur-3xl pointer-events-none'
-            style={{ background: 'var(--ui-brand)' }}
-          />
+        <div
+          className='relative overflow-hidden border border-ui-border rounded-[28px] p-6 md:p-7 mb-5'
+          style={{ backgroundColor: 'var(--page-bg)' }}
+        >
           <div className='relative z-10 flex flex-col md:flex-row md:items-center gap-5'>
             <div className='flex-1 min-w-0'>
               <div
@@ -343,10 +349,10 @@ const PersonalSetting = () => {
                 {systemToken ? t('重置') : t('生成')}
               </GhostBtn>
             </Row>
-            <Row title={<span className='text-ui-danger'>{t('删除账户')}</span>} desc={t('账户删除后无法恢复，请谨慎操作')}>
-              <DangerBtn onClick={() => setShowDelete(true)}>
+            <Row title={t('删除账户')} desc={t('账户删除后无法恢复，请谨慎操作')}>
+              <GhostBtn onClick={() => setShowDelete(true)}>
                 {t('删除')}
-              </DangerBtn>
+              </GhostBtn>
             </Row>
           </Card>
 
@@ -628,13 +634,10 @@ const DeleteAccountModal = ({ open, onClose, username, onDeleted, t }) => {
       }
     >
       <div className='space-y-3'>
-        <div className='flex items-start gap-3 p-3 rounded-lg border border-ui-danger/30 bg-ui-danger-bg'>
-          <ShieldAlert size={16} className='text-ui-danger flex-shrink-0 mt-0.5' />
-          <div className='text-xs text-ui-text-2'>
-            {t('此操作不可恢复，账户、令牌、日志等数据将被永久删除。')}
-          </div>
-        </div>
-        <Field label={t('请输入你的账户名以确认')} hint={username}>
+        <p className='text-xs text-ui-text-2 leading-relaxed'>
+          {t('此操作不可恢复，账户、令牌、日志等数据将被永久删除。')}
+        </p>
+        <Field label={t('请输入你的账户名以确认')}>
           <input
             type='text'
             value={confirmText}

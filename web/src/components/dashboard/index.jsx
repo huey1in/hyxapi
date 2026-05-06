@@ -7,7 +7,7 @@ BAI-inspired overview dashboard, fully integrated with backend stats.
 import React, { useContext, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { Plus, RefreshCw, Wallet, TrendingUp } from 'lucide-react';
+import { Plus, RefreshCw, Wallet, TrendingUp, Loader2 } from 'lucide-react';
 import { UserContext } from '../../context/User';
 import { StatusContext } from '../../context/Status';
 import { renderQuota, renderNumber, getRelativeTime } from '../../helpers';
@@ -225,14 +225,14 @@ const Dashboard = () => {
             </button>
           </div>
           <div
-            className='mt-2 text-[34px] font-semibold text-ui-text leading-none tabular-nums'
+            className='mt-2 text-[34px] font-semibold text-ui-text leading-none tabular-nums min-h-[34px] flex items-center'
             style={{ fontFamily: "'Space Grotesk', sans-serif", letterSpacing: '-0.02em' }}
           >
-            {loading ? '…' : renderQuota(balance)}
+            {loading ? <Spinner size={22} /> : renderQuota(balance)}
           </div>
           <div className='mt-5 pt-4 border-t border-ui-divider grid grid-cols-2 gap-3'>
-            <SubStat label={t('历史消耗')} value={loading ? '…' : renderQuota(usedTotal)} />
-            <SubStat label={t('累计调用')} value={loading ? '…' : renderNumber(requestCount || 0)} />
+            <SubStat label={t('历史消耗')} value={renderQuota(usedTotal)} loading={loading} />
+            <SubStat label={t('累计调用')} value={renderNumber(requestCount || 0)} loading={loading} />
           </div>
         </div>
 
@@ -246,22 +246,24 @@ const Dashboard = () => {
             <span>{t('当前周期消耗')}</span>
           </div>
           <div
-            className='mt-2 text-[34px] font-semibold text-ui-text leading-none tabular-nums'
+            className='mt-2 text-[34px] font-semibold text-ui-text leading-none tabular-nums min-h-[34px] flex items-center'
             style={{ fontFamily: "'Space Grotesk', sans-serif", letterSpacing: '-0.02em' }}
           >
-            {loading ? '…' : renderQuota(periodQuota)}
+            {loading ? <Spinner size={22} /> : renderQuota(periodQuota)}
           </div>
           <div className='mt-5 pt-4 border-t border-ui-divider grid grid-cols-2 sm:grid-cols-4 gap-3'>
             <SubStat
               label={t('调用次数')}
-              value={loading ? '…' : renderNumber(periodCalls || 0)}
+              value={renderNumber(periodCalls || 0)}
+              loading={loading}
             />
             <SubStat
               label={t('Tokens')}
-              value={loading ? '…' : renderNumber(safeNum(periodTokens))}
+              value={renderNumber(safeNum(periodTokens))}
+              loading={loading}
             />
-            <SubStat label={t('平均 RPM')} value={loading ? '…' : (performanceMetrics?.avgRPM ?? 0)} />
-            <SubStat label={t('平均 TPM')} value={loading ? '…' : (performanceMetrics?.avgTPM ?? 0)} />
+            <SubStat label={t('平均 RPM')} value={performanceMetrics?.avgRPM ?? 0} loading={loading} />
+            <SubStat label={t('平均 TPM')} value={performanceMetrics?.avgTPM ?? 0} loading={loading} />
           </div>
         </div>
       </div>
@@ -325,7 +327,11 @@ const SectionLabel = ({ children }) => (
   </div>
 );
 
-const SubStat = ({ label, value }) => (
+const Spinner = ({ size = 18 }) => (
+  <Loader2 size={size} className='animate-spin text-ui-text-2 align-middle' />
+);
+
+const SubStat = ({ label, value, loading }) => (
   <div className='min-w-0'>
     <div className='text-[11px] uppercase tracking-wider text-ui-text-3 mb-1 truncate'>
       {label}
@@ -334,7 +340,7 @@ const SubStat = ({ label, value }) => (
       className='text-[15px] font-semibold text-ui-text tabular-nums truncate'
       style={{ fontFamily: "'Space Grotesk', sans-serif", letterSpacing: '-0.01em' }}
     >
-      {value}
+      {loading ? <Spinner size={14} /> : value}
     </div>
   </div>
 );

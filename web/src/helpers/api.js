@@ -76,6 +76,21 @@ function patchAPIInstance(instance) {
     inFlightGetRequests.set(key, reqPromise);
     return reqPromise;
   };
+
+  instance.interceptors.response.use(
+    (response) => response,
+    (error) => {
+      const status = error?.response?.status;
+      if (status === 401 || status === 403) {
+        handleUnauthorized(error);
+      }
+      if (error.config && error.config.skipErrorHandler) {
+        return Promise.reject(error);
+      }
+      showError(error);
+      return Promise.reject(error);
+    },
+  );
 }
 
 patchAPIInstance(API);
@@ -94,17 +109,34 @@ export function updateAPI() {
   patchAPIInstance(API);
 }
 
-API.interceptors.response.use(
-  (response) => response,
-  (error) => {
-    // 如果请求配置中显式要求跳过全局错误处理，则不弹出默认错误提示
-    if (error.config && error.config.skipErrorHandler) {
-      return Promise.reject(error);
-    }
-    showError(error);
-    return Promise.reject(error);
-  },
-);
+// Path-prefixes whose 401/403 should NOT trigger a global redirect
+// to /login — these are part of the auth flow itself or always-public.
+const AUTH_BYPASS_RE =
+  /\/api\/(oauth|status|notice|verification|reset_password|user\/(login|register|logout|passkey\/login|password_reset))/;
+
+const handleUnauthorized = (error) => {
+  const url = error?.config?.url || '';
+  if (AUTH_BYPASS_RE.test(url)) return;
+  // Already on login/register/oauth pages — no need to bounce.
+  const path = window.location.pathname;
+  if (
+    path === '/login' ||
+    path === '/register' ||
+    path === '/reset' ||
+    path === '/user/reset' ||
+    path === '/setup' ||
+    path.startsWith('/oauth/')
+  ) {
+    return;
+  }
+  // Clear stale user, then bounce to login with a flag so the form
+  // can show "session expired" messaging.
+  try {
+    localStorage.removeItem('user');
+  } catch {}
+  const next = encodeURIComponent(path + window.location.search);
+  window.location.assign(`/login?expired=1&from=${next}`);
+};
 
 // playground
 
