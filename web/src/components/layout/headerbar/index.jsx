@@ -161,7 +161,7 @@ const HeaderBar = ({ onMobileMenuToggle, drawerOpen }) => {
   }
 
   return (
-    <header className='text-ui-text sticky top-0 z-50 transition-colors duration-300 bg-ui-header-bg backdrop-blur-lg border-b border-ui-border'>
+    <header className='fixed top-0 left-0 right-0 z-50 py-4 md:py-6 px-[16px] md:px-[26px] transition-colors duration-300 bg-transparent md:bg-[#f8f8f6]/80 dark:md:bg-[#1a1a18]/85 md:backdrop-blur-md' style={{ fontFamily: "Season-Sans, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif" }}>
       <NoticeModal
         visible={noticeVisible}
         onClose={handleNoticeClose}
@@ -170,59 +170,84 @@ const HeaderBar = ({ onMobileMenuToggle, drawerOpen }) => {
         unreadKeys={getUnreadKeys()}
       />
 
-      <div className='w-full px-4'>
-        <div className='flex items-center h-16 gap-4'>
-          <div className='flex items-center gap-3 min-w-0'>
-            <MobileMenuButton
-              isConsoleRoute={isConsoleRoute}
-              isMobile={isMobile}
-              drawerOpen={drawerOpen}
-              collapsed={collapsed}
-              onToggle={handleMobileMenuToggle}
-              t={t}
-            />
+      <div className='max-w-[1420px] mx-auto flex items-center justify-between'>
+        <div className='flex items-center gap-4'>
+          <MobileMenuButton
+            isConsoleRoute={isConsoleRoute}
+            isMobile={isMobile}
+            drawerOpen={drawerOpen}
+            collapsed={collapsed}
+            onToggle={handleMobileMenuToggle}
+            t={t}
+          />
 
-            <HeaderLogo
-              isMobile={isMobile}
-              isConsoleRoute={isConsoleRoute}
-              logo={logo}
-              logoLoaded={logoLoaded}
+          <HeaderLogo
+            isMobile={isMobile}
+            isConsoleRoute={isConsoleRoute}
+            logo={logo}
+            logoLoaded={logoLoaded}
+            isLoading={isLoading}
+            systemName={systemName}
+            isSelfUseMode={isSelfUseMode}
+            isDemoSiteMode={isDemoSiteMode}
+            t={t}
+          />
+
+          <div className='hidden lg:flex items-center gap-1'>
+            <Navigation
+              mainNavLinks={mainNavLinks}
+              isMobile={false}
               isLoading={isLoading}
-              systemName={systemName}
-              isSelfUseMode={isSelfUseMode}
-              isDemoSiteMode={isDemoSiteMode}
-              t={t}
-            />
-          </div>
-
-          <div className='ml-auto flex items-center gap-3'>
-            <div className='hidden md:block'>
-              <Navigation
-                mainNavLinks={mainNavLinks}
-                isMobile={isMobile}
-                isLoading={isLoading}
-                userState={userState}
-                pricingRequireAuth={pricingRequireAuth}
-              />
-            </div>
-
-            <ActionButtons
-              isNewYear={isNewYear}
-              unreadCount={unreadCount}
-              onNoticeOpen={handleNoticeOpen}
-              theme={theme}
-              onThemeToggle={handleThemeToggle}
-              currentLang={currentLang}
-              onLanguageChange={handleLanguageChange}
               userState={userState}
-              isLoading={isLoading}
-              isMobile={isMobile}
-              isSelfUseMode={isSelfUseMode}
-              logout={logout}
-              navigate={navigate}
-              t={t}
+              pricingRequireAuth={pricingRequireAuth}
+              variant='flat'
             />
           </div>
+        </div>
+
+        <div className='hidden lg:flex items-center gap-2'>
+          <ActionButtons
+            isNewYear={isNewYear}
+            unreadCount={unreadCount}
+            onNoticeOpen={handleNoticeOpen}
+            theme={theme}
+            onThemeToggle={handleThemeToggle}
+            currentLang={currentLang}
+            onLanguageChange={handleLanguageChange}
+            userState={userState}
+            isLoading={isLoading}
+            isMobile={false}
+            isSelfUseMode={isSelfUseMode}
+            logout={logout}
+            navigate={navigate}
+            t={t}
+          />
+        </div>
+
+        <div className='flex lg:hidden items-center gap-2'>
+          <ActionButtons
+            isNewYear={isNewYear}
+            unreadCount={unreadCount}
+            onNoticeOpen={handleNoticeOpen}
+            theme={theme}
+            onThemeToggle={handleThemeToggle}
+            currentLang={currentLang}
+            onLanguageChange={handleLanguageChange}
+            userState={userState}
+            isLoading={isLoading}
+            isMobile={true}
+            isSelfUseMode={isSelfUseMode}
+            logout={logout}
+            navigate={navigate}
+            t={t}
+          />
+          <button
+            onClick={() => setMobileNavOpen(true)}
+            aria-label='open menu'
+            className='w-[40px] h-[40px] rounded-full bg-black flex items-center justify-center cursor-pointer flex-shrink-0'
+          >
+            <Menu size={18} color='white' />
+          </button>
         </div>
       </div>
     </header>

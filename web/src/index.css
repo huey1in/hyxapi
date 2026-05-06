@@ -1,4 +1,6 @@
 /* ==================== Tailwind CSS 配置 ==================== */
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600&display=swap');
+
 @layer tailwind-base, semi, tailwind-components, tailwind-utils;
 
 @layer tailwind-base {
@@ -18,8 +20,10 @@
   --sidebar-width: 180px;
   --sidebar-width-collapsed: 0px;
   --sidebar-current-width: var(--sidebar-width);
+  --header-height: 76px;
 
   /* ── 自定义设计 token ── */
+  --page-bg:          #f8f8f6;
   --ui-bg:            #ffffff;
   --ui-bg-elevated:   #ffffff;
   --ui-bg-subtle:     #f4f4f5;
@@ -44,6 +48,7 @@
 }
 
 html.dark {
+  --page-bg:          #1a1a18;
   --ui-bg:            #09090b;
   --ui-bg-elevated:   #18181b;
   --ui-bg-subtle:     #27272a;
@@ -91,8 +96,8 @@ body {
 }
 
 .app-sider {
-  height: calc(100vh - 64px);
-  height: calc(100dvh - 64px);
+  height: calc(100vh - var(--header-height));
+  height: calc(100dvh - var(--header-height));
 }
 
 code {

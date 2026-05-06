@@ -181,7 +181,7 @@ const PageLayout = () => {
             style={{
               position: 'fixed',
               left: 0,
-              top: '64px',
+              top: 'var(--header-height)',
               zIndex: 99,
               border: 'none',
               paddingRight: '0',
@@ -214,6 +214,7 @@ const PageLayout = () => {
               WebkitOverflowScrolling: 'touch',
               padding: shouldInnerPadding ? (isMobile ? '5px' : '24px') : '0',
               position: 'relative',
+              backgroundColor: 'var(--page-bg)',
             }}
           >
             <ErrorBoundary>

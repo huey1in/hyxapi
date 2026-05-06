@@ -17,17 +17,14 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 
-import React, { useEffect, useMemo, useState } from 'react';
-import { Link, useLocation, useNavigate } from 'react-router-dom';
+import React, { useEffect, useMemo } from 'react';
+import { Link, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { ChevronLeft } from 'lucide-react';
 import { useSidebarCollapsed } from '../../hooks/common/useSidebarCollapsed';
 import { useSidebar } from '../../hooks/common/useSidebar';
 import { useMinimumLoadingTime } from '../../hooks/common/useMinimumLoadingTime';
 import { isAdmin, isRoot } from '../../helpers';
 import SkeletonWrapper from './components/SkeletonWrapper';
-
-import { Nav, Divider, Button } from '@douyinfe/semi-ui';
 
 const routerMap = {
   home: '/',
@@ -46,364 +43,147 @@ const routerMap = {
 
 const SiderBar = ({ onNavigate = () => {} }) => {
   const { t } = useTranslation();
-  const navigate = useNavigate();
   const [collapsed, toggleCollapsed] = useSidebarCollapsed();
-  const {
-    isModuleVisible,
-    hasSectionVisibleModules,
-    loading: sidebarLoading,
-  } = useSidebar();
-
-  const showSkeleton = useMinimumLoadingTime(sidebarLoading, 200);
-
-  const [selectedKeys, setSelectedKeys] = useState(['home']);
-  const [openedKeys, setOpenedKeys] = useState([]);
+  const { isModuleVisible, hasSectionVisibleModules, loading } = useSidebar();
+  const showSkeleton = useMinimumLoadingTime(loading, 200);
   const location = useLocation();
-  const [routerMapState, setRouterMapState] = useState(routerMap);
 
-  const workspaceItems = useMemo(() => {
-    const items = [
-      {
-        text: t('操练场'),
-        itemKey: 'playground',
-        to: '/playground',
-      },
-      {
-        text: t('数据看板'),
-        itemKey: 'detail',
-        to: '/detail',
-        className:
-          localStorage.getItem('enable_data_export') === 'true'
-            ? ''
-            : 'tableHiddle',
-      },
-      {
-        text: t('令牌管理'),
-        itemKey: 'token',
-        to: '/token',
-      },
-      {
-        text: t('使用日志'),
-        itemKey: 'log',
-        to: '/log',
-      },
-    ];
-
-    // 根据配置过滤项目
-    const filteredItems = items.filter((item) => {
-      const configVisible = isModuleVisible('console', item.itemKey);
-      return configVisible;
-    });
-
-    return filteredItems;
-  }, [
-    localStorage.getItem('enable_data_export'),
-    t,
-    isModuleVisible,
-  ]);
-
-  const financeItems = useMemo(() => {
-    const items = [
-      {
-        text: t('钱包管理'),
-        itemKey: 'topup',
-        to: '/topup',
-      },
-      {
-        text: t('个人设置'),
-        itemKey: 'personal',
-        to: '/personal',
-      },
-    ];
-
-    // 根据配置过滤项目
-    const filteredItems = items.filter((item) => {
-      const configVisible = isModuleVisible('personal', item.itemKey);
-      return configVisible;
-    });
-
-    return filteredItems;
-  }, [t, isModuleVisible]);
-
-  const adminItems = useMemo(() => {
-    const items = [
-      {
-        text: t('渠道管理'),
-        itemKey: 'channel',
-        to: '/channel',
-        className: isAdmin() ? '' : 'tableHiddle',
-      },
-      {
-        text: t('订阅管理'),
-        itemKey: 'subscription',
-        to: '/subscription',
-        className: isAdmin() ? '' : 'tableHiddle',
-      },
-      {
-        text: t('兑换码管理'),
-        itemKey: 'redemption',
-        to: '/redemption',
-        className: isAdmin() ? '' : 'tableHiddle',
-      },
-      {
-        text: t('用户管理'),
-        itemKey: 'user',
-        to: '/user',
-        className: isAdmin() ? '' : 'tableHiddle',
-      },
-      {
-        text: t('系统设置'),
-        itemKey: 'setting',
-        to: '/setting',
-        className: isRoot() ? '' : 'tableHiddle',
-      },
-    ];
-
-    // 根据配置过滤项目
-    const filteredItems = items.filter((item) => {
-      const configVisible = isModuleVisible('admin', item.itemKey);
-      return configVisible;
-    });
-
-    return filteredItems;
-  }, [isAdmin(), isRoot(), t, isModuleVisible]);
-
-  // 根据当前路径设置选中的菜单项
   useEffect(() => {
-    const currentPath = location.pathname;
-    let matchingKey = Object.keys(routerMapState).find(
-      (key) => routerMapState[key] === currentPath,
-    );
-
-    // 如果找到匹配的键，更新选中的键
-    if (matchingKey) {
-      setSelectedKeys([matchingKey]);
-    }
-  }, [location.pathname, routerMapState]);
-
-  // 监控折叠状态变化以更新 body class
-  useEffect(() => {
-    if (collapsed) {
-      document.body.classList.add('sidebar-collapsed');
-    } else {
-      document.body.classList.remove('sidebar-collapsed');
-    }
+    if (collapsed) document.body.classList.add('sidebar-collapsed');
+    else document.body.classList.remove('sidebar-collapsed');
   }, [collapsed]);
 
-  // 选中高亮颜色（统一）
-  const SELECTED_COLOR = 'var(--semi-color-primary)';
+  const activeKey = useMemo(
+    () => Object.keys(routerMap).find((key) => routerMap[key] === location.pathname) ?? null,
+    [location.pathname],
+  );
 
-  // 渲染自定义菜单项
-  const renderNavItem = (item) => {
-    // 跳过隐藏的项目
-    if (item.className === 'tableHiddle') return null;
+  const workspaceItems = useMemo(() => [
+    { itemKey: 'detail', text: t('数据看板') },
+    { itemKey: 'playground', text: t('操练场') },
+    { itemKey: 'token', text: t('令牌管理') },
+    { itemKey: 'log', text: t('使用日志') },
+  ].filter((item) => isModuleVisible('console', item.itemKey)), [t, isModuleVisible]);
 
-    const isSelected = selectedKeys.includes(item.itemKey);
-    const textColor = isSelected ? SELECTED_COLOR : 'inherit';
+  const financeItems = useMemo(() => [
+    { itemKey: 'topup', text: t('钱包管理') },
+    { itemKey: 'personal', text: t('个人设置') },
+  ].filter((item) => isModuleVisible('personal', item.itemKey)), [t, isModuleVisible]);
 
+  const adminItems = useMemo(() => [
+    { itemKey: 'channel', text: t('渠道管理'), hidden: !isAdmin() },
+    { itemKey: 'subscription', text: t('订阅管理'), hidden: !isAdmin() },
+    { itemKey: 'redemption', text: t('兑换码管理'), hidden: !isAdmin() },
+    { itemKey: 'user', text: t('用户管理'), hidden: !isAdmin() },
+    { itemKey: 'setting', text: t('系统设置'), hidden: !isRoot() },
+  ].filter((item) => !item.hidden && isModuleVisible('admin', item.itemKey)), [t, isModuleVisible]);
+
+  const NavItem = ({ itemKey, text }) => {
+    const to = routerMap[itemKey];
+    if (!to) return null;
+    const active = activeKey === itemKey;
     return (
-      <Nav.Item
-        key={item.itemKey}
-        itemKey={item.itemKey}
-        text={
-          <span
-            className='truncate font-medium text-sm'
-            style={{ color: textColor }}
-          >
-            {item.text}
-          </span>
-        }
-        className={item.className}
-      />
+      <Link
+        to={to}
+        onClick={onNavigate}
+        className={`flex items-center mx-2 px-3 py-2 mb-1 rounded-lg text-sm font-medium text-ui-text transition-all duration-150 hover:bg-ui-bg-subtle active:scale-[0.98] ${
+          active ? 'bg-ui-bg-subtle' : ''
+        }`}
+        style={{ fontFamily: "'Plus Jakarta Sans', 'Space Grotesk', sans-serif", letterSpacing: '-0.01em' }}
+      >
+        {text}
+      </Link>
     );
   };
 
-  // 渲染子菜单项
-  const renderSubItem = (item) => {
-    if (item.items && item.items.length > 0) {
-      const isSelected = selectedKeys.includes(item.itemKey);
-      const textColor = isSelected ? SELECTED_COLOR : 'inherit';
-
-      return (
-        <Nav.Sub
-          key={item.itemKey}
-          itemKey={item.itemKey}
-          text={
-            <span
-              className='truncate font-medium text-sm'
-              style={{ color: textColor }}
-            >
-              {item.text}
-            </span>
-          }
-        >
-          {item.items.map((subItem) => {
-            const isSubSelected = selectedKeys.includes(subItem.itemKey);
-            const subTextColor = isSubSelected ? SELECTED_COLOR : 'inherit';
-
-            return (
-              <Nav.Item
-                key={subItem.itemKey}
-                itemKey={subItem.itemKey}
-                text={
-                  <span
-                    className='truncate font-medium text-sm'
-                    style={{ color: subTextColor }}
-                  >
-                    {subItem.text}
-                  </span>
-                }
-              />
-            );
-          })}
-        </Nav.Sub>
-      );
-    } else {
-      return renderNavItem(item);
-    }
-  };
+  const SectionLabel = ({ label }) =>
+    collapsed ? null : (
+      <p className='px-5 pb-1.5 pt-3 text-[11px] font-semibold uppercase tracking-widest text-ui-text-3'>
+        {label}
+      </p>
+    );
 
   return (
     <div
-      className='sidebar-container'
+      className='h-full flex flex-col border-r border-ui-border relative'
       style={{
         width: 'var(--sidebar-current-width)',
-        overflow: 'hidden',
         transition: 'width 0.2s ease',
+        backgroundColor: 'var(--page-bg)',
+        overflow: 'visible',
       }}
     >
-      <SkeletonWrapper
-        loading={showSkeleton}
-        type='sidebar'
-        className=''
-        collapsed={collapsed}
-        showAdmin={isAdmin()}
-      >
-        <Nav
-          className='sidebar-nav'
-          defaultIsCollapsed={collapsed}
-          isCollapsed={collapsed}
-          onCollapseChange={toggleCollapsed}
-          selectedKeys={selectedKeys}
-          itemStyle='sidebar-nav-item'
-          hoverStyle='sidebar-nav-item:hover'
-          selectedStyle='sidebar-nav-item-selected'
-          renderWrapper={({ itemElement, props }) => {
-            const to =
-              routerMapState[props.itemKey] || routerMap[props.itemKey];
-
-            // 如果没有路由，直接返回元素
-            if (!to) return itemElement;
-
-            return (
-              <Link
-                style={{ textDecoration: 'none' }}
-                to={to}
-                onClick={onNavigate}
-              >
-                {itemElement}
-              </Link>
-            );
-          }}
-          onSelect={(key) => {
-            // 如果点击的是已经展开的子菜单的父项，则收起子菜单
-            if (openedKeys.includes(key.itemKey)) {
-              setOpenedKeys(openedKeys.filter((k) => k !== key.itemKey));
-            }
-
-            setSelectedKeys([key.itemKey]);
-
-            // Defensive: also navigate programmatically. If for any reason
-            // the wrapping <Link> didn't fire (e.g. an event listener in
-            // the active page swallowed the click), this ensures the URL
-            // and rendered route still update.
-            const target =
-              routerMapState[key.itemKey] || routerMap[key.itemKey];
-            if (target && location.pathname !== target) {
-              navigate(target);
-            }
-          }}
-          openKeys={openedKeys}
-          onOpenChange={(data) => {
-            setOpenedKeys(data.openKeys);
-          }}
-        >
-          {/* 控制台区域 */}
-          {hasSectionVisibleModules('console') && (
-            <>
-              <Divider className='sidebar-divider' />
-              <div>
-                {!collapsed && (
-                  <div className='sidebar-group-label'>{t('控制台')}</div>
-                )}
-                {workspaceItems.map((item) => renderNavItem(item))}
-              </div>
-            </>
-          )}
-
-          {/* 个人中心区域 */}
-          {hasSectionVisibleModules('personal') && (
-            <>
-              <Divider className='sidebar-divider' />
-              <div>
-                {!collapsed && (
-                  <div className='sidebar-group-label'>{t('个人中心')}</div>
-                )}
-                {financeItems.map((item) => renderNavItem(item))}
-              </div>
-            </>
-          )}
-
-          {/* 管理员区域 - 只在管理员时显示且配置允许时显示 */}
-          {isAdmin() && hasSectionVisibleModules('admin') && (
-            <>
-              <Divider className='sidebar-divider' />
-              <div>
-                {!collapsed && (
-                  <div className='sidebar-group-label'>{t('管理员')}</div>
-                )}
-                {adminItems.map((item) => renderNavItem(item))}
-              </div>
-            </>
-          )}
-        </Nav>
-      </SkeletonWrapper>
-
-      {/* 底部折叠按钮 */}
-      <div className='sidebar-collapse-button'>
+      {/* 内容区独立裁剪，不受 overflow:visible 影响 */}
+      <div className='h-full flex flex-col overflow-hidden w-full'>
         <SkeletonWrapper
           loading={showSkeleton}
-          type='button'
-          width={collapsed ? 36 : 156}
-          height={24}
-          className='w-full'
+          type='sidebar'
+          collapsed={collapsed}
+          showAdmin={isAdmin()}
         >
-          <Button
-            theme='outline'
-            type='tertiary'
-            size='small'
-            icon={
-              <ChevronLeft
-                size={16}
-                strokeWidth={2.5}
-                color='var(--semi-color-text-2)'
-                style={{
-                  transform: collapsed ? 'rotate(180deg)' : 'rotate(0deg)',
-                }}
-              />
-            }
-            onClick={toggleCollapsed}
-            icononly={collapsed}
-            style={
-              collapsed
-                ? { width: 36, height: 24, padding: 0 }
-                : { padding: '4px 12px', width: '100%' }
-            }
-          >
-            {!collapsed ? t('收起侧边栏') : null}
-          </Button>
+          <nav className='flex-1 overflow-y-auto py-3 scrollbar-hide'>
+            {hasSectionVisibleModules('console') && (
+              <div>
+                <SectionLabel label={t('控制台')} />
+                {workspaceItems.map((item) => <NavItem key={item.itemKey} {...item} />)}
+              </div>
+            )}
+
+            {hasSectionVisibleModules('console') && hasSectionVisibleModules('personal') && (
+              <div className='my-2 mx-4 border-t border-ui-border opacity-40' />
+            )}
+
+            {hasSectionVisibleModules('personal') && (
+              <div>
+                <SectionLabel label={t('个人中心')} />
+                {financeItems.map((item) => <NavItem key={item.itemKey} {...item} />)}
+              </div>
+            )}
+
+            {isAdmin() && hasSectionVisibleModules('admin') && (
+              <>
+                <div className='my-2 mx-4 border-t border-ui-border opacity-40' />
+                <div>
+                  <SectionLabel label={t('管理员')} />
+                  {adminItems.map((item) => <NavItem key={item.itemKey} {...item} />)}
+                </div>
+              </>
+            )}
+          </nav>
         </SkeletonWrapper>
       </div>
+
+      {/* 桌面端右侧凸出 tab */}
+      <button
+        onClick={toggleCollapsed}
+        aria-label={collapsed ? '展开侧边栏' : '收起侧边栏'}
+        className='hidden md:flex absolute top-1/2 -translate-y-1/2 items-center justify-center cursor-pointer transition-all duration-200'
+        style={{
+          right: '-14px',
+          width: '14px',
+          height: '44px',
+          backgroundColor: 'var(--page-bg)',
+          border: '1px solid var(--ui-border)',
+          borderLeft: 'none',
+          borderRadius: '0 8px 8px 0',
+          zIndex: 10,
+        }}
+      >
+        <svg
+          width='8'
+          height='8'
+          viewBox='0 0 8 12'
+          fill='none'
+          stroke='currentColor'
+          strokeWidth='1.75'
+          strokeLinecap='round'
+          strokeLinejoin='round'
+          className='text-ui-text-3'
+          style={{ transform: collapsed ? 'rotate(0deg)' : 'rotate(180deg)', transition: 'transform 0.2s ease' }}
+        >
+          <path d='M2 1l4 5-4 5' />
+        </svg>
+      </button>
     </div>
   );
 };

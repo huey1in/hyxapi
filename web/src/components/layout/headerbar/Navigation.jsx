@@ -61,8 +61,8 @@ const Navigation = ({
 
   const linkClass = (isActive) => {
     if (variant === 'flat') {
-      return `group flex items-center gap-1 text-[15px] font-medium text-black transition-colors py-2 px-1 whitespace-nowrap cursor-pointer font-['Season-Sans','-apple-system','BlinkMacSystemFont','Segoe_UI','Roboto','Oxygen','Ubuntu','Cantarell','Fira_Sans','Droid_Sans','Helvetica_Neue',sans-serif] ${
-        isActive ? 'underline underline-offset-[5px] decoration-black' : ''
+      return `group flex items-center gap-1 text-[15px] font-medium transition-colors py-2 px-1 whitespace-nowrap cursor-pointer ${
+        isActive ? 'text-ui-text' : 'text-ui-text-2 hover:text-ui-text'
       }`;
     }
     return `relative z-10 ${isMobile ? 'px-2.5 py-1' : 'px-3.5 py-1.5'} text-xs font-medium rounded-full transition-colors whitespace-nowrap ${
@@ -70,9 +70,13 @@ const Navigation = ({
     }`;
   };
 
-  const renderLabel = (text) => {
+  const renderLabel = (text, isActive) => {
     if (variant === 'flat') {
-      return <span className='underline-offset-[5px] decoration-black group-hover:underline'>{text}</span>;
+      return (
+        <span className={`underline-offset-[5px] decoration-current group-hover:underline ${isActive ? 'underline' : ''}`}>
+          {text}
+        </span>
+      );
     }
     return text;
   };
@@ -91,7 +95,7 @@ const Navigation = ({
             rel='noopener noreferrer'
             className={linkClass(isActive)}
           >
-            {renderLabel(link.text)}
+            {renderLabel(link.text, isActive)}
           </a>
         );
       }
@@ -110,7 +114,7 @@ const Navigation = ({
             onClick={openLoginModal}
             className={`${linkClass(isActive)} bg-transparent border-0`}
           >
-            {renderLabel(link.text)}
+            {renderLabel(link.text, isActive)}
           </button>
         );
       }
@@ -122,7 +126,7 @@ const Navigation = ({
           to={targetPath}
           className={linkClass(isActive)}
         >
-          {renderLabel(link.text)}
+          {renderLabel(link.text, isActive)}
         </Link>
       );
     });
