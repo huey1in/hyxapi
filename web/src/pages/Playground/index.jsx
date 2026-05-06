@@ -595,8 +595,8 @@ const Playground = () => {
               onPaste={handlePaste}
               rows={1}
               placeholder={t('发消息给模型，Enter 发送 / Shift + Enter 换行')}
-              className='block w-full resize-none bg-transparent border-0 outline-none focus:ring-0 px-5 pt-4 pb-1 text-[15px] leading-relaxed text-ui-text placeholder:text-ui-text-3'
-              style={{ minHeight: '92px', maxHeight: '260px' }}
+              className='block w-full resize-none border-0 outline-none focus:ring-0 px-5 pt-4 pb-1 text-[15px] leading-relaxed text-ui-text placeholder:text-ui-text-3'
+              style={{ minHeight: '92px', maxHeight: '260px', backgroundColor: 'transparent' }}
               onInput={(e) => {
                 e.target.style.height = 'auto';
                 e.target.style.height = `${Math.min(e.target.scrollHeight, 260)}px`;

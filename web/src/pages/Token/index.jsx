@@ -685,6 +685,14 @@ const Tokens = () => {
       style={{ backgroundColor: 'var(--page-bg)' }}
     >
       <div className='max-w-[960px] mx-auto'>
+        {/* Title */}
+        <h1
+          className='text-2xl md:text-3xl font-medium text-ui-text mb-6'
+          style={{ fontFamily: "'Space Grotesk', sans-serif", letterSpacing: '-0.02em' }}
+        >
+          {t('令牌')}
+        </h1>
+
         {/* API keys */}
         <section className='mb-10'>
           <div className='flex items-center justify-between gap-3 mb-3 pb-3 border-b border-ui-border'>
