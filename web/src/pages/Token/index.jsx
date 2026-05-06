@@ -1,15 +1,15 @@
 /*
 Copyright (C) 2025 QuantumNous
 
-Tokens management — minimal modern table with full feature parity.
+API page (formerly 令牌管理) — quick-start guide, key list, code samples.
 */
 
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { createPortal } from 'react-dom';
 import {
-  Plus, Search, RefreshCw, Eye, EyeOff, Copy, Pencil, Trash2,
-  X, Infinity as InfinityIcon, ChevronDown, Check,
+  Plus, Pencil, Trash2, Copy, Check, X,
+  Eye, EyeOff, Infinity as InfinityIcon, ChevronDown, RefreshCw,
 } from 'lucide-react';
 import {
   API,
@@ -19,31 +19,18 @@ import {
   renderQuota,
   timestamp2string,
 } from '../../helpers';
+import { quotaToDisplayAmount, displayAmountToQuota } from '../../helpers/quota';
 import { usePageTitle } from '../../hooks/common/usePageTitle';
-import Pagination from '../../components/common/table/Pagination';
 import ConfirmDialog from '../../components/common/ConfirmDialog';
+import SquircleBox from '../../components/common/ui/SquircleBox';
+import hljs from 'highlight.js/lib/core';
+import bashLang from 'highlight.js/lib/languages/bash';
+import pythonLang from 'highlight.js/lib/languages/python';
+import javascriptLang from 'highlight.js/lib/languages/javascript';
 
-const PAGE_SIZE = 20;
-
-// ── status badge ────────────────────────────────────────
-const StatusBadge = ({ status, t }) => {
-  const map = {
-    1: { label: t('启用'), color: '#22c55e', bg: 'rgba(34,197,94,0.12)' },
-    2: { label: t('禁用'), color: '#ef4444', bg: 'rgba(239,68,68,0.12)' },
-    3: { label: t('过期'), color: '#f59e0b', bg: 'rgba(245,158,11,0.12)' },
-    4: { label: t('耗尽'), color: '#a3a3a3', bg: 'rgba(163,163,163,0.18)' },
-  };
-  const info = map[status] || { label: t('未知'), color: '#a3a3a3', bg: 'rgba(163,163,163,0.18)' };
-  return (
-    <span
-      className='inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium'
-      style={{ background: info.bg, color: info.color }}
-    >
-      <span className='w-1.5 h-1.5 rounded-full' style={{ background: info.color }} />
-      {info.label}
-    </span>
-  );
-};
+hljs.registerLanguage('bash', bashLang);
+hljs.registerLanguage('python', pythonLang);
+hljs.registerLanguage('javascript', javascriptLang);
 
 // ── time helpers ────────────────────────────────────────
 const toLocalInput = (ts) => {
@@ -57,58 +44,17 @@ const toUnix = (val) => {
   if (!val) return 0;
   return Math.floor(new Date(val).getTime() / 1000);
 };
-
-// ── multi-select chip ───────────────────────────────────
-const MultiSelect = ({ options, value = [], onChange, placeholder, emptyText }) => {
-  const [open, setOpen] = useState(false);
-  const ref = useRef(null);
-  useEffect(() => {
-    const handler = (e) => { if (ref.current && !ref.current.contains(e.target)) setOpen(false); };
-    document.addEventListener('mousedown', handler);
-    return () => document.removeEventListener('mousedown', handler);
-  }, []);
-  const toggle = (v) => {
-    const next = value.includes(v) ? value.filter((x) => x !== v) : [...value, v];
-    onChange(next);
-  };
-  return (
-    <div className='relative' ref={ref}>
-      <button
-        type='button'
-        onClick={() => setOpen((o) => !o)}
-        className='w-full flex items-center justify-between gap-2 px-3 py-2 text-sm bg-ui-bg border border-ui-border rounded-lg text-ui-text hover:bg-ui-bg-subtle transition-colors'
-      >
-        <span className='truncate text-left flex-1'>
-          {value.length === 0
-            ? <span className='text-ui-text-3'>{placeholder}</span>
-            : `${value.length} 项`}
-        </span>
-        <ChevronDown size={14} className='text-ui-text-3 flex-shrink-0' />
-      </button>
-      {open && (
-        <div className='absolute left-0 right-0 mt-1 max-h-60 overflow-y-auto bg-ui-bg-elevated border border-ui-border rounded-lg shadow-lg py-1 z-30'>
-          {options.length === 0 ? (
-            <div className='px-3 py-2 text-xs text-ui-text-3'>{emptyText}</div>
-          ) : (
-            options.map((o) => (
-              <button
-                type='button'
-                key={o}
-                onClick={() => toggle(o)}
-                className='flex items-center justify-between w-full px-3 py-1.5 text-xs text-ui-text hover:bg-ui-bg-subtle text-left'
-              >
-                <span className='truncate'>{o}</span>
-                {value.includes(o) && <Check size={13} className='text-ui-brand flex-shrink-0' />}
-              </button>
-            ))
-          )}
-        </div>
-      )}
-    </div>
-  );
+const fmtDateTime = (ts) => {
+  if (!ts || ts === -1) return null;
+  const d = new Date(ts * 1000);
+  if (isNaN(d.getTime())) return null;
+  const pad = (n) => String(n).padStart(2, '0');
+  return `${d.getFullYear()}/${pad(d.getMonth() + 1)}/${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
 };
 
-// ── single-select dropdown ──────────────────────────────
+// ── select primitives reused inside the form modal ──────
+// Custom dropdown styled like the language selector — rotated chevron, rounded popup,
+// selected state with a check icon.
 const Select = ({ options, value, onChange, placeholder }) => {
   const [open, setOpen] = useState(false);
   const ref = useRef(null);
@@ -117,80 +63,56 @@ const Select = ({ options, value, onChange, placeholder }) => {
     document.addEventListener('mousedown', handler);
     return () => document.removeEventListener('mousedown', handler);
   }, []);
-  const list = options.map((o) => typeof o === 'string' ? { label: o, value: o } : o);
+  const list = options.map((o) => (typeof o === 'string' ? { label: o, value: o } : o));
   const current = list.find((o) => o.value === value);
   return (
     <div className='relative' ref={ref}>
       <button
         type='button'
         onClick={() => setOpen((o) => !o)}
-        className='w-full flex items-center justify-between gap-2 px-3 py-2 text-sm bg-ui-bg border border-ui-border rounded-lg text-ui-text hover:bg-ui-bg-subtle transition-colors'
+        className='w-full flex items-center justify-between gap-2 px-3 py-2 text-sm bg-transparent border border-ui-border rounded-xl text-ui-text hover:border-ui-text-3 transition-colors'
       >
         <span className='truncate text-left flex-1'>
           {current?.label || <span className='text-ui-text-3'>{placeholder}</span>}
         </span>
-        <ChevronDown size={14} className='text-ui-text-3 flex-shrink-0' />
+        <ChevronDown
+          size={14}
+          className={`text-ui-text-3 transition-transform flex-shrink-0 ${open ? 'rotate-180' : ''}`}
+        />
       </button>
       {open && (
-        <div className='absolute left-0 right-0 mt-1 max-h-60 overflow-y-auto bg-ui-bg-elevated border border-ui-border rounded-lg shadow-lg py-1 z-30'>
-          {list.map((o) => (
-            <button
-              type='button'
-              key={o.value}
-              onClick={() => { onChange(o.value); setOpen(false); }}
-              className={`flex w-full px-3 py-1.5 text-xs text-left transition-colors ${
-                value === o.value ? 'bg-ui-bg-subtle text-ui-text font-semibold' : 'text-ui-text hover:bg-ui-bg-subtle'
-              }`}
-            >
-              {o.label}
-            </button>
-          ))}
+        <div className='absolute left-0 right-0 mt-2 bg-ui-bg-elevated border border-ui-border rounded-2xl shadow-xl overflow-hidden z-50 animate-dropdown'>
+          <div className='px-2 py-2 flex flex-col gap-0.5 max-h-64 overflow-y-auto'>
+            {list.map((o) => {
+              const selected = value === o.value;
+              return (
+                <button
+                  type='button'
+                  key={o.value}
+                  onClick={() => { onChange(o.value); setOpen(false); }}
+                  className={`flex items-center justify-between w-full px-3 py-2.5 rounded-xl text-sm transition-colors ${
+                    selected
+                      ? 'bg-ui-bg-subtle text-ui-text font-medium'
+                      : 'text-ui-text hover:bg-ui-bg-subtle'
+                  }`}
+                >
+                  <span className='truncate'>{o.label}</span>
+                  {selected && (
+                    <svg width='14' height='14' viewBox='0 0 14 14' fill='none' stroke='currentColor' strokeWidth='2' strokeLinecap='round' strokeLinejoin='round' className='flex-shrink-0'>
+                      <path d='M2 7l3.5 3.5 6.5-7' />
+                    </svg>
+                  )}
+                </button>
+              );
+            })}
+          </div>
         </div>
       )}
     </div>
   );
 };
 
-// ── data hook ───────────────────────────────────────────
-const useTokensList = () => {
-  const [tokens, setTokens] = useState([]);
-  const [total, setTotal] = useState(0);
-  const [page, setPage] = useState(1);
-  const [loading, setLoading] = useState(false);
-  const [keyword, setKeyword] = useState('');
-  const [tokenSearch, setTokenSearch] = useState('');
-
-  const load = async (p = 1, kw = keyword, tk = tokenSearch) => {
-    setLoading(true);
-    try {
-      const url = (kw || tk)
-        ? `/api/token/search?keyword=${encodeURIComponent(kw)}&token=${encodeURIComponent(tk)}&p=${p}&size=${PAGE_SIZE}`
-        : `/api/token/?p=${p}&size=${PAGE_SIZE}`;
-      const { data } = await API.get(url);
-      if (data.success) {
-        setTokens(data.data.items || []);
-        setTotal(data.data.total || 0);
-        setPage(data.data.page || p);
-      } else {
-        showError(data.message);
-      }
-    } catch (e) {
-      showError(e.message);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => { load(1); }, []);
-
-  return {
-    tokens, total, page, loading,
-    keyword, setKeyword, tokenSearch, setTokenSearch,
-    load, setPage,
-  };
-};
-
-// ── form atoms (stable identity, must live at module scope) ──
+// ── token form modal (create/edit) ──────────────────────
 const FormSection = ({ title, children }) => (
   <div>
     <h3 className='text-[11px] uppercase tracking-[0.12em] font-semibold text-ui-text-3 mb-3'>
@@ -199,7 +121,6 @@ const FormSection = ({ title, children }) => (
     <div className='space-y-4'>{children}</div>
   </div>
 );
-
 const FormField = ({ label, hint, children, required }) => (
   <div>
     <div className='flex items-baseline justify-between mb-1.5'>
@@ -212,7 +133,6 @@ const FormField = ({ label, hint, children, required }) => (
     {children}
   </div>
 );
-
 const FormToggle = ({ checked, onChange }) => (
   <span
     role='switch'
@@ -231,52 +151,37 @@ const FormToggle = ({ checked, onChange }) => (
     />
   </span>
 );
-
-const SwitchRow = ({ title, description, checked, onChange, children }) => (
-  <div>
-    <div className='flex items-start justify-between gap-4'>
-      <div className='flex-1 min-w-0'>
-        <div className='text-sm text-ui-text font-medium'>{title}</div>
-        {description && (
-          <div className='text-[11px] text-ui-text-3 mt-0.5'>{description}</div>
-        )}
-      </div>
-      <div className='pt-0.5'>
-        <FormToggle checked={checked} onChange={onChange} />
-      </div>
+const SwitchRow = ({ title, description, checked, onChange }) => (
+  <div className='flex items-start justify-between gap-4'>
+    <div className='flex-1 min-w-0'>
+      <div className='text-sm text-ui-text font-medium'>{title}</div>
+      {description && (
+        <div className='text-[11px] text-ui-text-3 mt-0.5'>{description}</div>
+      )}
     </div>
-    {checked && children && <div className='mt-3'>{children}</div>}
+    <div className='pt-0.5'>
+      <FormToggle checked={checked} onChange={onChange} />
+    </div>
   </div>
 );
 
-// ── edit modal ──────────────────────────────────────────
 const TokenFormModal = ({ open, token, onClose, onSaved, t }) => {
   const isEdit = !!token?.id;
   const [name, setName] = useState('');
-  const [unlimitedQuota, setUnlimitedQuota] = useState(false);
+  const [unlimitedQuota, setUnlimitedQuota] = useState(true);
   const [remainQuota, setRemainQuota] = useState(500000);
   const [expiredTime, setExpiredTime] = useState(-1);
   const [group, setGroup] = useState('');
-  const [modelLimitsEnabled, setModelLimitsEnabled] = useState(false);
-  const [modelLimits, setModelLimits] = useState([]);
-  const [allowIps, setAllowIps] = useState('');
-  const [tokenCount, setTokenCount] = useState(1);
   const [submitting, setSubmitting] = useState(false);
-
   const [groupOptions, setGroupOptions] = useState([]);
-  const [modelOptions, setModelOptions] = useState([]);
 
   useEffect(() => {
     if (!open) return;
     setName(token?.name || '');
-    setUnlimitedQuota(token?.unlimited_quota ?? false);
+    setUnlimitedQuota(token?.unlimited_quota ?? true);
     setRemainQuota(token?.remain_quota ?? 500000);
     setExpiredTime(token?.expired_time ?? -1);
     setGroup(token?.group || '');
-    setModelLimitsEnabled(token?.model_limits_enabled || false);
-    setModelLimits(token?.model_limits ? token.model_limits.split(',').filter(Boolean) : []);
-    setAllowIps(token?.allow_ips || '');
-    setTokenCount(1);
   }, [open, token]);
 
   useEffect(() => {
@@ -289,11 +194,6 @@ const TokenFormModal = ({ open, token, onClose, onSaved, t }) => {
         }));
         setGroupOptions(opts);
         if (!group && opts[0]) setGroup(opts[0].value);
-      }
-    }).catch(() => {});
-    API.get('/api/user/models').then((res) => {
-      if (res.data.success && Array.isArray(res.data.data)) {
-        setModelOptions(res.data.data);
       }
     }).catch(() => {});
   }, [open]);
@@ -320,16 +220,15 @@ const TokenFormModal = ({ open, token, onClose, onSaved, t }) => {
         remain_quota: unlimitedQuota ? 0 : Number(remainQuota) || 0,
         expired_time: Number(expiredTime) || -1,
         group,
-        model_limits_enabled: modelLimitsEnabled,
-        model_limits: modelLimits.join(','),
-        allow_ips: allowIps,
+        model_limits_enabled: false,
+        model_limits: '',
+        allow_ips: '',
       };
       let res;
       if (isEdit) {
         res = await API.put('/api/token/', { ...payload, id: token.id });
       } else {
-        const count = Math.max(1, Math.min(100, Number(tokenCount) || 1));
-        res = await API.post('/api/token/', { ...payload, count });
+        res = await API.post('/api/token/', { ...payload, count: 1 });
       }
       if (res.data.success) {
         showSuccess(isEdit ? t('令牌已更新') : t('令牌已创建'));
@@ -348,46 +247,51 @@ const TokenFormModal = ({ open, token, onClose, onSaved, t }) => {
   if (typeof document === 'undefined') return null;
 
   const inputCls =
-    'w-full px-3 py-2 text-sm bg-ui-bg border border-ui-border rounded-lg text-ui-text outline-none focus:border-ui-text-3 transition-colors';
+    'w-full px-3 py-2 text-sm bg-transparent border border-ui-border rounded-xl text-ui-text outline-none focus:border-ui-text-3 transition-colors';
+  const transparentBg = { backgroundColor: 'transparent', colorScheme: 'light' };
 
   return createPortal(
     <div
       className='fixed inset-0 z-[150] flex items-start md:items-center justify-center p-4 overflow-y-auto'
       style={{ background: 'rgba(0,0,0,0.5)' }}
-      onClick={onClose}
+      onMouseDown={(e) => {
+        // close only when both press and release land on the mask
+        e.currentTarget._down = e.target === e.currentTarget;
+      }}
+      onMouseUp={(e) => {
+        const ok = e.currentTarget._down && e.target === e.currentTarget;
+        e.currentTarget._down = false;
+        if (ok) onClose();
+      }}
     >
-      <div
-        className='bg-ui-bg-elevated border border-ui-border rounded-2xl shadow-2xl w-full max-w-2xl my-8 overflow-hidden flex flex-col max-h-[90vh]'
-        onClick={(e) => e.stopPropagation()}
+      <SquircleBox
+        radius={40}
+        smoothing={0.9}
+        className='w-full max-w-md my-8 shadow-2xl'
       >
-        {/* Header */}
-        <div className='flex items-start justify-between px-7 pt-6 pb-4 border-b border-ui-border'>
-          <div>
-            <h2
-              className='text-xl font-semibold text-ui-text'
-              style={{ fontFamily: "'Space Grotesk', sans-serif", letterSpacing: '-0.015em' }}
+        <div onMouseDown={(e) => e.stopPropagation()}>
+          <div className='flex items-start justify-between px-6 pt-5 pb-4'>
+            <div>
+              <h2
+                className='text-lg font-semibold text-ui-text'
+                style={{ fontFamily: "'Space Grotesk', sans-serif", letterSpacing: '-0.015em' }}
+              >
+                {isEdit ? t('编辑 API key') : t('创建 API key')}
+              </h2>
+              <p className='text-xs text-ui-text-3 mt-1'>
+                {isEdit ? t('修改名称、配额或有效期') : t('为这个 API key 起一个名称')}
+              </p>
+            </div>
+            <button
+              onClick={onClose}
+              className='p-1.5 -mr-1 rounded-lg text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-subtle transition-colors'
             >
-              {isEdit ? t('编辑令牌') : t('新建令牌')}
-            </h2>
-            <p className='text-xs text-ui-text-3 mt-1'>
-              {isEdit
-                ? t('修改此令牌的访问权限和限额配置')
-                : t('创建一个用于访问 API 的密钥令牌')}
-            </p>
+              <X size={16} />
+            </button>
           </div>
-          <button
-            onClick={onClose}
-            className='p-1.5 -mr-1 rounded-lg text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-subtle transition-colors'
-          >
-            <X size={16} />
-          </button>
-        </div>
 
-        {/* Body */}
-        <div className='px-7 py-6 space-y-7 overflow-y-auto'>
-          {/* 基础信息 */}
-          <FormSection title={t('基础信息')}>
-            <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
+          <div className='px-6 pb-2 space-y-6'>
+            <FormSection title={t('基础信息')}>
               <FormField label={t('名称')} required>
                 <input
                   type='text'
@@ -395,452 +299,484 @@ const TokenFormModal = ({ open, token, onClose, onSaved, t }) => {
                   onChange={(e) => setName(e.target.value)}
                   placeholder={t('例如 my-app')}
                   className={`${inputCls} placeholder:text-ui-text-3`}
+                  style={transparentBg}
                   autoFocus
                 />
               </FormField>
-              {!isEdit ? (
-                <FormField label={t('创建数量')} hint={t('最多 100')}>
-                  <input
-                    type='number'
-                    min={1}
-                    max={100}
-                    value={tokenCount}
-                    onChange={(e) => setTokenCount(e.target.value)}
-                    className={inputCls}
-                  />
-                </FormField>
-              ) : (
-                <div />
-              )}
-            </div>
-
-            <FormField label={t('分组')}>
-              <Select
-                options={groupOptions}
-                value={group}
-                onChange={setGroup}
-                placeholder={t('选择分组')}
-              />
-            </FormField>
-          </FormSection>
-
-          {/* 配额与时效 */}
-          <div className='border-t border-ui-divider' />
-          <FormSection title={t('配额与时效')}>
-            <SwitchRow
-              title={t('不限额度')}
-              description={t('开启后令牌可无限制使用，不再扣减额度')}
-              checked={unlimitedQuota}
-              onChange={setUnlimitedQuota}
-            />
-            {!unlimitedQuota && (
-              <FormField label={t('额度')} hint={t('单位 quota')}>
-                <input
-                  type='number'
-                  value={remainQuota}
-                  onChange={(e) => setRemainQuota(e.target.value)}
-                  placeholder='500000'
-                  className={inputCls}
+              <FormField label={t('分组')}>
+                <Select
+                  options={groupOptions}
+                  value={group}
+                  onChange={setGroup}
+                  placeholder={t('选择分组')}
                 />
               </FormField>
-            )}
+            </FormSection>
 
-            <FormField label={t('过期时间')} hint={t('留空或选择「永不」表示长期有效')}>
-              <div className='flex gap-2'>
-                <input
-                  type='datetime-local'
-                  value={toLocalInput(expiredTime)}
-                  onChange={(e) => setExpiredTime(toUnix(e.target.value) || -1)}
-                  className={inputCls}
-                />
-                <button
-                  type='button'
-                  onClick={() => setExpiredTime(-1)}
-                  className={`px-3 py-2 text-xs rounded-lg border whitespace-nowrap transition-colors ${
-                    expiredTime === -1
-                      ? 'border-ui-text-3 bg-ui-bg-subtle text-ui-text font-medium'
-                      : 'border-ui-border text-ui-text-2 hover:bg-ui-bg-subtle'
-                  }`}
-                >
-                  {t('永不')}
-                </button>
-              </div>
-            </FormField>
-          </FormSection>
+            <div className='border-t border-ui-divider' />
 
-          {/* 高级 */}
-          <div className='border-t border-ui-divider' />
-          <FormSection title={t('高级')}>
-            <SwitchRow
-              title={t('模型限制')}
-              description={t('限定该令牌只能调用指定模型')}
-              checked={modelLimitsEnabled}
-              onChange={setModelLimitsEnabled}
+            <FormSection title={t('配额与时效')}>
+              <SwitchRow
+                title={t('不限额度')}
+                description={t('开启后令牌可无限制使用，不再扣减额度')}
+                checked={unlimitedQuota}
+                onChange={setUnlimitedQuota}
+              />
+              {!unlimitedQuota && (
+                <FormField label={t('金额')} hint={t('账户余额单位')}>
+                  <input
+                    type='number'
+                    min={0}
+                    step='any'
+                    value={quotaToDisplayAmount(remainQuota)}
+                    onChange={(e) => setRemainQuota(displayAmountToQuota(e.target.value))}
+                    className={inputCls}
+                    style={transparentBg}
+                  />
+                </FormField>
+              )}
+              <FormField label={t('过期时间')} hint={t('留空或选择「永不」表示长期有效')}>
+                <div className='flex gap-2'>
+                  <input
+                    type='datetime-local'
+                    value={toLocalInput(expiredTime)}
+                    onChange={(e) => setExpiredTime(toUnix(e.target.value) || -1)}
+                    className={inputCls}
+                    style={transparentBg}
+                  />
+                  <button
+                    type='button'
+                    onClick={() => setExpiredTime(-1)}
+                    className={`px-3 py-2 text-xs rounded-xl border whitespace-nowrap transition-colors ${
+                      expiredTime === -1
+                        ? 'border-ui-text-3 bg-ui-bg-subtle text-ui-text font-medium'
+                        : 'border-ui-border text-ui-text-2 hover:bg-ui-bg-subtle'
+                    }`}
+                  >
+                    {t('永不')}
+                  </button>
+                </div>
+              </FormField>
+            </FormSection>
+          </div>
+
+          <div className='flex items-center justify-end gap-2 px-6 py-3.5'>
+            <button
+              onClick={onClose}
+              className='px-4 py-1.5 text-sm font-medium rounded-lg border border-ui-border text-ui-text hover:bg-ui-bg-subtle transition-colors'
             >
-              <MultiSelect
-                options={modelOptions}
-                value={modelLimits}
-                onChange={setModelLimits}
-                placeholder={t('选择允许的模型')}
-                emptyText={t('暂无可用模型')}
-              />
-            </SwitchRow>
-
-            <FormField label={t('IP 白名单')} hint={t('每行一个，支持 CIDR')}>
-              <textarea
-                value={allowIps}
-                onChange={(e) => setAllowIps(e.target.value)}
-                rows={3}
-                placeholder='192.168.1.1&#10;10.0.0.0/24'
-                className={`${inputCls} placeholder:text-ui-text-3 resize-none font-mono text-xs`}
-              />
-            </FormField>
-          </FormSection>
+              {t('取消')}
+            </button>
+            <button
+              onClick={submit}
+              disabled={submitting}
+              className='px-4 py-1.5 text-sm font-semibold rounded-lg bg-ui-accent text-ui-accent-fg hover:bg-ui-accent-hover hover:shadow-md active:scale-95 disabled:opacity-50 disabled:hover:shadow-none disabled:active:scale-100 transition-all'
+            >
+              {submitting ? t('提交中...') : isEdit ? t('保存') : t('创建')}
+            </button>
+          </div>
         </div>
-
-        {/* Footer */}
-        <div className='flex items-center justify-end gap-2 px-7 py-4 border-t border-ui-border bg-ui-bg-subtle/30'>
-          <button
-            onClick={onClose}
-            className='px-4 py-1.5 text-sm font-medium rounded-lg border border-ui-border text-ui-text hover:bg-ui-bg-elevated transition-colors'
-          >
-            {t('取消')}
-          </button>
-          <button
-            onClick={submit}
-            disabled={submitting}
-            className='px-4 py-1.5 text-sm font-semibold rounded-lg bg-ui-accent text-ui-accent-fg hover:bg-ui-accent-hover hover:shadow-md active:scale-95 disabled:opacity-50 disabled:hover:shadow-none disabled:active:scale-100 transition-all'
-          >
-            {submitting ? t('提交中...') : isEdit ? t('保存') : t('创建')}
-          </button>
-        </div>
-      </div>
+      </SquircleBox>
     </div>,
     document.body,
   );
 };
 
-// ── main view ───────────────────────────────────────────
-const TokensView = () => {
-  const { t } = useTranslation();
-  usePageTitle(t('令牌管理'));
-  const list = useTokensList();
-  const [revealed, setRevealed] = useState({});
-  const [keys, setKeys] = useState({});
-  const [editOpen, setEditOpen] = useState(false);
-  const [editing, setEditing] = useState(null);
-  const [confirm, setConfirm] = useState(null); // {ids[], names[]}
-  const [selected, setSelected] = useState(new Set());
+// ── helpers ─────────────────────────────────────────────
+const useTokens = () => {
+  const [tokens, setTokens] = useState([]);
+  const [loading, setLoading] = useState(false);
 
-  const toggleSelect = (id) => {
-    setSelected((s) => {
-      const n = new Set(s);
-      if (n.has(id)) n.delete(id); else n.add(id);
-      return n;
-    });
-  };
-  const toggleSelectAll = () => {
-    setSelected((s) => {
-      if (s.size === list.tokens.length) return new Set();
-      return new Set(list.tokens.map((t) => t.id));
-    });
-  };
-
-  const onSearch = (e) => { e.preventDefault(); list.load(1); };
-
-  const toggleReveal = async (token) => {
-    const id = token.id;
-    if (revealed[id]) { setRevealed((r) => ({ ...r, [id]: false })); return; }
-    if (keys[id]) { setRevealed((r) => ({ ...r, [id]: true })); return; }
+  const load = async () => {
+    setLoading(true);
     try {
-      const { data } = await API.post(`/api/token/${id}/key`);
-      if (data.success && data.data?.key) {
-        setKeys((k) => ({ ...k, [id]: data.data.key }));
-        setRevealed((r) => ({ ...r, [id]: true }));
-      } else {
-        showError(data.message || t('获取密钥失败'));
-      }
-    } catch (e) {
-      showError(e.message);
-    }
-  };
-
-  const copyKey = async (token) => {
-    try {
-      const { data } = await API.post(`/api/token/${token.id}/key`);
-      if (data.success && data.data?.key) {
-        const ok = await copy(`sk-${data.data.key}`);
-        if (ok) showSuccess(t('已复制'));
-      } else {
-        showError(data.message || t('获取密钥失败'));
-      }
-    } catch (e) { showError(e.message); }
-  };
-
-  const removeMany = async () => {
-    if (!confirm) return;
-    try {
-      if (confirm.ids.length > 1) {
-        const { data } = await API.post('/api/token/batch', { ids: confirm.ids });
-        if (!data.success) {
-          showError(data.message);
-          return;
-        }
-      } else {
-        const { data } = await API.delete(`/api/token/${confirm.ids[0]}`);
-        if (!data.success) {
-          showError(data.message);
-          return;
-        }
-      }
-      showSuccess(t('已删除'));
-      setSelected(new Set());
-      list.load(list.page);
+      const { data } = await API.get('/api/token/?p=1&size=100');
+      if (data.success) setTokens(data.data.items || []);
+      else showError(data.message);
     } catch (e) {
       showError(e.message);
     } finally {
-      setConfirm(null);
+      setLoading(false);
     }
   };
 
-  const batchCopy = async () => {
-    if (selected.size === 0) { showError(t('请至少选择一个令牌')); return; }
-    try {
-      let content = '';
-      for (const id of selected) {
-        const tk = list.tokens.find((t) => t.id === id);
-        if (!tk) continue;
-        const { data } = await API.post(`/api/token/${id}/key`);
-        if (data.success && data.data?.key) {
-          content += `${tk.name}\tsk-${data.data.key}\n`;
-        }
-      }
-      if (content) {
-        const ok = await copy(content.trim());
-        if (ok) showSuccess(t('已复制 {{n}} 个令牌').replace('{{n}}', selected.size));
-      }
-    } catch (e) {
-      showError(e.message);
-    }
-  };
+  useEffect(() => { load(); }, []);
 
-  const fmtKey = (token) => {
-    if (!revealed[token.id]) return '••••••••••••';
-    const k = keys[token.id];
-    return k ? `sk-${k}` : '••••••••••••';
-  };
+  return { tokens, loading, reload: load };
+};
 
-  const fmtTs = (ts) => {
-    if (!ts || ts === -1) return null;
-    return timestamp2string(ts);
-  };
+const StepCard = ({ num, title, desc, onClick }) => (
+  <div
+    onClick={onClick}
+    className={`p-4 rounded-2xl border border-ui-border bg-ui-bg-elevated transition-colors ${onClick ? 'cursor-pointer hover:bg-ui-bg-subtle' : ''}`}
+  >
+    <div
+      className='text-[13px] text-ui-text-3 font-medium mb-2 tabular-nums'
+      style={{ fontFamily: "'Space Grotesk', sans-serif" }}
+    >
+      {num}
+    </div>
+    <div className='text-[15px] font-medium text-ui-text mb-1'>{title}</div>
+    <div className='text-xs text-ui-text-3 leading-relaxed'>{desc}</div>
+  </div>
+);
 
-  const cols = [
-    '', t('名称'), t('状态'), t('密钥'), t('已用 / 总额度'),
-    t('分组'), t('最后使用'), t('过期时间'), '',
-  ];
+const KeyRow = ({ token, revealed, keyValue, onToggle, onCopy, onEdit, onDelete, t }) => {
+  const masked = useMemo(() => {
+    const k = keyValue || '';
+    if (!k) return 'sk-••••••••';
+    return `sk-${k.slice(0, 5)}*******${k.slice(-4)}`;
+  }, [keyValue]);
+  const display = revealed && keyValue ? `sk-${keyValue}` : masked;
 
   return (
-    <div className='min-h-[calc(100vh-4rem)] mt-16 px-4 py-5 md:px-6 md:py-6 bg-ui-bg'>
-      {/* Header */}
-      <div className='flex items-center justify-between gap-3 mb-5'>
-        <h1
-          className='text-2xl md:text-3xl font-medium text-ui-text'
-          style={{ fontFamily: "'Space Grotesk', sans-serif", letterSpacing: '-0.02em' }}
-        >
-          {t('令牌管理')}
-        </h1>
-        <button
-          onClick={() => { setEditing(null); setEditOpen(true); }}
-          className='inline-flex items-center gap-1.5 px-3.5 py-1.5 text-sm font-semibold rounded-lg bg-ui-accent text-ui-accent-fg hover:bg-ui-accent-hover transition-colors'
-        >
-          <Plus size={14} />
-          {t('新建令牌')}
-        </button>
-      </div>
-
-      {/* Toolbar */}
-      <div className='flex flex-col md:flex-row md:items-center gap-2 mb-4'>
-        <form onSubmit={onSearch} className='flex flex-1 gap-2'>
-          <div className='relative flex-1 max-w-xs'>
-            <Search size={14} className='absolute left-3 top-1/2 -translate-y-1/2 text-ui-text-3' />
-            <input
-              type='text'
-              value={list.keyword}
-              onChange={(e) => list.setKeyword(e.target.value)}
-              placeholder={t('按名称搜索')}
-              className='w-full pl-9 pr-3 py-2 text-sm bg-ui-bg-elevated border border-ui-border rounded-lg text-ui-text placeholder:text-ui-text-3 outline-none focus:border-ui-text-3'
-            />
-          </div>
-          <div className='relative flex-1 max-w-xs'>
-            <Search size={14} className='absolute left-3 top-1/2 -translate-y-1/2 text-ui-text-3' />
-            <input
-              type='text'
-              value={list.tokenSearch}
-              onChange={(e) => list.setTokenSearch(e.target.value)}
-              placeholder={t('按密钥搜索')}
-              className='w-full pl-9 pr-3 py-2 text-sm bg-ui-bg-elevated border border-ui-border rounded-lg text-ui-text placeholder:text-ui-text-3 outline-none focus:border-ui-text-3'
-            />
-          </div>
-        </form>
-        <div className='flex items-center gap-1 ml-auto'>
-          {selected.size > 0 && (
-            <>
-              <span className='text-xs text-ui-text-2 mr-2'>{t('已选')} {selected.size}</span>
-              <button
-                onClick={batchCopy}
-                className='px-2.5 py-1.5 text-xs font-medium rounded-lg border border-ui-border text-ui-text hover:bg-ui-bg-subtle transition-colors'
-              >
-                {t('批量复制')}
-              </button>
-              <button
-                onClick={() => setConfirm({
-                  ids: Array.from(selected),
-                  names: list.tokens.filter((tk) => selected.has(tk.id)).map((tk) => tk.name),
-                })}
-                className='px-2.5 py-1.5 text-xs font-medium rounded-lg text-ui-danger hover:bg-ui-danger-bg transition-colors'
-              >
-                {t('批量删除')}
-              </button>
-            </>
-          )}
+    <div
+      className='py-4 px-5 border border-ui-border rounded-[28px] flex flex-col md:flex-row md:items-center gap-3 md:gap-6'
+      style={{
+        backgroundColor: 'var(--page-bg)',
+        fontFamily: "'Space Grotesk', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
+      }}
+    >
+      <div className='flex-1 min-w-0'>
+        <div className='flex items-center gap-2 mb-1'>
+          <span className='text-[15px] font-medium text-ui-text truncate'>
+            {token.name || `Token #${token.id}`}
+          </span>
           <button
-            onClick={() => list.load(list.page)}
-            className='inline-flex items-center justify-center w-9 h-9 rounded-lg text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-subtle transition-colors'
-            title={t('刷新')}
+            onClick={onEdit}
+            title={t('编辑')}
+            className='inline-flex items-center justify-center w-6 h-6 rounded-md text-ui-text-3 hover:text-ui-text hover:bg-ui-bg-subtle transition-colors'
           >
-            <RefreshCw size={14} className={list.loading ? 'animate-spin' : ''} />
+            <Pencil size={12} />
+          </button>
+        </div>
+        <div className='flex items-center gap-2'>
+          <code className='text-[13px] font-mono text-ui-text-2 tabular-nums truncate'>
+            {display}
+          </code>
+          <button
+            onClick={onToggle}
+            title={revealed ? t('隐藏密钥') : t('显示密钥')}
+            className='inline-flex items-center justify-center w-6 h-6 rounded-md text-ui-text-3 hover:text-ui-text hover:bg-ui-bg-subtle transition-colors flex-shrink-0'
+          >
+            {revealed ? <EyeOff size={12} /> : <Eye size={12} />}
+          </button>
+          <button
+            onClick={onCopy}
+            title={t('复制')}
+            className='inline-flex items-center justify-center w-6 h-6 rounded-md text-ui-text-3 hover:text-ui-text hover:bg-ui-bg-subtle transition-colors flex-shrink-0'
+          >
+            <Copy size={12} />
           </button>
         </div>
       </div>
 
-      {/* Table */}
-      <div className='bg-ui-bg-elevated border border-ui-border rounded-xl overflow-hidden'>
-        <div className='overflow-x-auto'>
-          <table className='w-full text-sm'>
-            <thead>
-              <tr className='border-b border-ui-border bg-ui-bg-subtle/50'>
-                <th className='px-4 py-3 w-8'>
-                  <input
-                    type='checkbox'
-                    checked={list.tokens.length > 0 && selected.size === list.tokens.length}
-                    onChange={toggleSelectAll}
-                    className='rounded border-ui-border'
-                  />
-                </th>
-                {cols.slice(1).map((h, i) => (
-                  <th
-                    key={i}
-                    className='text-left text-[11px] uppercase tracking-wider font-medium text-ui-text-3 px-4 py-3 whitespace-nowrap'
-                  >
-                    {h}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {list.loading && list.tokens.length === 0 ? (
-                <tr><td colSpan={cols.length} className='py-12 text-center text-ui-text-3 text-sm'>{t('加载中...')}</td></tr>
-              ) : list.tokens.length === 0 ? (
-                <tr><td colSpan={cols.length} className='py-12 text-center text-ui-text-3 text-sm'>{t('暂无令牌')}</td></tr>
-              ) : (
-                list.tokens.map((token) => (
-                  <tr
-                    key={token.id}
-                    className='border-b border-ui-divider last:border-b-0 hover:bg-ui-bg-subtle/30 transition-colors'
-                  >
-                    <td className='px-4 py-3'>
-                      <input
-                        type='checkbox'
-                        checked={selected.has(token.id)}
-                        onChange={() => toggleSelect(token.id)}
-                        className='rounded border-ui-border'
-                      />
-                    </td>
-                    <td className='px-4 py-3 text-ui-text font-medium'>{token.name}</td>
-                    <td className='px-4 py-3'><StatusBadge status={token.status} t={t} /></td>
-                    <td className='px-4 py-3'>
-                      <code className='text-xs font-mono text-ui-text-2'>{fmtKey(token)}</code>
-                    </td>
-                    <td className='px-4 py-3 text-ui-text tabular-nums whitespace-nowrap'>
-                      {token.unlimited_quota ? (
-                        <span className='inline-flex items-center gap-1'>
-                          <InfinityIcon size={14} className='text-ui-text-3' />
-                          <span className='text-ui-text-3'>{t('不限')}</span>
-                        </span>
-                      ) : (
-                        <>
-                          <span className='text-ui-text-2'>{renderQuota(token.used_quota)}</span>
-                          <span className='text-ui-text-3 mx-1'>/</span>
-                          <span>{renderQuota(token.remain_quota)}</span>
-                        </>
-                      )}
-                    </td>
-                    <td className='px-4 py-3 text-ui-text-2 text-xs'>
-                      {token.group || <span className='text-ui-text-3'>—</span>}
-                    </td>
-                    <td className='px-4 py-3 text-ui-text-2 text-xs whitespace-nowrap'>
-                      {fmtTs(token.accessed_time) || <span className='text-ui-text-3'>—</span>}
-                    </td>
-                    <td className='px-4 py-3 text-ui-text-2 text-xs whitespace-nowrap'>
-                      {fmtTs(token.expired_time) || <span className='text-ui-text-3'>{t('永不')}</span>}
-                    </td>
-                    <td className='px-4 py-3'>
-                      <div className='flex items-center gap-0.5 justify-end'>
-                        <button onClick={() => toggleReveal(token)} title={revealed[token.id] ? t('隐藏密钥') : t('显示密钥')}
-                          className='p-1.5 rounded text-ui-text-3 hover:text-ui-text hover:bg-ui-bg-subtle transition-colors'>
-                          {revealed[token.id] ? <EyeOff size={14} /> : <Eye size={14} />}
-                        </button>
-                        <button onClick={() => copyKey(token)} title={t('复制密钥')}
-                          className='p-1.5 rounded text-ui-text-3 hover:text-ui-text hover:bg-ui-bg-subtle transition-colors'>
-                          <Copy size={14} />
-                        </button>
-                        <button onClick={() => { setEditing(token); setEditOpen(true); }} title={t('编辑')}
-                          className='p-1.5 rounded text-ui-text-3 hover:text-ui-text hover:bg-ui-bg-subtle transition-colors'>
-                          <Pencil size={14} />
-                        </button>
-                        <button onClick={() => setConfirm({ ids: [token.id], names: [token.name] })} title={t('删除')}
-                          className='p-1.5 rounded text-ui-text-3 hover:text-ui-danger hover:bg-ui-danger-bg transition-colors'>
-                          <Trash2 size={14} />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
+      <div className='flex items-start gap-6 md:gap-8'>
+        <div className='min-w-0'>
+          <div className='text-[11px] text-ui-text-3 mb-0.5'>{t('创建时间')}</div>
+          <div className='text-[13px] text-ui-text tabular-nums whitespace-nowrap'>
+            {fmtDateTime(token.created_time) || '—'}
+          </div>
         </div>
-        {list.tokens.length > 0 && (
-          <Pagination
-            page={list.page} pageSize={PAGE_SIZE} total={list.total}
-            onChange={(p) => list.load(p)}
-          />
-        )}
+        <div className='min-w-0'>
+          <div className='text-[11px] text-ui-text-3 mb-0.5'>{t('最近使用时间')}</div>
+          <div className='text-[13px] text-ui-text tabular-nums whitespace-nowrap'>
+            {fmtDateTime(token.accessed_time) || t('从未使用')}
+          </div>
+        </div>
+        <div className='min-w-0 hidden md:block'>
+          <div className='text-[11px] text-ui-text-3 mb-0.5'>{t('额度')}</div>
+          <div className='text-[13px] text-ui-text tabular-nums whitespace-nowrap'>
+            {token.unlimited_quota ? (
+              <span className='inline-flex items-center gap-1 text-ui-text-2'>
+                <InfinityIcon size={13} />
+                {t('不限')}
+              </span>
+            ) : (
+              renderQuota(token.remain_quota)
+            )}
+          </div>
+        </div>
+      </div>
+
+      <button
+        onClick={onDelete}
+        title={t('删除')}
+        className='inline-flex items-center justify-center w-9 h-9 rounded-xl text-ui-text-3 hover:text-ui-danger hover:bg-ui-danger-bg transition-colors flex-shrink-0 self-end md:self-center'
+      >
+        <Trash2 size={15} />
+      </button>
+    </div>
+  );
+};
+
+// ── code samples ────────────────────────────────────────
+const buildSamples = (apiBase) => ({
+  curl: {
+    label: 'cURL',
+    lang: 'Shell',
+    hljsLang: 'bash',
+    code: `curl -X POST "${apiBase}/v1/chat/completions" \\
+  -H "Authorization: Bearer YOUR_API_KEY" \\
+  -H "Content-Type: application/json" \\
+  -d '{
+    "model": "gpt-4o-mini",
+    "messages": [
+      { "role": "user", "content": "Hello World" }
+    ],
+    "stream": true,
+    "temperature": 0.7
+  }'`,
+  },
+  python: {
+    label: 'Python',
+    lang: 'Python',
+    hljsLang: 'python',
+    code: `import requests
+
+response = requests.post(
+    "${apiBase}/v1/chat/completions",
+    headers={
+        "Authorization": "Bearer YOUR_API_KEY",
+        "Content-Type": "application/json",
+    },
+    json={
+        "model": "gpt-4o-mini",
+        "messages": [
+            {"role": "user", "content": "Hello World"}
+        ],
+        "stream": True,
+        "temperature": 0.7,
+    },
+)
+print(response.text)`,
+  },
+  nodejs: {
+    label: 'Node.js',
+    lang: 'JavaScript',
+    hljsLang: 'javascript',
+    code: `const response = await fetch('${apiBase}/v1/chat/completions', {
+  method: 'POST',
+  headers: {
+    Authorization: 'Bearer YOUR_API_KEY',
+    'Content-Type': 'application/json',
+  },
+  body: JSON.stringify({
+    model: 'gpt-4o-mini',
+    messages: [{ role: 'user', content: 'Hello World' }],
+    stream: true,
+    temperature: 0.7,
+  }),
+});
+const data = await response.json();
+console.log(data);`,
+  },
+});
+
+const CodeBlock = ({ sample, t }) => {
+  const [copied, setCopied] = useState(false);
+  const onCopy = async () => {
+    const ok = await copy(sample.code);
+    if (ok) {
+      setCopied(true);
+      showSuccess(t('已复制'));
+      setTimeout(() => setCopied(false), 1500);
+    }
+  };
+  const html = useMemo(() => {
+    try {
+      return hljs.highlight(sample.code, {
+        language: sample.hljsLang,
+        ignoreIllegals: true,
+      }).value;
+    } catch {
+      return sample.code;
+    }
+  }, [sample.code, sample.hljsLang]);
+
+  return (
+    <div
+      className='token-codeblock rounded-[28px] overflow-hidden'
+      style={{ backgroundColor: '#f4f3ec' }}
+    >
+      <div className='flex items-center justify-between px-5 py-2.5'>
+        <span className='text-[13px] text-ui-text-2 font-medium tabular-nums'>{sample.lang}</span>
+        <button
+          onClick={onCopy}
+          className='inline-flex items-center gap-1 px-2 py-1 text-[12px] text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-elevated rounded-md transition-colors'
+        >
+          {copied ? <Check size={12} /> : <Copy size={12} />}
+          {copied ? t('已复制') : t('复制')}
+        </button>
+      </div>
+      <pre
+        className='px-5 pb-5 pt-1 text-[12.5px] leading-relaxed text-ui-text overflow-x-auto bg-transparent'
+        style={{
+          fontFamily: "'JetBrains Mono', 'SF Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace",
+          fontVariantLigatures: 'contextual',
+        }}
+      >
+        <code dangerouslySetInnerHTML={{ __html: html }} />
+      </pre>
+    </div>
+  );
+};
+
+// ── main ────────────────────────────────────────────────
+const Tokens = () => {
+  const { t } = useTranslation();
+  usePageTitle(t('令牌'));
+
+  const { tokens, loading, reload } = useTokens();
+  const [revealed, setRevealed] = useState({});
+  const [keyMap, setKeyMap] = useState({});
+  const [editOpen, setEditOpen] = useState(false);
+  const [editing, setEditing] = useState(null);
+  const [confirmRm, setConfirmRm] = useState(null);
+  const [activeTab, setActiveTab] = useState('curl');
+
+  const apiBase = typeof window !== 'undefined' ? window.location.origin : '';
+  const samples = useMemo(() => buildSamples(apiBase), [apiBase]);
+
+  const ensureKey = async (id) => {
+    if (keyMap[id]) return keyMap[id];
+    const { data } = await API.post(`/api/token/${id}/key`);
+    if (data.success && data.data?.key) {
+      setKeyMap((m) => ({ ...m, [id]: data.data.key }));
+      return data.data.key;
+    }
+    showError(data.message || t('获取密钥失败'));
+    return null;
+  };
+
+  const onToggle = async (token) => {
+    if (revealed[token.id]) { setRevealed((r) => ({ ...r, [token.id]: false })); return; }
+    const key = await ensureKey(token.id);
+    if (key) setRevealed((r) => ({ ...r, [token.id]: true }));
+  };
+
+  const onCopy = async (token) => {
+    const key = await ensureKey(token.id);
+    if (!key) return;
+    const ok = await copy(`sk-${key}`);
+    if (ok) showSuccess(t('已复制'));
+  };
+
+  const onDelete = async () => {
+    if (!confirmRm) return;
+    try {
+      const { data } = await API.delete(`/api/token/${confirmRm.id}`);
+      if (data.success) {
+        showSuccess(t('已删除'));
+        reload();
+      } else {
+        showError(data.message);
+      }
+    } catch (e) {
+      showError(e.message);
+    } finally {
+      setConfirmRm(null);
+    }
+  };
+
+  return (
+    <div
+      className='min-h-[calc(100vh-4rem)] mt-16 px-4 py-6 md:px-6 md:py-8'
+      style={{ backgroundColor: 'var(--page-bg)' }}
+    >
+      <div className='max-w-[960px] mx-auto'>
+        {/* API keys */}
+        <section className='mb-10'>
+          <div className='flex items-center justify-between gap-3 mb-3 pb-3 border-b border-ui-border'>
+            <h2 className='text-[15px] font-semibold text-ui-text'>API keys</h2>
+            <button
+              onClick={() => reload()}
+              title={t('刷新')}
+              className='inline-flex items-center justify-center w-8 h-8 rounded-lg text-ui-text-3 hover:text-ui-text hover:bg-ui-bg-subtle transition-colors'
+            >
+              <RefreshCw size={13} className={loading ? 'animate-spin' : ''} />
+            </button>
+          </div>
+          <div className='flex items-start justify-between gap-4 mb-4'>
+            <p className='text-xs text-ui-text-3 leading-relaxed flex-1'>
+              {t('创建 API key 用以在你的应用或第三方客户端中使用 Routify 的服务，请妥善保存。不要与他人共享你的 API key，或将其暴露在浏览器或其他客户端代码中。')}
+            </p>
+            <button
+              onClick={() => { setEditing(null); setEditOpen(true); }}
+              className='inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-lg border border-ui-border text-ui-text hover:bg-ui-bg-subtle transition-colors whitespace-nowrap'
+            >
+              <Plus size={13} />
+              {t('创建 API key')}
+            </button>
+          </div>
+
+          {loading && tokens.length === 0 ? (
+            <div className='py-12 text-center text-ui-text-3 text-sm'>{t('加载中...')}</div>
+          ) : tokens.length === 0 ? (
+            <div className='py-12 text-center text-ui-text-3 text-sm'>{t('还没有创建 API key')}</div>
+          ) : (
+            <div className='space-y-3'>
+              {tokens.map((token) => (
+                <KeyRow
+                  key={token.id}
+                  token={token}
+                  revealed={!!revealed[token.id]}
+                  keyValue={keyMap[token.id]}
+                  onToggle={() => onToggle(token)}
+                  onCopy={() => onCopy(token)}
+                  onEdit={() => { setEditing(token); setEditOpen(true); }}
+                  onDelete={() => setConfirmRm({ id: token.id, name: token.name })}
+                  t={t}
+                />
+              ))}
+            </div>
+          )}
+        </section>
+
+        {/* Code samples */}
+        <section>
+          <h2 className='text-[15px] font-semibold text-ui-text mb-3 pb-3 border-b border-ui-border'>
+            {t('调用示例')}
+          </h2>
+          <div className='flex items-center gap-1 mb-3 border-b border-ui-border'>
+            {Object.entries(samples).map(([k, v]) => (
+              <button
+                key={k}
+                onClick={() => setActiveTab(k)}
+                className={`px-3 py-2 text-sm transition-colors -mb-px border-b-2 ${
+                  activeTab === k
+                    ? 'border-ui-text text-ui-text font-medium'
+                    : 'border-transparent text-ui-text-2 hover:text-ui-text'
+                }`}
+              >
+                {v.label}
+              </button>
+            ))}
+          </div>
+          <CodeBlock sample={samples[activeTab]} t={t} />
+        </section>
       </div>
 
       <TokenFormModal
-        open={editOpen} token={editing}
+        open={editOpen}
+        token={editing}
         onClose={() => setEditOpen(false)}
-        onSaved={() => { setEditOpen(false); list.load(editing ? list.page : 1); }}
+        onSaved={() => { setEditOpen(false); reload(); }}
         t={t}
       />
 
       <ConfirmDialog
-        open={!!confirm}
-        title={confirm?.ids.length > 1 ? t('批量删除令牌') : t('删除令牌')}
-        description={confirm?.ids.length > 1
-          ? t('确认删除 {{n}} 个令牌？此操作不可恢复。').replace('{{n}}', confirm?.ids.length || 0)
-          : t('确认删除令牌 “{{name}}”？此操作不可恢复。').replace('{{name}}', confirm?.names?.[0] || '')
-        }
+        open={!!confirmRm}
+        title={t('删除 API key')}
+        description={t('确认删除「{{name}}」？此操作不可恢复。').replace('{{name}}', confirmRm?.name || '')}
         confirmText={t('删除')}
         cancelText={t('取消')}
         danger
-        onConfirm={removeMany}
-        onCancel={() => setConfirm(null)}
+        onConfirm={onDelete}
+        onCancel={() => setConfirmRm(null)}
       />
     </div>
   );
 };
 
-export default TokensView;
+export default Tokens;

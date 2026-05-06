@@ -56,7 +56,7 @@ const UserArea = ({
   if (userState.user) {
     const menuItems = [
       { label: t('个人设置'), path: '/console/personal' },
-      { label: t('令牌管理'), path: '/console/token' },
+      { label: t('令牌'), path: '/console/token' },
       { label: t('钱包管理'), path: '/console/topup' },
     ];
 

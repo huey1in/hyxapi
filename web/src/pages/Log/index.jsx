@@ -1,7 +1,7 @@
 /*
 Copyright (C) 2025 QuantumNous
 
-Usage logs — clean modern table with rich filters.
+Logs — clean BAI-inspired table with composite token-usage chips.
 */
 
 import React, { useEffect, useState, useContext } from 'react';
@@ -34,7 +34,7 @@ const TypeBadge = ({ type, t }) => {
   const info = TYPE_LABELS[type] || TYPE_LABELS[0];
   return (
     <span
-      className='inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-medium'
+      className='inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium whitespace-nowrap'
       style={{ background: `${info.color}1f`, color: info.color }}
     >
       {t(info.label)}
@@ -57,6 +57,19 @@ const toUnix = (val) => {
   return Math.floor(new Date(val).getTime() / 1000);
 };
 
+const formatThousand = (v) => {
+  const n = Number(v) || 0;
+  if (n >= 1000) return `${(n / 1000).toFixed(2).replace(/\.?0+$/, '')}K`;
+  return String(n);
+};
+
+const formatDuration = (ms) => {
+  const v = Number(ms) || 0;
+  if (v <= 0) return '—';
+  if (v < 1000) return `${v} ms`;
+  return `${(v / 1000).toFixed(2)} s`;
+};
+
 const PRESETS = [
   { label: '今天', start: () => { const d = new Date(); d.setHours(0, 0, 0, 0); return d; } },
   { label: '近 7 天', start: () => { const d = new Date(); d.setDate(d.getDate() - 6); d.setHours(0, 0, 0, 0); return d; } },
@@ -69,6 +82,11 @@ const FIELD_LABEL = {
   billing_source: '计费来源',
   cache_ratio: '缓存倍率',
   cache_tokens: '缓存 Tokens',
+  cached_tokens: '命中缓存 Tokens',
+  cache_creation_input_tokens: '缓存写入 Tokens',
+  cache_read_input_tokens: '缓存命中 Tokens',
+  prompt_cache_hit_tokens: '缓存命中 Tokens',
+  prompt_cache_miss_tokens: '缓存未命中 Tokens',
   completion_ratio: '补全倍率',
   frt: '首字耗时 (ms)',
   group_ratio: '分组倍率',
@@ -82,7 +100,6 @@ const FIELD_LABEL = {
   admin_info: '管理信息',
 };
 
-// 部分字段 -1 表示"未设置/使用默认值"
 const FIELDS_DEFAULT_ON_NEG_ONE = new Set([
   'model_price',
   'user_group_ratio',
@@ -133,10 +150,39 @@ const DetailRow = ({ label, value, mono = false }) => (
   </div>
 );
 
-const UsageLogsView = () => {
+// ── BAI-style token usage chips ─────────────────────────
+
+const TokenUsageChips = ({ promptTokens, completionTokens }) => {
+  const inT = Number(promptTokens) || 0;
+  const outT = Number(completionTokens) || 0;
+  const total = inT + outT;
+  if (total === 0) return <span className='text-ui-text-3 text-xs'>—</span>;
+
+  const baseChip =
+    'inline-flex items-center gap-1 h-7 px-2 rounded-full text-[11px] tabular-nums whitespace-nowrap';
+  const sumChip = `${baseChip} border border-ui-border text-ui-text font-medium`;
+  const partChip = `${baseChip} border border-ui-border text-ui-text-2`;
+
+  return (
+    <span className='inline-flex items-center gap-1.5 whitespace-nowrap'>
+      <span className={sumChip}>
+        <span className='text-[10px] font-semibold text-ui-text-3'>总</span>
+        {formatThousand(total)}
+      </span>
+      <span className='text-ui-text-3 text-[11px]'>=</span>
+      <span className={partChip}>↑ {formatThousand(inT)}</span>
+      <span className='text-ui-text-3 text-[11px]'>+</span>
+      <span className={partChip}>↓ {formatThousand(outT)}</span>
+    </span>
+  );
+};
+
+// ── main view ───────────────────────────────────────────
+
+const LogsView = () => {
   const { t } = useTranslation();
-  usePageTitle(t('使用日志'));
-  const [userState] = useContext(UserContext);
+  usePageTitle(t('日志'));
+  const [, ] = useContext(UserContext);
   const isAdminUser = isAdmin();
 
   const [logs, setLogs] = useState([]);
@@ -194,15 +240,9 @@ const UsageLogsView = () => {
     }
   };
 
-  useEffect(() => {
-    load(1);
-  }, []);
+  useEffect(() => { load(1); }, []);
 
-  const onSearch = (e) => {
-    e?.preventDefault?.();
-    load(1);
-  };
-
+  const onSearch = (e) => { e?.preventDefault?.(); load(1); };
   const reset = () => {
     const f = {
       token_name: '', model_name: '', group: '', request_id: '',
@@ -212,7 +252,6 @@ const UsageLogsView = () => {
     setFilters(f);
     load(1, f);
   };
-
   const applyPreset = (preset) => {
     const start = preset.start();
     const end = new Date();
@@ -224,322 +263,293 @@ const UsageLogsView = () => {
   };
 
   const inputCls =
-    'w-full px-3 py-2 text-sm bg-ui-bg border border-ui-border rounded-lg text-ui-text placeholder:text-ui-text-3 outline-none focus:border-ui-text-3 transition-colors';
+    'w-full px-3 py-2 text-sm bg-transparent border border-ui-border rounded-xl text-ui-text placeholder:text-ui-text-3 outline-none focus:border-ui-text-3 transition-colors';
+
+  const cols = [
+    t('创建时间'),
+    t('类型'),
+    t('模型'),
+    t('Token 用量'),
+    ...(isAdminUser ? [t('用户'), t('渠道')] : []),
+    t('消耗'),
+    t('用时'),
+    '',
+  ];
 
   return (
-    <div className='min-h-[calc(100vh-4rem)] mt-16 px-4 py-5 md:px-6 md:py-6 bg-ui-bg'>
-      {/* Header */}
-      <div className='flex items-center justify-between gap-3 mb-5'>
-        <h1
-          className='text-2xl md:text-3xl font-medium text-ui-text'
-          style={{ fontFamily: "'Space Grotesk', sans-serif", letterSpacing: '-0.02em' }}
-        >
-          {t('使用日志')}
-        </h1>
-        <div className='flex items-center gap-1'>
-          <button
-            onClick={() => setShowFilters((s) => !s)}
-            title={t('筛选')}
-            className={`inline-flex items-center justify-center w-9 h-9 rounded-lg transition-colors ${
-              showFilters
-                ? 'bg-ui-bg-subtle text-ui-text'
-                : 'text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-subtle'
-            }`}
+    <div
+      className='min-h-[calc(100vh-4rem)] mt-16 px-4 py-6 md:px-6 md:py-8'
+      style={{ backgroundColor: 'var(--page-bg)' }}
+    >
+      <div className='max-w-[1080px] mx-auto'>
+        {/* Header */}
+        <div className='flex items-center justify-between gap-3 mb-5'>
+          <h1
+            className='text-2xl md:text-3xl font-medium text-ui-text'
+            style={{ fontFamily: "'Space Grotesk', sans-serif", letterSpacing: '-0.02em' }}
           >
-            <Filter size={14} />
-          </button>
-          <button
-            onClick={() => load(page)}
-            title={t('刷新')}
-            className='inline-flex items-center justify-center w-9 h-9 rounded-lg text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-subtle transition-colors'
-          >
-            <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />
-          </button>
+            {t('日志')}
+          </h1>
+          <div className='flex items-center gap-1'>
+            <button
+              onClick={() => setShowFilters((s) => !s)}
+              title={t('筛选')}
+              className={`inline-flex items-center justify-center w-9 h-9 rounded-xl transition-colors ${
+                showFilters
+                  ? 'bg-ui-bg-subtle text-ui-text'
+                  : 'text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-subtle'
+              }`}
+            >
+              <Filter size={14} />
+            </button>
+            <button
+              onClick={() => load(page)}
+              title={t('刷新')}
+              className='inline-flex items-center justify-center w-9 h-9 rounded-xl text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-subtle transition-colors'
+            >
+              <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />
+            </button>
+          </div>
         </div>
-      </div>
 
-      {/* Filters */}
-      {showFilters && (
-        <form
-          onSubmit={onSearch}
-          className='bg-ui-bg-elevated border border-ui-border rounded-xl p-4 mb-4'
-        >
-          {/* presets */}
-          <div className='flex flex-wrap gap-1 mb-3'>
-            {PRESETS.map((p) => (
-              <button
-                key={p.label}
-                type='button'
-                onClick={() => applyPreset(p)}
-                className='px-2.5 py-1 text-xs rounded-md text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-subtle transition-colors'
-              >
-                {t(p.label)}
+        {/* Filters */}
+        {showFilters && (
+          <form
+            onSubmit={onSearch}
+            className='border border-ui-border rounded-[28px] p-4 mb-4'
+            style={{ backgroundColor: 'var(--page-bg)' }}
+          >
+            <div className='flex flex-wrap gap-1 mb-3'>
+              {PRESETS.map((p) => (
+                <button
+                  key={p.label}
+                  type='button'
+                  onClick={() => applyPreset(p)}
+                  className='px-2.5 py-1 text-xs rounded-md text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-subtle transition-colors'
+                >
+                  {t(p.label)}
+                </button>
+              ))}
+            </div>
+
+            <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 mb-3'>
+              <div>
+                <label className='block text-xs font-medium text-ui-text-2 mb-1.5'>{t('开始时间')}</label>
+                <input type='datetime-local' value={toLocalInput(filters.start_timestamp)}
+                  onChange={(e) => setFilters({ ...filters, start_timestamp: toUnix(e.target.value) })}
+                  className={inputCls} style={{ backgroundColor: 'transparent', colorScheme: 'light' }} />
+              </div>
+              <div>
+                <label className='block text-xs font-medium text-ui-text-2 mb-1.5'>{t('结束时间')}</label>
+                <input type='datetime-local' value={toLocalInput(filters.end_timestamp)}
+                  onChange={(e) => setFilters({ ...filters, end_timestamp: toUnix(e.target.value) })}
+                  className={inputCls} style={{ backgroundColor: 'transparent', colorScheme: 'light' }} />
+              </div>
+              <div>
+                <label className='block text-xs font-medium text-ui-text-2 mb-1.5'>{t('令牌名称')}</label>
+                <input type='text' value={filters.token_name}
+                  onChange={(e) => setFilters({ ...filters, token_name: e.target.value })}
+                  placeholder={t('精确匹配')} className={inputCls} />
+              </div>
+              <div>
+                <label className='block text-xs font-medium text-ui-text-2 mb-1.5'>{t('模型')}</label>
+                <input type='text' value={filters.model_name}
+                  onChange={(e) => setFilters({ ...filters, model_name: e.target.value })}
+                  placeholder='gpt-4o' className={inputCls} />
+              </div>
+              <div>
+                <label className='block text-xs font-medium text-ui-text-2 mb-1.5'>{t('分组')}</label>
+                <input type='text' value={filters.group}
+                  onChange={(e) => setFilters({ ...filters, group: e.target.value })}
+                  className={inputCls} />
+              </div>
+              <div>
+                <label className='block text-xs font-medium text-ui-text-2 mb-1.5'>Request ID</label>
+                <input type='text' value={filters.request_id}
+                  onChange={(e) => setFilters({ ...filters, request_id: e.target.value })}
+                  className={inputCls} />
+              </div>
+              <div>
+                <label className='block text-xs font-medium text-ui-text-2 mb-1.5'>{t('类型')}</label>
+                <select value={filters.type}
+                  onChange={(e) => setFilters({ ...filters, type: Number(e.target.value) })}
+                  className={inputCls}>
+                  <option value={0}>{t('全部')}</option>
+                  <option value={1}>{t('充值')}</option>
+                  <option value={2}>{t('消费')}</option>
+                  <option value={3}>{t('管理')}</option>
+                  <option value={4}>{t('系统')}</option>
+                  <option value={5}>{t('错误')}</option>
+                  <option value={6}>{t('退款')}</option>
+                </select>
+              </div>
+              {isAdminUser && (
+                <>
+                  <div>
+                    <label className='block text-xs font-medium text-ui-text-2 mb-1.5'>{t('渠道 ID')}</label>
+                    <input type='text' value={filters.channel}
+                      onChange={(e) => setFilters({ ...filters, channel: e.target.value })}
+                      className={inputCls} />
+                  </div>
+                  <div>
+                    <label className='block text-xs font-medium text-ui-text-2 mb-1.5'>{t('用户名称')}</label>
+                    <input type='text' value={filters.username}
+                      onChange={(e) => setFilters({ ...filters, username: e.target.value })}
+                      className={inputCls} />
+                  </div>
+                </>
+              )}
+            </div>
+
+            <div className='flex justify-end gap-2'>
+              <button type='button' onClick={reset}
+                className='px-3.5 py-1.5 text-sm font-medium rounded-lg border border-ui-border text-ui-text hover:bg-ui-bg-subtle transition-colors'>
+                {t('重置')}
               </button>
-            ))}
-          </div>
+              <button type='submit'
+                className='px-3.5 py-1.5 text-sm font-semibold rounded-lg bg-ui-accent text-ui-accent-fg hover:bg-ui-accent-hover transition-colors'>
+                {t('查询')}
+              </button>
+            </div>
+          </form>
+        )}
 
-          <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 mb-3'>
-            <div>
-              <label className='block text-xs font-medium text-ui-text-2 mb-1.5'>{t('开始时间')}</label>
-              <input
-                type='datetime-local'
-                value={toLocalInput(filters.start_timestamp)}
-                onChange={(e) => setFilters({ ...filters, start_timestamp: toUnix(e.target.value) })}
-                className={inputCls}
-              />
-            </div>
-            <div>
-              <label className='block text-xs font-medium text-ui-text-2 mb-1.5'>{t('结束时间')}</label>
-              <input
-                type='datetime-local'
-                value={toLocalInput(filters.end_timestamp)}
-                onChange={(e) => setFilters({ ...filters, end_timestamp: toUnix(e.target.value) })}
-                className={inputCls}
-              />
-            </div>
-            <div>
-              <label className='block text-xs font-medium text-ui-text-2 mb-1.5'>{t('令牌名称')}</label>
-              <input
-                type='text'
-                value={filters.token_name}
-                onChange={(e) => setFilters({ ...filters, token_name: e.target.value })}
-                placeholder={t('精确匹配')}
-                className={inputCls}
-              />
-            </div>
-            <div>
-              <label className='block text-xs font-medium text-ui-text-2 mb-1.5'>{t('模型')}</label>
-              <input
-                type='text'
-                value={filters.model_name}
-                onChange={(e) => setFilters({ ...filters, model_name: e.target.value })}
-                placeholder='gpt-4o'
-                className={inputCls}
-              />
-            </div>
-            <div>
-              <label className='block text-xs font-medium text-ui-text-2 mb-1.5'>{t('分组')}</label>
-              <input
-                type='text'
-                value={filters.group}
-                onChange={(e) => setFilters({ ...filters, group: e.target.value })}
-                className={inputCls}
-              />
-            </div>
-            <div>
-              <label className='block text-xs font-medium text-ui-text-2 mb-1.5'>Request ID</label>
-              <input
-                type='text'
-                value={filters.request_id}
-                onChange={(e) => setFilters({ ...filters, request_id: e.target.value })}
-                className={inputCls}
-              />
-            </div>
-            <div>
-              <label className='block text-xs font-medium text-ui-text-2 mb-1.5'>{t('类型')}</label>
-              <select
-                value={filters.type}
-                onChange={(e) => setFilters({ ...filters, type: Number(e.target.value) })}
-                className={inputCls}
-              >
-                <option value={0}>{t('全部')}</option>
-                <option value={1}>{t('充值')}</option>
-                <option value={2}>{t('消费')}</option>
-                <option value={3}>{t('管理')}</option>
-                <option value={4}>{t('系统')}</option>
-                <option value={5}>{t('错误')}</option>
-                <option value={6}>{t('退款')}</option>
-              </select>
-            </div>
-            {isAdminUser && (
-              <>
-                <div>
-                  <label className='block text-xs font-medium text-ui-text-2 mb-1.5'>{t('渠道 ID')}</label>
-                  <input
-                    type='text'
-                    value={filters.channel}
-                    onChange={(e) => setFilters({ ...filters, channel: e.target.value })}
-                    className={inputCls}
-                  />
-                </div>
-                <div>
-                  <label className='block text-xs font-medium text-ui-text-2 mb-1.5'>{t('用户名称')}</label>
-                  <input
-                    type='text'
-                    value={filters.username}
-                    onChange={(e) => setFilters({ ...filters, username: e.target.value })}
-                    className={inputCls}
-                  />
-                </div>
-              </>
-            )}
-          </div>
-
-          <div className='flex justify-end gap-2'>
-            <button
-              type='button'
-              onClick={reset}
-              className='px-3.5 py-1.5 text-sm font-medium rounded-lg border border-ui-border text-ui-text hover:bg-ui-bg-subtle transition-colors'
-            >
-              {t('重置')}
-            </button>
-            <button
-              type='submit'
-              className='px-3.5 py-1.5 text-sm font-semibold rounded-lg bg-ui-accent text-ui-accent-fg hover:bg-ui-accent-hover transition-colors'
-            >
-              {t('查询')}
-            </button>
-          </div>
-        </form>
-      )}
-
-      {/* Table */}
-      <div className='bg-ui-bg-elevated border border-ui-border rounded-xl overflow-hidden'>
-        <div className='overflow-x-auto'>
-          <table className='w-full text-sm'>
-            <thead>
-              <tr className='border-b border-ui-border bg-ui-bg-subtle/50'>
-                {[
-                  t('时间'), t('类型'), t('模型'), t('令牌'),
-                  ...(isAdminUser ? [t('用户'), t('渠道')] : []),
-                  t('分组'), 'Tokens', t('耗时'), t('花费'), '',
-                ].map((h, i) => (
-                  <th
-                    key={i}
-                    className='text-left text-[11px] uppercase tracking-wider font-medium text-ui-text-3 px-4 py-3 whitespace-nowrap'
-                  >
-                    {h}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {loading && logs.length === 0 ? (
-                <tr>
-                  <td colSpan={11} className='py-12 text-center text-ui-text-3 text-sm'>
-                    {t('加载中...')}
-                  </td>
+        {/* Table */}
+        <div
+          className='border border-ui-border rounded-[28px] overflow-hidden'
+          style={{ backgroundColor: 'var(--page-bg)' }}
+        >
+          <div className='overflow-x-auto nice-scroll'>
+            <table className='w-full text-sm' style={{ minWidth: '880px' }}>
+              <thead>
+                <tr className='border-b border-ui-border'>
+                  {cols.map((h, i) => (
+                    <th
+                      key={i}
+                      className='text-left text-[12px] font-medium text-ui-text-2 px-4 py-3 whitespace-nowrap'
+                    >
+                      {h}
+                    </th>
+                  ))}
                 </tr>
-              ) : logs.length === 0 ? (
-                <tr>
-                  <td colSpan={11} className='py-12 text-center text-ui-text-3 text-sm'>
-                    {t('暂无日志')}
-                  </td>
-                </tr>
-              ) : (
-                logs.map((log, i) => {
-                  const isOpen = expandedRow === log.id;
-                  return (
-                    <React.Fragment key={log.id || i}>
-                      <tr className='border-b border-ui-divider last:border-b-0 hover:bg-ui-bg-subtle/30 transition-colors'>
-                        <td className='px-4 py-3 text-ui-text-2 text-xs whitespace-nowrap'>
-                          {timestamp2string(log.created_at)}
-                        </td>
-                        <td className='px-4 py-3'><TypeBadge type={log.type} t={t} /></td>
-                        <td className='px-4 py-3'>
-                          {log.model_name ? (
-                            <code className='text-xs font-mono text-ui-text bg-ui-bg-subtle px-1.5 py-0.5 rounded'>
-                              {log.model_name}
-                            </code>
-                          ) : (
-                            <span className='text-ui-text-3'>—</span>
-                          )}
-                        </td>
-                        <td className='px-4 py-3 text-ui-text-2 text-xs truncate max-w-[140px]'>
-                          {log.token_name || <span className='text-ui-text-3'>—</span>}
-                        </td>
-                        {isAdminUser && (
-                          <>
-                            <td className='px-4 py-3 text-ui-text-2 text-xs'>
-                              {log.username || <span className='text-ui-text-3'>—</span>}
-                            </td>
-                            <td className='px-4 py-3 text-ui-text-2 text-xs'>
-                              {log.channel_name || log.channel || <span className='text-ui-text-3'>—</span>}
-                            </td>
-                          </>
-                        )}
-                        <td className='px-4 py-3 text-ui-text-2 text-xs'>
-                          {log.group || <span className='text-ui-text-3'>—</span>}
-                        </td>
-                        <td className='px-4 py-3 text-ui-text tabular-nums whitespace-nowrap text-xs'>
-                          {log.prompt_tokens || log.completion_tokens ? (
+              </thead>
+              <tbody>
+                {loading && logs.length === 0 ? (
+                  <tr>
+                    <td colSpan={cols.length} className='py-12 text-center text-ui-text-3 text-sm'>
+                      {t('加载中...')}
+                    </td>
+                  </tr>
+                ) : logs.length === 0 ? (
+                  <tr>
+                    <td colSpan={cols.length} className='py-12 text-center text-ui-text-3 text-sm'>
+                      {t('暂无日志')}
+                    </td>
+                  </tr>
+                ) : (
+                  logs.map((log, i) => {
+                    const isOpen = expandedRow === log.id;
+                    const parsed = parseOther(log.other);
+                    const expandable = !!(log.content || parsed || log.request_id);
+                    return (
+                      <React.Fragment key={log.id || i}>
+                        <tr className='border-b border-ui-divider last:border-b-0 hover:bg-ui-bg-subtle/70 transition-colors'>
+                          <td className='px-4 py-3 text-ui-text text-[13px] tabular-nums whitespace-nowrap'>
+                            {timestamp2string(log.created_at)}
+                          </td>
+                          <td className='px-4 py-3'>
+                            <TypeBadge type={log.type} t={t} />
+                          </td>
+                          <td className='px-4 py-3'>
+                            {log.model_name ? (
+                              <span
+                                className='inline-block max-w-[200px] truncate text-[13px] text-ui-text'
+                                title={log.model_name}
+                              >
+                                {log.model_name}
+                              </span>
+                            ) : (
+                              <span className='text-ui-text-3'>—</span>
+                            )}
+                          </td>
+                          <td className='px-4 py-3'>
+                            <TokenUsageChips
+                              promptTokens={log.prompt_tokens}
+                              completionTokens={log.completion_tokens}
+                            />
+                          </td>
+                          {isAdminUser && (
                             <>
-                              <span className='text-ui-text-3'>{log.prompt_tokens || 0}</span>
-                              <span className='text-ui-text-3 mx-1'>↑</span>
-                              <span>{log.completion_tokens || 0}</span>
-                              <span className='text-ui-text-3 mx-1'>↓</span>
+                              <td className='px-4 py-3 text-ui-text-2 text-[13px]'>
+                                {log.username || <span className='text-ui-text-3'>—</span>}
+                              </td>
+                              <td className='px-4 py-3 text-ui-text-2 text-[13px]'>
+                                {log.channel_name || log.channel || <span className='text-ui-text-3'>—</span>}
+                              </td>
                             </>
-                          ) : (
-                            <span className='text-ui-text-3'>—</span>
                           )}
-                        </td>
-                        <td className='px-4 py-3 text-ui-text-2 text-xs tabular-nums whitespace-nowrap'>
-                          {log.use_time > 0 ? `${(log.use_time / 1000).toFixed(2)}s` : '—'}
-                        </td>
-                        <td className='px-4 py-3 text-ui-text font-medium tabular-nums whitespace-nowrap'>
-                          {log.quota > 0 ? renderQuota(log.quota) : <span className='text-ui-text-3'>—</span>}
-                        </td>
-                        <td className='px-4 py-3'>
-                          {(log.content || log.other || log.request_id) && (
-                            <button
-                              onClick={() => setExpandedRow(isOpen ? null : log.id)}
-                              className='p-1 rounded text-ui-text-3 hover:text-ui-text hover:bg-ui-bg-subtle transition-colors'
-                              title={t('详情')}
-                            >
-                              {isOpen ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
-                            </button>
-                          )}
-                        </td>
-                      </tr>
-                      {isOpen && (log.content || log.other || log.request_id) && (
-                        <tr className='bg-ui-bg-subtle/40'>
-                          <td colSpan={11} className='px-4 py-3'>
-                            <div className='space-y-3'>
-                              {log.content && (
-                                <DetailRow label={t('内容')} value={log.content} />
-                              )}
-
-                              {(() => {
-                                const parsed = parseOther(log.other);
-                                if (parsed) {
-                                  return (
-                                    <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-1.5'>
-                                      {Object.entries(parsed).map(([k, v]) => (
-                                        <DetailRow
-                                          key={k}
-                                          label={t(FIELD_LABEL[k] || k)}
-                                          value={formatVal(v, k)}
-                                        />
-                                      ))}
-                                    </div>
-                                  );
-                                }
-                                if (log.other) {
-                                  return <DetailRow label={t('其他')} value={log.other} mono />;
-                                }
-                                return null;
-                              })()}
-
-                              {log.request_id && (
-                                <DetailRow label='Request ID' value={log.request_id} mono />
-                              )}
-                            </div>
+                          <td className='px-4 py-3 text-ui-text text-[13px] tabular-nums whitespace-nowrap'>
+                            {log.quota > 0
+                              ? renderQuota(log.quota)
+                              : <span className='text-ui-text-3'>—</span>}
+                          </td>
+                          <td className='px-4 py-3 text-ui-text-2 text-[13px] tabular-nums whitespace-nowrap'>
+                            {formatDuration(log.use_time)}
+                          </td>
+                          <td className='px-4 py-3 w-8'>
+                            {expandable && (
+                              <button
+                                onClick={() => setExpandedRow(isOpen ? null : log.id)}
+                                className='p-1 rounded text-ui-text-3 hover:text-ui-text hover:bg-ui-bg-subtle transition-colors'
+                                title={t('详情')}
+                              >
+                                {isOpen ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+                              </button>
+                            )}
                           </td>
                         </tr>
-                      )}
-                    </React.Fragment>
-                  );
-                })
-              )}
-            </tbody>
-          </table>
+                        {isOpen && expandable && (
+                          <tr style={{ backgroundColor: 'rgba(0,0,0,0.02)' }}>
+                            <td colSpan={cols.length} className='px-4 py-3'>
+                              <div className='space-y-3'>
+                                {log.content && (
+                                  <DetailRow label={t('内容')} value={log.content} />
+                                )}
+                                {parsed && (
+                                  <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-1.5'>
+                                    {Object.entries(parsed).map(([k, v]) => (
+                                      <DetailRow
+                                        key={k}
+                                        label={t(FIELD_LABEL[k] || k)}
+                                        value={formatVal(v, k)}
+                                      />
+                                    ))}
+                                  </div>
+                                )}
+                                {!parsed && log.other && (
+                                  <DetailRow label={t('其他')} value={log.other} mono />
+                                )}
+                                {log.request_id && (
+                                  <DetailRow label='Request ID' value={log.request_id} mono />
+                                )}
+                              </div>
+                            </td>
+                          </tr>
+                        )}
+                      </React.Fragment>
+                    );
+                  })
+                )}
+              </tbody>
+            </table>
+          </div>
+          {logs.length > 0 && (
+            <Pagination page={page} pageSize={PAGE_SIZE} total={total} onChange={(p) => load(p)} />
+          )}
         </div>
-        {logs.length > 0 && (
-          <Pagination page={page} pageSize={PAGE_SIZE} total={total} onChange={(p) => load(p)} />
-        )}
       </div>
     </div>
   );
 };
 
-export default UsageLogsView;
+export default LogsView;

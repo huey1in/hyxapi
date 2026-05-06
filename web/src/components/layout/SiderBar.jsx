@@ -61,8 +61,8 @@ const SiderBar = ({ onNavigate = () => {} }) => {
   const workspaceItems = useMemo(() => [
     { itemKey: 'detail', text: t('概览') },
     { itemKey: 'playground', text: t('对话') },
-    { itemKey: 'token', text: t('令牌管理') },
-    { itemKey: 'log', text: t('使用日志') },
+    { itemKey: 'token', text: t('令牌') },
+    { itemKey: 'log', text: t('日志') },
   ].filter((item) => isModuleVisible('console', item.itemKey)), [t, isModuleVisible]);
 
   const financeItems = useMemo(() => [

@@ -42,7 +42,10 @@ const LoginModal = () => {
         if (e.target === e.currentTarget) closeLoginModal();
       }}
     >
-      <div className='relative w-full max-w-md max-h-[calc(100vh-32px)] overflow-y-auto bg-ui-bg-elevated rounded-2xl border border-ui-border shadow-2xl p-6 sm:p-8'>
+      <div
+        className='relative w-full max-w-md max-h-[calc(100vh-32px)] overflow-y-auto rounded-2xl border border-ui-border shadow-2xl p-6 sm:p-8'
+        style={{ backgroundColor: 'var(--page-bg)' }}
+      >
         <button
           type='button'
           aria-label='Close'

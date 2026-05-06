@@ -53,7 +53,7 @@ const PAGE_TITLES = [
   { match: (p) => p.startsWith('/oauth/'), name: 'OAuth 授权' },
   { match: (p) => p === '/console', name: '控制台' },
   { match: (p) => p === '/console/channel', name: '渠道管理' },
-  { match: (p) => p === '/console/token', name: '令牌管理' },
+  { match: (p) => p === '/console/token', name: '令牌' },
   { match: (p) => p === '/console/redemption', name: '兑换码' },
   { match: (p) => p === '/console/topup', name: '钱包管理' },
   { match: (p) => p === '/console/log', name: '日志' },

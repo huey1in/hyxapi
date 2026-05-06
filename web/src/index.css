@@ -112,6 +112,95 @@ body {
   }
 }
 
+/* highlight.js — light palette scoped to the token page code block */
+.token-codeblock .hljs-comment,
+.token-codeblock .hljs-quote { color: #6a737d; font-style: italic; }
+.token-codeblock .hljs-keyword,
+.token-codeblock .hljs-selector-tag,
+.token-codeblock .hljs-subst { color: #d73a49; }
+.token-codeblock .hljs-string,
+.token-codeblock .hljs-doctag,
+.token-codeblock .hljs-regexp { color: #032f62; }
+.token-codeblock .hljs-number,
+.token-codeblock .hljs-literal { color: #005cc5; }
+.token-codeblock .hljs-title,
+.token-codeblock .hljs-section,
+.token-codeblock .hljs-name,
+.token-codeblock .hljs-built_in,
+.token-codeblock .hljs-class .hljs-title { color: #6f42c1; }
+.token-codeblock .hljs-attribute,
+.token-codeblock .hljs-attr,
+.token-codeblock .hljs-variable,
+.token-codeblock .hljs-template-variable { color: #005cc5; }
+.token-codeblock .hljs-meta,
+.token-codeblock .hljs-meta-keyword { color: #6a737d; }
+.token-codeblock .hljs-tag,
+.token-codeblock .hljs-selector-id,
+.token-codeblock .hljs-symbol { color: #22863a; }
+.token-codeblock .hljs-bullet,
+.token-codeblock .hljs-link { color: #0366d6; text-decoration: underline; }
+.token-codeblock .hljs-emphasis { font-style: italic; }
+.token-codeblock .hljs-strong { font-weight: 600; }
+
+/* Subtle horizontal scrollbar for tables / wide containers. */
+.nice-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: #e3e0d3 transparent;
+}
+.nice-scroll::-webkit-scrollbar {
+  height: 8px;
+  width: 8px;
+}
+.nice-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+.nice-scroll::-webkit-scrollbar-thumb {
+  background: #e3e0d3;
+  border-radius: 999px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+.nice-scroll::-webkit-scrollbar-thumb:hover {
+  background: #d2cfc1;
+  background-clip: padding-box;
+  border: 2px solid transparent;
+}
+.nice-scroll::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+/* Default native inputs / textareas to the page background unless a
+ * component specifies its own (Tailwind / Antd / Semi rules win because
+ * `:where` has zero specificity). */
+:where(
+  input[type='text'],
+  input[type='password'],
+  input[type='email'],
+  input[type='number'],
+  input[type='datetime-local'],
+  input[type='date'],
+  input[type='time'],
+  input[type='search'],
+  input[type='url'],
+  input[type='tel'],
+  input:not([type]),
+  textarea,
+  select
+) {
+  background-color: var(--page-bg);
+}
+
+/* Keep autofilled inputs in modals using the page background instead of white */
+input.bg-transparent:-webkit-autofill,
+input.bg-transparent:-webkit-autofill:hover,
+input.bg-transparent:-webkit-autofill:focus,
+input.bg-transparent:-webkit-autofill:active {
+  -webkit-box-shadow: 0 0 0 1000px var(--page-bg) inset !important;
+  -webkit-text-fill-color: var(--ui-text) !important;
+  caret-color: var(--ui-text);
+  transition: background-color 9999s ease-in-out 0s;
+}
+
 code {
   font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
     monospace;

@@ -45,7 +45,7 @@ import { useTranslation } from 'react-i18next';
 import { SiDiscord } from 'react-icons/si';
 
 const inputClass =
-  'w-full px-4 py-2.5 text-sm border border-ui-border rounded-lg outline-none focus:ring-2 focus:ring-ui-accent bg-ui-bg text-ui-text placeholder:text-ui-text-3';
+  'w-full px-4 py-2.5 text-sm border border-ui-border rounded-lg outline-none focus:ring-2 focus:ring-ui-accent bg-transparent text-ui-text placeholder:text-ui-text-3';
 
 const usernamePattern = /^[A-Za-z0-9_\-.]{1,20}$/;
 
