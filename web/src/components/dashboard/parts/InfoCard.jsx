@@ -1,20 +1,30 @@
 /*
- * Side info card with tabs: API Info / Announcements / FAQ / Uptime.
+ * Side info card with tabs: API / Announcements / FAQ / Uptime.
  */
 import React, { useEffect, useMemo, useState } from 'react';
+import { Loader2 } from 'lucide-react';
+import GlobeIcon from '../../layout/headerbar/icons/GlobeIcon';
+import ChevronDownIcon from '../../layout/headerbar/icons/ChevronDownIcon';
+import MegaphoneIcon from '../../layout/icons/MegaphoneIcon';
+import HelpIcon from '../../layout/icons/HelpIcon';
+import PulseIcon from '../../layout/icons/PulseIcon';
+import CopyIcon from '../../layout/icons/CopyIcon';
+import SpeedIcon from '../../layout/icons/SpeedIcon';
 import {
-  Globe, Inbox, HelpCircle, Activity, Loader2,
-  ChevronDown, ChevronRight, Copy, Gauge,
-} from 'lucide-react';
-import Card from './Card';
-import { handleCopyUrl, handleSpeedTest, getUptimeStatusColor, getUptimeStatusText } from '../../../helpers/dashboard';
+  handleCopyUrl,
+  handleSpeedTest,
+  getUptimeStatusColor,
+  getUptimeStatusText,
+} from '../../../helpers/dashboard';
 import { UPTIME_STATUS_MAP } from '../../../constants/dashboard.constants';
 
 // ── primitives ──────────────────────────────────────────
 
-const Empty = ({ Icon = Inbox, text }) => (
-  <div className='flex flex-col items-center justify-center h-full min-h-[200px] text-ui-text-3'>
-    <Icon size={20} className='mb-2' />
+const Empty = ({ Icon = MegaphoneIcon, text }) => (
+  <div className='flex flex-col items-center justify-center h-full min-h-[220px] py-8 text-ui-text-3'>
+    <div className='w-10 h-10 rounded-full bg-ui-bg-subtle flex items-center justify-center mb-2'>
+      <Icon size={16} />
+    </div>
     <p className='text-xs'>{text}</p>
   </div>
 );
@@ -25,38 +35,53 @@ const ListContainer = ({ children }) => (
   </div>
 );
 
-// ── ApiInfo panel ───────────────────────────────────────
+const TYPE_DOT = {
+  success: '#22c55e',
+  warning: '#f59e0b',
+  error: '#ef4444',
+  info: '#3b82f6',
+};
+
+// ── ApiInfo ─────────────────────────────────────────────
 
 const ApiInfoList = ({ items, t }) => {
-  if (!items?.length) return <Empty Icon={Globe} text={t('暂无 API 信息')} />;
+  if (!items?.length) return <Empty Icon={GlobeIcon} text={t('暂无 API 信息')} />;
   return (
     <ListContainer>
       {items.map((item, i) => (
-        <div key={i} className='px-5 py-3 hover:bg-ui-bg-subtle/40 transition-colors'>
+        <div key={i} className='group px-5 py-3.5 hover:bg-ui-bg-subtle/50 transition-colors'>
           <div className='flex items-center justify-between gap-2 mb-1'>
-            <span className='text-sm font-medium text-ui-text truncate'>
-              {item.route || item.name || item.url}
-            </span>
-            <div className='flex items-center gap-0.5 flex-shrink-0'>
+            <div className='flex items-center gap-2 min-w-0'>
+              {item.color && (
+                <span
+                  className='w-1.5 h-1.5 rounded-full flex-shrink-0'
+                  style={{ background: item.color }}
+                />
+              )}
+              <span className='text-[13px] font-medium text-ui-text truncate'>
+                {item.route || item.name || item.url}
+              </span>
+            </div>
+            <div className='flex items-center gap-0.5 flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity'>
               <button
                 onClick={() => handleCopyUrl(item.url, t)}
                 title={t('复制')}
-                className='p-1 rounded text-ui-text-3 hover:text-ui-text hover:bg-ui-bg-subtle transition-colors'
+                className='p-1.5 rounded-md text-ui-text-3 hover:text-ui-text hover:bg-ui-bg-subtle transition-colors'
               >
-                <Copy size={12} />
+                <CopyIcon size={12} />
               </button>
               {item.url && (
                 <button
                   onClick={() => handleSpeedTest(item.url)}
                   title={t('测速')}
-                  className='p-1 rounded text-ui-text-3 hover:text-ui-text hover:bg-ui-bg-subtle transition-colors'
+                  className='p-1.5 rounded-md text-ui-text-3 hover:text-ui-text hover:bg-ui-bg-subtle transition-colors'
                 >
-                  <Gauge size={12} />
+                  <SpeedIcon size={12} />
                 </button>
               )}
             </div>
           </div>
-          <code className='block text-[11px] font-mono text-ui-text-2 truncate'>
+          <code className='block text-[11px] font-mono text-ui-text-3 truncate'>
             {item.url}
           </code>
         </div>
@@ -65,24 +90,27 @@ const ApiInfoList = ({ items, t }) => {
   );
 };
 
-// ── Announcements panel ─────────────────────────────────
+// ── Announcements ──────────────────────────────────────
 
 const AnnouncementsList = ({ items, t }) => {
-  if (!items?.length) return <Empty Icon={Inbox} text={t('暂无公告')} />;
-  const colorMap = { success: '#22c55e', warning: '#f59e0b', error: '#ef4444' };
+  if (!items?.length) return <Empty Icon={MegaphoneIcon} text={t('暂无公告')} />;
   return (
     <ListContainer>
       {items.slice(0, 30).map((item, i) => {
-        const color = colorMap[item.type] || 'var(--ui-text-3)';
+        const color = TYPE_DOT[item.type] || 'var(--ui-text-3)';
         return (
-          <div key={i} className='px-5 py-3'>
+          <div key={i} className='px-5 py-3.5 hover:bg-ui-bg-subtle/50 transition-colors'>
             <div className='flex items-center gap-2 mb-1.5'>
-              <span className='w-1.5 h-1.5 rounded-full flex-shrink-0' style={{ background: color }} />
-              <span className='text-[11px] text-ui-text-3'>
-                {item.relative ? `${item.relative} · ` : ''}{item.time}
+              <span
+                className='w-1.5 h-1.5 rounded-full flex-shrink-0'
+                style={{ background: color }}
+              />
+              <span className='text-[11px] text-ui-text-3 tabular-nums'>
+                {item.relative ? `${item.relative} · ` : ''}
+                {item.time}
               </span>
             </div>
-            <p className='text-sm text-ui-text leading-relaxed pl-3.5'>
+            <p className='text-[13px] text-ui-text leading-relaxed pl-3.5'>
               {item.content}
             </p>
           </div>
@@ -92,7 +120,7 @@ const AnnouncementsList = ({ items, t }) => {
   );
 };
 
-// ── FAQ panel ───────────────────────────────────────────
+// ── FAQ ────────────────────────────────────────────────
 
 const FaqRow = ({ q, a }) => {
   const [open, setOpen] = useState(false);
@@ -100,24 +128,25 @@ const FaqRow = ({ q, a }) => {
     <div>
       <button
         onClick={() => setOpen((o) => !o)}
-        className='flex items-center justify-between gap-3 w-full px-5 py-3 text-left text-sm text-ui-text hover:bg-ui-bg-subtle/40 transition-colors'
+        className='flex items-center justify-between gap-3 w-full px-5 py-3.5 text-left text-[13px] text-ui-text hover:bg-ui-bg-subtle/50 transition-colors'
       >
-        <span className='flex-1'>{q}</span>
-        {open ? (
-          <ChevronDown size={14} className='text-ui-text-3 flex-shrink-0' />
-        ) : (
-          <ChevronRight size={14} className='text-ui-text-3 flex-shrink-0' />
-        )}
+        <span className='flex-1 font-medium'>{q}</span>
+        <ChevronDownIcon
+          size={14}
+          className={`text-ui-text-3 flex-shrink-0 transition-transform ${open ? '' : '-rotate-90'}`}
+        />
       </button>
       {open && (
-        <div className='px-5 pb-3 text-sm text-ui-text-2 leading-relaxed'>{a}</div>
+        <div className='px-5 pb-3.5 pt-0 text-[13px] text-ui-text-2 leading-relaxed'>
+          {a}
+        </div>
       )}
     </div>
   );
 };
 
 const FaqList = ({ items, t }) => {
-  if (!items?.length) return <Empty Icon={HelpCircle} text={t('暂无问答')} />;
+  if (!items?.length) return <Empty Icon={HelpIcon} text={t('暂无问答')} />;
   return (
     <ListContainer>
       {items.map((item, i) => (
@@ -127,34 +156,34 @@ const FaqList = ({ items, t }) => {
   );
 };
 
-// ── Uptime panel ────────────────────────────────────────
+// ── Uptime ─────────────────────────────────────────────
 
 const UptimeList = ({ data, loading, activeGroup, setActiveGroup, t }) => {
   if (loading) {
     return (
-      <div className='flex items-center justify-center py-12 text-ui-text-3'>
+      <div className='flex items-center justify-center py-16 text-ui-text-3'>
         <Loader2 size={18} className='animate-spin' />
       </div>
     );
   }
-  if (!data?.length) return <Empty Icon={Activity} text={t('暂无服务')} />;
+  if (!data?.length) return <Empty Icon={PulseIcon} text={t('暂无服务')} />;
 
   const groups = data.map((g, i) => ({ key: String(i), label: g.categoryName }));
   const current = data[Number(activeGroup) || 0];
   const monitors = current?.monitorList || [];
 
   return (
-    <div>
+    <div className='h-full flex flex-col'>
       {groups.length > 1 && (
-        <div className='flex gap-0.5 px-3 py-2 border-b border-ui-divider overflow-x-auto'>
+        <div className='flex gap-0.5 px-3 py-2 border-b border-ui-divider overflow-x-auto scrollbar-hide flex-shrink-0'>
           {groups.map((g) => (
             <button
               key={g.key}
               onClick={() => setActiveGroup(g.key)}
-              className={`px-2.5 py-1 text-xs rounded-md transition-colors whitespace-nowrap ${
+              className={`px-2.5 py-1 text-[11px] rounded-md transition-colors whitespace-nowrap ${
                 activeGroup === g.key
                   ? 'bg-ui-bg-subtle text-ui-text font-medium'
-                  : 'text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-subtle'
+                  : 'text-ui-text-2 hover:text-ui-text'
               }`}
             >
               {g.label}
@@ -163,41 +192,55 @@ const UptimeList = ({ data, loading, activeGroup, setActiveGroup, t }) => {
         </div>
       )}
       {monitors.length === 0 ? (
-        <Empty Icon={Activity} text={t('暂无监控')} />
+        <Empty Icon={PulseIcon} text={t('暂无监控')} />
       ) : (
-        <ListContainer>
-          {monitors.map((m, i) => {
-            const color = getUptimeStatusColor(m.status, UPTIME_STATUS_MAP);
-            const text = getUptimeStatusText(m.status, UPTIME_STATUS_MAP, t);
-            const pct = ((m.uptime || 0) * 100).toFixed(2);
-            return (
-              <div key={i} className='px-5 py-3'>
-                <div className='flex items-center justify-between gap-2 mb-1'>
-                  <div className='flex items-center gap-2 min-w-0'>
-                    <span className='w-1.5 h-1.5 rounded-full flex-shrink-0' style={{ background: color }} />
-                    <span className='text-sm text-ui-text truncate'>{m.name}</span>
+        <div className='flex-1 min-h-0 overflow-y-auto'>
+          <ul className='divide-y divide-ui-divider'>
+            {monitors.map((m, i) => {
+              const color = getUptimeStatusColor(m.status, UPTIME_STATUS_MAP);
+              const text = getUptimeStatusText(m.status, UPTIME_STATUS_MAP, t);
+              const pct = ((m.uptime || 0) * 100).toFixed(2);
+              return (
+                <li key={i} className='px-5 py-3'>
+                  <div className='flex items-center justify-between gap-2 mb-1.5'>
+                    <div className='flex items-center gap-2 min-w-0'>
+                      <span
+                        className='w-1.5 h-1.5 rounded-full flex-shrink-0'
+                        style={{ background: color }}
+                      />
+                      <span className='text-[13px] text-ui-text truncate'>{m.name}</span>
+                    </div>
+                    <span className='text-[11px] text-ui-text-3 tabular-nums flex-shrink-0'>
+                      {pct}%
+                    </span>
                   </div>
-                  <span className='text-xs text-ui-text-3 tabular-nums flex-shrink-0'>{pct}%</span>
-                </div>
-                <div className='flex items-center gap-2 pl-3.5'>
-                  <span className='text-[11px] text-ui-text-3'>{text}</span>
-                  <div className='flex-1 h-1 rounded-full bg-ui-bg-subtle overflow-hidden'>
-                    <div
-                      className='h-full rounded-full transition-all'
-                      style={{ width: `${pct}%`, background: color }}
-                    />
+                  <div className='flex items-center gap-2 pl-3.5'>
+                    <span className='text-[10px] text-ui-text-3 w-12 shrink-0'>{text}</span>
+                    <div className='flex-1 h-1 rounded-full bg-ui-bg-subtle overflow-hidden'>
+                      <div
+                        className='h-full rounded-full transition-all'
+                        style={{ width: `${pct}%`, background: color }}
+                      />
+                    </div>
                   </div>
-                </div>
-              </div>
-            );
-          })}
-        </ListContainer>
+                </li>
+              );
+            })}
+          </ul>
+        </div>
       )}
     </div>
   );
 };
 
-// ── Main InfoCard ───────────────────────────────────────
+// ── Main InfoCard ──────────────────────────────────────
+
+const TAB_META = {
+  api: { label: '接入点', icon: GlobeIcon },
+  news: { label: '公告', icon: MegaphoneIcon },
+  faq: { label: '常见问题', icon: HelpIcon },
+  uptime: { label: '服务状态', icon: PulseIcon },
+};
 
 const InfoCard = ({
   apiInfoEnabled,
@@ -215,12 +258,12 @@ const InfoCard = ({
 }) => {
   const tabs = useMemo(() => {
     const out = [];
-    if (apiInfoEnabled) out.push({ key: 'api', label: t('API') });
-    if (announcementsEnabled) out.push({ key: 'news', label: t('公告') });
-    if (faqEnabled) out.push({ key: 'faq', label: t('FAQ') });
-    if (uptimeEnabled) out.push({ key: 'uptime', label: t('状态') });
+    if (apiInfoEnabled) out.push({ key: 'api', ...TAB_META.api });
+    if (announcementsEnabled) out.push({ key: 'news', ...TAB_META.news });
+    if (faqEnabled) out.push({ key: 'faq', ...TAB_META.faq });
+    if (uptimeEnabled) out.push({ key: 'uptime', ...TAB_META.uptime });
     return out;
-  }, [apiInfoEnabled, announcementsEnabled, faqEnabled, uptimeEnabled, t]);
+  }, [apiInfoEnabled, announcementsEnabled, faqEnabled, uptimeEnabled]);
 
   const [active, setActive] = useState(tabs[0]?.key);
   useEffect(() => {
@@ -230,43 +273,44 @@ const InfoCard = ({
   if (tabs.length === 0) return null;
 
   return (
-    <Card
-      className='h-full w-full'
-      title={
-        <span className='text-sm font-semibold text-ui-text'>{t('信息')}</span>
-      }
-      action={
-        <div className='flex items-center gap-0.5 -mr-1'>
-          {tabs.map(({ key, label }) => (
+    <div className='h-full flex flex-col bg-ui-bg-elevated border border-ui-border rounded-2xl overflow-hidden'>
+      {/* Tab bar */}
+      <div className='flex items-center gap-0.5 px-2 pt-2 pb-2 border-b border-ui-border overflow-x-auto scrollbar-hide flex-shrink-0'>
+        {tabs.map(({ key, label, icon: Icon }) => {
+          const isActive = active === key;
+          return (
             <button
               key={key}
               onClick={() => setActive(key)}
-              className={`px-2.5 py-1 text-xs rounded-md transition-colors ${
-                active === key
-                  ? 'bg-ui-bg-subtle text-ui-text font-medium'
-                  : 'text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-subtle'
+              className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[12px] font-medium transition-colors whitespace-nowrap ${
+                isActive
+                  ? 'bg-ui-bg-subtle text-ui-text'
+                  : 'text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-subtle/60'
               }`}
             >
-              {label}
+              <Icon size={13} />
+              {t(label)}
             </button>
-          ))}
-        </div>
-      }
-      bodyClass='p-0'
-    >
-      {active === 'api' && <ApiInfoList items={apiInfoData} t={t} />}
-      {active === 'news' && <AnnouncementsList items={announcementData} t={t} />}
-      {active === 'faq' && <FaqList items={faqData} t={t} />}
-      {active === 'uptime' && (
-        <UptimeList
-          data={uptimeData}
-          loading={uptimeLoading}
-          activeGroup={activeUptimeTab}
-          setActiveGroup={setActiveUptimeTab}
-          t={t}
-        />
-      )}
-    </Card>
+          );
+        })}
+      </div>
+
+      {/* Body */}
+      <div className='flex-1 min-h-0 overflow-hidden'>
+        {active === 'api' && <ApiInfoList items={apiInfoData} t={t} />}
+        {active === 'news' && <AnnouncementsList items={announcementData} t={t} />}
+        {active === 'faq' && <FaqList items={faqData} t={t} />}
+        {active === 'uptime' && (
+          <UptimeList
+            data={uptimeData}
+            loading={uptimeLoading}
+            activeGroup={activeUptimeTab}
+            setActiveGroup={setActiveUptimeTab}
+            t={t}
+          />
+        )}
+      </div>
+    </div>
   );
 };
 

@@ -59,7 +59,7 @@ const SiderBar = ({ onNavigate = () => {} }) => {
   );
 
   const workspaceItems = useMemo(() => [
-    { itemKey: 'detail', text: t('数据看板') },
+    { itemKey: 'detail', text: t('概览') },
     { itemKey: 'playground', text: t('操练场') },
     { itemKey: 'token', text: t('令牌管理') },
     { itemKey: 'log', text: t('使用日志') },
