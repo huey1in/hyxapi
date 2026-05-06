@@ -9,7 +9,7 @@ import { useTranslation } from 'react-i18next';
 import { usePageTitle } from '../../hooks/common/usePageTitle';
 import {
   Search, RefreshCw, Copy, Check, User, Server, ChevronDown,
-  ArrowDownToLine, ArrowUpFromLine, SlidersHorizontal,
+  ArrowDownToLine, ArrowUpFromLine, SlidersHorizontal, ArrowLeft,
 } from 'lucide-react';
 import { useSearchParams } from 'react-router-dom';
 import * as LobeIcons from '@lobehub/icons';
@@ -81,26 +81,18 @@ const VendorAvatar = ({ name, icon, size = 20 }) => {
 };
 
 // 可展开的侧栏分组
-const FilterGroup = ({ Icon, label, children, defaultOpen = true }) => {
+const FilterGroup = ({ label, children, defaultOpen = true }) => {
   const [open, setOpen] = useState(defaultOpen);
   return (
-    <div>
+    <div className='mb-5'>
       <button
         onClick={() => setOpen((o) => !o)}
-        className='flex items-center gap-2.5 w-full py-2.5 text-[14px] font-medium text-ui-text/85 hover:text-ui-text transition-colors'
+        className='flex items-center justify-between w-full pb-2 mb-1'
       >
-        <Icon size={18} className='text-ui-text-3 shrink-0' />
-        <span className='flex-1 text-left'>{label}</span>
-        <ChevronDown
-          size={14}
-          className={`text-ui-text-3 shrink-0 transition-transform ${open ? '' : '-rotate-90'}`}
-        />
+        <span className='text-[11px] font-semibold uppercase tracking-widest text-ui-text-3'>{label}</span>
+        <ChevronDown size={12} className={`text-ui-text-3 shrink-0 transition-transform ${open ? '' : '-rotate-90'}`} />
       </button>
-      {open && (
-        <div className='ml-[13px] border-l border-ui-border pl-4 pb-1 space-y-px'>
-          {children}
-        </div>
-      )}
+      {open && <div className='space-y-0.5'>{children}</div>}
     </div>
   );
 };
@@ -108,12 +100,17 @@ const FilterGroup = ({ Icon, label, children, defaultOpen = true }) => {
 const FilterItem = ({ label, count, active, onClick }) => (
   <button
     onClick={onClick}
-    className={`flex items-center justify-between w-full py-1.5 text-[13.5px] transition-colors text-left ${
-      active ? 'text-ui-text font-semibold' : 'text-ui-text-2/65 hover:text-ui-text'
+    className={`flex items-center justify-between w-full px-3 py-2 rounded-lg text-sm transition-all duration-150 text-left ${
+      active
+        ? 'bg-ui-bg-subtle text-ui-text font-medium'
+        : 'text-ui-text-2 hover:bg-ui-bg-subtle hover:text-ui-text'
     }`}
+    style={{ fontFamily: "'Plus Jakarta Sans', 'Space Grotesk', sans-serif" }}
   >
     <span className='truncate flex-1'>{label}</span>
-    {count != null && <span className='text-ui-text-3 text-xs ml-2'>{count}</span>}
+    {count != null && (
+      <span className='text-ui-text-3 text-[11px] ml-2 tabular-nums'>{count}</span>
+    )}
   </button>
 );
 
@@ -260,8 +257,31 @@ const PricingPage = () => {
   const visibleVendors = vendorsExpanded ? sortedVendors : sortedVendors.slice(0, 6);
 
   const sidebarContent = (
-    <nav className='space-y-0.5'>
-      <FilterGroup Icon={User} label={t('品牌')}>
+    <div>
+      {/* 搜索 + 刷新 */}
+      <div className='flex items-center gap-2 mb-5'>
+        <div className='relative flex-1'>
+          <Search size={13} className='absolute left-2.5 top-1/2 -translate-y-1/2 text-ui-text-3' />
+          <input
+            type='text'
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder={t('搜索模型...')}
+            className='w-full pl-8 pr-3 py-2 text-sm bg-ui-bg-elevated border border-ui-border rounded-xl text-ui-text placeholder:text-ui-text-3 outline-none focus:border-ui-text-3 transition-colors'
+            style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
+          />
+        </div>
+        <button
+          onClick={load}
+          disabled={loading}
+          title={t('刷新')}
+          className='inline-flex items-center justify-center w-9 h-9 rounded-xl text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-subtle border border-ui-border transition-colors disabled:opacity-50 shrink-0'
+        >
+          <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />
+        </button>
+      </div>
+      <nav className='space-y-0.5'>
+      <FilterGroup label={t('品牌')}>
         <FilterItem
           label={t('全部')}
           count={models.length}
@@ -287,7 +307,7 @@ const PricingPage = () => {
         )}
       </FilterGroup>
 
-      <FilterGroup Icon={Server} label={t('协议')} defaultOpen={false}>
+      <FilterGroup label={t('协议')} defaultOpen={false}>
         {endpointTypes.map((ep) => (
           <FilterItem
             key={ep}
@@ -299,7 +319,7 @@ const PricingPage = () => {
         ))}
       </FilterGroup>
 
-      <FilterGroup Icon={ArrowDownToLine} label={t('分组')} defaultOpen={false}>
+      <FilterGroup label={t('分组')} defaultOpen={false}>
         {Object.entries(usableGroups).map(([key, info]) => (
           <FilterItem
             key={key}
@@ -310,84 +330,114 @@ const PricingPage = () => {
         ))}
       </FilterGroup>
     </nav>
+    </div>
   );
 
   return (
-    <div className='min-h-screen bg-ui-bg'>
-      {/* Page header */}
-      <div className='border-b border-ui-border'>
-        <div className='max-w-[1400px] mx-auto px-4 lg:px-6 py-5 flex items-center justify-between gap-3'>
-          <div>
-            <h1
-              className='text-xl font-semibold text-ui-text'
-              style={{ fontFamily: "'Space Grotesk', sans-serif", letterSpacing: '-0.015em' }}
-            >
-              {t('模型广场')}
-            </h1>
-            <p className='text-xs text-ui-text-3 mt-0.5'>
-              {filtered.length} / {models.length} {t('个模型')}
-            </p>
-          </div>
-          <div className='flex items-center gap-2'>
-            {/* Mobile filter toggle */}
-            <button
-              onClick={() => setShowMobileFilters((v) => !v)}
-              className={`lg:hidden inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[13px] border transition-colors ${
-                showMobileFilters
-                  ? 'bg-ui-bg-subtle border-ui-text-3 text-ui-text'
-                  : 'bg-ui-bg-elevated border-ui-border text-ui-text-2'
-              }`}
-            >
-              <SlidersHorizontal size={13} />
-              {t('筛选')}
-              {(vendorFilter !== 'all' || endpointFilter !== 'all') && (
-                <span className='w-1.5 h-1.5 rounded-full bg-ui-accent' />
-              )}
-            </button>
-            <div className='relative w-44 sm:w-56 hidden sm:block'>
-              <Search size={14} className='absolute left-3 top-1/2 -translate-y-1/2 text-ui-text-3' />
-              <input
-                type='text'
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                placeholder={t('搜索模型...')}
-                className='w-full pl-9 pr-3 py-1.5 text-[13px] bg-ui-bg-elevated border border-ui-border rounded-lg text-ui-text placeholder:text-ui-text-3 outline-none focus:border-ui-text-3'
-              />
-            </div>
-            <button
-              onClick={load}
-              disabled={loading}
-              title={t('刷新')}
-              className='inline-flex items-center justify-center w-8 h-8 rounded-md text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-subtle transition-colors disabled:opacity-50'
-            >
-              <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />
-            </button>
-          </div>
-        </div>
-
-        {/* Mobile search */}
-        <div className='sm:hidden px-4 pb-2'>
-          <div className='relative'>
-            <Search size={14} className='absolute left-3 top-1/2 -translate-y-1/2 text-ui-text-3' />
+    <div className='min-h-screen'>
+      {/* 移动端顶部工具栏 */}
+      <div className='lg:hidden sticky top-[var(--header-height)] z-30 border-b border-ui-border bg-[var(--page-bg)]/90 backdrop-blur-md'>
+        <div className='px-4 py-2.5 flex items-center gap-2'>
+          <div className='relative flex-1'>
+            <Search size={13} className='absolute left-2.5 top-1/2 -translate-y-1/2 text-ui-text-3' />
             <input
               type='text'
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder={t('搜索模型...')}
-              className='w-full pl-9 pr-3 py-2 text-[13px] bg-ui-bg-elevated border border-ui-border rounded-lg text-ui-text placeholder:text-ui-text-3 outline-none focus:border-ui-text-3'
+              className='w-full pl-8 pr-3 py-2 text-sm bg-ui-bg-elevated border border-ui-border rounded-xl text-ui-text placeholder:text-ui-text-3 outline-none focus:border-ui-text-3 transition-colors'
             />
           </div>
+          <button
+            onClick={() => setShowMobileFilters(true)}
+            className={`inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm border transition-colors shrink-0 ${
+              vendorFilter !== 'all' || endpointFilter !== 'all' || group !== 'all'
+                ? 'bg-ui-accent text-ui-accent-fg border-transparent'
+                : 'bg-ui-bg-elevated border-ui-border text-ui-text-2'
+            }`}
+          >
+            <SlidersHorizontal size={14} />
+            {t('筛选')}
+            {(vendorFilter !== 'all' || endpointFilter !== 'all' || group !== 'all') && (
+              <span className='text-xs font-medium'>
+                {[vendorFilter !== 'all', endpointFilter !== 'all', group !== 'all'].filter(Boolean).length}
+              </span>
+            )}
+          </button>
         </div>
-
-        {/* Mobile expandable filter drawer */}
-        {showMobileFilters && (
-          <div className='lg:hidden border-t border-ui-border bg-ui-bg px-4 py-4'>
-            {sidebarContent}
-          </div>
-        )}
       </div>
 
-      {/* Body: sidebar + main 或 详情视图 */}
+      {/* 移动端 filter bottom sheet */}
+      {showMobileFilters && (
+        <div className='lg:hidden fixed inset-0 z-50 flex flex-col justify-end'>
+          {/* 遮罩 */}
+          <div
+            className='absolute inset-0 bg-black/40 backdrop-blur-sm'
+            onClick={() => setShowMobileFilters(false)}
+          />
+          {/* Sheet */}
+          <div
+            className='relative rounded-t-2xl border-t border-ui-border bg-ui-bg-elevated max-h-[80vh] flex flex-col'
+            style={{ animation: 'slideUp 0.3s cubic-bezier(0.16,1,0.3,1)' }}
+          >
+            {/* Handle */}
+            <div className='flex justify-center pt-3 pb-1'>
+              <div className='w-10 h-1 rounded-full bg-ui-border' />
+            </div>
+            {/* Header */}
+            <div className='flex items-center justify-between px-5 py-3 border-b border-ui-border'>
+              <span className='text-sm font-semibold text-ui-text'>{t('筛选')}</span>
+              <button
+                onClick={() => { setVendorFilter('all'); setEndpointFilter('all'); setGroup('all'); }}
+                className='text-xs text-ui-text-3 hover:text-ui-text transition-colors'
+              >
+                {t('重置')}
+              </button>
+            </div>
+            {/* Content */}
+            <div className='overflow-y-auto px-5 py-4 flex-1'>
+              {/* 只渲染 FilterGroups，不含搜索框 */}
+              <FilterGroup label={t('品牌')}>
+                <FilterItem label={t('全部')} count={models.length} active={vendorFilter === 'all'} onClick={() => setVendorFilter('all')} />
+                {visibleVendors.map((v) => (
+                  <FilterItem key={v.id} label={v.name} count={vendorCounts[v.id] || 0}
+                    active={String(vendorFilter) === String(v.id)}
+                    onClick={() => setVendorFilter(String(vendorFilter) === String(v.id) ? 'all' : v.id)} />
+                ))}
+                {sortedVendors.length > 6 && (
+                  <button onClick={() => setVendorsExpanded((e) => !e)}
+                    className='w-full py-1.5 text-[13px] text-ui-text-3 hover:text-ui-text-2 transition-colors text-left px-3'>
+                    {vendorsExpanded ? t('收起') : t('+{{n}} 更多').replace('{{n}}', sortedVendors.length - 6)}
+                  </button>
+                )}
+              </FilterGroup>
+              <FilterGroup label={t('协议')} defaultOpen={false}>
+                {endpointTypes.map((ep) => (
+                  <FilterItem key={ep} label={endpointLabel(ep)} count={endpointCounts[ep] || 0}
+                    active={endpointFilter === ep} onClick={() => setEndpointFilter(endpointFilter === ep ? 'all' : ep)} />
+                ))}
+              </FilterGroup>
+              <FilterGroup label={t('分组')} defaultOpen={false}>
+                {Object.entries(usableGroups).map(([key, info]) => (
+                  <FilterItem key={key} label={`${info?.desc || key}${groupRatio[key] != null ? ` ×${groupRatio[key]}` : ''}`}
+                    active={group === key} onClick={() => setGroup(group === key ? 'all' : key)} />
+                ))}
+              </FilterGroup>
+            </div>
+            {/* Footer */}
+            <div className='px-5 py-4 border-t border-ui-border'>
+              <button
+                onClick={() => setShowMobileFilters(false)}
+                className='w-full h-11 bg-ui-accent text-ui-accent-fg rounded-xl text-sm font-medium hover:bg-ui-accent-hover transition-colors'
+              >
+                {t('查看')} {filtered.length} {t('个模型')}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Body */}
       {selectedModel ? (
         <ModelDetailView
           model={selectedModel}
@@ -402,31 +452,29 @@ const PricingPage = () => {
           t={t}
         />
       ) : (
-        <div className='max-w-[1400px] mx-auto flex'>
+        <div className='max-w-[1400px] mx-auto flex items-start'>
 
         {/* Desktop Sidebar */}
-        <aside className='hidden lg:block bg-ui-bg-subtle/50 lg:bg-transparent pl-6 pt-5 border-r border-ui-border'>
-          <div className='lg:sticky lg:top-20'>
-            <div className='w-56 shrink-0 pr-6'>
-              {sidebarContent}
-            </div>
+        <aside className='hidden lg:block w-64 shrink-0 border-r border-ui-border'>
+          <div className='sticky top-[var(--header-height)] px-5 pt-5 pb-6'>
+            {sidebarContent}
           </div>
         </aside>
 
         {/* Main */}
-        <main className='flex-1 min-w-0 px-4 lg:px-6 pt-4 lg:pt-5 pb-12'>
+        <main className='flex-1 min-w-0 px-4 lg:px-8 pt-4 pb-12'>
           {loading && models.length === 0 ? (
-            <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
+            <div className='grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4'>
               {[...Array(6)].map((_, i) => (
-                <div key={i} className='bg-ui-bg-elevated border border-ui-border rounded-xl h-44 animate-pulse' />
+                <div key={i} className='bg-ui-bg-elevated border border-ui-border rounded-2xl h-44 animate-pulse' />
               ))}
             </div>
           ) : filtered.length === 0 ? (
-            <div className='py-24 text-center text-ui-text-3 text-sm'>
+            <div className='py-32 text-center text-ui-text-3 text-sm'>
               {t('没有匹配的模型')}
             </div>
           ) : (
-            <div className='grid grid-cols-1 md:grid-cols-2 gap-4 pb-4'>
+            <div className='grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 pb-4'>
               {filtered.map((m) => {
                 const vendor = vendors[m.vendor_id] || { name: m.owner_by || 'Unknown' };
                 const pricing = computePricing(m);
@@ -435,39 +483,41 @@ const PricingPage = () => {
                   <div
                     key={m.model_name}
                     onClick={() => openModel(m.model_name)}
-                    className='group relative flex flex-col overflow-hidden rounded-xl border border-ui-border bg-ui-bg-elevated cursor-pointer transition-colors duration-200 hover:border-ui-text-3'
+                    className='group relative flex flex-col overflow-hidden rounded-2xl border border-ui-border bg-ui-bg-elevated cursor-pointer transition-all duration-200 hover:border-ui-text-3/50 hover:shadow-md'
                   >
-                    <div className='flex flex-col px-5 pb-0 pt-5'>
-                      {/* Header row */}
-                      <div className='flex items-center gap-2 min-w-0'>
-                        <VendorAvatar name={vendor.name} icon={vendor.icon} />
-                        <h3 className='text-[15px] font-semibold leading-snug text-ui-text line-clamp-1 min-w-0'>
-                          <span className='text-ui-text-3 font-normal'>{vendor.name}: </span>
-                          {m.model_name}
-                        </h3>
+                    <div className='flex flex-col px-5 pt-5 pb-0'>
+                      <div className='flex items-center gap-2.5 min-w-0'>
+                        <div className='w-7 h-7 rounded-lg bg-ui-bg-subtle flex items-center justify-center shrink-0 overflow-hidden'>
+                          <VendorAvatar name={vendor.name} icon={vendor.icon} size={18} />
+                        </div>
+                        <span className='text-[11px] text-ui-text-3 font-medium truncate'>{vendor.name}</span>
+                        <div className='flex-1' />
                         <button
                           onClick={(e) => onCopyName(e, m.model_name)}
                           title={t('复制模型 ID')}
-                          className='p-1 rounded hover:bg-ui-bg-subtle transition-all shrink-0 opacity-0 group-hover:opacity-100'
+                          className='p-1.5 rounded-lg hover:bg-ui-bg-subtle transition-all shrink-0 opacity-0 group-hover:opacity-100'
                         >
                           {isCopied ? (
-                            <Check size={13} className='text-ui-brand' />
+                            <Check size={12} className='text-ui-brand' />
                           ) : (
-                            <Copy size={13} className='text-ui-text-3' />
+                            <Copy size={12} className='text-ui-text-3' />
                           )}
                         </button>
-                        <div className='flex-1' />
                       </div>
-
-                      {/* Groups */}
-                      <div className='mt-2.5 flex flex-wrap gap-1 min-h-[2lh] items-start'>
+                      <h3
+                        className='text-[15px] font-semibold text-ui-text mt-2.5 line-clamp-2 leading-snug'
+                        style={{ fontFamily: "'Plus Jakarta Sans', 'Space Grotesk', sans-serif", letterSpacing: '-0.01em' }}
+                      >
+                        {m.model_name}
+                      </h3>
+                      <div className='mt-2 flex flex-wrap gap-1 min-h-[1.5rem] items-start'>
                         {(m.enable_groups || []).length === 0 ? (
-                          <span className='text-[12px] text-ui-text-3'>{t('无可用分组')}</span>
+                          <span className='text-[11px] text-ui-text-3'>{t('无可用分组')}</span>
                         ) : (
-                          (m.enable_groups || []).map((g) => (
+                          (m.enable_groups || []).slice(0, 4).map((g) => (
                             <span
                               key={g}
-                              className='inline-flex items-center px-1.5 py-0.5 rounded text-[11px] text-ui-text-2 bg-ui-bg-subtle'
+                              className='inline-flex items-center px-1.5 py-0.5 rounded-md text-[11px] text-ui-text-2 bg-ui-bg-subtle'
                             >
                               {usableGroups[g]?.desc || g}
                               {groupRatio[g] != null && (
@@ -476,54 +526,47 @@ const PricingPage = () => {
                             </span>
                           ))
                         )}
+                        {(m.enable_groups || []).length > 4 && (
+                          <span className='text-[11px] text-ui-text-3 px-1.5 py-0.5'>+{m.enable_groups.length - 4}</span>
+                        )}
                       </div>
                     </div>
-
-                    {/* Footer: inline pricing */}
-                    <div className='px-5 pb-3.5 pt-2.5 mt-2 border-t border-ui-divider'>
-                      <div className='flex items-baseline flex-wrap gap-x-3 gap-y-0.5 text-[12px] leading-relaxed'>
+                    <div className='mt-auto px-5 pt-3 pb-4 border-t border-ui-divider mt-3'>
+                      <div className='flex items-center flex-wrap gap-x-4 gap-y-0.5 text-[12px]'>
                         {pricing.kind === 'per_call' ? (
-                          <span className='whitespace-nowrap'>
-                            <span className='text-ui-text-3'>{t('单次')}</span>{' '}
-                            <span className='text-ui-text font-medium tabular-nums'>
-                              ${formatPrice(pricing.dollar)}
-                            </span>
+                          <span>
+                            <span className='text-ui-text-3'>{t('单次')} </span>
+                            <span className='text-ui-text font-semibold tabular-nums'>${formatPrice(pricing.dollar)}</span>
                           </span>
                         ) : (
                           <>
-                            <span className='whitespace-nowrap'>
-                              <span className='text-ui-text-3'>{t('输入')}</span>{' '}
-                              <span className='text-ui-text font-medium tabular-nums'>
-                                ${formatPrice(pricing.promptPerM)}/M
-                              </span>
+                            <span>
+                              <span className='text-ui-text-3'>{t('输入')} </span>
+                              <span className='text-ui-text font-semibold tabular-nums'>${formatPrice(pricing.promptPerM)}/M</span>
                             </span>
-                            <span className='whitespace-nowrap'>
-                              <span className='text-ui-text-3'>{t('输出')}</span>{' '}
-                              <span className='text-ui-text font-medium tabular-nums'>
-                                ${formatPrice(pricing.completionPerM)}/M
-                              </span>
+                            <span>
+                              <span className='text-ui-text-3'>{t('输出')} </span>
+                              <span className='text-ui-text font-semibold tabular-nums'>${formatPrice(pricing.completionPerM)}/M</span>
                             </span>
                             {pricing.cachePerM != null && (
-                              <span className='whitespace-nowrap'>
-                                <span className='text-ui-text-3'>{t('缓存')}</span>{' '}
-                                <span className='text-ui-text font-medium tabular-nums'>
-                                  ${formatPrice(pricing.cachePerM)}/M
-                                </span>
+                              <span>
+                                <span className='text-ui-text-3'>{t('缓存')} </span>
+                                <span className='text-ui-text font-semibold tabular-nums'>${formatPrice(pricing.cachePerM)}/M</span>
                               </span>
                             )}
                           </>
                         )}
-                        {m.supported_endpoint_types?.length > 0 && (
-                          <span className='whitespace-nowrap'>
-                            <span className='text-ui-text-3'>{t('协议')}</span>{' '}
-                            <span className='font-mono text-[11px] text-ui-text-2'>
-                              {m.supported_endpoint_types.map(endpointLabel).join(', ')}
-                            </span>
-                          </span>
-                        )}
                       </div>
+                      {m.supported_endpoint_types?.length > 0 && (
+                        <div className='mt-1.5 flex flex-wrap gap-1'>
+                          {m.supported_endpoint_types.map((ep) => (
+                            <span key={ep} className='text-[10px] font-mono text-ui-text-3 bg-ui-bg px-1.5 py-0.5 rounded border border-ui-border'>
+                              {endpointLabel(ep)}
+                            </span>
+                          ))}
+                        </div>
+                      )}
                     </div>
-                    <div className='flex-1' />
                   </div>
                 );
               })}

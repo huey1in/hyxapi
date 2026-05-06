@@ -86,7 +86,7 @@ const SiderBar = ({ onNavigate = () => {} }) => {
       <Link
         to={to}
         onClick={onNavigate}
-        className={`flex items-center mx-2 px-4 py-3 mb-1.5 rounded-xl text-[18px] font-medium text-ui-text transition-all duration-150 hover:bg-ui-bg-subtle active:scale-[0.98] ${
+        className={`flex items-center mx-2 px-3 py-2 mb-1 rounded-lg text-sm font-medium text-ui-text transition-all duration-150 hover:bg-ui-bg-subtle active:scale-[0.98] ${
           active ? 'bg-ui-bg-subtle' : ''
         }`}
         style={{ fontFamily: "'Plus Jakarta Sans', 'Space Grotesk', sans-serif", letterSpacing: '-0.01em' }}
@@ -98,7 +98,7 @@ const SiderBar = ({ onNavigate = () => {} }) => {
 
   const SectionLabel = ({ label }) =>
     collapsed ? null : (
-      <p className='px-5 pb-2 pt-4 text-[12px] font-semibold uppercase tracking-widest text-ui-text-3'>
+      <p className='px-5 pb-1.5 pt-3 text-[11px] font-semibold uppercase tracking-widest text-ui-text-3'>
         {label}
       </p>
     );

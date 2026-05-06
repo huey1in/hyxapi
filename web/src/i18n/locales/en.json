@@ -3690,6 +3690,7 @@
     "使用你熟悉的 SDK 调用任意模型，完全兼容原生协议。": "Call any model with the SDK you already use — fully compatible with native protocols.",
     "让每个 token 都有去处": "Every token finds its way home",
     "免费注册，分钟级接入。兼容你现有的 SDK 和工作流。": "Free to start, live in minutes. Works with your existing SDK and workflow.",
-    "加载首页内容失败...": "Failed to load homepage content..."
+    "加载首页内容失败...": "Failed to load homepage content...",
+    "语言": "Language"
   }
 }

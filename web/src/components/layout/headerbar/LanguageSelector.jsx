@@ -51,7 +51,7 @@ const LanguageSelector = ({ currentLang, onLanguageChange, t }) => {
         <div className='absolute right-0 mt-3 w-52 bg-ui-bg-elevated border border-ui-border rounded-2xl shadow-xl overflow-hidden z-50 animate-dropdown'>
           <div className='px-3 pt-3 pb-1.5'>
             <p className='text-[11px] font-semibold text-ui-text-3 uppercase tracking-widest'>
-              Language
+              {t('语言')}
             </p>
           </div>
           <div className='px-2 pb-2 flex flex-col gap-0.5'>

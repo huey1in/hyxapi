@@ -1058,6 +1058,11 @@ html.dark .with-pastel-balls::before {
 }
 
 /* Setup page animations */
+@keyframes slideUp {
+  from { transform: translateY(100%); }
+  to   { transform: translateY(0); }
+}
+
 @keyframes bounce-slow {
   0%, 100% {
     transform: translateY(0);
