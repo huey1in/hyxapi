@@ -18,7 +18,6 @@ For commercial licensing, please contact support@quantumnous.com
 */
 
 import React, { useState, useRef, useEffect } from 'react';
-import { Link } from 'react-router-dom';
 import ChevronDownIcon from './icons/ChevronDownIcon';
 import SlidersIcon from './icons/SlidersIcon';
 import KeyIcon from './icons/KeyIcon';
@@ -65,12 +64,12 @@ const UserArea = ({
       <div className='relative' ref={ref}>
         <button
           onClick={() => setOpen((o) => !o)}
-          className='flex items-center gap-1.5 px-2.5 py-1.5 rounded-md hover:bg-ui-bg-subtle transition-colors'
+          className='inline-flex items-center gap-1.5 h-11 px-3 rounded-xl text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-subtle active:scale-95 transition-all duration-150'
         >
-          <span className='text-xs font-medium text-ui-text'>
+          <span className='text-sm font-medium text-ui-text max-w-[140px] truncate'>
             {userState.user.username}
           </span>
-          <ChevronDownIcon size={14} className='text-ui-text-3' />
+          <ChevronDownIcon size={16} className='text-ui-text-3' />
         </button>
 
         {open && (
@@ -111,12 +110,13 @@ const UserArea = ({
         {t('登录')}
       </button>
       {showRegisterButton && (
-        <Link
-          to='/register'
-          className='hidden md:inline-flex items-center px-5 py-2 text-sm font-semibold bg-ui-accent text-ui-accent-fg rounded-lg transition-all duration-200 hover:bg-ui-accent-hover hover:shadow-md active:scale-95'
+        <button
+          type='button'
+          onClick={() => openLoginModal('register')}
+          className='hidden md:inline-flex items-center px-5 py-2 text-sm font-semibold bg-ui-accent text-ui-accent-fg rounded-lg transition-all duration-200 hover:bg-ui-accent-hover hover:shadow-md active:scale-95 cursor-pointer border-0'
         >
           {t('注册')}
-        </Link>
+        </button>
       )}
     </div>
   );

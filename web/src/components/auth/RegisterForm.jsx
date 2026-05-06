@@ -47,6 +47,40 @@ import { SiDiscord } from 'react-icons/si';
 const inputClass =
   'w-full px-4 py-2.5 text-sm border border-ui-border rounded-lg outline-none focus:ring-2 focus:ring-ui-accent bg-ui-bg text-ui-text placeholder:text-ui-text-3';
 
+const usernamePattern = /^[A-Za-z0-9_\-.]{1,20}$/;
+
+// 计算密码强度，0~4 分。返回 { score, label, color, tips, valid }
+function evaluatePassword(pw) {
+  const tips = [];
+  const lengthOk = pw.length >= 8 && pw.length <= 20;
+  if (!lengthOk) tips.push('长度需 8-20 位');
+  const hasLower = /[a-z]/.test(pw);
+  const hasUpper = /[A-Z]/.test(pw);
+  const hasDigit = /\d/.test(pw);
+  const hasSymbol = /[^A-Za-z0-9]/.test(pw);
+
+  let score = 0;
+  if (lengthOk) score += 1;
+  const variety = (hasLower ? 1 : 0) + (hasUpper ? 1 : 0) + (hasDigit ? 1 : 0) + (hasSymbol ? 1 : 0);
+  if (lengthOk) {
+    if (variety >= 2) score = 2;
+    if (variety >= 3 || pw.length >= 12) score = 3;
+    if (variety >= 4 && pw.length >= 12) score = 4;
+  }
+
+  const labels = ['很弱', '弱', '中等', '较强', '很强'];
+  const colors = ['#ef4444', '#f97316', '#f59e0b', '#22c55e', '#16a34a'];
+  if (variety < 2 && lengthOk) tips.push('建议混合字母、数字或符号');
+
+  return {
+    score,
+    label: labels[score],
+    color: colors[score],
+    tips,
+    valid: lengthOk,
+  };
+}
+
 const OAuthButton = ({ onClick, loading, disabled, children, icon }) => (
   <button
     onClick={onClick}
@@ -106,6 +140,13 @@ const RegisterForm = ({ embedded = false, onSuccess, onSwitchToLogin }) => {
   const githubTimeoutRef = useRef(null);
   const githubButtonText = t(githubButtonTextKeyByState[githubButtonState]);
 
+  // username availability: idle | invalid | checking | available | taken | error
+  const [usernameStatus, setUsernameStatus] = useState({ state: 'idle', message: '' });
+  const usernameCheckRef = useRef(0);
+
+  const passwordEval = useMemo(() => evaluatePassword(password), [password]);
+  const passwordsMatch = password.length > 0 && password === password2;
+
   let affCode = new URLSearchParams(window.location.search).get('aff');
   if (affCode) localStorage.setItem('aff', affCode);
 
@@ -147,12 +188,51 @@ const RegisterForm = ({ embedded = false, onSuccess, onSwitchToLogin }) => {
     return () => { if (githubTimeoutRef.current) clearTimeout(githubTimeoutRef.current); };
   }, []);
 
+  useEffect(() => {
+    const value = username.trim();
+    if (!value) {
+      setUsernameStatus({ state: 'idle', message: '' });
+      return;
+    }
+    if (!usernamePattern.test(value)) {
+      setUsernameStatus({
+        state: 'invalid',
+        message: '1-20 位字母、数字、下划线、点或短横线',
+      });
+      return;
+    }
+    setUsernameStatus({ state: 'checking', message: '正在检测可用性…' });
+    const reqId = ++usernameCheckRef.current;
+    const handle = setTimeout(async () => {
+      try {
+        const res = await API.get(`/api/user/check_username?username=${encodeURIComponent(value)}`);
+        if (reqId !== usernameCheckRef.current) return;
+        const { success, data, message } = res.data || {};
+        if (success && data) {
+          setUsernameStatus(
+            data.available
+              ? { state: 'available', message: '该用户名可用' }
+              : { state: 'taken', message: '该用户名已被占用' },
+          );
+        } else {
+          setUsernameStatus({ state: 'error', message: message || '检测失败' });
+        }
+      } catch {
+        if (reqId !== usernameCheckRef.current) return;
+        setUsernameStatus({ state: 'error', message: '网络异常，无法检测' });
+      }
+    }, 450);
+    return () => clearTimeout(handle);
+  }, [username]);
+
   function handleChange(name, value) {
     setInputs((inputs) => ({ ...inputs, [name]: value }));
   }
 
   async function handleSubmit() {
-    if (password.length < 8) { showInfo('密码长度不得小于 8 位！'); return; }
+    if (usernameStatus.state === 'invalid') { showInfo(usernameStatus.message); return; }
+    if (usernameStatus.state === 'taken') { showInfo('该用户名已被占用'); return; }
+    if (!passwordEval.valid) { showInfo('密码长度需 8-20 位'); return; }
     if (password !== password2) { showInfo('两次输入的密码不一致'); return; }
     if (!username || !password) return;
     if (turnstileEnabled && turnstileToken === '') { showInfo('请稍后几秒重试，Turnstile 正在检查用户环境！'); return; }
@@ -352,39 +432,90 @@ const RegisterForm = ({ embedded = false, onSuccess, onSwitchToLogin }) => {
     </div>
   );
 
-  const renderEmailRegisterForm = () => (
+  const renderEmailRegisterForm = () => {
+    const usernameTone =
+      usernameStatus.state === 'available'
+        ? 'text-green-600'
+        : usernameStatus.state === 'taken' || usernameStatus.state === 'invalid' || usernameStatus.state === 'error'
+          ? 'text-red-500'
+          : 'text-ui-text-3';
+
+    return (
     <div className='space-y-3'>
-      <div>
+        <div>
         <label className='block mb-1.5 text-sm font-medium text-ui-text'>{t('用户名')}</label>
         <input
           type='text'
+          autoComplete='username'
           placeholder={t('请输入用户名')}
           value={inputs.username}
           onChange={(e) => handleChange('username', e.target.value)}
           className={inputClass}
         />
+        {usernameStatus.state !== 'idle' && (
+          <div className={`mt-1 text-[12px] flex items-center gap-1 ${usernameTone}`}>
+            {usernameStatus.state === 'checking' && (
+              <span className='w-3 h-3 border-2 border-current border-t-transparent rounded-full animate-spin' />
+            )}
+            <span>{usernameStatus.message}</span>
+          </div>
+        )}
       </div>
 
       <div>
         <label className='block mb-1.5 text-sm font-medium text-ui-text'>{t('密码')}</label>
         <input
           type='password'
+          autoComplete='new-password'
           placeholder={t('输入密码，最短 8 位，最长 20 位')}
           value={inputs.password}
           onChange={(e) => handleChange('password', e.target.value)}
           className={inputClass}
         />
+        {password.length > 0 && (
+          <div className='mt-1.5 space-y-1'>
+            <div className='flex items-center gap-2'>
+              <div className='flex-1 flex items-center gap-1'>
+                {[0, 1, 2].map((i) => {
+                  const filled = passwordEval.score <= 1 ? 1 : passwordEval.score === 2 ? 2 : 3;
+                  const active = i < filled;
+                  return (
+                    <div
+                      key={i}
+                      className='flex-1 h-1.5 rounded-full transition-colors duration-200'
+                      style={{
+                        backgroundColor: active ? passwordEval.color : 'var(--color-ui-bg-subtle, rgba(0,0,0,0.08))',
+                      }}
+                    />
+                  );
+                })}
+              </div>
+              <span className='text-[12px] font-medium' style={{ color: passwordEval.color }}>
+                {passwordEval.label}
+              </span>
+            </div>
+            {passwordEval.tips.length > 0 && (
+              <p className='text-[12px] text-ui-text-3'>{passwordEval.tips.join('；')}</p>
+            )}
+          </div>
+        )}
       </div>
 
       <div>
         <label className='block mb-1.5 text-sm font-medium text-ui-text'>{t('确认密码')}</label>
         <input
           type='password'
+          autoComplete='new-password'
           placeholder={t('确认密码')}
           value={inputs.password2}
           onChange={(e) => handleChange('password2', e.target.value)}
           className={inputClass}
         />
+        {password2.length > 0 && (
+          <p className={`mt-1 text-[12px] ${passwordsMatch ? 'text-green-600' : 'text-red-500'}`}>
+            {passwordsMatch ? '两次输入一致' : '两次输入的密码不一致'}
+          </p>
+        )}
       </div>
 
       {showEmailVerification && (
@@ -445,7 +576,8 @@ const RegisterForm = ({ embedded = false, onSuccess, onSwitchToLogin }) => {
         </button>
       )}
     </div>
-  );
+    );
+  };
 
   const wechatModal = (
     <Modal

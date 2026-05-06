@@ -227,6 +227,39 @@ func Register(c *gin.Context) {
 	return
 }
 
+// CheckUsername reports whether a username is taken (or soft-deleted).
+// Public endpoint; rate-limited at the router level.
+func CheckUsername(c *gin.Context) {
+	username := strings.TrimSpace(c.Query("username"))
+	if username == "" {
+		common.ApiErrorI18n(c, i18n.MsgInvalidParams)
+		return
+	}
+	if len(username) > 20 {
+		c.JSON(http.StatusOK, gin.H{
+			"success": true,
+			"message": "",
+			"data": gin.H{
+				"available": false,
+				"reason":    "length",
+			},
+		})
+		return
+	}
+	exist, err := model.CheckUserExistOrDeleted(username, "")
+	if err != nil {
+		common.ApiErrorI18n(c, i18n.MsgDatabaseError)
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{
+		"success": true,
+		"message": "",
+		"data": gin.H{
+			"available": !exist,
+		},
+	})
+}
+
 func GetAllUsers(c *gin.Context) {
 	pageInfo := common.GetPageQuery(c)
 	users, total, err := model.GetAllUsers(pageInfo)

@@ -198,7 +198,8 @@ const NoticeModal = ({
       onClick={onClose}
     >
       <div
-        className='bg-ui-bg-elevated rounded-2xl shadow-2xl border border-ui-border flex flex-col overflow-hidden w-full max-w-2xl max-h-[85vh]'
+        className='rounded-2xl shadow-2xl border border-ui-border flex flex-col overflow-hidden w-full max-w-2xl max-h-[85vh]'
+        style={{ backgroundColor: 'var(--page-bg)' }}
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}

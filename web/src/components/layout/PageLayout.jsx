@@ -70,6 +70,7 @@ const PageLayout = () => {
 
   const isConsoleRoute = location.pathname.startsWith('/console');
   const showSider = isConsoleRoute;
+  const headerOffset = isConsoleRoute ? '64px' : 'var(--header-height)';
 
   useEffect(() => {
     if (isMobile && drawerOpen && collapsed) {
@@ -173,7 +174,7 @@ const PageLayout = () => {
           overflow: isMobile ? 'visible' : 'auto',
           display: 'flex',
           flexDirection: 'column',
-          paddingTop: 'var(--header-height)',
+          paddingTop: headerOffset,
         }}
       >
         {showSider && (
@@ -185,7 +186,7 @@ const PageLayout = () => {
                 style={{
                   position: 'fixed',
                   inset: 0,
-                  top: 'var(--header-height)',
+                  top: headerOffset,
                   zIndex: 98,
                   backgroundColor: 'rgba(0,0,0,0.45)',
                   backdropFilter: 'blur(3px)',
@@ -201,7 +202,7 @@ const PageLayout = () => {
               style={{
                 position: 'fixed',
                 left: 0,
-                top: 'var(--header-height)',
+                top: headerOffset,
                 zIndex: 99,
                 border: 'none',
                 paddingRight: '0',
