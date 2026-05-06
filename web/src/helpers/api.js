@@ -77,6 +77,24 @@ function patchAPIInstance(instance) {
     return reqPromise;
   };
 
+  // Forward the active UI language to the backend so its i18n responses
+  // (toast messages, error strings) come back in the user's language.
+  instance.interceptors.request.use((config) => {
+    try {
+      const lang =
+        localStorage.getItem('i18nextLng') ||
+        (navigator.language || '').toLowerCase().startsWith('zh')
+          ? 'zh-CN'
+          : 'en';
+      const normalised = String(lang || '').toLowerCase().startsWith('zh')
+        ? 'zh-CN'
+        : 'en';
+      config.headers = config.headers || {};
+      config.headers['Accept-Language'] = normalised;
+    } catch {}
+    return config;
+  });
+
   instance.interceptors.response.use(
     (response) => response,
     (error) => {

@@ -145,7 +145,7 @@ const MobileNavDrawer = ({
         <button
           onClick={() => {
             onClose();
-            if (userState?.user) navigate('/console');
+            if (userState?.user) navigate('/console/playground');
             else openLoginModal('register');
           }}
           className='flex-1 h-[52px] rounded-full bg-black text-[15px] font-semibold text-white cursor-pointer'

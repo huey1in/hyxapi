@@ -335,7 +335,7 @@ const Playground = () => {
     const images = pendingImages.slice();
     if ((!text && images.length === 0) || isGenerating) return;
     if (!inputs.model) {
-      showWarning('请先选择一个模型');
+      showWarning(t('请先选择一个模型'));
       return;
     }
     setDraft('');
@@ -465,6 +465,8 @@ const Playground = () => {
     });
   };
 
+  const localizedTopics = topics.map((text) => ({ key: text, label: t(text) }));
+
   return (
     // 撑满 PageLayout 的 Content 区（已扣除 header 与 sidebar），不再用 fixed 以免缩窗时盖住导航
     <div
@@ -478,11 +480,11 @@ const Playground = () => {
             const username = userState?.user?.username || '';
             const hour = new Date().getHours();
             const greeting =
-              hour < 6 ? '夜深了'
-              : hour < 12 ? '早上好'
-              : hour < 14 ? '中午好'
-              : hour < 18 ? '下午好'
-              : '晚上好';
+              hour < 6 ? t('夜深了')
+              : hour < 12 ? t('早上好')
+              : hour < 14 ? t('中午好')
+              : hour < 18 ? t('下午好')
+              : t('晚上好');
             return (
               <div className='h-full flex flex-col items-center justify-center text-center px-6'>
                 <h2
@@ -497,17 +499,17 @@ const Playground = () => {
                   )}
                 </h2>
                 <p className='text-ui-text-2 text-sm md:text-base mb-8'>
-                  今天想聊点什么？
+                  {t('今天想聊点什么？')}
                 </p>
                 <div className='w-full max-w-2xl grid grid-cols-1 sm:grid-cols-2 gap-3'>
-                  {topics.map((text) => (
+                  {localizedTopics.map(({ key, label }) => (
                     <button
-                      key={text}
-                      onClick={() => handlePickTopic(text)}
+                      key={key}
+                      onClick={() => handlePickTopic(label)}
                       className='text-left px-4 py-3 rounded-2xl border border-ui-border hover:bg-ui-bg-subtle text-[14px] leading-relaxed text-ui-text transition-colors'
                       style={{ backgroundColor: 'var(--page-bg)' }}
                     >
-                      {text}
+                      {label}
                     </button>
                   ))}
                 </div>

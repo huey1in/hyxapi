@@ -9,7 +9,7 @@ import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { createPortal } from 'react-dom';
 import {
-  Copy, Check, RefreshCw, X, ChevronRight, ShieldAlert,
+  Copy, Check, RefreshCw, X, ChevronRight, ChevronDown, ShieldAlert,
 } from 'lucide-react';
 import {
   API, copy, showError, showInfo, showSuccess,
@@ -141,13 +141,72 @@ const ModalShell = ({ open, title, onClose, children, footer, max = 'max-w-md' }
 
 const languageOptions = [
   { value: 'zh-CN', label: '简体中文' },
-  { value: 'zh-TW', label: '繁體中文' },
   { value: 'en', label: 'English' },
-  { value: 'fr', label: 'Français' },
-  { value: 'ru', label: 'Русский' },
-  { value: 'ja', label: '日本語' },
-  { value: 'vi', label: 'Tiếng Việt' },
 ];
+
+// ── compact dropdown (LanguageSelector style) ───────────
+
+const PrefDropdown = ({ value, options, onChange }) => {
+  const [open, setOpen] = useState(false);
+  const ref = React.useRef(null);
+
+  useEffect(() => {
+    const handler = (e) => {
+      if (ref.current && !ref.current.contains(e.target)) setOpen(false);
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, []);
+
+  const current = options.find((o) => o.value === value);
+
+  return (
+    <div className='relative' ref={ref}>
+      <button
+        type='button'
+        onClick={() => setOpen((o) => !o)}
+        className='inline-flex items-center justify-between gap-2 min-w-[140px] px-3 py-1.5 text-xs bg-transparent border border-ui-border rounded-xl text-ui-text hover:border-ui-text-3 transition-colors'
+      >
+        <span className='truncate'>{current?.label || ''}</span>
+        <ChevronDown
+          size={12}
+          className={`text-ui-text-3 flex-shrink-0 transition-transform ${open ? 'rotate-180' : ''}`}
+        />
+      </button>
+      {open && (
+        <div
+          className='absolute right-0 mt-2 w-44 border border-ui-border rounded-2xl shadow-xl overflow-hidden z-50 animate-dropdown'
+          style={{ backgroundColor: 'var(--page-bg)' }}
+        >
+          <div className='px-2 py-2 flex flex-col gap-0.5 max-h-72 overflow-y-auto'>
+            {options.map((o) => {
+              const sel = value === o.value;
+              return (
+                <button
+                  key={o.value}
+                  type='button'
+                  onClick={() => { onChange(o.value); setOpen(false); }}
+                  className={`flex items-center justify-between w-full px-3 py-2 rounded-xl text-xs transition-colors ${
+                    sel
+                      ? 'bg-ui-bg-subtle text-ui-text font-medium'
+                      : 'text-ui-text hover:bg-ui-bg-subtle'
+                  }`}
+                >
+                  <span className='truncate'>{o.label}</span>
+                  {sel && (
+                    <svg width='12' height='12' viewBox='0 0 14 14' fill='none' stroke='currentColor' strokeWidth='2' strokeLinecap='round' strokeLinejoin='round' className='flex-shrink-0'>
+                      <path d='M2 7l3.5 3.5 6.5-7' />
+                    </svg>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
 
 // ── main page ───────────────────────────────────────────
 
@@ -358,15 +417,11 @@ const PersonalSetting = () => {
 
           <Card title={t('偏好设置')} bodyClass='p-0'>
             <Row title={t('界面语言')} desc={t('设置自动同步到所有设备')}>
-              <select
+              <PrefDropdown
                 value={currentLanguage}
-                onChange={(e) => handleLanguageChange(e.target.value)}
-                className='px-2.5 py-1.5 text-xs bg-ui-bg border border-ui-border rounded-md text-ui-text outline-none focus:border-ui-text-3 cursor-pointer'
-              >
-                {languageOptions.map((o) => (
-                  <option key={o.value} value={o.value}>{o.label}</option>
-                ))}
-              </select>
+                options={languageOptions}
+                onChange={handleLanguageChange}
+              />
             </Row>
           </Card>
         </div>

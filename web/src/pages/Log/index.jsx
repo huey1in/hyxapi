@@ -152,7 +152,7 @@ const DetailRow = ({ label, value, mono = false }) => (
 
 // ── BAI-style token usage chips ─────────────────────────
 
-const TokenUsageChips = ({ promptTokens, completionTokens }) => {
+const TokenUsageChips = ({ promptTokens, completionTokens, t }) => {
   const inT = Number(promptTokens) || 0;
   const outT = Number(completionTokens) || 0;
   const total = inT + outT;
@@ -166,7 +166,7 @@ const TokenUsageChips = ({ promptTokens, completionTokens }) => {
   return (
     <span className='inline-flex items-center gap-1.5 whitespace-nowrap'>
       <span className={sumChip}>
-        <span className='text-[10px] font-semibold text-ui-text-3'>总</span>
+        <span className='text-[10px] font-semibold text-ui-text-3'>{t('总')}</span>
         {formatThousand(total)}
       </span>
       <span className='text-ui-text-3 text-[11px]'>=</span>
@@ -482,6 +482,7 @@ const LogsView = () => {
                             <TokenUsageChips
                               promptTokens={log.prompt_tokens}
                               completionTokens={log.completion_tokens}
+                              t={t}
                             />
                           </td>
                           {isAdminUser && (

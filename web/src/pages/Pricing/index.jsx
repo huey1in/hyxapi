@@ -466,7 +466,7 @@ const PricingPage = () => {
           {loading && models.length === 0 ? (
             <div className='grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4'>
               {[...Array(6)].map((_, i) => (
-                <div key={i} className='bg-ui-bg-elevated border border-ui-border rounded-2xl h-44 animate-pulse' />
+                <div key={i} className='border border-ui-border rounded-2xl h-44 animate-pulse' style={{ backgroundColor: 'var(--page-bg)' }} />
               ))}
             </div>
           ) : filtered.length === 0 ? (
@@ -483,7 +483,8 @@ const PricingPage = () => {
                   <div
                     key={m.model_name}
                     onClick={() => openModel(m.model_name)}
-                    className='group relative flex flex-col overflow-hidden rounded-2xl border border-ui-border bg-ui-bg-elevated cursor-pointer transition-all duration-200 hover:border-ui-text-3/50 hover:shadow-md'
+                    className='group relative flex flex-col overflow-hidden rounded-2xl border border-ui-border cursor-pointer transition-all duration-200 hover:border-ui-text-3/50 hover:shadow-md'
+                    style={{ backgroundColor: 'var(--page-bg)' }}
                   >
                     <div className='flex flex-col px-5 pt-5 pb-0'>
                       <div className='flex items-center gap-2.5 min-w-0'>
@@ -560,7 +561,11 @@ const PricingPage = () => {
                       {m.supported_endpoint_types?.length > 0 && (
                         <div className='mt-1.5 flex flex-wrap gap-1'>
                           {m.supported_endpoint_types.map((ep) => (
-                            <span key={ep} className='text-[10px] font-mono text-ui-text-3 bg-ui-bg px-1.5 py-0.5 rounded border border-ui-border'>
+                            <span
+                              key={ep}
+                              className='text-[10px] font-mono text-ui-text-3 px-1.5 py-0.5 rounded border border-ui-border'
+                              style={{ backgroundColor: 'var(--page-bg)' }}
+                            >
                               {endpointLabel(ep)}
                             </span>
                           ))}
@@ -674,7 +679,10 @@ const ModelDetailView = ({
             </span>
           )}
         </h2>
-        <div className='bg-ui-bg-elevated border border-ui-border rounded-xl divide-y divide-ui-divider'>
+        <div
+          className='border border-ui-border rounded-[28px] divide-y divide-ui-divider'
+          style={{ backgroundColor: 'var(--page-bg)' }}
+        >
           {isPerCall ? (
             <div className='px-5 py-4 flex items-baseline justify-between'>
               <span className='text-sm text-ui-text-2'>{t('单次调用')}</span>
@@ -707,7 +715,10 @@ const ModelDetailView = ({
           <h2 className='text-xs uppercase tracking-widest font-semibold text-ui-text-3 mb-3'>
             {t('各分组定价')}
           </h2>
-          <div className='bg-ui-bg-elevated border border-ui-border rounded-xl overflow-hidden'>
+          <div
+            className='border border-ui-border rounded-[28px] overflow-hidden'
+            style={{ backgroundColor: 'var(--page-bg)' }}
+          >
             <table className='w-full text-sm'>
               <thead>
                 <tr className='border-b border-ui-border bg-ui-bg-subtle/50 text-[11px] uppercase tracking-wider text-ui-text-3'>
@@ -757,7 +768,10 @@ const ModelDetailView = ({
         <h2 className='text-xs uppercase tracking-widest font-semibold text-ui-text-3 mb-3'>
           {t('元数据')}
         </h2>
-        <div className='bg-ui-bg-elevated border border-ui-border rounded-xl p-5 grid grid-cols-2 md:grid-cols-3 gap-x-6 gap-y-4'>
+        <div
+          className='border border-ui-border rounded-[28px] p-5 grid grid-cols-2 md:grid-cols-3 gap-x-6 gap-y-4'
+          style={{ backgroundColor: 'var(--page-bg)' }}
+        >
           <Stat label={t('计费类型')} value={isPerCall ? t('按次') : t('按 token')} mono={false} />
           <Stat label={t('模型倍率')} value={(model.model_ratio ?? 0).toString()} />
           {!isPerCall && (
@@ -802,7 +816,8 @@ const ModelDetailView = ({
               return (
                 <div
                   key={ep}
-                  className='px-3 py-2 rounded-lg border border-ui-border bg-ui-bg-elevated min-w-[180px]'
+                  className='px-3 py-2 rounded-2xl border border-ui-border min-w-[180px]'
+                  style={{ backgroundColor: 'var(--page-bg)' }}
                 >
                   <div className='text-sm font-medium text-ui-text'>{endpointLabel(ep)}</div>
                   {info && typeof info === 'object' && (

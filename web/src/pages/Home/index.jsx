@@ -17,7 +17,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 
-import React, { useContext, useEffect, useRef, useState } from 'react';
+import React, { useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { marked } from 'marked';
 import { useTranslation } from 'react-i18next';
@@ -263,6 +263,21 @@ const Home = () => {
   const [noticeVisible, setNoticeVisible] = useState(false);
   const isMobile = useIsMobile();
   const docsLink = statusState?.status?.docs_link || '';
+  const docsEnabled = useMemo(() => {
+    const cfg = statusState?.status?.HeaderNavModules;
+    if (!cfg) return true;
+    try {
+      const modules = JSON.parse(cfg);
+      if (typeof modules.docs === 'boolean') return modules.docs;
+      if (modules.docs && typeof modules.docs === 'object') {
+        return modules.docs.enabled !== false;
+      }
+      return true;
+    } catch {
+      return true;
+    }
+  }, [statusState?.status?.HeaderNavModules]);
+  const showDocs = !!docsLink && docsEnabled;
   const serverAddress =
     statusState?.status?.server_address || `${window.location.origin}`;
 
@@ -394,7 +409,7 @@ const Home = () => {
                         {t('免费开始')} →
                       </button>
                     </Link>
-                    {docsLink && (
+                    {showDocs && (
                       <a href={docsLink} target='_blank' rel='noopener noreferrer'>
                         <button className='inline-flex items-center px-5 py-2.5 text-sm font-medium rounded-lg border border-ui-border text-ui-text bg-ui-bg-elevated hover:bg-ui-bg-subtle active:scale-95 transition-all duration-200'>
                           {t('查看文档')} →
