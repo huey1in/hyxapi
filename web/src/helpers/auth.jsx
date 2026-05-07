@@ -17,45 +17,56 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 
-import React from 'react';
+import React, { useContext, useEffect } from 'react';
 import { Navigate } from 'react-router-dom';
-import { history } from './history';
+import { useLoginModal } from '../context/LoginModal';
+import { UserContext } from '../context/User';
 
 export function authHeader() {
-  // return authorization header with jwt token
   let user = JSON.parse(localStorage.getItem('user'));
-
   if (user && user.token) {
     return { Authorization: 'Bearer ' + user.token };
-  } else {
-    return {};
   }
+  return {};
 }
 
 export const AuthRedirect = ({ children }) => {
   const user = localStorage.getItem('user');
-
-  if (user) {
-    return <Navigate to='/console' replace />;
-  }
-
+  if (user) return <Navigate to='/console' replace />;
   return children;
 };
 
+// 校验登录状态：未登录时停留在当前路由 + 打开登录模态框，登录成功后 UserContext 变更会自动刷新此组件
 function PrivateRoute({ children }) {
-  if (!localStorage.getItem('user')) {
-    return <Navigate to='/login' state={{ from: history.location }} />;
+  const [userState] = useContext(UserContext);
+  const { openLoginModal } = useLoginModal();
+  const hasUser = !!userState?.user || !!localStorage.getItem('user');
+
+  useEffect(() => {
+    if (!hasUser) openLoginModal('login');
+  }, [hasUser, openLoginModal]);
+
+  if (!hasUser) {
+    // 未登录时返回空白占位，让 LoginModal 在当前路由上方覆盖显示
+    return <div className='min-h-[40vh]' />;
   }
   return children;
 }
 
 export function AdminRoute({ children }) {
+  const [userState] = useContext(UserContext);
+  const { openLoginModal } = useLoginModal();
   const raw = localStorage.getItem('user');
-  if (!raw) {
-    return <Navigate to='/login' state={{ from: history.location }} />;
-  }
+  const hasUser = !!userState?.user || !!raw;
+
+  useEffect(() => {
+    if (!hasUser) openLoginModal('login');
+  }, [hasUser, openLoginModal]);
+
+  if (!hasUser) return <div className='min-h-[40vh]' />;
+
   try {
-    const user = JSON.parse(raw);
+    const user = userState?.user || (raw ? JSON.parse(raw) : null);
     if (user && typeof user.role === 'number' && user.role >= 10) {
       return children;
     }

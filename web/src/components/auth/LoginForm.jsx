@@ -63,7 +63,7 @@ const OAuthTile = ({ onClick, loading, disabled, name, icon }) => (
   <button
     onClick={onClick}
     disabled={loading || disabled}
-    className='h-11 w-full flex items-center gap-3 px-4 text-sm font-medium border border-ui-border rounded-xl bg-ui-bg-elevated hover:bg-ui-bg-subtle text-ui-text transition-all duration-150 disabled:opacity-50 disabled:cursor-not-allowed'
+    className='h-11 w-full flex items-center gap-3 px-4 text-sm font-medium border border-ui-border rounded-xl bg-[var(--page-bg)] hover:bg-ui-bg-subtle text-ui-text transition-all duration-150 disabled:opacity-50 disabled:cursor-not-allowed'
   >
     {loading ? (
       <span className='w-4 h-4 border-2 border-ui-text-3 border-t-transparent rounded-full animate-spin' />
@@ -78,7 +78,7 @@ const OAuthButton = ({ onClick, loading, disabled, children, icon }) => (
   <button
     onClick={onClick}
     disabled={loading || disabled}
-    className='w-full flex items-center justify-center gap-3 px-4 py-2.5 text-sm font-medium border border-ui-border rounded-lg bg-ui-bg-elevated hover:bg-ui-bg-subtle text-ui-text transition-colors disabled:opacity-50 disabled:cursor-not-allowed'
+    className='w-full flex items-center justify-center gap-3 px-4 py-2.5 text-sm font-medium border border-ui-border rounded-lg bg-[var(--page-bg)] hover:bg-ui-bg-subtle text-ui-text transition-colors disabled:opacity-50 disabled:cursor-not-allowed'
   >
     {loading ? (
       <span className='w-4 h-4 border-2 border-ui-text-3 border-t-transparent rounded-full animate-spin' />
@@ -417,7 +417,7 @@ const LoginForm = ({ embedded = false, onSuccess, onSwitchToRegister, onSwitchTo
 
         <button
           onClick={() => { setEmailLoginLoading(true); setShowEmailLogin(true); setEmailLoginLoading(false); }}
-          className='h-11 w-full flex items-center gap-3 px-4 text-sm font-medium border border-ui-border rounded-xl bg-ui-bg-elevated hover:bg-ui-bg-subtle text-ui-text transition-all duration-150'
+          className='h-11 w-full flex items-center gap-3 px-4 text-sm font-medium border border-ui-border rounded-xl bg-[var(--page-bg)] hover:bg-ui-bg-subtle text-ui-text transition-all duration-150'
         >
           <svg viewBox='0 0 24 24' className='w-5 h-5 flex-shrink-0' fill='none' stroke='currentColor' strokeWidth='1.75'>
             <path strokeLinecap='round' strokeLinejoin='round' d='M3 8l9 6 9-6M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z' />

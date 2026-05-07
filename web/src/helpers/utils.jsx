@@ -126,9 +126,8 @@ export function showError(error) {
     if (error.name === 'AxiosError') {
       switch (error.response.status) {
         case 401:
-          localStorage.removeItem('user');
-          window.location.href = '/login?expired=true';
-          break;
+          // 由 api.js 的 handleUnauthorized 通过 routify:auth-required 事件统一处理
+          return;
         case 429:
           toast.error('错误：请求次数过多，请稍后再试！');
           break;

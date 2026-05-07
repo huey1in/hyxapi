@@ -135,25 +135,21 @@ const AUTH_BYPASS_RE =
 const handleUnauthorized = (error) => {
   const url = error?.config?.url || '';
   if (AUTH_BYPASS_RE.test(url)) return;
-  // Already on login/register/oauth pages — no need to bounce.
+  // 在 setup / oauth callback 等独立页面直接放过
   const path = window.location.pathname;
-  if (
-    path === '/login' ||
-    path === '/register' ||
-    path === '/reset' ||
-    path === '/user/reset' ||
-    path === '/setup' ||
-    path.startsWith('/oauth/')
-  ) {
+  if (path === '/setup' || path.startsWith('/oauth/') || path === '/user/reset') {
     return;
   }
-  // Clear stale user, then bounce to login with a flag so the form
-  // can show "session expired" messaging.
+  // 清掉本地用户态，让 PrivateRoute 重新判断
   try {
     localStorage.removeItem('user');
   } catch {}
-  const next = encodeURIComponent(path + window.location.search);
-  window.location.assign(`/login?expired=1&from=${next}`);
+  // 通过自定义事件通知 React 打开登录模态框（不刷新页面）
+  try {
+    window.dispatchEvent(
+      new CustomEvent('routify:auth-required', { detail: { from: path } }),
+    );
+  } catch {}
 };
 
 // playground

@@ -85,7 +85,7 @@ const OAuthButton = ({ onClick, loading, disabled, children, icon }) => (
   <button
     onClick={onClick}
     disabled={loading || disabled}
-    className='w-full flex items-center justify-center gap-3 px-4 py-2.5 text-sm font-medium border border-ui-border rounded-lg bg-ui-bg-elevated hover:bg-ui-bg-subtle text-ui-text transition-colors disabled:opacity-50 disabled:cursor-not-allowed'
+    className='w-full flex items-center justify-center gap-3 px-4 py-2.5 text-sm font-medium border border-ui-border rounded-lg bg-[var(--page-bg)] hover:bg-ui-bg-subtle text-ui-text transition-colors disabled:opacity-50 disabled:cursor-not-allowed'
   >
     {loading ? (
       <span className='w-4 h-4 border-2 border-ui-text-3 border-t-transparent rounded-full animate-spin' />
