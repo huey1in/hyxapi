@@ -15,7 +15,7 @@ const Pagination = ({ page, pageSize, total, onChange }) => {
   };
 
   return (
-    <div className='flex items-center justify-between gap-3 px-4 py-3 border-t border-ui-border text-xs'>
+    <div className='flex items-center justify-between gap-3 px-4 py-3 border-t border-ui-border text-sm'>
       <span className='text-ui-text-3 tabular-nums'>
         {total > 0 ? `${start}-${end} / ${total}` : '0'}
       </span>
@@ -23,19 +23,19 @@ const Pagination = ({ page, pageSize, total, onChange }) => {
         <button
           onClick={() => go(page - 1)}
           disabled={page <= 1}
-          className='inline-flex items-center justify-center w-7 h-7 rounded-md text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-subtle disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-ui-text-2 transition-colors'
+          className='inline-flex items-center justify-center w-8 h-8 rounded-lg text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-subtle disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-ui-text-2 transition-colors'
         >
-          <ChevronLeft size={14} />
+          <ChevronLeft size={16} />
         </button>
-        <span className='px-2 text-ui-text tabular-nums'>
+        <span className='px-3 py-2 text-ui-text tabular-nums'>
           {page} / {totalPages}
         </span>
         <button
           onClick={() => go(page + 1)}
           disabled={page >= totalPages}
-          className='inline-flex items-center justify-center w-7 h-7 rounded-md text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-subtle disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-ui-text-2 transition-colors'
+          className='inline-flex items-center justify-center w-8 h-8 rounded-lg text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-subtle disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-ui-text-2 transition-colors'
         >
-          <ChevronRight size={14} />
+          <ChevronRight size={16} />
         </button>
       </div>
     </div>

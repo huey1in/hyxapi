@@ -164,13 +164,13 @@ const CardTable = ({
           return (
             <div
               key={col.key || colIdx}
-              className='flex justify-between items-start py-1 border-b last:border-b-0 border-dashed'
+              className='flex justify-between items-start py-1.5 border-b last:border-b-0 border-dashed'
               style={{ borderColor: 'var(--semi-color-border)' }}
             >
-              <span className='font-medium text-gray-600 mr-2 whitespace-nowrap select-none'>
+              <span className='text-[13px] font-medium text-ui-text-2 mr-2 whitespace-nowrap select-none'>
                 {title}
               </span>
-              <div className='flex-1 break-all flex justify-end items-center gap-1'>
+              <div className='flex-1 break-all flex justify-end items-center gap-1 text-sm'>
                 {cellContent !== undefined && cellContent !== null
                   ? cellContent
                   : '-'}

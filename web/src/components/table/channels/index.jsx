@@ -24,12 +24,12 @@ const ChannelsPage = () => {
   const t = channelsData.t;
 
   return (
-    <div className='min-h-[calc(100vh-4rem)] mt-16 px-4 py-5 md:px-6 md:py-6 bg-ui-bg'>
+    <div className='px-4 pt-8 pb-6 md:px-6 md:pt-10 md:pb-8'>
       <div className='max-w-[1400px] mx-auto'>
         {/* Header */}
         <div className='flex items-center justify-between gap-3 mb-5'>
           <h1
-            className='text-2xl md:text-3xl font-medium text-ui-text'
+            className='text-2xl font-semibold text-ui-text'
             style={{ fontFamily: "'Space Grotesk', sans-serif", letterSpacing: '-0.02em' }}
           >
             {t('渠道管理')}
@@ -37,31 +37,31 @@ const ChannelsPage = () => {
         </div>
 
         {channelsData.globalPassThroughEnabled && (
-          <div className='flex items-start gap-2 px-4 py-3 rounded-lg border border-amber-500/30 bg-amber-500/10 mb-3'>
+          <div className='flex items-start gap-2 px-5 py-3.5 rounded-2xl border border-amber-500/30 bg-amber-500/10 mb-3'>
             <AlertTriangle size={16} className='text-amber-500 flex-shrink-0 mt-0.5' />
-            <div className='text-xs text-ui-text-2 leading-relaxed'>
+            <div className='text-[13px] text-ui-text-2 leading-relaxed'>
               {t('已开启全局请求透传：参数覆写、模型重定向、渠道适配等 NewAPI 内置功能将失效，非最佳实践；如因此产生问题，请勿提交 issue 反馈。')}
             </div>
           </div>
         )}
 
         {/* Filters card (top) */}
-        <div className='bg-ui-bg-elevated border border-ui-border rounded-xl p-3 mb-3 space-y-2.5'>
+        <div className='border border-ui-border rounded-2xl p-4 mb-3 space-y-3 bg-[var(--page-bg)]'>
           <ChannelsFilters {...channelsData} />
-          <div className='border-t border-ui-divider pt-2.5'>
+          <div className='border-t border-ui-divider pt-3'>
             <ChannelsActions {...channelsData} />
           </div>
         </div>
 
         {/* Tabs */}
         {!channelsData.enableTagMode && (
-          <div className='mb-3'>
+          <div className='mb-4'>
             <ChannelsTabs {...channelsData} />
           </div>
         )}
 
         {/* Table card */}
-        <div className='bg-ui-bg-elevated border border-ui-border rounded-xl overflow-hidden'>
+        <div className='border border-ui-border rounded-2xl overflow-hidden bg-[var(--page-bg)]'>
           <ChannelsTable {...channelsData} />
           <div className='border-t border-ui-divider'>
             <Pagination

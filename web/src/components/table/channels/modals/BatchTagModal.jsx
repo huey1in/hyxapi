@@ -18,7 +18,8 @@ For commercial licensing, please contact support@quantumnous.com
 */
 
 import React from 'react';
-import { Modal, Input, Typography } from '@douyinfe/semi-ui';
+import ModalDialog from '../../../common/ModalDialog';
+import { TextField } from '../../../common/form/Primitives';
 
 const BatchTagModal = ({
   showBatchSetTag,
@@ -29,34 +30,49 @@ const BatchTagModal = ({
   selectedChannels,
   t,
 }) => {
+  const onCancel = () => setShowBatchSetTag(false);
   return (
-    <Modal
+    <ModalDialog
+      open={showBatchSetTag}
+      onClose={onCancel}
       title={t('批量设置标签')}
-      visible={showBatchSetTag}
-      onOk={batchSetChannelTag}
-      onCancel={() => setShowBatchSetTag(false)}
-      maskClosable={false}
-      centered={true}
-      size='small'
-      className='!rounded-lg'
+      width={460}
+      footer={
+        <>
+          <button
+            onClick={onCancel}
+            className='inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium rounded-xl border border-ui-border text-ui-text hover:bg-ui-bg-subtle transition-colors'
+          >
+            {t('取消')}
+          </button>
+          <button
+            onClick={batchSetChannelTag}
+            className='inline-flex items-center gap-1.5 px-4 py-2 text-sm font-semibold rounded-xl bg-ui-accent text-ui-accent-fg hover:bg-ui-accent-hover transition-colors'
+          >
+            {t('确定')}
+          </button>
+        </>
+      }
     >
-      <div className='mb-5'>
-        <Typography.Text>{t('请输入要设置的标签名称')}</Typography.Text>
+      <div className='mb-2'>
+        <span className='text-sm text-ui-text'>
+          {t('请输入要设置的标签名称')}
+        </span>
       </div>
-      <Input
+      <TextField
         placeholder={t('请输入标签名称')}
         value={batchSetTagValue}
         onChange={(v) => setBatchSetTagValue(v)}
       />
-      <div className='mt-4'>
-        <Typography.Text type='secondary'>
+      <div className='mt-2'>
+        <span className='text-xs text-ui-text-3'>
           {t('已选择 ${count} 个渠道').replace(
             '${count}',
             selectedChannels.length,
           )}
-        </Typography.Text>
+        </span>
       </div>
-    </Modal>
+    </ModalDialog>
   );
 };
 

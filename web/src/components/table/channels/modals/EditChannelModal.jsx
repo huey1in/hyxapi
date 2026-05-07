@@ -1902,9 +1902,9 @@ const EditChannelModal = (props) => {
           !isEdit ? (
             <button
               onClick={pasteFromClipboard}
-              className='inline-flex items-center gap-1.5 px-2.5 py-1 text-xs rounded-md border border-ui-border text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-subtle transition-colors whitespace-nowrap'
+              className='inline-flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-lg border border-ui-border text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-subtle transition-colors whitespace-nowrap'
             >
-              <Zap size={12} />
+              <Zap size={14} />
               {t('从剪贴板粘贴配置')}
             </button>
           ) : null
@@ -1913,13 +1913,13 @@ const EditChannelModal = (props) => {
           <>
             <button
               onClick={handleCancel}
-              className='inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-medium rounded-md border border-ui-border text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-subtle transition-colors whitespace-nowrap'
+              className='inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium rounded-xl border border-ui-border text-ui-text hover:bg-ui-bg-subtle transition-colors whitespace-nowrap'
             >
               {t('取消')}
             </button>
             <button
               onClick={submit}
-              className='inline-flex items-center gap-1.5 px-4 py-1.5 text-xs font-semibold rounded-md bg-ui-accent text-ui-accent-fg hover:bg-ui-accent-hover hover:shadow-md active:scale-95 transition-all whitespace-nowrap'
+              className='inline-flex items-center gap-1.5 px-5 py-2 text-sm font-semibold rounded-xl bg-ui-accent text-ui-accent-fg hover:bg-ui-accent-hover hover:shadow-md active:scale-95 transition-all whitespace-nowrap'
             >
               {t('提交')}
             </button>
@@ -2646,7 +2646,7 @@ const EditChannelModal = (props) => {
                   />
                   <button
                     onClick={addCustomModels}
-                    className='inline-flex items-center px-3 py-1.5 text-xs rounded-md bg-ui-accent text-ui-accent-fg hover:bg-ui-accent-hover whitespace-nowrap'
+                    className='inline-flex items-center px-3.5 py-2 text-sm rounded-xl bg-ui-accent text-ui-accent-fg hover:bg-ui-accent-hover whitespace-nowrap'
                   >
                     {t('填入')}
                   </button>
@@ -2926,7 +2926,7 @@ const EditChannelModal = (props) => {
 
                   {/* Field passthrough — OpenAI */}
                   {inputs.type === 1 && (
-                    <div className='space-y-1.5 pt-2 border-t border-ui-divider'>
+                    <div className='space-y-1.5 pt-2 border-t border-ui-border'>
                       <div className='text-[11px] uppercase tracking-wider text-ui-text-3 font-semibold mb-1'>
                         {t('字段透传控制')}
                       </div>
@@ -2959,7 +2959,7 @@ const EditChannelModal = (props) => {
 
                   {/* Field passthrough — Anthropic */}
                   {inputs.type === 14 && (
-                    <div className='space-y-1.5 pt-2 border-t border-ui-divider'>
+                    <div className='space-y-1.5 pt-2 border-t border-ui-border'>
                       <div className='text-[11px] uppercase tracking-wider text-ui-text-3 font-semibold mb-1'>
                         {t('字段透传控制')}
                       </div>
@@ -3085,18 +3085,21 @@ const EditChannelModal = (props) => {
         createPortal(
           <div
             className='fixed inset-0 z-[130] flex items-center justify-center p-4'
-            style={{ background: 'rgba(0,0,0,0.5)' }}
+            style={{ background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(2px)', WebkitBackdropFilter: 'blur(2px)' }}
             onClick={resetKeyDisplayState}
           >
             <div
               className='bg-ui-bg-elevated border border-ui-border rounded-2xl shadow-2xl w-full max-w-2xl max-h-[88vh] flex flex-col overflow-hidden'
               onClick={(e) => e.stopPropagation()}
             >
-              <div className='flex items-center justify-between gap-3 px-5 py-3.5 border-b border-ui-border'>
-                <span className='text-sm font-semibold text-ui-text'>{t('渠道密钥信息')}</span>
+              <div className='flex items-center justify-between gap-3 px-6 py-4 border-b border-ui-border'>
+                <span
+                  className='text-base font-semibold text-ui-text'
+                  style={{ fontFamily: "'Space Grotesk', sans-serif", letterSpacing: '-0.02em' }}
+                >{t('渠道密钥信息')}</span>
                 <button
                   onClick={resetKeyDisplayState}
-                  className='p-1 rounded text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-subtle'
+                  className='w-8 h-8 rounded-lg flex items-center justify-center text-ui-text-3 hover:text-ui-text hover:bg-ui-bg-subtle'
                 >
                   <svg width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='currentColor' strokeWidth='2'><path d='M18 6 6 18M6 6l12 12'/></svg>
                 </button>
@@ -3110,10 +3113,10 @@ const EditChannelModal = (props) => {
                   warningText={t('请妥善保管密钥信息，不要泄露给他人。如有安全疑虑，请及时更换密钥。')}
                 />
               </div>
-              <div className='flex justify-end gap-2 px-5 py-3 border-t border-ui-border'>
+              <div className='flex justify-end gap-2 px-6 py-4 border-t border-ui-border'>
                 <button
                   onClick={resetKeyDisplayState}
-                  className='inline-flex items-center px-4 py-1.5 text-xs font-semibold rounded-md bg-ui-accent text-ui-accent-fg hover:bg-ui-accent-hover whitespace-nowrap'
+                  className='inline-flex items-center px-5 py-2 text-sm font-semibold rounded-xl bg-ui-accent text-ui-accent-fg hover:bg-ui-accent-hover whitespace-nowrap'
                 >
                   {t('完成')}
                 </button>
@@ -3128,44 +3131,47 @@ const EditChannelModal = (props) => {
         createPortal(
           <div
             className='fixed inset-0 z-[125] flex items-center justify-center p-4'
-            style={{ background: 'rgba(0,0,0,0.5)' }}
+            style={{ background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(2px)', WebkitBackdropFilter: 'blur(2px)' }}
             onClick={() => closeMissingModelsModal('cancel')}
           >
             <div
               className='bg-ui-bg-elevated border border-ui-border rounded-2xl shadow-2xl w-full max-w-md overflow-hidden'
               onClick={(e) => e.stopPropagation()}
             >
-              <div className='px-5 py-4'>
-                <h3 className='flex items-center gap-2 text-base font-semibold text-ui-text mb-2'>
+              <div className='px-6 py-5'>
+                <h3
+                  className='flex items-center gap-2 text-base font-semibold text-ui-text mb-2'
+                  style={{ fontFamily: "'Space Grotesk', sans-serif", letterSpacing: '-0.02em' }}
+                >
                   <AlertTriangle size={15} className='text-amber-500' />
                   {t('模型未加入列表，可能无法调用')}
                 </h3>
                 <div className='text-sm text-ui-text-2 leading-relaxed'>
                   {t('模型重定向里的下列模型尚未添加到“模型”列表，调用时会因为缺少可用模型而失败：')}
                 </div>
-                <div className='font-mono text-xs break-all text-ui-danger mt-2 px-3 py-2 rounded bg-ui-danger-bg border border-ui-danger/30'>
+                <div className='font-mono text-xs break-all text-ui-danger mt-2 px-3 py-2 rounded-lg bg-ui-danger-bg border border-ui-danger/30'>
                   {missingModelsModal.models.join(', ')}
                 </div>
                 <div className='mt-3 text-sm text-ui-text-2'>
                   {t('你可以在"自定义模型名称"处手动添加它们，然后点击填入后再提交，或者直接使用下方操作自动处理。')}
                 </div>
               </div>
-              <div className='flex justify-end gap-2 px-5 py-3 border-t border-ui-border'>
+              <div className='flex justify-end gap-2 px-6 py-4 border-t border-ui-border'>
                 <button
                   onClick={() => closeMissingModelsModal('cancel')}
-                  className='inline-flex items-center px-3 py-1.5 text-xs font-medium rounded-md border border-ui-border text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-subtle whitespace-nowrap'
+                  className='inline-flex items-center px-4 py-2 text-sm font-medium rounded-xl border border-ui-border text-ui-text hover:bg-ui-bg-subtle whitespace-nowrap'
                 >
                   {t('返回修改')}
                 </button>
                 <button
                   onClick={() => closeMissingModelsModal('submit')}
-                  className='inline-flex items-center px-3 py-1.5 text-xs font-medium rounded-md border border-ui-border text-ui-text hover:bg-ui-bg-subtle whitespace-nowrap'
+                  className='inline-flex items-center px-4 py-2 text-sm font-medium rounded-xl border border-ui-border text-ui-text hover:bg-ui-bg-subtle whitespace-nowrap'
                 >
                   {t('直接提交')}
                 </button>
                 <button
                   onClick={() => closeMissingModelsModal('add')}
-                  className='inline-flex items-center px-4 py-1.5 text-xs font-semibold rounded-md bg-ui-accent text-ui-accent-fg hover:bg-ui-accent-hover whitespace-nowrap'
+                  className='inline-flex items-center px-5 py-2 text-sm font-semibold rounded-xl bg-ui-accent text-ui-accent-fg hover:bg-ui-accent-hover whitespace-nowrap'
                 >
                   {t('添加后提交')}
                 </button>

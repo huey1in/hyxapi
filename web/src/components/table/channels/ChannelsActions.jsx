@@ -4,17 +4,18 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { ChevronDown, Trash2, Tag as TagIcon } from 'lucide-react';
 import { showConfirm } from '../../common/ConfirmDialog';
+import Select from '../../common/form/Select';
 
 const Toggle = ({ checked, onChange }) => (
   <button
     type='button'
     onClick={() => onChange(!checked)}
-    className={`relative inline-flex h-4 w-7 items-center rounded-full transition-colors flex-shrink-0 ${
+    className={`relative inline-flex h-5 w-8 items-center rounded-full transition-colors flex-shrink-0 ${
       checked ? 'bg-ui-accent' : 'bg-ui-bg-subtle border border-ui-border'
     }`}
   >
     <span
-      className={`inline-block h-3 w-3 transform rounded-full transition-transform shadow ${
+      className={`inline-block h-4 w-4 transform rounded-full transition-transform shadow ${
         checked ? 'translate-x-[14px]' : 'translate-x-0.5'
       }`}
       style={{ background: '#ffffff' }}
@@ -23,8 +24,8 @@ const Toggle = ({ checked, onChange }) => (
 );
 
 const ToggleRow = ({ label, checked, onChange }) => (
-  <div className='inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md border border-ui-border bg-ui-bg'>
-    <span className='text-[11px] text-ui-text-2 whitespace-nowrap'>{label}</span>
+  <div className='inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-ui-border' style={{ backgroundColor: 'var(--page-bg)' }}>
+    <span className='text-xs text-ui-text-2 whitespace-nowrap'>{label}</span>
     <Toggle checked={checked} onChange={onChange} />
   </div>
 );
@@ -138,36 +139,36 @@ const ChannelsActions = ({
               onOk: () => batchDeleteChannels(),
             })
           }
-          className='inline-flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-md border border-ui-danger/40 text-ui-danger hover:bg-ui-danger-bg disabled:opacity-40 disabled:hover:bg-transparent transition-colors whitespace-nowrap'
+          className='inline-flex items-center gap-1.5 px-3.5 py-2 text-sm rounded-xl border border-ui-danger/40 text-ui-danger hover:bg-ui-danger-bg disabled:opacity-40 disabled:hover:bg-transparent transition-colors whitespace-nowrap'
         >
-          <Trash2 size={12} />
+          <Trash2 size={14} />
           {t('删除所选')}
         </button>
         <button
           disabled={!enableBatchDelete}
           onClick={() => setShowBatchSetTag(true)}
-          className='inline-flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-md border border-ui-border text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-subtle disabled:opacity-40 disabled:hover:bg-transparent transition-colors whitespace-nowrap'
+          className='inline-flex items-center gap-1.5 px-3.5 py-2 text-sm rounded-xl border border-ui-border text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-subtle disabled:opacity-40 disabled:hover:bg-transparent transition-colors whitespace-nowrap'
         >
-          <TagIcon size={12} />
+          <TagIcon size={14} />
           {t('批量设置标签')}
         </button>
 
         <div className='relative' ref={menuRef}>
           <button
             onClick={() => setMenuOpen((p) => !p)}
-            className='inline-flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-md border border-ui-border text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-subtle transition-colors whitespace-nowrap'
+            className='inline-flex items-center gap-1.5 px-3.5 py-2 text-sm rounded-xl border border-ui-border text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-subtle transition-colors whitespace-nowrap'
           >
             {t('批量操作')}
-            <ChevronDown size={12} />
+            <ChevronDown size={14} />
           </button>
           {menuOpen && (
-            <div className='absolute z-30 left-0 mt-1 min-w-[200px] bg-ui-bg-elevated border border-ui-border rounded-lg shadow-lg overflow-hidden'>
+            <div className='absolute z-30 left-0 mt-1 min-w-[220px] bg-ui-bg-elevated border border-ui-border rounded-xl shadow-lg overflow-hidden'>
               {menuItems.map((it, i) => (
                 <button
                   key={i}
                   onClick={it.onClick}
                   disabled={it.loading}
-                  className={`w-full text-left px-3 py-2 text-xs hover:bg-ui-bg-subtle transition-colors disabled:opacity-50 ${
+                  className={`w-full text-left px-3 py-2.5 text-sm hover:bg-ui-bg-subtle transition-colors disabled:opacity-50 ${
                     it.danger ? 'text-ui-danger' : it.primary ? 'text-ui-brand font-medium' : 'text-ui-text-2 hover:text-ui-text'
                   }`}
                 >
@@ -200,21 +201,20 @@ const ChannelsActions = ({
             loadChannels(1, pageSize, idSort, v);
           }}
         />
-        <select
+        <Select
           value={statusFilter}
-          onChange={(e) => {
-            const v = e.target.value;
+          onChange={(v) => {
             localStorage.setItem('channel-status-filter', v);
             setStatusFilter(v);
             setActivePage(1);
             loadChannels(1, pageSize, idSort, enableTagMode, activeTypeKey, v);
           }}
-          className='px-2.5 py-1 text-xs bg-ui-bg border border-ui-border rounded-md text-ui-text outline-none focus:border-ui-text-3 cursor-pointer'
-        >
-          <option value='all'>{t('全部状态')}</option>
-          <option value='enabled'>{t('已启用')}</option>
-          <option value='disabled'>{t('已禁用')}</option>
-        </select>
+          options={[
+            { label: t('全部状态'), value: 'all' },
+            { label: t('已启用'), value: 'enabled' },
+            { label: t('已禁用'), value: 'disabled' },
+          ]}
+        />
       </div>
     </div>
   );

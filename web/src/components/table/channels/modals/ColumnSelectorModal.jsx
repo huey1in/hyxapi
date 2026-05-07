@@ -18,8 +18,40 @@ For commercial licensing, please contact support@quantumnous.com
 */
 
 import React from 'react';
-import { Modal, Button, Checkbox } from '@douyinfe/semi-ui';
+import { Check } from 'lucide-react';
+import ModalDialog from '../../../common/ModalDialog';
 import { getChannelsColumns } from '../ChannelsColumnDefs';
+
+const Checkbox = ({ checked, indeterminate, onChange, children }) => {
+  const ref = React.useRef(null);
+  React.useEffect(() => {
+    if (ref.current) ref.current.indeterminate = !!indeterminate;
+  }, [indeterminate]);
+  return (
+    <label className='inline-flex items-center gap-2 cursor-pointer select-none'>
+      <span className='relative inline-flex items-center justify-center'>
+        <input
+          ref={ref}
+          type='checkbox'
+          checked={!!checked}
+          onChange={(e) => onChange?.(e.target.checked)}
+          className='peer appearance-none w-4 h-4 rounded border border-ui-border bg-ui-bg-elevated checked:bg-ui-accent checked:border-ui-accent transition-colors cursor-pointer'
+        />
+        {checked && !indeterminate && (
+          <Check
+            size={12}
+            className='absolute pointer-events-none text-ui-accent-fg'
+            strokeWidth={3}
+          />
+        )}
+        {indeterminate && (
+          <span className='absolute pointer-events-none w-2 h-[2px] bg-ui-accent-fg' />
+        )}
+      </span>
+      {children && <span className='text-sm text-ui-text'>{children}</span>}
+    </label>
+  );
+};
 
 const ColumnSelectorModal = ({
   showColumnSelector,
@@ -68,39 +100,49 @@ const ColumnSelectorModal = ({
     channels,
   });
 
+  const close = () => setShowColumnSelector(false);
+  const allChecked = Object.values(visibleColumns).every((v) => v === true);
+  const someChecked = Object.values(visibleColumns).some((v) => v === true);
+
   return (
-    <Modal
+    <ModalDialog
+      open={showColumnSelector}
+      onClose={close}
       title={t('列设置')}
-      visible={showColumnSelector}
-      onCancel={() => setShowColumnSelector(false)}
+      width={560}
       footer={
-        <div className='flex justify-end'>
-          <Button onClick={() => initDefaultColumns()}>{t('重置')}</Button>
-          <Button onClick={() => setShowColumnSelector(false)}>
+        <>
+          <button
+            onClick={() => initDefaultColumns()}
+            className='inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium rounded-xl border border-ui-border text-ui-text hover:bg-ui-bg-subtle transition-colors'
+          >
+            {t('重置')}
+          </button>
+          <button
+            onClick={close}
+            className='inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium rounded-xl border border-ui-border text-ui-text hover:bg-ui-bg-subtle transition-colors'
+          >
             {t('取消')}
-          </Button>
-          <Button onClick={() => setShowColumnSelector(false)}>
+          </button>
+          <button
+            onClick={close}
+            className='inline-flex items-center gap-1.5 px-4 py-2 text-sm font-semibold rounded-xl bg-ui-accent text-ui-accent-fg hover:bg-ui-accent-hover transition-colors'
+          >
             {t('确定')}
-          </Button>
-        </div>
+          </button>
+        </>
       }
     >
-      <div style={{ marginBottom: 20 }}>
+      <div className='mb-4'>
         <Checkbox
-          checked={Object.values(visibleColumns).every((v) => v === true)}
-          indeterminate={
-            Object.values(visibleColumns).some((v) => v === true) &&
-            !Object.values(visibleColumns).every((v) => v === true)
-          }
-          onChange={(e) => handleSelectAll(e.target.checked)}
+          checked={allChecked}
+          indeterminate={someChecked && !allChecked}
+          onChange={(checked) => handleSelectAll(checked)}
         >
           {t('全选')}
         </Checkbox>
       </div>
-      <div
-        className='flex flex-wrap max-h-96 overflow-y-auto rounded-lg p-4'
-        style={{ border: '1px solid var(--semi-color-border)' }}
-      >
+      <div className='flex flex-wrap max-h-96 overflow-y-auto rounded-xl p-4 border border-ui-border bg-ui-bg-elevated'>
         {allColumns.map((column) => {
           // Skip columns without title
           if (!column.title) {
@@ -111,8 +153,8 @@ const ColumnSelectorModal = ({
             <div key={column.key} className='w-1/2 mb-4 pr-2'>
               <Checkbox
                 checked={!!visibleColumns[column.key]}
-                onChange={(e) =>
-                  handleColumnVisibilityChange(column.key, e.target.checked)
+                onChange={(checked) =>
+                  handleColumnVisibilityChange(column.key, checked)
                 }
               >
                 {column.title}
@@ -121,7 +163,7 @@ const ColumnSelectorModal = ({
           );
         })}
       </div>
-    </Modal>
+    </ModalDialog>
   );
 };
 

@@ -19,28 +19,10 @@ For commercial licensing, please contact support@quantumnous.com
 
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import {
-  Modal,
-  Button,
-  Table,
-  Tag,
-  Typography,
-  Space,
-  Tooltip,
-  Popconfirm,
-  Empty,
-  Spin,
-  Select,
-  Row,
-  Col,
-  Badge,
-  Progress,
-  Card,
-} from '@douyinfe/semi-ui';
-import {
-  IllustrationNoResult,
-  IllustrationNoResultDark,
-} from '@douyinfe/semi-illustrations';
+import { Loader2, ChevronLeft, ChevronRight, Search } from 'lucide-react';
+import ModalDialog from '../../../common/ModalDialog';
+import { showConfirm } from '../../../common/ConfirmDialog';
+import Select from '../../../common/form/Select';
 import {
   API,
   showError,
@@ -48,7 +30,25 @@ import {
   timestamp2string,
 } from '../../../../helpers';
 
-const { Text } = Typography;
+const TAG_COLOR_CLASSES = {
+  green:
+    'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20',
+  red: 'bg-red-500/10 text-red-600 dark:text-red-400 border-red-500/20',
+  orange:
+    'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20',
+  grey: 'bg-ui-bg-subtle text-ui-text-2 border-ui-border',
+  white: 'bg-ui-bg-elevated text-ui-text-2 border-ui-border',
+};
+
+const Tag = ({ color = 'grey', children, className = '' }) => (
+  <span
+    className={`inline-flex items-center px-2 py-0.5 text-[11px] rounded-md font-medium border ${
+      TAG_COLOR_CLASSES[color] || TAG_COLOR_CLASSES.grey
+    } ${className}`}
+  >
+    {children}
+  </span>
+);
 
 const MultiKeyManageModal = ({ visible, onCancel, channel, onRefresh }) => {
   const { t } = useTranslation();
@@ -323,419 +323,363 @@ const MultiKeyManageModal = ({ visible, onCancel, channel, onRefresh }) => {
   const autoDisabledPercent =
     total > 0 ? Math.round((autoDisabledCount / total) * 100) : 0;
 
-  // 取消饼图：不再需要图表数据与配置
-
   // Get status tag component
   const renderStatusTag = (status) => {
     switch (status) {
       case 1:
-        return (
-          <Tag color='green' shape='circle' size='small'>
-            {t('已启用')}
-          </Tag>
-        );
+        return <Tag color='green'>{t('已启用')}</Tag>;
       case 2:
-        return (
-          <Tag color='red' shape='circle' size='small'>
-            {t('已禁用')}
-          </Tag>
-        );
+        return <Tag color='red'>{t('已禁用')}</Tag>;
       case 3:
-        return (
-          <Tag color='orange' shape='circle' size='small'>
-            {t('自动禁用')}
-          </Tag>
-        );
+        return <Tag color='orange'>{t('自动禁用')}</Tag>;
       default:
-        return (
-          <Tag color='grey' shape='circle' size='small'>
-            {t('未知状态')}
-          </Tag>
-        );
+        return <Tag color='grey'>{t('未知状态')}</Tag>;
     }
   };
 
-  // Table columns definition
-  const columns = [
-    {
-      title: t('索引'),
-      dataIndex: 'index',
-      render: (text) => `#${Number(text) + 1}`,
-    },
-    // {
-    //   title: t('密钥预览'),
-    //   dataIndex: 'key_preview',
-    //   render: (text) => (
-    //     <Text code style={{ fontSize: '12px' }}>
-    //       {text}
-    //     </Text>
-    //   ),
-    // },
-    {
-      title: t('状态'),
-      dataIndex: 'status',
-      render: (status) => renderStatusTag(status),
-    },
-    {
-      title: t('禁用原因'),
-      dataIndex: 'reason',
-      render: (reason, record) => {
-        if (record.status === 1 || !reason) {
-          return <Text type='quaternary'>-</Text>;
-        }
-        return (
-          <Tooltip content={reason}>
-            <Text style={{ maxWidth: '200px', display: 'block' }} ellipsis>
-              {reason}
-            </Text>
-          </Tooltip>
-        );
-      },
-    },
-    {
-      title: t('禁用时间'),
-      dataIndex: 'disabled_time',
-      render: (time, record) => {
-        if (record.status === 1 || !time) {
-          return <Text type='quaternary'>-</Text>;
-        }
-        return (
-          <Tooltip content={timestamp2string(time)}>
-            <Text style={{ fontSize: '12px' }}>{timestamp2string(time)}</Text>
-          </Tooltip>
-        );
-      },
-    },
-    {
-      title: t('操作'),
-      key: 'action',
-      fixed: 'right',
-      width: 150,
-      render: (_, record) => (
-        <Space>
-          {record.status === 1 ? (
-            <Button
-              type='danger'
-              size='small'
-              loading={operationLoading[`disable_${record.index}`]}
-              onClick={() => handleDisableKey(record.index)}
-            >
-              {t('禁用')}
-            </Button>
-          ) : (
-            <Button
-              type='primary'
-              size='small'
-              loading={operationLoading[`enable_${record.index}`]}
-              onClick={() => handleEnableKey(record.index)}
-            >
-              {t('启用')}
-            </Button>
-          )}
-          <Popconfirm
-            title={t('确定要删除此密钥吗？')}
-            content={t('此操作不可撤销，将永久删除该密钥')}
-            onConfirm={() => handleDeleteKey(record.index)}
-            okType={'danger'}
-            position={'topRight'}
-          >
-            <Button
-              type='danger'
-              size='small'
-              loading={operationLoading[`delete_${record.index}`]}
-            >
-              {t('删除')}
-            </Button>
-          </Popconfirm>
-        </Space>
-      ),
-    },
-  ];
+  const StatCard = ({ label, count, total, color, percent }) => (
+    <div className='flex-1 bg-ui-bg-elevated border border-ui-border rounded-xl p-3'>
+      <div className='flex items-center gap-2 mb-2'>
+        <span
+          className='inline-block w-2 h-2 rounded-full'
+          style={{ background: color }}
+        />
+        <span className='text-xs text-ui-text-3'>{label}</span>
+      </div>
+      <div className='flex items-end gap-2 mb-2'>
+        <span
+          className='text-lg font-bold tabular-nums'
+          style={{ color }}
+        >
+          {count}
+        </span>
+        <span className='text-sm text-ui-text-3'>/ {total}</span>
+      </div>
+      <div className='h-1.5 rounded-full bg-ui-bg-subtle overflow-hidden'>
+        <div
+          className='h-full rounded-full transition-all'
+          style={{ width: `${percent}%`, background: color }}
+        />
+      </div>
+    </div>
+  );
+
+  const headerExtra = (
+    <div className='flex items-center gap-2 flex-wrap'>
+      <span className='text-base font-semibold text-ui-text'>
+        {t('多密钥管理')}
+      </span>
+      {channel?.name && <Tag color='white'>{channel.name}</Tag>}
+      <Tag color='white'>
+        {t('总密钥数')}: {total}
+      </Tag>
+      {channel?.channel_info?.multi_key_mode && (
+        <Tag color='white'>
+          {channel.channel_info.multi_key_mode === 'random'
+            ? t('随机模式')
+            : t('轮询模式')}
+        </Tag>
+      )}
+    </div>
+  );
+
+  const totalPagesComputed =
+    totalPages || Math.max(1, Math.ceil(total / pageSize));
 
   return (
-    <Modal
-      title={
-        <Space>
-          <Text>{t('多密钥管理')}</Text>
-          {channel?.name && (
-            <Tag size='small' shape='circle' color='white'>
-              {channel.name}
-            </Tag>
-          )}
-          <Tag size='small' shape='circle' color='white'>
-            {t('总密钥数')}: {total}
-          </Tag>
-          {channel?.channel_info?.multi_key_mode && (
-            <Tag size='small' shape='circle' color='white'>
-              {channel.channel_info.multi_key_mode === 'random'
-                ? t('随机模式')
-                : t('轮询模式')}
-            </Tag>
-          )}
-        </Space>
-      }
-      visible={visible}
-      onCancel={onCancel}
+    <ModalDialog
+      open={visible}
+      onClose={onCancel}
+      title={headerExtra}
       width={900}
-      footer={null}
+      hideFooter
     >
-      <div className='flex flex-col mb-5'>
-        {/* Stats & Mode */}
-        <div
-          className='rounded-xl p-4 mb-3'
-          style={{
-            background: 'var(--semi-color-bg-1)',
-            border: '1px solid var(--semi-color-border)',
-          }}
-        >
-          <Row gutter={16} align='middle'>
-            <Col span={8}>
-              <div
-                style={{
-                  background: 'var(--semi-color-bg-0)',
-                  border: '1px solid var(--semi-color-border)',
-                  borderRadius: 12,
-                  padding: 12,
-                }}
+      <div className='flex flex-col'>
+        {/* Stats */}
+        <div className='flex flex-col md:flex-row gap-3 mb-3'>
+          <StatCard
+            label={t('已启用')}
+            count={enabledCount}
+            total={total}
+            color='#22c55e'
+            percent={enabledPercent}
+          />
+          <StatCard
+            label={t('手动禁用')}
+            count={manualDisabledCount}
+            total={total}
+            color='#ef4444'
+            percent={manualDisabledPercent}
+          />
+          <StatCard
+            label={t('自动禁用')}
+            count={autoDisabledCount}
+            total={total}
+            color='#f59e0b'
+            percent={autoDisabledPercent}
+          />
+        </div>
+
+        {/* Toolbar */}
+        <div className='flex flex-wrap items-center gap-2 justify-between mb-3'>
+          <div className='min-w-[160px]'>
+            <Select
+              value={statusFilter == null ? '__all__' : String(statusFilter)}
+              onChange={(v) =>
+                handleStatusFilterChange(v === '__all__' ? null : Number(v))
+              }
+              options={[
+                { value: '__all__', label: t('全部状态') },
+                { value: '1', label: t('已启用') },
+                { value: '2', label: t('手动禁用') },
+                { value: '3', label: t('自动禁用') },
+              ]}
+              placeholder={t('全部状态')}
+            />
+          </div>
+          <div className='flex flex-wrap items-center gap-2'>
+            <button
+              onClick={() => loadKeyStatus(currentPage, pageSize)}
+              disabled={loading}
+              className='inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg border border-ui-border text-ui-text hover:bg-ui-bg-subtle transition-colors disabled:opacity-60'
+            >
+              {loading && <Loader2 size={12} className='animate-spin' />}
+              {t('刷新')}
+            </button>
+            {manualDisabledCount + autoDisabledCount > 0 && (
+              <button
+                onClick={() =>
+                  showConfirm({
+                    title: t('确定要启用所有密钥吗？'),
+                    onOk: handleEnableAll,
+                  })
+                }
+                disabled={operationLoading.enable_all}
+                className='inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg bg-ui-accent text-ui-accent-fg hover:bg-ui-accent-hover transition-colors disabled:opacity-60'
               >
-                <div className='flex items-center gap-2 mb-2'>
-                  <Badge dot type='success' />
-                  <Text type='tertiary'>{t('已启用')}</Text>
-                </div>
-                <div className='flex items-end gap-2 mb-2'>
-                  <Text
-                    style={{ fontSize: 18, fontWeight: 700, color: '#22c55e' }}
-                  >
-                    {enabledCount}
-                  </Text>
-                  <Text
-                    style={{ fontSize: 18, color: 'var(--semi-color-text-2)' }}
-                  >
-                    / {total}
-                  </Text>
-                </div>
-                <Progress
-                  percent={enabledPercent}
-                  showInfo={false}
-                  size='small'
-                  stroke='#22c55e'
-                  style={{ height: 6, borderRadius: 999 }}
-                />
-              </div>
-            </Col>
-            <Col span={8}>
-              <div
-                style={{
-                  background: 'var(--semi-color-bg-0)',
-                  border: '1px solid var(--semi-color-border)',
-                  borderRadius: 12,
-                  padding: 12,
-                }}
+                {operationLoading.enable_all && (
+                  <Loader2 size={12} className='animate-spin' />
+                )}
+                {t('启用全部')}
+              </button>
+            )}
+            {enabledCount > 0 && (
+              <button
+                onClick={() =>
+                  showConfirm({
+                    title: t('确定要禁用所有的密钥吗？'),
+                    danger: true,
+                    onOk: handleDisableAll,
+                  })
+                }
+                disabled={operationLoading.disable_all}
+                className='inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg bg-ui-danger text-white hover:opacity-90 transition-opacity disabled:opacity-60'
               >
-                <div className='flex items-center gap-2 mb-2'>
-                  <Badge dot type='danger' />
-                  <Text type='tertiary'>{t('手动禁用')}</Text>
-                </div>
-                <div className='flex items-end gap-2 mb-2'>
-                  <Text
-                    style={{ fontSize: 18, fontWeight: 700, color: '#ef4444' }}
-                  >
-                    {manualDisabledCount}
-                  </Text>
-                  <Text
-                    style={{ fontSize: 18, color: 'var(--semi-color-text-2)' }}
-                  >
-                    / {total}
-                  </Text>
-                </div>
-                <Progress
-                  percent={manualDisabledPercent}
-                  showInfo={false}
-                  size='small'
-                  stroke='#ef4444'
-                  style={{ height: 6, borderRadius: 999 }}
-                />
-              </div>
-            </Col>
-            <Col span={8}>
-              <div
-                style={{
-                  background: 'var(--semi-color-bg-0)',
-                  border: '1px solid var(--semi-color-border)',
-                  borderRadius: 12,
-                  padding: 12,
-                }}
-              >
-                <div className='flex items-center gap-2 mb-2'>
-                  <Badge dot type='warning' />
-                  <Text type='tertiary'>{t('自动禁用')}</Text>
-                </div>
-                <div className='flex items-end gap-2 mb-2'>
-                  <Text
-                    style={{ fontSize: 18, fontWeight: 700, color: '#f59e0b' }}
-                  >
-                    {autoDisabledCount}
-                  </Text>
-                  <Text
-                    style={{ fontSize: 18, color: 'var(--semi-color-text-2)' }}
-                  >
-                    / {total}
-                  </Text>
-                </div>
-                <Progress
-                  percent={autoDisabledPercent}
-                  showInfo={false}
-                  size='small'
-                  stroke='#f59e0b'
-                  style={{ height: 6, borderRadius: 999 }}
-                />
-              </div>
-            </Col>
-          </Row>
+                {operationLoading.disable_all && (
+                  <Loader2 size={12} className='animate-spin' />
+                )}
+                {t('禁用全部')}
+              </button>
+            )}
+            <button
+              onClick={() =>
+                showConfirm({
+                  title: t('确定要删除所有已自动禁用的密钥吗？'),
+                  content: t('此操作不可撤销，将永久删除已自动禁用的密钥'),
+                  danger: true,
+                  onOk: handleDeleteDisabledKeys,
+                })
+              }
+              disabled={operationLoading.delete_disabled}
+              className='inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg bg-amber-500 text-white hover:opacity-90 transition-opacity disabled:opacity-60'
+            >
+              {operationLoading.delete_disabled && (
+                <Loader2 size={12} className='animate-spin' />
+              )}
+              {t('删除自动禁用密钥')}
+            </button>
+          </div>
         </div>
 
         {/* Table */}
-        <div className='flex-1 flex flex-col min-h-0'>
-          <Spin spinning={loading}>
-            <Card className='!rounded-xl'>
-              <Table
-                title={() => (
-                  <Row gutter={12} style={{ width: '100%' }}>
-                    <Col span={14}>
-                      <Row gutter={12} style={{ alignItems: 'center' }}>
-                        <Col>
-                          <Select
-                            value={statusFilter}
-                            onChange={handleStatusFilterChange}
-                            size='small'
-                            placeholder={t('全部状态')}
-                          >
-                            <Select.Option value={null}>
-                              {t('全部状态')}
-                            </Select.Option>
-                            <Select.Option value={1}>
-                              {t('已启用')}
-                            </Select.Option>
-                            <Select.Option value={2}>
-                              {t('手动禁用')}
-                            </Select.Option>
-                            <Select.Option value={3}>
-                              {t('自动禁用')}
-                            </Select.Option>
-                          </Select>
-                        </Col>
-                      </Row>
-                    </Col>
-                    <Col
-                      span={10}
-                      style={{ display: 'flex', justifyContent: 'flex-end' }}
+        <div className='border border-ui-border rounded-xl overflow-hidden bg-ui-bg-elevated'>
+          {loading ? (
+            <div className='flex items-center justify-center py-10 gap-2 text-ui-text-2'>
+              <Loader2 size={18} className='animate-spin' />
+              <span>{t('加载中...')}</span>
+            </div>
+          ) : keyStatusList.length === 0 ? (
+            <div className='flex flex-col items-center justify-center py-10 text-ui-text-3'>
+              <Search size={32} className='mb-2 opacity-50' />
+              <span className='text-sm font-medium text-ui-text-2'>
+                {t('暂无密钥数据')}
+              </span>
+              <span className='text-xs mt-1'>
+                {t('请检查渠道配置或刷新重试')}
+              </span>
+            </div>
+          ) : (
+            <div className='overflow-x-auto'>
+              <table className='w-full'>
+                <thead>
+                  <tr className='bg-ui-bg-subtle/50 text-[11px] uppercase tracking-wider text-ui-text-3'>
+                    <th className='px-3 py-2 text-left font-medium'>
+                      {t('索引')}
+                    </th>
+                    <th className='px-3 py-2 text-left font-medium'>
+                      {t('状态')}
+                    </th>
+                    <th className='px-3 py-2 text-left font-medium'>
+                      {t('禁用原因')}
+                    </th>
+                    <th className='px-3 py-2 text-left font-medium'>
+                      {t('禁用时间')}
+                    </th>
+                    <th className='px-3 py-2 text-right font-medium'>
+                      {t('操作')}
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {keyStatusList.map((record) => (
+                    <tr
+                      key={record.index}
+                      className='border-t border-ui-divider hover:bg-ui-bg-subtle/40'
                     >
-                      <Space>
-                        <Button
-                          size='small'
-                          type='tertiary'
-                          onClick={() => loadKeyStatus(currentPage, pageSize)}
-                          loading={loading}
-                        >
-                          {t('刷新')}
-                        </Button>
-                        {manualDisabledCount + autoDisabledCount > 0 && (
-                          <Popconfirm
-                            title={t('确定要启用所有密钥吗？')}
-                            onConfirm={handleEnableAll}
-                            position={'topRight'}
+                      <td className='px-3 py-3 text-sm text-ui-text tabular-nums'>
+                        #{Number(record.index) + 1}
+                      </td>
+                      <td className='px-3 py-3'>
+                        {renderStatusTag(record.status)}
+                      </td>
+                      <td className='px-3 py-3 text-sm text-ui-text-2'>
+                        {record.status === 1 || !record.reason ? (
+                          <span className='text-ui-text-3'>-</span>
+                        ) : (
+                          <span
+                            title={record.reason}
+                            className='block max-w-[200px] truncate'
                           >
-                            <Button
-                              size='small'
-                              type='primary'
-                              loading={operationLoading.enable_all}
-                            >
-                              {t('启用全部')}
-                            </Button>
-                          </Popconfirm>
+                            {record.reason}
+                          </span>
                         )}
-                        {enabledCount > 0 && (
-                          <Popconfirm
-                            title={t('确定要禁用所有的密钥吗？')}
-                            onConfirm={handleDisableAll}
-                            okType={'danger'}
-                            position={'topRight'}
-                          >
-                            <Button
-                              size='small'
-                              type='danger'
-                              loading={operationLoading.disable_all}
-                            >
-                              {t('禁用全部')}
-                            </Button>
-                          </Popconfirm>
+                      </td>
+                      <td className='px-3 py-3 text-xs text-ui-text-2'>
+                        {record.status === 1 || !record.disabled_time ? (
+                          <span className='text-ui-text-3'>-</span>
+                        ) : (
+                          <span title={timestamp2string(record.disabled_time)}>
+                            {timestamp2string(record.disabled_time)}
+                          </span>
                         )}
-                        <Popconfirm
-                          title={t('确定要删除所有已自动禁用的密钥吗？')}
-                          content={t(
-                            '此操作不可撤销，将永久删除已自动禁用的密钥',
+                      </td>
+                      <td className='px-3 py-3'>
+                        <div className='flex items-center gap-2 justify-end'>
+                          {record.status === 1 ? (
+                            <button
+                              disabled={
+                                operationLoading[`disable_${record.index}`]
+                              }
+                              onClick={() => handleDisableKey(record.index)}
+                              className='inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium rounded-lg bg-ui-danger text-white hover:opacity-90 transition-opacity disabled:opacity-60'
+                            >
+                              {operationLoading[`disable_${record.index}`] && (
+                                <Loader2
+                                  size={11}
+                                  className='animate-spin'
+                                />
+                              )}
+                              {t('禁用')}
+                            </button>
+                          ) : (
+                            <button
+                              disabled={
+                                operationLoading[`enable_${record.index}`]
+                              }
+                              onClick={() => handleEnableKey(record.index)}
+                              className='inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold rounded-lg bg-ui-accent text-ui-accent-fg hover:bg-ui-accent-hover transition-colors disabled:opacity-60'
+                            >
+                              {operationLoading[`enable_${record.index}`] && (
+                                <Loader2
+                                  size={11}
+                                  className='animate-spin'
+                                />
+                              )}
+                              {t('启用')}
+                            </button>
                           )}
-                          onConfirm={handleDeleteDisabledKeys}
-                          okType={'danger'}
-                          position={'topRight'}
-                        >
-                          <Button
-                            size='small'
-                            type='warning'
-                            loading={operationLoading.delete_disabled}
+                          <button
+                            disabled={operationLoading[`delete_${record.index}`]}
+                            onClick={() =>
+                              showConfirm({
+                                title: t('确定要删除此密钥吗？'),
+                                content: t(
+                                  '此操作不可撤销，将永久删除该密钥',
+                                ),
+                                danger: true,
+                                onOk: () => handleDeleteKey(record.index),
+                              })
+                            }
+                            className='inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium rounded-lg bg-ui-danger text-white hover:opacity-90 transition-opacity disabled:opacity-60'
                           >
-                            {t('删除自动禁用密钥')}
-                          </Button>
-                        </Popconfirm>
-                      </Space>
-                    </Col>
-                  </Row>
-                )}
-                columns={columns}
-                dataSource={keyStatusList}
-                pagination={{
-                  currentPage: currentPage,
-                  pageSize: pageSize,
-                  total: total,
-                  showSizeChanger: true,
-                  showQuickJumper: true,
-                  pageSizeOpts: [10, 20, 50, 100],
-                  onChange: (page, size) => {
-                    setCurrentPage(page);
-                    loadKeyStatus(page, size);
-                  },
-                  onShowSizeChange: (current, size) => {
-                    setCurrentPage(1);
-                    handlePageSizeChange(size);
-                  },
-                }}
-                size='small'
-                bordered={false}
-                rowKey='index'
-                scroll={{ x: 'max-content' }}
-                empty={
-                  <Empty
-                    image={
-                      <IllustrationNoResult
-                        style={{ width: 140, height: 140 }}
-                      />
-                    }
-                    darkModeImage={
-                      <IllustrationNoResultDark
-                        style={{ width: 140, height: 140 }}
-                      />
-                    }
-                    title={t('暂无密钥数据')}
-                    description={t('请检查渠道配置或刷新重试')}
-                    style={{ padding: 30 }}
-                  />
-                }
-              />
-            </Card>
-          </Spin>
+                            {operationLoading[`delete_${record.index}`] && (
+                              <Loader2 size={11} className='animate-spin' />
+                            )}
+                            {t('删除')}
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
         </div>
+
+        {/* Pagination */}
+        {keyStatusList.length > 0 && (
+          <div className='flex flex-wrap items-center justify-between gap-2 mt-3 text-xs text-ui-text-2'>
+            <div className='flex items-center gap-2'>
+              <span>
+                {t('共')} {total}
+              </span>
+              <div className='w-[110px]'>
+                <Select
+                  value={String(pageSize)}
+                  onChange={(v) => handlePageSizeChange(Number(v))}
+                  options={[
+                    { value: '10', label: '10 / page' },
+                    { value: '20', label: '20 / page' },
+                    { value: '50', label: '50 / page' },
+                    { value: '100', label: '100 / page' },
+                  ]}
+                />
+              </div>
+            </div>
+            <div className='flex items-center gap-1'>
+              <button
+                disabled={currentPage <= 1}
+                onClick={() => handlePageChange(currentPage - 1)}
+                className='inline-flex items-center justify-center w-8 h-8 rounded-lg border border-ui-border text-ui-text-2 hover:bg-ui-bg-subtle disabled:opacity-40 disabled:cursor-not-allowed'
+              >
+                <ChevronLeft size={14} />
+              </button>
+              <span className='px-2 tabular-nums'>
+                {currentPage} / {totalPagesComputed}
+              </span>
+              <button
+                disabled={currentPage >= totalPagesComputed}
+                onClick={() => handlePageChange(currentPage + 1)}
+                className='inline-flex items-center justify-center w-8 h-8 rounded-lg border border-ui-border text-ui-text-2 hover:bg-ui-bg-subtle disabled:opacity-40 disabled:cursor-not-allowed'
+              >
+                <ChevronRight size={14} />
+              </button>
+            </div>
+          </div>
+        )}
       </div>
-    </Modal>
+    </ModalDialog>
   );
 };
 

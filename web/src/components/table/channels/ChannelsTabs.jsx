@@ -36,24 +36,24 @@ const ChannelsTabs = ({
   ];
 
   return (
-    <div className='flex items-center gap-1 overflow-x-auto scrollbar-hide -mx-1 px-1 py-1'>
+    <div className='flex items-center gap-1.5 overflow-x-auto scrollbar-hide px-1 py-1.5'>
       {items.map((it) => {
         const active = activeTypeKey === it.key;
         return (
           <button
             key={it.key}
             onClick={() => handle(it.key)}
-            className={`inline-flex items-center gap-1.5 px-2.5 py-1 text-xs rounded-md whitespace-nowrap flex-shrink-0 transition-colors ${
+            className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-xl whitespace-nowrap flex-shrink-0 transition-colors ${
               active
-                ? 'bg-ui-bg-subtle text-ui-text font-semibold border border-ui-text-3'
-                : 'border border-ui-border text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-subtle'
+                ? 'bg-ui-text text-ui-bg font-medium border border-ui-text'
+                : 'text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-subtle'
             }`}
           >
             {it.icon && <span className='inline-flex'>{it.icon}</span>}
             {it.label}
             <span
-              className={`inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded text-[10px] tabular-nums ${
-                active ? 'bg-ui-accent text-ui-accent-fg' : 'bg-ui-bg-subtle text-ui-text-3 border border-ui-border'
+              className={`inline-flex items-center justify-center min-w-[20px] h-5 px-1 rounded text-[11px] tabular-nums ${
+                active ? 'bg-ui-bg/20 text-ui-bg' : 'bg-ui-bg-subtle text-ui-text-3'
               }`}
             >
               {it.count}

@@ -26,7 +26,7 @@ const PaymentChip = ({ children, color }) => {
     green: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20',
   }[color];
   return (
-    <span className={`inline-flex items-center px-1.5 py-0.5 text-[10px] rounded border ${cls}`}>
+    <span className={`inline-flex items-center px-2 py-0.5 text-[11px] rounded-md font-medium border ${cls}`}>
       {children}
     </span>
   );

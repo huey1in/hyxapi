@@ -41,32 +41,35 @@ const ConfirmDialog = ({
   return createPortal(
     <div
       className='fixed inset-0 z-[200] flex items-center justify-center p-4'
-      style={{ background: 'rgba(0,0,0,0.5)' }}
+      style={{ background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(2px)' }}
       onClick={onCancel}
     >
       <div
         className='bg-ui-bg-elevated border border-ui-border rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden'
         onClick={(e) => e.stopPropagation()}
       >
-        <div className='px-5 pt-5 pb-3'>
-          <h3 className='flex items-center gap-2 text-base font-semibold text-ui-text mb-1.5'>
-            {danger && <AlertTriangle size={15} className='text-ui-danger' />}
+        <div className='px-6 pt-6 pb-4'>
+          <h3
+            className='flex items-center gap-2 text-lg font-semibold text-ui-text mb-2'
+            style={{ fontFamily: "'Space Grotesk', sans-serif", letterSpacing: '-0.02em' }}
+          >
+            {danger && <AlertTriangle size={18} className='text-ui-danger' />}
             {title}
           </h3>
           {description && (
-            <p className='text-sm text-ui-text-2 leading-relaxed'>{description}</p>
+            <p className='text-sm text-ui-text-2 leading-relaxed mt-2'>{description}</p>
           )}
         </div>
-        <div className='flex justify-end gap-2 px-5 py-3 border-t border-ui-border'>
+        <div className='flex justify-end gap-2.5 px-6 py-4 border-t border-ui-border'>
           <button
             onClick={onCancel}
-            className='px-3.5 py-1.5 text-sm font-medium rounded-lg border border-ui-border text-ui-text hover:bg-ui-bg-subtle transition-colors'
+            className='px-4 py-2 text-sm font-medium rounded-xl border border-ui-border text-ui-text hover:bg-ui-bg-subtle transition-colors'
           >
             {cancelText}
           </button>
           <button
             onClick={onConfirm}
-            className={`px-3.5 py-1.5 text-sm font-semibold rounded-lg transition-colors ${
+            className={`px-4 py-2 text-sm font-semibold rounded-xl transition-colors ${
               danger
                 ? 'bg-ui-danger text-white hover:opacity-90'
                 : 'bg-ui-accent text-ui-accent-fg hover:bg-ui-accent-hover'

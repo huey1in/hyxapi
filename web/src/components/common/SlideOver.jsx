@@ -54,7 +54,7 @@ const SlideOver = ({
     <>
       <div
         className='fixed inset-0 z-[110] animate-fade'
-        style={{ background: 'rgba(0,0,0,0.5)' }}
+        style={{ background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(2px)' }}
         onClick={onClose}
       />
       <div
@@ -66,15 +66,15 @@ const SlideOver = ({
           @keyframes slide-in-left { from { transform: translateX(-100%); } to { transform: translateX(0); } }
         `}</style>
         {/* Header */}
-        <div className='flex items-center justify-between gap-3 px-5 py-3.5 border-b border-ui-border flex-shrink-0'>
+        <div className='flex items-center justify-between gap-3 px-6 py-4 border-b border-ui-border flex-shrink-0'>
           <div className='flex items-center gap-2 min-w-0 flex-1'>{title}</div>
           <div className='flex items-center gap-2 flex-shrink-0'>
             {headerExtra}
             <button
               onClick={onClose}
-              className='p-1 rounded text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-subtle'
+              className='p-1.5 rounded-lg text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-subtle'
             >
-              <X size={16} />
+              <X size={18} />
             </button>
           </div>
         </div>
@@ -84,7 +84,7 @@ const SlideOver = ({
 
         {/* Footer */}
         {footer && (
-          <div className='flex items-center justify-end gap-2 px-5 py-3 border-t border-ui-border flex-shrink-0'>
+          <div className='flex items-center justify-end gap-2.5 px-6 py-4 border-t border-ui-border flex-shrink-0'>
             {footer}
           </div>
         )}

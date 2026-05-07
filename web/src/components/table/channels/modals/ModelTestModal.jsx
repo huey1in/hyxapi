@@ -9,9 +9,9 @@ import { MODEL_TABLE_PAGE_SIZE } from '../../../../constants';
 import Pagination from '../../../common/table/Pagination';
 
 const inputCls =
-  'w-full pl-8 pr-3 py-2 text-sm bg-ui-bg border border-ui-border rounded-md text-ui-text placeholder:text-ui-text-3 outline-none focus:border-ui-text-3 transition-colors';
+  'w-full pl-8 pr-3 py-2 text-sm bg-[var(--page-bg)] border border-ui-border rounded-xl text-ui-text placeholder:text-ui-text-3 outline-none focus:border-ui-text-3 transition-colors';
 const selectCls =
-  'w-full px-2.5 py-1.5 text-xs bg-ui-bg border border-ui-border rounded-md text-ui-text outline-none focus:border-ui-text-3 cursor-pointer';
+  'w-full px-3 py-2 text-sm bg-[var(--page-bg)] border border-ui-border rounded-xl text-ui-text outline-none focus:border-ui-text-3 cursor-pointer';
 
 const ENDPOINT_OPTIONS_RAW = [
   { value: '', label: '自动检测' },
@@ -40,7 +40,7 @@ const StatusPill = ({ kind, children }) => {
     error: 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20',
   };
   return (
-    <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 text-[10px] rounded border ${map[kind] || map.pending}`}>
+    <span className={`inline-flex items-center gap-1 px-2 py-0.5 text-[11px] rounded-md font-medium border ${map[kind] || map.pending}`}>
       {kind === 'testing' && <Loader2 size={9} className='animate-spin' />}
       {children}
     </span>
@@ -167,7 +167,7 @@ const ModelTestModal = ({
   return createPortal(
     <div
       className='fixed inset-0 z-[100] flex items-center justify-center p-4'
-      style={{ background: 'rgba(0,0,0,0.5)' }}
+      style={{ background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(2px)', WebkitBackdropFilter: 'blur(2px)' }}
       onClick={() => !isBatchTesting && handleCloseModal()}
     >
       <div
@@ -175,9 +175,12 @@ const ModelTestModal = ({
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className='flex items-center justify-between gap-3 px-5 py-3.5 border-b border-ui-border'>
+        <div className='flex items-center justify-between gap-3 px-6 py-4 border-b border-ui-border'>
           <div className='flex items-center gap-2 min-w-0'>
-            <span className='text-sm font-semibold text-ui-text truncate'>
+            <span
+              className='text-base font-semibold text-ui-text truncate'
+              style={{ fontFamily: "'Space Grotesk', sans-serif", letterSpacing: '-0.02em' }}
+            >
               {currentTestChannel.name}
             </span>
             <span className='text-xs text-ui-text-3 flex-shrink-0'>
@@ -187,7 +190,7 @@ const ModelTestModal = ({
           <button
             onClick={handleCloseModal}
             disabled={isBatchTesting}
-            className='p-1 rounded text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-subtle disabled:opacity-40'
+            className='w-8 h-8 rounded-lg flex items-center justify-center text-ui-text-3 hover:text-ui-text hover:bg-ui-bg-subtle disabled:opacity-40'
           >
             <X size={16} />
           </button>
@@ -209,14 +212,14 @@ const ModelTestModal = ({
                 ))}
               </select>
             </div>
-            <div className='inline-flex items-center gap-2 px-3 py-1.5 rounded-md border border-ui-border bg-ui-bg'>
+            <div className='inline-flex items-center gap-2 px-3.5 py-2 rounded-xl border border-ui-border bg-[var(--page-bg)]'>
               <span className='text-[11px] text-ui-text-2 whitespace-nowrap'>{t('流式')}</span>
               <Toggle checked={isStreamTest} onChange={setIsStreamTest} disabled={streamDisabled} />
             </div>
           </div>
 
           {/* Notice */}
-          <div className='flex items-start gap-2 px-3 py-2 rounded-md border border-blue-500/20 bg-blue-500/5'>
+          <div className='flex items-start gap-2 px-3 py-2 rounded-lg border border-blue-500/20 bg-blue-500/5'>
             <Info size={14} className='text-blue-500 flex-shrink-0 mt-0.5' />
             <div className='text-[11px] text-ui-text-2 leading-relaxed'>
               {t('说明：本页测试为非流式请求；若渠道仅支持流式返回，可能出现测试失败，请以实际使用为准。')}
@@ -241,13 +244,13 @@ const ModelTestModal = ({
             <div className='flex items-center gap-1.5'>
               <button
                 onClick={handleCopySelected}
-                className='inline-flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-md border border-ui-border text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-subtle transition-colors whitespace-nowrap'
+                className='inline-flex items-center gap-1.5 px-3.5 py-2 text-sm rounded-xl border border-ui-border text-ui-text hover:bg-ui-bg-subtle transition-colors whitespace-nowrap'
               >
                 {t('复制已选')}
               </button>
               <button
                 onClick={handleSelectSuccess}
-                className='inline-flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-md border border-ui-border text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-subtle transition-colors whitespace-nowrap'
+                className='inline-flex items-center gap-1.5 px-3.5 py-2 text-sm rounded-xl border border-ui-border text-ui-text hover:bg-ui-bg-subtle transition-colors whitespace-nowrap'
               >
                 {t('选择成功')}
               </button>
@@ -284,7 +287,7 @@ const ModelTestModal = ({
                     const r = modelTestResults[`${currentTestChannel.id}-${model}`];
                     const testing = testingModels.has(model);
                     return (
-                      <tr key={model} className='border-b border-ui-divider last:border-b-0 hover:bg-ui-bg-subtle/40'>
+                      <tr key={model} className='border-b border-ui-border last:border-b-0 hover:bg-ui-bg-subtle/40'>
                         <td className='px-3 py-2.5 align-middle' onClick={(e) => e.stopPropagation()}>
                           <input
                             type='checkbox'
@@ -321,7 +324,7 @@ const ModelTestModal = ({
                                   {r.errorCode === 'model_price_error' && (
                                     <button
                                       onClick={() => window.open('/console/setting?tab=ratio', '_blank')}
-                                      className='inline-flex items-center gap-1 px-2 py-0.5 text-[10px] rounded border border-amber-500/30 text-amber-600 dark:text-amber-400 hover:bg-amber-500/10 transition-colors w-fit'
+                                      className='inline-flex items-center gap-1 px-2.5 py-1 text-[11px] rounded-md border border-amber-500/30 text-amber-600 dark:text-amber-400 hover:bg-amber-500/10 transition-colors w-fit'
                                     >
                                       <Settings size={10} />
                                       {t('前往设置')}
@@ -336,9 +339,9 @@ const ModelTestModal = ({
                           <button
                             onClick={() => testChannel(currentTestChannel, model, selectedEndpointType, isStreamTest)}
                             disabled={testing}
-                            className='inline-flex items-center gap-1 px-2.5 py-1 text-xs rounded border border-ui-border text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-subtle disabled:opacity-50 transition-colors whitespace-nowrap'
+                            className='inline-flex items-center gap-1 px-3 py-1.5 text-xs rounded-lg border border-ui-border text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-subtle disabled:opacity-50 transition-colors whitespace-nowrap'
                           >
-                            {testing && <Loader2 size={10} className='animate-spin' />}
+                            {testing && <Loader2 size={14} className='animate-spin' />}
                             {t('测试')}
                           </button>
                         </td>
@@ -361,18 +364,18 @@ const ModelTestModal = ({
         </div>
 
         {/* Footer */}
-        <div className='flex justify-end gap-2 px-5 py-3 border-t border-ui-border'>
+        <div className='flex justify-end gap-2 px-6 py-4 border-t border-ui-border'>
           {isBatchTesting ? (
             <button
               onClick={handleCloseModal}
-              className='inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-medium rounded-md border border-ui-danger/40 text-ui-danger hover:bg-ui-danger-bg transition-colors whitespace-nowrap'
+              className='inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium rounded-xl border border-ui-danger/40 text-ui-danger hover:bg-ui-danger-bg transition-colors whitespace-nowrap'
             >
               {t('停止测试')}
             </button>
           ) : (
             <button
               onClick={handleCloseModal}
-              className='inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-medium rounded-md border border-ui-border text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-subtle transition-colors whitespace-nowrap'
+              className='inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium rounded-xl border border-ui-border text-ui-text hover:bg-ui-bg-subtle transition-colors whitespace-nowrap'
             >
               {t('取消')}
             </button>
@@ -380,9 +383,9 @@ const ModelTestModal = ({
           <button
             onClick={batchTestModels}
             disabled={isBatchTesting}
-            className='inline-flex items-center gap-1.5 px-4 py-1.5 text-xs font-semibold rounded-md bg-ui-accent text-ui-accent-fg hover:bg-ui-accent-hover hover:shadow-md active:scale-95 disabled:opacity-50 transition-all whitespace-nowrap'
+            className='inline-flex items-center gap-1.5 px-5 py-2 text-sm font-semibold rounded-xl bg-ui-accent text-ui-accent-fg hover:bg-ui-accent-hover hover:shadow-md active:scale-95 disabled:opacity-50 transition-all whitespace-nowrap'
           >
-            {isBatchTesting && <Loader2 size={11} className='animate-spin' />}
+            {isBatchTesting && <Loader2 size={14} className='animate-spin' />}}
             {isBatchTesting
               ? t('测试中...')
               : t('批量测试${count}个模型').replace('${count}', filteredModels.length)}

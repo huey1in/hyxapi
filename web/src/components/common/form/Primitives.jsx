@@ -13,19 +13,19 @@ import { Search, X, ChevronDown, Save, Loader2 } from 'lucide-react';
 // ── shared classes ──────────────────────────────────────
 
 const inputCls =
-  'w-full px-3 py-2 text-sm bg-ui-bg border border-ui-border rounded-md text-ui-text placeholder:text-ui-text-3 outline-none focus:border-ui-text-3 transition-colors disabled:opacity-60 disabled:cursor-not-allowed';
+  'w-full px-3.5 py-2 text-sm bg-ui-bg-elevated border border-ui-border rounded-xl text-ui-text placeholder:text-ui-text-3 outline-none focus:border-ui-text-3 transition-colors disabled:opacity-60 disabled:cursor-not-allowed';
 
-const errorCls = 'mt-1 text-[11px] text-ui-danger';
-const hintCls = 'mt-1 text-[11px] text-ui-text-3 leading-relaxed';
+const errorCls = 'mt-1.5 text-xs text-ui-danger';
+const hintCls = 'mt-1.5 text-xs text-ui-text-3 leading-relaxed';
 
 // ── FieldRow ────────────────────────────────────────────
 
 export const FieldRow = ({ label, required, hint, error, extra, children }) => (
   <div>
     {(label || extra) && (
-      <div className='flex items-center justify-between gap-2 mb-1.5'>
+      <div className='flex items-center justify-between gap-2 mb-2'>
         {label && (
-          <label className='block text-xs font-medium text-ui-text-2'>
+          <label className='block text-sm font-medium text-ui-text'>
             {label}
             {required && <span className='text-ui-danger ml-1'>*</span>}
           </label>
@@ -56,7 +56,7 @@ export const TextField = ({
     return (
       <div className='relative'>
         {prefix && (
-          <span className='absolute left-2.5 top-1/2 -translate-y-1/2 text-ui-text-3 pointer-events-none'>
+          <span className='absolute left-3 top-1/2 -translate-y-1/2 text-ui-text-3 pointer-events-none'>
             {prefix}
           </span>
         )}
@@ -66,11 +66,11 @@ export const TextField = ({
           onChange={(e) => onChange?.(e.target.value)}
           placeholder={placeholder}
           disabled={disabled}
-          className={`${inputCls} ${prefix ? 'pl-8' : ''} ${suffix ? 'pr-8' : ''} ${className}`}
+          className={`${inputCls} ${prefix ? 'pl-9' : ''} ${suffix ? 'pr-9' : ''} ${className}`}
           {...rest}
         />
         {suffix && (
-          <span className='absolute right-2.5 top-1/2 -translate-y-1/2'>{suffix}</span>
+          <span className='absolute right-3 top-1/2 -translate-y-1/2'>{suffix}</span>
         )}
       </div>
     );
@@ -159,7 +159,7 @@ export const ToggleField = ({ label, hint, checked, onChange, disabled }) => (
   <div className='flex items-start justify-between gap-4 py-1.5'>
     <div className='min-w-0 flex-1'>
       <div className='text-sm text-ui-text'>{label}</div>
-      {hint && <div className='text-[11px] text-ui-text-3 mt-0.5 leading-relaxed'>{hint}</div>}
+      {hint && <div className='text-[13px] text-ui-text-3 mt-0.5 leading-relaxed'>{hint}</div>}
     </div>
     <Toggle checked={checked} onChange={onChange} disabled={disabled} />
   </div>
@@ -195,7 +195,7 @@ const noticeStyles = {
 };
 
 export const Notice = ({ kind = 'info', icon, children, action }) => (
-  <div className={`flex items-start gap-2 px-3 py-2 rounded-md border ${noticeStyles[kind]}`}>
+  <div className={`flex items-start gap-2 px-4 py-3.5 rounded-xl border ${noticeStyles[kind]}`}>
     {icon && <span className='flex-shrink-0 mt-0.5'>{icon}</span>}
     <div className='flex-1 text-xs leading-relaxed'>{children}</div>
     {action && <div className='flex-shrink-0'>{action}</div>}
@@ -207,7 +207,7 @@ export const Notice = ({ kind = 'info', icon, children, action }) => (
 export const Section = ({ title, children, className = '' }) => (
   <div className={`space-y-3 ${className}`}>
     {title && (
-      <div className='text-[11px] uppercase tracking-wider text-ui-text-3 font-semibold pb-1.5 border-b border-ui-divider'>
+      <div className='text-[11px] font-semibold uppercase tracking-widest text-ui-text-3 pb-1.5 border-b border-ui-divider'>
         {title}
       </div>
     )}
@@ -218,7 +218,7 @@ export const Section = ({ title, children, className = '' }) => (
 // ── Chip (used in TagInput / MultiCombobox) ────────────
 
 export const Chip = ({ children, onRemove, className = '' }) => (
-  <span className={`inline-flex items-center gap-1 px-2 py-0.5 text-[11px] rounded bg-ui-bg-subtle border border-ui-border text-ui-text-2 ${className}`}>
+  <span className={`inline-flex items-center gap-1 px-2.5 py-1 text-xs rounded-lg bg-ui-bg-subtle border border-ui-border text-ui-text-2 ${className}`}>
     {children}
     {onRemove && (
       <button
@@ -245,7 +245,7 @@ export const TagInput = ({ value = [], onChange, placeholder, disabled }) => {
     setDraft('');
   };
   return (
-    <div className='flex flex-wrap items-center gap-1 min-h-[36px] p-1.5 bg-ui-bg border border-ui-border rounded-md focus-within:border-ui-text-3 transition-colors'>
+    <div className='flex flex-wrap items-center gap-1 min-h-[40px] p-2 bg-ui-bg-elevated border border-ui-border rounded-xl focus-within:border-ui-text-3 transition-colors'>
       {value.map((v) => (
         <Chip key={v} onRemove={disabled ? undefined : () => onChange?.(value.filter((x) => x !== v))}>
           {v}
@@ -265,7 +265,7 @@ export const TagInput = ({ value = [], onChange, placeholder, disabled }) => {
         }}
         onBlur={() => draft && commit(draft)}
         placeholder={value.length ? '' : placeholder}
-        className='flex-1 min-w-[80px] px-1 py-0.5 text-xs bg-transparent outline-none text-ui-text placeholder:text-ui-text-3'
+        className='flex-1 min-w-[80px] px-1 py-0.5 text-sm bg-transparent outline-none text-ui-text placeholder:text-ui-text-3'
       />
     </div>
   );
@@ -305,10 +305,10 @@ export const MultiCombobox = ({
     <div className='space-y-1.5' ref={ref}>
       <div
         onClick={() => !disabled && setOpen(true)}
-        className={`flex flex-wrap items-center gap-1 min-h-[36px] p-1.5 bg-ui-bg border border-ui-border rounded-md cursor-text ${disabled ? 'opacity-60' : ''}`}
+        className={`flex flex-wrap items-center gap-1 min-h-[40px] p-2 bg-ui-bg-elevated border border-ui-border rounded-xl cursor-text ${disabled ? 'opacity-60' : ''}`}
       >
         {value.length === 0 && (
-          <span className='text-[11px] text-ui-text-3 px-1.5'>{placeholder}</span>
+          <span className='text-[13px] text-ui-text-3 px-1.5'>{placeholder}</span>
         )}
         {value.map((v) => {
           const meta = options.find((o) => o.value === v);
@@ -323,15 +323,15 @@ export const MultiCombobox = ({
         })}
       </div>
       {open && (
-        <div className='border border-ui-border rounded-md overflow-hidden bg-ui-bg-elevated shadow-lg'>
+        <div className='border border-ui-border rounded-xl overflow-hidden bg-ui-bg-elevated shadow-xl'>
           <div className='relative border-b border-ui-border'>
-            <Search size={13} className='absolute left-2.5 top-1/2 -translate-y-1/2 text-ui-text-3 pointer-events-none' />
+            <Search size={14} className='absolute left-3 top-1/2 -translate-y-1/2 text-ui-text-3 pointer-events-none' />
             <input
               autoFocus
               value={keyword}
               onChange={(e) => setKeyword(e.target.value)}
               placeholder={searchPlaceholder}
-              className='w-full pl-8 pr-3 py-2 text-xs bg-transparent outline-none text-ui-text placeholder:text-ui-text-3'
+              className='w-full pl-9 pr-3 py-2 text-sm bg-transparent outline-none text-ui-text placeholder:text-ui-text-3'
               onKeyDown={(e) => {
                 if (e.key === 'Enter' && allowCreate && keyword) {
                   add(keyword.trim());
@@ -340,9 +340,9 @@ export const MultiCombobox = ({
               }}
             />
           </div>
-          <div className='max-h-60 overflow-y-auto'>
+          <div className='max-h-60 overflow-y-auto p-1'>
             {filtered.length === 0 ? (
-              <div className='py-3 px-3 text-[11px] text-ui-text-3 text-center'>
+              <div className='py-3 px-3 text-[13px] text-ui-text-3 text-center'>
                 {allowCreate && keyword
                   ? `按 Enter 添加 "${keyword}"`
                   : '无匹配项'}
@@ -353,7 +353,7 @@ export const MultiCombobox = ({
                   key={String(o.value)}
                   type='button'
                   onClick={() => add(o.value)}
-                  className='flex items-center gap-2 w-full text-left px-3 py-1.5 text-xs text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-subtle transition-colors'
+                  className='flex items-center gap-2 w-full text-left px-3 py-2 text-sm rounded-lg text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-subtle transition-colors'
                 >
                   {o.icon && <span className='flex-shrink-0'>{o.icon}</span>}
                   <span className='truncate'>{o.label || o.value}</span>
@@ -402,7 +402,7 @@ export const Combobox = ({
         type='button'
         disabled={disabled}
         onClick={() => setOpen((p) => !p)}
-        className={`flex items-center justify-between gap-2 w-full px-3 py-2 text-sm bg-ui-bg border border-ui-border rounded-md text-ui-text outline-none hover:border-ui-text-3 transition-colors disabled:opacity-60 disabled:cursor-not-allowed ${open ? 'border-ui-text-3' : ''}`}
+        className={`flex items-center justify-between gap-2 w-full px-3.5 py-2 text-sm bg-ui-bg-elevated border border-ui-border rounded-xl text-ui-text outline-none hover:border-ui-text-3 transition-colors disabled:opacity-60 disabled:cursor-not-allowed ${open ? 'border-ui-text-3' : ''}`}
       >
         <span className={`flex items-center gap-2 truncate ${!current ? 'text-ui-text-3' : ''}`}>
           {current?.icon}
@@ -411,27 +411,27 @@ export const Combobox = ({
         <ChevronDown size={14} className={`text-ui-text-3 transition-transform flex-shrink-0 ${open ? 'rotate-180' : ''}`} />
       </button>
       {open && (
-        <div className='absolute z-50 left-0 right-0 mt-1 max-h-72 bg-ui-bg-elevated border border-ui-border rounded-md shadow-lg overflow-hidden flex flex-col'>
+        <div className='absolute z-50 left-0 right-0 mt-1 max-h-72 bg-ui-bg-elevated border border-ui-border rounded-xl shadow-xl overflow-hidden flex flex-col'>
           <div className='relative border-b border-ui-border flex-shrink-0'>
-            <Search size={13} className='absolute left-2.5 top-1/2 -translate-y-1/2 text-ui-text-3 pointer-events-none' />
+            <Search size={14} className='absolute left-3 top-1/2 -translate-y-1/2 text-ui-text-3 pointer-events-none' />
             <input
               autoFocus
               value={keyword}
               onChange={(e) => setKeyword(e.target.value)}
               placeholder={searchPlaceholder}
-              className='w-full pl-8 pr-3 py-2 text-xs bg-transparent outline-none text-ui-text placeholder:text-ui-text-3'
+              className='w-full pl-9 pr-3 py-2 text-sm bg-transparent outline-none text-ui-text placeholder:text-ui-text-3'
             />
           </div>
-          <div className='overflow-y-auto'>
+          <div className='overflow-y-auto p-1'>
             {filtered.length === 0 ? (
-              <div className='py-3 px-3 text-[11px] text-ui-text-3 text-center'>无匹配项</div>
+              <div className='py-3 px-3 text-[13px] text-ui-text-3 text-center'>无匹配项</div>
             ) : (
               filtered.map((o) => (
                 <button
                   key={String(o.value)}
                   type='button'
                   onClick={() => { onChange?.(o.value); setOpen(false); setKeyword(''); }}
-                  className={`flex items-center gap-2 w-full text-left px-3 py-1.5 text-xs hover:bg-ui-bg-subtle transition-colors ${
+                  className={`flex items-center gap-2 w-full text-left px-3 py-2 text-sm rounded-lg hover:bg-ui-bg-subtle transition-colors ${
                     value === o.value ? 'bg-ui-bg-subtle text-ui-text font-medium' : 'text-ui-text-2 hover:text-ui-text'
                   }`}
                 >

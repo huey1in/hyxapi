@@ -9,7 +9,8 @@
  * table readable; access them through the row's edit/manage modal instead.
  */
 
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import {
   ChevronDown, MoreHorizontal, Power, AlertTriangle, RefreshCw, FlaskConical, Edit2,
 } from 'lucide-react';
@@ -95,7 +96,7 @@ const ResponsePill = ({ ms }) => {
 const TypeCell = ({ record, t }) => {
   if (record.children !== undefined) {
     return (
-      <span className='inline-flex items-center px-1.5 py-0.5 text-[10px] rounded bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 border border-cyan-500/20'>
+      <span className='inline-flex items-center px-2 py-0.5 text-[11px] rounded-md font-medium bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 border border-cyan-500/20'>
         {t('标签聚合')}
       </span>
     );
@@ -135,39 +136,72 @@ const NumInput = ({ initial, onCommit, min = -999, max }) => {
 
 const RowMenu = ({ items }) => {
   const [open, setOpen] = useState(false);
-  const ref = useRef(null);
+  const [pos, setPos] = useState({ top: 0, left: 0 });
+  const btnRef = useRef(null);
+  const popRef = useRef(null);
+
   useEffect(() => {
     if (!open) return;
     const onClick = (e) => {
-      if (ref.current && !ref.current.contains(e.target)) setOpen(false);
+      if (
+        btnRef.current && !btnRef.current.contains(e.target) &&
+        popRef.current && !popRef.current.contains(e.target)
+      ) setOpen(false);
     };
+    const onScroll = () => setOpen(false);
     document.addEventListener('mousedown', onClick);
-    return () => document.removeEventListener('mousedown', onClick);
+    window.addEventListener('scroll', onScroll, true);
+    window.addEventListener('resize', onScroll);
+    return () => {
+      document.removeEventListener('mousedown', onClick);
+      window.removeEventListener('scroll', onScroll, true);
+      window.removeEventListener('resize', onScroll);
+    };
   }, [open]);
+
+  useLayoutEffect(() => {
+    if (!open || !btnRef.current) return;
+    const r = btnRef.current.getBoundingClientRect();
+    const popW = 180;
+    const margin = 8;
+    let left = r.right - popW;
+    if (left < margin) left = margin;
+    if (left + popW + margin > window.innerWidth) left = window.innerWidth - popW - margin;
+    setPos({ top: r.bottom + 4, left });
+  }, [open]);
+
   return (
-    <div className='relative' ref={ref}>
+    <>
       <button
+        ref={btnRef}
         onClick={(e) => { e.stopPropagation(); setOpen((p) => !p); }}
-        className='inline-flex items-center justify-center w-6 h-6 rounded text-ui-text-3 hover:text-ui-text hover:bg-ui-bg-subtle'
+        className='inline-flex items-center justify-center w-8 h-8 rounded-lg text-ui-text-3 hover:text-ui-text hover:bg-ui-bg-subtle transition-colors'
       >
         <MoreHorizontal size={14} />
       </button>
-      {open && (
-        <div className='absolute right-0 mt-1 z-30 min-w-[160px] bg-ui-bg-elevated border border-ui-border rounded-lg shadow-lg overflow-hidden'>
+      {open && createPortal(
+        <div
+          ref={popRef}
+          className='fixed z-[300] min-w-[180px] bg-ui-bg-elevated border border-ui-border rounded-xl shadow-xl overflow-hidden p-1 animate-dropdown'
+          style={{ top: pos.top, left: pos.left }}
+        >
           {items.map((it, i) => (
             <button
               key={i}
               onClick={(e) => { e.stopPropagation(); setOpen(false); it.onClick?.(); }}
-              className={`w-full text-left px-3 py-1.5 text-xs whitespace-nowrap hover:bg-ui-bg-subtle transition-colors ${
-                it.danger ? 'text-ui-danger' : 'text-ui-text-2 hover:text-ui-text'
+              className={`w-full text-left px-3 py-2 text-sm rounded-lg whitespace-nowrap transition-colors ${
+                it.danger
+                  ? 'text-ui-danger hover:bg-ui-danger-bg'
+                  : 'text-ui-text hover:bg-ui-bg-subtle'
               }`}
             >
               {it.label}
             </button>
           ))}
-        </div>
+        </div>,
+        document.body,
       )}
-    </div>
+    </>
   );
 };
 
@@ -275,7 +309,7 @@ const ChannelsTable = (channelsData) => {
             {groups.map((g) => (
               <span
                 key={g}
-                className={`inline-flex items-center px-1.5 py-0.5 text-[10px] rounded border ${groupColor(g)}`}
+                className={`inline-flex items-center px-2 py-0.5 text-[11px] rounded-md font-medium border ${groupColor(g)}`}
               >
                 {g}
               </span>
@@ -490,8 +524,9 @@ const ChannelsTable = (channelsData) => {
                   <td
                     key={c.key}
                     className={`px-3 py-3 align-middle ${
-                      c.sticky ? 'sticky right-0 bg-ui-bg-elevated text-right' : ''
+                      c.sticky ? 'sticky right-0 text-right' : ''
                     }`}
+                    style={c.sticky ? { backgroundColor: 'var(--page-bg)' } : undefined}
                   >
                     {renderCell(c, record, i)}
                   </td>
@@ -509,10 +544,10 @@ const ActionBtn = ({ children, onClick, danger, title }) => (
   <button
     onClick={(e) => { e.stopPropagation(); onClick?.(e); }}
     title={title}
-    className={`inline-flex items-center gap-1 px-2 py-1 text-[11px] rounded border transition-colors whitespace-nowrap ${
+    className={`inline-flex items-center gap-1 px-2 h-7 text-xs font-medium rounded-lg transition-colors whitespace-nowrap ${
       danger
-        ? 'border-ui-danger/30 text-ui-danger hover:bg-ui-danger-bg'
-        : 'border-ui-border text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-subtle'
+        ? 'text-ui-danger hover:bg-ui-danger-bg'
+        : 'text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-subtle'
     }`}
   >
     {children}

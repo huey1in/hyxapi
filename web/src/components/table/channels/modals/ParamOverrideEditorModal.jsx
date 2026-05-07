@@ -20,29 +20,211 @@ For commercial licensing, please contact support@quantumnous.com
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
-import {
-  Button,
-  Card,
-  Col,
-  Collapse,
-  Input,
-  Row,
-  Select,
-  Space,
-  Switch,
-  Tag,
-  TextArea,
-  Typography,
-} from '@douyinfe/semi-ui';
-import { IconDelete, IconMenu, IconPlus } from '@douyinfe/semi-icons';
-import { X } from 'lucide-react';
+import { ChevronDown, Trash2, Menu as MenuIcon, Plus, X } from 'lucide-react';
+import { TextField, TextAreaField, Toggle } from '../../../common/form/Primitives';
+import Select from '../../../common/form/Select';
 import { copy, showError, showSuccess, verifyJSON } from '../../../../helpers';
 import {
   CLAUDE_CLI_HEADER_PASSTHROUGH_TEMPLATE,
   CODEX_CLI_HEADER_PASSTHROUGH_TEMPLATE,
 } from '../../../../constants/channel-affinity-template.constants';
 
-const { Text } = Typography;
+// ── Local UI helpers (token-system replacements for Semi UI primitives) ──
+
+const Btn = ({ variant = 'tertiary', size = 'md', icon, iconOnly, className = '', children, ...rest }) => {
+  const sizeCls = size === 'small'
+    ? 'px-2.5 py-1 text-xs'
+    : 'px-4 py-2 text-sm';
+  let variantCls = '';
+  if (variant === 'primary') {
+    variantCls = 'font-semibold rounded-xl bg-ui-accent text-ui-accent-fg hover:bg-ui-accent-hover transition-colors';
+  } else if (variant === 'danger') {
+    variantCls = 'font-semibold rounded-xl bg-ui-danger text-white hover:opacity-90 transition-opacity';
+  } else if (variant === 'danger-borderless') {
+    variantCls = 'font-medium rounded-lg text-ui-danger hover:bg-ui-danger/10 transition-colors';
+  } else {
+    variantCls = 'font-medium rounded-xl border border-ui-border text-ui-text hover:bg-ui-bg-subtle transition-colors';
+  }
+  if (iconOnly) {
+    return (
+      <button
+        className={`inline-flex items-center justify-center w-8 h-8 rounded-lg text-ui-text-3 hover:text-ui-text hover:bg-ui-bg-subtle ${className}`}
+        {...rest}
+      >
+        {icon}
+      </button>
+    );
+  }
+  return (
+    <button
+      className={`inline-flex items-center gap-1.5 whitespace-nowrap ${sizeCls} ${variantCls} ${className}`}
+      {...rest}
+    >
+      {icon}
+      {children}
+    </button>
+  );
+};
+
+const TAG_COLOR_CLS = {
+  blue: 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20',
+  cyan: 'bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 border-cyan-500/20',
+  green: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20',
+  red: 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20',
+  violet: 'bg-violet-500/10 text-violet-600 dark:text-violet-400 border-violet-500/20',
+  orange: 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20',
+  grey: 'bg-ui-bg-subtle text-ui-text-2 border-ui-border',
+};
+
+const TagPill = ({ color = 'grey', size = 'md', className = '', onClick, children }) => {
+  const cls = TAG_COLOR_CLS[color] || TAG_COLOR_CLS.grey;
+  const padCls = size === 'small' ? 'px-1.5 py-0.5 text-[10px]' : 'px-2 py-0.5 text-[11px]';
+  return (
+    <span
+      onClick={onClick}
+      className={`inline-flex items-center rounded-md font-medium border ${cls} ${padCls} ${className}`}
+    >
+      {children}
+    </span>
+  );
+};
+
+const Text = ({ size = 'md', strong, type = 'default', variant, className = '', children, style, ...rest }) => {
+  const sizeCls = size === 'small' ? 'text-xs' : 'text-sm';
+  const kind = variant || type;
+  let colorCls = 'text-ui-text';
+  if (kind === 'tertiary') colorCls = 'text-ui-text-3';
+  else if (kind === 'secondary') colorCls = 'text-ui-text-2';
+  else if (kind === 'danger') colorCls = 'text-ui-danger';
+  const weightCls = strong ? 'font-semibold' : '';
+  return (
+    <span style={style} className={`${sizeCls} ${colorCls} ${weightCls} ${className}`} {...rest}>{children}</span>
+  );
+};
+
+const CardBox = ({ bodyStyle, className = '', children }) => (
+  <div
+    className={`rounded-2xl bg-[var(--page-bg)] border border-ui-border ${className}`}
+    style={{ padding: 14, ...(bodyStyle || {}) }}
+  >
+    {children}
+  </div>
+);
+
+// ── Layout shims (Row/Col/Space replacements) ────────────────────────
+const Row = ({ gutter = 0, style, children }) => {
+  const g = typeof gutter === 'number' ? gutter : 0;
+  return (
+    <div
+      style={{ display: 'flex', flexWrap: 'wrap', marginLeft: -g / 2, marginRight: -g / 2, ...(style || {}) }}
+    >
+      {React.Children.map(children, (child) => {
+        if (!child) return child;
+        return React.cloneElement(child, {
+          __gutter: g,
+        });
+      })}
+    </div>
+  );
+};
+
+const Col = ({ xs, sm, md, lg, span, __gutter = 0, style, children }) => {
+  // Convert Semi 24-col to flex-basis percentages.
+  // We use the smallest defined breakpoint as base, then apply md override at md screens.
+  // Simplification: pick md if set, else xs, else span. Always single value for layout.
+  const colSpan = md || lg || sm || xs || span || 24;
+  const widthPct = `${(colSpan / 24) * 100}%`;
+  return (
+    <div
+      style={{
+        flex: `0 0 ${widthPct}`,
+        maxWidth: widthPct,
+        paddingLeft: __gutter / 2,
+        paddingRight: __gutter / 2,
+        boxSizing: 'border-box',
+        ...(style || {}),
+      }}
+    >
+      {children}
+    </div>
+  );
+};
+
+const Space = ({ vertical, wrap, spacing = 8, align, style, className = '', children }) => {
+  if (vertical) {
+    return (
+      <div
+        className={className}
+        style={{ display: 'flex', flexDirection: 'column', gap: spacing, alignItems: align === 'start' ? 'flex-start' : undefined, ...(style || {}) }}
+      >
+        {children}
+      </div>
+    );
+  }
+  return (
+    <div
+      className={className}
+      style={{
+        display: 'inline-flex',
+        flexWrap: wrap ? 'wrap' : 'nowrap',
+        alignItems: align === 'center' ? 'center' : 'center',
+        gap: spacing,
+        ...(style || {}),
+      }}
+    >
+      {children}
+    </div>
+  );
+};
+
+// ── Custom Collapse (controlled by activeKey) ────────────────────────
+const Collapse = ({ activeKey, onChange, keepDOM, children }) => {
+  const keys = Array.isArray(activeKey) ? activeKey : activeKey ? [activeKey] : [];
+  const handleToggle = (itemKey) => {
+    const isOpen = keys.includes(itemKey);
+    const next = isOpen ? keys.filter((k) => k !== itemKey) : [...keys, itemKey];
+    onChange?.(next);
+  };
+  return (
+    <div className='flex flex-col gap-2'>
+      {React.Children.map(children, (child) => {
+        if (!child) return child;
+        return React.cloneElement(child, {
+          __open: keys.includes(child.props.itemKey),
+          __onToggle: () => handleToggle(child.props.itemKey),
+          __keepDOM: keepDOM,
+        });
+      })}
+    </div>
+  );
+};
+
+const CollapsePanel = ({ header, children, __open, __onToggle, __keepDOM }) => (
+  <div className='border border-ui-border rounded-xl bg-[var(--page-bg)] overflow-hidden'>
+    <button
+      type='button'
+      onClick={__onToggle}
+      className='w-full flex items-center justify-between gap-2 px-4 py-3 text-sm font-medium text-ui-text hover:bg-ui-bg-subtle/50 transition-colors'
+    >
+      <span className='flex items-center gap-2 min-w-0'>
+        <ChevronDown
+          size={14}
+          className={`text-ui-text-3 transition-transform shrink-0 ${__open ? '' : '-rotate-90'}`}
+        />
+        <span className='min-w-0'>{header}</span>
+      </span>
+    </button>
+    {__keepDOM ? (
+      <div style={{ display: __open ? 'block' : 'none' }} className='px-4 pb-4 pt-1 border-t border-ui-border'>
+        {children}
+      </div>
+    ) : (
+      __open && <div className='px-4 pb-4 pt-1 border-t border-ui-border'>{children}</div>
+    )}
+  </div>
+);
+
+Collapse.Panel = CollapsePanel;
 
 // Token-system shell that mimics Semi UI Modal's prop surface.
 // Used here so the giant ParamOverrideEditorModal body (which still uses
@@ -1987,7 +2169,7 @@ const ParamOverrideEditorModal = ({ visible, value, onSave, onCancel }) => {
       cancelText={t('取消')}
     >
       <Space vertical align='start' spacing={14} style={{ width: '100%' }}>
-        <Card
+        <CardBox
           className='!rounded-xl !border-0 w-full'
           bodyStyle={{
             padding: 12,
@@ -1996,23 +2178,23 @@ const ParamOverrideEditorModal = ({ visible, value, onSave, onCancel }) => {
         >
           <div className='flex items-start justify-between gap-3'>
             <Space wrap spacing={8}>
-              <Tag color='grey'>{t('编辑方式')}</Tag>
-              <Button
-                type={editMode === 'visual' ? 'primary' : 'tertiary'}
+              <TagPill color='grey'>{t('编辑方式')}</TagPill>
+              <Btn
+                variant={editMode === 'visual' ? 'primary' : 'tertiary'}
                 onClick={switchToVisualMode}
               >
                 {t('可视化')}
-              </Button>
-              <Button
-                type={editMode === 'json' ? 'primary' : 'tertiary'}
+              </Btn>
+              <Btn
+                variant={editMode === 'json' ? 'primary' : 'tertiary'}
                 onClick={switchToJsonMode}
               >
                 {t('JSON 文本')}
-              </Button>
-              <Tag color='grey'>{t('模板')}</Tag>
+              </Btn>
+              <TagPill color='grey'>{t('模板')}</TagPill>
               <Select
                 value={templateGroupKey}
-                optionList={TEMPLATE_GROUP_OPTIONS}
+                options={TEMPLATE_GROUP_OPTIONS}
                 onChange={(nextValue) =>
                   setTemplateGroupKey(nextValue || 'basic')
                 }
@@ -2020,27 +2202,27 @@ const ParamOverrideEditorModal = ({ visible, value, onSave, onCancel }) => {
               />
               <Select
                 value={templatePresetKey}
-                optionList={templatePresetOptions}
+                options={templatePresetOptions}
                 onChange={(nextValue) =>
                   setTemplatePresetKey(nextValue || 'operations_default')
                 }
                 style={{ width: 260 }}
               />
-              <Button onClick={fillTemplateFromLibrary}>{t('填充模板')}</Button>
-              <Button type='tertiary' onClick={appendTemplateFromLibrary}>
+              <Btn onClick={fillTemplateFromLibrary}>{t('填充模板')}</Btn>
+              <Btn variant='tertiary' onClick={appendTemplateFromLibrary}>
                 {t('追加模板')}
-              </Button>
-              <Button type='tertiary' onClick={resetEditorState}>
+              </Btn>
+              <Btn variant='tertiary' onClick={resetEditorState}>
                 {t('重置')}
-              </Button>
+              </Btn>
             </Space>
           </div>
-        </Card>
+        </CardBox>
 
         {editMode === 'visual' ? (
           <div style={{ width: '100%' }}>
             {visualMode === 'legacy' ? (
-              <Card
+              <CardBox
                 className='!rounded-2xl !border-0'
                 bodyStyle={{
                   padding: 14,
@@ -2048,32 +2230,31 @@ const ParamOverrideEditorModal = ({ visible, value, onSave, onCancel }) => {
                 }}
               >
                 <Text className='mb-2 block'>{t('旧格式（JSON 对象）')}</Text>
-                <TextArea
+                <TextAreaField
                   value={legacyValue}
-                  autosize={{ minRows: 10, maxRows: 20 }}
                   placeholder={JSON.stringify(LEGACY_TEMPLATE, null, 2)}
                   onChange={(nextValue) => setLegacyValue(nextValue)}
-                  showClear
+                  
                 />
-                <Text type='tertiary' size='small' className='mt-2 block'>
+                <Text variant='tertiary' size='small' className='mt-2 block'>
                   {t('这里直接编辑 JSON 对象。适合简单覆盖参数的场景。')}
                 </Text>
-              </Card>
+              </CardBox>
             ) : (
               <div>
                 <div className='flex items-center justify-between mb-3'>
                   <Space>
                     <Text>{t('新格式（规则 + 条件）')}</Text>
-                    <Tag color='cyan'>{`${t('规则')}: ${operationCount}`}</Tag>
+                    <TagPill color='cyan'>{`${t('规则')}: ${operationCount}`}</TagPill>
                   </Space>
-                  <Button icon={<IconPlus />} onClick={addOperation}>
+                  <Btn icon={<Plus size={14} />} onClick={addOperation}>
                     {t('新增规则')}
-                  </Button>
+                  </Btn>
                 </div>
 
                 <Row gutter={12}>
                   <Col xs={24} md={8}>
-                    <Card
+                    <CardBox
                       className='!rounded-2xl !border-0 h-full'
                       bodyStyle={{
                         padding: 12,
@@ -2086,30 +2267,30 @@ const ParamOverrideEditorModal = ({ visible, value, onSave, onCancel }) => {
                     >
                       <div className='flex items-center justify-between'>
                         <Text strong>{t('规则导航')}</Text>
-                        <Tag color='grey'>{`${operationCount}/${operations.length}`}</Tag>
+                        <TagPill color='grey'>{`${operationCount}/${operations.length}`}</TagPill>
                       </div>
 
                       {topOperationModes.length > 0 ? (
                         <Space wrap spacing={6}>
                           {topOperationModes.map(([mode, count]) => (
-                            <Tag
+                            <TagPill
                               key={`mode_stat_${mode}`}
                               size='small'
                               color={getOperationModeTagColor(mode)}
                             >
                               {`${OPERATION_MODE_LABEL_MAP[mode] || mode} · ${count}`}
-                            </Tag>
+                            </TagPill>
                           ))}
                         </Space>
                       ) : null}
 
-                      <Input
+                      <TextField
                         value={operationSearch}
                         placeholder={t('搜索规则（描述 / 类型 / 路径 / 来源 / 目标）')}
                         onChange={(nextValue) =>
                           setOperationSearch(nextValue || '')
                         }
-                        showClear
+                        
                       />
 
                       <div
@@ -2117,7 +2298,7 @@ const ParamOverrideEditorModal = ({ visible, value, onSave, onCancel }) => {
                         style={{ flex: 1, minHeight: 320, paddingRight: 2 }}
                       >
                         {filteredOperations.length === 0 ? (
-                          <Text type='tertiary' size='small'>
+                          <Text variant='tertiary' size='small'>
                             {t('没有匹配的规则')}
                           </Text>
                         ) : (
@@ -2195,12 +2376,12 @@ const ParamOverrideEditorModal = ({ visible, value, onSave, onCancel }) => {
                                           marginTop: 1,
                                         }}
                                       >
-                                        <IconMenu />
+                                        <MenuIcon size={14} />
                                       </div>
                                       <div className='min-w-0'>
                                         <Text strong>{`#${index + 1}`}</Text>
                                         <Text
-                                          type='tertiary'
+                                          variant='tertiary'
                                           size='small'
                                           className='block mt-1'
                                         >
@@ -2208,7 +2389,7 @@ const ParamOverrideEditorModal = ({ visible, value, onSave, onCancel }) => {
                                         </Text>
                                         {String(operation.description || '').trim() ? (
                                           <Text
-                                            type='tertiary'
+                                            variant='tertiary'
                                             size='small'
                                             className='block mt-1'
                                             style={{
@@ -2225,12 +2406,12 @@ const ParamOverrideEditorModal = ({ visible, value, onSave, onCancel }) => {
                                         ) : null}
                                       </div>
                                     </div>
-                                    <Tag size='small' color='grey'>
+                                    <TagPill size='small' color='grey'>
                                       {(operation.conditions || []).length}
-                                    </Tag>
+                                    </TagPill>
                                   </div>
                                   <Space spacing={6} style={{ marginTop: 8 }}>
-                                    <Tag
+                                    <TagPill
                                       size='small'
                                       color={getOperationModeTagColor(
                                         operation.mode || 'set',
@@ -2241,8 +2422,8 @@ const ParamOverrideEditorModal = ({ visible, value, onSave, onCancel }) => {
                                       ] ||
                                         operation.mode ||
                                         'set'}
-                                    </Tag>
-                                    <Text type='tertiary' size='small'>
+                                    </TagPill>
+                                    <Text variant='tertiary' size='small'>
                                       {t('条件数')}
                                     </Text>
                                   </Space>
@@ -2252,7 +2433,7 @@ const ParamOverrideEditorModal = ({ visible, value, onSave, onCancel }) => {
                           </div>
                         )}
                       </div>
-                    </Card>
+                    </CardBox>
                   </Col>
                   <Col xs={24} md={16}>
                     {selectedOperation ? (
@@ -2269,7 +2450,7 @@ const ParamOverrideEditorModal = ({ visible, value, onSave, onCancel }) => {
                             ? parseSyncTargetSpec(selectedOperation.to)
                             : null;
                         return (
-                          <Card
+                          <CardBox
                             className='!rounded-2xl !border-0'
                             bodyStyle={{
                               padding: 14,
@@ -2278,7 +2459,7 @@ const ParamOverrideEditorModal = ({ visible, value, onSave, onCancel }) => {
                           >
                             <div className='flex items-center justify-between mb-3'>
                               <Space>
-                                <Tag color='blue'>{`#${selectedOperationIndex + 1}`}</Tag>
+                                <TagPill color='blue'>{`#${selectedOperationIndex + 1}`}</TagPill>
                                 <Text strong>
                                   {getOperationSummary(
                                     selectedOperation,
@@ -2287,20 +2468,19 @@ const ParamOverrideEditorModal = ({ visible, value, onSave, onCancel }) => {
                                 </Text>
                               </Space>
                               <Space>
-                                <Button
+                                <Btn
                                   size='small'
-                                  type='tertiary'
+                                  variant='tertiary'
                                   onClick={() =>
                                     duplicateOperation(selectedOperation.id)
                                   }
                                 >
                                   {t('复制')}
-                                </Button>
-                                <Button
+                                </Btn>
+                                <Btn
                                   size='small'
-                                  type='danger'
-                                  theme='borderless'
-                                  icon={<IconDelete />}
+                                  variant='danger-borderless'
+                                  icon={<Trash2 size={14} />}
                                   aria-label={t('删除规则')}
                                   onClick={() =>
                                     removeOperation(selectedOperation.id)
@@ -2311,12 +2491,12 @@ const ParamOverrideEditorModal = ({ visible, value, onSave, onCancel }) => {
 
                             <Row gutter={12}>
                               <Col xs={24} md={8}>
-                                <Text type='tertiary' size='small'>
+                                <Text variant='tertiary' size='small'>
                                   {t('操作类型')}
                                 </Text>
                                 <Select
                                   value={mode}
-                                  optionList={OPERATION_MODE_OPTIONS}
+                                  options={OPERATION_MODE_OPTIONS}
                                   onChange={(nextMode) =>
                                     updateOperation(selectedOperation.id, {
                                       mode: nextMode,
@@ -2327,12 +2507,12 @@ const ParamOverrideEditorModal = ({ visible, value, onSave, onCancel }) => {
                               </Col>
                               {meta.path || meta.pathOptional ? (
                                 <Col xs={24} md={16}>
-                                  <Text type='tertiary' size='small'>
+                                  <Text variant='tertiary' size='small'>
                                     {meta.pathOptional
                                       ? t('目标路径（可选）')
                                       : t(getModePathLabel(mode))}
                                   </Text>
-                                  <Input
+                                  <TextField
                                     value={selectedOperation.path}
                                     placeholder={getModePathPlaceholder(mode)}
                                     onChange={(nextValue) =>
@@ -2346,17 +2526,17 @@ const ParamOverrideEditorModal = ({ visible, value, onSave, onCancel }) => {
                             </Row>
 
                             <Text
-                              type='tertiary'
+                              variant='tertiary'
                               size='small'
                               className='mt-1 block'
                             >
                               {MODE_DESCRIPTIONS[mode] || ''}
                             </Text>
                             <div className='mt-2'>
-                              <Text type='tertiary' size='small'>
+                              <Text variant='tertiary' size='small'>
                                 {t('规则描述（可选）')}
                               </Text>
-                              <Input
+                              <TextField
                                 value={selectedOperation.description || ''}
                                 placeholder={t('例如：清理工具参数，避免上游校验错误')}
                                 onChange={(nextValue) =>
@@ -2365,9 +2545,9 @@ const ParamOverrideEditorModal = ({ visible, value, onSave, onCancel }) => {
                                   })
                                 }
                                 maxLength={180}
-                                showClear
+                                
                               />
-                              <Text type='tertiary' size='small' className='mt-1 block'>
+                              <Text variant='tertiary' size='small' className='mt-1 block'>
                                 {`${String(selectedOperation.description || '').length}/180`}
                               </Text>
                             </div>
@@ -2384,12 +2564,12 @@ const ParamOverrideEditorModal = ({ visible, value, onSave, onCancel }) => {
                                   <div className='flex items-center justify-between mb-2'>
                                     <Text strong>{t('自定义错误响应')}</Text>
                                     <Space spacing={6} align='center'>
-                                      <Text type='tertiary' size='small'>
+                                      <Text variant='tertiary' size='small'>
                                         {t('模式')}
                                       </Text>
-                                      <Button
+                                      <Btn
                                         size='small'
-                                        type={
+                                        variant={
                                           returnErrorDraft.simpleMode
                                             ? 'primary'
                                             : 'tertiary'
@@ -2402,10 +2582,10 @@ const ParamOverrideEditorModal = ({ visible, value, onSave, onCancel }) => {
                                         }
                                       >
                                         {t('简洁')}
-                                      </Button>
-                                      <Button
+                                      </Btn>
+                                      <Btn
                                         size='small'
-                                        type={
+                                        variant={
                                           returnErrorDraft.simpleMode
                                             ? 'tertiary'
                                             : 'primary'
@@ -2418,16 +2598,15 @@ const ParamOverrideEditorModal = ({ visible, value, onSave, onCancel }) => {
                                         }
                                       >
                                         {t('高级')}
-                                      </Button>
+                                      </Btn>
                                     </Space>
                                   </div>
 
-                                  <Text type='tertiary' size='small'>
+                                  <Text variant='tertiary' size='small'>
                                     {t('错误消息（必填）')}
                                   </Text>
-                                  <TextArea
+                                  <TextAreaField
                                     value={returnErrorDraft.message}
-                                    autosize={{ minRows: 2, maxRows: 4 }}
                                     placeholder={t('例如：该请求不满足准入策略')}
                                     onChange={(nextValue) =>
                                       updateReturnErrorDraft(
@@ -2439,7 +2618,7 @@ const ParamOverrideEditorModal = ({ visible, value, onSave, onCancel }) => {
 
                                   {returnErrorDraft.simpleMode ? (
                                     <Text
-                                      type='tertiary'
+                                      variant='tertiary'
                                       size='small'
                                       className='mt-2 block'
                                     >
@@ -2451,10 +2630,10 @@ const ParamOverrideEditorModal = ({ visible, value, onSave, onCancel }) => {
                                     <>
                                       <Row gutter={12} style={{ marginTop: 10 }}>
                                         <Col xs={24} md={8}>
-                                          <Text type='tertiary' size='small'>
+                                          <Text variant='tertiary' size='small'>
                                             {t('状态码')}
                                           </Text>
-                                          <Input
+                                          <TextField
                                             value={String(
                                               returnErrorDraft.statusCode ?? '',
                                             )}
@@ -2472,10 +2651,10 @@ const ParamOverrideEditorModal = ({ visible, value, onSave, onCancel }) => {
                                           />
                                         </Col>
                                         <Col xs={24} md={8}>
-                                          <Text type='tertiary' size='small'>
+                                          <Text variant='tertiary' size='small'>
                                             {t('错误代码（可选）')}
                                           </Text>
-                                          <Input
+                                          <TextField
                                             value={returnErrorDraft.code}
                                             placeholder='forced_bad_request'
                                             onChange={(nextValue) =>
@@ -2487,10 +2666,10 @@ const ParamOverrideEditorModal = ({ visible, value, onSave, onCancel }) => {
                                           />
                                         </Col>
                                         <Col xs={24} md={8}>
-                                          <Text type='tertiary' size='small'>
+                                          <Text variant='tertiary' size='small'>
                                             {t('错误类型（可选）')}
                                           </Text>
-                                          <Input
+                                          <TextField
                                             value={returnErrorDraft.type}
                                             placeholder='invalid_request_error'
                                             onChange={(nextValue) =>
@@ -2503,12 +2682,12 @@ const ParamOverrideEditorModal = ({ visible, value, onSave, onCancel }) => {
                                         </Col>
                                       </Row>
                                       <div className='mt-2 flex items-center gap-2'>
-                                        <Text type='tertiary' size='small'>
+                                        <Text variant='tertiary' size='small'>
                                           {t('重试建议')}
                                         </Text>
-                                        <Button
+                                        <Btn
                                           size='small'
-                                          type={
+                                          variant={
                                             returnErrorDraft.skipRetry
                                               ? 'primary'
                                               : 'tertiary'
@@ -2521,10 +2700,10 @@ const ParamOverrideEditorModal = ({ visible, value, onSave, onCancel }) => {
                                           }
                                         >
                                           {t('停止重试')}
-                                        </Button>
-                                        <Button
+                                        </Btn>
+                                        <Btn
                                           size='small'
-                                          type={
+                                          variant={
                                             returnErrorDraft.skipRetry
                                               ? 'tertiary'
                                               : 'primary'
@@ -2537,10 +2716,10 @@ const ParamOverrideEditorModal = ({ visible, value, onSave, onCancel }) => {
                                           }
                                         >
                                           {t('允许重试')}
-                                        </Button>
+                                        </Btn>
                                       </div>
                                       <Space wrap style={{ marginTop: 8 }}>
-                                        <Tag
+                                        <TagPill
                                           size='small'
                                           color='grey'
                                           className='cursor-pointer'
@@ -2556,8 +2735,8 @@ const ParamOverrideEditorModal = ({ visible, value, onSave, onCancel }) => {
                                           }
                                         >
                                           {t('参数错误')}
-                                        </Tag>
-                                        <Tag
+                                        </TagPill>
+                                        <TagPill
                                           size='small'
                                           color='grey'
                                           className='cursor-pointer'
@@ -2573,8 +2752,8 @@ const ParamOverrideEditorModal = ({ visible, value, onSave, onCancel }) => {
                                           }
                                         >
                                           {t('未授权')}
-                                        </Tag>
-                                        <Tag
+                                        </TagPill>
+                                        <TagPill
                                           size='small'
                                           color='grey'
                                           className='cursor-pointer'
@@ -2590,7 +2769,7 @@ const ParamOverrideEditorModal = ({ visible, value, onSave, onCancel }) => {
                                           }
                                         >
                                           {t('限流')}
-                                        </Tag>
+                                        </TagPill>
                                       </Space>
                                     </>
                                   )}
@@ -2606,12 +2785,12 @@ const ParamOverrideEditorModal = ({ visible, value, onSave, onCancel }) => {
                                   <div className='flex items-center justify-between mb-2'>
                                     <Text strong>{t('对象清理规则')}</Text>
                                     <Space spacing={6} align='center'>
-                                      <Text type='tertiary' size='small'>
+                                      <Text variant='tertiary' size='small'>
                                         {t('模式')}
                                       </Text>
-                                      <Button
+                                      <Btn
                                         size='small'
-                                        type={
+                                        variant={
                                           pruneObjectsDraft.simpleMode
                                             ? 'primary'
                                             : 'tertiary'
@@ -2624,10 +2803,10 @@ const ParamOverrideEditorModal = ({ visible, value, onSave, onCancel }) => {
                                         }
                                       >
                                         {t('简洁')}
-                                      </Button>
-                                      <Button
+                                      </Btn>
+                                      <Btn
                                         size='small'
-                                        type={
+                                        variant={
                                           pruneObjectsDraft.simpleMode
                                             ? 'tertiary'
                                             : 'primary'
@@ -2640,14 +2819,14 @@ const ParamOverrideEditorModal = ({ visible, value, onSave, onCancel }) => {
                                         }
                                       >
                                         {t('高级')}
-                                      </Button>
+                                      </Btn>
                                     </Space>
                                   </div>
 
-                                  <Text type='tertiary' size='small'>
+                                  <Text variant='tertiary' size='small'>
                                     {t('类型（常用）')}
                                   </Text>
-                                  <Input
+                                  <TextField
                                     value={pruneObjectsDraft.typeText}
                                     placeholder='redacted_thinking'
                                     onChange={(nextValue) =>
@@ -2660,7 +2839,7 @@ const ParamOverrideEditorModal = ({ visible, value, onSave, onCancel }) => {
 
                                   {pruneObjectsDraft.simpleMode ? (
                                     <Text
-                                      type='tertiary'
+                                      variant='tertiary'
                                       size='small'
                                       className='mt-2 block'
                                     >
@@ -2672,12 +2851,12 @@ const ParamOverrideEditorModal = ({ visible, value, onSave, onCancel }) => {
                                     <>
                                       <Row gutter={12} style={{ marginTop: 10 }}>
                                         <Col xs={24} md={12}>
-                                          <Text type='tertiary' size='small'>
+                                          <Text variant='tertiary' size='small'>
                                             {t('逻辑')}
                                           </Text>
                                           <Select
                                             value={pruneObjectsDraft.logic}
-                                            optionList={[
+                                            options={[
                                               { label: t('全部满足（AND）'), value: 'AND' },
                                               { label: t('任一满足（OR）'), value: 'OR' },
                                             ]}
@@ -2691,13 +2870,13 @@ const ParamOverrideEditorModal = ({ visible, value, onSave, onCancel }) => {
                                           />
                                         </Col>
                                         <Col xs={24} md={12}>
-                                          <Text type='tertiary' size='small'>
+                                          <Text variant='tertiary' size='small'>
                                             {t('递归策略')}
                                           </Text>
                                           <Space spacing={6} style={{ marginTop: 2 }}>
-                                            <Button
+                                            <Btn
                                               size='small'
-                                              type={
+                                              variant={
                                                 pruneObjectsDraft.recursive
                                                   ? 'primary'
                                                   : 'tertiary'
@@ -2710,10 +2889,10 @@ const ParamOverrideEditorModal = ({ visible, value, onSave, onCancel }) => {
                                               }
                                             >
                                               {t('递归')}
-                                            </Button>
-                                            <Button
+                                            </Btn>
+                                            <Btn
                                               size='small'
-                                              type={
+                                              variant={
                                                 pruneObjectsDraft.recursive
                                                   ? 'tertiary'
                                                   : 'primary'
@@ -2726,7 +2905,7 @@ const ParamOverrideEditorModal = ({ visible, value, onSave, onCancel }) => {
                                               }
                                             >
                                               {t('仅当前层')}
-                                            </Button>
+                                            </Btn>
                                           </Space>
                                         </Col>
                                       </Row>
@@ -2741,18 +2920,18 @@ const ParamOverrideEditorModal = ({ visible, value, onSave, onCancel }) => {
                                           <Text strong>
                                             {t('附加条件')}
                                           </Text>
-                                          <Button
+                                          <Btn
                                             size='small'
-                                            icon={<IconPlus />}
+                                            icon={<Plus size={14} />}
                                             onClick={() =>
                                               addPruneRule(selectedOperation.id)
                                             }
                                           >
                                             {t('新增条件')}
-                                          </Button>
+                                          </Btn>
                                         </div>
                                         {(pruneObjectsDraft.rules || []).length === 0 ? (
-                                          <Text type='tertiary' size='small'>
+                                          <Text variant='tertiary' size='small'>
                                             {t(
                                               '未添加附加条件时，仅使用上方 type 进行清理。',
                                             )}
@@ -2772,14 +2951,13 @@ const ParamOverrideEditorModal = ({ visible, value, onSave, onCancel }) => {
                                                   }}
                                                 >
                                                   <div className='flex items-center justify-between mb-2'>
-                                                    <Tag size='small'>
+                                                    <TagPill size='small'>
                                                       {`R${ruleIndex + 1}`}
-                                                    </Tag>
-                                                    <Button
+                                                    </TagPill>
+                                                    <Btn
                                                       size='small'
-                                                      type='danger'
-                                                      theme='borderless'
-                                                      icon={<IconDelete />}
+                                                      variant='danger-borderless'
+                                                      icon={<Trash2 size={14} />}
                                                       onClick={() =>
                                                         removePruneRule(
                                                           selectedOperation.id,
@@ -2788,17 +2966,17 @@ const ParamOverrideEditorModal = ({ visible, value, onSave, onCancel }) => {
                                                       }
                                                     >
                                                       {t('删除条件')}
-                                                    </Button>
+                                                    </Btn>
                                                   </div>
                                                   <Row gutter={8}>
                                                     <Col xs={24} md={9}>
                                                       <Text
-                                                        type='tertiary'
+                                                        variant='tertiary'
                                                         size='small'
                                                       >
                                                         {t('字段路径')}
                                                       </Text>
-                                                      <Input
+                                                      <TextField
                                                         value={rule.path}
                                                         placeholder='type'
                                                         onChange={(nextValue) =>
@@ -2812,14 +2990,14 @@ const ParamOverrideEditorModal = ({ visible, value, onSave, onCancel }) => {
                                                     </Col>
                                                     <Col xs={24} md={7}>
                                                       <Text
-                                                        type='tertiary'
+                                                        variant='tertiary'
                                                         size='small'
                                                       >
                                                         {t('匹配方式')}
                                                       </Text>
                                                       <Select
                                                         value={rule.mode}
-                                                        optionList={
+                                                        options={
                                                           CONDITION_MODE_OPTIONS
                                                         }
                                                         style={{ width: '100%' }}
@@ -2834,12 +3012,12 @@ const ParamOverrideEditorModal = ({ visible, value, onSave, onCancel }) => {
                                                     </Col>
                                                     <Col xs={24} md={8}>
                                                       <Text
-                                                        type='tertiary'
+                                                        variant='tertiary'
                                                         size='small'
                                                       >
                                                         {t('匹配值（可选）')}
                                                       </Text>
-                                                      <Input
+                                                      <TextField
                                                         value={rule.value_text}
                                                         placeholder='redacted_thinking'
                                                         onChange={(nextValue) =>
@@ -2860,9 +3038,9 @@ const ParamOverrideEditorModal = ({ visible, value, onSave, onCancel }) => {
                                                     spacing={8}
                                                     style={{ marginTop: 8 }}
                                                   >
-                                                    <Button
+                                                    <Btn
                                                       size='small'
-                                                      type={
+                                                      variant={
                                                         rule.invert
                                                           ? 'primary'
                                                           : 'tertiary'
@@ -2879,10 +3057,10 @@ const ParamOverrideEditorModal = ({ visible, value, onSave, onCancel }) => {
                                                       }
                                                     >
                                                       {t('条件取反')}
-                                                    </Button>
-                                                    <Button
+                                                    </Btn>
+                                                    <Btn
                                                       size='small'
-                                                      type={
+                                                      variant={
                                                         rule.pass_missing_key
                                                           ? 'primary'
                                                           : 'tertiary'
@@ -2899,7 +3077,7 @@ const ParamOverrideEditorModal = ({ visible, value, onSave, onCancel }) => {
                                                       }
                                                     >
                                                       {t('字段缺失视为命中')}
-                                                    </Button>
+                                                    </Btn>
                                                   </Space>
                                                 </div>
                                               ),
@@ -2913,42 +3091,41 @@ const ParamOverrideEditorModal = ({ visible, value, onSave, onCancel }) => {
                               ) : (
                                 <div className='mt-2'>
                                   <div className='flex items-center justify-between gap-2'>
-                                    <Text type='tertiary' size='small'>
+                                    <Text variant='tertiary' size='small'>
                                       {t(getModeValueLabel(mode))}
                                     </Text>
                                     {mode === 'set_header' ? (
                                       <Space spacing={6}>
-                                        <Button
+                                        <Btn
                                           size='small'
-                                          type='tertiary'
+                                          variant='tertiary'
                                           onClick={() =>
                                             setHeaderValueExampleVisible(true)
                                           }
                                         >
                                           {t('查看 JSON 示例')}
-                                        </Button>
-                                        <Button
+                                        </Btn>
+                                        <Btn
                                           size='small'
-                                          type='tertiary'
+                                          variant='tertiary'
                                           onClick={formatSelectedOperationValueAsJson}
                                         >
                                           {t('格式化 JSON')}
-                                        </Button>
+                                        </Btn>
                                       </Space>
                                     ) : null}
                                   </div>
                                   {mode === 'set_header' ? (
                                     <Text
-                                      type='tertiary'
+                                      variant='tertiary'
                                       size='small'
                                       className='mt-1 mb-2 block'
                                     >
                                       {t('纯字符串会直接覆盖整条请求头，或者点击“查看 JSON 示例”按 token 规则处理。')}
                                     </Text>
                                   ) : null}
-                                  <TextArea
+                                  <TextAreaField
                                     value={selectedOperation.value_text}
-                                    autosize={{ minRows: 1, maxRows: 4 }}
                                     placeholder={getModeValuePlaceholder(mode)}
                                     onChange={(nextValue) =>
                                       updateOperation(selectedOperation.id, {
@@ -2962,20 +3139,17 @@ const ParamOverrideEditorModal = ({ visible, value, onSave, onCancel }) => {
 
                             {meta.keepOrigin ? (
                               <div className='mt-2 flex items-center gap-2'>
-                                <Switch
+                                <Toggle
                                   checked={Boolean(
                                     selectedOperation.keep_origin,
-                                  )}
-                                  checkedText={t('开')}
-                                  uncheckedText={t('关')}
-                                  onChange={(nextValue) =>
+                                  )}                                  un                                  onChange={(nextValue) =>
                                     updateOperation(selectedOperation.id, {
                                       keep_origin: nextValue,
                                     })
                                   }
                                 />
                                 <Text
-                                  type='tertiary'
+                                  variant='tertiary'
                                   size='small'
                                   className='leading-6'
                                 >
@@ -2986,18 +3160,18 @@ const ParamOverrideEditorModal = ({ visible, value, onSave, onCancel }) => {
 
                             {mode === 'sync_fields' ? (
                               <div className='mt-2'>
-                                <Text type='tertiary' size='small'>
+                                <Text variant='tertiary' size='small'>
                                   {t('同步端点')}
                                 </Text>
                                 <Row gutter={12} style={{ marginTop: 6 }}>
                                   <Col xs={24} md={12}>
-                                    <Text type='tertiary' size='small'>
+                                    <Text variant='tertiary' size='small'>
                                       {t('来源端点')}
                                     </Text>
                                     <div className='flex gap-2'>
                                       <Select
                                         value={syncFromTarget?.type || 'json'}
-                                        optionList={SYNC_TARGET_TYPE_OPTIONS}
+                                        options={SYNC_TARGET_TYPE_OPTIONS}
                                         style={{ width: 120 }}
                                         onChange={(nextType) =>
                                           updateOperation(
@@ -3011,7 +3185,7 @@ const ParamOverrideEditorModal = ({ visible, value, onSave, onCancel }) => {
                                           )
                                         }
                                       />
-                                      <Input
+                                      <TextField
                                         value={syncFromTarget?.key || ''}
                                         placeholder='session_id'
                                         onChange={(nextKey) =>
@@ -3029,13 +3203,13 @@ const ParamOverrideEditorModal = ({ visible, value, onSave, onCancel }) => {
                                     </div>
                                   </Col>
                                   <Col xs={24} md={12}>
-                                    <Text type='tertiary' size='small'>
+                                    <Text variant='tertiary' size='small'>
                                       {t('目标端点')}
                                     </Text>
                                     <div className='flex gap-2'>
                                       <Select
                                         value={syncToTarget?.type || 'json'}
-                                        optionList={SYNC_TARGET_TYPE_OPTIONS}
+                                        options={SYNC_TARGET_TYPE_OPTIONS}
                                         style={{ width: 120 }}
                                         onChange={(nextType) =>
                                           updateOperation(
@@ -3049,7 +3223,7 @@ const ParamOverrideEditorModal = ({ visible, value, onSave, onCancel }) => {
                                           )
                                         }
                                       />
-                                      <Input
+                                      <TextField
                                         value={syncToTarget?.key || ''}
                                         placeholder='prompt_cache_key'
                                         onChange={(nextKey) =>
@@ -3068,7 +3242,7 @@ const ParamOverrideEditorModal = ({ visible, value, onSave, onCancel }) => {
                                   </Col>
                                 </Row>
                                 <Space wrap style={{ marginTop: 8 }}>
-                                  <Tag
+                                  <TagPill
                                     size='small'
                                     color='cyan'
                                     className='cursor-pointer'
@@ -3082,8 +3256,8 @@ const ParamOverrideEditorModal = ({ visible, value, onSave, onCancel }) => {
                                     {
                                       'header:session_id -> json:prompt_cache_key'
                                     }
-                                  </Tag>
-                                  <Tag
+                                  </TagPill>
+                                  <TagPill
                                     size='small'
                                     color='cyan'
                                     className='cursor-pointer'
@@ -3097,17 +3271,17 @@ const ParamOverrideEditorModal = ({ visible, value, onSave, onCancel }) => {
                                     {
                                       'json:prompt_cache_key -> header:session_id'
                                     }
-                                  </Tag>
+                                  </TagPill>
                                 </Space>
                               </div>
                             ) : meta.from || meta.to === false || meta.to ? (
                               <Row gutter={12} style={{ marginTop: 8 }}>
                                 {meta.from || meta.to === false ? (
                                   <Col xs={24} md={12}>
-                                    <Text type='tertiary' size='small'>
+                                    <Text variant='tertiary' size='small'>
                                       {t(getModeFromLabel(mode))}
                                     </Text>
-                                    <Input
+                                    <TextField
                                       value={selectedOperation.from}
                                       placeholder={getModeFromPlaceholder(mode)}
                                       onChange={(nextValue) =>
@@ -3120,10 +3294,10 @@ const ParamOverrideEditorModal = ({ visible, value, onSave, onCancel }) => {
                                 ) : null}
                                 {meta.to || meta.to === false ? (
                                   <Col xs={24} md={12}>
-                                    <Text type='tertiary' size='small'>
+                                    <Text variant='tertiary' size='small'>
                                       {t(getModeToLabel(mode))}
                                     </Text>
-                                    <Input
+                                    <TextField
                                       value={selectedOperation.to}
                                       placeholder={getModeToPlaceholder(mode)}
                                       onChange={(nextValue) =>
@@ -3148,7 +3322,7 @@ const ParamOverrideEditorModal = ({ visible, value, onSave, onCancel }) => {
                                   <Text>{t('条件规则')}</Text>
                                   <Select
                                     value={selectedOperation.logic || 'OR'}
-                                    optionList={[
+                                    options={[
                                       { label: t('满足任一条件（OR）'), value: 'OR' },
                                       { label: t('必须全部满足（AND）'), value: 'AND' },
                                     ]}
@@ -3162,34 +3336,34 @@ const ParamOverrideEditorModal = ({ visible, value, onSave, onCancel }) => {
                                   />
                                 </Space>
                                 <Space spacing={6}>
-                                  <Button
+                                  <Btn
                                     size='small'
-                                    type='tertiary'
+                                    variant='tertiary'
                                     onClick={expandAllSelectedConditions}
                                   >
                                     {t('全部展开')}
-                                  </Button>
-                                  <Button
+                                  </Btn>
+                                  <Btn
                                     size='small'
-                                    type='tertiary'
+                                    variant='tertiary'
                                     onClick={collapseAllSelectedConditions}
                                   >
                                     {t('全部收起')}
-                                  </Button>
-                                  <Button
-                                    icon={<IconPlus />}
+                                  </Btn>
+                                  <Btn
+                                    icon={<Plus size={14} />}
                                     size='small'
                                     onClick={() =>
                                       addCondition(selectedOperation.id)
                                     }
                                   >
                                     {t('新增条件')}
-                                  </Button>
+                                  </Btn>
                                 </Space>
                               </div>
 
                               {conditions.length === 0 ? (
-                                <Text type='tertiary' size='small'>
+                                <Text variant='tertiary' size='small'>
                                   {t('没有条件时，默认总是执行该操作。')}
                                 </Text>
                               ) : (
@@ -3210,10 +3384,10 @@ const ParamOverrideEditorModal = ({ visible, value, onSave, onCancel }) => {
                                         itemKey={condition.id}
                                         header={
                                           <Space spacing={8}>
-                                            <Tag size='small'>
+                                            <TagPill size='small'>
                                               {`C${conditionIndex + 1}`}
-                                            </Tag>
-                                            <Text type='tertiary' size='small'>
+                                            </TagPill>
+                                            <Text variant='tertiary' size='small'>
                                               {condition.path ||
                                                 t('未设置路径')}
                                             </Text>
@@ -3222,13 +3396,12 @@ const ParamOverrideEditorModal = ({ visible, value, onSave, onCancel }) => {
                                       >
                                         <div>
                                           <div className='flex items-center justify-between mb-2'>
-                                            <Text type='tertiary' size='small'>
+                                            <Text variant='tertiary' size='small'>
                                               {t('条件项设置')}
                                             </Text>
-                                            <Button
-                                              theme='borderless'
-                                              type='danger'
-                                              icon={<IconDelete />}
+                                            <Btn
+                                              variant='danger-borderless'
+                                              icon={<Trash2 size={14} />}
                                               size='small'
                                               onClick={() =>
                                                 removeCondition(
@@ -3238,17 +3411,17 @@ const ParamOverrideEditorModal = ({ visible, value, onSave, onCancel }) => {
                                               }
                                             >
                                               {t('删除条件')}
-                                            </Button>
+                                            </Btn>
                                           </div>
                                           <Row gutter={12}>
                                             <Col xs={24} md={10}>
                                               <Text
-                                                type='tertiary'
+                                                variant='tertiary'
                                                 size='small'
                                               >
                                                 {t('字段路径')}
                                               </Text>
-                                              <Input
+                                              <TextField
                                                 value={condition.path}
                                                 placeholder='model'
                                                 onChange={(nextValue) =>
@@ -3262,14 +3435,14 @@ const ParamOverrideEditorModal = ({ visible, value, onSave, onCancel }) => {
                                             </Col>
                                             <Col xs={24} md={8}>
                                               <Text
-                                                type='tertiary'
+                                                variant='tertiary'
                                                 size='small'
                                               >
                                                 {t('匹配方式')}
                                               </Text>
                                               <Select
                                                 value={condition.mode}
-                                                optionList={
+                                                options={
                                                   CONDITION_MODE_OPTIONS
                                                 }
                                                 onChange={(nextValue) =>
@@ -3284,12 +3457,12 @@ const ParamOverrideEditorModal = ({ visible, value, onSave, onCancel }) => {
                                             </Col>
                                             <Col xs={24} md={6}>
                                               <Text
-                                                type='tertiary'
+                                                variant='tertiary'
                                                 size='small'
                                               >
                                                 {t('匹配值')}
                                               </Text>
-                                              <Input
+                                              <TextField
                                                 value={condition.value_text}
                                                 placeholder='gpt'
                                                 onChange={(nextValue) =>
@@ -3304,16 +3477,13 @@ const ParamOverrideEditorModal = ({ visible, value, onSave, onCancel }) => {
                                           </Row>
                                           <div className='mt-2 flex flex-wrap gap-3'>
                                             <div className='flex items-center gap-2'>
-                                              <Text type='tertiary' size='small'>
+                                              <Text variant='tertiary' size='small'>
                                                 {t('条件取反')}
                                               </Text>
-                                              <Switch
+                                              <Toggle
                                                 checked={Boolean(
                                                   condition.invert,
-                                                )}
-                                                checkedText={t('开')}
-                                                uncheckedText={t('关')}
-                                                onChange={(nextValue) =>
+                                                )}                                                un                                                onChange={(nextValue) =>
                                                   updateCondition(
                                                     selectedOperation.id,
                                                     condition.id,
@@ -3323,16 +3493,13 @@ const ParamOverrideEditorModal = ({ visible, value, onSave, onCancel }) => {
                                               />
                                             </div>
                                             <div className='flex items-center gap-2'>
-                                              <Text type='tertiary' size='small'>
+                                              <Text variant='tertiary' size='small'>
                                                 {t('字段缺失视为命中')}
                                               </Text>
-                                              <Switch
+                                              <Toggle
                                                 checked={Boolean(
                                                   condition.pass_missing_key,
-                                                )}
-                                                checkedText={t('开')}
-                                                uncheckedText={t('关')}
-                                                onChange={(nextValue) =>
+                                                )}                                                un                                                onChange={(nextValue) =>
                                                   updateCondition(
                                                     selectedOperation.id,
                                                     condition.id,
@@ -3351,25 +3518,25 @@ const ParamOverrideEditorModal = ({ visible, value, onSave, onCancel }) => {
                                 </Collapse>
                               )}
                             </div>
-                          </Card>
+                          </CardBox>
                         );
                       })()
                     ) : (
-                      <Card
+                      <CardBox
                         className='!rounded-2xl !border-0'
                         bodyStyle={{
                           padding: 14,
                           background: 'var(--semi-color-fill-0)',
                         }}
                       >
-                        <Text type='tertiary'>
+                        <Text variant='tertiary'>
                           {t('请选择一条规则进行编辑。')}
                         </Text>
-                      </Card>
+                      </CardBox>
                     )}
 
                     {visualValidationError ? (
-                      <Card
+                      <CardBox
                         className='!rounded-2xl !border-0 mt-3'
                         bodyStyle={{
                           padding: 12,
@@ -3377,10 +3544,10 @@ const ParamOverrideEditorModal = ({ visible, value, onSave, onCancel }) => {
                         }}
                       >
                         <Space>
-                          <Tag color='red'>{t('暂存错误')}</Tag>
-                          <Text type='danger'>{visualValidationError}</Text>
+                          <TagPill color='red'>{t('暂存错误')}</TagPill>
+                          <Text variant='danger'>{visualValidationError}</Text>
                         </Space>
-                      </Card>
+                      </CardBox>
                     ) : null}
                   </Col>
                 </Row>
@@ -3390,17 +3557,16 @@ const ParamOverrideEditorModal = ({ visible, value, onSave, onCancel }) => {
         ) : (
           <div style={{ width: '100%' }}>
             <Space style={{ marginBottom: 8 }} wrap>
-              <Button onClick={formatJson}>{t('格式化')}</Button>
-              <Tag color='grey'>{t('高级文本编辑')}</Tag>
+              <Btn onClick={formatJson}>{t('格式化')}</Btn>
+              <TagPill color='grey'>{t('高级文本编辑')}</TagPill>
             </Space>
-            <TextArea
+            <TextAreaField
               value={jsonText}
-              autosize={{ minRows: 18, maxRows: 28 }}
               onChange={(nextValue) => handleJsonChange(nextValue ?? '')}
               placeholder={JSON.stringify(OPERATION_TEMPLATE, null, 2)}
-              showClear
+              
             />
-            <Text type='tertiary' size='small' className='mt-2 block'>
+            <Text variant='tertiary' size='small' className='mt-2 block'>
               {t('直接编辑 JSON 文本，保存时会校验格式。')}
             </Text>
             {jsonError ? (
@@ -3420,13 +3586,12 @@ const ParamOverrideEditorModal = ({ visible, value, onSave, onCancel }) => {
         bodyStyle={{ padding: 16, paddingBottom: 24 }}
       >
         <Space vertical align='start' spacing={12} style={{ width: '100%' }}>
-          <Text type='tertiary' size='small'>
+          <Text variant='tertiary' size='small'>
             {t('下面是带注释的示例，仅用于参考；实际保存时请删除注释。')}
           </Text>
-          <TextArea
+          <TextAreaField
             value={HEADER_VALUE_JSONC_EXAMPLE}
             readOnly
-            autosize={{ minRows: 16, maxRows: 20 }}
             style={{ marginBottom: 8 }}
           />
         </Space>
@@ -3452,7 +3617,7 @@ const ParamOverrideEditorModal = ({ visible, value, onSave, onCancel }) => {
                 {t('字段速查')}
               </Text>
               <Text
-                type='tertiary'
+                variant='tertiary'
                 size='small'
                 className='block mt-1'
                 style={{ maxWidth: 560 }}
@@ -3462,10 +3627,10 @@ const ParamOverrideEditorModal = ({ visible, value, onSave, onCancel }) => {
                 )}
               </Text>
             </div>
-            <Tag color='blue'>{`${fieldGuideFieldCount} ${t('个字段')}`}</Tag>
+            <TagPill color='blue'>{`${fieldGuideFieldCount} ${t('个字段')}`}</TagPill>
           </div>
 
-          <Card
+          <CardBox
             className='!rounded-xl !border-0'
             bodyStyle={{
               padding: 12,
@@ -3473,38 +3638,38 @@ const ParamOverrideEditorModal = ({ visible, value, onSave, onCancel }) => {
             }}
           >
             <div className='flex items-center gap-2'>
-              <Input
+              <TextField
                 value={fieldGuideKeyword}
                 onChange={(nextValue) => setFieldGuideKeyword(nextValue || '')}
                 placeholder={t('搜索字段名 / 中文说明')}
-                showClear
+                
                 style={{ flex: 1 }}
               />
               <Select
                 value={fieldGuideTarget}
-                optionList={FIELD_GUIDE_TARGET_OPTIONS}
+                options={FIELD_GUIDE_TARGET_OPTIONS}
                 onChange={(nextValue) =>
                   setFieldGuideTarget(nextValue || 'path')
                 }
                 style={{ width: 170 }}
               />
             </div>
-          </Card>
+          </CardBox>
 
           {filteredFieldGuideSections.length === 0 ? (
-            <Card
+            <CardBox
               className='!rounded-xl !border-0'
               bodyStyle={{
                 padding: 20,
                 background: 'var(--semi-color-fill-0)',
               }}
             >
-              <Text type='tertiary'>{t('没有匹配的字段')}</Text>
-            </Card>
+              <Text variant='tertiary'>{t('没有匹配的字段')}</Text>
+            </CardBox>
           ) : (
             <div className='flex flex-col gap-2'>
               {filteredFieldGuideSections.map((section) => (
-                <Card
+                <CardBox
                   key={section.title}
                   className='!rounded-xl !border-0'
                   bodyStyle={{
@@ -3516,7 +3681,7 @@ const ParamOverrideEditorModal = ({ visible, value, onSave, onCancel }) => {
                     <Text strong style={{ fontSize: 18 }}>
                       {section.title}
                     </Text>
-                    <Tag color='grey'>{`${section.fields.length} ${t('项')}`}</Tag>
+                    <TagPill color='grey'>{`${section.fields.length} ${t('项')}`}</TagPill>
                   </div>
                   <div
                     style={{
@@ -3555,7 +3720,7 @@ const ParamOverrideEditorModal = ({ visible, value, onSave, onCancel }) => {
                             {field.key}
                           </Text>
                           <Text
-                            type='tertiary'
+                            variant='tertiary'
                             size='small'
                             className='block mt-1'
                             style={{ lineHeight: '18px' }}
@@ -3564,26 +3729,26 @@ const ParamOverrideEditorModal = ({ visible, value, onSave, onCancel }) => {
                           </Text>
                         </div>
                         <Space spacing={6} align='center'>
-                          <Button
+                          <Btn
                             size='small'
-                            type='tertiary'
+                            variant='tertiary'
                             onClick={() => copyBuiltinField(field.key)}
                           >
                             {t('复制')}
-                          </Button>
-                          <Button
+                          </Btn>
+                          <Btn
                             size='small'
                             onClick={() =>
                               applyBuiltinField(field.key, fieldGuideTarget)
                             }
                           >
                             {fieldGuideActionLabel}
-                          </Button>
+                          </Btn>
                         </Space>
                       </div>
                     ))}
                   </div>
-                </Card>
+                </CardBox>
               ))}
             </div>
           )}
