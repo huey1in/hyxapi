@@ -231,6 +231,8 @@ const PageLayout = () => {
                 position: 'fixed',
                 left: isMobile ? 0 : consoleGutter,
                 top: headerOffset,
+                bottom: 0,
+                height: 'auto',
                 zIndex: 99,
                 border: 'none',
                 paddingRight: '0',

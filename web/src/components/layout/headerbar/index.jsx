@@ -161,7 +161,7 @@ const HeaderBar = ({ onMobileMenuToggle, drawerOpen }) => {
   }
 
   return (
-    <header className='fixed top-0 left-0 right-0 z-50 py-4 md:py-6 px-[16px] md:px-[26px] transition-colors duration-300 bg-transparent md:bg-[#f8f8f6]/80 dark:md:bg-[#1a1a18]/85 md:backdrop-blur-md' style={{ fontFamily: "Season-Sans, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif" }}>
+    <header className='fixed top-0 left-0 right-0 z-50 py-4 md:py-6 px-[16px] md:px-[26px] transition-colors duration-300 bg-[#f8f8f6]/80 dark:bg-[#1a1a18]/85 backdrop-blur-md' style={{ fontFamily: "Season-Sans, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif" }}>
       <NoticeModal
         visible={noticeVisible}
         onClose={handleNoticeClose}
