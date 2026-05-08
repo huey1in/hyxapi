@@ -4,7 +4,7 @@
  */
 import React, { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { Loader2, X, Plus, Copy } from 'lucide-react';
+import { Loader2, X, Plus, Copy, Ticket, CheckCircle2 } from 'lucide-react';
 import { API, copy, showError, showSuccess } from '../../../../helpers';
 import {
   TextField,
@@ -89,24 +89,35 @@ const SubscriptionCodeBatchModal = ({
   return createPortal(
     <div
       className='fixed inset-0 z-[125] flex items-center justify-center p-4'
-      style={{ background: 'rgba(0,0,0,0.5)' }}
+      style={{ background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(2px)' }}
       onClick={generating ? undefined : onClose}
     >
       <div
-        className='bg-ui-bg-elevated border border-ui-border rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden'
+        className='bg-ui-bg-elevated border border-ui-border rounded-[28px] shadow-2xl w-full max-w-lg overflow-hidden'
         onClick={(e) => e.stopPropagation()}
       >
-        <div className='flex items-center justify-between gap-3 px-5 py-3.5 border-b border-ui-border'>
-          <span className='text-sm font-semibold text-ui-text'>{t('生成订阅兑换码')}</span>
+        {/* Header */}
+        <div className='flex items-center justify-between gap-3 px-5 py-4 border-b border-ui-border'>
+          <div className='flex items-center gap-2 min-w-0'>
+            {generated ? (
+              <CheckCircle2 size={16} className='text-emerald-500 flex-shrink-0' />
+            ) : (
+              <Ticket size={16} className='text-ui-text-2 flex-shrink-0' />
+            )}
+            <span className='text-base font-semibold text-ui-text truncate'>
+              {generated ? t('生成成功') : t('生成订阅兑换码')}
+            </span>
+          </div>
           <button
             onClick={onClose}
             disabled={generating}
-            className='p-1 rounded text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-subtle disabled:opacity-40'
+            className='inline-flex items-center justify-center w-9 h-9 rounded-xl text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-subtle disabled:opacity-40 transition-colors'
           >
             <X size={16} />
           </button>
         </div>
 
+        {/* Body */}
         <div className='p-5 space-y-3'>
           {!generated ? (
             <>
@@ -138,35 +149,39 @@ const SubscriptionCodeBatchModal = ({
             </>
           ) : (
             <>
-              <div className='text-xs text-ui-text-2'>
+              <div className='text-xs text-ui-text-2 px-1'>
                 {t('已为「{{plan}}」生成 {{n}} 条兑换码：', {
                   plan: generated.plan_title,
                   n: generated.keys.length,
                 })}
               </div>
-              <pre className='text-[11px] font-mono bg-ui-bg-subtle border border-ui-border rounded-md p-3 max-h-72 overflow-auto whitespace-pre-wrap break-all'>
+              <pre
+                className='text-[11px] font-mono border border-ui-border rounded-2xl p-3 max-h-72 overflow-auto whitespace-pre-wrap break-all nice-scroll text-ui-text'
+                style={{ backgroundColor: 'var(--page-bg)' }}
+              >
                 {generated.keys.join('\n')}
               </pre>
             </>
           )}
         </div>
 
-        <div className='flex justify-end gap-2 px-5 py-3 border-t border-ui-border'>
+        {/* Footer */}
+        <div className='flex justify-end gap-2 px-5 py-4 border-t border-ui-border'>
           {!generated ? (
             <>
               <button
                 onClick={onClose}
                 disabled={generating}
-                className='inline-flex items-center px-3.5 py-1.5 text-xs font-medium rounded-md border border-ui-border text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-subtle disabled:opacity-40 whitespace-nowrap'
+                className='inline-flex items-center h-9 px-4 text-sm font-medium rounded-xl border border-ui-border text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-subtle disabled:opacity-40 transition-colors whitespace-nowrap'
               >
                 {t('取消')}
               </button>
               <button
                 onClick={generate}
                 disabled={generating || !planId}
-                className='inline-flex items-center gap-1.5 px-4 py-1.5 text-xs font-semibold rounded-md bg-ui-accent text-ui-accent-fg hover:bg-ui-accent-hover disabled:opacity-50 whitespace-nowrap'
+                className='inline-flex items-center gap-1.5 h-9 px-4 text-sm font-semibold rounded-xl bg-ui-accent text-ui-accent-fg hover:bg-ui-accent-hover disabled:opacity-50 transition-colors whitespace-nowrap'
               >
-                {generating ? <Loader2 size={11} className='animate-spin' /> : <Plus size={11} />}
+                {generating ? <Loader2 size={13} className='animate-spin' /> : <Plus size={13} />}
                 {t('生成')}
               </button>
             </>
@@ -174,20 +189,20 @@ const SubscriptionCodeBatchModal = ({
             <>
               <button
                 onClick={() => setGenerated(null)}
-                className='inline-flex items-center px-3.5 py-1.5 text-xs font-medium rounded-md border border-ui-border text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-subtle whitespace-nowrap'
+                className='inline-flex items-center h-9 px-4 text-sm font-medium rounded-xl border border-ui-border text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-subtle transition-colors whitespace-nowrap'
               >
                 {t('再生成')}
               </button>
               <button
                 onClick={copyAll}
-                className='inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs rounded-md border border-ui-border text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-subtle whitespace-nowrap'
+                className='inline-flex items-center gap-1.5 h-9 px-4 text-sm rounded-xl border border-ui-border text-ui-text hover:bg-ui-bg-subtle transition-colors whitespace-nowrap'
               >
-                <Copy size={11} />
+                <Copy size={13} />
                 {t('复制全部')}
               </button>
               <button
                 onClick={onClose}
-                className='inline-flex items-center px-4 py-1.5 text-xs font-semibold rounded-md bg-ui-accent text-ui-accent-fg hover:bg-ui-accent-hover whitespace-nowrap'
+                className='inline-flex items-center h-9 px-4 text-sm font-semibold rounded-xl bg-ui-accent text-ui-accent-fg hover:bg-ui-accent-hover transition-colors whitespace-nowrap'
               >
                 {t('完成')}
               </button>

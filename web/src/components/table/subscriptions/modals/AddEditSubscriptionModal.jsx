@@ -1,8 +1,9 @@
 /*
- * Add / edit subscription plan — token-system rewrite.
+ * Add / edit subscription plan — SlideOver with SectionCard layout to
+ * match EditChannel / EditTag style.
  */
 import React, { useEffect, useState } from 'react';
-import { CalendarClock, Clock, RefreshCw } from 'lucide-react';
+import { CalendarClock, Clock, RefreshCw, Layers } from 'lucide-react';
 import { API, showError, showSuccess } from '../../../../helpers';
 import {
   quotaToDisplayAmount,
@@ -15,7 +16,6 @@ import {
   NumberField,
   NativeSelect,
   ToggleField,
-  Section,
   FieldRow,
 } from '../../../common/form/Primitives';
 
@@ -54,22 +54,30 @@ const DEFAULTS = {
   creem_product_id: '',
 };
 
-const SectionHeader = ({ icon: Icon, title, hint, color = 'blue' }) => {
-  const cls = {
-    blue: 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20',
-    green: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20',
-    orange: 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20',
-    purple: 'bg-violet-500/10 text-violet-600 dark:text-violet-400 border-violet-500/20',
-  }[color];
+const ICON_COLOR_MAP = {
+  blue: 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20',
+  green: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20',
+  orange: 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20',
+  purple: 'bg-violet-500/10 text-violet-600 dark:text-violet-400 border-violet-500/20',
+};
+
+const SectionCard = ({ Icon, title, description, color = 'blue', children }) => {
+  const iconCls = ICON_COLOR_MAP[color] || ICON_COLOR_MAP.blue;
   return (
-    <div className='flex items-center gap-2 mb-3'>
-      <div className={`w-8 h-8 rounded-md inline-flex items-center justify-center border ${cls}`}>
-        <Icon size={15} />
+    <div
+      className='border border-ui-border rounded-2xl p-4'
+      style={{ backgroundColor: 'var(--page-bg)' }}
+    >
+      <div className='flex items-center mb-4'>
+        <div className={`w-8 h-8 rounded-lg inline-flex items-center justify-center border ${iconCls} mr-2`}>
+          {Icon && <Icon size={15} />}
+        </div>
+        <div>
+          <div className='text-sm font-semibold text-ui-text'>{title}</div>
+          {description && <div className='text-[11px] text-ui-text-3 mt-0.5'>{description}</div>}
+        </div>
       </div>
-      <div>
-        <div className='text-sm font-semibold text-ui-text'>{title}</div>
-        {hint && <div className='text-[11px] text-ui-text-3'>{hint}</div>}
-      </div>
+      <div className='space-y-3'>{children}</div>
     </div>
   );
 };
@@ -198,115 +206,120 @@ const AddEditSubscriptionModal = ({
         <>
           <button
             onClick={handleClose}
-            className='inline-flex items-center px-3.5 py-1.5 text-xs font-medium rounded-md border border-ui-border text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-subtle transition-colors whitespace-nowrap'
+            className='inline-flex items-center h-9 px-4 text-sm font-medium rounded-xl border border-ui-border text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-subtle transition-colors whitespace-nowrap'
           >
             {t('取消')}
           </button>
           <button
             onClick={submit}
             disabled={loading}
-            className='inline-flex items-center px-4 py-1.5 text-xs font-semibold rounded-md bg-ui-accent text-ui-accent-fg hover:bg-ui-accent-hover hover:shadow-md active:scale-95 disabled:opacity-50 transition-all whitespace-nowrap'
+            className='inline-flex items-center h-9 px-4 text-sm font-semibold rounded-xl bg-ui-accent text-ui-accent-fg hover:bg-ui-accent-hover disabled:opacity-50 transition-colors whitespace-nowrap'
           >
-            {loading ? t('提交中...') : t('提交')}
+            {loading ? t('提交中...') : isEdit ? t('保存') : t('创建')}
           </button>
         </>
       }
-      bodyClass='p-5 space-y-6'
+      bodyClass='p-5 space-y-4'
     >
       {/* Basic info */}
-      <div>
-        <SectionHeader
-          icon={CalendarClock}
-          title={t('基本信息')}
-          hint={t('套餐的基本信息和定价')}
-          color='blue'
-        />
-        <div className='space-y-3'>
-          <FieldRow label={t('套餐标题')} required>
-            <TextField
-              value={values.title}
-              onChange={(v) => set('title', v)}
-              placeholder={t('例如：基础套餐')}
+      <SectionCard
+        Icon={CalendarClock}
+        title={t('基本信息')}
+        description={t('套餐的基本信息和定价')}
+        color='blue'
+      >
+        <FieldRow label={t('套餐标题')} required>
+          <TextField
+            value={values.title}
+            onChange={(v) => set('title', v)}
+            placeholder={t('例如：基础套餐')}
+          />
+        </FieldRow>
+        <FieldRow label={t('套餐副标题')}>
+          <TextField
+            value={values.subtitle}
+            onChange={(v) => set('subtitle', v)}
+            placeholder={t('例如：适合轻度使用')}
+          />
+        </FieldRow>
+        <div className='grid grid-cols-1 sm:grid-cols-2 gap-3'>
+          <FieldRow label={t('实付金额')} required>
+            <NumberField
+              value={values.price_amount}
+              onChange={(v) => set('price_amount', v)}
+              min={0}
+              step={0.01}
             />
           </FieldRow>
-          <FieldRow label={t('套餐副标题')}>
-            <TextField
-              value={values.subtitle}
-              onChange={(v) => set('subtitle', v)}
-              placeholder={t('例如：适合轻度使用')}
+          <FieldRow label={t('币种')} hint={t('由全站货币展示设置统一控制')}>
+            <TextField value={values.currency} disabled />
+          </FieldRow>
+          <FieldRow label={t('排序')}>
+            <NumberField
+              value={values.sort_order}
+              onChange={(v) => set('sort_order', Math.floor(v))}
             />
           </FieldRow>
-          <div className='grid grid-cols-2 gap-3'>
-            <FieldRow label={t('实付金额')} required>
-              <NumberField
-                value={values.price_amount}
-                onChange={(v) => set('price_amount', v)}
-                min={0}
-                step={0.01}
-              />
-            </FieldRow>
-            <FieldRow
-              label={t('总额度')}
-              required
-              hint={`${t('0 表示不限')} · ${t('原生额度')}：${displayAmountToQuota(values.total_amount)}`}
-            >
-              <NumberField
-                value={values.total_amount}
-                onChange={(v) => set('total_amount', v)}
-                min={0}
-                step={0.01}
-              />
-            </FieldRow>
-            <FieldRow
-              label={t('升级分组')}
-              hint={t('购买或手动新增订阅会升级到该分组；当套餐失效/过期或手动作废/删除后，将回退到升级前分组。回退不会立即生效，通常会有几分钟延迟。')}
-            >
-              <NativeSelect
-                value={values.upgrade_group}
-                onChange={(v) => set('upgrade_group', v)}
-                disabled={groupLoading}
-                options={groupChoices.map((g) => ({
-                  value: g,
-                  label: g === '' ? t('不升级') : g,
-                }))}
-              />
-            </FieldRow>
-            <FieldRow label={t('币种')} hint={t('由全站货币展示设置统一控制')}>
-              <TextField value={values.currency} disabled />
-            </FieldRow>
-            <FieldRow label={t('排序')}>
-              <NumberField
-                value={values.sort_order}
-                onChange={(v) => set('sort_order', Math.floor(v))}
-              />
-            </FieldRow>
-            <FieldRow label={t('购买上限')} hint={t('0 表示不限')}>
-              <NumberField
-                value={values.max_purchase_per_user}
-                onChange={(v) => set('max_purchase_per_user', Math.floor(v))}
-                min={0}
-              />
-            </FieldRow>
-          </div>
-          <div className='pt-2 border-t border-ui-divider'>
-            <ToggleField
-              label={t('启用状态')}
-              checked={!!values.enabled}
-              onChange={(v) => set('enabled', v)}
+          <FieldRow label={t('购买上限')} hint={t('0 表示不限')}>
+            <NumberField
+              value={values.max_purchase_per_user}
+              onChange={(v) => set('max_purchase_per_user', Math.floor(v))}
+              min={0}
             />
-          </div>
+          </FieldRow>
         </div>
-      </div>
+        <div className='pt-1'>
+          <ToggleField
+            label={t('启用状态')}
+            checked={!!values.enabled}
+            onChange={(v) => set('enabled', v)}
+          />
+        </div>
+      </SectionCard>
+
+      {/* Quota & group */}
+      <SectionCard
+        Icon={Layers}
+        title={t('额度与分组')}
+        description={t('订阅期间分配给用户的可用额度与升级分组')}
+        color='purple'
+      >
+        <FieldRow
+          label={t('总额度')}
+          required
+          hint={`${t('0 表示不限')} · ${t('原生额度')}：${displayAmountToQuota(values.total_amount)}`}
+        >
+          <NumberField
+            value={values.total_amount}
+            onChange={(v) => set('total_amount', v)}
+            min={0}
+            step={0.01}
+          />
+        </FieldRow>
+        <FieldRow
+          label={t('升级分组')}
+          hint={t('购买或手动新增订阅会升级到该分组；当套餐失效/过期或手动作废/删除后，将回退到升级前分组。回退不会立即生效，通常会有几分钟延迟。')}
+        >
+          <NativeSelect
+            value={values.upgrade_group}
+            onChange={(v) => set('upgrade_group', v)}
+            disabled={groupLoading}
+            options={groupChoices.map((g) => ({
+              value: g,
+              label: g === '' ? t('不升级') : g,
+            }))}
+          />
+        </FieldRow>
+      </SectionCard>
 
       {/* Duration */}
-      <div>
-        <SectionHeader
-          icon={Clock}
-          title={t('有效期设置')}
-          hint={t('配置套餐的有效时长')}
-          color='green'
-        />
-        <div className='grid grid-cols-2 gap-3'>
+      <SectionCard
+        Icon={Clock}
+        title={t('有效期设置')}
+        description={t('配置套餐的有效时长')}
+        color='green'
+      >
+        <div className='grid grid-cols-1 sm:grid-cols-2 gap-3'>
           <FieldRow label={t('有效期单位')} required>
             <NativeSelect
               value={values.duration_unit}
@@ -332,17 +345,16 @@ const AddEditSubscriptionModal = ({
             </FieldRow>
           )}
         </div>
-      </div>
+      </SectionCard>
 
       {/* Reset */}
-      <div>
-        <SectionHeader
-          icon={RefreshCw}
-          title={t('额度重置')}
-          hint={t('支持周期性重置套餐权益额度')}
-          color='orange'
-        />
-        <div className='grid grid-cols-2 gap-3'>
+      <SectionCard
+        Icon={RefreshCw}
+        title={t('额度重置')}
+        description={t('支持周期性重置套餐权益额度')}
+        color='orange'
+      >
+        <div className='grid grid-cols-1 sm:grid-cols-2 gap-3'>
           <FieldRow label={t('重置周期')}>
             <NativeSelect
               value={values.quota_reset_period}
@@ -359,7 +371,7 @@ const AddEditSubscriptionModal = ({
             />
           </FieldRow>
         </div>
-      </div>
+      </SectionCard>
     </SlideOver>
   );
 };
