@@ -4,7 +4,7 @@
  */
 import React, { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { Loader2, X, Plus, Copy, Ticket, CheckCircle2 } from 'lucide-react';
+import { Loader2, X, Plus, Copy } from 'lucide-react';
 import { API, copy, showError, showSuccess } from '../../../../helpers';
 import {
   TextField,
@@ -93,21 +93,15 @@ const SubscriptionCodeBatchModal = ({
       onClick={generating ? undefined : onClose}
     >
       <div
-        className='bg-ui-bg-elevated border border-ui-border rounded-[28px] shadow-2xl w-full max-w-lg overflow-hidden'
+        className='border border-ui-border rounded-[28px] shadow-2xl w-full max-w-lg overflow-hidden'
+        style={{ backgroundColor: 'var(--page-bg)' }}
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
         <div className='flex items-center justify-between gap-3 px-5 py-4 border-b border-ui-border'>
-          <div className='flex items-center gap-2 min-w-0'>
-            {generated ? (
-              <CheckCircle2 size={16} className='text-emerald-500 flex-shrink-0' />
-            ) : (
-              <Ticket size={16} className='text-ui-text-2 flex-shrink-0' />
-            )}
-            <span className='text-base font-semibold text-ui-text truncate'>
-              {generated ? t('生成成功') : t('生成订阅兑换码')}
-            </span>
-          </div>
+          <span className='text-base font-semibold text-ui-text truncate'>
+            {generated ? t('生成成功') : t('生成订阅兑换码')}
+          </span>
           <button
             onClick={onClose}
             disabled={generating}

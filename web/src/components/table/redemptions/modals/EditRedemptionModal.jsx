@@ -3,7 +3,6 @@
  */
 import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { CreditCard, Gift } from 'lucide-react';
 import {
   API,
   downloadTextAsFile,
@@ -25,23 +24,15 @@ import {
   FieldRow,
 } from '../../../common/form/Primitives';
 
-const SectionHeader = ({ icon: Icon, title, hint, color = 'blue' }) => {
-  const cls = {
-    blue: 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20',
-    green: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20',
-  }[color];
-  return (
-    <div className='flex items-center gap-2 mb-3'>
-      <div className={`w-8 h-8 rounded-md inline-flex items-center justify-center border ${cls}`}>
-        <Icon size={15} />
-      </div>
-      <div>
-        <div className='text-sm font-semibold text-ui-text'>{title}</div>
-        {hint && <div className='text-[11px] text-ui-text-3'>{hint}</div>}
-      </div>
+const SectionCard = ({ title, hint, children }) => (
+  <div className='border border-ui-border rounded-2xl p-4'>
+    <div className='mb-3'>
+      <div className='text-sm font-semibold text-ui-text'>{title}</div>
+      {hint && <div className='text-[11px] text-ui-text-3 mt-0.5'>{hint}</div>}
     </div>
-  );
-};
+    <div className='space-y-3'>{children}</div>
+  </div>
+);
 
 const DEFAULTS = () => ({
   name: '',
@@ -201,83 +192,67 @@ const EditRedemptionModal = (props) => {
           </button>
         </>
       }
-      bodyClass='p-5 space-y-6'
+      bodyClass='p-5 space-y-4'
     >
       {/* Basic info */}
-      <div>
-        <SectionHeader
-          icon={Gift}
-          title={t('基本信息')}
-          hint={t('设置兑换码的基本信息')}
-          color='blue'
-        />
-        <div className='space-y-3'>
-          <FieldRow label={t('名称')} required={isEdit}>
-            <TextField
-              value={values.name}
-              onChange={(v) => set('name', v)}
-              placeholder={t('请输入名称（留空时自动以额度命名）')}
-            />
-          </FieldRow>
-          <FieldRow label={t('过期时间')} hint={t('留空表示永不过期')}>
-            <input
-              type='datetime-local'
-              value={values.expired_time}
-              onChange={(e) => set('expired_time', e.target.value)}
-              className='w-full px-3 py-2 text-sm bg-ui-bg border border-ui-border rounded-md text-ui-text outline-none focus:border-ui-text-3'
-            />
-          </FieldRow>
-        </div>
-      </div>
+      <SectionCard title={t('基本信息')} hint={t('设置兑换码的基本信息')}>
+        <FieldRow label={t('名称')} required={isEdit}>
+          <TextField
+            value={values.name}
+            onChange={(v) => set('name', v)}
+            placeholder={t('请输入名称（留空时自动以额度命名）')}
+          />
+        </FieldRow>
+        <FieldRow label={t('过期时间')} hint={t('留空表示永不过期')}>
+          <input
+            type='datetime-local'
+            value={values.expired_time}
+            onChange={(e) => set('expired_time', e.target.value)}
+            className='w-full px-3 py-2 text-sm bg-transparent border border-ui-border rounded-xl text-ui-text outline-none focus:border-ui-text-3 transition-colors'
+          />
+        </FieldRow>
+      </SectionCard>
 
       {/* Quota */}
-      <div>
-        <SectionHeader
-          icon={CreditCard}
-          title={t('额度设置')}
-          hint={t('设置兑换码的额度和数量')}
-          color='green'
-        />
-        <div className='space-y-3'>
-          <FieldRow label={t('金额')}>
-            <TextField
-              value={values.amount}
-              type='number'
-              step='0.000001'
-              min='0'
-              onChange={(v) => onAmountChange(parseFloat(v) || 0)}
-              prefix={
-                <span className='text-ui-text-3 text-xs'>{getCurrencyConfig().symbol}</span>
-              }
+      <SectionCard title={t('额度设置')} hint={t('设置兑换码的额度和数量')}>
+        <FieldRow label={t('金额')}>
+          <TextField
+            value={values.amount}
+            type='number'
+            step='0.000001'
+            min='0'
+            onChange={(v) => onAmountChange(parseFloat(v) || 0)}
+            prefix={
+              <span className='text-ui-text-3 text-xs'>{getCurrencyConfig().symbol}</span>
+            }
+          />
+        </FieldRow>
+        <button
+          type='button'
+          onClick={() => setShowQuotaInput((v) => !v)}
+          className='text-[11px] text-ui-text-3 hover:text-ui-text'
+        >
+          {showQuotaInput ? `▾ ${t('收起原生额度输入')}` : `▸ ${t('使用原生额度输入')}`}
+        </button>
+        {showQuotaInput && (
+          <FieldRow label={t('额度')}>
+            <NumberField
+              value={values.quota}
+              onChange={onQuotaChange}
+              min={1}
             />
           </FieldRow>
-          <button
-            type='button'
-            onClick={() => setShowQuotaInput((v) => !v)}
-            className='text-[11px] text-ui-text-3 hover:text-ui-text'
-          >
-            {showQuotaInput ? `▾ ${t('收起原生额度输入')}` : `▸ ${t('使用原生额度输入')}`}
-          </button>
-          {showQuotaInput && (
-            <FieldRow label={t('额度')}>
-              <NumberField
-                value={values.quota}
-                onChange={onQuotaChange}
-                min={1}
-              />
-            </FieldRow>
-          )}
-          {!isEdit && (
-            <FieldRow label={t('生成数量')}>
-              <NumberField
-                value={values.count}
-                onChange={(v) => set('count', Math.max(1, Math.floor(v)))}
-                min={1}
-              />
-            </FieldRow>
-          )}
-        </div>
-      </div>
+        )}
+        {!isEdit && (
+          <FieldRow label={t('生成数量')}>
+            <NumberField
+              value={values.count}
+              onChange={(v) => set('count', Math.max(1, Math.floor(v)))}
+              min={1}
+            />
+          </FieldRow>
+        )}
+      </SectionCard>
     </SlideOver>
   );
 };

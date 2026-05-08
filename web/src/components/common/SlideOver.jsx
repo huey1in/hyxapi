@@ -58,8 +58,8 @@ const SlideOver = ({
         onClick={onClose}
       />
       <div
-        className={`fixed top-0 bottom-0 ${side} z-[120] flex flex-col bg-ui-bg-elevated border-${placement === 'left' ? 'r' : 'l'} border-ui-border shadow-2xl animate-slide-in`}
-        style={{ width: `min(${width}px, 100vw)`, animation: `slide-in-${placement} 0.2s ease-out` }}
+        className={`fixed top-0 bottom-0 ${side} z-[120] flex flex-col border-${placement === 'left' ? 'r' : 'l'} border-ui-border shadow-2xl animate-slide-in`}
+        style={{ width: `min(${width}px, 100vw)`, backgroundColor: 'var(--page-bg)', animation: `slide-in-${placement} 0.2s ease-out` }}
       >
         <style>{`
           @keyframes slide-in-right { from { transform: translateX(100%); } to { transform: translateX(0); } }

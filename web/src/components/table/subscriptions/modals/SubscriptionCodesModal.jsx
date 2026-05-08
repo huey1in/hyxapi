@@ -4,7 +4,7 @@
  */
 import React, { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { Loader2, X, Plus, Copy, Trash2, RefreshCw, Ticket, KeyRound } from 'lucide-react';
+import { Loader2, X, Plus, Copy, Trash2, RefreshCw } from 'lucide-react';
 import { API, copy, showError, showSuccess } from '../../../../helpers';
 import { showConfirm } from '../../../common/ConfirmDialog';
 import {
@@ -27,32 +27,18 @@ const StatusPill = ({ status, t }) => {
   );
 };
 
-const SectionCard = ({ Icon, title, description, color = 'blue', children, headerExtra }) => {
-  const cls = {
-    blue: 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20',
-    green: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20',
-  }[color];
-  return (
-    <div
-      className='border border-ui-border rounded-2xl p-4'
-      style={{ backgroundColor: 'var(--page-bg)' }}
-    >
-      <div className='flex items-center justify-between gap-3 mb-3'>
-        <div className='flex items-center gap-2 min-w-0'>
-          <div className={`w-8 h-8 rounded-lg inline-flex items-center justify-center border ${cls} flex-shrink-0`}>
-            {Icon && <Icon size={15} />}
-          </div>
-          <div className='min-w-0'>
-            <div className='text-sm font-semibold text-ui-text truncate'>{title}</div>
-            {description && <div className='text-[11px] text-ui-text-3 truncate'>{description}</div>}
-          </div>
-        </div>
-        {headerExtra && <div className='flex items-center gap-1 flex-shrink-0'>{headerExtra}</div>}
+const SectionCard = ({ title, description, children, headerExtra }) => (
+  <div className='border border-ui-border rounded-2xl p-4'>
+    <div className='flex items-center justify-between gap-3 mb-3'>
+      <div className='min-w-0'>
+        <div className='text-sm font-semibold text-ui-text truncate'>{title}</div>
+        {description && <div className='text-[11px] text-ui-text-3 truncate'>{description}</div>}
       </div>
-      {children}
+      {headerExtra && <div className='flex items-center gap-1 flex-shrink-0'>{headerExtra}</div>}
     </div>
-  );
-};
+    {children}
+  </div>
+);
 
 const SubscriptionCodesModal = ({ visible, onClose, plan, t }) => {
   const [loading, setLoading] = useState(false);
@@ -160,18 +146,18 @@ const SubscriptionCodesModal = ({ visible, onClose, plan, t }) => {
       onClick={generating ? undefined : onClose}
     >
       <div
-        className='bg-ui-bg-elevated border border-ui-border rounded-[28px] shadow-2xl w-full max-w-3xl max-h-[88vh] flex flex-col overflow-hidden'
+        className='border border-ui-border rounded-[28px] shadow-2xl w-full max-w-3xl max-h-[88vh] flex flex-col overflow-hidden'
+        style={{ backgroundColor: 'var(--page-bg)' }}
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
         <div className='flex items-center justify-between gap-3 px-5 py-4 border-b border-ui-border flex-shrink-0'>
           <div className='flex items-center gap-2 min-w-0'>
-            <Ticket size={16} className='text-ui-text-2 flex-shrink-0' />
             <span className='text-base font-semibold text-ui-text truncate'>
               {t('订阅兑换码')}
             </span>
             {plan?.plan?.title && (
-              <span className='inline-flex items-center px-2 py-0.5 text-[11px] rounded-md border border-ui-border text-ui-text-2 truncate max-w-[200px]'>
+              <span className='inline-flex items-center px-2 py-0.5 text-[11px] rounded-lg border border-ui-border text-ui-text-2 truncate max-w-[200px]'>
                 {plan.plan.title}
               </span>
             )}
@@ -188,10 +174,8 @@ const SubscriptionCodesModal = ({ visible, onClose, plan, t }) => {
         <div className='p-5 space-y-4 overflow-y-auto flex-1'>
           {/* Generator */}
           <SectionCard
-            Icon={Plus}
             title={t('生成新兑换码')}
             description={t('为该套餐生成可被用户兑换激活的码')}
-            color='blue'
           >
             <div className='grid grid-cols-1 sm:grid-cols-[1fr_auto_auto] gap-2 items-end'>
               <FieldRow label={t('备注')}>
@@ -222,14 +206,12 @@ const SubscriptionCodesModal = ({ visible, onClose, plan, t }) => {
 
           {/* Codes list */}
           <SectionCard
-            Icon={KeyRound}
             title={t('已生成的兑换码')}
             description={
               codes.length > 0
                 ? t('共 {{total}} 条 · 未使用 {{unused}} 条', { total: codes.length, unused: unusedCount })
                 : null
             }
-            color='green'
             headerExtra={
               <>
                 <button

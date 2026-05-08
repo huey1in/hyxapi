@@ -3,28 +3,10 @@
  */
 import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { UserPlus } from 'lucide-react';
 import { API, showError, showSuccess } from '../../../../helpers';
 import { useIsMobile } from '../../../../hooks/common/useIsMobile';
 import SlideOver from '../../../common/SlideOver';
 import { TextField, FieldRow } from '../../../common/form/Primitives';
-
-const SectionHeader = ({ icon: Icon, title, hint, color = 'blue' }) => {
-  const cls = {
-    blue: 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20',
-  }[color];
-  return (
-    <div className='flex items-center gap-2 mb-3'>
-      <div className={`w-8 h-8 rounded-md inline-flex items-center justify-center border ${cls}`}>
-        <Icon size={15} />
-      </div>
-      <div>
-        <div className='text-sm font-semibold text-ui-text'>{title}</div>
-        {hint && <div className='text-[11px] text-ui-text-3'>{hint}</div>}
-      </div>
-    </div>
-  );
-};
 
 const AddUserModal = (props) => {
   const { t } = useTranslation();
@@ -83,23 +65,27 @@ const AddUserModal = (props) => {
         <>
           <button
             onClick={props.handleClose}
-            className='inline-flex items-center px-3.5 py-1.5 text-xs font-medium rounded-md border border-ui-border text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-subtle whitespace-nowrap'
+            className='inline-flex items-center h-9 px-4 text-sm font-medium rounded-xl border border-ui-border text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-subtle transition-colors whitespace-nowrap'
           >
             {t('取消')}
           </button>
           <button
             onClick={submit}
             disabled={loading}
-            className='inline-flex items-center px-4 py-1.5 text-xs font-semibold rounded-md bg-ui-accent text-ui-accent-fg hover:bg-ui-accent-hover disabled:opacity-50 whitespace-nowrap'
+            className='inline-flex items-center h-9 px-4 text-sm font-semibold rounded-xl bg-ui-accent text-ui-accent-fg hover:bg-ui-accent-hover disabled:opacity-50 transition-colors whitespace-nowrap'
           >
-            {loading ? t('提交中...') : t('提交')}
+            {loading ? t('提交中...') : t('创建')}
           </button>
         </>
       }
       bodyClass='p-5'
     >
-      <SectionHeader icon={UserPlus} title={t('用户信息')} hint={t('创建新用户账户')} />
-      <div className='space-y-3'>
+      <div className='border border-ui-border rounded-2xl p-4'>
+        <div className='mb-3'>
+          <div className='text-sm font-semibold text-ui-text'>{t('用户信息')}</div>
+          <div className='text-[11px] text-ui-text-3 mt-0.5'>{t('创建新用户账户')}</div>
+        </div>
+        <div className='space-y-3'>
         <FieldRow label={t('用户名')} required>
           <TextField
             value={values.username}
@@ -131,6 +117,7 @@ const AddUserModal = (props) => {
             placeholder={t('请输入备注')}
           />
         </FieldRow>
+        </div>
       </div>
     </SlideOver>
   );

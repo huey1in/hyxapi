@@ -6,7 +6,7 @@
 import React, { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
-import { User, Users, Edit3, X, Loader2 } from 'lucide-react';
+import { X, Loader2 } from 'lucide-react';
 import {
   API,
   showError,
@@ -26,23 +26,15 @@ import {
   FieldRow,
 } from '../../../common/form/Primitives';
 
-const SectionHeader = ({ icon: Icon, title, hint, color = 'blue' }) => {
-  const cls = {
-    blue: 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20',
-    green: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20',
-  }[color];
-  return (
-    <div className='flex items-center gap-2 mb-3'>
-      <div className={`w-8 h-8 rounded-md inline-flex items-center justify-center border ${cls}`}>
-        <Icon size={15} />
-      </div>
-      <div>
-        <div className='text-sm font-semibold text-ui-text'>{title}</div>
-        {hint && <div className='text-[11px] text-ui-text-3'>{hint}</div>}
-      </div>
+const SectionCard = ({ title, hint, children }) => (
+  <div className='border border-ui-border rounded-2xl p-4'>
+    <div className='mb-3'>
+      <div className='text-sm font-semibold text-ui-text'>{title}</div>
+      {hint && <div className='text-[11px] text-ui-text-3 mt-0.5'>{hint}</div>}
     </div>
-  );
-};
+    <div className='space-y-3'>{children}</div>
+  </div>
+);
 
 const DEFAULTS = () => ({
   username: '',
@@ -209,90 +201,73 @@ const EditUserModal = (props) => {
         ) : (
           <>
             {/* Basic info */}
-            <div>
-              <SectionHeader
-                icon={User}
-                title={t('基本信息')}
-                hint={t('用户的基本账户信息')}
-                color='blue'
-              />
-              <div className='space-y-3'>
-                <FieldRow label={t('用户名')} required>
-                  <TextField
-                    value={values.username}
-                    onChange={(v) => set('username', v)}
-                    placeholder={t('请输入用户名')}
-                  />
-                </FieldRow>
-                <FieldRow label={t('密码')} hint={isEdit ? t('留空保持不变') : undefined}>
-                  <TextField
-                    type='password'
-                    value={values.password}
-                    onChange={(v) => set('password', v)}
-                    placeholder={t('请输入新的密码，最短 8 位')}
-                    autoComplete='new-password'
-                  />
-                </FieldRow>
-                <FieldRow label={t('显示名称')}>
-                  <TextField
-                    value={values.display_name}
-                    onChange={(v) => set('display_name', v)}
-                    placeholder={t('请输入显示名称')}
-                  />
-                </FieldRow>
-                <FieldRow label={t('邮箱')}>
-                  <TextField
-                    type='email'
-                    value={values.email}
-                    onChange={(v) => set('email', v)}
-                    placeholder='you@example.com'
-                  />
-                </FieldRow>
-                <FieldRow label={t('备注')} hint={t('仅管理员可见')}>
-                  <TextField
-                    value={values.remark}
-                    onChange={(v) => set('remark', v)}
-                    placeholder={t('请输入备注')}
-                  />
-                </FieldRow>
-              </div>
-            </div>
+            <SectionCard title={t('基本信息')} hint={t('用户的基本账户信息')}>
+              <FieldRow label={t('用户名')} required>
+                <TextField
+                  value={values.username}
+                  onChange={(v) => set('username', v)}
+                  placeholder={t('请输入用户名')}
+                />
+              </FieldRow>
+              <FieldRow label={t('密码')} hint={isEdit ? t('留空保持不变') : undefined}>
+                <TextField
+                  type='password'
+                  value={values.password}
+                  onChange={(v) => set('password', v)}
+                  placeholder={t('请输入新的密码，最短 8 位')}
+                  autoComplete='new-password'
+                />
+              </FieldRow>
+              <FieldRow label={t('显示名称')}>
+                <TextField
+                  value={values.display_name}
+                  onChange={(v) => set('display_name', v)}
+                  placeholder={t('请输入显示名称')}
+                />
+              </FieldRow>
+              <FieldRow label={t('邮箱')}>
+                <TextField
+                  type='email'
+                  value={values.email}
+                  onChange={(v) => set('email', v)}
+                  placeholder='you@example.com'
+                />
+              </FieldRow>
+              <FieldRow label={t('备注')} hint={t('仅管理员可见')}>
+                <TextField
+                  value={values.remark}
+                  onChange={(v) => set('remark', v)}
+                  placeholder={t('请输入备注')}
+                />
+              </FieldRow>
+            </SectionCard>
 
             {/* Quota */}
             {isEdit && (
-              <div>
-                <SectionHeader
-                  icon={Users}
-                  title={t('权限设置')}
-                  hint={t('用户额度管理')}
-                  color='green'
-                />
-                <div className='space-y-3'>
-                  <FieldRow label={t('当前额度')}>
-                    <div className='flex items-center justify-between gap-3 px-3 py-2 rounded-md border border-ui-border bg-ui-bg-subtle'>
-                      <span className='text-sm text-ui-text tabular-nums'>
-                        {renderQuota(values.quota || 0)}
-                        <span className='ml-2 text-xs text-ui-text-3'>
-                          {getCurrencyConfig().symbol}
-                          {Number(quotaToDisplayAmount(values.quota || 0).toFixed(6))}
-                        </span>
+              <SectionCard title={t('权限设置')} hint={t('用户额度管理')}>
+                <FieldRow label={t('当前额度')}>
+                  <div className='flex items-center justify-between gap-3 px-3 py-2 rounded-xl border border-ui-border'>
+                    <span className='text-sm text-ui-text tabular-nums'>
+                      {renderQuota(values.quota || 0)}
+                      <span className='ml-2 text-xs text-ui-text-3'>
+                        {getCurrencyConfig().symbol}
+                        {Number(quotaToDisplayAmount(values.quota || 0).toFixed(6))}
                       </span>
-                      <button
-                        type='button'
-                        onClick={() => {
-                          setAdjustMode('add');
-                          setAdjustAmount('');
-                          setAdjustOpen(true);
-                        }}
-                        className='inline-flex items-center gap-1 px-2.5 py-1 text-[11px] rounded-md border border-ui-border text-ui-text-2 hover:text-ui-text hover:bg-ui-bg whitespace-nowrap'
-                      >
-                        <Edit3 size={11} />
-                        {t('调整额度')}
-                      </button>
-                    </div>
-                  </FieldRow>
-                </div>
-              </div>
+                    </span>
+                    <button
+                      type='button'
+                      onClick={() => {
+                        setAdjustMode('add');
+                        setAdjustAmount('');
+                        setAdjustOpen(true);
+                      }}
+                      className='inline-flex items-center gap-1 px-2.5 py-1 text-[11px] rounded-lg border border-ui-border text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-subtle whitespace-nowrap'
+                    >
+                      {t('调整额度')}
+                    </button>
+                  </div>
+                </FieldRow>
+              </SectionCard>
             )}
           </>
         )}

@@ -3,7 +3,6 @@
  * match EditChannel / EditTag style.
  */
 import React, { useEffect, useState } from 'react';
-import { CalendarClock, Clock, RefreshCw, Layers } from 'lucide-react';
 import { API, showError, showSuccess } from '../../../../helpers';
 import {
   quotaToDisplayAmount,
@@ -54,33 +53,15 @@ const DEFAULTS = {
   creem_product_id: '',
 };
 
-const ICON_COLOR_MAP = {
-  blue: 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20',
-  green: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20',
-  orange: 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20',
-  purple: 'bg-violet-500/10 text-violet-600 dark:text-violet-400 border-violet-500/20',
-};
-
-const SectionCard = ({ Icon, title, description, color = 'blue', children }) => {
-  const iconCls = ICON_COLOR_MAP[color] || ICON_COLOR_MAP.blue;
-  return (
-    <div
-      className='border border-ui-border rounded-2xl p-4'
-      style={{ backgroundColor: 'var(--page-bg)' }}
-    >
-      <div className='flex items-center mb-4'>
-        <div className={`w-8 h-8 rounded-lg inline-flex items-center justify-center border ${iconCls} mr-2`}>
-          {Icon && <Icon size={15} />}
-        </div>
-        <div>
-          <div className='text-sm font-semibold text-ui-text'>{title}</div>
-          {description && <div className='text-[11px] text-ui-text-3 mt-0.5'>{description}</div>}
-        </div>
-      </div>
-      <div className='space-y-3'>{children}</div>
+const SectionCard = ({ title, description, children }) => (
+  <div className='border border-ui-border rounded-2xl p-4'>
+    <div className='mb-4'>
+      <div className='text-sm font-semibold text-ui-text'>{title}</div>
+      {description && <div className='text-[11px] text-ui-text-3 mt-0.5'>{description}</div>}
     </div>
-  );
-};
+    <div className='space-y-3'>{children}</div>
+  </div>
+);
 
 const AddEditSubscriptionModal = ({
   visible,
@@ -223,10 +204,8 @@ const AddEditSubscriptionModal = ({
     >
       {/* Basic info */}
       <SectionCard
-        Icon={CalendarClock}
         title={t('基本信息')}
         description={t('套餐的基本信息和定价')}
-        color='blue'
       >
         <FieldRow label={t('套餐标题')} required>
           <TextField
@@ -279,10 +258,8 @@ const AddEditSubscriptionModal = ({
 
       {/* Quota & group */}
       <SectionCard
-        Icon={Layers}
         title={t('额度与分组')}
         description={t('订阅期间分配给用户的可用额度与升级分组')}
-        color='purple'
       >
         <FieldRow
           label={t('总额度')}
@@ -314,10 +291,8 @@ const AddEditSubscriptionModal = ({
 
       {/* Duration */}
       <SectionCard
-        Icon={Clock}
         title={t('有效期设置')}
         description={t('配置套餐的有效时长')}
-        color='green'
       >
         <div className='grid grid-cols-1 sm:grid-cols-2 gap-3'>
           <FieldRow label={t('有效期单位')} required>
@@ -349,10 +324,8 @@ const AddEditSubscriptionModal = ({
 
       {/* Reset */}
       <SectionCard
-        Icon={RefreshCw}
         title={t('额度重置')}
         description={t('支持周期性重置套餐权益额度')}
-        color='orange'
       >
         <div className='grid grid-cols-1 sm:grid-cols-2 gap-3'>
           <FieldRow label={t('重置周期')}>

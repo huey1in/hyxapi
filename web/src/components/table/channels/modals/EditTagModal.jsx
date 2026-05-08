@@ -18,7 +18,7 @@ For commercial licensing, please contact support@quantumnous.com
 */
 
 import React, { useState, useEffect, useRef, useMemo } from 'react';
-import { Loader2, Save, X, Bookmark, User, Code, Settings } from 'lucide-react';
+import { Loader2, Save, X } from 'lucide-react';
 import {
   API,
   showError,
@@ -44,41 +44,20 @@ const MODEL_MAPPING_EXAMPLE = {
 };
 
 const SectionCard = ({
-  iconColor = 'blue',
-  Icon,
   title,
   description,
   children,
-}) => {
-  const ICON_COLOR_MAP = {
-    blue: 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20',
-    green:
-      'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20',
-    purple:
-      'bg-violet-500/10 text-violet-600 dark:text-violet-400 border-violet-500/20',
-    orange:
-      'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20',
-  };
-  const iconCls = ICON_COLOR_MAP[iconColor] || ICON_COLOR_MAP.blue;
-  return (
-    <div className='bg-[var(--page-bg)] border border-ui-border rounded-2xl p-4 mb-6'>
-      <div className='flex items-center mb-3'>
-        <div
-          className={`w-8 h-8 rounded-lg inline-flex items-center justify-center border ${iconCls} mr-2`}
-        >
-          {Icon && <Icon size={15} />}
-        </div>
-        <div>
-          <div className='text-sm font-semibold text-ui-text'>{title}</div>
-          {description && (
-            <div className='text-xs text-ui-text-3 mt-0.5'>{description}</div>
-          )}
-        </div>
-      </div>
-      <div className='space-y-4'>{children}</div>
+}) => (
+  <div className='border border-ui-border rounded-2xl p-4 mb-4'>
+    <div className='mb-3'>
+      <div className='text-sm font-semibold text-ui-text'>{title}</div>
+      {description && (
+        <div className='text-xs text-ui-text-3 mt-0.5'>{description}</div>
+      )}
     </div>
-  );
-};
+    <div className='space-y-4'>{children}</div>
+  </div>
+);
 
 const EditTagModal = (props) => {
   const { t } = useTranslation();
@@ -468,8 +447,6 @@ const EditTagModal = (props) => {
         )}
 
         <SectionCard
-          Icon={Bookmark}
-          iconColor='blue'
           title={t('标签信息')}
           description={t('标签的基本配置')}
         >
@@ -487,8 +464,6 @@ const EditTagModal = (props) => {
         </SectionCard>
 
         <SectionCard
-          Icon={Code}
-          iconColor='purple'
           title={t('模型配置')}
           description={t('模型选择和映射设置')}
         >
@@ -579,8 +554,6 @@ const EditTagModal = (props) => {
         </SectionCard>
 
         <SectionCard
-          Icon={Settings}
-          iconColor='orange'
           title={t('高级设置')}
           description={t('渠道的高级配置选项')}
         >
@@ -715,8 +688,6 @@ const EditTagModal = (props) => {
         </SectionCard>
 
         <SectionCard
-          Icon={User}
-          iconColor='green'
           title={t('分组设置')}
           description={t('用户分组配置')}
         >
