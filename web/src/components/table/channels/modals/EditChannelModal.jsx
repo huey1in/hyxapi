@@ -3089,7 +3089,8 @@ const EditChannelModal = (props) => {
             onClick={resetKeyDisplayState}
           >
             <div
-              className='bg-ui-bg-elevated border border-ui-border rounded-2xl shadow-2xl w-full max-w-2xl max-h-[88vh] flex flex-col overflow-hidden'
+              className='border border-ui-border rounded-[28px] shadow-2xl w-full max-w-2xl max-h-[88vh] flex flex-col overflow-hidden'
+              style={{ backgroundColor: 'var(--page-bg)' }}
               onClick={(e) => e.stopPropagation()}
             >
               <div className='flex items-center justify-between gap-3 px-6 py-4 border-b border-ui-border'>
@@ -3135,7 +3136,8 @@ const EditChannelModal = (props) => {
             onClick={() => closeMissingModelsModal('cancel')}
           >
             <div
-              className='bg-ui-bg-elevated border border-ui-border rounded-2xl shadow-2xl w-full max-w-md overflow-hidden'
+              className='border border-ui-border rounded-[28px] shadow-2xl w-full max-w-md overflow-hidden'
+              style={{ backgroundColor: 'var(--page-bg)' }}
               onClick={(e) => e.stopPropagation()}
             >
               <div className='px-6 py-5'>

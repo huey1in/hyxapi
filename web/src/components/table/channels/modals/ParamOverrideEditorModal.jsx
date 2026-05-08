@@ -262,8 +262,8 @@ const Modal = ({
       onClick={onCancel}
     >
       <div
-        className='bg-ui-bg-elevated border border-ui-border rounded-2xl shadow-2xl flex flex-col overflow-hidden'
-        style={{ width: `min(${width}px, 96vw)`, maxHeight: '90vh' }}
+        className='border border-ui-border rounded-[28px] shadow-2xl flex flex-col overflow-hidden'
+        style={{ width: `min(${width}px, 96vw)`, maxHeight: '90vh', backgroundColor: 'var(--page-bg)' }}
         onClick={(e) => e.stopPropagation()}
       >
         {title !== null && (

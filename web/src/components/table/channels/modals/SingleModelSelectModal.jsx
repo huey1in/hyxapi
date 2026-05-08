@@ -85,9 +85,10 @@ const SingleModelSelectModal = ({
       onClick={onCancel}
     >
       <div
-        className={`bg-ui-bg-elevated border border-ui-border rounded-2xl shadow-2xl w-full ${
+        className={`border border-ui-border rounded-[28px] shadow-2xl w-full ${
           isMobile ? 'max-w-full' : 'max-w-2xl'
         } max-h-[88vh] flex flex-col overflow-hidden`}
+        style={{ backgroundColor: 'var(--page-bg)' }}
         onClick={(e) => e.stopPropagation()}
       >
         <div className='flex items-center justify-between gap-3 px-5 py-3.5 border-b border-ui-border'>

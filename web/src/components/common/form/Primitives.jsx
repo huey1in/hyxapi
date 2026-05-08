@@ -13,7 +13,7 @@ import { Search, X, ChevronDown, Save, Loader2 } from 'lucide-react';
 // ── shared classes ──────────────────────────────────────
 
 const inputCls =
-  'w-full px-3.5 py-2 text-sm bg-ui-bg-elevated border border-ui-border rounded-xl text-ui-text placeholder:text-ui-text-3 outline-none focus:border-ui-text-3 transition-colors disabled:opacity-60 disabled:cursor-not-allowed';
+  'w-full px-3.5 py-2 text-sm bg-transparent border border-ui-border rounded-xl text-ui-text placeholder:text-ui-text-3 outline-none focus:border-ui-text-3 transition-colors disabled:opacity-60 disabled:cursor-not-allowed';
 
 const errorCls = 'mt-1.5 text-xs text-ui-danger';
 const hintCls = 'mt-1.5 text-xs text-ui-text-3 leading-relaxed';
@@ -305,7 +305,7 @@ export const MultiCombobox = ({
     <div className='space-y-1.5' ref={ref}>
       <div
         onClick={() => !disabled && setOpen(true)}
-        className={`flex flex-wrap items-center gap-1 min-h-[40px] p-2 bg-ui-bg-elevated border border-ui-border rounded-xl cursor-text ${disabled ? 'opacity-60' : ''}`}
+        className={`flex flex-wrap items-center gap-1 min-h-[40px] p-2 bg-transparent border border-ui-border rounded-xl cursor-text ${disabled ? 'opacity-60' : ''}`}
       >
         {value.length === 0 && (
           <span className='text-[13px] text-ui-text-3 px-1.5'>{placeholder}</span>
@@ -323,7 +323,7 @@ export const MultiCombobox = ({
         })}
       </div>
       {open && (
-        <div className='border border-ui-border rounded-xl overflow-hidden bg-ui-bg-elevated shadow-xl'>
+        <div className='border border-ui-border rounded-2xl overflow-hidden shadow-xl' style={{ backgroundColor: 'var(--page-bg)' }}>
           <div className='relative border-b border-ui-border'>
             <Search size={14} className='absolute left-3 top-1/2 -translate-y-1/2 text-ui-text-3 pointer-events-none' />
             <input
@@ -340,7 +340,7 @@ export const MultiCombobox = ({
               }}
             />
           </div>
-          <div className='max-h-60 overflow-y-auto p-1'>
+          <div className='max-h-60 overflow-y-auto nice-scroll p-1'>
             {filtered.length === 0 ? (
               <div className='py-3 px-3 text-[13px] text-ui-text-3 text-center'>
                 {allowCreate && keyword
@@ -402,7 +402,7 @@ export const Combobox = ({
         type='button'
         disabled={disabled}
         onClick={() => setOpen((p) => !p)}
-        className={`flex items-center justify-between gap-2 w-full px-3.5 py-2 text-sm bg-ui-bg-elevated border border-ui-border rounded-xl text-ui-text outline-none hover:border-ui-text-3 transition-colors disabled:opacity-60 disabled:cursor-not-allowed ${open ? 'border-ui-text-3' : ''}`}
+        className={`flex items-center justify-between gap-2 w-full px-3.5 py-2 text-sm bg-transparent border border-ui-border rounded-xl text-ui-text outline-none hover:border-ui-text-3 transition-colors disabled:opacity-60 disabled:cursor-not-allowed ${open ? 'border-ui-text-3' : ''}`}
       >
         <span className={`flex items-center gap-2 truncate ${!current ? 'text-ui-text-3' : ''}`}>
           {current?.icon}
@@ -411,7 +411,7 @@ export const Combobox = ({
         <ChevronDown size={14} className={`text-ui-text-3 transition-transform flex-shrink-0 ${open ? 'rotate-180' : ''}`} />
       </button>
       {open && (
-        <div className='absolute z-50 left-0 right-0 mt-1 max-h-72 bg-ui-bg-elevated border border-ui-border rounded-xl shadow-xl overflow-hidden flex flex-col'>
+        <div className='absolute z-50 left-0 right-0 mt-1 max-h-72 border border-ui-border rounded-2xl shadow-xl overflow-hidden flex flex-col' style={{ backgroundColor: 'var(--page-bg)' }}>
           <div className='relative border-b border-ui-border flex-shrink-0'>
             <Search size={14} className='absolute left-3 top-1/2 -translate-y-1/2 text-ui-text-3 pointer-events-none' />
             <input
@@ -422,7 +422,7 @@ export const Combobox = ({
               className='w-full pl-9 pr-3 py-2 text-sm bg-transparent outline-none text-ui-text placeholder:text-ui-text-3'
             />
           </div>
-          <div className='overflow-y-auto p-1'>
+          <div className='overflow-y-auto nice-scroll p-1'>
             {filtered.length === 0 ? (
               <div className='py-3 px-3 text-[13px] text-ui-text-3 text-center'>无匹配项</div>
             ) : (

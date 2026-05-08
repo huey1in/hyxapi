@@ -12,7 +12,7 @@ const generateUniqueId = (() => {
 })();
 
 const inputCls =
-  'w-full px-2.5 py-1.5 text-xs bg-ui-bg border border-ui-border rounded-md text-ui-text placeholder:text-ui-text-3 outline-none focus:border-ui-text-3 transition-colors';
+  'w-full px-2.5 py-1.5 text-xs bg-transparent border border-ui-border rounded-lg text-ui-text placeholder:text-ui-text-3 outline-none focus:border-ui-text-3 transition-colors';
 
 const JSONEditor = ({
   value = '',
@@ -426,8 +426,8 @@ const JSONEditor = ({
       {label && (
         <label className='block text-xs font-medium text-ui-text-2 mb-1.5'>{label}</label>
       )}
-      <div className='border border-ui-border rounded-lg bg-ui-bg-elevated overflow-hidden'>
-        <div className='flex items-center justify-between px-3 py-2 border-b border-ui-border bg-ui-bg-subtle/50'>
+      <div className='border border-ui-border rounded-2xl overflow-hidden'>
+        <div className='flex items-center justify-between px-3 py-2 border-b border-ui-border'>
           <div className='flex items-center gap-1'>
             <button
               type='button'

@@ -49,6 +49,7 @@ const SlideOver = ({
 
   const side = placement === 'left' ? 'left-0' : 'right-0';
   const animFrom = placement === 'left' ? '-translate-x-full' : 'translate-x-full';
+  const roundedCls = placement === 'left' ? 'rounded-r-[28px]' : 'rounded-l-[28px]';
 
   return createPortal(
     <>
@@ -58,7 +59,7 @@ const SlideOver = ({
         onClick={onClose}
       />
       <div
-        className={`fixed top-0 bottom-0 ${side} z-[120] flex flex-col border-${placement === 'left' ? 'r' : 'l'} border-ui-border shadow-2xl animate-slide-in`}
+        className={`fixed top-0 bottom-0 ${side} z-[120] flex flex-col ${roundedCls} border-${placement === 'left' ? 'r' : 'l'} border-ui-border shadow-2xl animate-slide-in overflow-hidden`}
         style={{ width: `min(${width}px, 100vw)`, backgroundColor: 'var(--page-bg)', animation: `slide-in-${placement} 0.2s ease-out` }}
       >
         <style>{`
@@ -80,7 +81,7 @@ const SlideOver = ({
         </div>
 
         {/* Body */}
-        <div className={`flex-1 overflow-y-auto ${bodyClass}`}>{children}</div>
+        <div className={`flex-1 overflow-y-auto nice-scroll ${bodyClass}`}>{children}</div>
 
         {/* Footer */}
         {footer && (
