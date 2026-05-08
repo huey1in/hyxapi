@@ -239,11 +239,13 @@ const RegisterForm = ({ embedded = false, onSuccess, onSwitchToLogin }) => {
     setRegisterLoading(true);
     try {
       if (!affCode) affCode = localStorage.getItem('aff');
-      inputs.aff_code = affCode;
-      const res = await API.post(`/api/user/register?turnstile=${turnstileToken}`, inputs);
+      const body = { ...inputs };
+      if (affCode) body.aff_code = affCode;
+      const res = await API.post(`/api/user/register?turnstile=${turnstileToken}`, body);
       const { success, message } = res.data;
       if (success) {
         showSuccess('注册成功！');
+        try { localStorage.removeItem('aff'); } catch {}
         if (embedded && onSwitchToLogin) {
           onSwitchToLogin();
         } else {

@@ -17,8 +17,8 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 
-import React, { lazy, Suspense, useContext, useMemo } from 'react';
-import { Navigate, Route, Routes, useLocation, useParams } from 'react-router-dom';
+import React, { lazy, Suspense, useContext, useEffect, useMemo } from 'react';
+import { Navigate, Route, Routes, useLocation, useNavigate, useParams } from 'react-router-dom';
 import Loading from './components/common/ui/Loading';
 import { ConfirmHost } from './components/common/ConfirmDialog';
 import User from './pages/User';
@@ -26,6 +26,7 @@ import { AuthRedirect, PrivateRoute, AdminRoute } from './helpers';
 import Forbidden from './pages/Forbidden';
 import Setting from './pages/Setting';
 import { StatusContext } from './context/Status';
+import { useLoginModal } from './context/LoginModal';
 
 import PasswordResetConfirm from './components/auth/PasswordResetConfirm';
 import Channel from './pages/Channel';
@@ -55,6 +56,34 @@ function NotFoundRedirect() {
   let isLoggedIn = false;
   try { isLoggedIn = !!localStorage.getItem('user'); } catch {}
   return <Navigate to={isLoggedIn ? '/console' : '/'} replace />;
+}
+
+// Legacy auth URLs — preserve any aff/expired/code query params and pop the
+// LoginModal in the requested mode, then jump back to the home page so
+// invitation links like /register?aff=XXXX still work.
+function AuthLegacyRoute({ mode }) {
+  const { openLoginModal } = useLoginModal();
+  const navigate = useNavigate();
+  const { search } = useLocation();
+  useEffect(() => {
+    let aff = '';
+    try {
+      const params = new URLSearchParams(search);
+      aff = params.get('aff') || '';
+      if (aff) localStorage.setItem('aff', aff);
+    } catch {}
+    let isLoggedIn = false;
+    try { isLoggedIn = !!localStorage.getItem('user'); } catch {}
+    const base = isLoggedIn ? '/console' : '/';
+    // Keep the aff query on the redirected URL too so RegisterForm's
+    // top-level `URLSearchParams(window.location.search)` reads it as
+    // well, not just the localStorage fallback.
+    const to = aff ? `${base}?aff=${encodeURIComponent(aff)}` : base;
+    navigate(to, { replace: true });
+    if (!isLoggedIn) openLoginModal(mode);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+  return null;
 }
 
 function App() {
@@ -160,6 +189,9 @@ function App() {
             </Suspense>
           }
         />
+        <Route path='/login' element={<AuthLegacyRoute mode='login' />} />
+        <Route path='/register' element={<AuthLegacyRoute mode='register' />} />
+        <Route path='/reset' element={<AuthLegacyRoute mode='reset' />} />
         <Route
           path='/oauth/github'
           element={
