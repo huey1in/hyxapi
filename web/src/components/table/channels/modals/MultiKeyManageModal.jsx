@@ -519,7 +519,7 @@ const MultiKeyManageModal = ({ visible, onCancel, channel, onRefresh }) => {
               </span>
             </div>
           ) : (
-            <div className='overflow-x-auto'>
+            <div className='overflow-x-auto nice-scroll'>
               <table className='w-full'>
                 <thead>
                   <tr className='bg-ui-bg-subtle/50 text-[11px] uppercase tracking-wider text-ui-text-3'>

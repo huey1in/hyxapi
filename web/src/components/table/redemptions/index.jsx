@@ -438,7 +438,7 @@ const SubscriptionMode = ({
       ) : filteredSubCodes.length === 0 ? (
         <div className='py-16 text-center text-ui-text-3 text-sm'>{t('暂无兑换码')}</div>
       ) : (
-        <div className='overflow-x-auto'>
+        <div className='overflow-x-auto nice-scroll'>
           <table className='w-full text-sm border-collapse'>
             <thead>
               <tr className='border-b border-ui-border bg-ui-bg-subtle/50 text-[11px] uppercase tracking-wider text-ui-text-3'>

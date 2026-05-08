@@ -475,7 +475,7 @@ const ChannelsTable = (channelsData) => {
   }
 
   return (
-    <div className='overflow-x-auto'>
+    <div className='overflow-x-auto nice-scroll'>
       <table className='w-full text-sm border-collapse'>
         <thead>
           <tr className='border-b border-ui-border bg-ui-bg-subtle/50 text-[11px] uppercase tracking-wider text-ui-text-3'>

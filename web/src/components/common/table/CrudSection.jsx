@@ -172,7 +172,7 @@ const CrudSection = ({
 
       {/* Table */}
       <div className='rounded-md border border-ui-border overflow-hidden'>
-        <div className='overflow-x-auto'>
+        <div className='overflow-x-auto nice-scroll'>
           <table className='w-full text-xs'>
             <thead>
               <tr className='bg-ui-bg-subtle'>
