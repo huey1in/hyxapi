@@ -56,8 +56,6 @@ const TwoFAVerification = ({ onSuccess, onBack, isModal = false }) => {
 
       if (res.data.success) {
         showSuccess('登录成功');
-        // 保存用户信息到本地存储
-        localStorage.setItem('user', JSON.stringify(res.data.data));
         if (onSuccess) {
           onSuccess(res.data.data);
         }

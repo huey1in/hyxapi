@@ -7,13 +7,11 @@ Simplified chat-style playground (no params/debug panel).
 import React, {
   useContext,
   useEffect,
-  useLayoutEffect,
   useRef,
   useState,
 } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { createPortal } from 'react-dom';
 import { usePageTitle } from '../../hooks/common/usePageTitle';
 import { Send, Square, Trash2, RotateCcw, Copy, Check, AlertCircle, ImagePlus, X as XIcon } from 'lucide-react';
 import ChevronDownIcon from '../../components/layout/headerbar/icons/ChevronDownIcon';
@@ -35,54 +33,29 @@ import {
 import { MESSAGE_ROLES } from '../../constants/playground.constants';
 import MarkdownRenderer from '../../components/common/markdown/MarkdownRenderer';
 
-// 紧凑的内嵌选择器（参考 LanguageSelector 的下拉菜单风格，popup 通过 portal 渲染避免被卡片裁切）
+// 紧凑的内嵌选择器（chip 触发，popup 向上 + portal）
+import Dropdown from '../../components/common/ui/Dropdown';
+
 const SelectChip = ({
   options,
   value,
   onChange,
   placeholder,
   emptyText,
-}) => {
-  const [open, setOpen] = useState(false);
-  const [pos, setPos] = useState({ left: 0, bottom: 0 });
-  const ref = useRef(null);
-  const btnRef = useRef(null);
-
-  useEffect(() => {
-    const handler = (e) => {
-      if (ref.current && !ref.current.contains(e.target)) {
-        const popup = document.getElementById('playground-select-chip-popup');
-        if (popup && popup.contains(e.target)) return;
-        setOpen(false);
-      }
-    };
-    document.addEventListener('mousedown', handler);
-    return () => document.removeEventListener('mousedown', handler);
-  }, []);
-
-  useLayoutEffect(() => {
-    if (!open || !btnRef.current) return;
-    const r = btnRef.current.getBoundingClientRect();
-    const popupWidth = 224; // w-56 = 14rem = 224px
-    const margin = 8;
-    let left = r.left;
-    if (left + popupWidth + margin > window.innerWidth) {
-      left = window.innerWidth - popupWidth - margin;
-    }
-    if (left < margin) left = margin;
-    setPos({ left, bottom: window.innerHeight - r.top + 8 });
-  }, [open]);
-
-  const list = (options || []).map((m) =>
-    typeof m === 'string' ? { label: m, value: m } : m,
-  );
-  const current = list.find((o) => o.value === value);
-
-  return (
-    <div className='relative' ref={ref}>
+}) => (
+  <Dropdown
+    options={options}
+    value={value}
+    onChange={onChange}
+    placeholder={placeholder}
+    emptyText={emptyText}
+    placement='top-start'
+    portal
+    popupClassName='w-56'
+    renderTrigger={({ open, current, ref, onClick }) => (
       <button
-        ref={btnRef}
-        onClick={() => setOpen((o) => !o)}
+        ref={ref}
+        onClick={onClick}
         className='inline-flex items-center gap-1 h-9 px-2 md:px-3 rounded-xl text-[13px] font-medium text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-subtle transition-colors max-w-[110px] md:max-w-[150px] min-w-0'
       >
         <span className='truncate'>{current?.label || placeholder}</span>
@@ -91,61 +64,9 @@ const SelectChip = ({
           className={`text-ui-text-3 transition-transform flex-shrink-0 ${open ? 'rotate-180' : ''}`}
         />
       </button>
-
-      {open && createPortal(
-        <div
-          id='playground-select-chip-popup'
-          className='fixed w-56 bg-ui-bg-elevated border border-ui-border rounded-2xl shadow-xl overflow-hidden z-[200] animate-dropdown'
-          style={{ left: pos.left, bottom: pos.bottom }}
-        >
-          <div className='px-2 py-2 flex flex-col gap-0.5 max-h-72 overflow-y-auto'>
-            {list.length === 0 ? (
-              <div className='px-3 py-4 text-center text-xs text-ui-text-3'>
-                {emptyText}
-              </div>
-            ) : (
-              list.map((m) => {
-                const selected = value === m.value;
-                return (
-                  <button
-                    key={m.value}
-                    onClick={() => {
-                      onChange(m.value);
-                      setOpen(false);
-                    }}
-                    className={`flex items-center justify-between w-full px-3 py-2.5 rounded-xl text-sm transition-colors ${
-                      selected
-                        ? 'bg-ui-bg-subtle text-ui-text font-medium'
-                        : 'text-ui-text hover:bg-ui-bg-subtle'
-                    }`}
-                  >
-                    <span className='truncate'>{m.label}</span>
-                    {selected && (
-                      <svg
-                        width='14'
-                        height='14'
-                        viewBox='0 0 14 14'
-                        fill='none'
-                        stroke='currentColor'
-                        strokeWidth='2'
-                        strokeLinecap='round'
-                        strokeLinejoin='round'
-                        className='flex-shrink-0'
-                      >
-                        <path d='M2 7l3.5 3.5 6.5-7' />
-                      </svg>
-                    )}
-                  </button>
-                );
-              })
-            )}
-          </div>
-        </div>,
-        document.body,
-      )}
-    </div>
-  );
-};
+    )}
+  />
+);
 
 // 从消息中抽取图片 URL 列表
 const getMessageImages = (msg) => {

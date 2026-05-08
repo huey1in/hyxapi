@@ -16,7 +16,6 @@ import { useDashboardData } from '../../hooks/dashboard/useDashboardData';
 import { useDashboardCharts } from '../../hooks/dashboard/useDashboardCharts';
 
 import MonthlyBarChart from './parts/MonthlyBarChart';
-import ModelBreakdown from './parts/ModelBreakdown';
 import InfoCard from './parts/InfoCard';
 import SearchModal from './parts/SearchModal';
 
@@ -156,8 +155,24 @@ const Dashboard = () => {
   const renderChartContent = () => {
     if (chartTab === 'quota') return <MonthlyBarChart data={timeQuotaData} loading={loading} t={t} valueLabel='quota' />;
     if (chartTab === 'calls') return <MonthlyBarChart data={timeCallsData} loading={loading} t={t} valueLabel='count' />;
-    if (chartTab === 'models_calls') return <ModelBreakdown items={modelByCalls} loading={loading} t={t} />;
-    if (chartTab === 'models_quota') return <ModelBreakdown items={modelByQuota} loading={loading} t={t} valueType='quota' />;
+    if (chartTab === 'models_calls')
+      return (
+        <MonthlyBarChart
+          data={modelByCalls.map((it) => ({ time: it.model, value: it.count || 0 }))}
+          loading={loading}
+          t={t}
+          valueLabel='count'
+        />
+      );
+    if (chartTab === 'models_quota')
+      return (
+        <MonthlyBarChart
+          data={modelByQuota.map((it) => ({ time: it.model, value: it.count || 0 }))}
+          loading={loading}
+          t={t}
+          valueLabel='quota'
+        />
+      );
     return null;
   };
 

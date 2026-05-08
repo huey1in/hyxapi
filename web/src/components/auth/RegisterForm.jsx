@@ -18,7 +18,7 @@ For commercial licensing, please contact support@quantumnous.com
 */
 
 import React, { useContext, useEffect, useMemo, useRef, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import {
   API,
   showError,
@@ -43,9 +43,7 @@ import { UserContext } from '../../context/User';
 import { StatusContext } from '../../context/Status';
 import { useTranslation } from 'react-i18next';
 import { SiDiscord } from 'react-icons/si';
-
-const inputClass =
-  'w-full px-4 py-2.5 text-sm border border-ui-border rounded-lg outline-none focus:ring-2 focus:ring-ui-accent bg-transparent text-ui-text placeholder:text-ui-text-3';
+import { AUTH_INPUT_CLS as inputClass } from '../common/ui/forms';
 
 const usernamePattern = /^[A-Za-z0-9_\-.]{1,20}$/;
 
@@ -246,10 +244,10 @@ const RegisterForm = ({ embedded = false, onSuccess, onSwitchToLogin }) => {
       if (success) {
         showSuccess('注册成功！');
         try { localStorage.removeItem('aff'); } catch {}
-        if (embedded && onSwitchToLogin) {
+        if (onSwitchToLogin) {
           onSwitchToLogin();
         } else {
-          navigate('/login');
+          navigate('/');
         }
       } else {
         showError(message);
@@ -283,7 +281,6 @@ const RegisterForm = ({ embedded = false, onSuccess, onSwitchToLogin }) => {
       const { success, message, data } = res.data;
       if (success) {
         userDispatch({ type: 'login', payload: data });
-        localStorage.setItem('user', JSON.stringify(data));
         setUserData(data);
         updateAPI();
         navigate('/');
@@ -342,7 +339,6 @@ const RegisterForm = ({ embedded = false, onSuccess, onSwitchToLogin }) => {
       const { success, message, data } = res.data;
       if (success) {
         userDispatch({ type: 'login', payload: data });
-        localStorage.setItem('user', JSON.stringify(data));
         showSuccess('登录成功！');
         setUserData(data);
         updateAPI();
@@ -619,45 +615,26 @@ const RegisterForm = ({ embedded = false, onSuccess, onSwitchToLogin }) => {
         : renderOAuthOptions()}
       <p className='mt-5 pt-4 border-t border-ui-border text-[13px] text-ui-text-3'>
         {t('已有账户？')}{' '}
-        {embedded && onSwitchToLogin ? (
-          <button onClick={onSwitchToLogin} className='text-ui-text font-medium hover:underline bg-transparent cursor-pointer'>
-            {t('登录')}
-          </button>
-        ) : (
-          <Link to='/login' className='text-ui-text font-medium hover:underline'>{t('登录')}</Link>
-        )}
+        <button
+          onClick={onSwitchToLogin}
+          className='text-ui-text font-medium hover:underline bg-transparent cursor-pointer'
+        >
+          {t('登录')}
+        </button>
       </p>
     </>
   );
 
-  if (embedded) {
-    return (
-      <>
-        {formContent}
-        {turnstileEnabled && (
-          <div className='flex justify-center mt-6'>
-            <Turnstile sitekey={turnstileSiteKey} onVerify={(token) => setTurnstileToken(token)} />
-          </div>
-        )}
-        {wechatModal}
-      </>
-    );
-  }
-
   return (
-    <div className='min-h-[calc(100vh-4rem)] flex items-start sm:items-center justify-center px-0 sm:px-4 pt-24 pb-12'>
-      <div className='w-full max-w-sm sm:mt-[60px]'>
-        <div className='p-5 sm:bg-ui-bg-elevated sm:rounded-2xl sm:border sm:border-ui-border sm:p-6'>
-          {formContent}
+    <>
+      {formContent}
+      {turnstileEnabled && (
+        <div className='flex justify-center mt-6'>
+          <Turnstile sitekey={turnstileSiteKey} onVerify={(token) => setTurnstileToken(token)} />
         </div>
-        {turnstileEnabled && (
-          <div className='flex justify-center mt-6'>
-            <Turnstile sitekey={turnstileSiteKey} onVerify={(token) => setTurnstileToken(token)} />
-          </div>
-        )}
-      </div>
+      )}
       {wechatModal}
-    </div>
+    </>
   );
 };
 

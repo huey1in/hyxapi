@@ -65,27 +65,30 @@ func LogQuotaData(userId int, username string, modelName string, quota int, crea
 }
 
 func SaveQuotaDataCache() {
+	// 1) Snapshot the current cache under the lock and immediately install
+	//    a fresh map so concurrent LogQuotaData calls aren't blocked while
+	//    we flush to the database.
 	CacheQuotaDataLock.Lock()
-	defer CacheQuotaDataLock.Unlock()
-	size := len(CacheQuotaData)
-	// 如果缓存中有数据，就保存到数据库中
-	// 1. 先查询数据库中是否有数据
-	// 2. 如果有数据，就更新数据
-	// 3. 如果没有数据，就插入数据
-	for _, quotaData := range CacheQuotaData {
+	if len(CacheQuotaData) == 0 {
+		CacheQuotaDataLock.Unlock()
+		return
+	}
+	snapshot := CacheQuotaData
+	CacheQuotaData = make(map[string]*QuotaData)
+	CacheQuotaDataLock.Unlock()
+
+	// 2) Flush the snapshot — DB work happens with no lock held.
+	size := len(snapshot)
+	for _, quotaData := range snapshot {
 		quotaDataDB := &QuotaData{}
 		DB.Table("quota_data").Where("user_id = ? and username = ? and model_name = ? and created_at = ?",
 			quotaData.UserID, quotaData.Username, quotaData.ModelName, quotaData.CreatedAt).First(quotaDataDB)
 		if quotaDataDB.Id > 0 {
-			//quotaDataDB.Count += quotaData.Count
-			//quotaDataDB.Quota += quotaData.Quota
-			//DB.Table("quota_data").Save(quotaDataDB)
 			increaseQuotaData(quotaData.UserID, quotaData.Username, quotaData.ModelName, quotaData.Count, quotaData.Quota, quotaData.CreatedAt, quotaData.TokenUsed)
 		} else {
 			DB.Table("quota_data").Create(quotaData)
 		}
 	}
-	CacheQuotaData = make(map[string]*QuotaData)
 	common.SysLog(fmt.Sprintf("保存数据看板数据成功，共保存%d条数据", size))
 }
 

@@ -25,7 +25,7 @@ type BillingPreferenceRequest struct {
 
 func GetSubscriptionPlans(c *gin.Context) {
 	var plans []model.SubscriptionPlan
-	if err := model.DB.Where("enabled = ?", true).Order("sort_order desc, id desc").Find(&plans).Error; err != nil {
+	if err := model.DB.Where("enabled = ?", true).Order("sort_order desc, id desc").Limit(200).Find(&plans).Error; err != nil {
 		common.ApiError(c, err)
 		return
 	}
@@ -90,7 +90,7 @@ func UpdateSubscriptionPreference(c *gin.Context) {
 
 func AdminListSubscriptionPlans(c *gin.Context) {
 	var plans []model.SubscriptionPlan
-	if err := model.DB.Order("sort_order desc, id desc").Find(&plans).Error; err != nil {
+	if err := model.DB.Order("sort_order desc, id desc").Limit(200).Find(&plans).Error; err != nil {
 		common.ApiError(c, err)
 		return
 	}

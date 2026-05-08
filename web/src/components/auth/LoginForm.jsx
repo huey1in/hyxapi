@@ -18,7 +18,7 @@ For commercial licensing, please contact support@quantumnous.com
 */
 
 import React, { useContext, useEffect, useMemo, useRef, useState } from 'react';
-import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { UserContext } from '../../context/User';
 import { StatusContext } from '../../context/Status';
 import {
@@ -49,9 +49,7 @@ import LinuxDoIcon from '../common/logo/LinuxDoIcon';
 import TwoFAVerification from './TwoFAVerification';
 import { useTranslation } from 'react-i18next';
 import { SiDiscord } from 'react-icons/si';
-
-const inputClass =
-  'w-full px-4 py-2.5 text-sm border border-ui-border rounded-lg outline-none focus:ring-2 focus:ring-ui-accent bg-transparent text-ui-text placeholder:text-ui-text-3';
+import { AUTH_INPUT_CLS as inputClass } from '../common/ui/forms';
 
 const baiFontStyle = {
   fontFamily:
@@ -119,7 +117,6 @@ const LoginForm = ({ embedded = false, onSuccess, onSwitchToRegister, onSwitchTo
   const [linuxdoLoading, setLinuxdoLoading] = useState(false);
   const [emailLoginLoading, setEmailLoginLoading] = useState(false);
   const [loginLoading, setLoginLoading] = useState(false);
-  const [resetPasswordLoading, setResetPasswordLoading] = useState(false);
   const [otherLoginOptionsLoading, setOtherLoginOptionsLoading] = useState(false);
   const [wechatCodeSubmitLoading, setWechatCodeSubmitLoading] = useState(false);
   const [showTwoFA, setShowTwoFA] = useState(false);
@@ -179,21 +176,20 @@ const LoginForm = ({ embedded = false, onSuccess, onSwitchToRegister, onSwitchTo
   };
 
   const onSubmitWeChatVerificationCode = async () => {
-    if (turnstileEnabled && turnstileToken === '') { showInfo('请稍后几秒重试，Turnstile 正在检查用户环境！'); return; }
+    if (turnstileEnabled && turnstileToken === '') { showInfo(t('请稍后几秒重试，Turnstile 正在检查用户环境！')); return; }
     setWechatCodeSubmitLoading(true);
     try {
       const res = await API.get(`/api/oauth/wechat?code=${inputs.wechat_verification_code}`);
       const { success, message, data } = res.data;
       if (success) {
         userDispatch({ type: 'login', payload: data });
-        localStorage.setItem('user', JSON.stringify(data));
         setUserData(data);
         updateAPI();
-        showSuccess('登录成功！');
+        showSuccess(t('登录成功！'));
         setShowWeChatLoginModal(false);
         handleAuthed(data, '/');
       } else showError(message);
-    } catch { showError('登录失败，请重试'); }
+    } catch { showError(t('登录失败，请重试')); }
     finally { setWechatCodeSubmitLoading(false); }
   };
 
@@ -203,7 +199,7 @@ const LoginForm = ({ embedded = false, onSuccess, onSwitchToRegister, onSwitchTo
 
   async function handleSubmit(e) {
     if ((hasUserAgreement || hasPrivacyPolicy) && !agreedToTerms) { showInfo(t('请先阅读并同意用户协议和隐私政策')); return; }
-    if (turnstileEnabled && turnstileToken === '') { showInfo('请稍后几秒重试，Turnstile 正在检查用户环境！'); return; }
+    if (turnstileEnabled && turnstileToken === '') { showInfo(t('请稍后几秒重试，Turnstile 正在检查用户环境！')); return; }
     setSubmitted(true);
     setLoginLoading(true);
     try {
@@ -215,14 +211,14 @@ const LoginForm = ({ embedded = false, onSuccess, onSwitchToRegister, onSwitchTo
           userDispatch({ type: 'login', payload: data });
           setUserData(data);
           updateAPI();
-          showSuccess('登录成功！');
+          showSuccess(t('登录成功！'));
           if (username === 'root' && password === '123456') {
-            Modal.error({ title: '您正在使用默认密码！', content: '请立刻修改默认密码！', centered: true });
+            Modal.error({ title: t('您正在使用默认密码！'), content: t('请立刻修改默认密码！'), centered: true });
           }
           handleAuthed(data, '/console');
         } else showError(message);
-      } else showError('请输入用户名和密码！');
-    } catch { showError('登录失败，请重试'); }
+      } else showError(t('请输入用户名和密码！'));
+    } catch { showError(t('登录失败，请重试')); }
     finally { setLoginLoading(false); }
   }
 
@@ -236,13 +232,12 @@ const LoginForm = ({ embedded = false, onSuccess, onSwitchToRegister, onSwitchTo
       const { success, message, data } = res.data;
       if (success) {
         userDispatch({ type: 'login', payload: data });
-        localStorage.setItem('user', JSON.stringify(data));
-        showSuccess('登录成功！');
+        showSuccess(t('登录成功！'));
         setUserData(data);
         updateAPI();
         handleAuthed(data, '/');
       } else showError(message);
-    } catch { showError('登录失败，请重试'); }
+    } catch { showError(t('登录失败，请重试')); }
   };
 
   const handleGitHubClick = () => {
@@ -292,28 +287,28 @@ const LoginForm = ({ embedded = false, onSuccess, onSwitchToRegister, onSwitchTo
 
   const handlePasskeyLogin = async () => {
     if ((hasUserAgreement || hasPrivacyPolicy) && !agreedToTerms) { showInfo(t('请先阅读并同意用户协议和隐私政策')); return; }
-    if (!passkeySupported || !window.PublicKeyCredential) { showInfo('当前环境无法使用 Passkey 登录'); return; }
+    if (!passkeySupported || !window.PublicKeyCredential) { showInfo(t('当前环境无法使用 Passkey 登录')); return; }
     setPasskeyLoading(true);
     try {
       const beginRes = await API.post('/api/user/passkey/login/begin');
       const { success, message, data } = beginRes.data;
-      if (!success) { showError(message || '无法发起 Passkey 登录'); return; }
+      if (!success) { showError(message || t('无法发起 Passkey 登录')); return; }
       const publicKeyOptions = prepareCredentialRequestOptions(data?.options || data?.publicKey || data);
       const assertion = await navigator.credentials.get({ publicKey: publicKeyOptions });
       const payload = buildAssertionResult(assertion);
-      if (!payload) { showError('Passkey 验证失败，请重试'); return; }
+      if (!payload) { showError(t('Passkey 验证失败，请重试')); return; }
       const finishRes = await API.post('/api/user/passkey/login/finish', payload);
       const finish = finishRes.data;
       if (finish.success) {
         userDispatch({ type: 'login', payload: finish.data });
         setUserData(finish.data);
         updateAPI();
-        showSuccess('登录成功！');
+        showSuccess(t('登录成功！'));
         handleAuthed(finish.data, '/console');
-      } else showError(finish.message || 'Passkey 登录失败，请重试');
+      } else showError(finish.message || t('Passkey 登录失败，请重试'));
     } catch (error) {
-      if (error?.name === 'AbortError') showInfo('已取消 Passkey 登录');
-      else showError('Passkey 登录失败，请重试');
+      if (error?.name === 'AbortError') showInfo(t('已取消 Passkey 登录'));
+      else showError(t('Passkey 登录失败，请重试'));
     } finally { setPasskeyLoading(false); }
   };
 
@@ -453,10 +448,7 @@ const LoginForm = ({ embedded = false, onSuccess, onSwitchToRegister, onSwitchTo
           <label className='text-sm font-medium text-ui-text'>{t('密码')}</label>
           <button
             type='button'
-            onClick={() => {
-              if (embedded && onSwitchToReset) { onSwitchToReset(); }
-              else { setResetPasswordLoading(true); navigate('/reset'); setResetPasswordLoading(false); }
-            }}
+            onClick={onSwitchToReset}
             className='text-xs text-ui-text-3 hover:text-ui-text transition-colors'
           >
             {t('忘记密码？')}
@@ -508,13 +500,12 @@ const LoginForm = ({ embedded = false, onSuccess, onSwitchToRegister, onSwitchTo
       {!status.self_use_mode_enabled && (
         <p className='mt-5 pt-4 border-t border-ui-border text-[13px] text-ui-text-3'>
           {t('没有账户？')}{' '}
-          {embedded && onSwitchToRegister ? (
-            <button onClick={onSwitchToRegister} className='text-ui-text font-medium hover:underline bg-transparent cursor-pointer'>
-              {t('注册')}
-            </button>
-          ) : (
-            <Link to='/register' className='text-ui-text font-medium hover:underline'>{t('注册')}</Link>
-          )}
+          <button
+            onClick={onSwitchToRegister}
+            className='text-ui-text font-medium hover:underline bg-transparent cursor-pointer'
+          >
+            {t('注册')}
+          </button>
         </p>
       )}
     </>
@@ -566,30 +557,13 @@ const LoginForm = ({ embedded = false, onSuccess, onSwitchToRegister, onSwitchTo
     </Modal>
   );
 
-  if (embedded) {
-    return (
-      <>
-        {cardContent}
-        {turnstileNode}
-        {wechatModalNode}
-        {twoFAModalNode}
-      </>
-    );
-  }
-
   return (
-    <div className='min-h-[calc(100vh-4rem)] flex items-start sm:items-center justify-center px-0 sm:px-4 pt-24 pb-12'>
-      <div className='w-full max-w-md sm:mt-[40px]'>
-        <div className='p-6 sm:bg-white sm:rounded-2xl sm:border sm:border-black/5 sm:p-8 sm:shadow-sm'>
-          {cardContent}
-        </div>
-
-        {turnstileNode}
-      </div>
-
+    <>
+      {cardContent}
+      {turnstileNode}
       {wechatModalNode}
       {twoFAModalNode}
-    </div>
+    </>
   );
 };
 

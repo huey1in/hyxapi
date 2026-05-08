@@ -44,9 +44,6 @@ const SetupWizard = () => {
     usageMode: 'external',
   });
 
-  // 确保默认选中”对外运营模式”
-  useEffect(() => {}, []);
-
   // 定义步骤内容
   const steps = [
     {

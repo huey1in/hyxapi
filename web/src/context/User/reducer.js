@@ -17,14 +17,29 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 
+// Centralised user storage so component code doesn't have to keep
+// `localStorage.setItem('user', JSON.stringify(...))` and the in-memory
+// state in sync.
+const persistUser = (user) => {
+  try {
+    if (user === null || user === undefined) {
+      localStorage.removeItem('user');
+    } else {
+      localStorage.setItem('user', JSON.stringify(user));
+    }
+  } catch {}
+};
+
 export const reducer = (state, action) => {
   switch (action.type) {
     case 'login':
+      persistUser(action.payload);
       return {
         ...state,
         user: action.payload,
       };
     case 'logout':
+      persistUser(null);
       return {
         ...state,
         user: undefined,

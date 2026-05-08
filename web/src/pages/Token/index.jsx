@@ -9,7 +9,7 @@ import { useTranslation } from 'react-i18next';
 import { createPortal } from 'react-dom';
 import {
   Plus, Pencil, Trash2, Copy, Check, X,
-  Eye, EyeOff, Infinity as InfinityIcon, ChevronDown, RefreshCw,
+  Eye, EyeOff, Infinity as InfinityIcon, RefreshCw,
 } from 'lucide-react';
 import {
   API,
@@ -53,64 +53,8 @@ const fmtDateTime = (ts) => {
 };
 
 // ── select primitives reused inside the form modal ──────
-// Custom dropdown styled like the language selector — rotated chevron, rounded popup,
-// selected state with a check icon.
-const Select = ({ options, value, onChange, placeholder }) => {
-  const [open, setOpen] = useState(false);
-  const ref = useRef(null);
-  useEffect(() => {
-    const handler = (e) => { if (ref.current && !ref.current.contains(e.target)) setOpen(false); };
-    document.addEventListener('mousedown', handler);
-    return () => document.removeEventListener('mousedown', handler);
-  }, []);
-  const list = options.map((o) => (typeof o === 'string' ? { label: o, value: o } : o));
-  const current = list.find((o) => o.value === value);
-  return (
-    <div className='relative' ref={ref}>
-      <button
-        type='button'
-        onClick={() => setOpen((o) => !o)}
-        className='w-full flex items-center justify-between gap-2 px-3 py-2 text-sm bg-transparent border border-ui-border rounded-xl text-ui-text hover:border-ui-text-3 transition-colors'
-      >
-        <span className='truncate text-left flex-1'>
-          {current?.label || <span className='text-ui-text-3'>{placeholder}</span>}
-        </span>
-        <ChevronDown
-          size={14}
-          className={`text-ui-text-3 transition-transform flex-shrink-0 ${open ? 'rotate-180' : ''}`}
-        />
-      </button>
-      {open && (
-        <div className='absolute left-0 right-0 mt-2 bg-ui-bg-elevated border border-ui-border rounded-2xl shadow-xl overflow-hidden z-50 animate-dropdown'>
-          <div className='px-2 py-2 flex flex-col gap-0.5 max-h-64 overflow-y-auto'>
-            {list.map((o) => {
-              const selected = value === o.value;
-              return (
-                <button
-                  type='button'
-                  key={o.value}
-                  onClick={() => { onChange(o.value); setOpen(false); }}
-                  className={`flex items-center justify-between w-full px-3 py-2.5 rounded-xl text-sm transition-colors ${
-                    selected
-                      ? 'bg-ui-bg-subtle text-ui-text font-medium'
-                      : 'text-ui-text hover:bg-ui-bg-subtle'
-                  }`}
-                >
-                  <span className='truncate'>{o.label}</span>
-                  {selected && (
-                    <svg width='14' height='14' viewBox='0 0 14 14' fill='none' stroke='currentColor' strokeWidth='2' strokeLinecap='round' strokeLinejoin='round' className='flex-shrink-0'>
-                      <path d='M2 7l3.5 3.5 6.5-7' />
-                    </svg>
-                  )}
-                </button>
-              );
-            })}
-          </div>
-        </div>
-      )}
-    </div>
-  );
-};
+// Use the shared Dropdown for the group picker.
+import Dropdown from '../../components/common/ui/Dropdown';
 
 // ── token form modal (create/edit) ──────────────────────
 const FormSection = ({ title, children }) => (
@@ -304,11 +248,13 @@ const TokenFormModal = ({ open, token, onClose, onSaved, t }) => {
                 />
               </FormField>
               <FormField label={t('分组')}>
-                <Select
+                <Dropdown
                   options={groupOptions}
                   value={group}
                   onChange={setGroup}
                   placeholder={t('选择分组')}
+                  triggerClassName='w-full'
+                  popupClassName='w-full'
                 />
               </FormField>
             </FormSection>

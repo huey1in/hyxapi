@@ -20,11 +20,8 @@ For commercial licensing, please contact support@quantumnous.com
 import React, { useEffect, useState } from 'react';
 import { API, showError, showInfo, showSuccess } from '../../helpers';
 import Turnstile from 'react-turnstile';
-import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-
-const inputClass =
-  'w-full px-4 py-3 text-sm border border-ui-border rounded-lg outline-none focus:ring-2 focus:ring-ui-accent bg-transparent text-ui-text placeholder:text-ui-text-3';
+import { AUTH_INPUT_CLS as inputClass } from '../common/ui/forms';
 
 const PasswordResetForm = ({ embedded = false, onSwitchToLogin }) => {
   const { t } = useTranslation();
@@ -120,45 +117,25 @@ const PasswordResetForm = ({ embedded = false, onSwitchToLogin }) => {
 
       <p className='mt-5 pt-4 border-t border-ui-border text-[13px] text-ui-text-3'>
         {t('想起来了？')}{' '}
-        {embedded && onSwitchToLogin ? (
-          <button onClick={onSwitchToLogin} className='text-ui-text font-medium hover:underline bg-transparent cursor-pointer'>
-            {t('登录')}
-          </button>
-        ) : (
-          <Link to='/login' className='text-ui-text font-medium hover:underline'>
-            {t('登录')}
-          </Link>
-        )}
+        <button
+          onClick={onSwitchToLogin}
+          className='text-ui-text font-medium hover:underline bg-transparent cursor-pointer'
+        >
+          {t('登录')}
+        </button>
       </p>
     </>
   );
 
-  if (embedded) {
-    return (
-      <>
-        {formContent}
-        {turnstileEnabled && (
-          <div className='flex justify-center mt-6'>
-            <Turnstile sitekey={turnstileSiteKey} onVerify={(token) => setTurnstileToken(token)} />
-          </div>
-        )}
-      </>
-    );
-  }
-
   return (
-    <div className='min-h-[calc(100vh-4rem)] flex items-start sm:items-center justify-center px-0 sm:px-4 pt-24 pb-12'>
-      <div className='w-full max-w-sm sm:mt-[60px]'>
-        <div className='p-6 sm:bg-ui-bg-elevated sm:rounded-2xl sm:border sm:border-ui-border sm:p-8'>
-          {formContent}
+    <>
+      {formContent}
+      {turnstileEnabled && (
+        <div className='flex justify-center mt-6'>
+          <Turnstile sitekey={turnstileSiteKey} onVerify={(token) => setTurnstileToken(token)} />
         </div>
-        {turnstileEnabled && (
-          <div className='flex justify-center mt-6'>
-            <Turnstile sitekey={turnstileSiteKey} onVerify={(token) => setTurnstileToken(token)} />
-          </div>
-        )}
-      </div>
-    </div>
+      )}
+    </>
   );
 };
 

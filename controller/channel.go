@@ -215,10 +215,7 @@ func FetchUpstreamModels(c *gin.Context) {
 
 	ids, err := fetchChannelUpstreamModelIDs(channel)
 	if err != nil {
-		c.JSON(http.StatusOK, gin.H{
-			"success": false,
-			"message": fmt.Sprintf("获取模型列表失败: %s", err.Error()),
-		})
+		common.ApiError(c, err)
 		return
 	}
 
@@ -997,10 +994,7 @@ func FetchModels(c *gin.Context) {
 	if req.Type == constant.ChannelTypeOllama {
 		models, err := ollama.FetchOllamaModels(baseURL, key)
 		if err != nil {
-			c.JSON(http.StatusOK, gin.H{
-				"success": false,
-				"message": fmt.Sprintf("获取Ollama模型失败: %s", err.Error()),
-			})
+			common.ApiError(c, err)
 			return
 		}
 
@@ -1019,10 +1013,7 @@ func FetchModels(c *gin.Context) {
 	if req.Type == constant.ChannelTypeGemini {
 		models, err := gemini.FetchGeminiModels(baseURL, key, "")
 		if err != nil {
-			c.JSON(http.StatusOK, gin.H{
-				"success": false,
-				"message": fmt.Sprintf("获取Gemini模型失败: %s", err.Error()),
-			})
+			common.ApiError(c, err)
 			return
 		}
 
@@ -1038,10 +1029,7 @@ func FetchModels(c *gin.Context) {
 
 	request, err := http.NewRequest("GET", url, nil)
 	if err != nil {
-		c.JSON(http.StatusOK, gin.H{
-			"success": false,
-			"message": fmt.Sprintf("构建请求失败: %s", err.Error()),
-		})
+		common.ApiError(c, err)
 		return
 	}
 
@@ -1049,18 +1037,12 @@ func FetchModels(c *gin.Context) {
 
 	response, err := client.Do(request)
 	if err != nil {
-		c.JSON(http.StatusOK, gin.H{
-			"success": false,
-			"message": fmt.Sprintf("请求上游失败: %s", err.Error()),
-		})
+		common.ApiError(c, err)
 		return
 	}
 	//check status code
 	if response.StatusCode != http.StatusOK {
-		c.JSON(http.StatusOK, gin.H{
-			"success": false,
-			"message": fmt.Sprintf("上游返回状态码 %d", response.StatusCode),
-		})
+		common.ApiErrorMsg(c, fmt.Sprintf("上游返回状态码 %d", response.StatusCode))
 		return
 	}
 	defer response.Body.Close()
@@ -1072,10 +1054,7 @@ func FetchModels(c *gin.Context) {
 	}
 
 	if err := json.NewDecoder(response.Body).Decode(&result); err != nil {
-		c.JSON(http.StatusOK, gin.H{
-			"success": false,
-			"message": fmt.Sprintf("解析上游响应失败: %s", err.Error()),
-		})
+		common.ApiError(c, err)
 		return
 	}
 
@@ -1941,10 +1920,7 @@ func OllamaVersion(c *gin.Context) {
 	key := strings.Split(channel.Key, "\n")[0]
 	version, err := ollama.FetchOllamaVersion(baseURL, key)
 	if err != nil {
-		c.JSON(http.StatusOK, gin.H{
-			"success": false,
-			"message": fmt.Sprintf("获取Ollama版本失败: %s", err.Error()),
-		})
+		common.ApiError(c, err)
 		return
 	}
 

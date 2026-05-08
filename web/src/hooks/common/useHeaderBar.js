@@ -182,7 +182,6 @@ export const useHeaderBar = ({ onMobileMenuToggle, drawerOpen }) => {
               type: 'login',
               payload: nextUser,
             });
-            localStorage.setItem('user', JSON.stringify(nextUser));
           }
         } catch (error) {
           if (previousLang) {
