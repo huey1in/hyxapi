@@ -1,19 +1,17 @@
 /*
- * Subscription plans admin page — token-system rewrite.
+ * Subscription plans admin page — page-bg + rounded-[28px] redesign to
+ * match Log / Token / User style.
  */
 import React, { useState } from 'react';
 import { Plus, RefreshCw, Info } from 'lucide-react';
-import { useIsMobile } from '../../../hooks/common/useIsMobile';
 import { useSubscriptionsData } from '../../../hooks/subscriptions/useSubscriptionsData';
 import Pagination from '../../common/table/Pagination';
-import { Notice } from '../../common/form/Primitives';
 import SubscriptionsTable from './SubscriptionsTable';
 import AddEditSubscriptionModal from './modals/AddEditSubscriptionModal';
 import SubscriptionCodesModal from './modals/SubscriptionCodesModal';
 
 const SubscriptionsPage = () => {
   const data = useSubscriptionsData();
-  const isMobile = useIsMobile();
   const [codesPlan, setCodesPlan] = useState(null);
 
   const {
@@ -34,8 +32,11 @@ const SubscriptionsPage = () => {
   } = data;
 
   return (
-    <div className='min-h-[calc(100vh-4rem)] mt-16 px-4 py-5 md:px-6 md:py-6 bg-ui-bg'>
-      <div className='max-w-[1400px] mx-auto'>
+    <div
+      className='min-h-[calc(100vh-4rem)] px-4 py-6 md:px-6 md:py-8'
+      style={{ backgroundColor: 'var(--page-bg)' }}
+    >
+      <div className='max-w-[1280px] mx-auto'>
         {/* Header */}
         <div className='flex items-center justify-between gap-3 mb-5'>
           <h1
@@ -44,34 +45,41 @@ const SubscriptionsPage = () => {
           >
             {t('订阅管理')}
           </h1>
-        </div>
-
-        {/* Actions card */}
-        <div className='bg-ui-bg-elevated border border-ui-border rounded-xl p-3 mb-3 flex flex-col md:flex-row md:items-center justify-between gap-2'>
-          <div className='flex items-center gap-1.5'>
-            <button
-              onClick={openCreate}
-              className='inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-md bg-ui-accent text-ui-accent-fg hover:bg-ui-accent-hover active:scale-95 transition-all whitespace-nowrap'
-            >
-              <Plus size={12} />
-              {t('新建套餐')}
-            </button>
+          <div className='flex items-center gap-1'>
             <button
               onClick={refresh}
               disabled={loading}
-              className='inline-flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-md border border-ui-border text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-subtle transition-colors whitespace-nowrap disabled:opacity-50'
+              title={t('刷新')}
+              className='inline-flex items-center justify-center w-9 h-9 rounded-xl text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-subtle transition-colors disabled:opacity-50'
             >
-              <RefreshCw size={12} className={loading ? 'animate-spin' : ''} />
-              {t('刷新')}
+              <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />
+            </button>
+            <button
+              onClick={openCreate}
+              className='inline-flex items-center gap-1.5 px-3 h-9 rounded-xl text-sm font-medium bg-ui-accent text-ui-accent-fg hover:bg-ui-accent-hover transition-colors whitespace-nowrap'
+            >
+              <Plus size={14} />
+              {t('新建套餐')}
             </button>
           </div>
-          <Notice kind='info' icon={<Info size={14} className='text-blue-500' />}>
-            {t('用户在「钱包管理」中输入兑换码即可激活对应订阅')}
-          </Notice>
         </div>
 
-        {/* Table card */}
-        <div className='bg-ui-bg-elevated border border-ui-border rounded-xl overflow-hidden'>
+        {/* Notice */}
+        <div
+          className='flex items-start gap-2 px-4 py-3 rounded-[20px] border border-ui-border mb-4'
+          style={{ backgroundColor: 'var(--page-bg)' }}
+        >
+          <Info size={14} className='text-ui-text-3 flex-shrink-0 mt-0.5' />
+          <p className='text-xs text-ui-text-2 leading-relaxed'>
+            {t('用户在「钱包管理」中输入兑换码即可激活对应订阅')}
+          </p>
+        </div>
+
+        {/* Table */}
+        <div
+          className='border border-ui-border rounded-[28px] overflow-hidden'
+          style={{ backgroundColor: 'var(--page-bg)' }}
+        >
           <SubscriptionsTable {...data} openCodes={(record) => setCodesPlan(record)} />
           {planCount > 0 && (
             <div className='border-t border-ui-divider'>

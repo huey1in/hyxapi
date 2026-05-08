@@ -103,20 +103,23 @@ const SubscriptionsTable = ({
 
   return (
     <div className='overflow-x-auto nice-scroll'>
-      <table className='w-full text-sm border-collapse'>
+      <table className='w-full text-sm border-collapse' style={{ minWidth: '1100px' }}>
         <thead>
-          <tr className='border-b border-ui-border bg-ui-bg-subtle/50 text-[11px] uppercase tracking-wider text-ui-text-3'>
-            <th className='text-left px-3 py-2.5 font-medium w-16'>ID</th>
-            <th className='text-left px-3 py-2.5 font-medium min-w-[180px]'>{t('套餐')}</th>
-            <th className='text-left px-3 py-2.5 font-medium min-w-[100px]'>{t('价格')}</th>
-            <th className='text-left px-3 py-2.5 font-medium min-w-[90px]'>{t('购买上限')}</th>
-            <th className='text-left px-3 py-2.5 font-medium min-w-[80px]'>{t('优先级')}</th>
-            <th className='text-left px-3 py-2.5 font-medium min-w-[100px]'>{t('有效期')}</th>
-            <th className='text-left px-3 py-2.5 font-medium min-w-[80px]'>{t('重置')}</th>
-            <th className='text-left px-3 py-2.5 font-medium min-w-[100px]'>{t('总额度')}</th>
-            <th className='text-left px-3 py-2.5 font-medium min-w-[100px]'>{t('升级分组')}</th>
-            <th className='text-left px-3 py-2.5 font-medium min-w-[80px]'>{t('状态')}</th>
-            <th className='text-right px-3 py-2.5 font-medium sticky right-0 bg-ui-bg-subtle/80 backdrop-blur-sm min-w-[220px]'>
+          <tr className='border-b border-ui-border'>
+            <th className='text-left px-4 py-3 text-[12px] font-medium text-ui-text-2 whitespace-nowrap w-16'>ID</th>
+            <th className='text-left px-4 py-3 text-[12px] font-medium text-ui-text-2 whitespace-nowrap min-w-[180px]'>{t('套餐')}</th>
+            <th className='text-left px-4 py-3 text-[12px] font-medium text-ui-text-2 whitespace-nowrap min-w-[100px]'>{t('价格')}</th>
+            <th className='text-left px-4 py-3 text-[12px] font-medium text-ui-text-2 whitespace-nowrap min-w-[90px]'>{t('购买上限')}</th>
+            <th className='text-left px-4 py-3 text-[12px] font-medium text-ui-text-2 whitespace-nowrap min-w-[80px]'>{t('优先级')}</th>
+            <th className='text-left px-4 py-3 text-[12px] font-medium text-ui-text-2 whitespace-nowrap min-w-[100px]'>{t('有效期')}</th>
+            <th className='text-left px-4 py-3 text-[12px] font-medium text-ui-text-2 whitespace-nowrap min-w-[80px]'>{t('重置')}</th>
+            <th className='text-left px-4 py-3 text-[12px] font-medium text-ui-text-2 whitespace-nowrap min-w-[100px]'>{t('总额度')}</th>
+            <th className='text-left px-4 py-3 text-[12px] font-medium text-ui-text-2 whitespace-nowrap min-w-[100px]'>{t('升级分组')}</th>
+            <th className='text-left px-4 py-3 text-[12px] font-medium text-ui-text-2 whitespace-nowrap min-w-[80px]'>{t('状态')}</th>
+            <th
+              className='text-right px-4 py-3 text-[12px] font-medium text-ui-text-2 whitespace-nowrap sticky right-0 min-w-[220px]'
+              style={{ backgroundColor: 'var(--page-bg)' }}
+            >
               {t('操作')}
             </th>
           </tr>
@@ -128,42 +131,42 @@ const SubscriptionsTable = ({
             const total = Number(plan.total_amount || 0);
             const group = plan.upgrade_group || '';
             return (
-              <tr key={plan.id} className='border-b border-ui-divider last:border-b-0 hover:bg-ui-bg-subtle/40 transition-colors'>
-                <td className='px-3 py-3 align-middle text-xs text-ui-text-3 tabular-nums'>#{plan.id}</td>
-                <td className='px-3 py-3 align-middle'>
+              <tr key={plan.id} className='border-b border-ui-divider last:border-b-0 hover:bg-ui-bg-subtle/50 transition-colors'>
+                <td className='px-4 py-3 align-middle text-[13px] text-ui-text-3 tabular-nums'>#{plan.id}</td>
+                <td className='px-4 py-3 align-middle'>
                   <div className='min-w-0'>
-                    <div className='text-sm font-semibold text-ui-text truncate max-w-[200px]'>
+                    <div className='text-[13px] font-medium text-ui-text truncate max-w-[220px]'>
                       {plan.title}
                     </div>
                     {plan.subtitle && (
-                      <div className='text-[11px] text-ui-text-3 truncate max-w-[200px] mt-0.5'>
+                      <div className='text-[11px] text-ui-text-3 truncate max-w-[220px] mt-0.5'>
                         {plan.subtitle}
                       </div>
                     )}
                   </div>
                 </td>
-                <td className='px-3 py-3 align-middle'>
-                  <span className='text-sm font-semibold text-emerald-600 dark:text-emerald-400 tabular-nums'>
+                <td className='px-4 py-3 align-middle'>
+                  <span className='text-[13px] font-semibold text-emerald-600 dark:text-emerald-400 tabular-nums whitespace-nowrap'>
                     {convertUSDToCurrency(Number(plan.price_amount || 0), 2)}
                   </span>
                 </td>
-                <td className='px-3 py-3 align-middle text-xs tabular-nums'>
+                <td className='px-4 py-3 align-middle text-[13px] tabular-nums'>
                   <span className={limit > 0 ? 'text-ui-text-2' : 'text-ui-text-3'}>
                     {limit > 0 ? limit : t('不限')}
                   </span>
                 </td>
-                <td className='px-3 py-3 align-middle text-xs text-ui-text-3 tabular-nums'>
+                <td className='px-4 py-3 align-middle text-[13px] text-ui-text-3 tabular-nums'>
                   {Number(plan.sort_order || 0)}
                 </td>
-                <td className='px-3 py-3 align-middle text-xs text-ui-text-2'>
+                <td className='px-4 py-3 align-middle text-[13px] text-ui-text-2 whitespace-nowrap'>
                   {formatDuration(plan, t)}
                 </td>
-                <td className='px-3 py-3 align-middle text-xs'>
+                <td className='px-4 py-3 align-middle text-[13px] whitespace-nowrap'>
                   <span className={plan.quota_reset_period && plan.quota_reset_period !== 'never' ? 'text-ui-text-2' : 'text-ui-text-3'}>
                     {formatResetPeriod(plan, t)}
                   </span>
                 </td>
-                <td className='px-3 py-3 align-middle text-xs tabular-nums'>
+                <td className='px-4 py-3 align-middle text-[13px] tabular-nums whitespace-nowrap'>
                   {total > 0 ? (
                     <span className='inline-flex items-center gap-1 text-ui-text-2' title={`${t('原生额度')}：${total}`}>
                       {renderQuota(total)}
@@ -173,15 +176,18 @@ const SubscriptionsTable = ({
                     <span className='text-ui-text-3'>{t('不限')}</span>
                   )}
                 </td>
-                <td className='px-3 py-3 align-middle text-xs'>
+                <td className='px-4 py-3 align-middle text-[13px]'>
                   <span className={group ? 'text-ui-text-2' : 'text-ui-text-3'}>
                     {group || t('不升级')}
                   </span>
                 </td>
-                <td className='px-3 py-3 align-middle'>
+                <td className='px-4 py-3 align-middle'>
                   <StatusPill enabled={plan.enabled} t={t} />
                 </td>
-                <td className='px-3 py-3 align-middle text-right sticky right-0 bg-ui-bg-elevated'>
+                <td
+                  className='px-4 py-3 align-middle text-right sticky right-0'
+                  style={{ backgroundColor: 'var(--page-bg)' }}
+                >
                   <div className='flex items-center justify-end gap-1'>
                     <ActionBtn onClick={() => openCodes?.(record)}>
                       <Ticket size={11} />
