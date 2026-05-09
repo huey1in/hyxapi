@@ -37,7 +37,7 @@ const StepNavigation = ({
       {currentStep > 0 && (
         <button
           onClick={prev}
-          className='px-6 py-3 text-sm border border-gray-300 rounded-lg text-gray-600 bg-white hover:bg-gray-50 transition-colors font-medium'
+          className='px-6 py-3 text-sm border border-gray-300 rounded-lg text-ui-text-2 bg-ui-bg-elevated hover:bg-ui-bg-subtle transition-colors font-medium'
         >
           {t('上一步')}
         </button>

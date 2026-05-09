@@ -57,7 +57,7 @@ const MessageActions = ({
           title={shouldDisableActions ? t('操作暂时被禁用') : t('重试')}
           onClick={() => !shouldDisableActions && onMessageReset(message)}
           disabled={shouldDisableActions}
-          className='text-gray-400 hover:text-blue-600 hover:bg-blue-50'
+          className='text-ui-text-3 hover:text-blue-600 hover:bg-blue-50'
         >
           <RefreshCw size={sz} />
         </IconBtn>
@@ -67,7 +67,7 @@ const MessageActions = ({
         <IconBtn
           title={t('复制')}
           onClick={() => onMessageCopy(message)}
-          className='text-gray-400 hover:text-green-600 hover:bg-green-50'
+          className='text-ui-text-3 hover:text-green-600 hover:bg-green-50'
         >
           <Copy size={sz} />
         </IconBtn>
@@ -78,7 +78,7 @@ const MessageActions = ({
           title={shouldDisableActions ? t('操作暂时被禁用') : t('编辑')}
           onClick={() => !shouldDisableActions && onMessageEdit(message)}
           disabled={shouldDisableActions}
-          className='text-gray-400 hover:text-yellow-600 hover:bg-yellow-50'
+          className='text-ui-text-3 hover:text-yellow-600 hover:bg-yellow-50'
         >
           <Edit size={sz} />
         </IconBtn>
@@ -89,7 +89,7 @@ const MessageActions = ({
           title={shouldDisableActions ? t('操作暂时被禁用') : message.role === 'assistant' ? t('切换为System角色') : t('切换为Assistant角色')}
           onClick={() => !shouldDisableActions && onRoleToggle && onRoleToggle(message)}
           disabled={shouldDisableActions}
-          className={message.role === 'system' ? 'text-purple-500 hover:text-purple-700 hover:bg-purple-50' : 'text-gray-400 hover:text-purple-600 hover:bg-purple-50'}
+          className={message.role === 'system' ? 'text-purple-500 hover:text-purple-700 hover:bg-purple-50' : 'text-ui-text-3 hover:text-purple-600 hover:bg-purple-50'}
         >
           <UserCheck size={sz} />
         </IconBtn>
@@ -100,7 +100,7 @@ const MessageActions = ({
           title={shouldDisableActions ? t('操作暂时被禁用') : t('删除')}
           onClick={() => !shouldDisableActions && onMessageDelete(message)}
           disabled={shouldDisableActions}
-          className='text-gray-400 hover:text-red-600 hover:bg-red-50'
+          className='text-ui-text-3 hover:text-red-600 hover:bg-red-50'
         >
           <Trash2 size={sz} />
         </IconBtn>

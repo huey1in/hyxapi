@@ -192,7 +192,7 @@ const UserSubscriptionsModal = ({ visible, onCancel, user, t, onSuccess }) => {
       width={isMobile ? window.innerWidth : 920}
       title={
         <>
-          <span className='inline-flex items-center px-2 py-0.5 text-[11px] font-medium rounded-md bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20'>
+          <span className='inline-flex items-center px-2 py-0.5 text-[11px] font-medium rounded-xl bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20'>
             {t('管理')}
           </span>
           <span className='text-base font-semibold text-ui-text truncate'>
@@ -229,7 +229,7 @@ const UserSubscriptionsModal = ({ visible, onCancel, user, t, onSuccess }) => {
           <button
             onClick={createSubscription}
             disabled={creating || !selectedPlanId}
-            className='inline-flex items-center justify-center gap-1.5 px-4 py-2 text-sm font-semibold rounded-md bg-ui-accent text-ui-accent-fg hover:bg-ui-accent-hover disabled:opacity-50 whitespace-nowrap'
+            className='inline-flex items-center justify-center gap-1.5 px-4 py-2 text-sm font-semibold rounded-xl bg-ui-accent text-ui-accent-fg hover:bg-ui-accent-hover disabled:opacity-50 whitespace-nowrap'
           >
             {creating ? <Loader2 size={13} className='animate-spin' /> : <Plus size={13} />}
             {t('新增订阅')}
@@ -245,7 +245,7 @@ const UserSubscriptionsModal = ({ visible, onCancel, user, t, onSuccess }) => {
         <button
           onClick={loadUserSubscriptions}
           disabled={loading}
-          className='inline-flex items-center gap-1 px-2.5 py-1 text-[11px] rounded-md border border-ui-border text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-subtle disabled:opacity-40 whitespace-nowrap'
+          className='inline-flex items-center gap-1 px-2.5 py-1 text-[11px] rounded-xl border border-ui-border text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-subtle disabled:opacity-40 whitespace-nowrap'
         >
           <RefreshCw size={11} className={loading ? 'animate-spin' : ''} />
           {t('刷新')}

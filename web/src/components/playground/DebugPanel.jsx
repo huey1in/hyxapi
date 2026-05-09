@@ -45,10 +45,10 @@ const DebugPanel = ({ debugData, activeDebugTab, onActiveDebugTabChange, styleSt
           <div className='w-8 h-8 rounded-full bg-gradient-to-r from-green-500 to-blue-500 flex items-center justify-center'>
             <Code size={16} className='text-white' />
           </div>
-          <span className='font-semibold text-gray-900'>{t('调试信息')}</span>
+          <span className='font-semibold text-ui-text'>{t('调试信息')}</span>
         </div>
         {styleState.isMobile && onCloseDebugPanel && (
-          <button onClick={onCloseDebugPanel} className='w-7 h-7 flex items-center justify-center text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors'>
+          <button onClick={onCloseDebugPanel} className='w-7 h-7 flex items-center justify-center text-ui-text-3 hover:text-ui-text hover:bg-ui-bg-subtle rounded-lg transition-colors'>
             <X size={16} />
           </button>
         )}
@@ -60,7 +60,7 @@ const DebugPanel = ({ debugData, activeDebugTab, onActiveDebugTabChange, styleSt
           <button
             key={key}
             onClick={() => handleTabChange(key)}
-            className={`flex items-center gap-1.5 px-3 py-2 text-xs font-medium border-b-2 transition-colors -mb-px ${activeKey === key ? 'border-black text-black' : 'border-transparent text-gray-500 hover:text-gray-700'}`}
+            className={`flex items-center gap-1.5 px-3 py-2 text-xs font-medium border-b-2 transition-colors -mb-px ${activeKey === key ? 'border-black text-ui-text' : 'border-transparent text-ui-text-2 hover:text-ui-text'}`}
           >
             <Icon size={13} />
             {t(label)}
@@ -88,8 +88,8 @@ const DebugPanel = ({ debugData, activeDebugTab, onActiveDebugTabChange, styleSt
       {/* 时间戳 */}
       {(debugData.timestamp || debugData.previewTimestamp) && (
         <div className='flex items-center gap-2 mt-3 pt-3 border-t border-gray-100 flex-shrink-0'>
-          <Clock size={12} className='text-gray-400' />
-          <span className='text-xs text-gray-400'>
+          <Clock size={12} className='text-ui-text-3' />
+          <span className='text-xs text-ui-text-3'>
             {activeKey === 'preview' && debugData.previewTimestamp
               ? `${t('预览更新')}: ${new Date(debugData.previewTimestamp).toLocaleString()}`
               : debugData.timestamp ? `${t('最后请求')}: ${new Date(debugData.timestamp).toLocaleString()}` : ''}

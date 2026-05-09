@@ -18,127 +18,95 @@ For commercial licensing, please contact support@quantumnous.com
 */
 
 import React from 'react';
-import { Card, Skeleton } from '@douyinfe/semi-ui';
 
 const PricingCardSkeleton = ({
   skeletonCount = 100,
   rowSelection = false,
   showRatio = false,
 }) => {
-  const placeholder = (
+  return (
     <div className='px-2 pt-2'>
       <div className='grid grid-cols-1 xl:grid-cols-2 2xl:grid-cols-3 gap-4'>
         {Array.from({ length: skeletonCount }).map((_, index) => (
-          <Card
+          <div
             key={index}
-            className='!rounded-2xl border border-gray-200'
-            bodyStyle={{ padding: '24px' }}
+            className='rounded-2xl border border-ui-border p-6'
+            style={{ backgroundColor: 'var(--page-bg)' }}
           >
             {/* 头部：图标 + 模型名称 + 操作按钮 */}
             <div className='flex items-start justify-between mb-3'>
               <div className='flex items-start space-x-3 flex-1 min-w-0'>
                 {/* 模型图标骨架 */}
-                <div className='w-12 h-12 rounded-2xl flex items-center justify-center relative shadow-sm'>
-                  <Skeleton.Avatar
-                    size='large'
-                    style={{ width: 48, height: 48, borderRadius: 16 }}
-                  />
-                </div>
+                <div className='w-12 h-12 rounded-2xl animate-pulse bg-ui-bg-subtle' />
                 {/* 模型名称和价格区域 */}
                 <div className='flex-1 min-w-0'>
                   {/* 模型名称骨架 */}
-                  <Skeleton.Title
-                    style={{
-                      width: `${120 + (index % 3) * 30}px`,
-                      height: 20,
-                      marginBottom: 8,
-                    }}
+                  <div
+                    className='animate-pulse bg-ui-bg-subtle rounded-md mb-2'
+                    style={{ width: `${120 + (index % 3) * 30}px`, height: 20 }}
                   />
                   {/* 价格信息骨架 */}
-                  <Skeleton.Title
-                    style={{
-                      width: `${160 + (index % 4) * 20}px`,
-                      height: 20,
-                      marginBottom: 0,
-                    }}
+                  <div
+                    className='animate-pulse bg-ui-bg-subtle rounded-md'
+                    style={{ width: `${160 + (index % 4) * 20}px`, height: 20 }}
                   />
                 </div>
               </div>
 
               <div className='flex items-center space-x-2 ml-3'>
                 {/* 复制按钮骨架 */}
-                <Skeleton.Button
-                  size='small'
-                  style={{ width: 16, height: 16, borderRadius: 4 }}
-                />
+                <div className='w-4 h-4 animate-pulse bg-ui-bg-subtle rounded' />
                 {/* 勾选框骨架 */}
                 {rowSelection && (
-                  <Skeleton.Button
-                    size='small'
-                    style={{ width: 16, height: 16, borderRadius: 2 }}
-                  />
+                  <div className='w-4 h-4 animate-pulse bg-ui-bg-subtle rounded-sm' />
                 )}
               </div>
             </div>
 
             {/* 模型描述骨架 */}
-            <div className='mb-4'>
-              <Skeleton.Paragraph
-                rows={2}
-                style={{ marginBottom: 0 }}
-                title={false}
-              />
+            <div className='mb-4 space-y-2'>
+              <div className='animate-pulse bg-ui-bg-subtle rounded h-3 w-full' />
+              <div className='animate-pulse bg-ui-bg-subtle rounded h-3 w-3/4' />
             </div>
 
             {/* 标签区域骨架 */}
             <div className='flex flex-wrap gap-2'>
               {Array.from({ length: 2 + (index % 3) }).map((_, tagIndex) => (
-                <Skeleton.Button
+                <div
                   key={tagIndex}
-                  size='small'
-                  style={{
-                    width: 64,
-                    height: 18,
-                    borderRadius: 10,
-                  }}
+                  className='animate-pulse bg-ui-bg-subtle rounded-full'
+                  style={{ width: 64, height: 18 }}
                 />
               ))}
             </div>
 
             {/* 倍率信息骨架（可选） */}
             {showRatio && (
-              <div className='mt-4 pt-3 border-t border-gray-100'>
+              <div className='mt-4 pt-3 border-t border-ui-border'>
                 <div className='flex items-center space-x-1 mb-2'>
-                  <Skeleton.Title
-                    style={{ width: 60, height: 12, marginBottom: 0 }}
-                  />
-                  <Skeleton.Button
-                    size='small'
-                    style={{ width: 14, height: 14, borderRadius: 7 }}
-                  />
+                  <div className='animate-pulse bg-ui-bg-subtle rounded h-3 w-15' />
+                  <div className='animate-pulse bg-ui-bg-subtle rounded-full w-3.5 h-3.5' />
                 </div>
                 <div className='grid grid-cols-3 gap-2'>
                   {Array.from({ length: 3 }).map((_, ratioIndex) => (
-                    <Skeleton.Title
+                    <div
                       key={ratioIndex}
-                      style={{ width: '100%', height: 12, marginBottom: 0 }}
+                      className='animate-pulse bg-ui-bg-subtle rounded h-3 w-full'
                     />
                   ))}
                 </div>
               </div>
             )}
-          </Card>
+          </div>
         ))}
       </div>
 
       {/* 分页骨架 */}
       <div className='flex justify-center mt-6 py-4 border-t pricing-pagination-divider'>
-        <Skeleton.Button style={{ width: 300, height: 32 }} />
+        <div className='animate-pulse bg-ui-bg-subtle rounded-lg' style={{ width: 300, height: 32 }} />
       </div>
     </div>
   );
-
-  return <Skeleton loading={true} active placeholder={placeholder}></Skeleton>;
 };
 
 export default PricingCardSkeleton;

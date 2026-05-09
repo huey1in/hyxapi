@@ -18,7 +18,9 @@ For commercial licensing, please contact support@quantumnous.com
 */
 
 import React from 'react';
-import { Input, Modal, Typography } from '@douyinfe/semi-ui';
+import { Lock } from 'lucide-react';
+import ModalDialog from '../../../common/ModalDialog';
+import { TextField, FieldRow } from '../../../common/form/Primitives';
 import Turnstile from 'react-turnstile';
 
 const ChangePasswordModal = ({
@@ -33,58 +35,57 @@ const ChangePasswordModal = ({
   setTurnstileToken,
 }) => {
   return (
-    <Modal
+    <ModalDialog
+      open={showChangePasswordModal}
+      onClose={() => setShowChangePasswordModal(false)}
       title={
         <div className='flex items-center'>
-          <IconLock className='mr-2 text-orange-500' />
+          <Lock size={16} className='mr-2 text-orange-500' />
           {t('修改密码')}
         </div>
       }
-      visible={showChangePasswordModal}
-      onCancel={() => setShowChangePasswordModal(false)}
-      onOk={changePassword}
-      size={'small'}
-      centered={true}
-      className='modern-modal'
+      footer={
+        <>
+          <button
+            onClick={() => setShowChangePasswordModal(false)}
+            className='inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium rounded-xl border border-ui-border text-ui-text hover:bg-ui-bg-subtle transition-colors'
+          >
+            {t('取消')}
+          </button>
+          <button
+            onClick={changePassword}
+            className='inline-flex items-center gap-1.5 px-4 py-2 text-sm font-semibold rounded-xl bg-ui-accent text-ui-accent-fg hover:bg-ui-accent-hover transition-colors disabled:opacity-50'
+          >
+            {t('确定')}
+          </button>
+        </>
+      }
     >
-      <div className='space-y-4 py-4'>
-        <div>
-          <Typography.Text strong className='block mb-2'>
-            {t('原密码')}
-          </Typography.Text>
-          <Input
+      <div className='space-y-4'>
+        <FieldRow label={t('原密码')}>
+          <TextField
             name='original_password'
             placeholder={t('请输入原密码')}
             type='password'
             value={inputs.original_password}
             onChange={(value) => handleInputChange('original_password', value)}
-            size='large'
-            className='!rounded-lg'
-            prefix={<IconLock />}
+            prefix={<Lock size={14} />}
           />
-        </div>
+        </FieldRow>
 
-        <div>
-          <Typography.Text strong className='block mb-2'>
-            {t('新密码')}
-          </Typography.Text>
-          <Input
+        <FieldRow label={t('新密码')}>
+          <TextField
             name='set_new_password'
             placeholder={t('请输入新密码')}
             type='password'
             value={inputs.set_new_password}
             onChange={(value) => handleInputChange('set_new_password', value)}
-            size='large'
-            className='!rounded-lg'
-            prefix={<IconLock />}
+            prefix={<Lock size={14} />}
           />
-        </div>
+        </FieldRow>
 
-        <div>
-          <Typography.Text strong className='block mb-2'>
-            {t('确认新密码')}
-          </Typography.Text>
-          <Input
+        <FieldRow label={t('确认新密码')}>
+          <TextField
             name='set_new_password_confirmation'
             placeholder={t('请再次输入新密码')}
             type='password'
@@ -92,11 +93,9 @@ const ChangePasswordModal = ({
             onChange={(value) =>
               handleInputChange('set_new_password_confirmation', value)
             }
-            size='large'
-            className='!rounded-lg'
-            prefix={<IconLock />}
+            prefix={<Lock size={14} />}
           />
-        </div>
+        </FieldRow>
 
         {turnstileEnabled && (
           <div className='flex justify-center'>
@@ -109,7 +108,7 @@ const ChangePasswordModal = ({
           </div>
         )}
       </div>
-    </Modal>
+    </ModalDialog>
   );
 };
 

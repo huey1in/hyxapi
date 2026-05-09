@@ -18,12 +18,9 @@ For commercial licensing, please contact support@quantumnous.com
 */
 
 import React, { useState } from 'react';
-import { Card, Divider, Typography, Button } from '@douyinfe/semi-ui';
 import PropTypes from 'prop-types';
 import { useIsMobile } from '../../../hooks/common/useIsMobile';
-import { IconEyeOpened, IconEyeClosed } from '@douyinfe/semi-icons';
-
-const { Text } = Typography;
+import { Eye, EyeOff } from 'lucide-react';
 
 /**
  * CardPro 高级卡片组件
@@ -88,7 +85,7 @@ const CardPro = ({
         {/* 第一个分隔线 - 在描述信息或统计信息后面 */}
         {((type === 'type1' || type === 'type3') && descriptionArea) ||
         (type === 'type2' && statsArea) ? (
-          <Divider margin='12px' />
+          <hr style={{ borderColor: 'var(--semi-color-border)', margin: '12px 0' }} />
         ) : null}
 
         {/* 类型切换/标签区域 - 主要用于type3 */}
@@ -98,16 +95,14 @@ const CardPro = ({
         {isMobile && hasMobileHideableContent && (
           <>
             <div className='w-full mb-2'>
-              <Button
+              <button
                 onClick={toggleMobileActions}
-                icon={showMobileActions ? <IconEyeClosed /> : <IconEyeOpened />}
-                type='tertiary'
-                size='small'
-                theme='outline'
-                block
+                className='w-full flex items-center justify-center gap-1.5 px-3 py-1.5 text-sm border rounded-md'
+                style={{ borderColor: 'var(--semi-color-border)', color: 'var(--semi-color-text-2)' }}
               >
+                {showMobileActions ? <EyeOff size={14} /> : <Eye size={14} />}
                 {showMobileActions ? t('隐藏操作项') : t('显示操作项')}
-              </Button>
+              </button>
             </div>
           </>
         )}
@@ -122,7 +117,7 @@ const CardPro = ({
             (Array.isArray(actionsArea) ? (
               actionsArea.map((area, idx) => (
                 <React.Fragment key={idx}>
-                  {idx !== 0 && <Divider />}
+                  {idx !== 0 && <hr style={{ borderColor: 'var(--semi-color-border)' }} />}
                   <div className='w-full'>{area}</div>
                 </React.Fragment>
               ))
@@ -131,7 +126,7 @@ const CardPro = ({
             ))}
 
           {/* 当同时存在操作区和搜索区时，插入分隔线 */}
-          {actionsArea && searchArea && <Divider />}
+          {actionsArea && searchArea && <hr style={{ borderColor: 'var(--semi-color-border)' }} />}
 
           {/* 搜索表单区域 - 所有类型都可能有 */}
           {searchArea && <div className='w-full'>{searchArea}</div>}
@@ -159,17 +154,25 @@ const CardPro = ({
   const footerContent = renderFooter();
 
   return (
-    <Card
-      className={`table-scroll-card !rounded-2xl ${className}`}
-      title={headerContent}
-      footer={footerContent}
-      shadows={shadows}
-      bordered={bordered}
-      style={style}
+    <div
+      className={`table-scroll-card !rounded-2xl border ${className}`}
+      style={{ borderColor: bordered ? 'var(--semi-color-border)' : 'transparent', backgroundColor: 'var(--semi-color-bg-0)', ...style }}
       {...props}
     >
-      {children}
-    </Card>
+      {headerContent && (
+        <div className='p-4 pb-0'>
+          {headerContent}
+        </div>
+      )}
+      <div className='p-4'>
+        {children}
+      </div>
+      {footerContent && (
+        <div className='px-4 pb-4'>
+          {footerContent}
+        </div>
+      )}
+    </div>
   );
 };
 

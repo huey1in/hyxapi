@@ -55,7 +55,7 @@ const AddUserModal = (props) => {
       width={isMobile ? window.innerWidth : 600}
       title={
         <>
-          <span className='inline-flex items-center px-2 py-0.5 text-[11px] font-medium rounded-md bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20'>
+          <span className='inline-flex items-center px-2 py-0.5 text-[11px] font-medium rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20'>
             {t('新建')}
           </span>
           <span className='text-base font-semibold text-ui-text truncate'>{t('添加用户')}</span>

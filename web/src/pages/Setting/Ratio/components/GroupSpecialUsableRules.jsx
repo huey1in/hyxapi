@@ -185,7 +185,7 @@ export default function GroupSpecialUsableRules({ value, groupNames = [], onChan
             <option value=''>{t('选择用户分组')}</option>
             {groupOptions.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
           </select>
-          <button onClick={addNewGroup} className='inline-flex items-center gap-1 px-3 py-1.5 text-xs rounded-md border border-ui-border text-ui-text-2 hover:bg-ui-bg-hover'>
+          <button onClick={addNewGroup} className='inline-flex items-center gap-1 px-3 py-1.5 text-xs rounded-xl border border-ui-border text-ui-text-2 hover:bg-ui-bg-hover'>
             {t('添加分组规则')}
           </button>
         </div>
@@ -205,7 +205,7 @@ export default function GroupSpecialUsableRules({ value, groupNames = [], onChan
           <option value=''>{t('选择用户分组')}</option>
           {groupOptions.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
         </select>
-        <button onClick={addNewGroup} className='inline-flex items-center gap-1 px-3 py-1.5 text-xs rounded-md border border-ui-border text-ui-text-2 hover:bg-ui-bg-hover'>
+        <button onClick={addNewGroup} className='inline-flex items-center gap-1 px-3 py-1.5 text-xs rounded-xl border border-ui-border text-ui-text-2 hover:bg-ui-bg-hover'>
           {t('添加分组规则')}
         </button>
       </div>

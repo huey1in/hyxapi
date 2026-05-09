@@ -77,7 +77,7 @@ const ChannelKeyDisplay = ({
               </span>
               <button
                 onClick={handleCopyAll}
-                className='inline-flex items-center gap-1 px-2.5 py-1 text-[11px] rounded-md border border-ui-border text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-subtle whitespace-nowrap'
+                className='inline-flex items-center gap-1 px-2.5 py-1 text-[11px] rounded-xl border border-ui-border text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-subtle whitespace-nowrap'
               >
                 <Copy size={11} />
                 {t('复制全部')}
@@ -93,13 +93,13 @@ const ChannelKeyDisplay = ({
                 <span className='text-xs font-semibold text-ui-text-2'>{it.label}</span>
                 <div className='flex items-center gap-1.5'>
                   {it.type === 'json' && (
-                    <span className='inline-flex items-center px-2 py-0.5 text-[11px] rounded-md font-medium bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20'>
+                    <span className='inline-flex items-center px-2 py-0.5 text-[11px] rounded-xl font-medium bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20'>
                       JSON
                     </span>
                   )}
                   <button
                     onClick={() => handleCopyKey(it.content)}
-                    className='inline-flex items-center gap-1 px-2 py-0.5 text-[11px] rounded-md border border-ui-border text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-subtle whitespace-nowrap'
+                    className='inline-flex items-center gap-1 px-2 py-0.5 text-[11px] rounded-xl border border-ui-border text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-subtle whitespace-nowrap'
                   >
                     <Copy size={11} />
                     {t('复制')}
@@ -119,7 +119,7 @@ const ChannelKeyDisplay = ({
         </div>
 
         {isMultiple && (
-          <div className='flex items-start gap-2 px-3 py-2 rounded-md border border-blue-500/30 bg-blue-500/5'>
+          <div className='flex items-start gap-2 px-3 py-2 rounded-xl border border-blue-500/30 bg-blue-500/5'>
             <Info size={14} className='text-blue-500 flex-shrink-0 mt-0.5' />
             <span className='text-[11px] text-ui-text-2 leading-relaxed'>
               {t('检测到多个密钥，您可以单独复制每个密钥，或点击复制全部获取完整内容。')}
@@ -129,7 +129,7 @@ const ChannelKeyDisplay = ({
       </div>
 
       {showWarning && (
-        <div className='flex items-start gap-2 px-3 py-3 rounded-md border border-amber-500/30 bg-amber-500/5'>
+        <div className='flex items-start gap-2 px-3 py-3 rounded-xl border border-amber-500/30 bg-amber-500/5'>
           <AlertTriangle size={16} className='text-amber-500 flex-shrink-0 mt-0.5' />
           <div className='flex-1'>
             <div className='text-sm font-semibold text-amber-700 dark:text-amber-300 mb-1'>{t('安全提醒')}</div>

@@ -174,7 +174,7 @@ const TAG_COLOR_CLASSES = {
 
 const Tag = ({ color = 'grey', children, className = '' }) => (
   <span
-    className={`inline-flex items-center px-2 py-0.5 text-[11px] rounded-md font-medium border ${
+    className={`inline-flex items-center px-2 py-0.5 text-[11px] rounded-xl font-medium border ${
       TAG_COLOR_CLASSES[color] || TAG_COLOR_CLASSES.grey
     } ${className}`}
   >
@@ -249,7 +249,7 @@ const AccountInfoValue = ({ t, label, value, onCopy, monospace = false }) => {
         <button
           onClick={() => hasValue && onCopy?.(text)}
           disabled={!hasValue}
-          className='shrink-0 px-2 py-0.5 text-[11px] rounded-md border border-ui-border text-ui-text-2 hover:bg-ui-bg-subtle disabled:opacity-40 disabled:cursor-not-allowed transition-colors'
+          className='shrink-0 px-2 py-0.5 text-[11px] rounded-xl border border-ui-border text-ui-text-2 hover:bg-ui-bg-subtle disabled:opacity-40 disabled:cursor-not-allowed transition-colors'
         >
           {tt('复制')}
         </button>

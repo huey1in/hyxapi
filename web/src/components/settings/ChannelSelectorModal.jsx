@@ -42,7 +42,7 @@ const STATUS_MAP = {
   2: { label: '已禁用', color: 'bg-red-500/10 text-red-600 dark:text-red-400 border-red-500/20' },
   3: { label: '自动禁用', color: 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20' },
 };
-const DEFAULT_STATUS = { label: '未知状态', color: 'bg-gray-500/10 text-gray-500 border-gray-400/20' };
+const DEFAULT_STATUS = { label: '未知状态', color: 'bg-ui-bg-subtle0/10 text-ui-text-2 border-gray-400/20' };
 
 function highlightMatch(text, keyword) {
   if (!keyword || !text) return text;
@@ -106,8 +106,8 @@ const ChannelSelectorModal = forwardRef(
         width={900}
         footer={
           <div className='flex justify-end gap-2'>
-            <button onClick={onCancel} className='px-3.5 py-1.5 text-xs rounded-md border border-ui-border text-ui-text-2 hover:bg-ui-bg-subtle'>{t('取消')}</button>
-            <button onClick={onOk} className='px-3.5 py-1.5 text-xs font-semibold rounded-md bg-ui-accent text-ui-accent-fg hover:opacity-90'>{t('确定')}</button>
+            <button onClick={onCancel} className='px-3.5 py-1.5 text-xs rounded-xl border border-ui-border text-ui-text-2 hover:bg-ui-bg-subtle'>{t('取消')}</button>
+            <button onClick={onOk} className='px-3.5 py-1.5 text-xs font-semibold rounded-xl bg-ui-accent text-ui-accent-fg hover:opacity-90'>{t('确定')}</button>
           </div>
         }
       >

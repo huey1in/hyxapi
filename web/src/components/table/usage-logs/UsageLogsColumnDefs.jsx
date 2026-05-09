@@ -19,14 +19,6 @@ For commercial licensing, please contact support@quantumnous.com
 
 import React from 'react';
 import {
-  Avatar,
-  Space,
-  Tag,
-  Tooltip,
-  Popover,
-  Typography,
-} from '@douyinfe/semi-ui';
-import {
   renderGroup,
   renderQuota,
   stringToColor,
@@ -34,8 +26,7 @@ import {
   renderModelTag,
   renderModelPriceSimple,
 } from '../../../helpers';
-import { IconHelpCircle } from '@douyinfe/semi-icons';
-import { CircleAlert, Route, Sparkles } from 'lucide-react';
+import { CircleAlert, Route, Sparkles, HelpCircle } from 'lucide-react';
 
 const colors = [
   'amber',
@@ -95,53 +86,23 @@ function buildChannelAffinityTooltip(affinity, t) {
 
 // Render functions
 function renderType(type, t) {
-  switch (type) {
-    case 1:
-      return (
-        <Tag color='cyan' shape='circle'>
-          {t('充值')}
-        </Tag>
-      );
-    case 2:
-      return (
-        <Tag color='lime' shape='circle'>
-          {t('消费')}
-        </Tag>
-      );
-    case 3:
-      return (
-        <Tag color='orange' shape='circle'>
-          {t('管理')}
-        </Tag>
-      );
-    case 4:
-      return (
-        <Tag color='purple' shape='circle'>
-          {t('系统')}
-        </Tag>
-      );
-    case 5:
-      return (
-        <Tag color='red' shape='circle'>
-          {t('错误')}
-        </Tag>
-      );
-    case 6:
-      return (
-        <Tag color='teal' shape='circle'>
-          {t('退款')}
-        </Tag>
-      );
-    default:
-      return (
-        <Tag color='grey' shape='circle'>
-          {t('未知')}
-        </Tag>
-      );
-  }
+  const tagMap = {
+    1: { cls: 'bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 border-cyan-500/20', text: t('充值') },
+    2: { cls: 'bg-lime-500/10 text-lime-600 dark:text-lime-400 border-lime-500/20', text: t('消费') },
+    3: { cls: 'bg-orange-500/10 text-orange-600 dark:text-orange-400 border-orange-500/20', text: t('管理') },
+    4: { cls: 'bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-500/20', text: t('系统') },
+    5: { cls: 'bg-red-500/10 text-red-600 dark:text-red-400 border-red-500/20', text: t('错误') },
+    6: { cls: 'bg-teal-500/10 text-teal-600 dark:text-teal-400 border-teal-500/20', text: t('退款') },
+  };
+  const tag = tagMap[type] || { cls: 'bg-gray-500/10 text-gray-600 dark:text-gray-400 border-gray-500/20', text: t('未知') };
+  return (
+    <span className={`inline-flex items-center px-2 py-0.5 text-[11px] rounded-md font-medium border ${tag.cls}`}>
+      {tag.text}
+    </span>
+  );
 }
 
-function buildStreamStatusTooltip(ss, t) {
+function buildStreamStatusTooltipText(ss, t) {
   if (!ss) return null;
   const lines = [
     t('流状态') + '：' + t('异常'),
@@ -153,13 +114,7 @@ function buildStreamStatusTooltip(ss, t) {
   if (ss.end_error) {
     lines.push(ss.end_error);
   }
-  return (
-    <div style={{ lineHeight: 1.6, display: 'flex', flexDirection: 'column' }}>
-      {lines.map((line, i) => (
-        <div key={i}>{line}</div>
-      ))}
-    </div>
-  );
+  return lines.join('\n');
 }
 
 function renderIsStream(bool, t, streamStatus) {
@@ -168,101 +123,78 @@ function renderIsStream(bool, t, streamStatus) {
   if (bool) {
     return (
       <span style={{ position: 'relative', display: 'inline-block' }}>
-        <Tag color='blue' shape='circle'>
+        <span className='inline-flex items-center px-2 py-0.5 text-[11px] rounded-md font-medium bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20'>
           {t('流')}
-        </Tag>
+        </span>
         {isError && (
-          <Tooltip content={buildStreamStatusTooltip(streamStatus, t)}>
-            <span
-              style={{
-                position: 'absolute',
-                right: -4,
-                top: -4,
-                lineHeight: 1,
-                color: '#ef4444',
-                cursor: 'pointer',
-                userSelect: 'none',
-              }}
-            >
-              <CircleAlert
-                size={14}
-                strokeWidth={2.5}
-                color='currentColor'
-              />
-            </span>
-          </Tooltip>
+          <span
+            title={buildStreamStatusTooltipText(streamStatus, t)}
+            style={{
+              position: 'absolute',
+              right: -4,
+              top: -4,
+              lineHeight: 1,
+              color: '#ef4444',
+              cursor: 'pointer',
+              userSelect: 'none',
+            }}
+          >
+            <CircleAlert
+              size={14}
+              strokeWidth={2.5}
+              color='currentColor'
+            />
+          </span>
         )}
       </span>
     );
   } else {
     return (
-      <Tag color='purple' shape='circle'>
+      <span className='inline-flex items-center px-2 py-0.5 text-[11px] rounded-md font-medium bg-purple-500/10 text-purple-600 dark:text-purple-400 border border-purple-500/20'>
         {t('非流')}
-      </Tag>
+      </span>
     );
   }
 }
 
 function renderUseTime(type, t) {
   const time = parseInt(type);
-  if (time < 101) {
-    return (
-      <Tag color='green' shape='circle'>
-        {' '}
-        {time} s{' '}
-      </Tag>
-    );
-  } else if (time < 300) {
-    return (
-      <Tag color='orange' shape='circle'>
-        {' '}
-        {time} s{' '}
-      </Tag>
-    );
-  } else {
-    return (
-      <Tag color='red' shape='circle'>
-        {' '}
-        {time} s{' '}
-      </Tag>
-    );
+  let cls = 'bg-green-500/10 text-green-600 dark:text-green-400 border-green-500/20';
+  if (time >= 300) {
+    cls = 'bg-red-500/10 text-red-600 dark:text-red-400 border-red-500/20';
+  } else if (time >= 101) {
+    cls = 'bg-orange-500/10 text-orange-600 dark:text-orange-400 border-orange-500/20';
   }
+  return (
+    <span className={`inline-flex items-center px-2 py-0.5 text-[11px] rounded-md font-medium border ${cls}`}>
+      {time} s
+    </span>
+  );
 }
 
 function renderFirstUseTime(type, t) {
   let time = parseFloat(type) / 1000.0;
   time = time.toFixed(1);
-  if (time < 3) {
-    return (
-      <Tag color='green' shape='circle'>
-        {' '}
-        {time} s{' '}
-      </Tag>
-    );
-  } else if (time < 10) {
-    return (
-      <Tag color='orange' shape='circle'>
-        {' '}
-        {time} s{' '}
-      </Tag>
-    );
-  } else {
-    return (
-      <Tag color='red' shape='circle'>
-        {' '}
-        {time} s{' '}
-      </Tag>
-    );
+  let cls = 'bg-green-500/10 text-green-600 dark:text-green-400 border-green-500/20';
+  if (time >= 10) {
+    cls = 'bg-red-500/10 text-red-600 dark:text-red-400 border-red-500/20';
+  } else if (time >= 3) {
+    cls = 'bg-orange-500/10 text-orange-600 dark:text-orange-400 border-orange-500/20';
   }
+  return (
+    <span className={`inline-flex items-center px-2 py-0.5 text-[11px] rounded-md font-medium border ${cls}`}>
+      {time} s
+    </span>
+  );
 }
 
 function renderBillingTag(record, t) {
   const other = getLogOther(record.other);
   if (other?.billing_source === 'subscription') {
     return (
-      <Tag color='green' shape='circle'>
+      <span className='inline-flex items-center px-2 py-0.5 text-[11px] rounded-md font-medium bg-green-500/10 text-green-600 dark:text-green-400 border border-green-500/20'>
         {t('订阅抵扣')}
-      </Tag>
+      </span>
     );
   }
   return null;
@@ -282,51 +214,20 @@ function renderModelName(record, copyText, t) {
     });
   } else {
     return (
-      <>
-        <Space vertical align={'start'}>
-          <Popover
-            content={
-              <div style={{ padding: 10 }}>
-                <Space vertical align={'start'}>
-                  <div className='flex items-center'>
-                    <Typography.Text strong style={{ marginRight: 8 }}>
-                      {t('请求并计费模型')}:
-                    </Typography.Text>
-                    {renderModelTag(record.model_name, {
-                      onClick: (event) => {
-                        copyText(event, record.model_name).then((r) => {});
-                      },
-                    })}
-                  </div>
-                  <div className='flex items-center'>
-                    <Typography.Text strong style={{ marginRight: 8 }}>
-                      {t('实际模型')}:
-                    </Typography.Text>
-                    {renderModelTag(other.upstream_model_name, {
-                      onClick: (event) => {
-                        copyText(event, other.upstream_model_name).then(
-                          (r) => {},
-                        );
-                      },
-                    })}
-                  </div>
-                </Space>
-              </div>
-            }
-          >
-            {renderModelTag(record.model_name, {
-              onClick: (event) => {
-                copyText(event, record.model_name).then((r) => {});
-              },
-              suffixIcon: (
-                <Route
-                  style={{ width: '0.9em', height: '0.9em', opacity: 0.75 }}
-                />
-              ),
-            })}
-          </Popover>
-        </Space>
-      </>
+      <span
+        title={`${t('请求并计费模型')}: ${record.model_name}\n${t('实际模型')}: ${other.upstream_model_name}`}
+      >
+        {renderModelTag(record.model_name, {
+          onClick: (event) => {
+            copyText(event, record.model_name).then((r) => {});
+          },
+          suffixIcon: (
+            <Route
+              style={{ width: '0.9em', height: '0.9em', opacity: 0.75 }}
+            />
+          ),
+        })}
+      </span>
     );
   }
 }
@@ -402,14 +303,13 @@ function renderCompactDetailSummary(summarySegments) {
       }}
     >
       {segments.map((segment, index) => (
-        <Typography.Text
+        <span
           key={`${segment.text}-${index}`}
-          type={segment.tone === 'secondary' ? 'tertiary' : undefined}
-          size={segment.tone === 'secondary' ? 'small' : undefined}
+          className={segment.tone === 'secondary' ? 'text-ui-text-3' : 'text-ui-text-2'}
           style={{
             display: 'block',
             maxWidth: '100%',
-            fontSize: 12,
+            fontSize: segment.tone === 'secondary' ? 11 : 12,
             marginTop: index === 0 ? 0 : 2,
             whiteSpace: 'nowrap',
             overflow: 'hidden',
@@ -417,7 +317,7 @@ function renderCompactDetailSummary(summarySegments) {
           }}
         >
           {segment.text}
-        </Typography.Text>
+        </span>
       ))}
     </div>
   );
@@ -554,63 +454,48 @@ export const getLogsColumns = ({
             record.type === 2 ||
             record.type === 5 ||
             record.type === 6) ? (
-          <Space>
+          <div className='flex items-center gap-1'>
             <span style={{ position: 'relative', display: 'inline-block' }}>
-              <Tooltip content={record.channel_name || t('未知渠道')}>
-                <span>
-                  <Tag
-                    color={colors[parseInt(text) % colors.length]}
-                    shape='circle'
-                  >
-                    {text}
-                  </Tag>
-                </span>
-              </Tooltip>
+              <span
+                title={record.channel_name || t('未知渠道')}
+                className={`inline-flex items-center px-2 py-0.5 text-[11px] rounded-md font-medium border bg-${colors[parseInt(text) % colors.length]}-500/10 text-${colors[parseInt(text) % colors.length]}-600 dark:text-${colors[parseInt(text) % colors.length]}-400 border-${colors[parseInt(text) % colors.length]}-500/20`}
+                style={{ cursor: 'default' }}
+              >
+                {text}
+              </span>
               {showMarker && (
-                <Tooltip
-                  content={
-                    <div style={{ lineHeight: 1.6 }}>
-                      <div>{content}</div>
-                      {affinity ? (
-                        <div style={{ marginTop: 6 }}>
-                          {buildChannelAffinityTooltip(affinity, t)}
-                        </div>
-                      ) : null}
-                    </div>
-                  }
+                <span
+                  title={content}
+                  style={{
+                    position: 'absolute',
+                    right: -4,
+                    top: -4,
+                    lineHeight: 1,
+                    fontWeight: 600,
+                    color: '#f59e0b',
+                    cursor: 'pointer',
+                    userSelect: 'none',
+                  }}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    openChannelAffinityUsageCacheModal?.(affinity);
+                  }}
                 >
-                  <span
-                    style={{
-                      position: 'absolute',
-                      right: -4,
-                      top: -4,
-                      lineHeight: 1,
-                      fontWeight: 600,
-                      color: '#f59e0b',
-                      cursor: 'pointer',
-                      userSelect: 'none',
-                    }}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      openChannelAffinityUsageCacheModal?.(affinity);
-                    }}
-                  >
-                    <Sparkles
-                      size={14}
-                      strokeWidth={2}
-                      color='currentColor'
-                      fill='currentColor'
-                    />
-                  </span>
-                </Tooltip>
+                  <Sparkles
+                    size={14}
+                    strokeWidth={2}
+                    color='currentColor'
+                    fill='currentColor'
+                  />
+                </span>
               )}
             </span>
             {isMultiKey && (
-              <Tag color='white' shape='circle'>
+              <span className='inline-flex items-center px-2 py-0.5 text-[11px] rounded-md font-medium bg-gray-500/10 text-gray-600 dark:text-gray-400 border border-gray-500/20'>
                 {multiKeyIndex}
-              </Tag>
+              </span>
             )}
-          </Space>
+          </div>
         ) : null;
       },
     },
@@ -620,18 +505,17 @@ export const getLogsColumns = ({
       dataIndex: 'username',
       render: (text, record, index) => {
         return isAdminUser ? (
-          <div>
-            <Avatar
-              size='extra-small'
-              color={stringToColor(text)}
-              style={{ marginRight: 4 }}
+          <div className='flex items-center gap-1'>
+            <span
+              className='inline-flex items-center justify-center w-5 h-5 rounded-full text-[10px] font-medium text-white cursor-pointer'
+              style={{ backgroundColor: stringToColor(text), marginRight: 4 }}
               onClick={(event) => {
                 event.stopPropagation();
                 showUserInfoFunc(record.user_id);
               }}
             >
               {typeof text === 'string' && text.slice(0, 1)}
-            </Avatar>
+            </span>
             {text}
           </div>
         ) : (
@@ -649,16 +533,14 @@ export const getLogsColumns = ({
           record.type === 5 ||
           record.type === 6 ? (
           <div>
-            <Tag
-              color='grey'
-              shape='circle'
+            <span
+              className='inline-flex items-center px-2 py-0.5 text-[11px] rounded-md font-medium bg-gray-500/10 text-gray-600 dark:text-gray-400 border border-gray-500/20 cursor-pointer'
               onClick={(event) => {
                 copyText(event, text);
               }}
             >
-              {' '}
-              {t(text)}{' '}
-            </Tag>
+              {t(text)}
+            </span>
           </div>
         ) : (
           <></>
@@ -736,22 +618,18 @@ export const getLogsColumns = ({
         if (record.is_stream) {
           let other = getLogOther(record.other);
           return (
-            <>
-              <Space>
-                {renderUseTime(text, t)}
-                {renderFirstUseTime(other?.frt, t)}
-                {renderIsStream(record.is_stream, t, other?.stream_status)}
-              </Space>
-            </>
+            <div className='flex items-center gap-1 flex-wrap'>
+              {renderUseTime(text, t)}
+              {renderFirstUseTime(other?.frt, t)}
+              {renderIsStream(record.is_stream, t, other?.stream_status)}
+            </div>
           );
         } else {
           return (
-            <>
-              <Space>
-                {renderUseTime(text, t)}
-                {renderIsStream(record.is_stream, t)}
-              </Space>
-            </>
+            <div className='flex items-center gap-1 flex-wrap'>
+              {renderUseTime(text, t)}
+              {renderIsStream(record.is_stream, t)}
+            </div>
           );
         }
       },
@@ -761,13 +639,13 @@ export const getLogsColumns = ({
       title: (
         <div className='flex items-center gap-1'>
           {t('输入')}
-          <Tooltip
-            content={t(
+          <span
+            title={t(
               '根据 Anthropic 协定，/v1/messages 的输入 tokens 仅统计非缓存输入，不包含缓存读取与缓存写入 tokens。',
             )}
           >
-            <IconHelpCircle className='text-gray-400 cursor-help' />
-          </Tooltip>
+            <HelpCircle size={12} className='text-ui-text-3 cursor-help' />
+          </span>
         </div>
       ),
       dataIndex: 'prompt_tokens',
@@ -803,7 +681,7 @@ export const getLogsColumns = ({
                 style={{
                   marginTop: 2,
                   fontSize: 11,
-                  color: 'var(--semi-color-text-2)',
+                  color: 'var(--color-ui-text-3, #888)',
                   whiteSpace: 'nowrap',
                 }}
               >
@@ -852,9 +730,9 @@ export const getLogsColumns = ({
         if (isSubscription) {
           // Subscription billed: show only tag (no $0), but keep tooltip for equivalent cost.
           return (
-            <Tooltip content={`${t('由订阅抵扣')}：${renderQuota(text, 6)}`}>
-              <span>{renderBillingTag(record, t)}</span>
-            </Tooltip>
+            <span title={`${t('由订阅抵扣')}：${renderQuota(text, 6)}`}>
+              {renderBillingTag(record, t)}
+            </span>
           );
         }
         return <>{renderQuota(text, 6)}</>;
@@ -865,13 +743,13 @@ export const getLogsColumns = ({
       title: (
         <div className='flex items-center gap-1'>
           {t('IP')}
-          <Tooltip
-            content={t(
+          <span
+            title={t(
               '只有当用户设置开启IP记录时，才会进行请求和错误类型日志的IP记录',
             )}
           >
-            <IconHelpCircle className='text-gray-400 cursor-help' />
-          </Tooltip>
+            <HelpCircle size={12} className='text-ui-text-3 cursor-help' />
+          </span>
         </div>
       ),
       dataIndex: 'ip',
@@ -882,19 +760,15 @@ export const getLogsColumns = ({
             (isAdminUser && record.type === 1)) &&
           text;
         return showIp ? (
-          <Tooltip content={text}>
-            <span>
-              <Tag
-                color='orange'
-                shape='circle'
-                onClick={(event) => {
-                  copyText(event, text);
-                }}
-              >
-                {text}
-              </Tag>
-            </span>
-          </Tooltip>
+          <span
+            title={text}
+            className='inline-flex items-center px-2 py-0.5 text-[11px] rounded-md font-medium bg-orange-500/10 text-orange-600 dark:text-orange-400 border border-orange-500/20 cursor-pointer'
+            onClick={(event) => {
+              copyText(event, text);
+            }}
+          >
+            {text}
+          </span>
         ) : (
           <></>
         );
@@ -945,18 +819,21 @@ export const getLogsColumns = ({
 
         if (!detailSummary) {
           return (
-            <Typography.Paragraph
-              ellipsis={{
-                rows: 2,
-                showTooltip: {
-                  type: 'popover',
-                  opts: { style: { width: 240 } },
-                },
+            <div
+              className='text-sm text-ui-text-2'
+              style={{
+                maxWidth: 200,
+                marginBottom: 0,
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                display: '-webkit-box',
+                WebkitLineClamp: 2,
+                WebkitBoxOrient: 'vertical',
               }}
-              style={{ maxWidth: 200, marginBottom: 0 }}
+              title={text}
             >
               {text}
-            </Typography.Paragraph>
+            </div>
           );
         }
 

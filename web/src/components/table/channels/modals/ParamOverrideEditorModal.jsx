@@ -290,14 +290,14 @@ const Modal = ({
           <div className='flex justify-end gap-2 px-5 py-3 border-t border-ui-border'>
             <button
               onClick={onCancel}
-              className='inline-flex items-center px-3.5 py-1.5 text-xs font-medium rounded-md border border-ui-border text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-subtle whitespace-nowrap'
+              className='inline-flex items-center px-3.5 py-1.5 text-xs font-medium rounded-xl border border-ui-border text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-subtle whitespace-nowrap'
             >
               {cancelText || '取消'}
             </button>
             {onOk && (
               <button
                 onClick={onOk}
-                className='inline-flex items-center px-4 py-1.5 text-xs font-semibold rounded-md bg-ui-accent text-ui-accent-fg hover:bg-ui-accent-hover whitespace-nowrap'
+                className='inline-flex items-center px-4 py-1.5 text-xs font-semibold rounded-xl bg-ui-accent text-ui-accent-fg hover:bg-ui-accent-hover whitespace-nowrap'
               >
                 {okText || '确定'}
               </button>

@@ -391,7 +391,7 @@ const EditTagModal = (props) => {
 
   const title = (
     <div className='flex items-center gap-2'>
-      <span className='inline-flex items-center px-2 py-0.5 text-[11px] rounded-md font-medium bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20'>
+      <span className='inline-flex items-center px-2 py-0.5 text-[11px] rounded-xl font-medium bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20'>
         {t('编辑')}
       </span>
       <h3

@@ -21,13 +21,13 @@ import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { Hash, Thermometer, Target, Repeat, Ban, Shuffle, Check, X } from 'lucide-react';
 
-const inputClass = 'w-full px-3 py-1.5 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-black bg-white disabled:opacity-50 disabled:cursor-not-allowed';
+const inputClass = 'w-full px-3 py-1.5 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-black bg-ui-bg-elevated disabled:opacity-50 disabled:cursor-not-allowed';
 
 const ToggleBtn = ({ enabled, onClick, disabled }) => (
   <button
     onClick={onClick}
     disabled={disabled}
-    className={`w-5 h-5 rounded-full flex items-center justify-center transition-colors flex-shrink-0 ${enabled ? 'bg-black text-white' : 'border border-gray-300 text-gray-400 bg-white'} disabled:opacity-40`}
+    className={`w-5 h-5 rounded-full flex items-center justify-center transition-colors flex-shrink-0 ${enabled ? 'bg-black text-white' : 'border border-gray-300 text-ui-text-3 bg-ui-bg-elevated'} disabled:opacity-40`}
   >
     {enabled ? <Check size={10} /> : <X size={10} />}
   </button>
@@ -39,11 +39,11 @@ const ParamSlider = ({ label, icon, desc, name, value, onChange, onToggle, enabl
       <div className='flex items-center gap-2'>
         {icon}
         <span className='text-sm font-medium'>{label}</span>
-        <span className='text-xs text-gray-500 bg-gray-100 px-1.5 py-0.5 rounded'>{value}</span>
+        <span className='text-xs text-ui-text-2 bg-ui-bg-subtle px-1.5 py-0.5 rounded'>{value}</span>
       </div>
       <ToggleBtn enabled={enabled} onClick={onToggle} disabled={disabled} />
     </div>
-    {desc && <p className='text-xs text-gray-400 mb-2'>{desc}</p>}
+    {desc && <p className='text-xs text-ui-text-3 mb-2'>{desc}</p>}
     <input
       type='range'
       min={min}
@@ -62,19 +62,19 @@ const ParameterControl = ({ inputs, parameterEnabled, onInputChange, onParameter
 
   return (
     <>
-      <ParamSlider label='Temperature' icon={<Thermometer size={14} className='text-gray-400' />} desc={t('控制输出的随机性和创造性')}
+      <ParamSlider label='Temperature' icon={<Thermometer size={14} className='text-ui-text-3' />} desc={t('控制输出的随机性和创造性')}
         value={inputs.temperature} onChange={(v) => onInputChange('temperature', v)} onToggle={() => onParameterToggle('temperature')}
         enabled={parameterEnabled.temperature} disabled={disabled} min={0.1} max={1} step={0.1} />
 
-      <ParamSlider label='Top P' icon={<Target size={14} className='text-gray-400' />} desc={t('核采样，控制词汇选择的多样性')}
+      <ParamSlider label='Top P' icon={<Target size={14} className='text-ui-text-3' />} desc={t('核采样，控制词汇选择的多样性')}
         value={inputs.top_p} onChange={(v) => onInputChange('top_p', v)} onToggle={() => onParameterToggle('top_p')}
         enabled={parameterEnabled.top_p} disabled={disabled} min={0.1} max={1} step={0.1} />
 
-      <ParamSlider label='Frequency Penalty' icon={<Repeat size={14} className='text-gray-400' />} desc={t('频率惩罚，减少重复词汇的出现')}
+      <ParamSlider label='Frequency Penalty' icon={<Repeat size={14} className='text-ui-text-3' />} desc={t('频率惩罚，减少重复词汇的出现')}
         value={inputs.frequency_penalty} onChange={(v) => onInputChange('frequency_penalty', v)} onToggle={() => onParameterToggle('frequency_penalty')}
         enabled={parameterEnabled.frequency_penalty} disabled={disabled} min={-2} max={2} step={0.1} />
 
-      <ParamSlider label='Presence Penalty' icon={<Ban size={14} className='text-gray-400' />} desc={t('存在惩罚，鼓励讨论新话题')}
+      <ParamSlider label='Presence Penalty' icon={<Ban size={14} className='text-ui-text-3' />} desc={t('存在惩罚，鼓励讨论新话题')}
         value={inputs.presence_penalty} onChange={(v) => onInputChange('presence_penalty', v)} onToggle={() => onParameterToggle('presence_penalty')}
         enabled={parameterEnabled.presence_penalty} disabled={disabled} min={-2} max={2} step={0.1} />
 
@@ -82,7 +82,7 @@ const ParameterControl = ({ inputs, parameterEnabled, onInputChange, onParameter
       <div className={`mb-4 transition-opacity duration-200 ${!parameterEnabled.max_tokens || disabled ? 'opacity-50' : ''}`}>
         <div className='flex items-center justify-between mb-2'>
           <div className='flex items-center gap-2'>
-            <Hash size={14} className='text-gray-400' />
+            <Hash size={14} className='text-ui-text-3' />
             <span className='text-sm font-medium'>Max Tokens</span>
           </div>
           <ToggleBtn enabled={parameterEnabled.max_tokens} onClick={() => onParameterToggle('max_tokens')} disabled={disabled} />
@@ -102,9 +102,9 @@ const ParameterControl = ({ inputs, parameterEnabled, onInputChange, onParameter
       <div className={`mb-4 transition-opacity duration-200 ${!parameterEnabled.seed || disabled ? 'opacity-50' : ''}`}>
         <div className='flex items-center justify-between mb-2'>
           <div className='flex items-center gap-2'>
-            <Shuffle size={14} className='text-gray-400' />
+            <Shuffle size={14} className='text-ui-text-3' />
             <span className='text-sm font-medium'>Seed</span>
-            <span className='text-xs text-gray-400'>({t('可选，用于复现结果')})</span>
+            <span className='text-xs text-ui-text-3'>({t('可选，用于复现结果')})</span>
           </div>
           <ToggleBtn enabled={parameterEnabled.seed} onClick={() => onParameterToggle('seed')} disabled={disabled} />
         </div>

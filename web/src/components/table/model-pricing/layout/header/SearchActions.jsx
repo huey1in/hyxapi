@@ -18,8 +18,8 @@ For commercial licensing, please contact support@quantumnous.com
 */
 
 import React, { memo, useCallback } from 'react';
-import { Input, Button, Switch, Select, Divider } from '@douyinfe/semi-ui';
-import { IconSearch, IconCopy, IconFilter } from '@douyinfe/semi-icons';
+import { Search, Copy, Filter } from 'lucide-react';
+import Select from '../../../../common/form/Select';
 
 const SearchActions = memo(
   ({
@@ -66,41 +66,44 @@ const SearchActions = memo(
 
     return (
       <div className='flex items-center gap-2 w-full'>
-        <div className='flex-1'>
-          <Input
-            prefix={<IconSearch />}
+        <div className='flex-1 relative'>
+          <Search size={16} className='absolute left-3 top-1/2 -translate-y-1/2 text-ui-text-3' />
+          <input
+            className='w-full pl-9 pr-3.5 py-2 text-sm bg-transparent border border-ui-border rounded-xl text-ui-text placeholder:text-ui-text-3 outline-none focus:border-ui-text-3 transition-colors'
             placeholder={t('模糊搜索模型名称')}
             value={searchValue}
             onCompositionStart={handleCompositionStart}
             onCompositionEnd={handleCompositionEnd}
-            onChange={handleChange}
-            showClear
+            onChange={(e) => handleChange(e.target.value)}
           />
         </div>
 
-        <Button
-          theme='outline'
-          type='primary'
-          icon={<IconCopy />}
+        <button
+          className='inline-flex items-center gap-1.5 px-4 py-2 text-sm font-semibold rounded-xl bg-ui-accent text-ui-accent-fg hover:bg-ui-accent-hover transition-colors disabled:opacity-50'
           onClick={handleCopyClick}
           disabled={selectedRowKeys.length === 0}
-          className='!bg-blue-500 hover:!bg-blue-600 !text-white disabled:!bg-gray-300 disabled:!text-gray-500'
         >
+          <Copy size={14} />
           {t('复制')}
-        </Button>
+        </button>
 
         {!isMobile && (
           <>
-            <Divider layout='vertical' margin='8px' />
+            <div className='border-l border-ui-border h-6 mx-1' />
 
             {/* 充值价格显示开关 */}
             {supportsCurrencyDisplay && (
               <div className='flex items-center gap-2'>
-                <span className='text-sm text-gray-600'>{t('充值价格显示')}</span>
-                <Switch
-                  checked={showWithRecharge}
-                  onChange={setShowWithRecharge}
-                />
+                <span className='text-sm text-ui-text-2'>{t('充值价格显示')}</span>
+                <label className='relative inline-flex items-center cursor-pointer'>
+                  <input
+                    type='checkbox'
+                    className='sr-only peer'
+                    checked={showWithRecharge}
+                    onChange={(e) => setShowWithRecharge(e.target.checked)}
+                  />
+                  <div className="w-9 h-5 bg-ui-bg-subtle border border-ui-border rounded-full peer peer-checked:bg-ui-accent peer-checked:border-ui-accent transition-colors after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:after:translate-x-full" />
+                </label>
               </div>
             )}
 
@@ -109,7 +112,7 @@ const SearchActions = memo(
               <Select
                 value={currency}
                 onChange={setCurrency}
-                optionList={[
+                options={[
                   { value: 'USD', label: 'USD' },
                   { value: 'CNY', label: 'CNY' },
                   { value: 'CUSTOM', label: t('自定义货币') },
@@ -119,39 +122,44 @@ const SearchActions = memo(
 
             {/* 显示倍率开关 */}
             <div className='flex items-center gap-2'>
-              <span className='text-sm text-gray-600'>{t('倍率')}</span>
-              <Switch checked={showRatio} onChange={setShowRatio} />
+              <span className='text-sm text-ui-text-2'>{t('倍率')}</span>
+              <label className='relative inline-flex items-center cursor-pointer'>
+                <input
+                  type='checkbox'
+                  className='sr-only peer'
+                  checked={showRatio}
+                  onChange={(e) => setShowRatio(e.target.checked)}
+                />
+                <div className="w-9 h-5 bg-ui-bg-subtle border border-ui-border rounded-full peer peer-checked:bg-ui-accent peer-checked:border-ui-accent transition-colors after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:after:translate-x-full" />
+              </label>
             </div>
 
             {/* 视图模式切换按钮 */}
-            <Button
-              theme={viewMode === 'table' ? 'solid' : 'outline'}
-              type={viewMode === 'table' ? 'primary' : 'tertiary'}
+            <button
+              className={`inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium rounded-xl border transition-colors ${viewMode === 'table' ? 'bg-ui-accent text-ui-accent-fg border-ui-accent' : 'border-ui-border text-ui-text hover:bg-ui-bg-subtle'}`}
               onClick={handleViewModeToggle}
             >
               {t('表格视图')}
-            </Button>
+            </button>
 
             {/* Token单位切换按钮 */}
-            <Button
-              theme={tokenUnit === 'K' ? 'solid' : 'outline'}
-              type={tokenUnit === 'K' ? 'primary' : 'tertiary'}
+            <button
+              className={`inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium rounded-xl border transition-colors ${tokenUnit === 'K' ? 'bg-ui-accent text-ui-accent-fg border-ui-accent' : 'border-ui-border text-ui-text hover:bg-ui-bg-subtle'}`}
               onClick={handleTokenUnitToggle}
             >
               {tokenUnit}
-            </Button>
+            </button>
           </>
         )}
 
         {isMobile && (
-          <Button
-            theme='outline'
-            type='tertiary'
-            icon={<IconFilter />}
+          <button
+            className='inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium rounded-xl border border-ui-border text-ui-text hover:bg-ui-bg-subtle transition-colors'
             onClick={handleFilterClick}
           >
+            <Filter size={14} />
             {t('筛选')}
-          </Button>
+          </button>
         )}
       </div>
     );

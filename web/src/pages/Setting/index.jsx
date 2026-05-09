@@ -56,7 +56,7 @@ const Setting = () => {
 
   if (!isRoot()) {
     return (
-      <div className='min-h-[calc(100vh-4rem)] mt-16 px-4 py-5 md:px-6 md:py-6 bg-ui-bg'>
+      <div className='px-4 pt-8 pb-6 md:px-6 md:pt-10 md:pb-8'>
         <div className='max-w-[1400px] mx-auto py-16 text-center text-ui-text-3 text-sm'>
           {t('需要超级管理员权限')}
         </div>
@@ -67,7 +67,7 @@ const Setting = () => {
   const Active = TABS.find((t) => t.key === active) || TABS[0];
 
   return (
-    <div className='min-h-[calc(100vh-4rem)] mt-16 px-4 py-5 md:px-6 md:py-6 bg-ui-bg'>
+    <div className='px-4 pt-8 pb-6 md:px-6 md:pt-10 md:pb-8'>
       <div className='max-w-[1400px] mx-auto'>
         {/* Header */}
         <div className='flex items-center justify-between gap-3 mb-5'>
@@ -88,7 +88,7 @@ const Setting = () => {
                 <button
                   key={tb.key}
                   onClick={() => onChange(tb.key)}
-                  className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-md whitespace-nowrap transition-colors flex-shrink-0 ${
+                  className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-xl whitespace-nowrap transition-colors flex-shrink-0 ${
                     isActive
                       ? 'bg-ui-bg-subtle text-ui-text font-semibold border border-ui-text-3'
                       : 'border border-transparent text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-subtle'

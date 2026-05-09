@@ -479,7 +479,7 @@ const Home = () => {
                           <button
                             key={proto}
                             onClick={() => setTab(proto)}
-                            className='font-mono text-xs px-2.5 py-1.5 rounded-md transition-colors'
+                            className='font-mono text-xs px-2.5 py-1.5 rounded-xl transition-colors'
                             style={
                               tab === proto
                                 ? { background: 'rgba(255,255,255,0.1)', color: '#fff' }
@@ -494,7 +494,7 @@ const Home = () => {
                       </div>
                       <button
                         onClick={handleCopySnippet}
-                        className='flex items-center gap-1.5 font-mono text-xs px-2.5 py-1.5 rounded-md transition-colors'
+                        className='flex items-center gap-1.5 font-mono text-xs px-2.5 py-1.5 rounded-xl transition-colors'
                         style={{ color: copied ? '#4ade80' : 'rgba(255,255,255,0.5)' }}
                       >
                         {copied ? <Check size={12} /> : <Copy size={12} />}

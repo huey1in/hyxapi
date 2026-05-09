@@ -42,7 +42,7 @@ const TAG_COLOR_CLASSES = {
 
 const Tag = ({ color = 'grey', children, className = '' }) => (
   <span
-    className={`inline-flex items-center px-2 py-0.5 text-[11px] rounded-md font-medium border ${
+    className={`inline-flex items-center px-2 py-0.5 text-[11px] rounded-xl font-medium border ${
       TAG_COLOR_CLASSES[color] || TAG_COLOR_CLASSES.grey
     } ${className}`}
   >

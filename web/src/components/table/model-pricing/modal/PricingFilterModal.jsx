@@ -18,7 +18,7 @@ For commercial licensing, please contact support@quantumnous.com
 */
 
 import React from 'react';
-import { Modal } from '@douyinfe/semi-ui';
+import ModalDialog from '../../../common/ModalDialog';
 import { resetPricingFilters } from '../../../../helpers/utils';
 import FilterModalContent from './components/FilterModalContent';
 import FilterModalFooter from './components/FilterModalFooter';
@@ -45,22 +45,25 @@ const PricingFilterModal = ({ visible, onClose, sidebarProps, t }) => {
   );
 
   return (
-    <Modal
+    <ModalDialog
+      open={visible}
+      onClose={onClose}
       title={t('筛选')}
-      visible={visible}
-      onCancel={onClose}
+      width='100%'
       footer={footer}
-      style={{ width: '100%', height: '100%', margin: 0 }}
-      bodyStyle={{
-        padding: 0,
-        height: 'calc(100vh - 160px)',
-        overflowY: 'auto',
-        scrollbarWidth: 'none',
-        msOverflowStyle: 'none',
-      }}
+      hideFooter={false}
     >
-      <FilterModalContent sidebarProps={sidebarProps} t={t} />
-    </Modal>
+      <div
+        style={{
+          height: 'calc(100vh - 160px)',
+          overflowY: 'auto',
+          scrollbarWidth: 'none',
+          msOverflowStyle: 'none',
+        }}
+      >
+        <FilterModalContent sidebarProps={sidebarProps} t={t} />
+      </div>
+    </ModalDialog>
   );
 };
 

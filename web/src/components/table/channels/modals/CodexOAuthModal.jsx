@@ -95,7 +95,7 @@ const CodexOAuthModal = ({ visible, onCancel, onSuccess }) => {
           </button>
         </div>
         <div className='p-5 space-y-3'>
-          <div className='flex items-start gap-2 px-3 py-2 rounded-md border border-blue-500/30 bg-blue-500/5'>
+          <div className='flex items-start gap-2 px-3 py-2 rounded-xl border border-blue-500/30 bg-blue-500/5'>
             <Info size={14} className='text-blue-500 flex-shrink-0 mt-0.5' />
             <div className='text-xs text-ui-text-2 leading-relaxed'>
               {t('1) 点击「打开授权页面」完成登录；2) 浏览器会跳转到 localhost（页面打不开也没关系）；3) 复制地址栏完整 URL 粘贴到下方；4) 点击「生成并填入」。')}
@@ -105,7 +105,7 @@ const CodexOAuthModal = ({ visible, onCancel, onSuccess }) => {
             <button
               onClick={startOAuth}
               disabled={loading}
-              className='inline-flex items-center gap-1.5 px-4 py-2 text-sm font-semibold rounded-md bg-ui-accent text-ui-accent-fg hover:bg-ui-accent-hover disabled:opacity-50 whitespace-nowrap'
+              className='inline-flex items-center gap-1.5 px-4 py-2 text-sm font-semibold rounded-xl bg-ui-accent text-ui-accent-fg hover:bg-ui-accent-hover disabled:opacity-50 whitespace-nowrap'
             >
               {loading && <Loader2 size={12} className='animate-spin' />}
               {t('打开授权页面')}
@@ -113,7 +113,7 @@ const CodexOAuthModal = ({ visible, onCancel, onSuccess }) => {
             <button
               disabled={!authorizeUrl || loading}
               onClick={() => copy(authorizeUrl)}
-              className='inline-flex items-center px-3 py-2 text-sm rounded-md border border-ui-border text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-subtle disabled:opacity-40 whitespace-nowrap'
+              className='inline-flex items-center px-3 py-2 text-sm rounded-xl border border-ui-border text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-subtle disabled:opacity-40 whitespace-nowrap'
             >
               {t('复制授权链接')}
             </button>
@@ -123,7 +123,7 @@ const CodexOAuthModal = ({ visible, onCancel, onSuccess }) => {
             value={input}
             onChange={(e) => setInput(e.target.value)}
             placeholder={t('请粘贴完整回调 URL（包含 code 与 state）')}
-            className='w-full px-3 py-2 text-sm bg-ui-bg border border-ui-border rounded-md text-ui-text placeholder:text-ui-text-3 outline-none focus:border-ui-text-3 transition-colors'
+            className='w-full px-3 py-2 text-sm bg-transparent border border-ui-border rounded-xl text-ui-text placeholder:text-ui-text-3 outline-none focus:border-ui-text-3 transition-colors'
           />
           <p className='text-[11px] text-ui-text-3 leading-relaxed'>
             {t('说明：生成结果是可直接粘贴到渠道密钥里的 JSON（包含 access_token / refresh_token / account_id）。')}
@@ -133,14 +133,14 @@ const CodexOAuthModal = ({ visible, onCancel, onSuccess }) => {
           <button
             onClick={onCancel}
             disabled={loading}
-            className='inline-flex items-center px-3.5 py-1.5 text-xs font-medium rounded-md border border-ui-border text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-subtle disabled:opacity-40 whitespace-nowrap'
+            className='inline-flex items-center px-3.5 py-1.5 text-xs font-medium rounded-xl border border-ui-border text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-subtle disabled:opacity-40 whitespace-nowrap'
           >
             {t('取消')}
           </button>
           <button
             onClick={completeOAuth}
             disabled={loading}
-            className='inline-flex items-center gap-1.5 px-4 py-1.5 text-xs font-semibold rounded-md bg-ui-accent text-ui-accent-fg hover:bg-ui-accent-hover disabled:opacity-50 whitespace-nowrap'
+            className='inline-flex items-center gap-1.5 px-4 py-1.5 text-xs font-semibold rounded-xl bg-ui-accent text-ui-accent-fg hover:bg-ui-accent-hover disabled:opacity-50 whitespace-nowrap'
           >
             {loading && <Loader2 size={11} className='animate-spin' />}
             {t('生成并填入')}

@@ -18,10 +18,9 @@ For commercial licensing, please contact support@quantumnous.com
 */
 
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { Modal, Descriptions, Spin, Typography } from '@douyinfe/semi-ui';
+import ModalDialog from '../../../common/ModalDialog';
 import { API, showError, timestamp2string } from '../../../../helpers';
-
-const { Text } = Typography;
+import { Loader2 } from 'lucide-react';
 
 function formatRate(hit, total) {
   if (!total || total <= 0) return '-';
@@ -192,19 +191,16 @@ const ChannelAffinityUsageCacheModal = ({
   }, [stats, params, t]);
 
   return (
-    <Modal
+    <ModalDialog
+      open={showChannelAffinityUsageCacheModal}
+      onClose={() => setShowChannelAffinityUsageCacheModal(false)}
       title={t('渠道亲和性：上游缓存命中')}
-      visible={showChannelAffinityUsageCacheModal}
-      onCancel={() => setShowChannelAffinityUsageCacheModal(false)}
-      footer={null}
-      centered
-      closable
-      maskClosable
       width={640}
+      hideFooter
     >
       <div style={{ padding: 16 }}>
         <div style={{ marginBottom: 12 }}>
-          <Text type='tertiary' size='small'>
+          <span className='text-xs text-ui-text-3'>
             {t(
               '命中判定：usage 中存在 cached tokens（例如 cached_tokens/prompt_cache_hit_tokens）即视为命中。',
             )}
@@ -220,21 +216,31 @@ const ChannelAffinityUsageCacheModal = ({
                 {t('该记录不包含可用的 token 统计口径。')}
               </>
             ) : null}
-          </Text>
+          </span>
         </div>
-        <Spin spinning={loading} tip={t('加载中...')}>
-          {stats && rows.length > 0 ? (
-            <Descriptions data={rows} />
-          ) : (
-            <div style={{ padding: '24px 0' }}>
-              <Text type='tertiary' size='small'>
-                {loading ? t('加载中...') : t('暂无可展示数据')}
-              </Text>
-            </div>
-          )}
-        </Spin>
+        {loading ? (
+          <div className='flex items-center justify-center py-6'>
+            <Loader2 size={16} className='animate-spin text-ui-text-3' />
+            <span className='ml-2 text-sm text-ui-text-3'>{t('加载中...')}</span>
+          </div>
+        ) : stats && rows.length > 0 ? (
+          <div className='grid grid-cols-1 gap-2'>
+            {rows.map((item, i) => (
+              <div key={i} className='flex gap-3 py-1.5 border-b border-ui-divider last:border-0'>
+                <span className='text-xs text-ui-text-3 min-w-[100px]'>{item.key}</span>
+                <span className='text-xs text-ui-text'>{item.value}</span>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div style={{ padding: '24px 0' }}>
+            <span className='text-xs text-ui-text-3'>
+              {loading ? t('加载中...') : t('暂无可展示数据')}
+            </span>
+          </div>
+        )}
       </div>
-    </Modal>
+    </ModalDialog>
   );
 };
 

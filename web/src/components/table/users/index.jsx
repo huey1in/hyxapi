@@ -10,7 +10,7 @@ import AddUserModal from './modals/AddUserModal';
 import EditUserModal from './modals/EditUserModal';
 
 const inputCls =
-  'w-full pl-8 pr-7 py-1.5 text-xs bg-ui-bg border border-ui-border rounded-md text-ui-text placeholder:text-ui-text-3 outline-none focus:border-ui-text-3 transition-colors';
+  'w-full pl-8 pr-7 py-1.5 text-xs bg-transparent border border-ui-border rounded-md text-ui-text placeholder:text-ui-text-3 outline-none focus:border-ui-text-3 transition-colors';
 
 const UsersPage = () => {
   const data = useUsersData();
@@ -58,7 +58,7 @@ const UsersPage = () => {
   };
 
   return (
-    <div className='min-h-[calc(100vh-4rem)] mt-16 px-4 py-5 md:px-6 md:py-6 bg-ui-bg'>
+    <div className='px-4 pt-8 pb-6 md:px-6 md:pt-10 md:pb-8'>
       <div className='max-w-[1400px] mx-auto'>
         {/* Header */}
         <div className='flex items-center justify-between gap-3 mb-5'>
@@ -75,7 +75,7 @@ const UsersPage = () => {
           <div className='flex items-center gap-1.5'>
             <button
               onClick={() => setShowAddUser(true)}
-              className='inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-md bg-ui-accent text-ui-accent-fg hover:bg-ui-accent-hover active:scale-95 transition-all whitespace-nowrap'
+              className='inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-xl bg-ui-accent text-ui-accent-fg hover:bg-ui-accent-hover active:scale-95 transition-all whitespace-nowrap'
             >
               <Plus size={12} />
               {t('添加用户')}
@@ -83,7 +83,7 @@ const UsersPage = () => {
             <button
               onClick={refresh}
               disabled={loading || searching}
-              className='inline-flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-md border border-ui-border text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-subtle disabled:opacity-50 transition-colors whitespace-nowrap'
+              className='inline-flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-xl border border-ui-border text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-subtle disabled:opacity-50 transition-colors whitespace-nowrap'
             >
               <RefreshCw size={12} className={loading || searching ? 'animate-spin' : ''} />
               {t('刷新')}
@@ -113,14 +113,14 @@ const UsersPage = () => {
             <button
               type='submit'
               disabled={loading || searching}
-              className='inline-flex items-center px-3 py-1.5 text-xs rounded-md border border-ui-border text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-subtle disabled:opacity-50 whitespace-nowrap'
+              className='inline-flex items-center px-3 py-1.5 text-xs rounded-xl border border-ui-border text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-subtle disabled:opacity-50 whitespace-nowrap'
             >
               {searching ? t('查询中...') : t('查询')}
             </button>
             <button
               type='button'
               onClick={onReset}
-              className='inline-flex items-center px-3 py-1.5 text-xs rounded-md border border-ui-border text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-subtle whitespace-nowrap'
+              className='inline-flex items-center px-3 py-1.5 text-xs rounded-xl border border-ui-border text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-subtle whitespace-nowrap'
             >
               {t('重置')}
             </button>

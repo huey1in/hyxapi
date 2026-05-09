@@ -36,7 +36,7 @@ const ImageUrlInput = ({ imageUrls, imageEnabled, onImageUrlsChange, onImageEnab
     <div className={disabled ? 'opacity-50' : ''}>
       <div className='flex items-center justify-between mb-2'>
         <div className='flex items-center gap-2'>
-          <Image size={14} className={imageEnabled && !disabled ? 'text-blue-500' : 'text-gray-400'} />
+          <Image size={14} className={imageEnabled && !disabled ? 'text-blue-500' : 'text-ui-text-3'} />
           <span className='text-sm font-medium'>{t('图片地址')}</span>
           {disabled && <span className='text-xs text-orange-600'>({t('已在自定义模式中忽略')})</span>}
         </div>
@@ -45,9 +45,9 @@ const ImageUrlInput = ({ imageUrls, imageEnabled, onImageUrlsChange, onImageEnab
           <button
             onClick={() => !disabled && onImageEnabledChange(!imageEnabled)}
             disabled={disabled}
-            className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors disabled:opacity-40 ${imageEnabled ? 'bg-black' : 'bg-gray-200'}`}
+            className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors disabled:opacity-40 ${imageEnabled ? 'bg-black' : 'bg-ui-bg-subtle'}`}
           >
-            <span className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white transition-transform ${imageEnabled ? 'translate-x-[18px]' : 'translate-x-[2px]'}`} />
+            <span className={`inline-block h-3.5 w-3.5 transform rounded-full bg-ui-bg-elevated transition-transform ${imageEnabled ? 'translate-x-[18px]' : 'translate-x-[2px]'}`} />
           </button>
           <button
             onClick={handleAddImageUrl}
@@ -59,7 +59,7 @@ const ImageUrlInput = ({ imageUrls, imageEnabled, onImageUrlsChange, onImageEnab
         </div>
       </div>
 
-      <p className='text-xs text-gray-400 mb-2'>
+      <p className='text-xs text-ui-text-3 mb-2'>
         {!imageEnabled
           ? disabled ? t('图片功能在自定义请求体模式下不可用') : t('启用后可添加图片URL进行多模态对话')
           : imageUrls.length === 0
@@ -77,7 +77,7 @@ const ImageUrlInput = ({ imageUrls, imageEnabled, onImageUrlsChange, onImageEnab
               value={url}
               onChange={(e) => handleUpdateImageUrl(index, e.target.value)}
               disabled={!imageEnabled || disabled}
-              className='flex-1 px-2 py-1 text-xs border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-black disabled:cursor-not-allowed bg-white'
+              className='flex-1 px-2 py-1 text-xs border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-black disabled:cursor-not-allowed bg-ui-bg-elevated'
             />
             <button
               onClick={() => handleRemoveImageUrl(index)}

@@ -18,18 +18,9 @@ For commercial licensing, please contact support@quantumnous.com
 */
 
 import React, { useState, useEffect, useMemo } from 'react';
-import {
-  Card,
-  Calendar,
-  Button,
-  Typography,
-  Avatar,
-  Spin,
-  Tooltip,
-  Collapsible,
-  Modal,
-} from '@douyinfe/semi-ui';
+import { Loader2, ChevronDown, ChevronUp, Check } from 'lucide-react';
 import Turnstile from 'react-turnstile';
+import ModalDialog from '../../../common/ModalDialog';
 import { API, showError, showSuccess, renderQuota } from '../../../../helpers';
 
 const CheckinCalendar = ({ t, status, turnstileEnabled, turnstileSiteKey }) => {
@@ -50,12 +41,10 @@ const CheckinCalendar = ({ t, status, turnstileEnabled, turnstileSiteKey }) => {
   const [currentMonth, setCurrentMonth] = useState(
     new Date().toISOString().slice(0, 7),
   );
-  // 初始加载状态，用于避免折叠状态闪烁
   const [initialLoaded, setInitialLoaded] = useState(false);
-  // 折叠状态：null 表示未确定（等待首次加载）
   const [isCollapsed, setIsCollapsed] = useState(null);
 
-  // 创建日期到额度的映射，方便快速查找
+  // Map date to quota for quick lookup
   const checkinRecordsMap = useMemo(() => {
     const map = {};
     const records = checkinData.stats?.records || [];
@@ -65,16 +54,13 @@ const CheckinCalendar = ({ t, status, turnstileEnabled, turnstileSiteKey }) => {
     return map;
   }, [checkinData.stats?.records]);
 
-  // 计算本月获得的额度
+  // Calculate monthly quota
   const monthlyQuota = useMemo(() => {
     const records = checkinData.stats?.records || [];
-    return records.reduce(
-      (sum, record) => sum + (record.quota_awarded || 0),
-      0,
-    );
+    return records.reduce((sum, record) => sum + (record.quota_awarded || 0), 0);
   }, [checkinData.stats?.records]);
 
-  // 获取签到状态
+  // Fetch checkin status
   const fetchCheckinStatus = async (month) => {
     const isFirstLoad = !initialLoaded;
     setLoading(true);
@@ -83,24 +69,17 @@ const CheckinCalendar = ({ t, status, turnstileEnabled, turnstileSiteKey }) => {
       const { success, data, message } = res.data;
       if (success) {
         setCheckinData(data);
-        // 首次加载时，根据签到状态设置折叠状态
         if (isFirstLoad) {
           setIsCollapsed(data.stats?.checked_in_today ?? false);
           setInitialLoaded(true);
         }
       } else {
         showError(message || t('获取签到状态失败'));
-        if (isFirstLoad) {
-          setIsCollapsed(false);
-          setInitialLoaded(true);
-        }
+        if (isFirstLoad) { setIsCollapsed(false); setInitialLoaded(true); }
       }
     } catch (error) {
       showError(t('获取签到状态失败'));
-      if (isFirstLoad) {
-        setIsCollapsed(false);
-        setInitialLoaded(true);
-      }
+      if (isFirstLoad) { setIsCollapsed(false); setInitialLoaded(true); }
     } finally {
       setLoading(false);
     }
@@ -125,10 +104,7 @@ const CheckinCalendar = ({ t, status, turnstileEnabled, turnstileSiteKey }) => {
       const res = await postCheckin(token);
       const { success, data, message } = res.data;
       if (success) {
-        showSuccess(
-          t('签到成功！获得') + ' ' + renderQuota(data.quota_awarded),
-        );
-        // 刷新签到状态
+        showSuccess(t('签到成功！获得') + ' ' + renderQuota(data.quota_awarded));
         fetchCheckinStatus(currentMonth);
         setTurnstileModalVisible(false);
       } else {
@@ -158,214 +134,201 @@ const CheckinCalendar = ({ t, status, turnstileEnabled, turnstileSiteKey }) => {
     }
   }, [status?.checkin_enabled, currentMonth]);
 
-  // 如果签到功能未启用，不显示组件
   if (!status?.checkin_enabled) {
     return null;
   }
 
-  // 日期渲染函数 - 显示签到状态和获得的额度
-  const dateRender = (dateString) => {
-    // Semi Calendar 传入的 dateString 是 Date.toString() 格式
-    // 需要转换为 YYYY-MM-DD 格式来匹配后端数据
-    const date = new Date(dateString);
-    if (isNaN(date.getTime())) {
-      return null;
-    }
-    // 使用本地时间格式化，避免时区问题
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const day = String(date.getDate()).padStart(2, '0');
-    const formattedDate = `${year}-${month}-${day}`; // YYYY-MM-DD
-    const quotaAwarded = checkinRecordsMap[formattedDate];
-    const isCheckedIn = quotaAwarded !== undefined;
+  // Generate calendar grid for current month
+  const generateCalendarDays = () => {
+    const [year, month] = currentMonth.split('-').map(Number);
+    const firstDay = new Date(year, month - 1, 1);
+    const lastDay = new Date(year, month, 0);
+    const daysInMonth = lastDay.getDate();
+    const startDayOfWeek = firstDay.getDay(); // 0=Sun
 
-    if (isCheckedIn) {
-      return (
-        <Tooltip
-          content={`${t('获得')} ${renderQuota(quotaAwarded)}`}
-          position='top'
-        >
-          <div className='absolute inset-0 flex flex-col items-center justify-center cursor-pointer'>
-            <div className='w-6 h-6 rounded-full bg-green-500 flex items-center justify-center mb-0.5 shadow-sm'>
-              </div>
-            <div className='text-[10px] font-medium text-green-600 dark:text-green-400 leading-none'>
-              {renderQuota(quotaAwarded)}
-            </div>
-          </div>
-        </Tooltip>
-      );
+    const days = [];
+    // Fill empty cells before first day
+    for (let i = 0; i < startDayOfWeek; i++) {
+      days.push(null);
     }
-    return null;
+    for (let d = 1; d <= daysInMonth; d++) {
+      days.push(d);
+    }
+    return days;
   };
 
-  // 处理月份变化
-  const handleMonthChange = (date) => {
-    const month = date.toISOString().slice(0, 7);
-    setCurrentMonth(month);
+  const handlePrevMonth = () => {
+    const [year, month] = currentMonth.split('-').map(Number);
+    const prev = month === 1 ? `${year - 1}-12` : `${year}-${String(month - 1).padStart(2, '0')}`;
+    setCurrentMonth(prev);
   };
+
+  const handleNextMonth = () => {
+    const [year, month] = currentMonth.split('-').map(Number);
+    const next = month === 12 ? `${year + 1}-01` : `${year}-${String(month + 1).padStart(2, '0')}`;
+    setCurrentMonth(next);
+  };
+
+  const today = new Date();
+  const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+  const calendarDays = generateCalendarDays();
+  const weekDays = [t('日'), t('一'), t('二'), t('三'), t('四'), t('五'), t('六')];
 
   return (
-    <Card className='!rounded-2xl'>
-      <Modal
-        title='Security Check'
-        visible={turnstileModalVisible}
-        footer={null}
-        centered
-        onCancel={() => {
+    <div className='border border-ui-border rounded-2xl p-4' style={{ backgroundColor: 'var(--page-bg)' }}>
+      <ModalDialog
+        open={turnstileModalVisible}
+        onClose={() => {
           setTurnstileModalVisible(false);
           setTurnstileWidgetKey((v) => v + 1);
         }}
+        title='Security Check'
+        hideFooter
       >
         <div className='flex justify-center py-2'>
           <Turnstile
             key={turnstileWidgetKey}
             sitekey={turnstileSiteKey}
-            onVerify={(token) => {
-              doCheckin(token);
-            }}
-            onExpire={() => {
-              setTurnstileWidgetKey((v) => v + 1);
-            }}
+            onVerify={(token) => { doCheckin(token); }}
+            onExpire={() => { setTurnstileWidgetKey((v) => v + 1); }}
           />
         </div>
-      </Modal>
+      </ModalDialog>
 
-      {/* 卡片头部 */}
+      {/* Card header */}
       <div className='flex items-center justify-between'>
         <div
           className='flex items-center flex-1 cursor-pointer'
           onClick={() => setIsCollapsed(!isCollapsed)}
         >
-          <Avatar size='small' color='green' className='mr-3 shadow-md'>
-            </Avatar>
+          <div className='w-8 h-8 rounded-full bg-green-500/10 flex items-center justify-center mr-3'>
+            <Check size={16} className='text-green-600' />
+          </div>
           <div className='flex-1'>
             <div className='flex items-center gap-2'>
-              <Typography.Text className='text-lg font-medium'>
+              <span className='text-lg font-medium text-ui-text'>
                 {t('每日签到')}
-              </Typography.Text>
-              {isCollapsed ? (
-                ) : (
-                )}
+              </span>
+              {isCollapsed ? <ChevronDown size={16} className='text-ui-text-3' /> : <ChevronUp size={16} className='text-ui-text-3' />}
             </div>
-            <div className='text-xs text-gray-500 dark:text-gray-400'>
+            <div className='text-xs text-ui-text-2'>
               {!initialLoaded
                 ? t('正在加载签到状态...')
                 : checkinData.stats?.checked_in_today
-                  ? t('今日已签到，累计签到') +
-                    ` ${checkinData.stats?.total_checkins || 0} ` +
-                    t('天')
+                  ? t('今日已签到，累计签到') + ` ${checkinData.stats?.total_checkins || 0} ` + t('天')
                   : t('每日签到可获得随机额度奖励')}
             </div>
           </div>
         </div>
-        <Button
-          type='primary'
-          theme='solid'/>}
+        <button
           onClick={() => doCheckin()}
-          loading={checkinLoading || !initialLoaded}
-          disabled={!initialLoaded || checkinData.stats?.checked_in_today}
-          className='!bg-green-600 hover:!bg-green-700'
+          disabled={!initialLoaded || checkinData.stats?.checked_in_today || checkinLoading}
+          className='inline-flex items-center gap-1.5 px-4 py-2 text-sm font-semibold rounded-xl bg-green-600 text-white hover:bg-green-700 transition-colors disabled:opacity-50'
         >
+          {(checkinLoading || !initialLoaded) && <Loader2 size={14} className='animate-spin' />}
           {!initialLoaded
             ? t('加载中...')
             : checkinData.stats?.checked_in_today
               ? t('今日已签到')
               : t('立即签到')}
-        </Button>
+        </button>
       </div>
 
-      {/* 可折叠内容 */}
-      <Collapsible isOpen={isCollapsed === false} keepDOM>
-        {/* 签到统计 */}
-        <div className='grid grid-cols-3 gap-3 mb-4 mt-4'>
-          <div className='text-center p-2.5 bg-slate-50 dark:bg-slate-800 rounded-lg'>
-            <div className='text-xl font-bold text-green-600'>
-              {checkinData.stats?.total_checkins || 0}
+      {/* Collapsible content */}
+      {isCollapsed === false && (
+        <>
+          {/* Checkin stats */}
+          <div className='grid grid-cols-3 gap-3 mb-4 mt-4'>
+            <div className='text-center p-2.5 bg-slate-50 dark:bg-slate-800 rounded-lg'>
+              <div className='text-xl font-bold text-green-600'>
+                {checkinData.stats?.total_checkins || 0}
+              </div>
+              <div className='text-xs text-ui-text-2'>{t('累计签到')}</div>
             </div>
-            <div className='text-xs text-gray-500'>{t('累计签到')}</div>
-          </div>
-          <div className='text-center p-2.5 bg-slate-50 dark:bg-slate-800 rounded-lg'>
-            <div className='text-xl font-bold text-orange-600'>
-              {renderQuota(monthlyQuota, 6)}
+            <div className='text-center p-2.5 bg-slate-50 dark:bg-slate-800 rounded-lg'>
+              <div className='text-xl font-bold text-orange-600'>
+                {renderQuota(monthlyQuota, 6)}
+              </div>
+              <div className='text-xs text-ui-text-2'>{t('本月获得')}</div>
             </div>
-            <div className='text-xs text-gray-500'>{t('本月获得')}</div>
-          </div>
-          <div className='text-center p-2.5 bg-slate-50 dark:bg-slate-800 rounded-lg'>
-            <div className='text-xl font-bold text-blue-600'>
-              {renderQuota(checkinData.stats?.total_quota || 0, 6)}
+            <div className='text-center p-2.5 bg-slate-50 dark:bg-slate-800 rounded-lg'>
+              <div className='text-xl font-bold text-blue-600'>
+                {renderQuota(checkinData.stats?.total_quota || 0, 6)}
+              </div>
+              <div className='text-xs text-ui-text-2'>{t('累计获得')}</div>
             </div>
-            <div className='text-xs text-gray-500'>{t('累计获得')}</div>
           </div>
-        </div>
 
-        {/* 签到日历 - 使用更紧凑的样式 */}
-        <Spin spinning={loading}>
-          <div className='border rounded-lg overflow-hidden checkin-calendar'>
-            <style>{`
-            .checkin-calendar .semi-calendar {
-              font-size: 13px;
-            }
-            .checkin-calendar .semi-calendar-month-header {
-              padding: 8px 12px;
-            }
-            .checkin-calendar .semi-calendar-month-week-row {
-              height: 28px;
-            }
-            .checkin-calendar .semi-calendar-month-week-row th {
-              font-size: 12px;
-              padding: 4px 0;
-            }
-            .checkin-calendar .semi-calendar-month-grid-row {
-              height: auto;
-            }
-            .checkin-calendar .semi-calendar-month-grid-row td {
-              height: 56px;
-              padding: 2px;
-            }
-            .checkin-calendar .semi-calendar-month-grid-row-cell {
-              position: relative;
-              height: 100%;
-            }
-            .checkin-calendar .semi-calendar-month-grid-row-cell-day {
-              position: absolute;
-              top: 4px;
-              left: 50%;
-              transform: translateX(-50%);
-              font-size: 12px;
-              z-index: 1;
-            }
-            .checkin-calendar .semi-calendar-month-same {
-              background: transparent;
-            }
-            .checkin-calendar .semi-calendar-month-today .semi-calendar-month-grid-row-cell-day {
-              background: var(--semi-color-primary);
-              color: white;border-radius: 50%;
-              width: 20px;
-              height: 20px;
-              display: flex;
-              align-items: center;
-              justify-content: center;}
-          `}</style>
-            <Calendar
-              mode='month'
-              onChange={handleMonthChange}
-              dateGridRender={(dateString, date) => dateRender(dateString)}
-            />
+          {/* Calendar */}
+          <div className='relative border border-ui-border rounded-lg overflow-hidden'>
+            {loading && (
+              <div className='absolute inset-0 bg-white/50 dark:bg-black/30 flex items-center justify-center z-10'>
+                <Loader2 size={20} className='animate-spin text-ui-text-3' />
+              </div>
+            )}
+            {/* Month navigation */}
+            <div className='flex items-center justify-between px-4 py-2 border-b border-ui-border'>
+              <button onClick={handlePrevMonth} className='text-sm text-ui-text-2 hover:text-ui-text px-2 py-1 rounded transition-colors'>
+                &lt;
+              </button>
+              <span className='text-sm font-medium text-ui-text'>{currentMonth}</span>
+              <button onClick={handleNextMonth} className='text-sm text-ui-text-2 hover:text-ui-text px-2 py-1 rounded transition-colors'>
+                &gt;
+              </button>
+            </div>
+            {/* Week header */}
+            <div className='grid grid-cols-7 text-center border-b border-ui-border'>
+              {weekDays.map((d) => (
+                <div key={d} className='py-1.5 text-xs font-medium text-ui-text-3'>{d}</div>
+              ))}
+            </div>
+            {/* Days grid */}
+            <div className='grid grid-cols-7'>
+              {calendarDays.map((day, idx) => {
+                if (day === null) return <div key={`empty-${idx}`} className='h-14' />;
+                const [year, month] = currentMonth.split('-').map(Number);
+                const dateStr = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                const quotaAwarded = checkinRecordsMap[dateStr];
+                const isCheckedIn = quotaAwarded !== undefined;
+                const isToday = dateStr === todayStr;
+                return (
+                  <div
+                    key={dateStr}
+                    className='h-14 relative flex flex-col items-center justify-center border-b border-r border-ui-border/30'
+                    title={isCheckedIn ? `${t('获得')} ${renderQuota(quotaAwarded)}` : ''}
+                  >
+                    <span className={`text-xs ${isToday ? 'bg-blue-500 text-white w-5 h-5 rounded-full flex items-center justify-center' : 'text-ui-text-2'}`}>
+                      {day}
+                    </span>
+                    {isCheckedIn && (
+                      <>
+                        <div className='w-4 h-4 rounded-full bg-green-500 flex items-center justify-center mt-0.5'>
+                          <Check size={10} className='text-white' />
+                        </div>
+                        <div className='text-[9px] font-medium text-green-600 dark:text-green-400 leading-none mt-0.5'>
+                          {renderQuota(quotaAwarded)}
+                        </div>
+                      </>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
           </div>
-        </Spin>
 
-        {/* 签到说明 */}
-        <div className='mt-3 p-2.5 bg-slate-50 dark:bg-slate-800 rounded-lg'>
-          <Typography.Text type='tertiary' className='text-xs'>
-            <ul className='list-disc list-inside space-y-0.5'>
-              <li>{t('每日签到可获得随机额度奖励')}</li>
-              <li>{t('签到奖励将直接添加到您的账户余额')}</li>
-              <li>{t('每日仅可签到一次，请勿重复签到')}</li>
-            </ul>
-          </Typography.Text>
-        </div>
-      </Collapsible>
-    </Card>
+          {/* Checkin notes */}
+          <div className='mt-3 p-2.5 bg-slate-50 dark:bg-slate-800 rounded-lg'>
+            <span className='text-xs text-ui-text-2'>
+              <ul className='list-disc list-inside space-y-0.5'>
+                <li>{t('每日签到可获得随机额度奖励')}</li>
+                <li>{t('签到奖励将直接添加到您的账户余额')}</li>
+                <li>{t('每日仅可签到一次，请勿重复签到')}</li>
+              </ul>
+            </span>
+          </div>
+        </>
+      )}
+    </div>
   );
 };
 

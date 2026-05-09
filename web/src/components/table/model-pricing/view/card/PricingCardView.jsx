@@ -18,22 +18,8 @@ For commercial licensing, please contact support@quantumnous.com
 */
 
 import React from 'react';
-import {
-  Card,
-  Tag,
-  Tooltip,
-  Checkbox,
-  Empty,
-  Pagination,
-  Button,
-  Avatar,
-} from '@douyinfe/semi-ui';
-import { IconHelpCircle } from '@douyinfe/semi-icons';
+import { HelpCircle } from 'lucide-react';
 import { Copy } from 'lucide-react';
-import {
-  IllustrationNoResult,
-  IllustrationNoResultDark,
-} from '@douyinfe/semi-illustrations';
 import {
   stringToColor,
   calculateModelPrice,
@@ -100,7 +86,7 @@ const PricingCardView = ({
     if (!model || !model.model_name) {
       return (
         <div className={CARD_STYLES.container}>
-          <Avatar size='large'>?</Avatar>
+          <div className='w-12 h-12 rounded-2xl bg-ui-bg-subtle flex items-center justify-center text-sm font-bold text-ui-text-2'>?</div>
         </div>
       );
     }
@@ -130,18 +116,17 @@ const PricingCardView = ({
     const avatarText = model.model_name.slice(0, 2).toUpperCase();
     return (
       <div className={CARD_STYLES.container}>
-        <Avatar
-          size='large'
+        <div
+          className='flex items-center justify-center text-base font-bold text-ui-text'
           style={{
             width: 48,
             height: 48,
             borderRadius: 16,
-            fontSize: 16,
-            fontWeight: 'bold',
+            backgroundColor: 'var(--page-bg)',
           }}
         >
           {avatarText}
-        </Avatar>
+        </div>
       </div>
     );
   };
@@ -155,21 +140,21 @@ const PricingCardView = ({
   const renderTags = (record) => {
     // 计费类型标签（左边）
     let billingTag = (
-      <Tag key='billing' shape='circle' color='white' size='small'>
+      <span key='billing' className='inline-flex items-center px-2 py-0.5 text-[11px] rounded-full font-medium bg-gray-500/10 text-ui-text border border-gray-500/20'>
         -
-      </Tag>
+      </span>
     );
     if (record.quota_type === 1) {
       billingTag = (
-        <Tag key='billing' shape='circle' color='teal' size='small'>
+        <span key='billing' className='inline-flex items-center px-2 py-0.5 text-[11px] rounded-full font-medium bg-teal-500/10 text-teal-600 dark:text-teal-400 border border-teal-500/20'>
           {t('按次计费')}
-        </Tag>
+        </span>
       );
     } else if (record.quota_type === 0) {
       billingTag = (
-        <Tag key='billing' shape='circle' color='violet' size='small'>
+        <span key='billing' className='inline-flex items-center px-2 py-0.5 text-[11px] rounded-full font-medium bg-violet-500/10 text-violet-600 dark:text-violet-400 border border-violet-500/20'>
           {t('按量计费')}
-        </Tag>
+        </span>
       );
     }
 
@@ -178,15 +163,19 @@ const PricingCardView = ({
     if (record.tags) {
       const tagArr = record.tags.split(',').filter(Boolean);
       tagArr.forEach((tg, idx) => {
+        const color = stringToColor(tg);
         customTags.push(
-          <Tag
+          <span
             key={`custom-${idx}`}
-            shape='circle'
-            color={stringToColor(tg)}
-            size='small'
+            className='inline-flex items-center px-2 py-0.5 text-[11px] rounded-full font-medium border'
+            style={{
+              backgroundColor: `${color}15`,
+              color: color,
+              borderColor: `${color}30`,
+            }}
           >
             {tg}
-          </Tag>,
+          </span>,
         );
       });
     }
@@ -221,14 +210,12 @@ const PricingCardView = ({
 
   if (!filteredModels || filteredModels.length === 0) {
     return (
-      <div className='flex justify-center items-center py-20'>
-        <Empty
-          image={<IllustrationNoResult style={{ width: 150, height: 150 }} />}
-          darkModeImage={
-            <IllustrationNoResultDark style={{ width: 150, height: 150 }} />
-          }
-          description={t('搜索无结果')}
-        />
+      <div className='flex flex-col justify-center items-center py-20 text-ui-text-3'>
+        <svg width='150' height='150' viewBox='0 0 150 150' fill='none' className='mb-4 opacity-50'>
+          <circle cx='75' cy='75' r='60' stroke='currentColor' strokeWidth='2' strokeDasharray='4 4' />
+          <path d='M55 65h40M55 75h30M55 85h20' stroke='currentColor' strokeWidth='2' strokeLinecap='round' />
+        </svg>
+        <span className='text-sm'>{t('搜索无结果')}</span>
       </div>
     );
   }
@@ -251,10 +238,10 @@ const PricingCardView = ({
           });
 
           return (
-            <Card
+            <div
               key={modelKey || index}
-              className={`!rounded-2xl transition-all duration-200 hover:shadow-lg border cursor-pointer ${isSelected ? CARD_STYLES.selected : CARD_STYLES.default}`}
-              bodyStyle={{ height: '100%' }}
+              className={`rounded-2xl transition-all duration-200 hover:shadow-lg border cursor-pointer p-4 ${isSelected ? CARD_STYLES.selected : CARD_STYLES.default}`}
+              style={{ backgroundColor: 'var(--page-bg)' }}
               onClick={() => openModelDetail && openModelDetail(model)}
             >
               <div className='flex flex-col h-full'>
@@ -263,7 +250,7 @@ const PricingCardView = ({
                   <div className='flex items-start space-x-3 flex-1 min-w-0'>
                     {getModelIcon(model)}
                     <div className='flex-1 min-w-0'>
-                      <h3 className='text-lg font-bold text-gray-900 truncate'>
+                      <h3 className='text-lg font-bold text-ui-text truncate'>
                         {model.model_name}
                       </h3>
                       <div className='flex flex-col gap-1 text-xs mt-1'>
@@ -274,25 +261,27 @@ const PricingCardView = ({
 
                   <div className='flex items-center space-x-2 ml-3'>
                     {/* 复制按钮 */}
-                    <Button
-                      size='small'
-                      theme='outline'
-                      type='tertiary'
-                      icon={<Copy size={12} />}
+                    <button
+                      className='inline-flex items-center justify-center w-8 h-8 rounded-lg text-ui-text-3 hover:text-ui-text hover:bg-ui-bg-subtle transition-colors'
                       onClick={(e) => {
                         e.stopPropagation();
                         copyText(model.model_name);
                       }}
-                    />
+                    >
+                      <Copy size={12} />
+                    </button>
 
                     {/* 选择框 */}
                     {rowSelection && (
-                      <Checkbox
+                      <input
+                        type='checkbox'
                         checked={isSelected}
+                        className='w-4 h-4 rounded border-ui-border text-ui-accent cursor-pointer'
                         onChange={(e) => {
                           e.stopPropagation();
                           handleCheckboxChange(model, e.target.checked);
                         }}
+                        onClick={(e) => e.stopPropagation()}
                       />
                     )}
                   </div>
@@ -300,10 +289,7 @@ const PricingCardView = ({
 
                 {/* 模型描述 - 占据剩余空间 */}
                 <div className='flex-1 mb-4'>
-                  <p
-                    className='text-xs line-clamp-2 leading-relaxed'
-                    style={{ color: 'var(--semi-color-text-2)' }}
-                  >
+                  <p className='text-xs line-clamp-2 leading-relaxed text-ui-text-2'>
                     {getModelDescription(model)}
                   </p>
                 </div>
@@ -317,24 +303,22 @@ const PricingCardView = ({
                   {showRatio && (
                     <div className='pt-3'>
                       <div className='flex items-center space-x-1 mb-2'>
-                        <span className='text-xs font-medium text-gray-700'>
+                        <span className='text-xs font-medium text-ui-text'>
                           {t('倍率信息')}
                         </span>
-                        <Tooltip
-                          content={t('倍率是为了方便换算不同价格的模型')}
+                        <button
+                          className='text-blue-500 cursor-pointer'
+                          title={t('倍率是为了方便换算不同价格的模型')}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setModalImageUrl('/ratio.png');
+                            setIsModalOpenurl(true);
+                          }}
                         >
-                          <IconHelpCircle
-                            className='text-blue-500 cursor-pointer'
-                            size='small'
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setModalImageUrl('/ratio.png');
-                              setIsModalOpenurl(true);
-                            }}
-                          />
-                        </Tooltip>
+                          <HelpCircle size={14} />
+                        </button>
                       </div>
-                      <div className='grid grid-cols-3 gap-2 text-xs text-gray-600'>
+                      <div className='grid grid-cols-3 gap-2 text-xs text-ui-text-2'>
                         <div>
                           {t('模型')}:{' '}
                           {model.quota_type === 0 ? model.model_ratio : t('无')}
@@ -353,28 +337,43 @@ const PricingCardView = ({
                   )}
                 </div>
               </div>
-            </Card>
+            </div>
           );
         })}
       </div>
 
       {/* 分页 */}
       {filteredModels.length > 0 && (
-        <div className='flex justify-center mt-6 py-4 border-t pricing-pagination-divider'>
-          <Pagination
-            currentPage={currentPage}
-            pageSize={pageSize}
-            total={filteredModels.length}
-            showSizeChanger={true}
-            pageSizeOptions={[10, 20, 50, 100]}
-            size={isMobile ? 'small' : 'default'}
-            showQuickJumper={isMobile}
-            onPageChange={(page) => setCurrentPage(page)}
-            onPageSizeChange={(size) => {
-              setPageSize(size);
+        <div className='flex justify-center items-center gap-4 mt-6 py-4 border-t pricing-pagination-divider'>
+          <button
+            className='px-3 py-1.5 text-sm rounded-lg border border-ui-border text-ui-text hover:bg-ui-bg-subtle transition-colors disabled:opacity-50'
+            disabled={currentPage <= 1}
+            onClick={() => setCurrentPage(currentPage - 1)}
+          >
+            ←
+          </button>
+          <span className='text-sm text-ui-text-2'>
+            {currentPage} / {Math.ceil(filteredModels.length / pageSize)}
+          </span>
+          <button
+            className='px-3 py-1.5 text-sm rounded-lg border border-ui-border text-ui-text hover:bg-ui-bg-subtle transition-colors disabled:opacity-50'
+            disabled={currentPage >= Math.ceil(filteredModels.length / pageSize)}
+            onClick={() => setCurrentPage(currentPage + 1)}
+          >
+            →
+          </button>
+          <select
+            className='px-2 py-1.5 text-sm border border-ui-border rounded-lg bg-transparent text-ui-text outline-none'
+            value={pageSize}
+            onChange={(e) => {
+              setPageSize(Number(e.target.value));
               setCurrentPage(1);
             }}
-          />
+          >
+            {[10, 20, 50, 100].map((size) => (
+              <option key={size} value={size}>{size} / page</option>
+            ))}
+          </select>
         </div>
       )}
     </div>

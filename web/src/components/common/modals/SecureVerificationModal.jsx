@@ -70,7 +70,7 @@ const SecureVerificationModal = ({
           <div className='flex justify-end px-5 py-3 border-t border-ui-border'>
             <button
               onClick={onCancel}
-              className='inline-flex items-center px-4 py-1.5 text-xs font-semibold rounded-md bg-ui-accent text-ui-accent-fg hover:bg-ui-accent-hover whitespace-nowrap'
+              className='inline-flex items-center px-4 py-1.5 text-xs font-semibold rounded-xl bg-ui-accent text-ui-accent-fg hover:bg-ui-accent-hover whitespace-nowrap'
             >
               {t('确定')}
             </button>
@@ -139,7 +139,7 @@ const SecureVerificationModal = ({
                   maxLength={8}
                   autoFocus
                   disabled={loading}
-                  className='w-full pl-8 pr-3 py-2 text-sm bg-ui-bg border border-ui-border rounded-md text-ui-text placeholder:text-ui-text-3 outline-none focus:border-ui-text-3 disabled:opacity-60'
+                  className='w-full pl-8 pr-3 py-2 text-sm bg-transparent border border-ui-border rounded-md text-ui-text placeholder:text-ui-text-3 outline-none focus:border-ui-text-3 disabled:opacity-60'
                 />
               </div>
               <p className='text-[11px] text-ui-text-3'>{t('从认证器应用中获取验证码，或使用备用码')}</p>
@@ -163,14 +163,14 @@ const SecureVerificationModal = ({
           <button
             onClick={onCancel}
             disabled={loading}
-            className='inline-flex items-center px-3.5 py-1.5 text-xs font-medium rounded-md border border-ui-border text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-subtle disabled:opacity-40 whitespace-nowrap'
+            className='inline-flex items-center px-3.5 py-1.5 text-xs font-medium rounded-xl border border-ui-border text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-subtle disabled:opacity-40 whitespace-nowrap'
           >
             {t('取消')}
           </button>
           <button
             onClick={() => onVerify(method, code)}
             disabled={loading || (method === '2fa' && !code?.trim())}
-            className='inline-flex items-center gap-1.5 px-4 py-1.5 text-xs font-semibold rounded-md bg-ui-accent text-ui-accent-fg hover:bg-ui-accent-hover disabled:opacity-50 whitespace-nowrap'
+            className='inline-flex items-center gap-1.5 px-4 py-1.5 text-xs font-semibold rounded-xl bg-ui-accent text-ui-accent-fg hover:bg-ui-accent-hover disabled:opacity-50 whitespace-nowrap'
           >
             {loading && <Loader2 size={11} className='animate-spin' />}
             {method === 'passkey' ? t('验证 Passkey') : t('验证')}

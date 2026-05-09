@@ -55,7 +55,7 @@ function UpdateModal({ open, onClose, tagName, content, t }) {
         <div className='flex justify-end gap-2 px-5 py-3 border-t border-ui-divider'>
           <button
             onClick={onClose}
-            className='px-3.5 py-1.5 text-xs rounded-md border border-ui-border text-ui-text-2 hover:bg-ui-bg-subtle'
+            className='px-3.5 py-1.5 text-xs rounded-xl border border-ui-border text-ui-text-2 hover:bg-ui-bg-subtle'
           >
             {t('关闭')}
           </button>
@@ -63,7 +63,7 @@ function UpdateModal({ open, onClose, tagName, content, t }) {
             href={`https://github.com/Calcium-Ion/new-api/releases/tag/${tagName}`}
             target='_blank'
             rel='noreferrer'
-            className='inline-flex items-center gap-1 px-3.5 py-1.5 text-xs font-semibold rounded-md bg-ui-accent text-ui-accent-fg hover:opacity-90'
+            className='inline-flex items-center gap-1 px-3.5 py-1.5 text-xs font-semibold rounded-xl bg-ui-accent text-ui-accent-fg hover:opacity-90'
           >
             {t('详情')}
           </a>
@@ -167,7 +167,7 @@ const OtherSetting = () => {
           <button
             onClick={checkUpdate}
             disabled={!!loadingKeys.CheckUpdate}
-            className='inline-flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-md border border-ui-border text-ui-text-2 hover:bg-ui-bg-hover disabled:opacity-50'
+            className='inline-flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-xl border border-ui-border text-ui-text-2 hover:bg-ui-bg-hover disabled:opacity-50'
           >
             {t('检查更新')}
           </button>
@@ -188,7 +188,7 @@ const OtherSetting = () => {
               <button
                 onClick={() => updateOption(f.key, inputs[f.key], f.successMsg)}
                 disabled={!!loadingKeys[f.key]}
-                className='inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-md bg-ui-accent text-ui-accent-fg hover:opacity-90 disabled:opacity-50'
+                className='inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-xl bg-ui-accent text-ui-accent-fg hover:opacity-90 disabled:opacity-50'
               >
                 {t('保存')}
               </button>

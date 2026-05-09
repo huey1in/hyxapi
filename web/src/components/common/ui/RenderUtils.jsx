@@ -18,9 +18,6 @@ For commercial licensing, please contact support@quantumnous.com
 */
 
 import React from 'react';
-import { Space, Tag, Typography, Popover } from '@douyinfe/semi-ui';
-
-const { Text } = Typography;
 
 // 通用渲染函数：限制项目数量显示，支持popover展开
 export function renderLimitedItems({ items, renderItem, maxDisplay = 3 }) {
@@ -28,33 +25,29 @@ export function renderLimitedItems({ items, renderItem, maxDisplay = 3 }) {
   const displayItems = items.slice(0, maxDisplay);
   const remainingItems = items.slice(maxDisplay);
   return (
-    <Space spacing={1} wrap>
+    <span className='inline-flex flex-wrap gap-1'>
       {displayItems.map((item, idx) => renderItem(item, idx))}
       {remainingItems.length > 0 && (
-        <Popover
-          content={
-            <div className='p-2'>
-              <Space spacing={1} wrap>
-                {remainingItems.map((item, idx) => renderItem(item, idx))}
-              </Space>
-            </div>
-          }
-          position='top'
+        <span
+          className='inline-flex items-center px-1.5 py-0.5 text-xs rounded-full bg-gray-100 text-gray-600 cursor-default'
+          title={remainingItems.map((item) => (typeof item === 'string' ? item : '')).join(', ')}
         >
-          <Tag size='small' shape='circle' color='grey'>
-            +{remainingItems.length}
-          </Tag>
-        </Popover>
+          +{remainingItems.length}
+        </span>
       )}
-    </Space>
+    </span>
   );
 }
 
 // 渲染描述字段，长文本支持tooltip
 export const renderDescription = (text, maxWidth = 200) => {
   return (
-    <Text ellipsis={{ showTooltip: true }} style={{ maxWidth }}>
+    <span
+      className='block truncate'
+      style={{ maxWidth }}
+      title={text || '-'}
+    >
       {text || '-'}
-    </Text>
+    </span>
   );
 };

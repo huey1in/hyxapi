@@ -17,7 +17,6 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 
-import { Pagination } from '@douyinfe/semi-ui';
 import { toastConstants } from '../constants';
 import React from 'react';
 import { toast } from '../components/common/Toast';
@@ -901,6 +900,7 @@ export const createCardProPagination = ({
 
   const start = (currentPage - 1) * pageSize + 1;
   const end = Math.min(currentPage * pageSize, total);
+  const totalPages = Math.ceil(total / pageSize);
   const totalText = `${t('显示第')} ${start} ${t('条 - 第')} ${end} ${t('条，共')} ${total} ${t('条')}`;
 
   return (
@@ -916,18 +916,41 @@ export const createCardProPagination = ({
       )}
 
       {/* 右侧分页控件 */}
-      <Pagination
-        currentPage={currentPage}
-        pageSize={pageSize}
-        total={total}
-        pageSizeOpts={pageSizeOpts}
-        showSizeChanger={showSizeChanger}
-        onPageSizeChange={onPageSizeChange}
-        onPageChange={onPageChange}
-        size={isMobile ? 'small' : 'default'}
-        showQuickJumper={isMobile}
-        showTotal
-      />
+      <div className='flex items-center gap-2'>
+        {showSizeChanger && (
+          <select
+            className='text-sm border rounded px-2 py-1'
+            style={{ borderColor: 'var(--semi-color-border)' }}
+            value={pageSize}
+            onChange={(e) => onPageSizeChange(Number(e.target.value))}
+          >
+            {pageSizeOpts.map((opt) => (
+              <option key={opt} value={opt}>
+                {opt} {t('条')}/{t('页')}
+              </option>
+            ))}
+          </select>
+        )}
+        <button
+          className='px-2 py-1 text-sm border rounded disabled:opacity-40'
+          style={{ borderColor: 'var(--semi-color-border)' }}
+          disabled={currentPage <= 1}
+          onClick={() => onPageChange(currentPage - 1)}
+        >
+          ‹
+        </button>
+        <span className='text-sm select-none' style={{ color: 'var(--semi-color-text-1)' }}>
+          {currentPage} / {totalPages}
+        </span>
+        <button
+          className='px-2 py-1 text-sm border rounded disabled:opacity-40'
+          style={{ borderColor: 'var(--semi-color-border)' }}
+          disabled={currentPage >= totalPages}
+          onClick={() => onPageChange(currentPage + 1)}
+        >
+          ›
+        </button>
+      </div>
     </>
   );
 };

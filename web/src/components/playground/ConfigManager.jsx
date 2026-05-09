@@ -25,11 +25,11 @@ import { showSuccess, showError } from '../../helpers';
 
 const ConfirmDialog = ({ title, content, okText, cancelText, onOk, onCancel, danger }) => (
   <div className='fixed inset-0 z-[9999] flex items-center justify-center bg-black/40'>
-    <div className='bg-white rounded-2xl p-6 w-80 shadow-xl'>
-      <h3 className='font-semibold text-gray-900 mb-2'>{title}</h3>
-      <p className='text-sm text-gray-600 mb-6'>{content}</p>
+    <div className='bg-ui-bg-elevated rounded-2xl p-6 w-80 shadow-xl'>
+      <h3 className='font-semibold text-ui-text mb-2'>{title}</h3>
+      <p className='text-sm text-ui-text-2 mb-6'>{content}</p>
       <div className='flex gap-2 justify-end'>
-        <button onClick={onCancel} className='px-4 py-2 text-sm border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors'>{cancelText}</button>
+        <button onClick={onCancel} className='px-4 py-2 text-sm border border-gray-200 rounded-lg hover:bg-ui-bg-subtle transition-colors'>{cancelText}</button>
         <button onClick={onOk} className={`px-4 py-2 text-sm text-white rounded-lg transition-colors ${danger ? 'bg-red-500 hover:bg-red-600' : 'bg-black hover:bg-[#333]'}`}>{okText}</button>
       </div>
     </div>
@@ -120,14 +120,14 @@ const ConfigManager = ({ currentConfig, onConfigImport, onConfigReset, styleStat
 
       {styleState.isMobile ? (
         <div className='relative'>
-          <button onClick={() => setShowMenu(!showMenu)} className='w-8 h-8 flex items-center justify-center text-gray-500 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors'>
+          <button onClick={() => setShowMenu(!showMenu)} className='w-8 h-8 flex items-center justify-center text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-subtle rounded-lg transition-colors'>
             <Settings2 size={16} />
           </button>
           {showMenu && (
-            <div className='absolute left-0 top-9 bg-white border border-gray-200 rounded-xl shadow-lg z-50 py-1 w-36'>
-              <button onClick={handleExport} className={`${btnBase} w-full text-gray-700 hover:bg-gray-50`}><Download size={13} />{t('导出配置')}</button>
-              <button onClick={handleImportClick} className={`${btnBase} w-full text-gray-700 hover:bg-gray-50`}><Upload size={13} />{t('导入配置')}</button>
-              <div className='h-px bg-gray-100 my-1' />
+            <div className='absolute left-0 top-9 bg-ui-bg-elevated border border-gray-200 rounded-xl shadow-lg z-50 py-1 w-36'>
+              <button onClick={handleExport} className={`${btnBase} w-full text-ui-text hover:bg-ui-bg-subtle`}><Download size={13} />{t('导出配置')}</button>
+              <button onClick={handleImportClick} className={`${btnBase} w-full text-ui-text hover:bg-ui-bg-subtle`}><Upload size={13} />{t('导入配置')}</button>
+              <div className='h-px bg-ui-bg-subtle my-1' />
               <button onClick={handleReset} className={`${btnBase} w-full text-red-600 hover:bg-red-50`}><RotateCcw size={13} />{t('重置配置')}</button>
             </div>
           )}
@@ -135,7 +135,7 @@ const ConfigManager = ({ currentConfig, onConfigImport, onConfigReset, styleStat
       ) : (
         <div className='space-y-2'>
           <div className='flex items-center justify-between'>
-            <span className='text-xs text-gray-400'>{getConfigStatus()}</span>
+            <span className='text-xs text-ui-text-3'>{getConfigStatus()}</span>
             <button onClick={handleReset} title={t('重置配置')} className='w-6 h-6 flex items-center justify-center text-red-400 hover:text-red-600 hover:bg-red-50 rounded-full transition-colors'>
               <RotateCcw size={12} />
             </button>
@@ -144,7 +144,7 @@ const ConfigManager = ({ currentConfig, onConfigImport, onConfigReset, styleStat
             <button onClick={handleExport} className='flex-1 flex items-center justify-center gap-1.5 py-1.5 text-xs bg-black text-white rounded-lg hover:bg-[#333] transition-colors'>
               <Download size={11} />{t('导出')}
             </button>
-            <button onClick={handleImportClick} className='flex-1 flex items-center justify-center gap-1.5 py-1.5 text-xs border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors'>
+            <button onClick={handleImportClick} className='flex-1 flex items-center justify-center gap-1.5 py-1.5 text-xs border border-gray-200 rounded-lg hover:bg-ui-bg-subtle transition-colors'>
               <Upload size={11} />{t('导入')}
             </button>
           </div>

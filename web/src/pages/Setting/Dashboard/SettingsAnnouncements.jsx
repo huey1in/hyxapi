@@ -193,10 +193,10 @@ const SettingsAnnouncements = ({ options, refresh }) => {
       key: 'action', title: t('操作'), width: 130,
       render: (_, row) => (
         <div className='flex items-center gap-1'>
-          <button onClick={() => openEdit(row)} className='inline-flex items-center gap-1 px-2 py-1 text-[11px] rounded-md border border-ui-border text-ui-text-2 hover:bg-ui-bg-hover'>
+          <button onClick={() => openEdit(row)} className='inline-flex items-center gap-1 px-2 py-1 text-[11px] rounded-xl border border-ui-border text-ui-text-2 hover:bg-ui-bg-hover'>
             {t('编辑')}
           </button>
-          <button onClick={() => handleDelete(row)} className='inline-flex items-center gap-1 px-2 py-1 text-[11px] rounded-md border border-ui-danger/30 text-ui-danger hover:bg-ui-danger-bg'>
+          <button onClick={() => handleDelete(row)} className='inline-flex items-center gap-1 px-2 py-1 text-[11px] rounded-xl border border-ui-danger/30 text-ui-danger hover:bg-ui-danger-bg'>
             {t('删除')}
           </button>
         </div>
@@ -236,8 +236,8 @@ const SettingsAnnouncements = ({ options, refresh }) => {
         width={600}
         footer={
           <div className='flex justify-end gap-2'>
-            <button onClick={() => setShowModal(false)} className='px-3.5 py-1.5 text-xs rounded-md border border-ui-border text-ui-text-2 hover:bg-ui-bg-subtle'>{t('取消')}</button>
-            <button onClick={handleSave} disabled={modalLoading} className='px-3.5 py-1.5 text-xs font-semibold rounded-md bg-ui-accent text-ui-accent-fg hover:opacity-90 disabled:opacity-50'>{t('保存')}</button>
+            <button onClick={() => setShowModal(false)} className='px-3.5 py-1.5 text-xs rounded-xl border border-ui-border text-ui-text-2 hover:bg-ui-bg-subtle'>{t('取消')}</button>
+            <button onClick={handleSave} disabled={modalLoading} className='px-3.5 py-1.5 text-xs font-semibold rounded-xl bg-ui-accent text-ui-accent-fg hover:opacity-90 disabled:opacity-50'>{t('保存')}</button>
           </div>
         }
       >
@@ -249,7 +249,7 @@ const SettingsAnnouncements = ({ options, refresh }) => {
             placeholder={t('请输入公告内容（支持 Markdown/HTML）')}
             rows={4}
             maxLength={500}
-            className='w-full rounded-md border border-ui-border bg-ui-bg-subtle text-ui-text text-xs px-3 py-2 pr-9 focus:outline-none focus:ring-1 focus:ring-ui-accent/40 resize-y'
+            className='w-full rounded-xl border border-ui-border bg-ui-bg-subtle text-ui-text text-xs px-3 py-2 pr-9 focus:outline-none focus:ring-1 focus:ring-ui-accent/40 resize-y'
           />
           <button
             type='button'
@@ -266,7 +266,7 @@ const SettingsAnnouncements = ({ options, refresh }) => {
               type='datetime-local'
               value={form.publishDate}
               onChange={(e) => setForm({ ...form, publishDate: e.target.value })}
-              className='w-full rounded-md border border-ui-border bg-ui-bg-subtle text-ui-text text-xs px-3 py-2 focus:outline-none focus:ring-1 focus:ring-ui-accent/40'
+              className='w-full rounded-xl border border-ui-border bg-ui-bg-subtle text-ui-text text-xs px-3 py-2 focus:outline-none focus:ring-1 focus:ring-ui-accent/40'
             />
           </div>
           <div>
@@ -285,7 +285,7 @@ const SettingsAnnouncements = ({ options, refresh }) => {
             value={form.extra}
             onChange={(e) => setForm({ ...form, extra: e.target.value })}
             placeholder={t('可选，公告的补充说明')}
-            className='w-full rounded-md border border-ui-border bg-ui-bg-subtle text-ui-text text-xs px-3 py-2 focus:outline-none focus:ring-1 focus:ring-ui-accent/40'
+            className='w-full rounded-xl border border-ui-border bg-ui-bg-subtle text-ui-text text-xs px-3 py-2 focus:outline-none focus:ring-1 focus:ring-ui-accent/40'
           />
         </div>
       </ModalDialog>
@@ -298,7 +298,7 @@ const SettingsAnnouncements = ({ options, refresh }) => {
         width={800}
         footer={
           <div className='flex justify-end gap-2'>
-            <button onClick={() => setShowContentFull(false)} className='px-3.5 py-1.5 text-xs rounded-md border border-ui-border text-ui-text-2 hover:bg-ui-bg-subtle'>{t('确定')}</button>
+            <button onClick={() => setShowContentFull(false)} className='px-3.5 py-1.5 text-xs rounded-xl border border-ui-border text-ui-text-2 hover:bg-ui-bg-subtle'>{t('确定')}</button>
           </div>
         }
       >
@@ -308,7 +308,7 @@ const SettingsAnnouncements = ({ options, refresh }) => {
           placeholder={t('请输入公告内容（支持 Markdown/HTML）')}
           maxLength={500}
           rows={15}
-          className='w-full rounded-md border border-ui-border bg-ui-bg-subtle text-ui-text text-xs px-3 py-2 focus:outline-none focus:ring-1 focus:ring-ui-accent/40 resize-y font-mono'
+          className='w-full rounded-xl border border-ui-border bg-ui-bg-subtle text-ui-text text-xs px-3 py-2 focus:outline-none focus:ring-1 focus:ring-ui-accent/40 resize-y font-mono'
         />
       </ModalDialog>
     </>

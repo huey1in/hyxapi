@@ -176,7 +176,7 @@ const UptimeList = ({ data, loading, activeGroup, setActiveGroup, t }) => {
             <button
               key={g.key}
               onClick={() => setActiveGroup(g.key)}
-              className={`px-2.5 py-1 text-[11px] rounded-md transition-colors whitespace-nowrap ${
+              className={`px-2.5 py-1 text-[11px] rounded-xl transition-colors whitespace-nowrap ${
                 activeGroup === g.key
                   ? 'bg-ui-bg-subtle text-ui-text font-medium'
                   : 'text-ui-text-2 hover:text-ui-text'

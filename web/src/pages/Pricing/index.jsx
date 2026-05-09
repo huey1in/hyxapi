@@ -634,7 +634,7 @@ const ModelDetailView = ({
       {/* Top bar */}
       <button
         onClick={onClose}
-        className='inline-flex items-center gap-1.5 mb-5 px-2.5 py-1.5 -ml-2.5 rounded-md text-sm text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-subtle transition-colors'
+        className='inline-flex items-center gap-1.5 mb-5 px-2.5 py-1.5 -ml-2.5 rounded-xl text-sm text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-subtle transition-colors'
       >
         <ArrowLeft size={14} />
         {t('返回')}

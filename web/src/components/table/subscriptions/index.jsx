@@ -33,7 +33,7 @@ const SubscriptionsPage = () => {
 
   return (
     <div
-      className='min-h-[calc(100vh-4rem)] px-4 py-6 md:px-6 md:py-8'
+      className='px-4 pt-8 pb-6 md:px-6 md:pt-10 md:pb-8'
       style={{ backgroundColor: 'var(--page-bg)' }}
     >
       <div className='max-w-[1280px] mx-auto'>

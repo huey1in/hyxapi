@@ -294,7 +294,7 @@ const Dashboard = () => {
               <button
                 key={tb.key}
                 onClick={() => setChartTab(tb.key)}
-                className={`px-2.5 py-1 text-[11px] rounded-md transition-colors whitespace-nowrap flex-shrink-0 ${
+                className={`px-2.5 py-1 text-[11px] rounded-xl transition-colors whitespace-nowrap flex-shrink-0 ${
                   chartTab === tb.key
                     ? 'bg-ui-bg-subtle text-ui-text font-medium'
                     : 'text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-subtle'

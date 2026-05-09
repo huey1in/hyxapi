@@ -237,26 +237,26 @@ const SetupWizard = () => {
   };
 
   return (
-    <div className='min-h-screen bg-white flex items-center justify-center p-6'>
+    <div className='min-h-screen bg-ui-bg-elevated flex items-center justify-center p-6'>
       <div className='w-full max-w-xl'>
         {/* 极简进度指示器 */}
         <div className='flex items-center space-x-2 mb-12 text-sm'>
           {steps.map((item, index) => (
             <React.Fragment key={item.title}>
-              <span className={index === currentStep ? 'font-semibold text-black' : 'text-gray-400'}>
+              <span className={index === currentStep ? 'font-semibold text-ui-text' : 'text-ui-text-3'}>
                 {index + 1}. {item.title}
               </span>
-              {index < steps.length - 1 && <span className='text-gray-300'>/</span>}
+              {index < steps.length - 1 && <span className='text-ui-text-3'>/</span>}
             </React.Fragment>
           ))}
         </div>
 
         {/* 头部标题 */}
         <div className='mb-10'>
-          <h1 className='text-4xl font-semibold tracking-tight mb-3 text-black'>
+          <h1 className='text-4xl font-semibold tracking-tight mb-3 text-ui-text'>
             {t('系统初始化')}
           </h1>
-          <p className='text-gray-500 text-base'>
+          <p className='text-ui-text-2 text-base'>
             {t('欢迎使用，请完成以下设置以开始使用系统')}
           </p>
         </div>

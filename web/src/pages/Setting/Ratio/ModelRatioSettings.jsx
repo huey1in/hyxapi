@@ -148,7 +148,7 @@ export default function ModelRatioSettings(props) {
         <button
           type='button'
           onClick={resetModelRatio}
-          className='inline-flex items-center gap-1 px-2.5 py-1.5 text-xs rounded-md border border-ui-danger/30 text-ui-danger hover:bg-ui-danger-bg'
+          className='inline-flex items-center gap-1 px-2.5 py-1.5 text-xs rounded-xl border border-ui-danger/30 text-ui-danger hover:bg-ui-danger-bg'
         >
           {t('重置模型倍率')}
         </button>

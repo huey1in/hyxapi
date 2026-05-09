@@ -18,11 +18,8 @@ For commercial licensing, please contact support@quantumnous.com
 */
 
 import React from 'react';
-import { Card, Avatar, Typography, Tag, Space } from '@douyinfe/semi-ui';
-import { IconInfoCircle } from '@douyinfe/semi-icons';
+import { Info } from 'lucide-react';
 import { stringToColor } from '../../../../../helpers';
-
-const { Text } = Typography;
 
 const ModelBasicInfo = ({ modelData, vendorsMap = {}, t }) => {
   // 获取模型描述（使用后端真实数据）
@@ -58,31 +55,39 @@ const ModelBasicInfo = ({ modelData, vendorsMap = {}, t }) => {
   };
 
   return (
-    <Card className='!rounded-2xl shadow-sm border-0 mb-6'>
+    <div className='border border-ui-border rounded-2xl p-4 mb-6' style={{ backgroundColor: 'var(--page-bg)' }}>
       <div className='flex items-center mb-4'>
-        <Avatar size='small' color='blue' className='mr-2 shadow-md'>
-          <IconInfoCircle size={16} />
-        </Avatar>
+        <div className='w-7 h-7 rounded-lg bg-blue-500/10 flex items-center justify-center mr-2 shadow-md'>
+          <Info size={16} className='text-blue-500' />
+        </div>
         <div>
-          <Text className='text-lg font-medium'>{t('基本信息')}</Text>
-          <div className='text-xs text-gray-600'>
+          <span className='text-lg font-medium text-ui-text'>{t('基本信息')}</span>
+          <div className='text-xs text-ui-text-2'>
             {t('模型的详细描述和基本特性')}
           </div>
         </div>
       </div>
-      <div className='text-gray-600'>
+      <div className='text-ui-text-2'>
         <p className='mb-4'>{getModelDescription()}</p>
         {getModelTags().length > 0 && (
-          <Space wrap>
+          <div className='flex flex-wrap gap-1.5'>
             {getModelTags().map((tag, index) => (
-              <Tag key={index} color={tag.color} shape='circle' size='small'>
+              <span
+                key={index}
+                className='inline-flex items-center px-2 py-0.5 text-[11px] rounded-full font-medium border'
+                style={{
+                  backgroundColor: `${tag.color}15`,
+                  color: tag.color,
+                  borderColor: `${tag.color}30`,
+                }}
+              >
                 {tag.text}
-              </Tag>
+              </span>
             ))}
-          </Space>
+          </div>
         )}
       </div>
-    </Card>
+    </div>
   );
 };
 

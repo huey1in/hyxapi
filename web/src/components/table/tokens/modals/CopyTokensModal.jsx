@@ -18,7 +18,7 @@ For commercial licensing, please contact support@quantumnous.com
 */
 
 import React from 'react';
-import { Modal, Button, Space } from '@douyinfe/semi-ui';
+import ModalDialog from '../../../common/ModalDialog';
 
 const CopyTokensModal = ({
   visible,
@@ -39,22 +39,29 @@ const CopyTokensModal = ({
   };
 
   return (
-    <Modal
+    <ModalDialog
+      open={visible}
+      onClose={onCancel}
       title={t('复制令牌')}
-      icon={null}
-      visible={visible}
-      onCancel={onCancel}
       footer={
-        <Space>
-          <Button type='tertiary' onClick={handleCopyWithName}>
+        <>
+          <button
+            onClick={handleCopyWithName}
+            className='inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium rounded-xl border border-ui-border text-ui-text hover:bg-ui-bg-subtle transition-colors'
+          >
             {t('名称+密钥')}
-          </Button>
-          <Button onClick={handleCopyKeyOnly}>{t('仅密钥')}</Button>
-        </Space>
+          </button>
+          <button
+            onClick={handleCopyKeyOnly}
+            className='inline-flex items-center gap-1.5 px-4 py-2 text-sm font-semibold rounded-xl bg-ui-accent text-ui-accent-fg hover:bg-ui-accent-hover transition-colors'
+          >
+            {t('仅密钥')}
+          </button>
+        </>
       }
     >
       {t('请选择你的复制方式')}
-    </Modal>
+    </ModalDialog>
   );
 };
 

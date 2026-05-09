@@ -19,15 +19,10 @@ For commercial licensing, please contact support@quantumnous.com
 
 import React from 'react';
 import {
-  Button,
   Dropdown,
   InputNumber,
   Modal,
-  Space,
   SplitButtonGroup,
-  Tag,
-  Tooltip,
-  Typography,
 } from '@douyinfe/semi-ui';
 import {
   timestamp2string,
@@ -35,7 +30,6 @@ import {
   renderQuota,
   getChannelIcon,
   renderQuotaWithAmount,
-  showSuccess,
   showError,
   showInfo,
 } from '../../../helpers';
@@ -47,8 +41,8 @@ import { parseUpstreamUpdateMeta } from '../../../hooks/channels/upstreamUpdateU
 import {
   IconTreeTriangleDown,
   IconMore,
-  IconAlertTriangle,
 } from '@douyinfe/semi-icons';
+import { AlertTriangle } from 'lucide-react';
 import { FaRandom } from 'react-icons/fa';
 
 // Render functions
@@ -78,9 +72,10 @@ const renderType = (type, record = {}, t) => {
   }
 
   const typeTag = (
-    <Tag color={type2label[type]?.color} shape='circle' prefixIcon={icon}>
+    <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium tag-${type2label[type]?.color || 'grey'}`}>
+      {icon}
       {type2label[type]?.label}
-    </Tag>
+    </span>
   );
 
   let ionetMeta = null;
@@ -109,42 +104,27 @@ const renderType = (type, record = {}, t) => {
   };
 
   return (
-    <Space spacing={6}>
+    <div className='flex items-center gap-1.5'>
       {typeTag}
-      <Tooltip
-        content={
-          <div className='max-w-xs'>
-            <div className='text-xs text-gray-600'>
-              {t('来源于 IO.NET 部署')}
-            </div>
-            {ionetMeta?.deployment_id && (
-              <div className='text-xs text-gray-500 mt-1'>
-                {t('部署 ID')}: {ionetMeta.deployment_id}
-              </div>
-            )}
-          </div>
-        }
+      <span
+        title={`${t('来源于 IO.NET 部署')}${ionetMeta?.deployment_id ? ` - ${t('部署 ID')}: ${ionetMeta.deployment_id}` : ''}`}
       >
-        <span>
-          <Tag
-            color='purple'
-            type='light'
-            className='cursor-pointer'
-            onClick={handleNavigate}
-          >
-            IO.NET
-          </Tag>
+        <span
+          className='inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium tag-purple cursor-pointer'
+          onClick={handleNavigate}
+        >
+          IO.NET
         </span>
-      </Tooltip>
-    </Space>
+      </span>
+    </div>
   );
 };
 
 const renderTagType = (t) => {
   return (
-    <Tag color='light-blue' shape='circle' type='light'>
+    <span className='inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium tag-light-blue'>
       {t('标签聚合')}
-    </Tag>
+    </span>
   );
 };
 
@@ -163,27 +143,27 @@ const renderStatus = (status, channelInfo = undefined, t) => {
   switch (status) {
     case 1:
       return (
-        <Tag color='green' shape='circle'>
+        <span className='inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium tag-green'>
           {t('已启用')}
-        </Tag>
+        </span>
       );
     case 2:
       return (
-        <Tag color='red' shape='circle'>
+        <span className='inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium tag-red'>
           {t('已禁用')}
-        </Tag>
+        </span>
       );
     case 3:
       return (
-        <Tag color='yellow' shape='circle'>
+        <span className='inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium tag-yellow'>
           {t('自动禁用')}
-        </Tag>
+        </span>
       );
     default:
       return (
-        <Tag color='grey' shape='circle'>
+        <span className='inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium tag-grey'>
           {t('未知状态')}
-        </Tag>
+        </span>
       );
   }
 };
@@ -192,27 +172,27 @@ const renderMultiKeyStatus = (status, keySize, enabledKeySize, t) => {
   switch (status) {
     case 1:
       return (
-        <Tag color='green' shape='circle'>
+        <span className='inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium tag-green'>
           {t('已启用')} {enabledKeySize}/{keySize}
-        </Tag>
+        </span>
       );
     case 2:
       return (
-        <Tag color='red' shape='circle'>
+        <span className='inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium tag-red'>
           {t('已禁用')} {enabledKeySize}/{keySize}
-        </Tag>
+        </span>
       );
     case 3:
       return (
-        <Tag color='yellow' shape='circle'>
+        <span className='inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium tag-yellow'>
           {t('自动禁用')} {enabledKeySize}/{keySize}
-        </Tag>
+        </span>
       );
     default:
       return (
-        <Tag color='grey' shape='circle'>
+        <span className='inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium tag-grey'>
           {t('未知状态')} {enabledKeySize}/{keySize}
-        </Tag>
+        </span>
       );
   }
 };
@@ -222,33 +202,33 @@ const renderResponseTime = (responseTime, t) => {
   time = time.toFixed(2) + t(' 秒');
   if (responseTime === 0) {
     return (
-      <Tag color='grey' shape='circle'>
+      <span className='inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium tag-grey'>
         {t('未测试')}
-      </Tag>
+      </span>
     );
   } else if (responseTime <= 1000) {
     return (
-      <Tag color='green' shape='circle'>
+      <span className='inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium tag-green'>
         {time}
-      </Tag>
+      </span>
     );
   } else if (responseTime <= 3000) {
     return (
-      <Tag color='lime' shape='circle'>
+      <span className='inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium tag-lime'>
         {time}
-      </Tag>
+      </span>
     );
   } else if (responseTime <= 5000) {
     return (
-      <Tag color='yellow' shape='circle'>
+      <span className='inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium tag-yellow'>
         {time}
-      </Tag>
+      </span>
     );
   } else {
     return (
-      <Tag color='red' shape='circle'>
+      <span className='inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium tag-red'>
         {time}
-      </Tag>
+      </span>
     );
   }
 };
@@ -349,35 +329,7 @@ export const getChannelsColumns = ({
           (pendingAddCount > 0 || pendingRemoveCount > 0);
         const nameNode =
           record.remark && record.remark.trim() !== '' ? (
-            <Tooltip
-              content={
-                <div className='flex flex-col gap-2 max-w-xs'>
-                  <div className='text-sm'>{record.remark}</div>
-                  <Button
-                    size='small'
-                    type='primary'
-                    theme='outline'
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      navigator.clipboard
-                        .writeText(record.remark)
-                        .then(() => {
-                          showSuccess(t('复制成功'));
-                        })
-                        .catch(() => {
-                          showError(t('复制失败'));
-                        });
-                    }}
-                  >
-                    {t('复制')}
-                  </Button>
-                </div>
-              }
-              trigger='hover'
-              position='topLeft'
-            >
-              <span>{text}</span>
-            </Tooltip>
+            <span title={record.remark}>{text}</span>
           ) : (
             <span>{text}</span>
           );
@@ -387,72 +339,60 @@ export const getChannelsColumns = ({
         }
 
         return (
-          <Space spacing={6} align='center'>
+          <div className='flex items-center gap-1.5'>
             {nameNode}
             {passThroughEnabled && (
-              <Tooltip
-                content={t(
+              <span
+                className='inline-flex items-center'
+                title={t(
                   '该渠道已开启请求透传：参数覆写、模型重定向、渠道适配等 NewAPI 内置功能将失效，非最佳实践；如因此产生问题，请勿提交 issue 反馈。',
                 )}
-                trigger='hover'
-                position='topLeft'
               >
-                <span className='inline-flex items-center'>
-                  <IconAlertTriangle
-                    style={{ color: 'var(--semi-color-warning)' }}
-                  />
-                </span>
-              </Tooltip>
+                <AlertTriangle
+                  size={14}
+                  style={{ color: 'var(--semi-color-warning)' }}
+                />
+              </span>
             )}
             {showUpstreamUpdateTag && (
-              <Space spacing={4} align='center'>
+              <div className='flex items-center gap-1'>
                 {pendingAddCount > 0 ? (
-                  <Tooltip content={t('点击处理新增模型')} position='top'>
-                    <Tag
-                      color='green'
-                      type='light'
-                      size='small'
-                      shape='circle'
-                      className='cursor-pointer transition-all duration-150 hover:opacity-85 hover:-translate-y-px active:scale-95'
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        openUpstreamUpdateModal(
-                          record,
-                          upstreamUpdateMeta.pendingAddModels,
-                          upstreamUpdateMeta.pendingRemoveModels,
-                          'add',
-                        );
-                      }}
-                    >
-                      +{pendingAddCount}
-                    </Tag>
-                  </Tooltip>
+                  <span
+                    title={t('点击处理新增模型')}
+                    className='inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-medium tag-green cursor-pointer transition-all duration-150 hover:opacity-85 hover:-translate-y-px active:scale-95'
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      openUpstreamUpdateModal(
+                        record,
+                        upstreamUpdateMeta.pendingAddModels,
+                        upstreamUpdateMeta.pendingRemoveModels,
+                        'add',
+                      );
+                    }}
+                  >
+                    +{pendingAddCount}
+                  </span>
                 ) : null}
                 {pendingRemoveCount > 0 ? (
-                  <Tooltip content={t('点击处理删除模型')} position='top'>
-                    <Tag
-                      color='red'
-                      type='light'
-                      size='small'
-                      shape='circle'
-                      className='cursor-pointer transition-all duration-150 hover:opacity-85 hover:-translate-y-px active:scale-95'
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        openUpstreamUpdateModal(
-                          record,
-                          upstreamUpdateMeta.pendingAddModels,
-                          upstreamUpdateMeta.pendingRemoveModels,
-                          'remove',
-                        );
-                      }}
-                    >
-                      -{pendingRemoveCount}
-                    </Tag>
-                  </Tooltip>
+                  <span
+                    title={t('点击处理删除模型')}
+                    className='inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-medium tag-red cursor-pointer transition-all duration-150 hover:opacity-85 hover:-translate-y-px active:scale-95'
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      openUpstreamUpdateModal(
+                        record,
+                        upstreamUpdateMeta.pendingAddModels,
+                        upstreamUpdateMeta.pendingRemoveModels,
+                        'remove',
+                      );
+                    }}
+                  >
+                    -{pendingRemoveCount}
+                  </span>
                 ) : null}
-              </Space>
+              </div>
             )}
-          </Space>
+          </div>
         );
       },
     },
@@ -462,7 +402,7 @@ export const getChannelsColumns = ({
       dataIndex: 'group',
       render: (text, record, index) => (
         <div>
-          <Space spacing={2}>
+          <div className='flex items-center flex-wrap gap-0.5'>
             {text
               ?.split(',')
               .sort((a, b) => {
@@ -471,7 +411,7 @@ export const getChannelsColumns = ({
                 return a.localeCompare(b);
               })
               .map((item, index) => renderGroup(item))}
-          </Space>
+          </div>
         </div>
       ),
     },
@@ -501,13 +441,13 @@ export const getChannelsColumns = ({
           let time = otherInfo['status_time'];
           return (
             <div>
-              <Tooltip
-                content={
+              <span
+                title={
                   t('原因：') + reason + t('，时间：') + timestamp2string(time)
                 }
               >
                 {renderStatus(text, record.channel_info, t)}
-              </Tooltip>
+              </span>
             </div>
           );
         } else {
@@ -529,14 +469,15 @@ export const getChannelsColumns = ({
         if (record.children === undefined) {
           return (
             <div>
-              <Space spacing={1}>
-                <Tooltip content={t('已用额度')}>
-                  <Tag color='white' type='ghost' shape='circle'>
-                    {renderQuota(record.used_quota)}
-                  </Tag>
-                </Tooltip>
-                <Tooltip
-                  content={
+              <div className='flex items-center gap-0.5'>
+                <span
+                  title={t('已用额度')}
+                  className='inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium tag-ghost'
+                >
+                  {renderQuota(record.used_quota)}
+                </span>
+                <span
+                  title={
                     record.type === 57
                       ? t('查看 Codex 帐号信息与用量')
                       : t('剩余额度') +
@@ -544,29 +485,24 @@ export const getChannelsColumns = ({
                         renderQuotaWithAmount(record.balance) +
                         t('，点击更新')
                   }
+                  className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${record.type === 57 ? 'tag-light-blue cursor-pointer' : 'tag-ghost'}`}
+                  onClick={() => updateChannelBalance(record)}
                 >
-                  <Tag
-                    color={record.type === 57 ? 'light-blue' : 'white'}
-                    type={record.type === 57 ? 'light' : 'ghost'}
-                    shape='circle'
-                    className={record.type === 57 ? 'cursor-pointer' : ''}
-                    onClick={() => updateChannelBalance(record)}
-                  >
-                    {record.type === 57
-                      ? t('帐号信息')
-                      : renderQuotaWithAmount(record.balance)}
-                  </Tag>
-                </Tooltip>
-              </Space>
+                  {record.type === 57
+                    ? t('帐号信息')
+                    : renderQuotaWithAmount(record.balance)}
+                </span>
+              </div>
             </div>
           );
         } else {
           return (
-            <Tooltip content={t('已用额度')}>
-              <Tag color='white' type='ghost' shape='circle'>
-                {renderQuota(record.used_quota)}
-              </Tag>
-            </Tooltip>
+            <span
+              title={t('已用额度')}
+              className='inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium tag-ghost'
+            >
+              {renderQuota(record.used_quota)}
+            </span>
           );
         }
       },
@@ -764,58 +700,55 @@ export const getChannelsColumns = ({
           }
 
           return (
-            <Space wrap>
+            <div className='flex items-center flex-wrap gap-2'>
               <SplitButtonGroup
                 className='overflow-hidden'
                 aria-label={t('测试单个渠道操作项目组')}
               >
-                <Button
-                  size='small'
-                  type='tertiary'
+                <button
+                  className='px-2 py-1 text-xs rounded-l border border-ui-border bg-ui-bg-elevated text-ui-text hover:bg-ui-bg-subtle transition-colors'
                   onClick={() => testChannel(record, '')}
                 >
                   {t('测试')}
-                </Button>
-                <Button
-                  size='small'
-                  type='tertiary'
-                  icon={<IconTreeTriangleDown />}
+                </button>
+                <button
+                  className='px-1.5 py-1 text-xs rounded-r border border-l-0 border-ui-border bg-ui-bg-elevated text-ui-text hover:bg-ui-bg-subtle transition-colors'
                   onClick={() => {
                     setCurrentTestChannel(record);
                     setShowModelTestModal(true);
                   }}
-                />
+                >
+                  <IconTreeTriangleDown />
+                </button>
               </SplitButtonGroup>
 
               {record.status === 1 ? (
-                <Button
-                  type='danger'
-                  size='small'
+                <button
+                  className='px-2 py-1 text-xs rounded border border-red-300 bg-red-50 text-red-600 hover:bg-red-100 transition-colors dark:bg-red-900/20 dark:border-red-700 dark:text-red-400'
                   onClick={() => manageChannel(record.id, 'disable', record)}
                 >
                   {t('禁用')}
-                </Button>
+                </button>
               ) : (
-                <Button
-                  size='small'
+                <button
+                  className='px-2 py-1 text-xs rounded border border-ui-border bg-ui-bg-elevated text-ui-text hover:bg-ui-bg-subtle transition-colors'
                   onClick={() => manageChannel(record.id, 'enable', record)}
                 >
                   {t('启用')}
-                </Button>
+                </button>
               )}
 
               {record.channel_info?.is_multi_key ? (
                 <SplitButtonGroup aria-label={t('多密钥渠道操作项目组')}>
-                  <Button
-                    type='tertiary'
-                    size='small'
+                  <button
+                    className='px-2 py-1 text-xs rounded-l border border-ui-border bg-ui-bg-elevated text-ui-text hover:bg-ui-bg-subtle transition-colors'
                     onClick={() => {
                       setEditingChannel(record);
                       setShowEdit(true);
                     }}
                   >
                     {t('编辑')}
-                  </Button>
+                  </button>
                   <Dropdown
                     trigger='click'
                     position='bottomRight'
@@ -831,24 +764,23 @@ export const getChannelsColumns = ({
                       },
                     ]}
                   >
-                    <Button
-                      type='tertiary'
-                      size='small'
-                      icon={<IconTreeTriangleDown />}
-                    />
+                    <button
+                      className='px-1.5 py-1 text-xs rounded-r border border-l-0 border-ui-border bg-ui-bg-elevated text-ui-text hover:bg-ui-bg-subtle transition-colors'
+                    >
+                      <IconTreeTriangleDown />
+                    </button>
                   </Dropdown>
                 </SplitButtonGroup>
               ) : (
-                <Button
-                  type='tertiary'
-                  size='small'
+                <button
+                  className='px-2 py-1 text-xs rounded border border-ui-border bg-ui-bg-elevated text-ui-text hover:bg-ui-bg-subtle transition-colors'
                   onClick={() => {
                     setEditingChannel(record);
                     setShowEdit(true);
                   }}
                 >
                   {t('编辑')}
-                </Button>
+                </button>
               )}
 
               <Dropdown
@@ -857,39 +789,38 @@ export const getChannelsColumns = ({
                 getPopupContainer={() => document.body}
                 menu={moreMenuItems}
               >
-                <Button icon={<IconMore />} type='tertiary' size='small' />
+                <button className='px-1.5 py-1 text-xs rounded border border-ui-border bg-ui-bg-elevated text-ui-text hover:bg-ui-bg-subtle transition-colors'>
+                  <IconMore />
+                </button>
               </Dropdown>
-            </Space>
+            </div>
           );
         } else {
           // 标签操作按钮
           return (
-            <Space wrap>
-              <Button
-                type='tertiary'
-                size='small'
+            <div className='flex items-center flex-wrap gap-2'>
+              <button
+                className='px-2 py-1 text-xs rounded border border-ui-border bg-ui-bg-elevated text-ui-text hover:bg-ui-bg-subtle transition-colors'
                 onClick={() => manageTag(record.key, 'enable')}
               >
                 {t('启用全部')}
-              </Button>
-              <Button
-                type='tertiary'
-                size='small'
+              </button>
+              <button
+                className='px-2 py-1 text-xs rounded border border-ui-border bg-ui-bg-elevated text-ui-text hover:bg-ui-bg-subtle transition-colors'
                 onClick={() => manageTag(record.key, 'disable')}
               >
                 {t('禁用全部')}
-              </Button>
-              <Button
-                type='tertiary'
-                size='small'
+              </button>
+              <button
+                className='px-2 py-1 text-xs rounded border border-ui-border bg-ui-bg-elevated text-ui-text hover:bg-ui-bg-subtle transition-colors'
                 onClick={() => {
                   setShowEditTag(true);
                   setEditingTag(record.key);
                 }}
               >
                 {t('编辑')}
-              </Button>
-            </Space>
+              </button>
+            </div>
           );
         }
       },

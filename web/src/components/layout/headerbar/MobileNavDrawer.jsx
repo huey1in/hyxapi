@@ -80,7 +80,7 @@ const MobileNavDrawer = ({
           aria-label='Home'
         >
           <span
-            className='text-[22px] font-bold text-black'
+            className='text-[22px] font-bold text-ui-text'
             style={{ fontFamily: "'Space Grotesk', sans-serif", letterSpacing: '-0.03em' }}
           >
             {systemName === 'Routify' ? (
@@ -120,7 +120,7 @@ const MobileNavDrawer = ({
               <button
                 onClick={() => navigateLink(link)}
                 className={`w-full flex items-center justify-between py-[18px] text-[15px] font-medium bg-transparent cursor-pointer ${
-                  isActive ? 'text-black' : 'text-black'
+                  isActive ? 'text-ui-text' : 'text-ui-text'
                 }`}
               >
                 <span>{link.text}</span>
@@ -137,7 +137,7 @@ const MobileNavDrawer = ({
             if (userState?.user) navigate('/console');
             else openLoginModal();
           }}
-          className='flex-1 h-[52px] rounded-full border text-[15px] font-semibold text-black bg-transparent cursor-pointer'
+          className='flex-1 h-[52px] rounded-full border text-[15px] font-semibold text-ui-text bg-transparent cursor-pointer'
           style={{ borderColor: 'rgb(192, 190, 181)' }}
         >
           {userState?.user ? '控制台' : '登录'}

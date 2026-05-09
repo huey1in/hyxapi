@@ -18,24 +18,17 @@ For commercial licensing, please contact support@quantumnous.com
 */
 
 import React from 'react';
-import { Empty } from '@douyinfe/semi-ui';
-import {
-  IllustrationNoAccess,
-  IllustrationNoAccessDark,
-} from '@douyinfe/semi-illustrations';
+import { ShieldX } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
 const Forbidden = () => {
   const { t } = useTranslation();
   return (
-    <div className='flex justify-center items-center h-screen p-8'>
-      <Empty
-        image={<IllustrationNoAccess style={{ width: 250, height: 250 }} />}
-        darkModeImage={
-          <IllustrationNoAccessDark style={{ width: 250, height: 250 }} />
-        }
-        description={t('您无权访问此页面，请联系管理员')}
-      />
+    <div className='flex flex-col justify-center items-center h-screen p-8 gap-4'>
+      <ShieldX size={80} className='text-ui-text-2 opacity-60' />
+      <p className='text-ui-text-2 text-base'>
+        {t('您无权访问此页面，请联系管理员')}
+      </p>
     </div>
   );
 };

@@ -215,21 +215,21 @@ export default function SettingGlobalModel(props) {
           <button
             type='button'
             onClick={() => set(POLICY_KEY)(policyExample)}
-            className='px-2.5 py-1 text-[11px] rounded-md border border-ui-border text-ui-text-2 hover:bg-ui-bg-hover'
+            className='px-2.5 py-1 text-[11px] rounded-xl border border-ui-border text-ui-text-2 hover:bg-ui-bg-hover'
           >
             {t('填充模板（指定渠道）')}
           </button>
           <button
             type='button'
             onClick={() => set(POLICY_KEY)(policyAllChannelsExample)}
-            className='px-2.5 py-1 text-[11px] rounded-md border border-ui-border text-ui-text-2 hover:bg-ui-bg-hover'
+            className='px-2.5 py-1 text-[11px] rounded-xl border border-ui-border text-ui-text-2 hover:bg-ui-bg-hover'
           >
             {t('填充模板（全渠道）')}
           </button>
           <button
             type='button'
             onClick={formatPolicy}
-            className='px-2.5 py-1 text-[11px] rounded-md border border-ui-border text-ui-text-2 hover:bg-ui-bg-hover'
+            className='px-2.5 py-1 text-[11px] rounded-xl border border-ui-border text-ui-text-2 hover:bg-ui-bg-hover'
           >
             {t('格式化 JSON')}
           </button>

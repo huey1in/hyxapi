@@ -32,18 +32,18 @@ const DatabaseStep = ({ setupStatus, renderNavigationButtons, t }) => {
     <>
       {setupStatus.database_type === 'sqlite' && (
         <div className='p-6 rounded-2xl bg-[#fafafa]'>
-          <h3 className='font-semibold text-lg text-black mb-4'>
+          <h3 className='font-semibold text-lg text-ui-text mb-4'>
             {isElectron ? t('本地数据存储') : t('数据库警告')}
           </h3>
           {isElectron ? (
-            <div className='text-gray-600 text-sm leading-relaxed space-y-4'>
+            <div className='text-ui-text-2 text-sm leading-relaxed space-y-4'>
               <p>
                 {t('您的数据将安全地存储在本地计算机上。所有配置、用户信息和使用记录都会自动保存，关闭应用后不会丢失。')}
               </p>
               {window.electron?.dataDir && (
                 <div>
-                  <p className='font-medium text-black mb-2'>{t('数据存储位置：')}</p>
-                  <div className='p-4 bg-[#f4f4f5] rounded-xl font-mono text-xs text-gray-800 overflow-x-auto'>
+                  <p className='font-medium text-ui-text mb-2'>{t('数据存储位置：')}</p>
+                  <div className='p-4 bg-[#f4f4f5] rounded-xl font-mono text-xs text-ui-text overflow-x-auto'>
                     {window.electron.dataDir}
                   </div>
                 </div>
@@ -51,7 +51,7 @@ const DatabaseStep = ({ setupStatus, renderNavigationButtons, t }) => {
               <p>{t('提示：如需备份数据，只需复制上述目录即可')}</p>
             </div>
           ) : (
-            <div className='text-gray-600 text-sm leading-relaxed space-y-4'>
+            <div className='text-ui-text-2 text-sm leading-relaxed space-y-4'>
               <p>
                 {t('您正在使用 SQLite 数据库。如果您在容器环境中运行，请确保已正确设置数据库文件的持久化映射，否则容器重启后所有数据将丢失！')}
               </p>
@@ -65,8 +65,8 @@ const DatabaseStep = ({ setupStatus, renderNavigationButtons, t }) => {
 
       {setupStatus.database_type === 'mysql' && (
         <div className='p-6 rounded-2xl bg-[#fafafa]'>
-          <h3 className='font-semibold text-lg text-black mb-4'>{t('数据库信息')}</h3>
-          <p className='text-gray-600 text-sm leading-relaxed'>
+          <h3 className='font-semibold text-lg text-ui-text mb-4'>{t('数据库信息')}</h3>
+          <p className='text-ui-text-2 text-sm leading-relaxed'>
             {t('您正在使用 MySQL 数据库。MySQL 是一个可靠的关系型数据库管理系统，适合生产环境使用。')}
           </p>
         </div>
@@ -74,8 +74,8 @@ const DatabaseStep = ({ setupStatus, renderNavigationButtons, t }) => {
 
       {setupStatus.database_type === 'postgres' && (
         <div className='p-6 rounded-2xl bg-[#fafafa]'>
-          <h3 className='font-semibold text-lg text-black mb-4'>{t('数据库信息')}</h3>
-          <p className='text-gray-600 text-sm leading-relaxed'>
+          <h3 className='font-semibold text-lg text-ui-text mb-4'>{t('数据库信息')}</h3>
+          <p className='text-ui-text-2 text-sm leading-relaxed'>
             {t('您正在使用 PostgreSQL 数据库。PostgreSQL 是一个功能强大的开源关系型数据库系统，提供了出色的可靠性和数据完整性，适合生产环境使用。')}
           </p>
         </div>

@@ -34,7 +34,7 @@ import {
   onOIDCClicked,
 } from '../../helpers';
 import Turnstile from 'react-turnstile';
-import { Modal } from '@douyinfe/semi-ui';
+import ModalDialog from '../common/ModalDialog';
 import WeChatIcon from '../common/logo/WeChatIcon';
 import OIDCIcon from '../common/logo/OIDCIcon';
 import LinuxDoIcon from '../common/logo/LinuxDoIcon';
@@ -531,7 +531,7 @@ const RegisterForm = ({ embedded = false, onSuccess, onSwitchToLogin }) => {
               <button
                 onClick={sendVerificationCode}
                 disabled={disableButton || verificationCodeLoading}
-                className='px-3 py-2 text-sm font-medium border border-black rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap flex items-center gap-1'
+                className='px-3 py-2 text-sm font-medium border border-black rounded-lg hover:bg-ui-bg-subtle transition-colors disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap flex items-center gap-1'
               >
                 {verificationCodeLoading && (
                   <span className='w-3 h-3 border-2 border-ui-text-3 border-t-transparent rounded-full animate-spin' />
@@ -578,15 +578,19 @@ const RegisterForm = ({ embedded = false, onSuccess, onSwitchToLogin }) => {
   };
 
   const wechatModal = (
-    <Modal
+    <ModalDialog
       title={t('微信扫码登录')}
-      visible={showWeChatLoginModal}
-      maskClosable={true}
-      onOk={onSubmitWeChatVerificationCode}
-      onCancel={() => setShowWeChatLoginModal(false)}
-      okText={t('登录')}
-      centered={true}
-      okButtonProps={{ loading: wechatCodeSubmitLoading }}
+      open={showWeChatLoginModal}
+      onClose={() => setShowWeChatLoginModal(false)}
+      footer={
+        <button
+          className='w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50'
+          onClick={onSubmitWeChatVerificationCode}
+          disabled={wechatCodeSubmitLoading}
+        >
+          {wechatCodeSubmitLoading ? '...' : t('登录')}
+        </button>
+      }
     >
       <div className='flex flex-col items-center'>
         <img src={status.wechat_qrcode} alt='微信二维码' className='mb-4' />
@@ -601,7 +605,7 @@ const RegisterForm = ({ embedded = false, onSuccess, onSwitchToLogin }) => {
         onChange={(e) => handleChange('wechat_verification_code', e.target.value)}
         className={inputClass}
       />
-    </Modal>
+    </ModalDialog>
   );
 
   const formContent = (

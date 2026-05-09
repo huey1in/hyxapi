@@ -105,7 +105,7 @@ const SingleModelSelectModal = ({
               placeholder={t('搜索模型')}
               value={keyword}
               onChange={(e) => setKeyword(e.target.value)}
-              className='w-full pl-8 pr-3 py-2 text-sm bg-ui-bg border border-ui-border rounded-md text-ui-text placeholder:text-ui-text-3 outline-none focus:border-ui-text-3'
+              className='w-full pl-8 pr-3 py-2 text-sm bg-transparent border border-ui-border rounded-md text-ui-text placeholder:text-ui-text-3 outline-none focus:border-ui-text-3'
             />
           </div>
 
@@ -152,13 +152,13 @@ const SingleModelSelectModal = ({
           )}
         </div>
         <div className='flex justify-end gap-2 px-5 py-3 border-t border-ui-border'>
-          <button onClick={onCancel} className='inline-flex items-center px-3.5 py-1.5 text-xs font-medium rounded-md border border-ui-border text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-subtle whitespace-nowrap'>
+          <button onClick={onCancel} className='inline-flex items-center px-3.5 py-1.5 text-xs font-medium rounded-xl border border-ui-border text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-subtle whitespace-nowrap'>
             {t('取消')}
           </button>
           <button
             onClick={() => onConfirm?.(selectedModel)}
             disabled={!selectedModel}
-            className='inline-flex items-center px-4 py-1.5 text-xs font-semibold rounded-md bg-ui-accent text-ui-accent-fg hover:bg-ui-accent-hover disabled:opacity-40 whitespace-nowrap'
+            className='inline-flex items-center px-4 py-1.5 text-xs font-semibold rounded-xl bg-ui-accent text-ui-accent-fg hover:bg-ui-accent-hover disabled:opacity-40 whitespace-nowrap'
           >
             {t('确定')}
           </button>

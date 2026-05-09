@@ -16,7 +16,7 @@ import EditRedemptionModal from './modals/EditRedemptionModal';
 import SubscriptionCodeBatchModal from './modals/SubscriptionCodeBatchModal';
 
 const inputCls =
-  'w-full pl-8 pr-3 py-1.5 text-xs bg-ui-bg border border-ui-border rounded-md text-ui-text placeholder:text-ui-text-3 outline-none focus:border-ui-text-3 transition-colors';
+  'w-full pl-8 pr-3 py-1.5 text-xs bg-transparent border border-ui-border rounded-md text-ui-text placeholder:text-ui-text-3 outline-none focus:border-ui-text-3 transition-colors';
 
 const Tabs = ({ active, onChange, items }) => (
   <div className='flex items-center gap-1'>
@@ -24,7 +24,7 @@ const Tabs = ({ active, onChange, items }) => (
       <button
         key={it.value}
         onClick={() => onChange(it.value)}
-        className={`px-3 py-1.5 text-xs rounded-md transition-colors whitespace-nowrap ${
+        className={`px-3 py-1.5 text-xs rounded-xl transition-colors whitespace-nowrap ${
           active === it.value
             ? 'bg-ui-bg-subtle text-ui-text font-semibold border border-ui-text-3'
             : 'border border-ui-border text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-subtle'
@@ -160,7 +160,7 @@ const RedemptionsPage = () => {
   };
 
   return (
-    <div className='min-h-[calc(100vh-4rem)] mt-16 px-4 py-5 md:px-6 md:py-6 bg-ui-bg'>
+    <div className='px-4 pt-8 pb-6 md:px-6 md:pt-10 md:pb-8'>
       <div className='max-w-[1400px] mx-auto'>
         {/* Header */}
         <div className='flex items-center justify-between gap-3 mb-5'>
@@ -256,7 +256,7 @@ const QuotaMode = ({ data, t }) => {
               data.setEditingRedemption({ id: undefined });
               data.setShowEdit(true);
             }}
-            className='inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-md bg-ui-accent text-ui-accent-fg hover:bg-ui-accent-hover whitespace-nowrap'
+            className='inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-xl bg-ui-accent text-ui-accent-fg hover:bg-ui-accent-hover whitespace-nowrap'
           >
             <Plus size={12} />
             {t('添加兑换码')}
@@ -264,13 +264,13 @@ const QuotaMode = ({ data, t }) => {
           <button
             onClick={data.batchCopyRedemptions}
             disabled={!data.selectedKeys.length}
-            className='inline-flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-md border border-ui-border text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-subtle disabled:opacity-40 whitespace-nowrap'
+            className='inline-flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-xl border border-ui-border text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-subtle disabled:opacity-40 whitespace-nowrap'
           >
             {t('复制所选')}
           </button>
           <button
             onClick={data.batchDeleteRedemptions}
-            className='inline-flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-md border border-ui-danger/40 text-ui-danger hover:bg-ui-danger-bg whitespace-nowrap'
+            className='inline-flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-xl border border-ui-danger/40 text-ui-danger hover:bg-ui-danger-bg whitespace-nowrap'
           >
             <Trash2 size={12} />
             {t('清除失效')}
@@ -305,14 +305,14 @@ const QuotaMode = ({ data, t }) => {
           <button
             type='submit'
             disabled={data.searching}
-            className='inline-flex items-center px-3 py-1.5 text-xs rounded-md border border-ui-border text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-subtle whitespace-nowrap disabled:opacity-50'
+            className='inline-flex items-center px-3 py-1.5 text-xs rounded-xl border border-ui-border text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-subtle whitespace-nowrap disabled:opacity-50'
           >
             {data.searching ? t('查询中...') : t('查询')}
           </button>
           <button
             type='button'
             onClick={reset}
-            className='inline-flex items-center px-3 py-1.5 text-xs rounded-md border border-ui-border text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-subtle whitespace-nowrap'
+            className='inline-flex items-center px-3 py-1.5 text-xs rounded-xl border border-ui-border text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-subtle whitespace-nowrap'
           >
             {t('重置')}
           </button>
@@ -374,7 +374,7 @@ const SubscriptionMode = ({
         <button
           onClick={openGenerator}
           disabled={plans.length === 0}
-          className='inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-md bg-ui-accent text-ui-accent-fg hover:bg-ui-accent-hover disabled:opacity-50 whitespace-nowrap'
+          className='inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-xl bg-ui-accent text-ui-accent-fg hover:bg-ui-accent-hover disabled:opacity-50 whitespace-nowrap'
         >
           <Plus size={12} />
           {t('生成订阅兑换码')}
@@ -382,7 +382,7 @@ const SubscriptionMode = ({
         <button
           onClick={loadSubscriptionCodes}
           disabled={subLoading}
-          className='inline-flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-md border border-ui-border text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-subtle disabled:opacity-50 whitespace-nowrap'
+          className='inline-flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-xl border border-ui-border text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-subtle disabled:opacity-50 whitespace-nowrap'
         >
           <RefreshCw size={12} className={subLoading ? 'animate-spin' : ''} />
           {t('刷新')}
@@ -390,7 +390,7 @@ const SubscriptionMode = ({
         <button
           onClick={copyAllUnusedSub}
           disabled={!filteredSubCodes.some((c) => c.status === 1)}
-          className='inline-flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-md border border-ui-border text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-subtle disabled:opacity-40 whitespace-nowrap'
+          className='inline-flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-xl border border-ui-border text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-subtle disabled:opacity-40 whitespace-nowrap'
         >
           {t('复制未使用')}
         </button>
@@ -399,7 +399,7 @@ const SubscriptionMode = ({
         <select
           value={planFilter}
           onChange={(e) => setPlanFilter(e.target.value)}
-          className='px-2.5 py-1.5 text-xs bg-ui-bg border border-ui-border rounded-md text-ui-text outline-none focus:border-ui-text-3 cursor-pointer'
+          className='px-2.5 py-1.5 text-xs bg-transparent border border-ui-border rounded-xl text-ui-text outline-none focus:border-ui-text-3 cursor-pointer'
         >
           <option value='all'>{t('全部套餐')}</option>
           {plans.map((p) => (

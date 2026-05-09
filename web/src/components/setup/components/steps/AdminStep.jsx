@@ -51,20 +51,20 @@ const AdminStep = ({
   };
 
   const inputClass =
-    'w-full px-4 py-3 text-sm border border-black rounded-lg outline-none focus:ring-2 focus:ring-black bg-white';
+    'w-full px-4 py-3 text-sm border border-black rounded-lg outline-none focus:ring-2 focus:ring-black bg-ui-bg-elevated';
 
   return (
     <>
       {setupStatus.root_init ? (
         <div className='p-6 rounded-2xl bg-[#fafafa]'>
-          <p className='text-gray-600 text-sm leading-relaxed'>
+          <p className='text-ui-text-2 text-sm leading-relaxed'>
             {t('管理员账号已经初始化过，请继续设置其他参数')}
           </p>
         </div>
       ) : (
         <div className='space-y-6'>
           <div>
-            <label className='block mb-2 text-sm font-medium text-black'>
+            <label className='block mb-2 text-sm font-medium text-ui-text'>
               {t('用户名')}
             </label>
             <input
@@ -82,7 +82,7 @@ const AdminStep = ({
             )}
           </div>
           <div>
-            <label className='block mb-2 text-sm font-medium text-black'>
+            <label className='block mb-2 text-sm font-medium text-ui-text'>
               {t('密码')}
             </label>
             <input
@@ -100,7 +100,7 @@ const AdminStep = ({
             )}
           </div>
           <div>
-            <label className='block mb-2 text-sm font-medium text-black'>
+            <label className='block mb-2 text-sm font-medium text-ui-text'>
               {t('确认密码')}
             </label>
             <input

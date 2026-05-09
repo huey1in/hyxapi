@@ -18,10 +18,8 @@ For commercial licensing, please contact support@quantumnous.com
 */
 
 import React from 'react';
-import { Typography, Toast, Avatar } from '@douyinfe/semi-ui';
+import { Copy } from 'lucide-react';
 import { getLobeHubIcon } from '../../../../../helpers';
-
-const { Paragraph } = Typography;
 
 const CARD_STYLES = {
   container:
@@ -57,37 +55,42 @@ const ModelHeader = ({ modelData, vendorsMap = {}, t }) => {
     const avatarText = modelData?.model_name?.slice(0, 2).toUpperCase() || 'AI';
     return (
       <div className={CARD_STYLES.container}>
-        <Avatar
-          size='large'
+        <div
+          className='flex items-center justify-center text-base font-bold text-ui-text'
           style={{
             width: 48,
             height: 48,
             borderRadius: 16,
-            fontSize: 16,
-            fontWeight: 'bold',
+            backgroundColor: 'var(--page-bg)',
           }}
         >
           {avatarText}
-        </Avatar>
+        </div>
       </div>
     );
+  };
+
+  const handleCopy = () => {
+    const text = modelData?.model_name || '';
+    navigator.clipboard.writeText(text);
   };
 
   return (
     <div className='flex items-center'>
       {getModelIcon()}
       <div className='ml-3 font-normal'>
-        <Paragraph
-          className='!mb-0 !text-lg !font-medium'
-          copyable={{
-            content: modelData?.model_name || '',
-            onCopy: () => Toast.success({ content: t('已复制模型名称') }),
-          }}
-        >
-          <span className='truncate max-w-60 font-bold'>
+        <div className='flex items-center gap-2'>
+          <span className='truncate max-w-60 font-bold text-lg'>
             {modelData?.model_name || t('未知模型')}
           </span>
-        </Paragraph>
+          <button
+            className='inline-flex items-center justify-center w-6 h-6 rounded-md text-ui-text-3 hover:text-ui-text hover:bg-ui-bg-subtle transition-colors'
+            onClick={handleCopy}
+            title={t('已复制模型名称')}
+          >
+            <Copy size={14} />
+          </button>
+        </div>
       </div>
     </div>
   );

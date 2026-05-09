@@ -17,17 +17,9 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 import React, { useState, useEffect, useMemo } from 'react';
-import {
-  Modal,
-  RadioGroup,
-  Radio,
-  Select,
-  Input,
-  Toast,
-  Typography,
-} from '@douyinfe/semi-ui';
+import ModalDialog from '../../../common/ModalDialog';
 import { useTranslation } from 'react-i18next';
-import { selectFilter } from '../../../../helpers';
+import { showError } from '../../../../helpers';
 
 const APP_CONFIGS = {
   claude: {
@@ -113,7 +105,7 @@ export default function CCSwitchModal({
 
   const handleSubmit = () => {
     if (!models.model) {
-      Toast.warning(t('请选择主模型'));
+      showError(t('请选择主模型'));
       return;
     }
     const url = buildCCSwitchURL(app, name, models, 'sk-' + tokenKey);
@@ -125,70 +117,87 @@ export default function CCSwitchModal({
     () => ({
       marginBottom: 4,
       fontSize: 13,
-      color: 'var(--semi-color-text-1)',
     }),
     [],
   );
 
   return (
-    <Modal
+    <ModalDialog
+      open={visible}
+      onClose={onClose}
       title={t('填入 CC Switch')}
-      visible={visible}
-      onCancel={onClose}
-      onOk={handleSubmit}
-      okText={t('打开 CC Switch')}
-      cancelText={t('取消')}
-      maskClosable={false}
       width={480}
+      footer={
+        <>
+          <button
+            onClick={onClose}
+            className='px-4 py-2 text-sm font-medium rounded-xl border border-ui-border text-ui-text hover:bg-ui-bg-subtle transition-colors'
+          >
+            {t('取消')}
+          </button>
+          <button
+            onClick={handleSubmit}
+            className='inline-flex items-center gap-1.5 px-4 py-2 text-sm font-semibold rounded-xl bg-ui-accent text-ui-accent-fg hover:bg-ui-accent-hover transition-colors'
+          >
+            {t('打开 CC Switch')}
+          </button>
+        </>
+      }
     >
       <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
         <div>
-          <div style={fieldLabelStyle}>{t('应用')}</div>
-          <RadioGroup
-            type='button'
-            value={app}
-            onChange={(e) => handleAppChange(e.target.value)}
-            style={{ width: '100%' }}
-          >
+          <div style={fieldLabelStyle} className='text-ui-text'>{t('应用')}</div>
+          <div className='flex gap-1 p-1 bg-ui-bg-subtle rounded-xl'>
             {Object.entries(APP_CONFIGS).map(([key, cfg]) => (
-              <Radio key={key} value={key}>
+              <button
+                key={key}
+                type='button'
+                onClick={() => handleAppChange(key)}
+                className={`flex-1 px-3 py-1.5 text-sm rounded-lg transition-colors ${
+                  app === key
+                    ? 'bg-ui-bg-elevated text-ui-text font-medium shadow-sm'
+                    : 'text-ui-text-2 hover:text-ui-text'
+                }`}
+              >
                 {cfg.label}
-              </Radio>
+              </button>
             ))}
-          </RadioGroup>
+          </div>
         </div>
 
         <div>
-          <div style={fieldLabelStyle}>{t('名称')}</div>
-          <Input
+          <div style={fieldLabelStyle} className='text-ui-text'>{t('名称')}</div>
+          <input
             value={name}
-            onChange={setName}
+            onChange={(e) => setName(e.target.value)}
             placeholder={currentConfig.defaultName}
+            className='w-full px-3.5 py-2 text-sm bg-transparent border border-ui-border rounded-xl text-ui-text placeholder:text-ui-text-3 outline-none focus:border-ui-text-3 transition-colors'
           />
         </div>
 
         {currentConfig.modelFields.map((field) => (
           <div key={field.key}>
-            <div style={fieldLabelStyle}>
+            <div style={fieldLabelStyle} className='text-ui-text'>
               {t(field.label)}
               {field.key === 'model' && (
-                <Typography.Text type='danger'> *</Typography.Text>
+                <span className='text-ui-danger ml-1'>*</span>
               )}
             </div>
-            <Select
-              placeholder={t('请选择模型')}
-              optionList={modelOptions}
-              value={models[field.key] || undefined}
-              onChange={(val) => handleModelChange(field.key, val)}
-              filter={selectFilter}
-              style={{ width: '100%' }}
-              showClear
-              searchable
-              emptyContent={t('暂无数据')}
-            />
+            <select
+              value={models[field.key] || ''}
+              onChange={(e) => handleModelChange(field.key, e.target.value || undefined)}
+              className='w-full px-3.5 py-2 text-sm bg-transparent border border-ui-border rounded-xl text-ui-text outline-none focus:border-ui-text-3 transition-colors'
+            >
+              <option value=''>{t('请选择模型')}</option>
+              {(modelOptions || []).map((opt) => (
+                <option key={opt.value} value={opt.value}>
+                  {typeof opt.label === 'string' ? opt.label : opt.value}
+                </option>
+              ))}
+            </select>
           </div>
         ))}
       </div>
-    </Modal>
+    </ModalDialog>
   );
 }

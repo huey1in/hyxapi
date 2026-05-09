@@ -41,8 +41,8 @@ function ConflictConfirmModal({ t, visible, items, onOk, onCancel }) {
       width={700}
       footer={
         <div className='flex justify-end gap-2'>
-          <button onClick={onCancel} className='px-3.5 py-1.5 text-xs rounded-md border border-ui-border text-ui-text-2 hover:bg-ui-bg-subtle'>{t('取消')}</button>
-          <button onClick={onOk} className='px-3.5 py-1.5 text-xs font-semibold rounded-md bg-ui-accent text-ui-accent-fg hover:opacity-90'>{t('确定')}</button>
+          <button onClick={onCancel} className='px-3.5 py-1.5 text-xs rounded-xl border border-ui-border text-ui-text-2 hover:bg-ui-bg-subtle'>{t('取消')}</button>
+          <button onClick={onOk} className='px-3.5 py-1.5 text-xs font-semibold rounded-xl bg-ui-accent text-ui-accent-fg hover:opacity-90'>{t('确定')}</button>
         </div>
       }
     >
@@ -282,11 +282,11 @@ export default function UpstreamRatioSync(props) {
       {/* Toolbar */}
       <div className='flex flex-wrap items-center gap-2'>
         <button onClick={() => { setModalVisible(true); if (!allChannels.length) fetchAllChannels(); }}
-          className='inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium rounded-md border border-ui-border text-ui-text-2 hover:bg-ui-bg-hover'>
+          className='inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium rounded-xl border border-ui-border text-ui-text-2 hover:bg-ui-bg-hover'>
           {t('选择同步渠道')}
         </button>
         <button onClick={applySync} disabled={!Object.keys(resolutions).length}
-          className='inline-flex items-center gap-1 px-3 py-1.5 text-xs font-semibold rounded-md bg-ui-accent text-ui-accent-fg hover:opacity-90 disabled:opacity-40'>
+          className='inline-flex items-center gap-1 px-3 py-1.5 text-xs font-semibold rounded-xl bg-ui-accent text-ui-accent-fg hover:opacity-90 disabled:opacity-40'>
           {t('应用同步')}
         </button>
         <div className='relative flex-1 min-w-[180px] max-w-[220px]'>
@@ -295,7 +295,7 @@ export default function UpstreamRatioSync(props) {
             className='w-full rounded-md border border-ui-border bg-ui-bg-subtle text-ui-text text-xs pl-8 pr-3 py-1.5 focus:outline-none focus:ring-1 focus:ring-ui-accent/40' />
         </div>
         <select value={ratioTypeFilter} onChange={(e) => setRatioTypeFilter(e.target.value)}
-          className='rounded-md border border-ui-border bg-ui-bg-subtle text-ui-text text-xs px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-ui-accent/40'>
+          className='rounded-xl border border-ui-border bg-ui-bg-subtle text-ui-text text-xs px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-ui-accent/40'>
           <option value=''>{t('全部倍率类型')}</option>
           <option value='model_ratio'>{t('模型倍率')}</option>
           <option value='completion_ratio'>{t('补全倍率')}</option>
@@ -354,7 +354,7 @@ export default function UpstreamRatioSync(props) {
                         {row.current != null ? (
                           <span className={`${miniTag} !bg-blue-500/10 !text-blue-600 dark:!text-blue-400 !border-blue-500/20`}>{String(row.current)}</span>
                         ) : (
-                          <span className={`${miniTag} !bg-gray-400/10 !text-gray-500 !border-gray-400/20`}>{t('未设置')}</span>
+                          <span className={`${miniTag} !bg-gray-400/10 !text-ui-text-2 !border-gray-400/20`}>{t('未设置')}</span>
                         )}
                       </td>
                       {upstreamNames.map((upName) => {

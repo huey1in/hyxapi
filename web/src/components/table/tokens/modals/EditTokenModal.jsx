@@ -23,66 +23,78 @@ import {
   showError,
   showSuccess,
   timestamp2string,
-  renderGroupOption,
   getCurrencyConfig,
   getModelCategories,
-  selectFilter,
 } from '../../../../helpers';
 import {
   quotaToDisplayAmount,
   displayAmountToQuota,
 } from '../../../../helpers/quota';
 import { useIsMobile } from '../../../../hooks/common/useIsMobile';
-import {
-  Button,
-  SideSheet,
-  Space,
-  Spin,
-  Typography,
-  Card,
-  Tag,
-  Avatar,
-  Form,
-  Col,
-  Row,
-  InputNumber,
-} from '@douyinfe/semi-ui';
-import {
-  IconCreditCard,
-  IconLink,
-  IconSave,
-  IconClose,
-  IconKey,
-} from '@douyinfe/semi-icons';
+import { Save, X, CreditCard, Link, Key, Loader2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { StatusContext } from '../../../../context/Status';
+import SlideOver from '../../../common/SlideOver';
+import {
+  FieldRow,
+  TextField,
+  NumberField,
+  TextAreaField,
+  Toggle,
+  MultiCombobox,
+  Combobox,
+} from '../../../common/form/Primitives';
 
-const { Text, Title } = Typography;
+const SectionCard = ({ icon: Icon, iconColor = 'blue', title, description, children }) => {
+  const colorMap = {
+    blue: 'bg-blue-500/10 text-blue-600 dark:text-blue-400',
+    green: 'bg-green-500/10 text-green-600 dark:text-green-400',
+    purple: 'bg-purple-500/10 text-purple-600 dark:text-purple-400',
+  };
+  return (
+    <div className='border border-ui-border rounded-2xl p-4 mb-4'>
+      <div className='flex items-center mb-3'>
+        {Icon && (
+          <span className={`inline-flex items-center justify-center w-8 h-8 rounded-lg mr-2 ${colorMap[iconColor] || colorMap.blue}`}>
+            <Icon size={16} />
+          </span>
+        )}
+        <div>
+          <div className='text-sm font-semibold text-ui-text'>{title}</div>
+          {description && <div className='text-xs text-ui-text-3 mt-0.5'>{description}</div>}
+        </div>
+      </div>
+      <div className='space-y-4'>{children}</div>
+    </div>
+  );
+};
+
+const getInitValues = () => ({
+  name: '',
+  remain_quota: 0,
+  remain_amount: 0,
+  expired_time: -1,
+  unlimited_quota: true,
+  model_limits_enabled: false,
+  model_limits: [],
+  allow_ips: '',
+  group: '',
+  cross_group_retry: false,
+  tokenCount: 1,
+});
 
 const EditTokenModal = (props) => {
   const { t } = useTranslation();
-  const [statusState, statusDispatch] = useContext(StatusContext);
+  const [statusState] = useContext(StatusContext);
   const [loading, setLoading] = useState(false);
   const isMobile = useIsMobile();
-  const formApiRef = useRef(null);
+  const [values, setValues] = useState(getInitValues());
   const [models, setModels] = useState([]);
   const [groups, setGroups] = useState([]);
   const [showQuotaInput, setShowQuotaInput] = useState(false);
   const isEdit = props.editingToken.id !== undefined;
 
-  const getInitValues = () => ({
-    name: '',
-    remain_quota: 0,
-    remain_amount: 0,
-    expired_time: -1,
-    unlimited_quota: true,
-    model_limits_enabled: false,
-    model_limits: [],
-    allow_ips: '',
-    group: '',
-    cross_group_retry: false,
-    tokenCount: 1,
-  });
+  const setValue = (field, val) => setValues((prev) => ({ ...prev, [field]: val }));
 
   const handleCancel = () => {
     props.handleClose();
@@ -95,12 +107,11 @@ const EditTokenModal = (props) => {
     seconds += day * 24 * 60 * 60;
     seconds += hour * 60 * 60;
     seconds += minute * 60;
-    if (!formApiRef.current) return;
     if (seconds !== 0) {
       timestamp += seconds;
-      formApiRef.current.setValue('expired_time', timestamp2string(timestamp));
+      setValue('expired_time', timestamp2string(timestamp));
     } else {
-      formApiRef.current.setValue('expired_time', -1);
+      setValue('expired_time', -1);
     }
   };
 
@@ -118,13 +129,9 @@ const EditTokenModal = (props) => {
           }
         }
         return {
-          label: (
-            <span className='flex items-center gap-1'>
-              {icon}
-              {model}
-            </span>
-          ),
+          label: model,
           value: model,
+          icon,
         };
       });
       setModels(localModelOptions);
@@ -148,9 +155,6 @@ const EditTokenModal = (props) => {
         }
       }
       setGroups(localGroupOptions);
-      // if (statusState?.status?.default_use_auto_group && formApiRef.current) {
-      //   formApiRef.current.setValue('group', 'auto');
-      // }
     } else {
       showError(t(message));
     }
@@ -172,9 +176,7 @@ const EditTokenModal = (props) => {
       data.remain_amount = Number(
         quotaToDisplayAmount(data.remain_quota || 0).toFixed(6),
       );
-      if (formApiRef.current) {
-        formApiRef.current.setValues({ ...getInitValues(), ...data });
-      }
+      setValues({ ...getInitValues(), ...data });
     } else {
       showError(message);
     }
@@ -182,10 +184,8 @@ const EditTokenModal = (props) => {
   };
 
   useEffect(() => {
-    if (formApiRef.current) {
-      if (!isEdit) {
-        formApiRef.current.setValues(getInitValues());
-      }
+    if (!isEdit) {
+      setValues(getInitValues());
     }
     loadModels();
     loadGroups();
@@ -196,10 +196,10 @@ const EditTokenModal = (props) => {
       if (isEdit) {
         loadToken();
       } else {
-        formApiRef.current?.setValues(getInitValues());
+        setValues(getInitValues());
       }
     } else {
-      formApiRef.current?.reset();
+      setValues(getInitValues());
     }
   }, [props.visiable, props.editingToken.id]);
 
@@ -215,7 +215,7 @@ const EditTokenModal = (props) => {
     return result;
   };
 
-  const submit = async (values) => {
+  const submit = async () => {
     setLoading(true);
     if (isEdit) {
       let { tokenCount: _tc, ...localInputs } = values;
@@ -236,7 +236,9 @@ const EditTokenModal = (props) => {
         }
         localInputs.expired_time = Math.ceil(time / 1000);
       }
-      localInputs.model_limits = localInputs.model_limits.join(',');
+      localInputs.model_limits = Array.isArray(localInputs.model_limits)
+        ? localInputs.model_limits.join(',')
+        : '';
       localInputs.model_limits_enabled = localInputs.model_limits.length > 0;
       let res = await API.put(`/api/token/`, {
         ...localInputs,
@@ -280,7 +282,9 @@ const EditTokenModal = (props) => {
           }
           localInputs.expired_time = Math.ceil(time / 1000);
         }
-        localInputs.model_limits = localInputs.model_limits.join(',');
+        localInputs.model_limits = Array.isArray(localInputs.model_limits)
+          ? localInputs.model_limits.join(',')
+          : '';
         localInputs.model_limits_enabled = localInputs.model_limits.length > 0;
         let res = await API.post(`/api/token/`, localInputs);
         const { success, message } = res.data;
@@ -298,355 +302,227 @@ const EditTokenModal = (props) => {
       }
     }
     setLoading(false);
-    formApiRef.current?.setValues(getInitValues());
+    setValues(getInitValues());
   };
 
   return (
-    <SideSheet
+    <SlideOver
+      open={props.visiable}
+      onClose={handleCancel}
       placement={isEdit ? 'right' : 'left'}
-      title={
-        <Space>
-          {isEdit ? (
-            <Tag color='blue' shape='circle'>
-              {t('更新')}
-            </Tag>
-          ) : (
-            <Tag color='green' shape='circle'>
-              {t('新建')}
-            </Tag>
-          )}
-          <Title heading={4} className='m-0'>
-            {isEdit ? t('更新令牌信息') : t('创建新的令牌')}
-          </Title>
-        </Space>
-      }
-      bodyStyle={{ padding: '0' }}
-      visible={props.visiable}
       width={isMobile ? '100%' : 600}
-      footer={
-        <div className='flex justify-end bg-white'>
-          <Space>
-            <Button
-              theme='solid'
-              className='!rounded-lg'
-              onClick={() => formApiRef.current?.submitForm()}
-              icon={<IconSave />}
-              loading={loading}
-            >
-              {t('提交')}
-            </Button>
-            <Button
-              theme='light'
-              className='!rounded-lg'
-              type='primary'
-              onClick={handleCancel}
-              icon={<IconClose />}
-            >
-              {t('取消')}
-            </Button>
-          </Space>
+      title={
+        <div className='flex items-center gap-2'>
+          {isEdit ? (
+            <span className='inline-flex items-center px-2 py-0.5 text-[11px] rounded-md font-medium bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20'>
+              {t('更新')}
+            </span>
+          ) : (
+            <span className='inline-flex items-center px-2 py-0.5 text-[11px] rounded-md font-medium bg-green-500/10 text-green-600 dark:text-green-400 border border-green-500/20'>
+              {t('新建')}
+            </span>
+          )}
+          <span className='text-base font-semibold text-ui-text'>
+            {isEdit ? t('更新令牌信息') : t('创建新的令牌')}
+          </span>
         </div>
       }
-      closeIcon={null}
-      onCancel={() => handleCancel()}
+      footer={
+        <>
+          <button
+            onClick={submit}
+            disabled={loading}
+            className='inline-flex items-center gap-1.5 px-4 py-2 text-sm font-semibold rounded-xl bg-ui-accent text-ui-accent-fg hover:bg-ui-accent-hover transition-colors disabled:opacity-50'
+          >
+            {loading ? <Loader2 size={14} className='animate-spin' /> : <Save size={14} />}
+            {t('提交')}
+          </button>
+          <button
+            onClick={handleCancel}
+            className='inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium rounded-xl border border-ui-border text-ui-text hover:bg-ui-bg-subtle transition-colors'
+          >
+            <X size={14} />
+            {t('取消')}
+          </button>
+        </>
+      }
     >
-      <Spin spinning={loading}>
-        <Form
-          key={isEdit ? 'edit' : 'new'}
-          initValues={getInitValues()}
-          getFormApi={(api) => (formApiRef.current = api)}
-          onSubmit={submit}
-        >
-          {({ values }) => (
-            <div className='p-2'>
-              {/* 基本信息 */}
-              <Card className='!rounded-2xl shadow-sm border-0'>
-                <div className='flex items-center mb-2'>
-                  <Avatar size='small' color='blue' className='mr-2 shadow-md'>
-                    <IconKey size={16} />
-                  </Avatar>
-                  <div>
-                    <Text className='text-lg font-medium'>{t('基本信息')}</Text>
-                    <div className='text-xs text-gray-600'>
-                      {t('设置令牌的基本信息')}
-                    </div>
-                  </div>
-                </div>
-                <Row gutter={12}>
-                  <Col span={24}>
-                    <Form.Input
-                      field='name'
-                      label={t('名称')}
-                      placeholder={t('请输入名称')}
-                      rules={[{ required: true, message: t('请输入名称') }]}
-                      showClear
-                    />
-                  </Col>
-                  <Col span={24}>
-                    {groups.length > 0 ? (
-                      <Form.Select
-                        field='group'
-                        label={t('令牌分组')}
-                        placeholder={t('令牌分组，默认为用户的分组')}
-                        optionList={groups}
-                        renderOptionItem={renderGroupOption}
-                        filter={(input, option) => {
-                          const q = input.toLowerCase();
-                          return (
-                            option.value?.toLowerCase().includes(q) ||
-                            (typeof option.label === 'string' &&
-                              option.label.toLowerCase().includes(q))
-                          );
-                        }}
-                        showClear
-                        style={{ width: '100%' }}
-                      />
-                    ) : (
-                      <Form.Select
-                        placeholder={t('管理员未设置用户可选分组')}
-                        disabled
-                        label={t('令牌分组')}
-                        style={{ width: '100%' }}
-                      />
-                    )}
-                  </Col>
-                  <Col
-                    span={24}
-                    style={{
-                      display: values.group === 'auto' ? 'block' : 'none',
-                    }}
-                  >
-                    <Form.Switch
-                      field='cross_group_retry'
-                      label={t('跨分组重试')}
-                      size='default'
-                      extraText={t(
-                        '开启后，当前分组渠道失败时会按顺序尝试下一个分组的渠道',
-                      )}
-                    />
-                  </Col>
-                  <Col xs={24} sm={24} md={24} lg={10} xl={10}>
-                    <Form.DatePicker
-                      field='expired_time'
-                      label={t('过期时间')}
-                      type='dateTime'
-                      placeholder={t('请选择过期时间')}
-                      rules={[
-                        { required: true, message: t('请选择过期时间') },
-                        {
-                          validator: (rule, value) => {
-                            // 允许 -1 表示永不过期，也允许空值在必填校验时被拦截
-                            if (value === -1 || !value)
-                              return Promise.resolve();
-                            const time = Date.parse(value);
-                            if (isNaN(time)) {
-                              return Promise.reject(t('过期时间格式错误！'));
-                            }
-                            if (time <= Date.now()) {
-                              return Promise.reject(
-                                t('过期时间不能早于当前时间！'),
-                              );
-                            }
-                            return Promise.resolve();
-                          },
-                        },
-                      ]}
-                      showClear
-                      style={{ width: '100%' }}
-                    />
-                  </Col>
-                  <Col xs={24} sm={24} md={24} lg={14} xl={14}>
-                    <Form.Slot label={t('过期时间快捷设置')}>
-                      <Space wrap>
-                        <Button
-                          theme='light'
-                          type='primary'
-                          onClick={() => setExpiredTime(0, 0, 0, 0)}
-                        >
-                          {t('永不过期')}
-                        </Button>
-                        <Button
-                          theme='light'
-                          type='tertiary'
-                          onClick={() => setExpiredTime(1, 0, 0, 0)}
-                        >
-                          {t('一个月')}
-                        </Button>
-                        <Button
-                          theme='light'
-                          type='tertiary'
-                          onClick={() => setExpiredTime(0, 1, 0, 0)}
-                        >
-                          {t('一天')}
-                        </Button>
-                        <Button
-                          theme='light'
-                          type='tertiary'
-                          onClick={() => setExpiredTime(0, 0, 1, 0)}
-                        >
-                          {t('一小时')}
-                        </Button>
-                      </Space>
-                    </Form.Slot>
-                  </Col>
-                  {!isEdit && (
-                    <Col span={24}>
-                      <Form.InputNumber
-                        field='tokenCount'
-                        label={t('新建数量')}
-                        min={1}
-                        extraText={t('批量创建时会在名称后自动添加随机后缀')}
-                        rules={[
-                          { required: true, message: t('请输入新建数量') },
-                        ]}
-                        style={{ width: '100%' }}
-                      />
-                    </Col>
-                  )}
-                </Row>
-              </Card>
+      {loading && (
+        <div className='flex items-center justify-center py-8'>
+          <Loader2 size={20} className='animate-spin text-ui-text-3' />
+        </div>
+      )}
+      {!loading && (
+        <div className='p-4 space-y-4'>
+          {/* 基本信息 */}
+          <SectionCard icon={Key} iconColor='blue' title={t('基本信息')} description={t('设置令牌的基本信息')}>
+            <FieldRow label={t('名称')} required>
+              <TextField
+                value={values.name}
+                onChange={(v) => setValue('name', v)}
+                placeholder={t('请输入名称')}
+              />
+            </FieldRow>
 
-              {/* 额度设置 */}
-              <Card className='!rounded-2xl shadow-sm border-0'>
-                <div className='flex items-center mb-2'>
-                  <Avatar size='small' color='green' className='mr-2 shadow-md'>
-                    <IconCreditCard size={16} />
-                  </Avatar>
-                  <div>
-                    <Text className='text-lg font-medium'>{t('额度设置')}</Text>
-                    <div className='text-xs text-gray-600'>
-                      {t('设置令牌可用额度和数量')}
-                    </div>
-                  </div>
-                </div>
-                <Row gutter={12}>
-                  <Col span={24}>
-                    <Form.InputNumber
-                      field='remain_amount'
-                      label={t('金额')}
-                      prefix={getCurrencyConfig().symbol}
-                      placeholder={t('输入金额')}
-                      precision={6}
-                      disabled={values.unlimited_quota}
-                      min={0}
-                      step={0.000001}
+            {groups.length > 0 ? (
+              <FieldRow label={t('令牌分组')}>
+                <Combobox
+                  value={values.group}
+                  onChange={(v) => setValue('group', v)}
+                  options={groups}
+                  placeholder={t('令牌分组，默认为用户的分组')}
+                />
+              </FieldRow>
+            ) : (
+              <FieldRow label={t('令牌分组')}>
+                <TextField
+                  disabled
+                  placeholder={t('管理员未设置用户可选分组')}
+                />
+              </FieldRow>
+            )}
+
+            {values.group === 'auto' && (
+              <FieldRow label={t('跨分组重试')} hint={t('开启后，当前分组渠道失败时会按顺序尝试下一个分组的渠道')}>
+                <Toggle
+                  checked={values.cross_group_retry}
+                  onChange={(v) => setValue('cross_group_retry', v)}
+                />
+              </FieldRow>
+            )}
+
+            <FieldRow label={t('过期时间')}>
+              <TextField
+                value={values.expired_time === -1 ? '' : values.expired_time}
+                onChange={(v) => setValue('expired_time', v || -1)}
+                placeholder={t('请选择过期时间')}
+              />
+            </FieldRow>
+
+            <FieldRow label={t('过期时间快捷设置')}>
+              <div className='flex flex-wrap gap-2'>
+                <button
+                  type='button'
+                  onClick={() => setExpiredTime(0, 0, 0, 0)}
+                  className='px-3 py-1.5 text-xs font-medium rounded-lg bg-ui-accent/10 text-ui-accent hover:bg-ui-accent/20 transition-colors'
+                >
+                  {t('永不过期')}
+                </button>
+                <button
+                  type='button'
+                  onClick={() => setExpiredTime(1, 0, 0, 0)}
+                  className='px-3 py-1.5 text-xs font-medium rounded-lg border border-ui-border text-ui-text hover:bg-ui-bg-subtle transition-colors'
+                >
+                  {t('一个月')}
+                </button>
+                <button
+                  type='button'
+                  onClick={() => setExpiredTime(0, 1, 0, 0)}
+                  className='px-3 py-1.5 text-xs font-medium rounded-lg border border-ui-border text-ui-text hover:bg-ui-bg-subtle transition-colors'
+                >
+                  {t('一天')}
+                </button>
+                <button
+                  type='button'
+                  onClick={() => setExpiredTime(0, 0, 1, 0)}
+                  className='px-3 py-1.5 text-xs font-medium rounded-lg border border-ui-border text-ui-text hover:bg-ui-bg-subtle transition-colors'
+                >
+                  {t('一小时')}
+                </button>
+              </div>
+            </FieldRow>
+
+            {!isEdit && (
+              <FieldRow label={t('新建数量')} hint={t('批量创建时会在名称后自动添加随机后缀')}>
+                <NumberField
+                  value={values.tokenCount}
+                  onChange={(v) => setValue('tokenCount', v)}
+                  min={1}
+                />
+              </FieldRow>
+            )}
+          </SectionCard>
+
+          {/* 额度设置 */}
+          <SectionCard icon={CreditCard} iconColor='green' title={t('额度设置')} description={t('设置令牌可用额度和数量')}>
+            <FieldRow label={t('金额')}>
+              <div className='flex items-center gap-2'>
+                <span className='text-sm text-ui-text-2'>{getCurrencyConfig().symbol}</span>
+                <NumberField
+                  value={values.remain_amount}
+                  onChange={(val) => {
+                    const amount = val === '' || val == null ? 0 : val;
+                    setValue('remain_amount', amount);
+                    setValue('remain_quota', displayAmountToQuota(amount));
+                  }}
+                  min={0}
+                  step={0.000001}
+                  disabled={values.unlimited_quota}
+                  className='flex-1'
+                />
+              </div>
+            </FieldRow>
+
+            <div>
+              <button
+                type='button'
+                className='text-xs text-ui-text-2 cursor-pointer'
+                onClick={() => setShowQuotaInput((v) => !v)}
+              >
+                {showQuotaInput
+                  ? `▾ ${t('收起原生额度输入')}`
+                  : `▸ ${t('使用原生额度输入')}`}
+              </button>
+              {showQuotaInput && (
+                <div className='mt-2'>
+                  <FieldRow label={t('额度')}>
+                    <NumberField
+                      value={values.remain_quota}
                       onChange={(val) => {
-                        const amount = val === '' || val == null ? 0 : val;
-                        formApiRef.current?.setValue('remain_amount', amount);
-                        formApiRef.current?.setValue(
-                          'remain_quota',
-                          displayAmountToQuota(amount),
-                        );
+                        const quota = val === '' || val == null ? 0 : val;
+                        setValue('remain_quota', quota);
+                        setValue('remain_amount', Number(quotaToDisplayAmount(quota).toFixed(6)));
                       }}
-                      style={{ width: '100%' }}
-                      showClear
+                      min={0}
+                      step={500000}
+                      disabled={values.unlimited_quota}
                     />
-                  </Col>
-                  <Col span={24}>
-                    <div
-                      className='text-xs cursor-pointer mt-1'
-                      style={{ color: 'var(--semi-color-text-2)' }}
-                      onClick={() => setShowQuotaInput((v) => !v)}
-                    >
-                      {showQuotaInput
-                        ? `▾ ${t('收起原生额度输入')}`
-                        : `▸ ${t('使用原生额度输入')}`}
-                    </div>
-                    <div style={{ display: showQuotaInput ? 'block' : 'none' }} className='mt-2'>
-                      <Form.InputNumber
-                        field='remain_quota'
-                        label={t('额度')}
-                        placeholder={t('输入额度')}
-                        disabled={values.unlimited_quota}
-                        min={0}
-                        step={500000}
-                        rules={
-                          values.unlimited_quota
-                            ? []
-                            : [{ required: true, message: t('请输入额度') }]
-                        }
-                        onChange={(val) => {
-                          const quota = val === '' || val == null ? 0 : val;
-                          formApiRef.current?.setValue('remain_quota', quota);
-                          formApiRef.current?.setValue(
-                            'remain_amount',
-                            Number(quotaToDisplayAmount(quota).toFixed(6)),
-                          );
-                        }}
-                        style={{ width: '100%' }}
-                        showClear
-                      />
-                    </div>
-                  </Col>
-                  <Col span={24}>
-                    <Form.Switch
-                      field='unlimited_quota'
-                      label={t('无限额度')}
-                      size='default'
-                      extraText={t(
-                        '令牌的额度仅用于限制令牌本身的最大额度使用量，实际的使用受到账户的剩余额度限制',
-                      )}
-                    />
-                  </Col>
-                </Row>
-              </Card>
-
-              {/* 访问限制 */}
-              <Card className='!rounded-2xl shadow-sm border-0'>
-                <div className='flex items-center mb-2'>
-                  <Avatar
-                    size='small'
-                    color='purple'
-                    className='mr-2 shadow-md'
-                  >
-                    <IconLink size={16} />
-                  </Avatar>
-                  <div>
-                    <Text className='text-lg font-medium'>{t('访问限制')}</Text>
-                    <div className='text-xs text-gray-600'>
-                      {t('设置令牌的访问限制')}
-                    </div>
-                  </div>
+                  </FieldRow>
                 </div>
-                <Row gutter={12}>
-                  <Col span={24}>
-                    <Form.Select
-                      field='model_limits'
-                      label={t('模型限制列表')}
-                      placeholder={t(
-                        '请选择该令牌支持的模型，留空支持所有模型',
-                      )}
-                      multiple
-                      optionList={models}
-                      extraText={t('非必要，不建议启用模型限制')}
-                      filter={selectFilter}
-                      autoClearSearchValue={false}
-                      searchPosition='dropdown'
-                      showClear
-                      style={{ width: '100%' }}
-                    />
-                  </Col>
-                  <Col span={24}>
-                    <Form.TextArea
-                      field='allow_ips'
-                      label={t('IP白名单（支持CIDR表达式）')}
-                      placeholder={t('允许的IP，一行一个，不填写则不限制')}
-                      autosize
-                      rows={1}
-                      extraText={t(
-                        '请勿过度信任此功能，IP可能被伪造，请配合nginx和cdn等网关使用',
-                      )}
-                      showClear
-                      style={{ width: '100%' }}
-                    />
-                  </Col>
-                </Row>
-              </Card>
+              )}
             </div>
-          )}
-        </Form>
-      </Spin>
-    </SideSheet>
+
+            <FieldRow label={t('无限额度')} hint={t('令牌的额度仅用于限制令牌本身的最大额度使用量，实际的使用受到账户的剩余额度限制')}>
+              <Toggle
+                checked={values.unlimited_quota}
+                onChange={(v) => setValue('unlimited_quota', v)}
+              />
+            </FieldRow>
+          </SectionCard>
+
+          {/* 访问限制 */}
+          <SectionCard icon={Link} iconColor='purple' title={t('访问限制')} description={t('设置令牌的访问限制')}>
+            <FieldRow label={t('模型限制列表')} hint={t('非必要，不建议启用模型限制')}>
+              <MultiCombobox
+                value={values.model_limits || []}
+                onChange={(v) => setValue('model_limits', v)}
+                options={models}
+                placeholder={t('请选择该令牌支持的模型，留空支持所有模型')}
+              />
+            </FieldRow>
+
+            <FieldRow label={t('IP白名单（支持CIDR表达式）')} hint={t('请勿过度信任此功能，IP可能被伪造，请配合nginx和cdn等网关使用')}>
+              <TextAreaField
+                value={values.allow_ips}
+                onChange={(v) => setValue('allow_ips', v)}
+                placeholder={t('允许的IP，一行一个，不填写则不限制')}
+                rows={2}
+              />
+            </FieldRow>
+          </SectionCard>
+        </div>
+      )}
+    </SlideOver>
   );
 };
 

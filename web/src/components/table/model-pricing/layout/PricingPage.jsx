@@ -18,7 +18,6 @@ For commercial licensing, please contact support@quantumnous.com
 */
 
 import React from 'react';
-import { Layout, ImagePreview } from '@douyinfe/semi-ui';
 import PricingSidebar from './PricingSidebar';
 import PricingContent from './content/PricingContent';
 import ModelDetailSideSheet from '../modal/ModelDetailSideSheet';
@@ -27,7 +26,6 @@ import { useIsMobile } from '../../../../hooks/common/useIsMobile';
 
 const PricingPage = () => {
   const pricingData = useModelPricingData();
-  const { Sider, Content } = Layout;
   const isMobile = useIsMobile();
   const [showRatio, setShowRatio] = React.useState(false);
   const [viewMode, setViewMode] = React.useState('card');
@@ -40,28 +38,35 @@ const PricingPage = () => {
   };
 
   return (
-    <div className='bg-white'>
-      <Layout className='pricing-layout'>
+    <div className='bg-ui-bg-elevated'>
+      <div className='pricing-layout flex'>
         {!isMobile && (
-          <Sider className='pricing-scroll-hide pricing-sidebar'>
+          <aside className='pricing-scroll-hide pricing-sidebar'>
             <PricingSidebar {...allProps} />
-          </Sider>
+          </aside>
         )}
 
-        <Content className='pricing-scroll-hide pricing-content'>
+        <main className='pricing-scroll-hide pricing-content flex-1'>
           <PricingContent
             {...allProps}
             isMobile={isMobile}
             sidebarProps={allProps}
           />
-        </Content>
-      </Layout>
+        </main>
+      </div>
 
-      <ImagePreview
-        src={pricingData.modalImageUrl}
-        visible={pricingData.isModalOpenurl}
-        onVisibleChange={(visible) => pricingData.setIsModalOpenurl(visible)}
-      />
+      {pricingData.isModalOpenurl && pricingData.modalImageUrl && (
+        <div
+          className='fixed inset-0 z-[300] flex items-center justify-center bg-black/70'
+          onClick={() => pricingData.setIsModalOpenurl(false)}
+        >
+          <img
+            src={pricingData.modalImageUrl}
+            alt=''
+            className='max-w-[90vw] max-h-[90vh] object-contain rounded-lg'
+          />
+        </div>
+      )}
 
       <ModelDetailSideSheet
         visible={pricingData.showModelDetail}

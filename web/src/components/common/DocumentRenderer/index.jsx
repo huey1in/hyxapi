@@ -19,12 +19,7 @@ For commercial licensing, please contact support@quantumnous.com
 
 import React, { useEffect, useMemo, useState } from 'react';
 import { API, showError } from '../../../helpers';
-import { Empty, Card, Spin, Typography } from '@douyinfe/semi-ui';
-const { Title } = Typography;
-import {
-  IllustrationConstruction,
-  IllustrationConstructionDark,
-} from '@douyinfe/semi-illustrations';
+import { Loader2, FileX } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import MarkdownRenderer from '../markdown/MarkdownRenderer';
 
@@ -142,7 +137,7 @@ const DocumentRenderer = ({ apiEndpoint, title, cacheKey, emptyMessage }) => {
   if (loading) {
     return (
       <div className='flex justify-center items-center min-h-screen'>
-        <Spin size='large' />
+        <Loader2 size={36} className='animate-spin text-ui-text-2' />
       </div>
     );
   }
@@ -150,17 +145,11 @@ const DocumentRenderer = ({ apiEndpoint, title, cacheKey, emptyMessage }) => {
   // 如果没有内容，显示空状态
   if (!content || content.trim() === '') {
     return (
-      <div className='flex justify-center items-center min-h-screen bg-gray-50'>
-        <Empty
-          title={t('管理员未设置' + title + '内容')}
-          image={
-            <IllustrationConstruction style={{ width: 150, height: 150 }} />
-          }
-          darkModeImage={
-            <IllustrationConstructionDark style={{ width: 150, height: 150 }} />
-          }
-          className='p-8'
-        />
+      <div className='flex flex-col justify-center items-center min-h-screen bg-ui-bg-subtle gap-4 p-8'>
+        <FileX size={64} className='text-ui-text-2 opacity-60' />
+        <p className='text-ui-text-2 text-base'>
+          {t('管理员未设置' + title + '内容')}
+        </p>
       </div>
     );
   }
@@ -168,13 +157,13 @@ const DocumentRenderer = ({ apiEndpoint, title, cacheKey, emptyMessage }) => {
   // 如果是 URL，显示链接卡片
   if (isUrl(content)) {
     return (
-      <div className='flex justify-center items-center min-h-screen bg-gray-50 p-4'>
-        <Card className='max-w-md w-full'>
+      <div className='flex justify-center items-center min-h-screen bg-ui-bg-subtle p-4'>
+        <div className='border border-ui-border rounded-2xl p-4 max-w-md w-full' style={{ backgroundColor: 'var(--page-bg)' }}>
           <div className='text-center'>
-            <Title heading={4} className='mb-4'>
+            <span className='text-xl font-semibold mb-4 block'>
               {title}
-            </Title>
-            <p className='text-gray-600 mb-4'>
+            </span>
+            <p className='text-ui-text-2 mb-4'>
               {t('管理员设置了外部链接，点击下方按钮访问')}
             </p>
             <a
@@ -188,7 +177,7 @@ const DocumentRenderer = ({ apiEndpoint, title, cacheKey, emptyMessage }) => {
               {t('访问' + title)}
             </a>
           </div>
-        </Card>
+        </div>
       </div>
     );
   }
@@ -196,12 +185,12 @@ const DocumentRenderer = ({ apiEndpoint, title, cacheKey, emptyMessage }) => {
   // 如果是 HTML 内容，直接渲染
   if (isHtmlContent(content)) {
     return (
-      <div className='min-h-screen bg-gray-50'>
+      <div className='min-h-screen bg-ui-bg-subtle'>
         <div className='max-w-4xl mx-auto py-12 px-4 sm:px-6 lg:px-8'>
-          <div className='bg-white rounded-lg shadow-sm p-8'>
-            <Title heading={2} className='text-center mb-8'>
+          <div className='bg-ui-bg-elevated rounded-lg shadow-sm p-8'>
+            <span className='text-2xl font-semibold text-center mb-8 block'>
               {title}
-            </Title>
+            </span>
             <div
               className='prose prose-lg max-w-none'
               dangerouslySetInnerHTML={{ __html: htmlPayload.content }}
@@ -214,12 +203,12 @@ const DocumentRenderer = ({ apiEndpoint, title, cacheKey, emptyMessage }) => {
 
   // 其他内容统一使用 Markdown 渲染器
   return (
-    <div className='min-h-screen bg-gray-50'>
+    <div className='min-h-screen bg-ui-bg-subtle'>
       <div className='max-w-4xl mx-auto py-12 px-4 sm:px-6 lg:px-8'>
-        <div className='bg-white rounded-lg shadow-sm p-8'>
-          <Title heading={2} className='text-center mb-8'>
+        <div className='bg-ui-bg-elevated rounded-lg shadow-sm p-8'>
+          <span className='text-2xl font-semibold text-center mb-8 block'>
             {title}
-          </Title>
+          </span>
           <div className='prose prose-lg max-w-none'>
             <MarkdownRenderer content={content} />
           </div>

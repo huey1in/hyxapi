@@ -132,7 +132,7 @@ const RatioSetting = () => {
               <button
                 key={s.key}
                 onClick={() => setActive(s.key)}
-                className={`px-3 py-1.5 text-xs rounded-md transition-colors whitespace-nowrap ${
+                className={`px-3 py-1.5 text-xs rounded-xl transition-colors whitespace-nowrap ${
                   isActive
                     ? 'bg-ui-bg-elevated text-ui-text font-semibold border border-ui-text-3'
                     : 'border border-transparent text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-subtle'

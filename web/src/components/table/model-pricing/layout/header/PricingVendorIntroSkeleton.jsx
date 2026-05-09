@@ -18,7 +18,6 @@ For commercial licensing, please contact support@quantumnous.com
 */
 
 import React, { memo } from 'react';
-import { Card, Skeleton } from '@douyinfe/semi-ui';
 
 const THEME_COLORS = {
   allVendors: {
@@ -98,111 +97,105 @@ const createSkeletonRect = (style = {}, key = null) => (
 
 const PricingVendorIntroSkeleton = memo(
   ({ isAllVendors = false, isMobile = false }) => {
-    const placeholder = (
-      <Card
-        className='!rounded-2xl shadow-sm border-0'
-        cover={
-          <div
-            className='relative h-full'
-            style={SKELETON_STYLES.cover(
-              isAllVendors
-                ? THEME_COLORS.allVendors.primary
-                : THEME_COLORS.specific.primary,
-            )}
-          >
-            <div className='relative z-10 h-full flex items-center justify-between p-4'>
-              <div className='flex-1 min-w-0 mr-4'>
-                <div className='flex flex-row flex-wrap items-center gap-2 sm:gap-3 mb-2'>
-                  {createSkeletonRect(
-                    {
-                      ...SKELETON_STYLES.title,
-                      width: isAllVendors
-                        ? SIZES.title.width.all
-                        : SIZES.title.width.specific,
-                      height: SIZES.title.height,
-                    },
-                    'title',
-                  )}
-                  {createSkeletonRect(
-                    {
-                      ...SKELETON_STYLES.tag,
-                      width: SIZES.tag.width,
-                      height: SIZES.tag.height,
-                    },
-                    'tag',
-                  )}
-                </div>
-                <div className='space-y-2'>
-                  {createSkeletonRect(
-                    {
-                      ...SKELETON_STYLES.description,
-                      width: '100%',
-                      height: SIZES.description.height,
-                    },
-                    'desc1',
-                  )}
-                  {createSkeletonRect(
-                    {
-                      ...SKELETON_STYLES.description,
-                      backgroundColor: 'rgba(255, 255, 255, 0.15)',
-                      width: '75%',
-                      height: SIZES.description.height,
-                    },
-                    'desc2',
-                  )}
-                </div>
-              </div>
-
-              <div className='flex-shrink-0 w-16 h-16 rounded-2xl bg-white/90 shadow-md backdrop-blur-sm flex items-center justify-center'>
+    return (
+      <div className='rounded-2xl shadow-sm border-0 overflow-hidden' style={{ backgroundColor: 'var(--page-bg)' }}>
+        <div
+          className='relative h-full'
+          style={SKELETON_STYLES.cover(
+            isAllVendors
+              ? THEME_COLORS.allVendors.primary
+              : THEME_COLORS.specific.primary,
+          )}
+        >
+          <div className='relative z-10 h-full flex items-center justify-between p-4'>
+            <div className='flex-1 min-w-0 mr-4'>
+              <div className='flex flex-row flex-wrap items-center gap-2 sm:gap-3 mb-2'>
                 {createSkeletonRect(
                   {
-                    ...SKELETON_STYLES.avatar(isAllVendors),
-                    width: SIZES.avatar.width,
-                    height: SIZES.avatar.height,
+                    ...SKELETON_STYLES.title,
+                    width: isAllVendors
+                      ? SIZES.title.width.all
+                      : SIZES.title.width.specific,
+                    height: SIZES.title.height,
                   },
-                  'avatar',
+                  'title',
+                )}
+                {createSkeletonRect(
+                  {
+                    ...SKELETON_STYLES.tag,
+                    width: SIZES.tag.width,
+                    height: SIZES.tag.height,
+                  },
+                  'tag',
+                )}
+              </div>
+              <div className='space-y-2'>
+                {createSkeletonRect(
+                  {
+                    ...SKELETON_STYLES.description,
+                    width: '100%',
+                    height: SIZES.description.height,
+                  },
+                  'desc1',
+                )}
+                {createSkeletonRect(
+                  {
+                    ...SKELETON_STYLES.description,
+                    backgroundColor: 'rgba(255, 255, 255, 0.15)',
+                    width: '75%',
+                    height: SIZES.description.height,
+                  },
+                  'desc2',
                 )}
               </div>
             </div>
+
+            <div className='flex-shrink-0 w-16 h-16 rounded-2xl bg-ui-bg-elevated/90 shadow-md backdrop-blur-sm flex items-center justify-center'>
+              {createSkeletonRect(
+                {
+                  ...SKELETON_STYLES.avatar(isAllVendors),
+                  width: SIZES.avatar.width,
+                  height: SIZES.avatar.height,
+                },
+                'avatar',
+              )}
+            </div>
           </div>
-        }
-      >
-        <div className='flex items-center gap-2 w-full'>
-          <div className='flex-1'>
+        </div>
+        <div className='p-4'>
+          <div className='flex items-center gap-2 w-full'>
+            <div className='flex-1'>
+              {createSkeletonRect(
+                {
+                  ...SKELETON_STYLES.searchInput,
+                  width: '100%',
+                  height: SIZES.searchInput.height,
+                },
+                'search',
+              )}
+            </div>
+
             {createSkeletonRect(
-              {
-                ...SKELETON_STYLES.searchInput,
-                width: '100%',
-                height: SIZES.searchInput.height,
-              },
-              'search',
-            )}
-          </div>
-
-          {createSkeletonRect(
-            {
-              ...SKELETON_STYLES.button,
-              width: SIZES.button.width,
-              height: SIZES.button.height,
-            },
-            'copy-button',
-          )}
-
-          {isMobile &&
-            createSkeletonRect(
               {
                 ...SKELETON_STYLES.button,
                 width: SIZES.button.width,
                 height: SIZES.button.height,
               },
-              'filter-button',
+              'copy-button',
             )}
-        </div>
-      </Card>
-    );
 
-    return (
-      <Skeleton loading={true} active placeholder={placeholder}></Skeleton>
+            {isMobile &&
+              createSkeletonRect(
+                {
+                  ...SKELETON_STYLES.button,
+                  width: SIZES.button.width,
+                  height: SIZES.button.height,
+                },
+                'filter-button',
+              )}
+          </div>
+        </div>
+      </div>
     );
   },
 );

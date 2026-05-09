@@ -18,10 +18,7 @@ For commercial licensing, please contact support@quantumnous.com
 */
 
 import React from 'react';
-import { Card, Avatar, Typography, Badge } from '@douyinfe/semi-ui';
-import { IconLink } from '@douyinfe/semi-icons';
-
-const { Text } = Typography;
+import { Link } from 'lucide-react';
 
 const ModelEndpoints = ({ modelData, endpointMap = {}, t }) => {
   const renderAPIEndpoints = () => {
@@ -42,19 +39,18 @@ const ModelEndpoints = ({ modelData, endpointMap = {}, t }) => {
       return (
         <div
           key={type}
-          className='flex justify-between border-b border-dashed last:border-0 py-2 last:pb-0'
-          style={{ borderColor: 'var(--semi-color-border)' }}
+          className='flex justify-between border-b border-dashed last:border-0 py-2 last:pb-0 border-ui-border'
         >
           <span className='flex items-center pr-5'>
-            <Badge dot type='success' className='mr-2' />
+            <span className='w-2 h-2 rounded-full bg-green-500 mr-2' />
             {type}
             {path && '：'}
             {path && (
-              <span className='text-gray-500 md:ml-1 break-all'>{path}</span>
+              <span className='text-ui-text-2 md:ml-1 break-all'>{path}</span>
             )}
           </span>
           {path && (
-            <span className='text-gray-500 text-xs md:ml-1'>{method}</span>
+            <span className='text-ui-text-2 text-xs md:ml-1'>{method}</span>
           )}
         </div>
       );
@@ -62,20 +58,20 @@ const ModelEndpoints = ({ modelData, endpointMap = {}, t }) => {
   };
 
   return (
-    <Card className='!rounded-2xl shadow-sm border-0 mb-6'>
+    <div className='border border-ui-border rounded-2xl p-4 mb-6' style={{ backgroundColor: 'var(--page-bg)' }}>
       <div className='flex items-center mb-4'>
-        <Avatar size='small' color='purple' className='mr-2 shadow-md'>
-          <IconLink size={16} />
-        </Avatar>
+        <div className='w-7 h-7 rounded-lg bg-purple-500/10 flex items-center justify-center mr-2 shadow-md'>
+          <Link size={16} className='text-purple-500' />
+        </div>
         <div>
-          <Text className='text-lg font-medium'>{t('API端点')}</Text>
-          <div className='text-xs text-gray-600'>
+          <span className='text-lg font-medium text-ui-text'>{t('API端点')}</span>
+          <div className='text-xs text-ui-text-2'>
             {t('模型支持的接口端点信息')}
           </div>
         </div>
       </div>
       {renderAPIEndpoints()}
-    </Card>
+    </div>
   );
 };
 

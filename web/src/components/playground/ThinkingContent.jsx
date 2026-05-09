@@ -64,11 +64,11 @@ const ThinkingContent = ({
         onClick={() => onToggleReasoningExpansion(message.id)}
       >
         <div className='absolute inset-0 overflow-hidden'>
-          <div className='absolute -top-10 -right-10 w-40 h-40 bg-white opacity-5 rounded-full'></div>
-          <div className='absolute -bottom-8 -left-8 w-24 h-24 bg-white opacity-10 rounded-full'></div>
+          <div className='absolute -top-10 -right-10 w-40 h-40 bg-ui-bg-elevated opacity-5 rounded-full'></div>
+          <div className='absolute -bottom-8 -left-8 w-24 h-24 bg-ui-bg-elevated opacity-10 rounded-full'></div>
         </div>
         <div className='flex items-center gap-2 sm:gap-4 relative'>
-          <div className='w-6 h-6 sm:w-8 sm:h-8 rounded-full bg-white/20 flex items-center justify-center shadow-lg'>
+          <div className='w-6 h-6 sm:w-8 sm:h-8 rounded-full bg-ui-bg-elevated/20 flex items-center justify-center shadow-lg'>
             <Brain style={{ color: 'white' }} size={styleState.isMobile ? 12 : 16} />
           </div>
           <div className='flex flex-col'>
@@ -86,7 +86,7 @@ const ThinkingContent = ({
             </div>
           )}
           {(!isThinkingStatus || message.isThinkingComplete) && (
-            <div className='w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-white/20 flex items-center justify-center'>
+            <div className='w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-ui-bg-elevated/20 flex items-center justify-center'>
               {message.isReasoningExpanded
                 ? <ChevronUp size={styleState.isMobile ? 12 : 16} style={{ color: 'white' }} />
                 : <ChevronRight size={styleState.isMobile ? 12 : 16} style={{ color: 'white' }} />
@@ -100,7 +100,7 @@ const ThinkingContent = ({
           <div className='p-3 sm:p-5 pt-2 sm:pt-4'>
             <div
               ref={scrollRef}
-              className='bg-white/70 backdrop-blur-sm rounded-lg sm:rounded-xl p-2 shadow-inner overflow-x-auto overflow-y-auto thinking-content-scroll'
+              className='bg-ui-bg-elevated/70 backdrop-blur-sm rounded-lg sm:rounded-xl p-2 shadow-inner overflow-x-auto overflow-y-auto thinking-content-scroll'
               style={{ maxHeight: '200px', scrollbarWidth: 'thin', scrollbarColor: 'rgba(0,0,0,0.3) transparent' }}
             >
               <div className='prose prose-xs sm:prose-sm prose-purple max-w-none text-xs sm:text-sm'>

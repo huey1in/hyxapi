@@ -18,17 +18,9 @@ For commercial licensing, please contact support@quantumnous.com
 */
 
 import React, { useMemo } from 'react';
-import {
-  Modal,
-  Button,
-  Empty,
-  Divider,
-  Typography,
-} from '@douyinfe/semi-ui';
-import { IconCopy } from '@douyinfe/semi-icons';
+import ModalDialog from '../../../common/ModalDialog';
+import { Copy } from 'lucide-react';
 import { copy, showError, showSuccess } from '../../../../helpers';
-
-const { Text } = Typography;
 
 const parseAuditLine = (line) => {
   if (typeof line !== 'string') {
@@ -122,15 +114,12 @@ const ParamOverrideModal = ({
   };
 
   return (
-    <Modal
+    <ModalDialog
+      open={showParamOverrideModal}
+      onClose={() => setShowParamOverrideModal(false)}
       title={t('参数覆盖详情')}
-      visible={showParamOverrideModal}
-      onCancel={() => setShowParamOverrideModal(false)}
-      footer={null}
-      centered
-      closable
-      maskClosable
       width={640}
+      hideFooter
     >
       <div style={{ padding: '8px 20px 20px' }}>
         <div
@@ -144,9 +133,9 @@ const ParamOverrideModal = ({
         >
           <div style={{ minWidth: 0 }}>
             <div style={{ marginBottom: 4 }}>
-              <Text style={{ fontWeight: 600 }}>
+              <span className='text-sm font-semibold text-ui-text'>
                 {t('{{count}} 项操作', { count: lines.length })}
-              </Text>
+              </span>
             </div>
             <div
               style={{
@@ -154,46 +143,42 @@ const ParamOverrideModal = ({
                 flexWrap: 'wrap',
                 gap: 8,
                 fontSize: 12,
-                color: 'var(--semi-color-text-2)',
               }}
             >
               {paramOverrideTarget?.modelName ? (
-                <Text type='tertiary' size='small'>
+                <span className='text-xs text-ui-text-3'>
                   {paramOverrideTarget.modelName}
-                </Text>
+                </span>
               ) : null}
               {paramOverrideTarget?.requestId ? (
-                <Text type='tertiary' size='small'>
+                <span className='text-xs text-ui-text-3'>
                   {t('Request ID')}: {paramOverrideTarget.requestId}
-                </Text>
+                </span>
               ) : null}
               {paramOverrideTarget?.requestPath ? (
-                <Text type='tertiary' size='small'>
+                <span className='text-xs text-ui-text-3'>
                   {t('请求路径')}: {paramOverrideTarget.requestPath}
-                </Text>
+                </span>
               ) : null}
             </div>
           </div>
 
-          <Button
-            icon={<IconCopy />}
-            theme='borderless'
-            type='tertiary'
-            size='small'
+          <button
+            className='inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg text-ui-text-3 hover:text-ui-text hover:bg-ui-bg-subtle transition-colors disabled:opacity-50'
             onClick={copyAll}
             disabled={lines.length === 0}
           >
+            <Copy size={12} />
             {t('复制')}
-          </Button>
+          </button>
         </div>
 
-        <Divider margin='12px' />
+        <hr className='border-ui-divider my-3' />
 
         {lines.length === 0 ? (
-          <Empty
-            description={t('暂无参数覆盖记录')}
-            style={{ padding: '24px 0 8px' }}
-          />
+          <div className='flex items-center justify-center py-6 text-sm text-ui-text-3'>
+            {t('暂无参数覆盖记录')}
+          </div>
         ) : (
           <div
             style={{
@@ -213,59 +198,25 @@ const ParamOverrideModal = ({
               return (
                 <div
                   key={`${item.action}-${index}`}
-                  style={{
-                    padding: '10px 12px',
-                    borderRadius: 10,
-                    border: '1px solid var(--semi-color-border)',
-                    background: 'var(--semi-color-fill-0)',
-                    display: 'flex',
-                    gap: 12,
-                    alignItems: 'flex-start',
-                  }}
+                  className='flex gap-3 items-start p-3 rounded-xl border border-ui-border bg-ui-bg-subtle/30'
                 >
-                  <div
-                    style={{
-                      flex: '0 0 auto',
-                      minWidth: 74,
-                    }}
-                  >
-                    <Text
-                      style={{
-                        display: 'inline-block',
-                        fontSize: 11,
-                        fontWeight: 700,
-                        lineHeight: '20px',
-                        padding: '0 8px',
-                        borderRadius: 999,
-                        background: 'rgba(var(--semi-blue-5), 0.12)',
-                        color: 'var(--semi-color-primary)',
-                      }}
-                    >
+                  <div className='flex-shrink-0 min-w-[74px]'>
+                    <span className='inline-block text-[11px] font-bold leading-5 px-2 rounded-full bg-blue-500/10 text-blue-600 dark:text-blue-400'>
                       {getActionLabel(item.action, t)}
-                    </Text>
+                    </span>
                   </div>
-                  <Text
-                    style={{
-                      flex: 1,
-                      minWidth: 0,
-                      fontFamily:
-                        'ui-monospace, SFMono-Regular, SF Mono, Menlo, Consolas, monospace',
-                      fontSize: 12,
-                      lineHeight: 1.6,
-                      whiteSpace: 'pre-wrap',
-                      wordBreak: 'break-word',
-                      color: 'var(--semi-color-text-0)',
-                    }}
+                  <span
+                    className='flex-1 min-w-0 font-mono text-xs leading-relaxed whitespace-pre-wrap break-words text-ui-text'
                   >
                     {item.content}
-                  </Text>
+                  </span>
                 </div>
               );
             })}
           </div>
         )}
       </div>
-    </Modal>
+    </ModalDialog>
   );
 };
 

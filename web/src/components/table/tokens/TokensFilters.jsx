@@ -17,9 +17,8 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 
-import React, { useRef } from 'react';
-import { Form, Button } from '@douyinfe/semi-ui';
-import { IconSearch } from '@douyinfe/semi-icons';
+import React, { useRef, useState } from 'react';
+import { Search } from 'lucide-react';
 
 const TokensFilters = ({
   formInitValues,
@@ -29,77 +28,107 @@ const TokensFilters = ({
   searching,
   t,
 }) => {
-  // Handle form reset and immediate search
-  const formApiRef = useRef(null);
+  const [keyword, setKeyword] = useState(formInitValues?.searchKeyword || '');
+  const [token, setToken] = useState(formInitValues?.searchToken || '');
+
+  // Expose a minimal form-like API for parent compatibility
+  const apiRef = useRef(null);
+  if (!apiRef.current) {
+    apiRef.current = {
+      getValues: () => ({ searchKeyword: keyword, searchToken: token }),
+      getValue: (field) => {
+        if (field === 'searchKeyword') return keyword;
+        if (field === 'searchToken') return token;
+        return undefined;
+      },
+      reset: () => {
+        setKeyword('');
+        setToken('');
+      },
+    };
+  }
+  // Keep the ref in sync
+  apiRef.current.getValues = () => ({ searchKeyword: keyword, searchToken: token });
+  apiRef.current.getValue = (field) => {
+    if (field === 'searchKeyword') return keyword;
+    if (field === 'searchToken') return token;
+    return undefined;
+  };
+  apiRef.current.reset = () => {
+    setKeyword('');
+    setToken('');
+  };
+
+  // Notify parent of formApi
+  React.useEffect(() => {
+    setFormApi(apiRef.current);
+  }, []);
 
   const handleReset = () => {
-    if (!formApiRef.current) return;
-    formApiRef.current.reset();
+    setKeyword('');
+    setToken('');
     setTimeout(() => {
       searchTokens();
     }, 100);
   };
 
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    searchTokens(1);
+  };
+
   return (
-    <Form
-      initValues={formInitValues}
-      getFormApi={(api) => {
-        setFormApi(api);
-        formApiRef.current = api;
-      }}
-      onSubmit={() => searchTokens(1)}
-      allowEmpty={true}
+    <form
+      onSubmit={handleSubmit}
       autoComplete='off'
-      layout='horizontal'
-      trigger='change'
-      stopValidateWithError={false}
       className='w-full md:w-auto order-1 md:order-2'
     >
       <div className='flex flex-col md:flex-row items-center gap-2 w-full md:w-auto'>
         <div className='relative w-full md:w-56'>
-          <Form.Input
-            field='searchKeyword'
-            prefix={<IconSearch />}
+          <span className='absolute left-3 top-1/2 -translate-y-1/2 text-ui-text-3'>
+            <Search size={14} />
+          </span>
+          <input
+            type='text'
+            value={keyword}
+            onChange={(e) => setKeyword(e.target.value)}
             placeholder={t('搜索关键字')}
-            showClear
-            pure
-            size='small'
+            className='w-full pl-9 pr-3 py-2 text-sm bg-transparent border border-ui-border rounded-xl text-ui-text placeholder:text-ui-text-3 outline-none focus:border-ui-text-3 transition-colors'
           />
         </div>
 
         <div className='relative w-full md:w-56'>
-          <Form.Input
-            field='searchToken'
-            prefix={<IconSearch />}
+          <span className='absolute left-3 top-1/2 -translate-y-1/2 text-ui-text-3'>
+            <Search size={14} />
+          </span>
+          <input
+            type='text'
+            value={token}
+            onChange={(e) => setToken(e.target.value)}
             placeholder={t('密钥')}
-            showClear
-            pure
-            size='small'
+            className='w-full pl-9 pr-3 py-2 text-sm bg-transparent border border-ui-border rounded-xl text-ui-text placeholder:text-ui-text-3 outline-none focus:border-ui-text-3 transition-colors'
           />
         </div>
 
         <div className='flex gap-2 w-full md:w-auto'>
-          <Button
-            type='tertiary'
-            htmlType='submit'
-            loading={loading || searching}
-            className='flex-1 md:flex-initial md:w-auto'
-            size='small'
+          <button
+            type='submit'
+            disabled={loading || searching}
+            className='inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium rounded-xl border border-ui-border text-ui-text hover:bg-ui-bg-subtle transition-colors disabled:opacity-50 flex-1 md:flex-initial md:w-auto'
           >
             {t('查询')}
-          </Button>
+          </button>
 
-          <Button
-            type='tertiary'
+          <button
+            type='button'
             onClick={handleReset}
-            className='flex-1 md:flex-initial md:w-auto'
-            size='small'
+            className='inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium rounded-xl border border-ui-border text-ui-text hover:bg-ui-bg-subtle transition-colors flex-1 md:flex-initial md:w-auto'
           >
             {t('重置')}
-          </Button>
+          </button>
         </div>
       </div>
-    </Form>
+    </form>
   );
 };
 

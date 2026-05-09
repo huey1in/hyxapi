@@ -105,8 +105,8 @@ const ChatArea = ({
 
   const getRoleBubbleClass = (role) => {
     if (role === 'user') return 'bg-black text-white';
-    if (role === 'system') return 'bg-amber-50 border border-amber-200 text-gray-900';
-    return 'bg-[#fafafa] border border-gray-200 text-gray-900';
+    if (role === 'system') return 'bg-amber-50 border border-amber-200 text-ui-text';
+    return 'bg-[#fafafa] border border-gray-200 text-ui-text';
   };
 
   const isUserRole = (role) => role === 'user';
@@ -116,12 +116,12 @@ const ChatArea = ({
       {/* 头部 */}
       {!styleState.isMobile && (
         <div className='flex items-center justify-between px-6 py-3 border-b border-gray-200 flex-shrink-0'>
-          <span className='text-sm font-medium text-gray-900'>
+          <span className='text-sm font-medium text-ui-text'>
             {inputs.model || t('选择模型开始对话')}
           </span>
           <button
             onClick={onToggleDebugPanel}
-            className='flex items-center gap-1.5 px-3 py-1.5 text-xs border border-gray-200 rounded-lg text-gray-600 hover:bg-gray-50 transition-colors'
+            className='flex items-center gap-1.5 px-3 py-1.5 text-xs border border-gray-200 rounded-lg text-ui-text-2 hover:bg-ui-bg-subtle transition-colors'
           >
             {showDebugPanel ? <EyeOff size={13} /> : <Eye size={13} />}
             {showDebugPanel ? t('隐藏调试') : t('显示调试')}
@@ -132,7 +132,7 @@ const ChatArea = ({
       {/* 消息列表 */}
       <div ref={scrollRef} className='flex-1 overflow-y-auto px-4 sm:px-6 py-4 space-y-4'>
         {message.length === 0 && (
-          <div className='flex items-center justify-center h-full text-gray-400 text-sm'>
+          <div className='flex items-center justify-center h-full text-ui-text-3 text-sm'>
             {t('请输入您的问题...')}
           </div>
         )}
@@ -171,7 +171,7 @@ const ChatArea = ({
           <button
             onClick={onClearMessages}
             title={t('清空对话')}
-            className='flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors'
+            className='flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-ui-text-3 hover:text-red-500 hover:bg-red-50 transition-colors'
           >
             <Trash2 size={15} />
           </button>
@@ -208,7 +208,7 @@ const ChatArea = ({
             </button>
           )}
         </div>
-        <p className='text-xs text-gray-400 mt-1.5 ml-10'>Enter 发送 · Shift+Enter 换行 · Ctrl+V 粘贴图片</p>
+        <p className='text-xs text-ui-text-3 mt-1.5 ml-10'>Enter 发送 · Shift+Enter 换行 · Ctrl+V 粘贴图片</p>
       </div>
     </div>
   );

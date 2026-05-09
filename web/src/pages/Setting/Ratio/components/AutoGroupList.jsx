@@ -70,7 +70,7 @@ export default function AutoGroupList({ value, groupNames = [], onChange }) {
       <div>
         <div className='text-center text-xs text-ui-text-3 py-4'>{t('暂无自动分组，点击下方按钮添加')}</div>
         <div className='flex justify-center'>
-          <button onClick={addItem} className='inline-flex items-center gap-1 px-3 py-1.5 text-xs rounded-md border border-ui-border text-ui-text-2 hover:bg-ui-bg-hover'>
+          <button onClick={addItem} className='inline-flex items-center gap-1 px-3 py-1.5 text-xs rounded-xl border border-ui-border text-ui-text-2 hover:bg-ui-bg-hover'>
             {t('添加分组')}
           </button>
         </div>
@@ -107,7 +107,7 @@ export default function AutoGroupList({ value, groupNames = [], onChange }) {
         </div>
       ))}
       <div className='flex justify-center'>
-        <button onClick={addItem} className='inline-flex items-center gap-1 px-3 py-1.5 text-xs rounded-md border border-ui-border text-ui-text-2 hover:bg-ui-bg-hover'>
+        <button onClick={addItem} className='inline-flex items-center gap-1 px-3 py-1.5 text-xs rounded-xl border border-ui-border text-ui-text-2 hover:bg-ui-bg-hover'>
           {t('添加分组')}
         </button>
       </div>

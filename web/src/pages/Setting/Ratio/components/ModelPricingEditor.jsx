@@ -15,7 +15,7 @@ import { Notice } from '../../../../components/common/form/Primitives';
 import Pagination from '../../../../components/common/table/Pagination';
 import ModalDialog from '../../../../components/common/ModalDialog';
 
-const inputCls = 'w-full rounded-md border border-ui-border bg-ui-bg-subtle text-ui-text text-xs px-3 py-2 focus:outline-none focus:ring-1 focus:ring-ui-accent/40 disabled:opacity-50';
+const inputCls = 'w-full rounded-xl border border-ui-border bg-ui-bg-subtle text-ui-text text-xs px-3 py-2 focus:outline-none focus:ring-1 focus:ring-ui-accent/40 disabled:opacity-50';
 
 function PriceInput({
   label, value, placeholder, onChange, suffix = PRICE_SUFFIX,
@@ -53,7 +53,7 @@ function ToggleSmall({ checked, onChange, disabled = false }) {
       onClick={() => onChange(!checked)}
       className={`relative inline-flex h-4 w-7 items-center rounded-full transition-colors disabled:opacity-50 ${checked ? 'bg-ui-accent' : 'bg-ui-bg-subtle border border-ui-border'}`}
     >
-      <span className={`inline-block h-3 w-3 rounded-full bg-white shadow transition-transform ${checked ? 'translate-x-3.5' : 'translate-x-0.5'}`} />
+      <span className={`inline-block h-3 w-3 rounded-full bg-ui-bg-elevated shadow transition-transform ${checked ? 'translate-x-3.5' : 'translate-x-0.5'}`} />
     </button>
   );
 }
@@ -111,15 +111,15 @@ export default function ModelPricingEditor({
       {/* Toolbar */}
       <div className='flex flex-wrap items-center gap-2'>
         {allowAddModel && (
-          <button onClick={() => setAddVisible(true)} className='inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium rounded-md bg-ui-accent text-ui-accent-fg hover:opacity-90'>
+          <button onClick={() => setAddVisible(true)} className='inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium rounded-xl bg-ui-accent text-ui-accent-fg hover:opacity-90'>
             {t('添加模型')}
           </button>
         )}
-        <button onClick={handleSubmit} disabled={loading} className='inline-flex items-center gap-1 px-3 py-1.5 text-xs font-semibold rounded-md bg-ui-accent text-ui-accent-fg hover:opacity-90 disabled:opacity-50'>
+        <button onClick={handleSubmit} disabled={loading} className='inline-flex items-center gap-1 px-3 py-1.5 text-xs font-semibold rounded-xl bg-ui-accent text-ui-accent-fg hover:opacity-90 disabled:opacity-50'>
           {t('应用更改')}
         </button>
         <button disabled={!selectedModel || selectedModelNames.length === 0} onClick={() => setBatchVisible(true)}
-          className='inline-flex items-center gap-1 px-3 py-1.5 text-xs rounded-md border border-ui-border text-ui-text-2 hover:bg-ui-bg-hover disabled:opacity-40'>
+          className='inline-flex items-center gap-1 px-3 py-1.5 text-xs rounded-xl border border-ui-border text-ui-text-2 hover:bg-ui-bg-hover disabled:opacity-40'>
           {t('批量应用当前模型价格')}{selectedModelNames.length > 0 ? ` (${selectedModelNames.length})` : ''}
         </button>
         <div className='relative flex-1 min-w-[180px] max-w-[220px]'>
@@ -137,7 +137,7 @@ export default function ModelPricingEditor({
       {listDescription && <div className='text-xs text-ui-text-3'>{listDescription}</div>}
 
       {selectedModelNames.length > 0 && (
-        <div className='px-3 py-2 rounded-md border border-blue-500/30 bg-blue-500/5 text-xs font-semibold text-blue-600 dark:text-blue-400'>
+        <div className='px-3 py-2 rounded-xl border border-blue-500/30 bg-blue-500/5 text-xs font-semibold text-blue-600 dark:text-blue-400'>
           {t('已勾选 {{count}} 个模型', { count: selectedModelNames.length })}
         </div>
       )}
@@ -276,8 +276,8 @@ export default function ModelPricingEditor({
         <ModalDialog open={addVisible} onClose={() => { setAddVisible(false); setNewModelName(''); }} title={t('添加模型')} width={400}
           footer={
             <div className='flex justify-end gap-2'>
-              <button onClick={() => { setAddVisible(false); setNewModelName(''); }} className='px-3.5 py-1.5 text-xs rounded-md border border-ui-border text-ui-text-2 hover:bg-ui-bg-subtle'>{t('取消')}</button>
-              <button onClick={handleAddModel} className='px-3.5 py-1.5 text-xs font-semibold rounded-md bg-ui-accent text-ui-accent-fg hover:opacity-90'>{t('确定')}</button>
+              <button onClick={() => { setAddVisible(false); setNewModelName(''); }} className='px-3.5 py-1.5 text-xs rounded-xl border border-ui-border text-ui-text-2 hover:bg-ui-bg-subtle'>{t('取消')}</button>
+              <button onClick={handleAddModel} className='px-3.5 py-1.5 text-xs font-semibold rounded-xl bg-ui-accent text-ui-accent-fg hover:opacity-90'>{t('确定')}</button>
             </div>
           }>
           <input type='text' value={newModelName} onChange={(e) => setNewModelName(e.target.value)} placeholder={t('输入模型名称，例如 gpt-4.1')} className={inputCls} onKeyDown={(e) => e.key === 'Enter' && handleAddModel()} />
@@ -288,8 +288,8 @@ export default function ModelPricingEditor({
       <ModalDialog open={batchVisible} onClose={() => setBatchVisible(false)} title={t('批量应用当前模型价格')} width={500}
         footer={
           <div className='flex justify-end gap-2'>
-            <button onClick={() => setBatchVisible(false)} className='px-3.5 py-1.5 text-xs rounded-md border border-ui-border text-ui-text-2 hover:bg-ui-bg-subtle'>{t('取消')}</button>
-            <button onClick={() => { if (applySelectedModelPricing()) setBatchVisible(false); }} className='px-3.5 py-1.5 text-xs font-semibold rounded-md bg-ui-accent text-ui-accent-fg hover:opacity-90'>{t('确定')}</button>
+            <button onClick={() => setBatchVisible(false)} className='px-3.5 py-1.5 text-xs rounded-xl border border-ui-border text-ui-text-2 hover:bg-ui-bg-subtle'>{t('取消')}</button>
+            <button onClick={() => { if (applySelectedModelPricing()) setBatchVisible(false); }} className='px-3.5 py-1.5 text-xs font-semibold rounded-xl bg-ui-accent text-ui-accent-fg hover:opacity-90'>{t('确定')}</button>
           </div>
         }>
         <div className='text-xs text-ui-text-2'>

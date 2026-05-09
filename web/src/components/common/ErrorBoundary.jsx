@@ -1,9 +1,5 @@
 import React from 'react';
-import { Empty, Button } from '@douyinfe/semi-ui';
-import {
-  IllustrationFailure,
-  IllustrationFailureDark,
-} from '@douyinfe/semi-illustrations';
+import { AlertTriangle } from 'lucide-react';
 import { withTranslation } from 'react-i18next';
 
 class ErrorBoundary extends React.Component {
@@ -25,23 +21,16 @@ class ErrorBoundary extends React.Component {
       const { t } = this.props;
       return (
         <div className='flex flex-col justify-center items-center h-screen p-8'>
-          <Empty
-            image={
-              <IllustrationFailure style={{ width: 250, height: 250 }} />
-            }
-            darkModeImage={
-              <IllustrationFailureDark style={{ width: 250, height: 250 }} />
-            }
-            description={t('页面渲染出错，请刷新页面重试')}
-          />
-          <Button
-            theme='solid'
-            type='primary'
-            style={{ marginTop: 16 }}
+          <AlertTriangle size={64} className='text-gray-400 mb-4' />
+          <p className='text-lg text-gray-600 mb-4'>
+            {t('页面渲染出错，请刷新页面重试')}
+          </p>
+          <button
+            className='px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors'
             onClick={() => window.location.reload()}
           >
             {t('刷新页面')}
-          </Button>
+          </button>
         </div>
       );
     }

@@ -166,7 +166,7 @@ const EditUserModal = (props) => {
         width={isMobile ? window.innerWidth : 600}
         title={
           <>
-            <span className='inline-flex items-center px-2 py-0.5 text-[11px] font-medium rounded-md bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20'>
+            <span className='inline-flex items-center px-2 py-0.5 text-[11px] font-medium rounded-xl bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20'>
               {isEdit ? t('编辑') : t('新建')}
             </span>
             <span className='text-base font-semibold text-ui-text truncate'>
@@ -178,14 +178,14 @@ const EditUserModal = (props) => {
           <>
             <button
               onClick={props.handleClose}
-              className='inline-flex items-center px-3.5 py-1.5 text-xs font-medium rounded-md border border-ui-border text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-subtle whitespace-nowrap'
+              className='inline-flex items-center px-3.5 py-1.5 text-xs font-medium rounded-xl border border-ui-border text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-subtle whitespace-nowrap'
             >
               {t('取消')}
             </button>
             <button
               onClick={submit}
               disabled={loading}
-              className='inline-flex items-center px-4 py-1.5 text-xs font-semibold rounded-md bg-ui-accent text-ui-accent-fg hover:bg-ui-accent-hover disabled:opacity-50 whitespace-nowrap'
+              className='inline-flex items-center px-4 py-1.5 text-xs font-semibold rounded-xl bg-ui-accent text-ui-accent-fg hover:bg-ui-accent-hover disabled:opacity-50 whitespace-nowrap'
             >
               {loading ? t('提交中...') : t('提交')}
             </button>
@@ -313,7 +313,7 @@ const EditUserModal = (props) => {
                           setAdjustMode(m.v);
                           setAdjustAmount('');
                         }}
-                        className={`flex-1 px-2.5 py-1.5 text-xs rounded-md transition-colors ${
+                        className={`flex-1 px-2.5 py-1.5 text-xs rounded-xl transition-colors ${
                           adjustMode === m.v
                             ? 'bg-ui-bg-subtle text-ui-text font-semibold border border-ui-text-3'
                             : 'border border-ui-border text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-subtle'
@@ -341,14 +341,14 @@ const EditUserModal = (props) => {
                 <button
                   onClick={() => setAdjustOpen(false)}
                   disabled={adjustLoading}
-                  className='inline-flex items-center px-3.5 py-1.5 text-xs font-medium rounded-md border border-ui-border text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-subtle disabled:opacity-40 whitespace-nowrap'
+                  className='inline-flex items-center px-3.5 py-1.5 text-xs font-medium rounded-xl border border-ui-border text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-subtle disabled:opacity-40 whitespace-nowrap'
                 >
                   {t('取消')}
                 </button>
                 <button
                   onClick={submitAdjust}
                   disabled={adjustLoading}
-                  className='inline-flex items-center gap-1.5 px-4 py-1.5 text-xs font-semibold rounded-md bg-ui-accent text-ui-accent-fg hover:bg-ui-accent-hover disabled:opacity-50 whitespace-nowrap'
+                  className='inline-flex items-center gap-1.5 px-4 py-1.5 text-xs font-semibold rounded-xl bg-ui-accent text-ui-accent-fg hover:bg-ui-accent-hover disabled:opacity-50 whitespace-nowrap'
                 >
                   {adjustLoading && <Loader2 size={11} className='animate-spin' />}
                   {t('确认调整')}

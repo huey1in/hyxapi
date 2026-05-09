@@ -141,7 +141,7 @@ export default function SettingsSidebarModulesAdmin(props) {
         const sectionEnabled = !!modules[section.key]?.enabled;
         return (
           <div key={section.key} className='space-y-3'>
-            <div className='flex items-center justify-between gap-2 px-3 py-2 rounded-md border border-ui-border bg-ui-bg-subtle'>
+            <div className='flex items-center justify-between gap-2 px-3 py-2 rounded-xl border border-ui-border bg-ui-bg-subtle'>
               <div className='flex-1 min-w-0'>
                 <div className='text-sm font-semibold text-ui-text'>
                   {section.title}
@@ -186,7 +186,7 @@ export default function SettingsSidebarModulesAdmin(props) {
         <button
           type='button'
           onClick={reset}
-          className='inline-flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-md border border-ui-border text-ui-text-2 hover:bg-ui-bg-hover'
+          className='inline-flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-xl border border-ui-border text-ui-text-2 hover:bg-ui-bg-hover'
         >
           {t('重置为默认')}
         </button>
@@ -194,7 +194,7 @@ export default function SettingsSidebarModulesAdmin(props) {
           type='button'
           onClick={submit}
           disabled={loading}
-          className='inline-flex items-center gap-1.5 px-4 py-1.5 text-xs font-semibold rounded-md bg-ui-accent text-ui-accent-fg hover:opacity-90 disabled:opacity-50'
+          className='inline-flex items-center gap-1.5 px-4 py-1.5 text-xs font-semibold rounded-xl bg-ui-accent text-ui-accent-fg hover:opacity-90 disabled:opacity-50'
         >
           {t('保存设置')}
         </button>

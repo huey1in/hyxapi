@@ -56,7 +56,7 @@ const PrimaryBtn = ({ children, ...props }) => (
 const GhostBtn = ({ children, ...props }) => (
   <button
     {...props}
-    className={`inline-flex items-center justify-center gap-1.5 px-3.5 py-1.5 text-xs font-medium rounded-md border border-ui-border text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-subtle transition-colors whitespace-nowrap ${props.className || ''}`}
+    className={`inline-flex items-center justify-center gap-1.5 px-3.5 py-1.5 text-xs font-medium rounded-xl border border-ui-border text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-subtle transition-colors whitespace-nowrap ${props.className || ''}`}
   >
     {children}
   </button>
@@ -65,7 +65,7 @@ const GhostBtn = ({ children, ...props }) => (
 const DangerBtn = ({ children, ...props }) => (
   <button
     {...props}
-    className={`inline-flex items-center justify-center gap-1.5 px-3.5 py-1.5 text-xs font-medium rounded-md border border-ui-danger/40 text-ui-danger hover:bg-ui-danger-bg transition-colors whitespace-nowrap ${props.className || ''}`}
+    className={`inline-flex items-center justify-center gap-1.5 px-3.5 py-1.5 text-xs font-medium rounded-xl border border-ui-danger/40 text-ui-danger hover:bg-ui-danger-bg transition-colors whitespace-nowrap ${props.className || ''}`}
   >
     {children}
   </button>
@@ -273,7 +273,7 @@ const PersonalSetting = () => {
 
   return (
     <div
-      className='min-h-[calc(100vh-4rem)] px-4 py-6 md:px-6 md:py-8'
+      className='px-4 pt-8 pb-6 md:px-6 md:pt-10 md:pb-8'
       style={{ backgroundColor: 'var(--page-bg)' }}
     >
       <div className='max-w-[960px] mx-auto'>
@@ -301,7 +301,7 @@ const PersonalSetting = () => {
                 {username}
               </div>
               <div className='flex flex-wrap items-center gap-1.5 mt-2'>
-                <span className='inline-flex items-center px-2 py-0.5 text-[11px] font-medium rounded-md bg-ui-bg-subtle border border-ui-border text-ui-text-2'>
+                <span className='inline-flex items-center px-2 py-0.5 text-[11px] font-medium rounded-xl bg-ui-bg-subtle border border-ui-border text-ui-text-2'>
                   {roleLabel}
                 </span>
               </div>

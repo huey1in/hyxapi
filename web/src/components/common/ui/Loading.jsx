@@ -18,12 +18,15 @@ For commercial licensing, please contact support@quantumnous.com
 */
 
 import React from 'react';
-import { Spin } from '@douyinfe/semi-ui';
+import { Loader2 } from 'lucide-react';
 
 const Loading = ({ size = 'small' }) => {
+  const sizeMap = { small: 20, middle: 28, large: 36 };
+  const iconSize = sizeMap[size] || 20;
+
   return (
     <div className='fixed inset-0 w-screen h-screen flex items-center justify-center'>
-      <Spin size={size} spinning={true} />
+      <Loader2 size={iconSize} className='animate-spin text-gray-500' />
     </div>
   );
 };

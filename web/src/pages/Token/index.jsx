@@ -549,7 +549,7 @@ const CodeBlock = ({ sample, t }) => {
         <span className='text-[13px] text-ui-text-2 font-medium tabular-nums'>{sample.lang}</span>
         <button
           onClick={onCopy}
-          className='inline-flex items-center gap-1 px-2 py-1 text-[12px] text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-elevated rounded-md transition-colors'
+          className='inline-flex items-center gap-1 px-2 py-1 text-[12px] text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-elevated rounded-xl transition-colors'
         >
           {copied ? <Check size={12} /> : <Copy size={12} />}
           {copied ? t('已复制') : t('复制')}
@@ -627,7 +627,7 @@ const Tokens = () => {
 
   return (
     <div
-      className='min-h-[calc(100vh-4rem)] px-4 py-6 md:px-6 md:py-8'
+      className='px-4 pt-8 pb-6 md:px-6 md:pt-10 md:pb-8'
       style={{ backgroundColor: 'var(--page-bg)' }}
     >
       <div className='max-w-[960px] mx-auto'>

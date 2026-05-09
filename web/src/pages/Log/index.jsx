@@ -277,7 +277,7 @@ const LogsView = () => {
 
   return (
     <div
-      className='min-h-[calc(100vh-4rem)] px-4 py-6 md:px-6 md:py-8'
+      className='px-4 pt-8 pb-6 md:px-6 md:pt-10 md:pb-8'
       style={{ backgroundColor: 'var(--page-bg)' }}
     >
       <div className='max-w-[1080px] mx-auto'>
@@ -324,7 +324,7 @@ const LogsView = () => {
                   key={p.label}
                   type='button'
                   onClick={() => applyPreset(p)}
-                  className='px-2.5 py-1 text-xs rounded-md text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-subtle transition-colors'
+                  className='px-2.5 py-1 text-xs rounded-xl text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-subtle transition-colors'
                 >
                   {t(p.label)}
                 </button>

@@ -81,14 +81,14 @@ const CustomRequestEditor = ({ customRequestMode, customRequestBody, onCustomReq
     <div className='space-y-4'>
       <div className='flex items-center justify-between'>
         <div className='flex items-center gap-2'>
-          <Code size={14} className='text-gray-400' />
+          <Code size={14} className='text-ui-text-3' />
           <span className='text-sm font-medium'>{t('自定义请求体模式')}</span>
         </div>
         <button
           onClick={handleModeToggle}
-          className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${customRequestMode ? 'bg-black' : 'bg-gray-200'}`}
+          className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${customRequestMode ? 'bg-black' : 'bg-ui-bg-subtle'}`}
         >
-          <span className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white transition-transform ${customRequestMode ? 'translate-x-[18px]' : 'translate-x-[2px]'}`} />
+          <span className={`inline-block h-3.5 w-3.5 transform rounded-full bg-ui-bg-elevated transition-transform ${customRequestMode ? 'translate-x-[18px]' : 'translate-x-[2px]'}`} />
         </button>
       </div>
 
@@ -110,7 +110,7 @@ const CustomRequestEditor = ({ customRequestMode, customRequestBody, onCustomReq
                 <button
                   onClick={formatJson}
                   disabled={!isValid}
-                  className='flex items-center gap-1 px-2 py-1 text-xs border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-40'
+                  className='flex items-center gap-1 px-2 py-1 text-xs border border-gray-200 rounded-lg hover:bg-ui-bg-subtle transition-colors disabled:opacity-40'
                 >
                   <Edit size={11} />{t('格式化')}
                 </button>
@@ -122,14 +122,14 @@ const CustomRequestEditor = ({ customRequestMode, customRequestBody, onCustomReq
               onChange={handleValueChange}
               placeholder='{"model": "gpt-4o", "messages": [...], ...}'
               rows={10}
-              className={`w-full px-3 py-2 text-xs border rounded-lg resize-y focus:outline-none focus:ring-2 focus:ring-black bg-white ${!isValid ? 'border-red-400' : 'border-gray-200'}`}
+              className={`w-full px-3 py-2 text-xs border rounded-lg resize-y focus:outline-none focus:ring-2 focus:ring-black bg-ui-bg-elevated ${!isValid ? 'border-red-400' : 'border-gray-200'}`}
               style={{ fontFamily: 'Consolas, Monaco, "Courier New", monospace', lineHeight: '1.5', minHeight: '160px' }}
             />
 
             {!isValid && errorMessage && (
               <p className='text-xs text-red-500 mt-1'>{errorMessage}</p>
             )}
-            <p className='text-xs text-gray-400 mt-1'>{t('请输入有效的JSON格式的请求体。您可以参考预览面板中的默认请求体格式。')}</p>
+            <p className='text-xs text-ui-text-3 mt-1'>{t('请输入有效的JSON格式的请求体。您可以参考预览面板中的默认请求体格式。')}</p>
           </div>
         </>
       )}

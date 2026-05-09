@@ -96,7 +96,7 @@ const ResponsePill = ({ ms }) => {
 const TypeCell = ({ record, t }) => {
   if (record.children !== undefined) {
     return (
-      <span className='inline-flex items-center px-2 py-0.5 text-[11px] rounded-md font-medium bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 border border-cyan-500/20'>
+      <span className='inline-flex items-center px-2 py-0.5 text-[11px] rounded-xl font-medium bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 border border-cyan-500/20'>
         {t('标签聚合')}
       </span>
     );
@@ -127,7 +127,7 @@ const NumInput = ({ initial, onCommit, min = -999, max }) => {
         if (String(next) !== String(initial)) onCommit(next);
       }}
       onKeyDown={(e) => e.key === 'Enter' && e.target.blur()}
-      className='w-16 px-2 py-1 text-xs bg-ui-bg border border-ui-border rounded text-ui-text outline-none focus:border-ui-text-3 tabular-nums'
+      className='w-16 px-2 py-1 text-xs bg-transparent border border-ui-border rounded text-ui-text outline-none focus:border-ui-text-3 tabular-nums'
     />
   );
 };
@@ -309,7 +309,7 @@ const ChannelsTable = (channelsData) => {
             {groups.map((g) => (
               <span
                 key={g}
-                className={`inline-flex items-center px-2 py-0.5 text-[11px] rounded-md font-medium border ${groupColor(g)}`}
+                className={`inline-flex items-center px-2 py-0.5 text-[11px] rounded-xl font-medium border ${groupColor(g)}`}
               >
                 {g}
               </span>

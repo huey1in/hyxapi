@@ -20,7 +20,7 @@ const RoleChip = ({ role, t }) => {
     label: t('未知身份'),
   };
   return (
-    <span className={`inline-flex items-center px-2 py-0.5 text-[11px] rounded-md font-medium border ${cfg.cls}`}>
+    <span className={`inline-flex items-center px-2 py-0.5 text-[11px] rounded-xl font-medium border ${cfg.cls}`}>
       {cfg.label}
     </span>
   );

@@ -90,7 +90,7 @@ const ChartsCard = ({
               <button
                 key={tb.key}
                 onClick={() => setActiveChartTab(tb.key)}
-                className={`inline-flex items-center px-3 py-1.5 text-xs font-medium rounded-md transition-all whitespace-nowrap ${
+                className={`inline-flex items-center px-3 py-1.5 text-xs font-medium rounded-xl transition-all whitespace-nowrap ${
                   isActive
                     ? 'bg-ui-accent text-ui-accent-fg shadow-sm'
                     : 'text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-subtle'

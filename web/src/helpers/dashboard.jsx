@@ -18,11 +18,6 @@ For commercial licensing, please contact support@quantumnous.com
 */
 
 import React from 'react';
-import { Progress, Divider, Empty } from '@douyinfe/semi-ui';
-import {
-  IllustrationConstruction,
-  IllustrationConstructionDark,
-} from '@douyinfe/semi-illustrations';
 import {
   timestamp2string,
   timestamp2string1,
@@ -179,13 +174,9 @@ export const renderMonitorList = (
   if (!monitors || monitors.length === 0) {
     return (
       <div className='flex justify-center items-center py-4'>
-        <Empty
-          image={<IllustrationConstruction style={ILLUSTRATION_SIZE} />}
-          darkModeImage={
-            <IllustrationConstructionDark style={ILLUSTRATION_SIZE} />
-          }
-          title={t('暂无监控数据')}
-        />
+        <div className='text-center'>
+          <p className='text-ui-text-2'>{t('暂无监控数据')}</p>
+        </div>
       </div>
     );
   }
@@ -198,32 +189,35 @@ export const renderMonitorList = (
   });
 
   const renderItem = (monitor, idx) => (
-    <div key={idx} className='p-2 hover:bg-white rounded-lg transition-colors'>
+    <div key={idx} className='p-2 hover:bg-ui-bg-elevated rounded-lg transition-colors'>
       <div className='flex items-center justify-between mb-1'>
         <div className='flex items-center gap-2'>
           <div
             className='w-2 h-2 rounded-full flex-shrink-0'
             style={{ backgroundColor: getUptimeStatusColor(monitor.status) }}
           />
-          <span className='text-sm font-medium text-gray-900'>
+          <span className='text-sm font-medium text-ui-text'>
             {monitor.name}
           </span>
         </div>
-        <span className='text-xs text-gray-500'>
+        <span className='text-xs text-ui-text-2'>
           {((monitor.uptime || 0) * 100).toFixed(2)}%
         </span>
       </div>
       <div className='flex items-center gap-2'>
-        <span className='text-xs text-gray-500'>
+        <span className='text-xs text-ui-text-2'>
           {getUptimeStatusText(monitor.status)}
         </span>
         <div className='flex-1'>
-          <Progress
-            percent={(monitor.uptime || 0) * 100}
-            showInfo={false}
-            aria-label={`${monitor.name} uptime`}
-            stroke={getUptimeStatusColor(monitor.status)}
-          />
+          <div className='w-full h-1.5 rounded-full bg-gray-200 overflow-hidden'>
+            <div
+              className='h-full rounded-full transition-all'
+              style={{
+                width: `${(monitor.uptime || 0) * 100}%`,
+                backgroundColor: getUptimeStatusColor(monitor.status),
+              }}
+            />
+          </div>
         </div>
       </div>
     </div>
@@ -233,10 +227,10 @@ export const renderMonitorList = (
     <div key={gname || 'default'} className='mb-2'>
       {gname && (
         <>
-          <div className='text-md font-semibold text-gray-500 px-2 py-1'>
+          <div className='text-md font-semibold text-ui-text-2 px-2 py-1'>
             {gname}
           </div>
-          <Divider />
+          <hr style={{ borderColor: 'var(--semi-color-border)', margin: '8px 0' }} />
         </>
       )}
       {list.map(renderItem)}

@@ -77,7 +77,7 @@ const SSEViewer = ({ sseData }) => {
           <XCircle size={14} className='text-red-600' />
           <span className='text-red-600 text-xs'>{t('解析错误')}: {item.error}</span>
         </div>
-        <div className='p-3 bg-gray-100 rounded-lg font-mono text-xs overflow-auto'><pre>{item.raw}</pre></div>
+        <div className='p-3 bg-ui-bg-subtle rounded-lg font-mono text-xs overflow-auto'><pre>{item.raw}</pre></div>
       </div>
     );
     return (
@@ -86,7 +86,7 @@ const SSEViewer = ({ sseData }) => {
           <pre className='p-3 bg-gray-900 text-gray-100 rounded-lg overflow-auto text-xs font-mono leading-relaxed'>
             {JSON.stringify(item.parsed, null, 2)}
           </pre>
-          <button onClick={() => handleCopySingle(item)} className='absolute top-2 right-2 w-6 h-6 flex items-center justify-center bg-gray-700/80 text-gray-300 rounded hover:bg-gray-600 transition-colors'>
+          <button onClick={() => handleCopySingle(item)} className='absolute top-2 right-2 w-6 h-6 flex items-center justify-center bg-gray-700/80 text-ui-text-3 rounded hover:bg-gray-600 transition-colors'>
             <Copy size={11} />
           </button>
         </div>
@@ -95,7 +95,7 @@ const SSEViewer = ({ sseData }) => {
             {item.parsed.choices[0].delta?.content && <span className='px-2 py-0.5 bg-blue-100 text-blue-700 rounded-full'>{t('内容')}: "{String(item.parsed.choices[0].delta.content).substring(0, 20)}..."</span>}
             {item.parsed.choices[0].delta?.reasoning_content && <span className='px-2 py-0.5 bg-yellow-100 text-yellow-700 rounded-full'>{t('有 Reasoning')}</span>}
             {item.parsed.choices[0].finish_reason && <span className='px-2 py-0.5 bg-green-100 text-green-700 rounded-full'>{t('完成')}: {item.parsed.choices[0].finish_reason}</span>}
-            {item.parsed.usage && <span className='px-2 py-0.5 bg-gray-100 text-gray-600 rounded-full'>{t('令牌')}: {item.parsed.usage.prompt_tokens || 0}/{item.parsed.usage.completion_tokens || 0}</span>}
+            {item.parsed.usage && <span className='px-2 py-0.5 bg-ui-bg-subtle text-ui-text-2 rounded-full'>{t('令牌')}: {item.parsed.usage.prompt_tokens || 0}/{item.parsed.usage.completion_tokens || 0}</span>}
           </div>
         )}
       </div>
@@ -103,7 +103,7 @@ const SSEViewer = ({ sseData }) => {
   };
 
   if (!parsedSSEData.length) return (
-    <div className='flex items-center justify-center h-full min-h-[200px] text-gray-400 text-sm'>{t('暂无SSE响应数据')}</div>
+    <div className='flex items-center justify-center h-full min-h-[200px] text-ui-text-3 text-sm'>{t('暂无SSE响应数据')}</div>
   );
 
   return (
@@ -116,10 +116,10 @@ const SSEViewer = ({ sseData }) => {
           {stats.errors > 0 && <span className='px-1.5 py-0.5 text-xs bg-red-100 text-red-600 rounded-full'>{stats.errors} {t('错误')}</span>}
         </div>
         <div className='flex items-center gap-1'>
-          <button onClick={handleCopyAll} className='flex items-center gap-1 px-2 py-1 text-xs border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors'>
+          <button onClick={handleCopyAll} className='flex items-center gap-1 px-2 py-1 text-xs border border-gray-200 rounded-lg hover:bg-ui-bg-subtle transition-colors'>
             <Copy size={11} />{copied ? t('已复制') : t('复制全部')}
           </button>
-          <button onClick={handleToggleAll} className='flex items-center gap-1 px-2 py-1 text-xs border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors'>
+          <button onClick={handleToggleAll} className='flex items-center gap-1 px-2 py-1 text-xs border border-gray-200 rounded-lg hover:bg-ui-bg-subtle transition-colors'>
             {expandedKeys.length === parsedSSEData.length ? <><ChevronUp size={11} />{t('收起')}</> : <><ChevronDown size={11} />{t('展开')}</>}
           </button>
         </div>
@@ -127,17 +127,17 @@ const SSEViewer = ({ sseData }) => {
 
       <div className='flex-1 overflow-auto p-3 space-y-2'>
         {parsedSSEData.map((item) => (
-          <div key={item.key} className='bg-white border border-gray-200 rounded-lg overflow-hidden'>
+          <div key={item.key} className='bg-ui-bg-elevated border border-gray-200 rounded-lg overflow-hidden'>
             <button
               onClick={() => toggleItem(item.key)}
-              className='w-full flex items-center gap-2 px-3 py-2 text-left hover:bg-gray-50 transition-colors'
+              className='w-full flex items-center gap-2 px-3 py-2 text-left hover:bg-ui-bg-subtle transition-colors'
             >
-              <span className='px-1.5 py-0.5 text-xs bg-gray-100 text-gray-500 rounded-full flex-shrink-0'>#{item.index + 1}</span>
+              <span className='px-1.5 py-0.5 text-xs bg-ui-bg-subtle text-ui-text-2 rounded-full flex-shrink-0'>#{item.index + 1}</span>
               {item.isDone ? <span className='text-green-600 font-medium text-xs'>[DONE]</span>
                 : item.error ? <span className='text-red-600 text-xs'>{t('解析错误')}</span>
-                : <span className='text-gray-600 text-xs'>{item.parsed?.id || item.parsed?.object || t('SSE 事件')}</span>
+                : <span className='text-ui-text-2 text-xs'>{item.parsed?.id || item.parsed?.object || t('SSE 事件')}</span>
               }
-              <div className='ml-auto'>{expandedKeys.includes(item.key) ? <ChevronUp size={13} className='text-gray-400' /> : <ChevronDown size={13} className='text-gray-400' />}</div>
+              <div className='ml-auto'>{expandedKeys.includes(item.key) ? <ChevronUp size={13} className='text-ui-text-3' /> : <ChevronDown size={13} className='text-ui-text-3' />}</div>
             </button>
             {expandedKeys.includes(item.key) && <div className='px-3 pb-3'>{renderSSEItem(item)}</div>}
           </div>

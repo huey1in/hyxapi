@@ -18,17 +18,22 @@ For commercial licensing, please contact support@quantumnous.com
 */
 
 import React from 'react';
-import { Button } from '@douyinfe/semi-ui';
 
 const FilterModalFooter = ({ onReset, onConfirm, t }) => {
   return (
-    <div className='flex justify-end'>
-      <Button theme='outline' type='tertiary' onClick={onReset}>
+    <div className='flex justify-end gap-2'>
+      <button
+        className='inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium rounded-xl border border-ui-border text-ui-text hover:bg-ui-bg-subtle transition-colors'
+        onClick={onReset}
+      >
         {t('重置')}
-      </Button>
-      <Button theme='solid' type='primary' onClick={onConfirm}>
+      </button>
+      <button
+        className='inline-flex items-center gap-1.5 px-4 py-2 text-sm font-semibold rounded-xl bg-ui-accent text-ui-accent-fg hover:bg-ui-accent-hover transition-colors'
+        onClick={onConfirm}
+      >
         {t('确定')}
-      </Button>
+      </button>
     </div>
   );
 };

@@ -18,7 +18,6 @@ For commercial licensing, please contact support@quantumnous.com
 */
 
 import React from 'react';
-import { Tag, Space, Skeleton } from '@douyinfe/semi-ui';
 import { renderQuota } from '../../../helpers';
 import CompactModeToggle from '../../common/ui/CompactModeToggle';
 import { useMinimumLoadingTime } from '../../../hooks/common/useMinimumLoadingTime';
@@ -34,54 +33,36 @@ const LogsActions = ({
   const showSkeleton = useMinimumLoadingTime(loadingStat);
   const needSkeleton = !showStat || showSkeleton;
 
-  const placeholder = (
-    <Space>
-      <Skeleton.Title style={{ width: 108, height: 21, borderRadius: 6 }} />
-      <Skeleton.Title style={{ width: 65, height: 21, borderRadius: 6 }} />
-      <Skeleton.Title style={{ width: 64, height: 21, borderRadius: 6 }} />
-    </Space>
-  );
-
   return (
     <div className='flex flex-col md:flex-row justify-between items-start md:items-center gap-2 w-full'>
-      <Skeleton loading={needSkeleton} active placeholder={placeholder}>
-        <Space>
-          <Tag
-            color='blue'
-            style={{
-              fontWeight: 500,
-              boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)',
-              padding: 13,
-            }}
-            className='!rounded-lg'
+      {needSkeleton ? (
+        <div className='flex gap-2'>
+          <span className='inline-block w-[108px] h-[21px] rounded-md bg-ui-bg-subtle animate-pulse' />
+          <span className='inline-block w-[65px] h-[21px] rounded-md bg-ui-bg-subtle animate-pulse' />
+          <span className='inline-block w-[64px] h-[21px] rounded-md bg-ui-bg-subtle animate-pulse' />
+        </div>
+      ) : (
+        <div className='flex flex-wrap gap-2'>
+          <span
+            className='inline-flex items-center px-3 py-1.5 text-xs font-medium rounded-lg bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20'
+            style={{ boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)' }}
           >
             {t('消耗额度')}: {renderQuota(stat.quota)}
-          </Tag>
-          <Tag
-            color='pink'
-            style={{
-              fontWeight: 500,
-              boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)',
-              padding: 13,
-            }}
-            className='!rounded-lg'
+          </span>
+          <span
+            className='inline-flex items-center px-3 py-1.5 text-xs font-medium rounded-lg bg-pink-500/10 text-pink-600 dark:text-pink-400 border border-pink-500/20'
+            style={{ boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)' }}
           >
             RPM: {stat.rpm}
-          </Tag>
-          <Tag
-            color='white'
-            style={{
-              border: 'none',
-              boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)',
-              fontWeight: 500,
-              padding: 13,
-            }}
-            className='!rounded-lg'
+          </span>
+          <span
+            className='inline-flex items-center px-3 py-1.5 text-xs font-medium rounded-lg bg-gray-500/10 text-gray-600 dark:text-gray-400 border border-gray-500/20'
+            style={{ boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)' }}
           >
             TPM: {stat.tpm}
-          </Tag>
-        </Space>
-      </Skeleton>
+          </span>
+        </div>
+      )}
 
       <CompactModeToggle
         compactMode={compactMode}

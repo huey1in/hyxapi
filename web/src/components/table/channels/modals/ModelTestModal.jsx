@@ -40,7 +40,7 @@ const StatusPill = ({ kind, children }) => {
     error: 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20',
   };
   return (
-    <span className={`inline-flex items-center gap-1 px-2 py-0.5 text-[11px] rounded-md font-medium border ${map[kind] || map.pending}`}>
+    <span className={`inline-flex items-center gap-1 px-2 py-0.5 text-[11px] rounded-xl font-medium border ${map[kind] || map.pending}`}>
       {kind === 'testing' && <Loader2 size={9} className='animate-spin' />}
       {children}
     </span>
@@ -324,7 +324,7 @@ const ModelTestModal = ({
                                   {r.errorCode === 'model_price_error' && (
                                     <button
                                       onClick={() => window.open('/console/setting?tab=ratio', '_blank')}
-                                      className='inline-flex items-center gap-1 px-2.5 py-1 text-[11px] rounded-md border border-amber-500/30 text-amber-600 dark:text-amber-400 hover:bg-amber-500/10 transition-colors w-fit'
+                                      className='inline-flex items-center gap-1 px-2.5 py-1 text-[11px] rounded-xl border border-amber-500/30 text-amber-600 dark:text-amber-400 hover:bg-amber-500/10 transition-colors w-fit'
                                     >
                                       <Settings size={10} />
                                       {t('前往设置')}

@@ -18,11 +18,12 @@ For commercial licensing, please contact support@quantumnous.com
 */
 
 import React, { useState, useEffect, useContext } from "react";
-import { Card, Select, Typography, Avatar } from "@douyinfe/semi-ui";
+import { Globe } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { API, showSuccess, showError } from "../../../../helpers";
 import { UserContext } from "../../../../context/User";
 import { normalizeLanguage } from "../../../../i18n/language";
+import { NativeSelect } from "../../../common/form/Primitives";
 
 // Language options with native names
 const languageOptions = [
@@ -119,57 +120,57 @@ const PreferencesSettings = ({ t }) => {
 	};
 
 	return (
-		<Card className="!rounded-2xl shadow-sm border-0">
+		<div className="border border-ui-border rounded-2xl p-4" style={{ backgroundColor: 'var(--page-bg)' }}>
 			{/* Card Header */}
 			<div className="flex items-center mb-4">
-				<Avatar size="small" color="violet" className="mr-3 shadow-md">
-					</Avatar>
+				<div className="w-8 h-8 rounded-full bg-violet-500/10 flex items-center justify-center mr-3">
+					<Globe size={16} className="text-violet-600" />
+				</div>
 				<div>
-					<Typography.Text className="text-lg font-medium">
+					<span className="text-lg font-medium text-ui-text">
 						{t("偏好设置")}
-					</Typography.Text>
-					<div className="text-xs text-gray-600 dark:text-gray-400">
+					</span>
+					<div className="text-xs text-ui-text-2 dark:text-ui-text-3">
 						{t("界面语言和其他个人偏好")}
 					</div>
 				</div>
 			</div>
 			{/* Language Setting Card */}
-			<Card className="!rounded-xl border dark:border-gray-700">
+			<div className="border border-ui-border rounded-xl p-4" style={{ backgroundColor: 'var(--page-bg)' }}>
 				<div className="flex flex-col sm:flex-row items-start sm:items-center sm:justify-between gap-4">
 					<div className="flex items-start w-full sm:w-auto">
 						<div className="w-12 h-12 rounded-full bg-violet-50 dark:bg-violet-900/30 flex items-center justify-center mr-4 flex-shrink-0">
-							</div>
+							<Globe size={20} className="text-violet-600" />
+						</div>
 						<div>
-							<Typography.Title heading={6} className="mb-1">
+							<h6 className="text-sm font-semibold text-ui-text mb-1">
 								{t("语言偏好")}
-							</Typography.Title>
-							<Typography.Text type="tertiary" className="text-sm">
+							</h6>
+							<span className="text-sm text-ui-text-2">
 								{t("选择您的首选界面语言，设置将自动保存并同步到所有设备")}
-							</Typography.Text>
+							</span>
 						</div>
 					</div>
-					<Select
-						value={currentLanguage}
-						onChange={handleLanguagePreferenceChange}
-						style={{ width: 180 }}
-						loading={loading}
-						optionList={languageOptions.map((opt) => ({
-							value: opt.value,
-							label: opt.label,
-						}))}
-					/>
+					<div style={{ width: 180 }}>
+						<NativeSelect
+							value={currentLanguage}
+							onChange={handleLanguagePreferenceChange}
+							options={languageOptions}
+							disabled={loading}
+						/>
+					</div>
 				</div>
-			</Card>
+			</div>
 
 			{/* Additional info */}
-			<div className="mt-4 text-xs text-gray-500 dark:text-gray-400">
-				<Typography.Text type="tertiary">
+			<div className="mt-4 text-xs text-ui-text-2 dark:text-ui-text-3">
+				<span className="text-ui-text-3">
 					{t(
 						"提示：语言偏好会同步到您登录的所有设备，并影响API返回的错误消息语言。",
 					)}
-				</Typography.Text>
+				</span>
 			</div>
-		</Card>
+		</div>
 	);
 };
 

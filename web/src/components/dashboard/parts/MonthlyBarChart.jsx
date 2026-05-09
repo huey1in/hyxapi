@@ -89,7 +89,7 @@ const MonthlyBarChart = ({ data = [], loading, t, valueLabel = 'quota' }) => {
                 />
                 {isHover && (
                   <div
-                    className='absolute z-10 px-2 py-1 rounded-md bg-ui-text text-ui-bg text-[11px] font-medium tabular-nums whitespace-nowrap shadow-md pointer-events-none'
+                    className='absolute z-10 px-2 py-1 rounded-xl bg-ui-text text-ui-bg text-[11px] font-medium tabular-nums whitespace-nowrap shadow-md pointer-events-none'
                     style={{
                       bottom: `calc(${pct}% + 8px)`,
                       left: '50%',

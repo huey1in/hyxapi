@@ -18,7 +18,6 @@ For commercial licensing, please contact support@quantumnous.com
 */
 
 import React from 'react';
-import { RadioGroup, Radio } from '@douyinfe/semi-ui';
 
 /**
  * 使用模式选择步骤组件
@@ -30,58 +29,57 @@ const UsageModeStep = ({
   renderNavigationButtons,
   t,
 }) => {
+  const options = [
+    {
+      value: 'external',
+      label: t('对外运营模式'),
+      description: t('适用于为多个用户提供服务的场景'),
+    },
+    {
+      value: 'self',
+      label: t('自用模式'),
+      description: t('适用于个人使用的场景，不需要设置模型价格'),
+    },
+    {
+      value: 'demo',
+      label: t('演示站点模式'),
+      description: t('适用于展示系统功能的场景，提供基础功能演示'),
+    },
+  ];
+
   return (
     <>
-      <div className='space-y-4'>
-        <RadioGroup
-          value={formData.usageMode}
-          onChange={handleUsageModeChange}
-          type='card'
-          direction='vertical'
-          aria-label='使用模式选择'
-          name='usage-mode-selection'
-          className='space-y-3'
-        >
-          <Radio
-            value='external'
-            extra={
-              <span className='text-sm text-gray-600'>
-                {t('适用于为多个用户提供服务的场景')}
-              </span>
-            }
-            className='border border-black rounded-2xl p-5 hover:bg-[#fafafa] transition-colors bg-white'
+      <div className='space-y-3'>
+        {options.map((option) => (
+          <label
+            key={option.value}
+            className={`block border rounded-2xl p-5 cursor-pointer transition-colors bg-ui-bg-elevated hover:bg-[#fafafa] ${
+              formData.usageMode === option.value
+                ? 'border-blue-500 ring-1 ring-blue-500'
+                : 'border-black'
+            }`}
+            onClick={() => handleUsageModeChange(option.value)}
           >
-            <span className='text-base font-semibold text-black'>
-              {t('对外运营模式')}
-            </span>
-          </Radio>
-          <Radio
-            value='self'
-            extra={
-              <span className='text-sm text-gray-600'>
-                {t('适用于个人使用的场景，不需要设置模型价格')}
-              </span>
-            }
-            className='border border-black rounded-2xl p-5 hover:bg-[#fafafa] transition-colors bg-white'
-          >
-            <span className='text-base font-semibold text-black'>
-              {t('自用模式')}
-            </span>
-          </Radio>
-          <Radio
-            value='demo'
-            extra={
-              <span className='text-sm text-gray-600'>
-                {t('适用于展示系统功能的场景，提供基础功能演示')}
-              </span>
-            }
-            className='border border-black rounded-2xl p-5 hover:bg-[#fafafa] transition-colors bg-white'
-          >
-            <span className='text-base font-semibold text-black'>
-              {t('演示站点模式')}
-            </span>
-          </Radio>
-        </RadioGroup>
+            <div className='flex items-center gap-3'>
+              <input
+                type='radio'
+                name='usage-mode-selection'
+                value={option.value}
+                checked={formData.usageMode === option.value}
+                onChange={() => handleUsageModeChange(option.value)}
+                className='w-4 h-4 text-blue-600'
+              />
+              <div>
+                <span className='text-base font-semibold text-ui-text'>
+                  {option.label}
+                </span>
+                <p className='text-sm text-ui-text-2 mt-0.5'>
+                  {option.description}
+                </p>
+              </div>
+            </div>
+          </label>
+        ))}
       </div>
       {renderNavigationButtons && renderNavigationButtons()}
     </>

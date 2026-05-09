@@ -30,7 +30,7 @@ export function ServerCard({ inputs, setInputs, submitServerAddress, t }) {
           />
           <button
             onClick={submitServerAddress}
-            className='px-3 py-1.5 text-xs font-semibold rounded-md bg-ui-accent text-ui-accent-fg hover:opacity-90 whitespace-nowrap'
+            className='px-3 py-1.5 text-xs font-semibold rounded-xl bg-ui-accent text-ui-accent-fg hover:opacity-90 whitespace-nowrap'
           >
             {t('更新')}
           </button>
@@ -112,7 +112,7 @@ export function SSRFCard({
         <TagInput value={allowedPorts} onChange={(value) => { setAllowedPorts(value); setInputs((prev) => ({ ...prev, 'fetch_setting.allowed_ports': value })); }} placeholder={t('输入端口后回车，如 80 或 8000-8999')} />
       </div>
 
-      <button onClick={submitSSRF} className='px-3 py-1.5 text-xs font-semibold rounded-md bg-ui-accent text-ui-accent-fg hover:opacity-90'>
+      <button onClick={submitSSRF} className='px-3 py-1.5 text-xs font-semibold rounded-xl bg-ui-accent text-ui-accent-fg hover:opacity-90'>
         {t('更新 SSRF 防护设置')}
       </button>
     </div>

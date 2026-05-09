@@ -18,8 +18,33 @@ For commercial licensing, please contact support@quantumnous.com
 */
 
 import i18next from 'i18next';
-import { Modal, Tag, Typography, Avatar } from '@douyinfe/semi-ui';
-import { copy, showSuccess } from './utils';
+// Simple Tag replacement for Semi UI Tag
+const TAG_COLOR_MAP = {
+  amber: '#f59e0b', blue: '#3b82f6', cyan: '#06b6d4', green: '#10b981',
+  grey: '#6b7280', indigo: '#6366f1', 'light-blue': '#0ea5e9', lime: '#84cc16',
+  orange: '#f97316', pink: '#ec4899', purple: '#8b5cf6', red: '#ef4444',
+  teal: '#14b8a6', violet: '#7c3aed', yellow: '#eab308', white: '#9ca3af',
+};
+
+function Tag({ color, children, prefixIcon, suffixIcon, onClick, size, shape }) {
+  const bgColor = TAG_COLOR_MAP[color] || TAG_COLOR_MAP.grey;
+  return (
+    <span
+      onClick={onClick}
+      className='inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium cursor-default'
+      style={{
+        backgroundColor: `${bgColor}20`,
+        color: bgColor,
+        border: `1px solid ${bgColor}40`,
+      }}
+    >
+      {prefixIcon && <span className='inline-flex'>{prefixIcon}</span>}
+      {children}
+      {suffixIcon && <span className='inline-flex'>{suffixIcon}</span>}
+    </span>
+  );
+}
+import { copy, showSuccess, showError } from './utils';
 import { MOBILE_BREAKPOINT } from '../hooks/common/useIsMobile';
 import { visit } from 'unist-util-visit';
 import * as LobeIcons from '@lobehub/icons';
@@ -411,9 +436,9 @@ export function getChannelIcon(channelType) {
  */
 export function getLobeHubIcon(iconName, size = 14) {
   if (typeof iconName === 'string') iconName = iconName.trim();
-  // 如果没有图标名称，返回 Avatar
+  // 如果没有图标名称，返回 fallback
   if (!iconName) {
-    return <Avatar size='extra-extra-small'>?</Avatar>;
+    return <span className='inline-flex items-center justify-center w-5 h-5 rounded-full bg-gray-200 text-xs font-medium text-gray-600'>?</span>;
   }
 
   // 解析组件路径与点号链式属性
@@ -438,7 +463,7 @@ export function getLobeHubIcon(iconName, size = 14) {
     (typeof IconComponent !== 'function' && typeof IconComponent !== 'object')
   ) {
     const firstLetter = String(iconName).charAt(0).toUpperCase();
-    return <Avatar size='extra-extra-small'>{firstLetter}</Avatar>;
+    return <span className='inline-flex items-center justify-center w-5 h-5 rounded-full bg-gray-200 text-xs font-medium text-gray-600'>{firstLetter}</span>;
   }
 
   // 解析点号链式属性，形如：key={...}、key='...'、key="..."、key=123、key、key=true/false
@@ -583,7 +608,7 @@ export function getOAuthProviderIcon(iconName, size = 20) {
   }
 
   return (
-    <Avatar size='extra-extra-small'>{raw.charAt(0).toUpperCase()}</Avatar>
+    <span className='inline-flex items-center justify-center w-5 h-5 rounded-full bg-gray-200 text-xs font-medium text-gray-600'>{raw.charAt(0).toUpperCase()}</span>
   );
 }
 
@@ -795,10 +820,7 @@ export function renderGroup(group) {
             if (await copy(group)) {
               showSuccess(i18next.t('已复制：') + group);
             } else {
-              Modal.error({
-                title: i18next.t('无法复制到剪贴板，请手动复制'),
-                content: group,
-              });
+              showError(i18next.t('无法复制到剪贴板，请手动复制') + ': ' + group);
             }
           }}
         >
@@ -954,12 +976,12 @@ export const renderGroupOption = (item) => {
       onMouseEnter={handleMouseEnter}
     >
       <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-        <Typography.Text strong type={disabled ? 'tertiary' : undefined}>
+        <span style={{ fontWeight: 600, color: disabled ? 'var(--semi-color-text-3)' : undefined }}>
           {value}
-        </Typography.Text>
-        <Typography.Text type='secondary' size='small'>
+        </span>
+        <span style={{ color: 'var(--semi-color-text-2)', fontSize: '12px' }}>
           {label}
-        </Typography.Text>
+        </span>
       </div>
       {item.ratio && renderRatio(item.ratio)}
     </div>

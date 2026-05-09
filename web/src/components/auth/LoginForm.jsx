@@ -41,7 +41,7 @@ import {
   isPasskeySupported,
 } from '../../helpers';
 import Turnstile from 'react-turnstile';
-import { Modal } from '@douyinfe/semi-ui';
+import ModalDialog from '../common/ModalDialog';
 import TelegramLoginButton from 'react-telegram-login';
 import OIDCIcon from '../common/logo/OIDCIcon';
 import WeChatIcon from '../common/logo/WeChatIcon';
@@ -213,7 +213,7 @@ const LoginForm = ({ embedded = false, onSuccess, onSwitchToRegister, onSwitchTo
           updateAPI();
           showSuccess(t('登录成功！'));
           if (username === 'root' && password === '123456') {
-            Modal.error({ title: t('您正在使用默认密码！'), content: t('请立刻修改默认密码！'), centered: true });
+            showError(t('您正在使用默认密码！') + ' ' + t('请立刻修改默认密码！'));
           }
           handleAuthed(data, '/console');
         } else showError(message);
@@ -518,15 +518,19 @@ const LoginForm = ({ embedded = false, onSuccess, onSwitchToRegister, onSwitchTo
   );
 
   const wechatModalNode = (
-    <Modal
+    <ModalDialog
       title={t('微信扫码登录')}
-      visible={showWeChatLoginModal}
-      maskClosable={true}
-      onOk={onSubmitWeChatVerificationCode}
-      onCancel={() => setShowWeChatLoginModal(false)}
-      okText={t('登录')}
-      centered={true}
-      okButtonProps={{ loading: wechatCodeSubmitLoading }}
+      open={showWeChatLoginModal}
+      onClose={() => setShowWeChatLoginModal(false)}
+      footer={
+        <button
+          className='w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50'
+          onClick={onSubmitWeChatVerificationCode}
+          disabled={wechatCodeSubmitLoading}
+        >
+          {wechatCodeSubmitLoading ? '...' : t('登录')}
+        </button>
+      }
     >
       <div className='flex flex-col items-center'>
         <img src={status.wechat_qrcode} alt='微信二维码' className='mb-4' />
@@ -541,20 +545,19 @@ const LoginForm = ({ embedded = false, onSuccess, onSwitchToRegister, onSwitchTo
         onChange={(e) => handleChange('wechat_verification_code', e.target.value)}
         className={inputClass}
       />
-    </Modal>
+    </ModalDialog>
   );
 
   const twoFAModalNode = (
-    <Modal
+    <ModalDialog
       title='两步验证'
-      visible={showTwoFA}
-      onCancel={handleBackToLogin}
-      footer={null}
+      open={showTwoFA}
+      onClose={handleBackToLogin}
+      hideFooter
       width={450}
-      centered
     >
       <TwoFAVerification onSuccess={handle2FASuccess} onBack={handleBackToLogin} isModal={true} />
-    </Modal>
+    </ModalDialog>
   );
 
   return (

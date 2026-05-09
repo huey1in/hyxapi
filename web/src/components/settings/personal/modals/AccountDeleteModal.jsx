@@ -18,7 +18,9 @@ For commercial licensing, please contact support@quantumnous.com
 */
 
 import React from 'react';
-import { Banner, Input, Modal, Typography } from '@douyinfe/semi-ui';
+import { Trash2, User } from 'lucide-react';
+import ModalDialog from '../../../common/ModalDialog';
+import { TextField, FieldRow, Notice } from '../../../common/form/Primitives';
 import Turnstile from 'react-turnstile';
 
 const AccountDeleteModal = ({
@@ -34,33 +36,39 @@ const AccountDeleteModal = ({
   setTurnstileToken,
 }) => {
   return (
-    <Modal
+    <ModalDialog
+      open={showAccountDeleteModal}
+      onClose={() => setShowAccountDeleteModal(false)}
       title={
         <div className='flex items-center'>
-          <IconDelete className='mr-2 text-red-500' />
+          <Trash2 size={16} className='mr-2 text-red-500' />
           {t('删除账户确认')}
         </div>
       }
-      visible={showAccountDeleteModal}
-      onCancel={() => setShowAccountDeleteModal(false)}
-      onOk={deleteAccount}
-      size={'small'}
-      centered={true}
-      className='modern-modal'
+      footer={
+        <>
+          <button
+            onClick={() => setShowAccountDeleteModal(false)}
+            className='inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium rounded-xl border border-ui-border text-ui-text hover:bg-ui-bg-subtle transition-colors'
+          >
+            {t('取消')}
+          </button>
+          <button
+            onClick={deleteAccount}
+            className='inline-flex items-center gap-1.5 px-4 py-2 text-sm font-semibold rounded-xl bg-ui-danger text-white hover:opacity-90 transition-opacity disabled:opacity-50'
+          >
+            {t('确定')}
+          </button>
+        </>
+      }
     >
-      <div className='space-y-4 py-4'>
-        <Banner
-          type='danger'
-          description={t('您正在删除自己的帐户，将清空所有数据且不可恢复')}
-          closeIcon={null}
-          className='!rounded-lg'
-        />
+      <div className='space-y-4'>
+        <Notice kind='danger'>
+          {t('您正在删除自己的帐户，将清空所有数据且不可恢复')}
+        </Notice>
 
-        <div>
-          <Typography.Text strong className='block mb-2 text-red-600'>
-            {t('请输入您的用户名以确认删除')}
-          </Typography.Text>
-          <Input
+        <FieldRow label={<span className='text-red-600'>{t('请输入您的用户名以确认删除')}</span>}>
+          <TextField
             placeholder={t('输入你的账户名{{username}}以确认删除', {
               username: ` ${userState?.user?.username} `,
             })}
@@ -69,11 +77,9 @@ const AccountDeleteModal = ({
             onChange={(value) =>
               handleInputChange('self_account_deletion_confirmation', value)
             }
-            size='large'
-            className='!rounded-lg'
-            prefix={<IconUser />}
+            prefix={<User size={14} />}
           />
-        </div>
+        </FieldRow>
 
         {turnstileEnabled && (
           <div className='flex justify-center'>
@@ -86,7 +92,7 @@ const AccountDeleteModal = ({
           </div>
         )}
       </div>
-    </Modal>
+    </ModalDialog>
   );
 };
 

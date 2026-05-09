@@ -90,7 +90,7 @@ export default function SettingsLog(props) {
               </span>
             )}
           </div>
-          <div className='flex items-start gap-2 px-3 py-2 rounded-md border border-amber-500/30 bg-amber-500/5'>
+          <div className='flex items-start gap-2 px-3 py-2 rounded-xl border border-amber-500/30 bg-amber-500/5'>
             <div className='text-xs text-ui-text-2 leading-relaxed'>
               {t('将删除')}{' '}
               <span className='text-ui-danger font-semibold'>{targetStr}</span>{' '}
@@ -141,7 +141,7 @@ export default function SettingsLog(props) {
             <button
               onClick={cleanHistory}
               disabled={cleaning}
-              className='inline-flex items-center gap-1 px-2.5 py-1 text-[11px] rounded-md border border-ui-danger/30 text-ui-danger hover:bg-ui-danger-bg disabled:opacity-50 whitespace-nowrap'
+              className='inline-flex items-center gap-1 px-2.5 py-1 text-[11px] rounded-xl border border-ui-danger/30 text-ui-danger hover:bg-ui-danger-bg disabled:opacity-50 whitespace-nowrap'
             >
               {t('清除历史日志')}
             </button>

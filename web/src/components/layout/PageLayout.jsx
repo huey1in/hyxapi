@@ -18,7 +18,6 @@ For commercial licensing, please contact support@quantumnous.com
 */
 
 import HeaderBar from './headerbar';
-import { Layout } from '@douyinfe/semi-ui';
 import SiderBar from './SiderBar';
 import App from '../../App';
 import FooterBar from './Footer';
@@ -38,7 +37,6 @@ import { UserContext } from '../../context/User';
 import { StatusContext } from '../../context/Status';
 import { useLocation } from 'react-router-dom';
 import { normalizeLanguage } from '../../i18n/language';
-const { Sider, Content, Header } = Layout;
 
 const PAGE_TITLES = [
   { match: (p) => p === '/', name: '首页' },
@@ -172,7 +170,7 @@ const PageLayout = () => {
   }, [i18n, userState?.user?.setting]);
 
   return (
-    <Layout
+    <div
       className='app-layout'
       style={{
         display: 'flex',
@@ -181,7 +179,7 @@ const PageLayout = () => {
         backgroundColor: 'var(--page-bg)',
       }}
     >
-      <Header
+      <header
         style={{
           padding: 0,
           height: 'auto',
@@ -196,8 +194,8 @@ const PageLayout = () => {
           onMobileMenuToggle={() => setDrawerOpen((prev) => !prev)}
           drawerOpen={drawerOpen}
         />
-      </Header>
-      <Layout
+      </header>
+      <div
         style={{
           overflow: isMobile ? 'visible' : 'auto',
           display: 'flex',
@@ -225,7 +223,7 @@ const PageLayout = () => {
                 }}
               />
             )}
-            <Sider
+            <aside
               className='app-sider'
               style={{
                 position: 'fixed',
@@ -246,10 +244,10 @@ const PageLayout = () => {
                   if (isMobile) setDrawerOpen(false);
                 }}
               />
-            </Sider>
+            </aside>
           </>
         )}
-        <Layout
+        <div
           style={{
             marginLeft: isMobile
               ? '0'
@@ -263,7 +261,7 @@ const PageLayout = () => {
             transition: 'margin-left 0.35s cubic-bezier(0.16, 1, 0.3, 1)',
           }}
         >
-          <Content
+          <main
             style={{
               flex: '1 0 auto',
               overflowY: isMobile ? 'visible' : 'hidden',
@@ -276,21 +274,21 @@ const PageLayout = () => {
             <ErrorBoundary>
               <App />
             </ErrorBoundary>
-          </Content>
+          </main>
           {!shouldHideFooter && (
-            <Layout.Footer
+            <footer
               style={{
                 flex: '0 0 auto',
                 width: '100%',
               }}
             >
               <FooterBar />
-            </Layout.Footer>
+            </footer>
           )}
-        </Layout>
-      </Layout>
+        </div>
+      </div>
       <ToastContainer />
-    </Layout>
+    </div>
   );
 };
 

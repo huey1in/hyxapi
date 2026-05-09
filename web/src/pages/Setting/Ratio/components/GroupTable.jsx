@@ -171,7 +171,7 @@ export default function GroupTable({ groupRatio, userUsableGroups, onChange }) {
       <div className='flex justify-center'>
         <button
           onClick={addRow}
-          className='inline-flex items-center gap-1 px-3 py-1.5 text-xs rounded-md border border-ui-border text-ui-text-2 hover:bg-ui-bg-hover'
+          className='inline-flex items-center gap-1 px-3 py-1.5 text-xs rounded-xl border border-ui-border text-ui-text-2 hover:bg-ui-bg-hover'
         >
           {t('添加分组')}
         </button>

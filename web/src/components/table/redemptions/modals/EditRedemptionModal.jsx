@@ -162,7 +162,7 @@ const EditRedemptionModal = (props) => {
       title={
         <>
           <span
-            className={`inline-flex items-center px-2 py-0.5 text-[11px] font-medium rounded-md border ${
+            className={`inline-flex items-center px-2 py-0.5 text-[11px] font-medium rounded-xl border ${
               isEdit
                 ? 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20'
                 : 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20'
@@ -179,14 +179,14 @@ const EditRedemptionModal = (props) => {
         <>
           <button
             onClick={props.handleClose}
-            className='inline-flex items-center px-3.5 py-1.5 text-xs font-medium rounded-md border border-ui-border text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-subtle whitespace-nowrap'
+            className='inline-flex items-center px-3.5 py-1.5 text-xs font-medium rounded-xl border border-ui-border text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-subtle whitespace-nowrap'
           >
             {t('取消')}
           </button>
           <button
             onClick={submit}
             disabled={loading}
-            className='inline-flex items-center px-4 py-1.5 text-xs font-semibold rounded-md bg-ui-accent text-ui-accent-fg hover:bg-ui-accent-hover disabled:opacity-50 whitespace-nowrap'
+            className='inline-flex items-center px-4 py-1.5 text-xs font-semibold rounded-xl bg-ui-accent text-ui-accent-fg hover:bg-ui-accent-hover disabled:opacity-50 whitespace-nowrap'
           >
             {loading ? t('提交中...') : t('提交')}
           </button>

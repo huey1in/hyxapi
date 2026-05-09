@@ -62,16 +62,16 @@ const MessageContent = ({
     if (message.errorCode === 'model_price_error') {
       return (
         <div className={className}>
-          <div className='rounded-lg p-3 space-y-2 border border-gray-200 bg-white'>
+          <div className='rounded-lg p-3 space-y-2 border border-gray-200 bg-ui-bg-elevated'>
             <div className='flex items-center gap-2'>
               <AlertTriangle size={16} className='text-orange-500 shrink-0' />
-              <span className='font-semibold text-gray-900'>{t('模型价格未配置')}</span>
+              <span className='font-semibold text-ui-text'>{t('模型价格未配置')}</span>
             </div>
-            <p className='text-gray-600 text-sm break-words'>{errorText}</p>
+            <p className='text-ui-text-2 text-sm break-words'>{errorText}</p>
             {isAdmin() && (
               <button
                 onClick={() => window.open('/console/setting?tab=ratio', '_blank')}
-                className='flex items-center gap-1 text-sm px-3 py-1.5 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors'
+                className='flex items-center gap-1 text-sm px-3 py-1.5 border border-gray-200 rounded-lg hover:bg-ui-bg-subtle transition-colors'
               >
                 <Settings size={14} />
                 {t('前往设置')}

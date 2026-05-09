@@ -41,15 +41,15 @@ const NativeSelect = ({ value, onChange, options, placeholder, disabled, filter 
         type='button'
         onClick={() => !disabled && setOpen(!open)}
         disabled={disabled}
-        className='w-full flex items-center justify-between px-3 py-2 text-sm border border-gray-200 rounded-lg bg-white disabled:opacity-50 disabled:cursor-not-allowed hover:border-gray-400 transition-colors text-left'
+        className='w-full flex items-center justify-between px-3 py-2 text-sm border border-gray-200 rounded-lg bg-ui-bg-elevated disabled:opacity-50 disabled:cursor-not-allowed hover:border-gray-400 transition-colors text-left'
       >
-        <span className={value ? 'text-gray-900' : 'text-gray-400'}>{selectedLabel}</span>
-        <ChevronDown size={14} className='text-gray-400 flex-shrink-0' />
+        <span className={value ? 'text-ui-text' : 'text-ui-text-3'}>{selectedLabel}</span>
+        <ChevronDown size={14} className='text-ui-text-3 flex-shrink-0' />
       </button>
       {open && (
         <>
           <div className='fixed inset-0 z-40' onClick={() => setOpen(false)} />
-          <div className='absolute z-50 mt-1 w-full bg-white border border-gray-200 rounded-lg shadow-lg overflow-hidden'>
+          <div className='absolute z-50 mt-1 w-full bg-ui-bg-elevated border border-gray-200 rounded-lg shadow-lg overflow-hidden'>
             {filter && (
               <div className='p-2 border-b border-gray-100'>
                 <input
@@ -69,12 +69,12 @@ const NativeSelect = ({ value, onChange, options, placeholder, disabled, filter 
                   key={opt.value}
                   type='button'
                   onClick={() => { onChange(opt.value); setOpen(false); setSearch(''); }}
-                  className={`w-full text-left px-3 py-2 text-sm hover:bg-gray-50 transition-colors ${opt.value === value ? 'bg-gray-100 font-medium' : ''}`}
+                  className={`w-full text-left px-3 py-2 text-sm hover:bg-ui-bg-subtle transition-colors ${opt.value === value ? 'bg-ui-bg-subtle font-medium' : ''}`}
                 >
                   {opt.label || opt.value}
                 </button>
               ))}
-              {filtered.length === 0 && <div className='px-3 py-2 text-xs text-gray-400'>无匹配结果</div>}
+              {filtered.length === 0 && <div className='px-3 py-2 text-xs text-ui-text-3'>无匹配结果</div>}
             </div>
           </div>
         </>
@@ -102,10 +102,10 @@ const SettingsPanel = ({
           <div className='w-8 h-8 rounded-full bg-gradient-to-r from-purple-500 to-pink-500 flex items-center justify-center'>
             <Settings size={16} className='text-white' />
           </div>
-          <span className='font-semibold text-gray-900'>{t('模型配置')}</span>
+          <span className='font-semibold text-ui-text'>{t('模型配置')}</span>
         </div>
         {styleState.isMobile && onCloseSettings && (
-          <button onClick={onCloseSettings} className='w-7 h-7 flex items-center justify-center text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors'>
+          <button onClick={onCloseSettings} className='w-7 h-7 flex items-center justify-center text-ui-text-3 hover:text-ui-text hover:bg-ui-bg-subtle rounded-lg transition-colors'>
             <X size={16} />
           </button>
         )}
@@ -129,7 +129,7 @@ const SettingsPanel = ({
         {/* 分组 */}
         <div className={customRequestMode ? 'opacity-50 pointer-events-none' : ''}>
           <div className='flex items-center gap-2 mb-2'>
-            <Users size={14} className='text-gray-400' />
+            <Users size={14} className='text-ui-text-3' />
             <span className='text-sm font-medium'>{t('分组')}</span>
             {customRequestMode && <span className='text-xs text-orange-600'>({t('已在自定义模式中忽略')})</span>}
           </div>
@@ -146,7 +146,7 @@ const SettingsPanel = ({
         {/* 模型 */}
         <div className={customRequestMode ? 'opacity-50 pointer-events-none' : ''}>
           <div className='flex items-center gap-2 mb-2'>
-            <Sparkles size={14} className='text-gray-400' />
+            <Sparkles size={14} className='text-ui-text-3' />
             <span className='text-sm font-medium'>{t('模型')}</span>
             {customRequestMode && <span className='text-xs text-orange-600'>({t('已在自定义模式中忽略')})</span>}
           </div>
@@ -179,16 +179,16 @@ const SettingsPanel = ({
         <div className={customRequestMode ? 'opacity-50 pointer-events-none' : ''}>
           <div className='flex items-center justify-between'>
             <div className='flex items-center gap-2'>
-              <ToggleLeft size={14} className='text-gray-400' />
+              <ToggleLeft size={14} className='text-ui-text-3' />
               <span className='text-sm font-medium'>{t('流式输出')}</span>
               {customRequestMode && <span className='text-xs text-orange-600'>({t('已在自定义模式中忽略')})</span>}
             </div>
             <button
               onClick={() => !customRequestMode && onInputChange('stream', !inputs.stream)}
               disabled={customRequestMode}
-              className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors disabled:opacity-40 ${inputs.stream ? 'bg-black' : 'bg-gray-200'}`}
+              className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors disabled:opacity-40 ${inputs.stream ? 'bg-black' : 'bg-ui-bg-subtle'}`}
             >
-              <span className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white transition-transform ${inputs.stream ? 'translate-x-[18px]' : 'translate-x-[2px]'}`} />
+              <span className={`inline-block h-3.5 w-3.5 transform rounded-full bg-ui-bg-elevated transition-transform ${inputs.stream ? 'translate-x-[18px]' : 'translate-x-[2px]'}`} />
             </button>
           </div>
         </div>

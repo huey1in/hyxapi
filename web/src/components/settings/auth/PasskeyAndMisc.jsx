@@ -54,7 +54,7 @@ export function PasskeyCard({ inputs, setInputs, submitPasskeySettings, t }) {
       <FieldRow label={t('允许的 Origins')} hint={t('留空使用服务器地址，多个 Origin 用逗号分隔')}>
         <input value={inputs['passkey.origins'] || ''} onChange={(e) => setInputs((prev) => ({ ...prev, 'passkey.origins': e.target.value }))} placeholder='https://newapi.pro,https://newapi.com' className={inputCls} />
       </FieldRow>
-      <button onClick={submitPasskeySettings} className='px-3 py-1.5 text-xs font-semibold rounded-md bg-ui-accent text-ui-accent-fg hover:opacity-90'>
+      <button onClick={submitPasskeySettings} className='px-3 py-1.5 text-xs font-semibold rounded-xl bg-ui-accent text-ui-accent-fg hover:opacity-90'>
         {t('保存 Passkey 设置')}
       </button>
     </div>
@@ -83,9 +83,9 @@ export function EmailWhitelistCard({ inputs, updateOptions, emailDomainWhitelist
       <TagInput value={emailDomainWhitelist} onChange={setEmailDomainWhitelist} placeholder={t('输入域名后回车')} />
       <div className='flex gap-2'>
         <input value={emailToAdd || ''} onChange={(e) => setEmailToAdd(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleAddEmail()} placeholder={t('输入要添加的邮箱域名')} className={inputCls + ' flex-1'} />
-        <button onClick={handleAddEmail} className='px-3 py-1.5 text-xs font-semibold rounded-md bg-ui-accent text-ui-accent-fg hover:opacity-90 whitespace-nowrap'>{t('添加')}</button>
+        <button onClick={handleAddEmail} className='px-3 py-1.5 text-xs font-semibold rounded-xl bg-ui-accent text-ui-accent-fg hover:opacity-90 whitespace-nowrap'>{t('添加')}</button>
       </div>
-      <button onClick={() => { if (Array.isArray(emailDomainWhitelist)) updateOptions([{ key: 'EmailDomainWhitelist', value: emailDomainWhitelist.join(',') }]); }} className='px-3 py-1.5 text-xs font-semibold rounded-md bg-ui-accent text-ui-accent-fg hover:opacity-90'>
+      <button onClick={() => { if (Array.isArray(emailDomainWhitelist)) updateOptions([{ key: 'EmailDomainWhitelist', value: emailDomainWhitelist.join(',') }]); }} className='px-3 py-1.5 text-xs font-semibold rounded-xl bg-ui-accent text-ui-accent-fg hover:opacity-90'>
         {t('保存邮箱域名白名单设置')}
       </button>
     </div>
@@ -118,7 +118,7 @@ export function SMTPCard({ inputs, setInputs, submitSMTP, t }) {
         <ToggleField label={t('启用 SMTP SSL')} checked={!!inputs.SMTPSSLEnabled} onChange={(v) => updateOptions([{ key: 'SMTPSSLEnabled', value: v }])} />
         <ToggleField label={t('强制使用 AUTH LOGIN')} checked={!!inputs.SMTPForceAuthLogin} onChange={(v) => updateOptions([{ key: 'SMTPForceAuthLogin', value: v }])} />
       </div>
-      <button onClick={submitSMTP} className='px-3 py-1.5 text-xs font-semibold rounded-md bg-ui-accent text-ui-accent-fg hover:opacity-90'>
+      <button onClick={submitSMTP} className='px-3 py-1.5 text-xs font-semibold rounded-xl bg-ui-accent text-ui-accent-fg hover:opacity-90'>
         {t('保存 SMTP 设置')}
       </button>
     </div>
@@ -138,7 +138,7 @@ export function TurnstileCard({ inputs, setInputs, submitTurnstile, t }) {
           <input type='password' value={inputs.TurnstileSecretKey || ''} onChange={(e) => setInputs((prev) => ({ ...prev, TurnstileSecretKey: e.target.value }))} placeholder={t('敏感信息不会发送到前端显示')} className={inputCls} />
         </FieldRow>
       </div>
-      <button onClick={submitTurnstile} className='px-3 py-1.5 text-xs font-semibold rounded-md bg-ui-accent text-ui-accent-fg hover:opacity-90'>
+      <button onClick={submitTurnstile} className='px-3 py-1.5 text-xs font-semibold rounded-xl bg-ui-accent text-ui-accent-fg hover:opacity-90'>
         {t('保存 Turnstile 设置')}
       </button>
     </div>

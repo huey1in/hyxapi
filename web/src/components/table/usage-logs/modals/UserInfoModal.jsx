@@ -18,7 +18,7 @@ For commercial licensing, please contact support@quantumnous.com
 */
 
 import React from 'react';
-import { Modal, Badge } from '@douyinfe/semi-ui';
+import ModalDialog from '../../../common/ModalDialog';
 import { renderQuota, renderNumber } from '../../../../helpers';
 
 const UserInfoModal = ({
@@ -27,22 +27,17 @@ const UserInfoModal = ({
   userInfoData,
   t,
 }) => {
-  const infoItemStyle = {
-    marginBottom: '16px',
-  };
-
   const labelStyle = {
     display: 'flex',
     alignItems: 'center',
     marginBottom: '2px',
     fontSize: '12px',
-    color: 'var(--semi-color-text-2)',
     gap: '6px',
   };
 
-  const renderLabel = (text, type = 'tertiary') => (
-    <div style={labelStyle}>
-      <Badge dot type={type} />
+  const renderLabel = (text, color = '#888') => (
+    <div style={labelStyle} className='text-ui-text-3'>
+      <span className='w-1.5 h-1.5 rounded-full' style={{ backgroundColor: color }} />
       {text}
     </div>
   );
@@ -50,7 +45,6 @@ const UserInfoModal = ({
   const valueStyle = {
     fontSize: '14px',
     fontWeight: '600',
-    color: 'var(--semi-color-text-0)',
   };
 
   const rowStyle = {
@@ -66,28 +60,25 @@ const UserInfoModal = ({
   };
 
   return (
-    <Modal
+    <ModalDialog
+      open={showUserInfo}
+      onClose={() => setShowUserInfoModal(false)}
       title={t('用户信息')}
-      visible={showUserInfo}
-      onCancel={() => setShowUserInfoModal(false)}
-      footer={null}
-      centered
-      closable
-      maskClosable
       width={600}
+      hideFooter
     >
       {userInfoData && (
         <div style={{ padding: 20 }}>
           {/* 基本信息 */}
           <div style={rowStyle}>
             <div style={colStyle}>
-              {renderLabel(t('用户名'), 'primary')}
-              <div style={valueStyle}>{userInfoData.username}</div>
+              {renderLabel(t('用户名'), '#3b82f6')}
+              <div style={valueStyle} className='text-ui-text'>{userInfoData.username}</div>
             </div>
             {userInfoData.display_name && (
               <div style={colStyle}>
-                {renderLabel(t('显示名称'), 'primary')}
-                <div style={valueStyle}>{userInfoData.display_name}</div>
+                {renderLabel(t('显示名称'), '#3b82f6')}
+                <div style={valueStyle} className='text-ui-text'>{userInfoData.display_name}</div>
               </div>
             )}
           </div>
@@ -95,12 +86,12 @@ const UserInfoModal = ({
           {/* 余额信息 */}
           <div style={rowStyle}>
             <div style={colStyle}>
-              {renderLabel(t('余额'), 'success')}
-              <div style={valueStyle}>{renderQuota(userInfoData.quota)}</div>
+              {renderLabel(t('余额'), '#22c55e')}
+              <div style={valueStyle} className='text-ui-text'>{renderQuota(userInfoData.quota)}</div>
             </div>
             <div style={colStyle}>
-              {renderLabel(t('已用额度'), 'warning')}
-              <div style={valueStyle}>
+              {renderLabel(t('已用额度'), '#f59e0b')}
+              <div style={valueStyle} className='text-ui-text'>
                 {renderQuota(userInfoData.used_quota)}
               </div>
             </div>
@@ -109,15 +100,15 @@ const UserInfoModal = ({
           {/* 统计信息 */}
           <div style={rowStyle}>
             <div style={colStyle}>
-              {renderLabel(t('请求次数'), 'warning')}
-              <div style={valueStyle}>
+              {renderLabel(t('请求次数'), '#f59e0b')}
+              <div style={valueStyle} className='text-ui-text'>
                 {renderNumber(userInfoData.request_count)}
               </div>
             </div>
             {userInfoData.group && (
               <div style={colStyle}>
-                {renderLabel(t('用户组'), 'tertiary')}
-                <div style={valueStyle}>{userInfoData.group}</div>
+                {renderLabel(t('用户组'))}
+                <div style={valueStyle} className='text-ui-text'>{userInfoData.group}</div>
               </div>
             )}
           </div>
@@ -127,14 +118,14 @@ const UserInfoModal = ({
             <div style={rowStyle}>
               {userInfoData.aff_code && (
                 <div style={colStyle}>
-                  {renderLabel(t('邀请码'), 'tertiary')}
-                  <div style={valueStyle}>{userInfoData.aff_code}</div>
+                  {renderLabel(t('邀请码'))}
+                  <div style={valueStyle} className='text-ui-text'>{userInfoData.aff_code}</div>
                 </div>
               )}
               {userInfoData.aff_count !== undefined && (
                 <div style={colStyle}>
-                  {renderLabel(t('邀请人数'), 'tertiary')}
-                  <div style={valueStyle}>
+                  {renderLabel(t('邀请人数'))}
+                  <div style={valueStyle} className='text-ui-text'>
                     {renderNumber(userInfoData.aff_count)}
                   </div>
                 </div>
@@ -145,9 +136,9 @@ const UserInfoModal = ({
           {/* 邀请获得额度 */}
           {userInfoData.aff_quota !== undefined &&
             userInfoData.aff_quota > 0 && (
-              <div style={infoItemStyle}>
-                {renderLabel(t('邀请获得额度'), 'success')}
-                <div style={valueStyle}>
+              <div style={{ marginBottom: '16px' }}>
+                {renderLabel(t('邀请获得额度'), '#22c55e')}
+                <div style={valueStyle} className='text-ui-text'>
                   {renderQuota(userInfoData.aff_quota)}
                 </div>
               </div>
@@ -156,13 +147,14 @@ const UserInfoModal = ({
           {/* 备注 */}
           {userInfoData.remark && (
             <div style={{ marginBottom: 0 }}>
-              {renderLabel(t('备注'), 'tertiary')}
+              {renderLabel(t('备注'))}
               <div
                 style={{
                   ...valueStyle,
                   wordBreak: 'break-all',
                   lineHeight: '1.4',
                 }}
+                className='text-ui-text'
               >
                 {userInfoData.remark}
               </div>
@@ -170,7 +162,7 @@ const UserInfoModal = ({
           )}
         </div>
       )}
-    </Modal>
+    </ModalDialog>
   );
 };
 

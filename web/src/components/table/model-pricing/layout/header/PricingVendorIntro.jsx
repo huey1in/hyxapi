@@ -18,18 +18,9 @@ For commercial licensing, please contact support@quantumnous.com
 */
 
 import React, { useState, useEffect, useMemo, useCallback, memo } from 'react';
-import {
-  Card,
-  Tag,
-  Avatar,
-  Typography,
-  Tooltip,
-  Modal,
-} from '@douyinfe/semi-ui';
 import { getLobeHubIcon } from '../../../../../helpers';
+import ModalDialog from '../../../../common/ModalDialog';
 import SearchActions from './SearchActions';
-
-const { Paragraph } = Typography;
 
 const CONFIG = {
   CAROUSEL_INTERVAL: 2000,
@@ -56,7 +47,7 @@ const COMPONENT_STYLES = {
     fontWeight: '500',
   },
   avatarContainer:
-    'w-16 h-16 rounded-2xl bg-white/90 shadow-md backdrop-blur-sm flex items-center justify-center',
+    'w-16 h-16 rounded-2xl bg-ui-bg-elevated/90 shadow-md backdrop-blur-sm flex items-center justify-center',
   titleText: { color: 'white' },
   descriptionText: { color: 'rgba(255,255,255,0.9)' },
 };
@@ -86,9 +77,9 @@ const getVendorDisplayName = (vendorName, t) => {
 
 const createDefaultAvatar = () => (
   <div className={COMPONENT_STYLES.avatarContainer}>
-    <Avatar size='large' color='transparent'>
+    <div className='w-10 h-10 rounded-xl bg-ui-bg-subtle flex items-center justify-center text-sm font-bold text-ui-text-2'>
       AI
-    </Avatar>
+    </div>
   </div>
 );
 
@@ -108,12 +99,12 @@ const createAvatarContent = (vendor, isAllVendors) => {
   }
 
   return (
-    <Avatar
-      size='large'
+    <div
+      className='w-10 h-10 rounded-xl flex items-center justify-center text-sm font-bold text-ui-text'
       style={{ backgroundColor: getAvatarBackgroundColor(isAllVendors) }}
     >
       {getAvatarText(vendor.name)}
-    </Avatar>
+    </div>
   );
 };
 
@@ -126,9 +117,9 @@ const renderVendorAvatar = (vendor, t, isAllVendors = false) => {
   const avatarContent = createAvatarContent(vendor, isAllVendors);
 
   return (
-    <Tooltip content={displayName} position='top'>
-      <div className={COMPONENT_STYLES.avatarContainer}>{avatarContent}</div>
-    </Tooltip>
+    <div className={COMPONENT_STYLES.avatarContainer} title={displayName}>
+      {avatarContent}
+    </div>
   );
 };
 
@@ -172,19 +163,23 @@ const PricingVendorIntro = memo(
 
     const renderDescriptionModal = useCallback(
       () => (
-        <Modal
+        <ModalDialog
+          open={descModalVisible}
+          onClose={handleCloseDescModal}
           title={t('供应商介绍')}
-          visible={descModalVisible}
-          onCancel={handleCloseDescModal}
-          footer={null}
           width={isMobile ? '95%' : 600}
-          bodyStyle={{
-            maxHeight: isMobile ? '70vh' : '60vh',
-            overflowY: 'auto',
-          }}
+          hideFooter
         >
-          <div className='text-sm mb-4'>{descModalContent}</div>
-        </Modal>
+          <div
+            className='text-sm mb-4'
+            style={{
+              maxHeight: isMobile ? '70vh' : '60vh',
+              overflowY: 'auto',
+            }}
+          >
+            {descModalContent}
+          </div>
+        </ModalDialog>
       ),
       [descModalVisible, descModalContent, handleCloseDescModal, isMobile, t],
     );
@@ -319,48 +314,43 @@ const PricingVendorIntro = memo(
 
     const renderHeaderCard = useCallback(
       ({ title, count, description, rightContent, primaryDarkerChannel }) => (
-        <Card
-          className='!rounded-2xl shadow-sm border-0'
-          cover={
-            <div
-              className='relative h-full'
-              style={createCoverStyle(primaryDarkerChannel)}
-            >
-              <div className='relative z-10 h-full flex items-center justify-between p-4'>
-                <div className='flex-1 min-w-0 mr-4'>
-                  <div className='flex flex-row flex-wrap items-center gap-2 sm:gap-3 mb-2'>
-                    <h2
-                      className='text-lg sm:text-xl font-bold truncate'
-                      style={COMPONENT_STYLES.titleText}
-                    >
-                      {title}
-                    </h2>
-                    <Tag
-                      style={COMPONENT_STYLES.tag}
-                      shape='circle'
-                      size='small'
-                      className='self-center'
-                    >
-                      {t('共 {{count}} 个模型', { count })}
-                    </Tag>
-                  </div>
-                  <Paragraph
-                    className='text-xs sm:text-sm leading-relaxed !mb-0 cursor-pointer'
-                    style={COMPONENT_STYLES.descriptionText}
-                    ellipsis={{ rows: 2 }}
-                    onClick={() => handleOpenDescModal(description)}
+        <div className='rounded-2xl shadow-sm border-0 overflow-hidden' style={{ backgroundColor: 'var(--page-bg)' }}>
+          <div
+            className='relative h-full'
+            style={createCoverStyle(primaryDarkerChannel)}
+          >
+            <div className='relative z-10 h-full flex items-center justify-between p-4'>
+              <div className='flex-1 min-w-0 mr-4'>
+                <div className='flex flex-row flex-wrap items-center gap-2 sm:gap-3 mb-2'>
+                  <h2
+                    className='text-lg sm:text-xl font-bold truncate'
+                    style={COMPONENT_STYLES.titleText}
                   >
-                    {description}
-                  </Paragraph>
+                    {title}
+                  </h2>
+                  <span
+                    className='inline-flex items-center px-2.5 py-0.5 text-xs rounded-full font-medium self-center'
+                    style={COMPONENT_STYLES.tag}
+                  >
+                    {t('共 {{count}} 个模型', { count })}
+                  </span>
                 </div>
-
-                <div className='flex-shrink-0'>{rightContent}</div>
+                <p
+                  className='text-xs sm:text-sm leading-relaxed !mb-0 cursor-pointer line-clamp-2'
+                  style={COMPONENT_STYLES.descriptionText}
+                  onClick={() => handleOpenDescModal(description)}
+                >
+                  {description}
+                </p>
               </div>
+
+              <div className='flex-shrink-0'>{rightContent}</div>
             </div>
-          }
-        >
-          {renderSearchActions()}
-        </Card>
+          </div>
+          <div className='p-4'>
+            {renderSearchActions()}
+          </div>
+        </div>
       ),
       [renderSearchActions, createCoverStyle, handleOpenDescModal, t],
     );

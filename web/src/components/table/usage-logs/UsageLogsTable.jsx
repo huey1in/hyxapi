@@ -18,12 +18,7 @@ For commercial licensing, please contact support@quantumnous.com
 */
 
 import React, { useMemo } from 'react';
-import { Empty, Descriptions } from '@douyinfe/semi-ui';
 import CardTable from '../../common/ui/CardTable';
-import {
-  IllustrationNoResult,
-  IllustrationNoResultDark,
-} from '@douyinfe/semi-illustrations';
 import { getLogsColumns } from './UsageLogsColumnDefs';
 
 const LogsTable = (logsData) => {
@@ -85,7 +80,18 @@ const LogsTable = (logsData) => {
   }, [compactMode, visibleColumnsList]);
 
   const expandRowRender = (record, index) => {
-    return <Descriptions data={expandData[record.key]} />;
+    const data = expandData[record.key];
+    if (!data || data.length === 0) return null;
+    return (
+      <div className='grid grid-cols-2 gap-x-4 gap-y-1 p-3 text-xs'>
+        {data.map((item, i) => (
+          <div key={i} className='flex gap-2'>
+            <span className='text-ui-text-3 whitespace-nowrap'>{item.key}:</span>
+            <span className='text-ui-text'>{item.value}</span>
+          </div>
+        ))}
+      </div>
+    );
   };
 
   return (
@@ -104,14 +110,9 @@ const LogsTable = (logsData) => {
       className='rounded-xl overflow-hidden'
       size='small'
       empty={
-        <Empty
-          image={<IllustrationNoResult style={{ width: 150, height: 150 }} />}
-          darkModeImage={
-            <IllustrationNoResultDark style={{ width: 150, height: 150 }} />
-          }
-          description={t('搜索无结果')}
-          style={{ padding: 30 }}
-        />
+        <div className='flex flex-col items-center justify-center py-8 text-ui-text-3'>
+          <span className='text-sm'>{t('搜索无结果')}</span>
+        </div>
       }
       pagination={{
         currentPage: activePage,

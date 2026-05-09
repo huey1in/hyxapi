@@ -17,17 +17,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 import { API, showError, showSuccess } from '../../helpers';
-import {
-  Button,
-  Card,
-  Divider,
-  Form,
-  Input,
-  Typography,
-} from '@douyinfe/semi-ui';
 import React, { useState } from 'react';
-
-const { Title, Text, Paragraph } = Typography;
 
 const TwoFAVerification = ({ onSuccess, onBack, isModal = false }) => {
   const [loading, setLoading] = useState(false);
@@ -78,71 +68,68 @@ const TwoFAVerification = ({ onSuccess, onBack, isModal = false }) => {
   if (isModal) {
     return (
       <div className='space-y-4'>
-        <Paragraph className='text-gray-600 dark:text-gray-300'>
+        <p className='text-ui-text-2 dark:text-ui-text-3'>
           请输入认证器应用显示的验证码完成登录
-        </Paragraph>
+        </p>
 
-        <Form onSubmit={handleSubmit}>
-          <Form.Input
-            field='code'
-            label={useBackupCode ? '备用码' : '验证码'}
-            placeholder={useBackupCode ? '请输入8位备用码' : '请输入6位验证码'}
-            value={verificationCode}
-            onChange={setVerificationCode}
-            onKeyPress={handleKeyPress}
-            size='large'
-            style={{ marginBottom: 16 }}
-            autoFocus
-          />
+        <form onSubmit={(e) => { e.preventDefault(); handleSubmit(); }}>
+          <div className='mb-4'>
+            <label className='block text-sm font-medium mb-1'>
+              {useBackupCode ? '备用码' : '验证码'}
+            </label>
+            <input
+              type='text'
+              className='w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500'
+              style={{ borderColor: 'var(--semi-color-border)' }}
+              placeholder={useBackupCode ? '请输入8位备用码' : '请输入6位验证码'}
+              value={verificationCode}
+              onChange={(e) => setVerificationCode(e.target.value)}
+              onKeyPress={handleKeyPress}
+              autoFocus
+            />
+          </div>
 
-          <Button
-            htmlType='submit'
-            type='primary'
-            loading={loading}
-            block
-            size='large'
-            style={{ marginBottom: 16 }}
+          <button
+            type='submit'
+            disabled={loading}
+            className='w-full px-4 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors mb-4'
           >
-            验证并登录
-          </Button>
-        </Form>
+            {loading ? '验证中...' : '验证并登录'}
+          </button>
+        </form>
 
-        <Divider />
+        <hr style={{ borderColor: 'var(--semi-color-border)' }} />
 
         <div style={{ textAlign: 'center' }}>
-          <Button
-            theme='borderless'
-            type='tertiary'
+          <button
+            className='text-blue-500 hover:text-blue-600 text-sm mr-4'
             onClick={() => {
               setUseBackupCode(!useBackupCode);
               setVerificationCode('');
             }}
-            style={{ marginRight: 16, color: '#1890ff', padding: 0 }}
           >
             {useBackupCode ? '使用认证器验证码' : '使用备用码'}
-          </Button>
+          </button>
 
           {onBack && (
-            <Button
-              theme='borderless'
-              type='tertiary'
+            <button
+              className='text-blue-500 hover:text-blue-600 text-sm'
               onClick={onBack}
-              style={{ color: '#1890ff', padding: 0 }}
             >
               返回登录
-            </Button>
+            </button>
           )}
         </div>
 
-        <div className='bg-gray-50 dark:bg-gray-800 rounded-lg p-3'>
-          <Text size='small' type='secondary'>
+        <div className='bg-ui-bg-subtle dark:bg-ui-text rounded-lg p-3'>
+          <span className='text-xs text-gray-500'>
             <strong>提示：</strong>
             <br />
             • 验证码每30秒更新一次
             <br />
             • 如果无法获取验证码，请使用备用码
             <br />• 每个备用码只能使用一次
-          </Text>
+          </span>
         </div>
       </div>
     );
@@ -157,63 +144,60 @@ const TwoFAVerification = ({ onSuccess, onBack, isModal = false }) => {
         minHeight: '60vh',
       }}
     >
-      <Card style={{ width: 400, padding: 24 }}>
+      <div className='rounded-2xl border p-8' style={{ width: 400, borderColor: 'var(--semi-color-border)', backgroundColor: 'var(--semi-color-bg-0)' }}>
         <div style={{ textAlign: 'center', marginBottom: 24 }}>
-          <Title heading={3}>两步验证</Title>
-          <Paragraph type='secondary'>
+          <h3 className='text-xl font-semibold'>两步验证</h3>
+          <p className='text-gray-500 mt-2'>
             请输入认证器应用显示的验证码完成登录
-          </Paragraph>
+          </p>
         </div>
 
-        <Form onSubmit={handleSubmit}>
-          <Form.Input
-            field='code'
-            label={useBackupCode ? '备用码' : '验证码'}
-            placeholder={useBackupCode ? '请输入8位备用码' : '请输入6位验证码'}
-            value={verificationCode}
-            onChange={setVerificationCode}
-            onKeyPress={handleKeyPress}
-            size='large'
-            style={{ marginBottom: 16 }}
-            autoFocus
-          />
+        <form onSubmit={(e) => { e.preventDefault(); handleSubmit(); }}>
+          <div className='mb-4'>
+            <label className='block text-sm font-medium mb-1'>
+              {useBackupCode ? '备用码' : '验证码'}
+            </label>
+            <input
+              type='text'
+              className='w-full px-3 py-2.5 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500'
+              style={{ borderColor: 'var(--semi-color-border)' }}
+              placeholder={useBackupCode ? '请输入8位备用码' : '请输入6位验证码'}
+              value={verificationCode}
+              onChange={(e) => setVerificationCode(e.target.value)}
+              onKeyPress={handleKeyPress}
+              autoFocus
+            />
+          </div>
 
-          <Button
-            htmlType='submit'
-            type='primary'
-            loading={loading}
-            block
-            size='large'
-            style={{ marginBottom: 16 }}
+          <button
+            type='submit'
+            disabled={loading}
+            className='w-full px-4 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors mb-4'
           >
-            验证并登录
-          </Button>
-        </Form>
+            {loading ? '验证中...' : '验证并登录'}
+          </button>
+        </form>
 
-        <Divider />
+        <hr style={{ borderColor: 'var(--semi-color-border)', margin: '16px 0' }} />
 
         <div style={{ textAlign: 'center' }}>
-          <Button
-            theme='borderless'
-            type='tertiary'
+          <button
+            className='text-blue-500 hover:text-blue-600 text-sm mr-4'
             onClick={() => {
               setUseBackupCode(!useBackupCode);
               setVerificationCode('');
             }}
-            style={{ marginRight: 16, color: '#1890ff', padding: 0 }}
           >
             {useBackupCode ? '使用认证器验证码' : '使用备用码'}
-          </Button>
+          </button>
 
           {onBack && (
-            <Button
-              theme='borderless'
-              type='tertiary'
+            <button
+              className='text-blue-500 hover:text-blue-600 text-sm'
               onClick={onBack}
-              style={{ color: '#1890ff', padding: 0 }}
             >
               返回登录
-            </Button>
+            </button>
           )}
         </div>
 
@@ -225,16 +209,16 @@ const TwoFAVerification = ({ onSuccess, onBack, isModal = false }) => {
             borderRadius: 6,
           }}
         >
-          <Text size='small' type='secondary'>
+          <span className='text-xs text-gray-500'>
             <strong>提示：</strong>
             <br />
             • 验证码每30秒更新一次
             <br />
             • 如果无法获取验证码，请使用备用码
             <br />• 每个备用码只能使用一次
-          </Text>
+          </span>
         </div>
-      </Card>
+      </div>
     </div>
   );
 };

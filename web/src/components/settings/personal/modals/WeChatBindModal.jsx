@@ -18,8 +18,10 @@ For commercial licensing, please contact support@quantumnous.com
 */
 
 import React from 'react';
-import { Button, Input, Modal, Image } from '@douyinfe/semi-ui';
+import { Key } from 'lucide-react';
 import { SiWechat } from 'react-icons/si';
+import ModalDialog from '../../../common/ModalDialog';
+import { TextField } from '../../../common/form/Primitives';
 
 const WeChatBindModal = ({
   t,
@@ -31,46 +33,39 @@ const WeChatBindModal = ({
   status,
 }) => {
   return (
-    <Modal
+    <ModalDialog
+      open={showWeChatBindModal}
+      onClose={() => setShowWeChatBindModal(false)}
       title={
         <div className='flex items-center'>
+          <SiWechat className='mr-2 text-green-500' />
           {t('绑定微信账户')}
         </div>
       }
-      visible={showWeChatBindModal}
-      onCancel={() => setShowWeChatBindModal(false)}
-      footer={null}
-      size={'small'}
-      centered={true}
-      className='modern-modal'
+      hideFooter
     >
-      <div className='space-y-4 py-4 text-center'>
-        <Image src={status.wechat_qrcode} className='mx-auto' />
-        <div className='text-gray-600'>
+      <div className='space-y-4 text-center'>
+        <img src={status.wechat_qrcode} className='mx-auto' alt='WeChat QR Code' />
+        <div className='text-ui-text-2'>
           <p>
             {t('微信扫码关注公众号，输入「验证码」获取验证码（三分钟内有效）')}
           </p>
         </div>
-        <Input
+        <TextField
           placeholder={t('验证码')}
           name='wechat_verification_code'
           value={inputs.wechat_verification_code}
           onChange={(v) => handleInputChange('wechat_verification_code', v)}
-          size='large'
-          className='!rounded-lg'
-          prefix={<IconKey />}
+          prefix={<Key size={14} />}
         />
-        <Button
-          type='primary'
-          theme='solid'
-          size='large'
+        <button
           onClick={bindWeChat}
-          className='!rounded-lg w-full !bg-slate-600 hover:!bg-slate-700'/>}
+          className='inline-flex items-center justify-center gap-1.5 px-4 py-2 text-sm font-semibold rounded-xl bg-ui-accent text-ui-accent-fg hover:bg-ui-accent-hover transition-colors disabled:opacity-50 w-full'
         >
           {t('绑定')}
-        </Button>
+        </button>
       </div>
-    </Modal>
+    </ModalDialog>
   );
 };
 

@@ -649,7 +649,7 @@ export const SectionWithSave = ({
             <button
               onClick={onSave}
               disabled={loading || !dirty}
-              className='inline-flex items-center gap-1.5 px-4 py-1.5 text-xs font-semibold rounded-md bg-ui-accent text-ui-accent-fg hover:bg-ui-accent-hover hover:shadow-md active:scale-95 disabled:opacity-50 disabled:hover:shadow-none disabled:active:scale-100 transition-all whitespace-nowrap'
+              className='inline-flex items-center gap-1.5 px-4 py-2 text-sm font-semibold rounded-xl bg-ui-accent text-ui-accent-fg hover:bg-ui-accent-hover hover:shadow-md active:scale-95 disabled:opacity-50 disabled:hover:shadow-none disabled:active:scale-100 transition-all whitespace-nowrap'
             >
               {loading ? <Loader2 size={11} className='animate-spin' /> : <Save size={11} />}
               {onSaveLabel || (loading ? '保存中...' : '保存')}

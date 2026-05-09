@@ -18,7 +18,14 @@ For commercial licensing, please contact support@quantumnous.com
 */
 
 import React from 'react';
-import { Skeleton } from '@douyinfe/semi-ui';
+
+// Simple skeleton pulse element
+const SkeletonBlock = ({ width, height, rounded = false, className = '' }) => (
+  <div
+    className={`animate-pulse bg-gray-200 dark:bg-gray-700 ${rounded ? 'rounded-full' : 'rounded'} ${className}`}
+    style={{ width, height, minWidth: width }}
+  />
+);
 
 const SkeletonWrapper = ({
   loading = false,
@@ -47,15 +54,7 @@ const SkeletonWrapper = ({
       .fill(null)
       .map((_, index) => (
         <div key={index} className={skeletonLinkClasses}>
-          <Skeleton
-            loading={true}
-            active
-            placeholder={
-              <Skeleton.Title
-                style={{ width: isMobile ? 40 : width, height }}
-              />
-            }
-          />
+          <SkeletonBlock width={isMobile ? 40 : width} height={height} />
         </div>
       ));
   };
@@ -66,23 +65,9 @@ const SkeletonWrapper = ({
       <div
         className={`flex items-center p-1 rounded-full bg-semi-color-fill-0 dark:bg-semi-color-fill-1 ${className}`}
       >
-        <Skeleton
-          loading={true}
-          active
-          placeholder={
-            <Skeleton.Avatar size='extra-small' className='shadow-sm' />
-          }
-        />
+        <SkeletonBlock width={24} height={24} rounded className='shadow-sm' />
         <div className='ml-1.5 mr-1'>
-          <Skeleton
-            loading={true}
-            active
-            placeholder={
-              <Skeleton.Title
-                style={{ width: isMobile ? 15 : width, height: 12 }}
-              />
-            }
-          />
+          <SkeletonBlock width={isMobile ? 15 : width} height={12} />
         </div>
       </div>
     );
@@ -91,39 +76,25 @@ const SkeletonWrapper = ({
   // Logo图片骨架屏
   const renderImageSkeleton = () => {
     return (
-      <Skeleton
-        loading={true}
-        active
-        placeholder={
-          <Skeleton.Image
-            className={`absolute inset-0 !rounded-full ${className}`}
-            style={{ width: '100%', height: '100%' }}
-          />
-        }
+      <SkeletonBlock
+        width='100%'
+        height='100%'
+        rounded
+        className={`absolute inset-0 ${className}`}
       />
     );
   };
 
   // 系统名称骨架屏
   const renderTitleSkeleton = () => {
-    return (
-      <Skeleton
-        loading={true}
-        active
-        placeholder={<Skeleton.Title style={{ width, height: 24 }} />}
-      />
-    );
+    return <SkeletonBlock width={width} height={24} />;
   };
 
   // 通用文本骨架屏
   const renderTextSkeleton = () => {
     return (
       <div className={className}>
-        <Skeleton
-          loading={true}
-          active
-          placeholder={<Skeleton.Title style={{ width, height }} />}
-        />
+        <SkeletonBlock width={width} height={height} />
       </div>
     );
   };
@@ -132,13 +103,7 @@ const SkeletonWrapper = ({
   const renderButtonSkeleton = () => {
     return (
       <div className={className}>
-        <Skeleton
-          loading={true}
-          active
-          placeholder={
-            <Skeleton.Title style={{ width, height, borderRadius: 9999 }} />
-          }
-        />
+        <SkeletonBlock width={width} height={height} rounded />
       </div>
     );
   };
@@ -154,24 +119,10 @@ const SkeletonWrapper = ({
         >
           {/* 图标骨架屏 */}
           <div className='sidebar-icon-container flex-shrink-0'>
-            <Skeleton
-              loading={true}
-              active
-              placeholder={
-                <Skeleton.Avatar size='extra-small' shape='square' />
-              }
-            />
+            <SkeletonBlock width={16} height={16} />
           </div>
           {/* 文本骨架屏 */}
-          <Skeleton
-            loading={true}
-            active
-            placeholder={
-              <Skeleton.Title
-                style={{ width: width || 80, height: height || 14 }}
-              />
-            }
-          />
+          <SkeletonBlock width={width || 80} height={height || 14} />
         </div>
       ));
   };
@@ -180,15 +131,7 @@ const SkeletonWrapper = ({
   const renderSidebarGroupTitleSkeleton = () => {
     return (
       <div className={`mb-2 ${className}`}>
-        <Skeleton
-          loading={true}
-          active
-          placeholder={
-            <Skeleton.Title
-              style={{ width: width || 60, height: height || 12 }}
-            />
-          }
-        />
+        <SkeletonBlock width={width || 60} height={height || 12} />
       </div>
     );
   };
@@ -203,29 +146,6 @@ const SkeletonWrapper = ({
     const TITLE_HEIGHT = 12;
     const TEXT_HEIGHT = 16;
 
-    const renderIcon = () => (
-      <Skeleton
-        loading={true}
-        active
-        placeholder={
-          <Skeleton.Avatar
-            shape='square'
-            style={{ width: ICON_SIZE, height: ICON_SIZE }}
-          />
-        }
-      />
-    );
-
-    const renderLabel = (labelWidth) => (
-      <Skeleton
-        loading={true}
-        active
-        placeholder={
-          <Skeleton.Title style={{ width: labelWidth, height: TEXT_HEIGHT }} />
-        }
-      />
-    );
-
     const NavRow = ({ labelWidth }) => (
       <div
         className='flex items-center p-2 mb-1 rounded-md'
@@ -236,9 +156,9 @@ const SkeletonWrapper = ({
         }}
       >
         <div className='sidebar-icon-container flex-shrink-0'>
-          {renderIcon()}
+          <SkeletonBlock width={ICON_SIZE} height={ICON_SIZE} />
         </div>
-        {renderLabel(labelWidth)}
+        <SkeletonBlock width={labelWidth} height={TEXT_HEIGHT} />
       </div>
     );
 
@@ -252,16 +172,7 @@ const SkeletonWrapper = ({
           margin: '0 8px 4px 8px',
         }}
       >
-        <Skeleton
-          loading={true}
-          active
-          placeholder={
-            <Skeleton.Avatar
-              shape='square'
-              style={{ width: ICON_SIZE, height: ICON_SIZE }}
-            />
-          }
-        />
+        <SkeletonBlock width={ICON_SIZE} height={ICON_SIZE} />
       </div>
     );
 
@@ -305,47 +216,17 @@ const SkeletonWrapper = ({
       <div className={`w-full ${className}`} style={{ paddingTop: '12px' }}>
         {sections.map((sec, idx) => (
           <React.Fragment key={sec.key}>
-            {sec.wrapper === 'section' ? (
-              <div className='sidebar-section'>
-                <div
-                  className='sidebar-group-label'
-                  style={{ padding: '4px 15px 8px' }}
-                >
-                  <Skeleton
-                    loading={true}
-                    active
-                    placeholder={
-                      <Skeleton.Title
-                        style={{ width: sec.titleWidth, height: TITLE_HEIGHT }}
-                      />
-                    }
-                  />
-                </div>
-                {sec.itemWidths.map((w, i) => (
-                  <NavRow key={`${sec.key}-${i}`} labelWidth={w} />
-                ))}
+            <div className={sec.wrapper === 'section' ? 'sidebar-section' : ''}>
+              <div
+                className='sidebar-group-label'
+                style={{ padding: '4px 15px 8px' }}
+              >
+                <SkeletonBlock width={sec.titleWidth} height={TITLE_HEIGHT} />
               </div>
-            ) : (
-              <div>
-                <div
-                  className='sidebar-group-label'
-                  style={{ padding: '4px 15px 8px' }}
-                >
-                  <Skeleton
-                    loading={true}
-                    active
-                    placeholder={
-                      <Skeleton.Title
-                        style={{ width: sec.titleWidth, height: TITLE_HEIGHT }}
-                      />
-                    }
-                  />
-                </div>
-                {sec.itemWidths.map((w, i) => (
-                  <NavRow key={`${sec.key}-${i}`} labelWidth={w} />
-                ))}
-              </div>
-            )}
+              {sec.itemWidths.map((w, i) => (
+                <NavRow key={`${sec.key}-${i}`} labelWidth={w} />
+              ))}
+            </div>
           </React.Fragment>
         ))}
       </div>

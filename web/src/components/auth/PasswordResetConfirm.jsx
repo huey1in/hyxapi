@@ -78,7 +78,7 @@ const PasswordResetConfirm = () => {
   }
 
   return (
-    <div className='min-h-[calc(100vh-4rem)] flex items-start sm:items-center justify-center px-0 sm:px-4 pt-24 pb-12'>
+    <div className='min-h-screen flex items-start sm:items-center justify-center px-0 sm:px-4 pt-24 pb-12'>
       <div className='w-full max-w-sm sm:mt-[60px]'>
         <div className='p-6 sm:bg-ui-bg-elevated sm:rounded-2xl sm:border sm:border-ui-border sm:p-8'>
           <h2 className='text-2xl font-semibold text-ui-text mb-6'>
@@ -122,7 +122,7 @@ const PasswordResetConfirm = () => {
                       await copy(newPassword);
                       showNotice(`${t('密码已复制到剪贴板：')} ${newPassword}`);
                     }}
-                    className='px-4 py-3 text-sm font-medium border border-black rounded-lg hover:bg-gray-50 transition-colors whitespace-nowrap'
+                    className='px-4 py-3 text-sm font-medium border border-black rounded-lg hover:bg-ui-bg-subtle transition-colors whitespace-nowrap'
                   >
                     {t('复制')}
                   </button>

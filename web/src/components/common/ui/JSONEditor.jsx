@@ -283,7 +283,7 @@ const JSONEditor = ({
   const renderKeyValueEditor = () => (
     <div className='space-y-1.5'>
       {duplicateKeys.size > 0 && (
-        <div className='flex items-start gap-2 px-3 py-2 rounded-md border border-amber-500/30 bg-amber-500/5'>
+        <div className='flex items-start gap-2 px-3 py-2 rounded-xl border border-amber-500/30 bg-amber-500/5'>
           <AlertTriangle size={14} className='text-amber-500 flex-shrink-0 mt-0.5' />
           <div className='text-xs text-ui-text-2'>
             <div className='font-semibold'>{t('存在重复的键名：')} {Array.from(duplicateKeys).join(', ')}</div>
@@ -331,7 +331,7 @@ const JSONEditor = ({
         <button
           type='button'
           onClick={addKeyValue}
-          className='inline-flex items-center gap-1 px-3 py-1 text-[11px] rounded-md border border-ui-border text-ui-brand hover:bg-ui-bg-subtle whitespace-nowrap'
+          className='inline-flex items-center gap-1 px-3 py-1 text-[11px] rounded-xl border border-ui-border text-ui-brand hover:bg-ui-bg-subtle whitespace-nowrap'
         >
           <Plus size={12} />
           {t('添加键值对')}
@@ -346,7 +346,7 @@ const JSONEditor = ({
     return (
       <div className='space-y-3'>
         {duplicateKeys.size > 0 && (
-          <div className='flex items-start gap-2 px-3 py-2 rounded-md border border-amber-500/30 bg-amber-500/5'>
+          <div className='flex items-start gap-2 px-3 py-2 rounded-xl border border-amber-500/30 bg-amber-500/5'>
             <AlertTriangle size={14} className='text-amber-500 flex-shrink-0 mt-0.5' />
             <div className='text-xs text-ui-text-2'>
               <div className='font-semibold'>{t('存在重复的键名：')} {Array.from(duplicateKeys).join(', ')}</div>
@@ -407,7 +407,7 @@ const JSONEditor = ({
               <button
                 type='button'
                 onClick={addKeyValue}
-                className='inline-flex items-center gap-1 px-3 py-1 text-[11px] rounded-md border border-ui-border text-ui-brand hover:bg-ui-bg-subtle whitespace-nowrap'
+                className='inline-flex items-center gap-1 px-3 py-1 text-[11px] rounded-xl border border-ui-border text-ui-brand hover:bg-ui-bg-subtle whitespace-nowrap'
               >
                 <Plus size={12} />
                 {t('添加模型区域')}
@@ -432,7 +432,7 @@ const JSONEditor = ({
             <button
               type='button'
               onClick={() => editMode === 'manual' && toggleEditMode()}
-              className={`px-2.5 py-1 text-[11px] rounded-md transition-colors ${
+              className={`px-2.5 py-1 text-[11px] rounded-xl transition-colors ${
                 editMode === 'visual' ? 'bg-ui-bg-subtle text-ui-text font-semibold border border-ui-text-3' : 'border border-transparent text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-subtle'
               }`}
             >
@@ -441,7 +441,7 @@ const JSONEditor = ({
             <button
               type='button'
               onClick={() => editMode === 'visual' && toggleEditMode()}
-              className={`px-2.5 py-1 text-[11px] rounded-md transition-colors ${
+              className={`px-2.5 py-1 text-[11px] rounded-xl transition-colors ${
                 editMode === 'manual' ? 'bg-ui-bg-subtle text-ui-text font-semibold border border-ui-text-3' : 'border border-transparent text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-subtle'
               }`}
             >
@@ -452,7 +452,7 @@ const JSONEditor = ({
             <button
               type='button'
               onClick={fillTemplate}
-              className='inline-flex items-center px-2 py-0.5 text-[11px] rounded-md border border-ui-border text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-subtle whitespace-nowrap'
+              className='inline-flex items-center px-2 py-0.5 text-[11px] rounded-xl border border-ui-border text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-subtle whitespace-nowrap'
             >
               {templateLabel}
             </button>
@@ -460,7 +460,7 @@ const JSONEditor = ({
         </div>
         <div className='p-3 space-y-2'>
           {hasJsonError && (
-            <div className='flex items-start gap-2 px-3 py-2 rounded-md border border-ui-danger/30 bg-ui-danger-bg'>
+            <div className='flex items-start gap-2 px-3 py-2 rounded-xl border border-ui-danger/30 bg-ui-danger-bg'>
               <AlertTriangle size={14} className='text-ui-danger flex-shrink-0 mt-0.5' />
               <div className='text-xs text-ui-danger'>JSON 格式错误: {jsonError}</div>
             </div>

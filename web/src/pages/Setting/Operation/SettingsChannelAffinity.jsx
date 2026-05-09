@@ -380,16 +380,16 @@ export default function SettingsChannelAffinity(props) {
             if (v === 'json') setInputs((prev) => ({ ...prev, [KEY_RULES]: rulesToJson(rules) }));
             setEditMode(v);
           }} options={[{ value: 'visual', label: t('可视化') }, { value: 'json', label: t('JSON 模式') }]} />
-          <button onClick={appendTemplates} className='inline-flex items-center gap-1 px-2.5 py-1.5 text-xs rounded-md border border-ui-border text-ui-text-2 hover:bg-ui-bg-hover'>
+          <button onClick={appendTemplates} className='inline-flex items-center gap-1 px-2.5 py-1.5 text-xs rounded-xl border border-ui-border text-ui-text-2 hover:bg-ui-bg-hover'>
             {t('填充模版')}
           </button>
-          <button onClick={openAddModal} className='inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium rounded-md bg-ui-accent text-ui-accent-fg hover:opacity-90'>
+          <button onClick={openAddModal} className='inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium rounded-xl bg-ui-accent text-ui-accent-fg hover:opacity-90'>
             {t('新增规则')}
           </button>
-          <button onClick={refreshCacheStats} disabled={cacheLoading} className='inline-flex items-center gap-1 px-2.5 py-1.5 text-xs rounded-md border border-ui-border text-ui-text-2 hover:bg-ui-bg-hover disabled:opacity-50'>
+          <button onClick={refreshCacheStats} disabled={cacheLoading} className='inline-flex items-center gap-1 px-2.5 py-1.5 text-xs rounded-xl border border-ui-border text-ui-text-2 hover:bg-ui-bg-hover disabled:opacity-50'>
             {t('刷新缓存')}
           </button>
-          <button onClick={clearAllCache} className='inline-flex items-center gap-1 px-2.5 py-1.5 text-xs rounded-md border border-ui-danger/30 text-ui-danger hover:bg-ui-danger-bg'>
+          <button onClick={clearAllCache} className='inline-flex items-center gap-1 px-2.5 py-1.5 text-xs rounded-xl border border-ui-danger/30 text-ui-danger hover:bg-ui-danger-bg'>
             {t('清空全部缓存')}
           </button>
         </div>
@@ -518,7 +518,7 @@ export default function SettingsChannelAffinity(props) {
                 <div className='flex items-center justify-between mb-2'>
                   <label className='text-xs font-medium text-ui-text-2'>{t('参数覆盖模板')}</label>
                   <div className='flex items-center gap-1.5'>
-                    <span className={`${miniTag} ${paramTemplateDraft ? '!bg-orange-500/10 !text-orange-600 dark:!text-orange-400 !border-orange-500/20' : '!bg-gray-400/10 !text-gray-500 !border-gray-400/20'}`}>
+                    <span className={`${miniTag} ${paramTemplateDraft ? '!bg-orange-500/10 !text-orange-600 dark:!text-orange-400 !border-orange-500/20' : '!bg-gray-400/10 !text-ui-text-2 !border-gray-400/20'}`}>
                       {paramTemplateDraft ? t('已设置') : t('未设置')}
                     </span>
                     <button onClick={() => setParamTemplateEditorVisible(true)} className='text-[11px] px-2 py-0.5 rounded border border-ui-border text-ui-text-2 hover:bg-ui-bg-hover'>{t('可视化编辑')}</button>
@@ -585,8 +585,8 @@ export default function SettingsChannelAffinity(props) {
 
             {/* Footer */}
             <div className='flex justify-end gap-2 pt-3 border-t border-ui-divider'>
-              <button onClick={() => { setModalVisible(false); setEditingRule(null); }} className='px-3.5 py-1.5 text-xs rounded-md border border-ui-border text-ui-text-2 hover:bg-ui-bg-subtle'>{t('取消')}</button>
-              <button onClick={handleModalSave} className='px-3.5 py-1.5 text-xs font-semibold rounded-md bg-ui-accent text-ui-accent-fg hover:opacity-90'>{t('保存')}</button>
+              <button onClick={() => { setModalVisible(false); setEditingRule(null); }} className='px-3.5 py-1.5 text-xs rounded-xl border border-ui-border text-ui-text-2 hover:bg-ui-bg-subtle'>{t('取消')}</button>
+              <button onClick={handleModalSave} className='px-3.5 py-1.5 text-xs font-semibold rounded-xl bg-ui-accent text-ui-accent-fg hover:opacity-90'>{t('保存')}</button>
             </div>
           </div>
         )}

@@ -19,38 +19,21 @@ For commercial licensing, please contact support@quantumnous.com
 
 import React from 'react';
 import {
-  Button,
-  Dropdown,
-  Space,
-  Tag,
-  AvatarGroup,
-  Avatar,
-  Tooltip,
-  Progress,
-  Popover,
-  Typography,
-  Input,
-  Modal,
-} from '@douyinfe/semi-ui';
-import {
   timestamp2string,
   renderGroup,
   renderQuota,
   getModelCategories,
   showError,
 } from '../../../helpers';
-import {
-  IconCopy,
-  IconEyeOpened,
-  IconEyeClosed,
-} from '@douyinfe/semi-icons';
+import { Copy, Eye, EyeOff, ChevronDown } from 'lucide-react';
+import { showConfirm } from '../../common/ConfirmDialog';
 
 // progress color helper
 const getProgressColor = (pct) => {
-  if (pct === 100) return 'var(--semi-color-success)';
-  if (pct <= 10) return 'var(--semi-color-danger)';
-  if (pct <= 30) return 'var(--semi-color-warning)';
-  return undefined;
+  if (pct === 100) return '#22c55e';
+  if (pct <= 10) return '#ef4444';
+  if (pct <= 30) return '#f59e0b';
+  return '#3b82f6';
 };
 
 // Render functions
@@ -62,26 +45,26 @@ function renderTimestamp(timestamp) {
 const renderStatus = (text, record, t) => {
   const enabled = text === 1;
 
-  let tagColor = 'black';
+  let colorCls = 'bg-gray-500/10 text-gray-600 dark:text-gray-400 border-gray-500/20';
   let tagText = t('未知状态');
   if (enabled) {
-    tagColor = 'green';
+    colorCls = 'bg-green-500/10 text-green-600 dark:text-green-400 border-green-500/20';
     tagText = t('已启用');
   } else if (text === 2) {
-    tagColor = 'red';
+    colorCls = 'bg-red-500/10 text-red-600 dark:text-red-400 border-red-500/20';
     tagText = t('已禁用');
   } else if (text === 3) {
-    tagColor = 'yellow';
+    colorCls = 'bg-yellow-500/10 text-yellow-600 dark:text-yellow-400 border-yellow-500/20';
     tagText = t('已过期');
   } else if (text === 4) {
-    tagColor = 'grey';
+    colorCls = 'bg-gray-500/10 text-gray-600 dark:text-gray-400 border-gray-500/20';
     tagText = t('已耗尽');
   }
 
   return (
-    <Tag color={tagColor} shape='circle' size='small'>
+    <span className={`inline-flex items-center px-2 py-0.5 text-[11px] rounded-md font-medium border ${colorCls}`}>
       {tagText}
-    </Tag>
+    </span>
   );
 };
 
@@ -92,9 +75,9 @@ const renderGroupColumn = (text, record, t, groupRatios = {}) => {
     <span className='flex items-center gap-1'>
       {renderGroup(text)}
       {ratio !== undefined && (
-        <Tag size='small' color='green' shape='circle'>
+        <span className='inline-flex items-center px-2 py-0.5 text-[11px] rounded-md font-medium bg-green-500/10 text-green-600 dark:text-green-400 border border-green-500/20'>
           {ratio}x
-        </Tag>
+        </span>
       )}
     </span>
   );
@@ -122,57 +105,86 @@ const renderTokenKey = (
 
   return (
     <div className='w-[200px]'>
-      <Input
-        readOnly
-        value={displayedKey}
-        size='small'
-        suffix={
-          <div className='flex items-center'>
-            <Button
-              theme='borderless'
-              size='small'
-              type='tertiary'
-              icon={revealed ? <IconEyeClosed /> : <IconEyeOpened />}
-              loading={loading}
-              aria-label='toggle token visibility'
-              onClick={async (e) => {
-                e.stopPropagation();
-                await toggleTokenVisibility(record);
-              }}
-            />
-            <Dropdown
-              trigger='click'
-              position='bottomRight'
-              getPopupContainer={() => document.body}
-              clickToHide
-              menu={[
-                {
-                  node: 'item',
-                  name: t('复制密钥'),
-                  onClick: () => copyTokenKey(record),
-                },
-                {
-                  node: 'item',
-                  name: t('复制连接信息'),
-                  onClick: () => copyTokenConnectionString(record),
-                },
-              ]}
-            >
-              <Button
-                theme='borderless'
-                size='small'
-                type='tertiary'
-                icon={<IconCopy />}
-                loading={loading}
-                aria-label='copy token key'
-                onClick={async (e) => {
-                  e.stopPropagation();
-                }}
-              />
-            </Dropdown>
-          </div>
-        }
-      />
+      <div className='flex items-center border border-ui-border rounded-xl overflow-hidden'>
+        <input
+          readOnly
+          value={displayedKey}
+          className='flex-1 min-w-0 px-3 py-1.5 text-sm bg-transparent text-ui-text outline-none'
+        />
+        <div className='flex items-center pr-1'>
+          <button
+            className='inline-flex items-center justify-center w-7 h-7 rounded-lg text-ui-text-3 hover:text-ui-text hover:bg-ui-bg-subtle transition-colors'
+            aria-label='toggle token visibility'
+            onClick={async (e) => {
+              e.stopPropagation();
+              await toggleTokenVisibility(record);
+            }}
+          >
+            {revealed ? <EyeOff size={14} /> : <Eye size={14} />}
+          </button>
+          <TokenCopyDropdown
+            record={record}
+            copyTokenKey={copyTokenKey}
+            copyTokenConnectionString={copyTokenConnectionString}
+            loading={loading}
+            t={t}
+          />
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// Simple dropdown for copy actions
+const TokenCopyDropdown = ({ record, copyTokenKey, copyTokenConnectionString, loading, t }) => {
+  const [open, setOpen] = React.useState(false);
+  const ref = React.useRef(null);
+
+  React.useEffect(() => {
+    if (!open) return;
+    const handler = (e) => {
+      if (ref.current && !ref.current.contains(e.target)) setOpen(false);
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [open]);
+
+  return (
+    <div className='relative' ref={ref}>
+      <button
+        className='inline-flex items-center justify-center w-7 h-7 rounded-lg text-ui-text-3 hover:text-ui-text hover:bg-ui-bg-subtle transition-colors'
+        aria-label='copy token key'
+        onClick={(e) => {
+          e.stopPropagation();
+          setOpen(!open);
+        }}
+      >
+        <Copy size={14} />
+      </button>
+      {open && (
+        <div className='absolute right-0 top-full mt-1 z-50 bg-ui-bg-elevated border border-ui-border rounded-xl shadow-lg py-1 min-w-[140px]'>
+          <button
+            className='w-full text-left px-3 py-1.5 text-sm text-ui-text hover:bg-ui-bg-subtle transition-colors'
+            onClick={(e) => {
+              e.stopPropagation();
+              copyTokenKey(record);
+              setOpen(false);
+            }}
+          >
+            {t('复制密钥')}
+          </button>
+          <button
+            className='w-full text-left px-3 py-1.5 text-sm text-ui-text hover:bg-ui-bg-subtle transition-colors'
+            onClick={(e) => {
+              e.stopPropagation();
+              copyTokenConnectionString(record);
+              setOpen(false);
+            }}
+          >
+            {t('复制连接信息')}
+          </button>
+        </div>
+      )}
     </div>
   );
 };
@@ -193,20 +205,13 @@ const renderModelLimits = (text, record, t) => {
       );
       if (vendorModels.length > 0) {
         vendorAvatars.push(
-          <Tooltip
+          <span
             key={key}
-            content={vendorModels.join(', ')}
-            position='top'
-            showArrow
+            title={vendorModels.join(', ')}
+            className='inline-flex items-center justify-center w-6 h-6 rounded-full bg-ui-bg-subtle text-xs'
           >
-            <Avatar
-              size='extra-extra-small'
-              alt={category.label}
-              color='transparent'
-            >
-              {category.icon}
-            </Avatar>
-          </Tooltip>,
+            {category.icon}
+          </span>,
         );
         vendorModels.forEach((m) => matchedModels.add(m));
       }
@@ -215,25 +220,22 @@ const renderModelLimits = (text, record, t) => {
     const unmatchedModels = models.filter((m) => !matchedModels.has(m));
     if (unmatchedModels.length > 0) {
       vendorAvatars.push(
-        <Tooltip
+        <span
           key='unknown'
-          content={unmatchedModels.join(', ')}
-          position='top'
-          showArrow
+          title={unmatchedModels.join(', ')}
+          className='inline-flex items-center justify-center w-6 h-6 rounded-full bg-ui-bg-subtle text-[10px]'
         >
-          <Avatar size='extra-extra-small' alt='unknown'>
-            {t('其他')}
-          </Avatar>
-        </Tooltip>,
+          {t('其他')}
+        </span>,
       );
     }
 
-    return <AvatarGroup size='extra-extra-small'>{vendorAvatars}</AvatarGroup>;
+    return <div className='flex items-center -space-x-1'>{vendorAvatars}</div>;
   } else {
     return (
-      <Tag color='white' shape='circle'>
+      <span className='inline-flex items-center px-2 py-0.5 text-[11px] rounded-md font-medium bg-gray-500/10 text-gray-600 dark:text-gray-400 border border-gray-500/20'>
         {t('无限制')}
-      </Tag>
+      </span>
     );
   }
 };
@@ -242,9 +244,9 @@ const renderModelLimits = (text, record, t) => {
 const renderAllowIps = (text, t) => {
   if (!text || text.trim() === '') {
     return (
-      <Tag color='white' shape='circle'>
+      <span className='inline-flex items-center px-2 py-0.5 text-[11px] rounded-md font-medium bg-gray-500/10 text-gray-600 dark:text-gray-400 border border-gray-500/20'>
         {t('无限制')}
-      </Tag>
+      </span>
     );
   }
 
@@ -257,78 +259,58 @@ const renderAllowIps = (text, t) => {
   const extraCount = ips.length - displayIps.length;
 
   const ipTags = displayIps.map((ip, idx) => (
-    <Tag key={idx} shape='circle'>
+    <span key={idx} className='inline-flex items-center px-2 py-0.5 text-[11px] rounded-md font-medium bg-gray-500/10 text-gray-600 dark:text-gray-400 border border-gray-500/20'>
       {ip}
-    </Tag>
+    </span>
   ));
 
   if (extraCount > 0) {
     ipTags.push(
-      <Tooltip
+      <span
         key='extra'
-        content={ips.slice(1).join(', ')}
-        position='top'
-        showArrow
+        title={ips.slice(1).join(', ')}
+        className='inline-flex items-center px-2 py-0.5 text-[11px] rounded-md font-medium bg-gray-500/10 text-gray-600 dark:text-gray-400 border border-gray-500/20 cursor-help'
       >
-        <Tag shape='circle'>{'+' + extraCount}</Tag>
-      </Tooltip>,
+        {'+' + extraCount}
+      </span>,
     );
   }
 
-  return <Space wrap>{ipTags}</Space>;
+  return <div className='flex flex-wrap gap-1'>{ipTags}</div>;
 };
 
 // Render separate quota usage column
 const renderQuotaUsage = (text, record, t) => {
-  const { Paragraph } = Typography;
   const used = parseInt(record.used_quota) || 0;
   const remain = parseInt(record.remain_quota) || 0;
   const total = used + remain;
   if (record.unlimited_quota) {
-    const popoverContent = (
-      <div className='text-xs p-2'>
-        <Paragraph copyable={{ content: renderQuota(used) }}>
-          {t('已用额度')}: {renderQuota(used)}
-        </Paragraph>
-      </div>
-    );
     return (
-      <Popover content={popoverContent} position='top'>
-        <Tag color='white' shape='circle'>
-          {t('无限额度')}
-        </Tag>
-      </Popover>
+      <span
+        className='inline-flex items-center px-2 py-0.5 text-[11px] rounded-md font-medium bg-gray-500/10 text-gray-600 dark:text-gray-400 border border-gray-500/20 cursor-help'
+        title={`${t('已用额度')}: ${renderQuota(used)}`}
+      >
+        {t('无限额度')}
+      </span>
     );
   }
   const percent = total > 0 ? (remain / total) * 100 : 0;
-  const popoverContent = (
-    <div className='text-xs p-2'>
-      <Paragraph copyable={{ content: renderQuota(used) }}>
-        {t('已用额度')}: {renderQuota(used)}
-      </Paragraph>
-      <Paragraph copyable={{ content: renderQuota(remain) }}>
-        {t('剩余额度')}: {renderQuota(remain)} ({percent.toFixed(0)}%)
-      </Paragraph>
-      <Paragraph copyable={{ content: renderQuota(total) }}>
-        {t('总额度')}: {renderQuota(total)}
-      </Paragraph>
-    </div>
-  );
+  const tooltipText = `${t('已用额度')}: ${renderQuota(used)} | ${t('剩余额度')}: ${renderQuota(remain)} (${percent.toFixed(0)}%) | ${t('总额度')}: ${renderQuota(total)}`;
   return (
-    <Popover content={popoverContent} position='top'>
-      <Tag color='white' shape='circle'>
-        <div className='flex flex-col items-end'>
-          <span className='text-xs leading-none'>{`${renderQuota(remain)} / ${renderQuota(total)}`}</span>
-          <Progress
-            percent={percent}
-            stroke={getProgressColor(percent)}
-            aria-label='quota usage'
-            format={() => `${percent.toFixed(0)}%`}
-            style={{ width: '100%', marginTop: '1px', marginBottom: 0 }}
+    <span
+      className='inline-flex items-center px-2 py-0.5 text-[11px] rounded-md font-medium bg-gray-500/10 text-gray-600 dark:text-gray-400 border border-gray-500/20 cursor-help'
+      title={tooltipText}
+    >
+      <span className='flex flex-col items-end'>
+        <span className='text-xs leading-none'>{`${renderQuota(remain)} / ${renderQuota(total)}`}</span>
+        <span className='w-full mt-0.5 h-1 rounded-full bg-ui-border overflow-hidden'>
+          <span
+            className='block h-full rounded-full transition-all'
+            style={{ width: `${percent}%`, backgroundColor: getProgressColor(percent) }}
           />
-        </div>
-      </Tag>
-    </Popover>
+        </span>
+      </span>
+    </span>
   );
 };
 
@@ -343,60 +325,56 @@ const renderOperations = (
   t,
 ) => {
   return (
-    <Space wrap>
+    <div className='flex flex-wrap gap-1.5'>
       {record.status === 1 ? (
-        <Button
-          type='danger'
-          size='small'
+        <button
+          className='inline-flex items-center gap-1 px-3 py-1.5 text-xs font-semibold rounded-lg bg-ui-danger text-white hover:opacity-90 transition-colors'
           onClick={async () => {
             await manageToken(record.id, 'disable', record);
             await refresh();
           }}
         >
           {t('禁用')}
-        </Button>
+        </button>
       ) : (
-        <Button
-          size='small'
+        <button
+          className='inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium rounded-lg border border-ui-border text-ui-text hover:bg-ui-bg-subtle transition-colors'
           onClick={async () => {
             await manageToken(record.id, 'enable', record);
             await refresh();
           }}
         >
           {t('启用')}
-        </Button>
+        </button>
       )}
 
-      <Button
-        type='tertiary'
-        size='small'
+      <button
+        className='inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium rounded-lg border border-ui-border text-ui-text hover:bg-ui-bg-subtle transition-colors'
         onClick={() => {
           setEditingToken(record);
           setShowEdit(true);
         }}
       >
         {t('编辑')}
-      </Button>
+      </button>
 
-      <Button
-        type='danger'
-        size='small'
+      <button
+        className='inline-flex items-center gap-1 px-3 py-1.5 text-xs font-semibold rounded-lg bg-ui-danger text-white hover:opacity-90 transition-colors'
         onClick={() => {
-          Modal.confirm({
+          showConfirm({
             title: t('确定是否要删除此令牌？'),
             content: t('此修改将不可逆'),
-            onOk: () => {
-              (async () => {
-                await manageToken(record.id, 'delete', record);
-                await refresh();
-              })();
+            danger: true,
+            onOk: async () => {
+              await manageToken(record.id, 'delete', record);
+              await refresh();
             },
           });
         }}
       >
         {t('删除')}
-      </Button>
-    </Space>
+      </button>
+    </div>
   );
 };
 
