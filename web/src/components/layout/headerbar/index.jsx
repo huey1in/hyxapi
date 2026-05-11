@@ -27,6 +27,7 @@ import MobileMenuButton from './MobileMenuButton';
 import MobileNavDrawer from './MobileNavDrawer';
 import HeaderLogo from './HeaderLogo';
 import Navigation from './Navigation';
+import { IconButton } from '../../ui';
 import ActionButtons from './ActionButtons';
 
 const HeaderBar = ({ onMobileMenuToggle, drawerOpen }) => {
@@ -147,13 +148,14 @@ const HeaderBar = ({ onMobileMenuToggle, drawerOpen }) => {
               navigate={navigate}
               t={t}
             />
-            <button
+            <IconButton
+              icon={Menu}
+              size='xl'
+              shape='circle'
+              tone='black'
               onClick={() => setMobileNavOpen(true)}
               aria-label='open menu'
-              className='w-[40px] h-[40px] rounded-full bg-black flex items-center justify-center cursor-pointer flex-shrink-0'
-            >
-              <Menu size={18} color='white' />
-            </button>
+            />
           </div>
         </div>
       </header>
@@ -242,13 +244,14 @@ const HeaderBar = ({ onMobileMenuToggle, drawerOpen }) => {
             t={t}
           />
           {!isConsoleRoute && (
-            <button
+            <IconButton
+              icon={Menu}
+              size='xl'
+              shape='circle'
+              tone='black'
               onClick={() => setMobileNavOpen(true)}
               aria-label='open menu'
-              className='w-[40px] h-[40px] rounded-full bg-black flex items-center justify-center cursor-pointer flex-shrink-0'
-            >
-              <Menu size={18} color='white' />
-            </button>
+            />
           )}
         </div>
       </div>

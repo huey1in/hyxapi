@@ -21,6 +21,7 @@ import React, { useEffect, useState } from 'react';
 import { API, copy, showError, showNotice } from '../../helpers';
 import { useSearchParams, Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import { Button } from '../ui';
 
 const inputClass =
   'w-full px-4 py-3 text-sm border border-ui-border rounded-lg outline-none focus:ring-2 focus:ring-ui-accent bg-ui-bg text-ui-text placeholder:text-ui-text-3 disabled:bg-ui-bg-subtle disabled:text-ui-text-3';
@@ -117,29 +118,28 @@ const PasswordResetConfirm = () => {
                     disabled
                     className={inputClass + ' flex-1'}
                   />
-                  <button
+                  <Button
+                    variant='secondary'
                     onClick={async () => {
                       await copy(newPassword);
                       showNotice(`${t('密码已复制到剪贴板：')} ${newPassword}`);
                     }}
-                    className='px-4 py-3 text-sm font-medium border border-black rounded-lg hover:bg-ui-bg-subtle transition-colors whitespace-nowrap'
                   >
                     {t('复制')}
-                  </button>
+                  </Button>
                 </div>
               </div>
             )}
 
-            <button
+            <Button
+              variant='primary'
+              block
               onClick={handleSubmit}
               disabled={loading || disableButton || !!newPassword || !isValidResetLink}
-              className='w-full py-3 text-sm font-medium rounded-lg transition-colors bg-ui-accent text-ui-accent-fg hover:bg-ui-accent-hover disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2'
+              loading={loading}
             >
-              {loading && (
-                <span className='w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin' />
-              )}
               {newPassword ? t('密码重置完成') : t('确认重置密码')}
-            </button>
+            </Button>
           </div>
 
           <p className='mt-6 text-center text-sm text-ui-text-2'>

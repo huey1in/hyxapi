@@ -20,6 +20,7 @@ For commercial licensing, please contact support@quantumnous.com
 import React from 'react';
 import { Copy } from 'lucide-react';
 import { getLobeHubIcon } from '../../../../../helpers';
+import { IconButton } from '../../../../ui';
 
 const CARD_STYLES = {
   container:
@@ -83,13 +84,12 @@ const ModelHeader = ({ modelData, vendorsMap = {}, t }) => {
           <span className='truncate max-w-60 font-bold text-lg'>
             {modelData?.model_name || t('未知模型')}
           </span>
-          <button
-            className='inline-flex items-center justify-center w-6 h-6 rounded-md text-ui-text-3 hover:text-ui-text hover:bg-ui-bg-subtle transition-colors'
+          <IconButton
+            icon={Copy}
+            size='sm'
             onClick={handleCopy}
             title={t('已复制模型名称')}
-          >
-            <Copy size={14} />
-          </button>
+          />
         </div>
       </div>
     </div>

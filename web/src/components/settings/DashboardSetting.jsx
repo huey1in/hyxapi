@@ -10,11 +10,12 @@ import SettingsAnnouncements from '../../pages/Setting/Dashboard/SettingsAnnounc
 import SettingsFAQ from '../../pages/Setting/Dashboard/SettingsFAQ';
 import SettingsUptimeKuma from '../../pages/Setting/Dashboard/SettingsUptimeKuma';
 import SettingsDataDashboard from '../../pages/Setting/Dashboard/SettingsDataDashboard';
+import { Card } from '../ui';
 
 const TokenCard = ({ children, className = '' }) => (
-  <div className={`bg-ui-bg-elevated border border-ui-border rounded-xl p-5 ${className}`}>
+  <Card variant='elevated' padding='lg' radius='md' className={className}>
     {children}
-  </div>
+  </Card>
 );
 
 const DashboardSetting = () => {

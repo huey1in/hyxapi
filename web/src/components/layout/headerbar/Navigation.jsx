@@ -21,6 +21,7 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import SkeletonWrapper from '../components/SkeletonWrapper';
 import { useLoginModal } from '../../../context/LoginModal';
+import { Button } from '../../ui';
 
 const Navigation = ({
   mainNavLinks,
@@ -107,15 +108,15 @@ const Navigation = ({
 
       if (needsLogin) {
         return (
-          <button
+          <Button
             key={link.itemKey}
             data-key={link.itemKey}
-            type='button'
+            variant='bare'
             onClick={openLoginModal}
-            className={`${linkClass(isActive)} bg-transparent border-0`}
+            className={linkClass(isActive)}
           >
             {renderLabel(link.text, isActive)}
-          </button>
+          </Button>
         );
       }
 

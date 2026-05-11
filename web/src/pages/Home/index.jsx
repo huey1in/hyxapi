@@ -27,7 +27,7 @@ import { useIsMobile } from '../../hooks/common/useIsMobile';
 import { StatusContext } from '../../context/Status';
 import { useActualTheme } from '../../context/Theme';
 import { UserContext } from '../../context/User';
-import { Button } from '../../components/ui';
+import { Button, IconButton, Card } from '../../components/ui';
 import { useLoginModal } from '../../context/LoginModal';
 import NoticeModal from '../../components/layout/NoticeModal';
 
@@ -474,30 +474,25 @@ const Home = () => {
                     <div className='flex items-center justify-between px-4 py-2.5 border-b' style={{ borderColor: 'rgba(255,255,255,0.08)' }}>
                       <div className='flex items-center gap-1'>
                         {['OpenAI', 'Claude'].map((proto) => (
-                          <button
+                          <Button
                             key={proto}
+                            variant='tab'
+                            selected={tab === proto}
+                            size='sm'
                             onClick={() => setTab(proto)}
-                            className='font-mono text-xs px-2.5 py-1.5 rounded-xl transition-colors'
-                            style={
-                              tab === proto
-                                ? { background: 'rgba(255,255,255,0.1)', color: '#fff' }
-                                : { color: 'rgba(255,255,255,0.4)' }
-                            }
-                            onMouseEnter={(e) => { if (tab !== proto) e.currentTarget.style.color = 'rgba(255,255,255,0.7)'; }}
-                            onMouseLeave={(e) => { if (tab !== proto) e.currentTarget.style.color = 'rgba(255,255,255,0.4)'; }}
+                            className='font-mono'
                           >
                             {proto}
-                          </button>
+                          </Button>
                         ))}
                       </div>
-                      <button
+                      <IconButton
+                        icon={copied ? Check : Copy}
+                        size='sm'
+                        tone={copied ? 'green' : 'default'}
                         onClick={handleCopySnippet}
-                        className='flex items-center gap-1.5 font-mono text-xs px-2.5 py-1.5 rounded-xl transition-colors'
-                        style={{ color: copied ? '#4ade80' : 'rgba(255,255,255,0.5)' }}
-                      >
-                        {copied ? <Check size={12} /> : <Copy size={12} />}
-                        {copied ? 'Copied' : 'Copy'}
-                      </button>
+                        title={copied ? 'Copied' : 'Copy'}
+                      />
                     </div>
                     <pre className='font-mono text-[12.5px] leading-relaxed p-5 overflow-x-auto'>
                       <code>
@@ -601,7 +596,7 @@ const Home = () => {
                   {t('三步接入，分钟级上线')}
                 </h2>
               </div>
-              <div className='border border-ui-border rounded-3xl overflow-hidden bg-ui-bg-elevated'>
+              <Card variant='elevated' radius='xl' padding='none'>
                 {[
                   { num: '01', title: t('注册账号'), desc: registerDesc, to: '/register' },
                   { num: '02', title: t('创建 API Key'), desc: t('在控制台创建密钥，支持多 Key 管理与权限控制。'), to: '/console/token' },
@@ -639,7 +634,7 @@ const Home = () => {
                     </Link>
                   );
                 })}
-              </div>
+              </Card>
             </div>
           </section>
 

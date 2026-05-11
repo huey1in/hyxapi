@@ -24,6 +24,7 @@ import {
   renderQuota,
   stringToColor,
 } from '../../../../helpers';
+import { Card } from '../../../ui';
 
 const UserInfoHeader = ({ t, userState }) => {
   const getUsername = () => {
@@ -43,10 +44,7 @@ const UserInfoHeader = ({ t, userState }) => {
   };
 
   return (
-    <div
-      className='border border-ui-border rounded-2xl overflow-hidden'
-      style={{ backgroundColor: 'var(--page-bg)' }}
-    >
+    <Card padding='none'>
       {/* Cover */}
       <div
         className='relative h-32'
@@ -112,10 +110,7 @@ const UserInfoHeader = ({ t, userState }) => {
 
           {/* Desktop stats */}
           <div className='hidden lg:block flex-shrink-0'>
-            <div
-              className='border border-ui-border rounded-xl px-4 py-3'
-              style={{ backgroundColor: 'var(--page-bg)' }}
-            >
+            <Card padding='none' radius='md' className='px-4 py-3'>
               <div className='flex items-center gap-4'>
                 <div className='flex items-center gap-2'>
                   <span className='text-sm text-ui-text-2'>
@@ -135,16 +130,13 @@ const UserInfoHeader = ({ t, userState }) => {
                   </span>
                 </div>
               </div>
-            </div>
+            </Card>
           </div>
         </div>
 
         {/* Mobile stats */}
         <div className='lg:hidden mt-2'>
-          <div
-            className='border border-ui-border rounded-xl px-4 py-3'
-            style={{ backgroundColor: 'var(--page-bg)' }}
-          >
+          <Card padding='none' radius='md' className='px-4 py-3'>
             <div className='space-y-3'>
               <div className='flex items-center justify-between'>
                 <span className='text-sm text-ui-text-2'>
@@ -164,10 +156,10 @@ const UserInfoHeader = ({ t, userState }) => {
                 </span>
               </div>
             </div>
-          </div>
+          </Card>
         </div>
       </div>
-    </div>
+    </Card>
   );
 };
 

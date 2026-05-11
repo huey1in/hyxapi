@@ -20,17 +20,7 @@ For commercial licensing, please contact support@quantumnous.com
 import React from 'react';
 import { RefreshCw, Copy, Trash2, UserCheck, Edit } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-
-const IconBtn = ({ title, onClick, disabled, children, className = '' }) => (
-  <button
-    title={title}
-    onClick={onClick}
-    disabled={disabled}
-    className={`w-7 h-7 rounded-full flex items-center justify-center transition-colors disabled:opacity-30 disabled:cursor-not-allowed ${className}`}
-  >
-    {children}
-  </button>
-);
+import { IconButton } from '../ui';
 
 const MessageActions = ({
   message,
@@ -44,7 +34,7 @@ const MessageActions = ({
   isEditing = false,
 }) => {
   const { t } = useTranslation();
-  const sz = styleState.isMobile ? 12 : 14;
+  const size = styleState.isMobile ? 'xs' : 'sm';
   const isLoading = message.status === 'loading' || message.status === 'incomplete';
   const shouldDisableActions = isAnyMessageGenerating || isEditing;
   const canToggleRole = message.role === 'assistant' || message.role === 'system';
@@ -53,57 +43,63 @@ const MessageActions = ({
   return (
     <div className='flex items-center gap-0.5'>
       {!isLoading && (
-        <IconBtn
+        <IconButton
+          icon={RefreshCw}
+          size={size}
+          shape='circle'
+          tone='blue'
           title={shouldDisableActions ? t('操作暂时被禁用') : t('重试')}
           onClick={() => !shouldDisableActions && onMessageReset(message)}
           disabled={shouldDisableActions}
-          className='text-ui-text-3 hover:text-blue-600 hover:bg-blue-50'
-        >
-          <RefreshCw size={sz} />
-        </IconBtn>
+        />
       )}
 
       {message.content && (
-        <IconBtn
+        <IconButton
+          icon={Copy}
+          size={size}
+          shape='circle'
+          tone='green'
           title={t('复制')}
           onClick={() => onMessageCopy(message)}
-          className='text-ui-text-3 hover:text-green-600 hover:bg-green-50'
-        >
-          <Copy size={sz} />
-        </IconBtn>
+        />
       )}
 
       {canEdit && (
-        <IconBtn
+        <IconButton
+          icon={Edit}
+          size={size}
+          shape='circle'
+          tone='yellow'
           title={shouldDisableActions ? t('操作暂时被禁用') : t('编辑')}
           onClick={() => !shouldDisableActions && onMessageEdit(message)}
           disabled={shouldDisableActions}
-          className='text-ui-text-3 hover:text-yellow-600 hover:bg-yellow-50'
-        >
-          <Edit size={sz} />
-        </IconBtn>
+        />
       )}
 
       {canToggleRole && !isLoading && (
-        <IconBtn
+        <IconButton
+          icon={UserCheck}
+          size={size}
+          shape='circle'
+          tone='purple'
+          selected={message.role === 'system'}
           title={shouldDisableActions ? t('操作暂时被禁用') : message.role === 'assistant' ? t('切换为System角色') : t('切换为Assistant角色')}
           onClick={() => !shouldDisableActions && onRoleToggle && onRoleToggle(message)}
           disabled={shouldDisableActions}
-          className={message.role === 'system' ? 'text-purple-500 hover:text-purple-700 hover:bg-purple-50' : 'text-ui-text-3 hover:text-purple-600 hover:bg-purple-50'}
-        >
-          <UserCheck size={sz} />
-        </IconBtn>
+        />
       )}
 
       {!isLoading && (
-        <IconBtn
+        <IconButton
+          icon={Trash2}
+          size={size}
+          shape='circle'
+          tone='red'
           title={shouldDisableActions ? t('操作暂时被禁用') : t('删除')}
           onClick={() => !shouldDisableActions && onMessageDelete(message)}
           disabled={shouldDisableActions}
-          className='text-ui-text-3 hover:text-red-600 hover:bg-red-50'
-        >
-          <Trash2 size={sz} />
-        </IconBtn>
+        />
       )}
     </div>
   );

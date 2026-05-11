@@ -56,31 +56,15 @@ const baiFontStyle = {};
 
 // BAI-style 2-column OAuth tile with icon + name
 const OAuthTile = ({ onClick, loading, disabled, name, icon }) => (
-  <button
-    onClick={onClick}
-    disabled={loading || disabled}
-    className='h-11 w-full flex items-center gap-3 px-4 text-sm font-medium border border-ui-border rounded-xl bg-[var(--page-bg)] hover:bg-ui-bg-subtle text-ui-text transition-all duration-150 disabled:opacity-50 disabled:cursor-not-allowed'
-  >
-    {loading ? (
-      <span className='w-4 h-4 border-2 border-ui-text-3 border-t-transparent rounded-full animate-spin' />
-    ) : (
-      <span className='flex items-center justify-center w-5 h-5 flex-shrink-0'>{icon}</span>
-    )}
-    <span>{name}</span>
-  </button>
+  <Button variant='oauth' block onClick={onClick} loading={loading} disabled={disabled} icon={icon}>
+    {name}
+  </Button>
 );
 
 const OAuthButton = ({ onClick, loading, disabled, children, icon }) => (
-  <button
-    onClick={onClick}
-    disabled={loading || disabled}
-    className='w-full flex items-center justify-center gap-3 px-4 py-2.5 text-sm font-medium border border-ui-border rounded-lg bg-[var(--page-bg)] hover:bg-ui-bg-subtle text-ui-text transition-colors disabled:opacity-50 disabled:cursor-not-allowed'
-  >
-    {loading ? (
-      <span className='w-4 h-4 border-2 border-ui-text-3 border-t-transparent rounded-full animate-spin' />
-    ) : icon}
-    <span>{children}</span>
-  </button>
+  <Button variant='oauth' block onClick={onClick} loading={loading} disabled={disabled} icon={icon}>
+    {children}
+  </Button>
 );
 
 const LoginForm = ({ embedded = false, onSuccess, onSwitchToRegister, onSwitchToReset }) => {
@@ -408,15 +392,18 @@ const LoginForm = ({ embedded = false, onSuccess, onSwitchToRegister, onSwitchTo
           </div>
         )}
 
-        <button
+        <Button
+          variant='oauth'
+          block
           onClick={() => { setEmailLoginLoading(true); setShowEmailLogin(true); setEmailLoginLoading(false); }}
-          className='h-11 w-full flex items-center gap-3 px-4 text-sm font-medium border border-ui-border rounded-xl bg-[var(--page-bg)] hover:bg-ui-bg-subtle text-ui-text transition-all duration-150'
+          icon={
+            <svg viewBox='0 0 24 24' className='w-5 h-5' fill='none' stroke='currentColor' strokeWidth='1.75'>
+              <path strokeLinecap='round' strokeLinejoin='round' d='M3 8l9 6 9-6M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z' />
+            </svg>
+          }
         >
-          <svg viewBox='0 0 24 24' className='w-5 h-5 flex-shrink-0' fill='none' stroke='currentColor' strokeWidth='1.75'>
-            <path strokeLinecap='round' strokeLinejoin='round' d='M3 8l9 6 9-6M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z' />
-          </svg>
           {t('使用 邮箱或用户名 登录')}
-        </button>
+        </Button>
       </div>
     );
   };

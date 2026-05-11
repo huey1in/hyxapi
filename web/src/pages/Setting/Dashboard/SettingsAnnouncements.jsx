@@ -14,7 +14,8 @@ import { NativeSelect } from '../../../components/common/form/Primitives';
 import CrudSection from '../../../components/common/table/CrudSection';
 import ModalDialog from '../../../components/common/ModalDialog';
 import { showConfirm } from '../../../components/common/ConfirmDialog';
-import { Button } from '../../../components/ui';
+import { Button, IconButton } from '../../../components/ui';
+import { Maximize2 } from 'lucide-react';
 
 const TYPE_OPTIONS = [
   { value: 'default', label: '默认' },
@@ -252,13 +253,13 @@ const SettingsAnnouncements = ({ options, refresh }) => {
             maxLength={500}
             className='w-full rounded-xl border border-ui-border bg-ui-bg-subtle text-ui-text text-xs px-3 py-2 pr-9 focus:outline-none focus:ring-1 focus:ring-ui-accent/40 resize-y'
           />
-          <button
-            type='button'
-            onClick={() => setShowContentFull(true)}
-            className='absolute right-2 top-2 text-ui-text-3 hover:text-ui-text'
+          <IconButton
+            icon={Maximize2}
+            size='sm'
             title={t('放大编辑')}
-          >
-            </button>
+            onClick={() => setShowContentFull(true)}
+            className='absolute right-2 top-2'
+          />
         </div>
         <div className='grid grid-cols-2 gap-3'>
           <div>

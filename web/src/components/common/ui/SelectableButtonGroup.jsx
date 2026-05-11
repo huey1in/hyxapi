@@ -172,6 +172,7 @@ const SelectableButtonGroup = ({
 
         if (withCheckbox) {
           return (
+            // SelectableButtonGroup 视觉系底层（依赖外部 .sbg-button CSS）
             <button
               key={item.value}
               type='button'
@@ -202,6 +203,7 @@ const SelectableButtonGroup = ({
         }
 
         return (
+          // SelectableButtonGroup 视觉系底层
           <button
             key={item.value}
             type='button'

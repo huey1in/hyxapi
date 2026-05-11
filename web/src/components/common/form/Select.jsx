@@ -26,6 +26,7 @@ const Select = ({
     renderTrigger={
       width
         ? ({ open, current, ref, onClick }) => (
+            // Select 自定义宽度触发器：Select 视觉系内部实现
             <button
               ref={ref}
               type='button'

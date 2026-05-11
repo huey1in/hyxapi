@@ -20,6 +20,7 @@ For commercial licensing, please contact support@quantumnous.com
 import React from 'react';
 import SunIcon from './icons/SunIcon';
 import MoonIcon from './icons/MoonIcon';
+import IconButton from '../../ui/IconButton';
 
 const CYCLE = ['light', 'dark'];
 const ICONS = { light: SunIcon, dark: MoonIcon };
@@ -34,14 +35,14 @@ const ThemeToggle = ({ theme, onThemeToggle, t }) => {
   const label = theme === 'light' ? t('浅色模式') : t('深色模式');
 
   return (
-    <button
+    <IconButton
+      icon={Icon}
+      variant='ghost'
+      size='md'
       onClick={handleClick}
       aria-label={label}
       title={label}
-      className='inline-flex items-center justify-center w-11 h-11 rounded-xl text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-subtle active:scale-90 transition-all duration-150'
-    >
-      <Icon size={22} />
-    </button>
+    />
   );
 };
 

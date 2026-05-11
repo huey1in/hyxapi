@@ -13,6 +13,7 @@ Usage:
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { X } from 'lucide-react';
+import { IconButton } from '../ui';
 
 const DEFAULT_DURATION = {
   success: 2500,
@@ -66,13 +67,13 @@ export const ToastContainer = () => {
           className='pointer-events-auto flex items-start gap-3 px-4 py-2.5 bg-ui-bg-elevated border border-ui-border rounded-xl shadow-lg w-fit min-w-[220px] max-w-full text-sm text-ui-text animate-toast-in'
         >
           <span className='flex-1 leading-snug'>{item.message}</span>
-          <button
+          <IconButton
+            icon={X}
+            size='xs'
             onClick={() => dismiss(item.id)}
             aria-label='close'
-            className='p-0.5 -mr-1 rounded text-ui-text-3 hover:text-ui-text hover:bg-ui-bg-subtle transition-colors flex-shrink-0 mt-0.5'
-          >
-            <X size={14} />
-          </button>
+            className='-mr-1 mt-0.5'
+          />
         </div>
       ))}
     </div>,

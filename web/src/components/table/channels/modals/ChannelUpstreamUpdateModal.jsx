@@ -19,11 +19,12 @@ For commercial licensing, please contact support@quantumnous.com
 
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Search, Loader2, Check } from 'lucide-react';
+import { Search, Check } from 'lucide-react';
 import ModalDialog from '../../../common/ModalDialog';
 import { showConfirm } from '../../../common/ConfirmDialog';
 import { TextField } from '../../../common/form/Primitives';
 import { useIsMobile } from '../../../../hooks/common/useIsMobile';
+import { Button } from '../../../ui';
 
 const normalizeModels = (models = []) =>
   Array.from(
@@ -235,22 +236,12 @@ const ChannelUpstreamUpdateModal = ({
       width={isMobile ? 'calc(100vw - 16px)' : 640}
       footer={
         <>
-          <button
-            onClick={onCancel}
-            className='inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium rounded-xl border border-ui-border text-ui-text hover:bg-ui-bg-subtle transition-colors'
-          >
+          <Button variant='secondary' onClick={onCancel}>
             {t('取消')}
-          </button>
-          <button
-            onClick={handleSubmit}
-            disabled={confirmLoading}
-            className='inline-flex items-center gap-1.5 px-4 py-2 text-sm font-semibold rounded-xl bg-ui-accent text-ui-accent-fg hover:bg-ui-accent-hover transition-colors disabled:opacity-60'
-          >
-            {confirmLoading && (
-              <Loader2 size={14} className='animate-spin' />
-            )}
+          </Button>
+          <Button onClick={handleSubmit} loading={confirmLoading}>
             {t('确定')}
-          </button>
+          </Button>
         </>
       }
     >
@@ -266,18 +257,16 @@ const ChannelUpstreamUpdateModal = ({
           {tabList.map((tab) => {
             const isActive = activeTab === tab.itemKey;
             return (
-              <button
+              <Button
                 key={tab.itemKey}
+                variant='tab'
+                size='sm'
+                selected={isActive}
                 disabled={tab.disabled}
                 onClick={() => setActiveTab(tab.itemKey)}
-                className={`px-3 py-2 text-sm font-medium transition-colors whitespace-nowrap disabled:opacity-40 disabled:cursor-not-allowed ${
-                  isActive
-                    ? 'text-ui-text border-b-2 border-ui-text -mb-px'
-                    : 'text-ui-text-2 hover:text-ui-text'
-                }`}
               >
                 {tab.tab}
-              </button>
+              </Button>
             );
           })}
         </div>

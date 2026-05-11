@@ -5,29 +5,12 @@ import React from 'react';
 import { ChevronDown, Trash2, Tag as TagIcon } from 'lucide-react';
 import { showConfirm } from '../../common/ConfirmDialog';
 import Select from '../../common/form/Select';
-import { Button, Dropdown } from '../../ui';
-
-const Toggle = ({ checked, onChange }) => (
-  <button
-    type='button'
-    onClick={() => onChange(!checked)}
-    className={`relative inline-flex h-5 w-8 items-center rounded-full transition-colors flex-shrink-0 ${
-      checked ? 'bg-ui-accent' : 'bg-ui-bg-subtle border border-ui-border'
-    }`}
-  >
-    <span
-      className={`inline-block h-4 w-4 transform rounded-full transition-transform shadow ${
-        checked ? 'translate-x-[14px]' : 'translate-x-0.5'
-      }`}
-      style={{ background: '#ffffff' }}
-    />
-  </button>
-);
+import { Button, Dropdown, Switch } from '../../ui';
 
 const ToggleRow = ({ label, checked, onChange }) => (
   <div className='inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-ui-border' style={{ backgroundColor: 'var(--page-bg)' }}>
     <span className='text-xs text-ui-text-2 whitespace-nowrap'>{label}</span>
-    <Toggle checked={checked} onChange={onChange} />
+    <Switch checked={checked} onChange={onChange} size='sm' />
   </div>
 );
 

@@ -29,7 +29,8 @@ import {
   Chip,
 } from '../../../components/common/form/Primitives';
 import { showConfirm } from '../../../components/common/ConfirmDialog';
-import { Button } from '../../../components/ui';
+import { Button, IconButton, inputClass } from '../../../components/ui';
+import { Trash2, RefreshCw, Pencil } from 'lucide-react';
 
 const KEY_ENABLED = 'channel_affinity_setting.enabled';
 const KEY_SWITCH_ON_SUCCESS = 'channel_affinity_setting.switch_on_success';
@@ -80,8 +81,8 @@ const DEFAULTS = {
   [KEY_RULES]: '[]',
 };
 
-const selectCls = 'rounded border border-ui-border bg-ui-bg-subtle text-ui-text text-xs px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-ui-accent/40';
-const inputCls = 'w-full rounded border border-ui-border bg-ui-bg-subtle text-ui-text text-xs px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-ui-accent/40';
+const selectCls = inputClass({ variant: 'inline', size: 'sm' });
+const inputCls = inputClass({ variant: 'inline', size: 'sm' });
 const miniTag = 'inline-block text-[10px] px-1.5 py-0.5 rounded-full border font-medium';
 
 const normalizeStringList = (text) => (text || '').split('\n').map((s) => s.trim()).filter(Boolean);
@@ -138,9 +139,9 @@ function CollapsibleSection({ title, defaultOpen = false, children }) {
   const [open, setOpen] = useState(defaultOpen);
   return (
     <div className='border border-ui-border rounded-md overflow-hidden'>
-      <button className='flex items-center gap-2 w-full px-3 py-2 bg-ui-bg-subtle text-left' onClick={() => setOpen(!open)}>
+      <Button variant='ghost' block onClick={() => setOpen(!open)} className='!justify-start !rounded-none bg-ui-bg-subtle'>
         <span className='text-xs font-semibold text-ui-text'>{title}</span>
-      </button>
+      </Button>
       {open && <div className='p-3 space-y-3'>{children}</div>}
     </div>
   );
@@ -446,15 +447,27 @@ export default function SettingsChannelAffinity(props) {
                         </td>
                         <td className='px-3 py-2'>
                           <div className='flex items-center gap-1'>
-                            <button onClick={() => clearRuleCache(rule)} disabled={!rule.include_rule_name}
-                              className='p-1 rounded text-ui-text-3 hover:text-amber-500 hover:bg-amber-500/10 disabled:opacity-30 transition-colors' title={t('清空缓存')}>
-                              </button>
-                            <button onClick={() => openEditModal(rule)}
-                              className='p-1 rounded text-ui-text-3 hover:text-ui-text hover:bg-ui-bg-hover transition-colors' title={t('编辑')}>
-                              </button>
-                            <button onClick={() => showConfirm({ title: t('确认删除？'), danger: true, okText: t('删除'), onOk: () => handleDeleteRule(rule.id) })}
-                              className='p-1 rounded text-ui-text-3 hover:text-ui-danger hover:bg-ui-danger-bg transition-colors' title={t('删除')}>
-                              </button>
+                            <IconButton
+                              icon={RefreshCw}
+                              size='sm'
+                              tone='yellow'
+                              title={t('清空缓存')}
+                              disabled={!rule.include_rule_name}
+                              onClick={() => clearRuleCache(rule)}
+                            />
+                            <IconButton
+                              icon={Pencil}
+                              size='sm'
+                              title={t('编辑')}
+                              onClick={() => openEditModal(rule)}
+                            />
+                            <IconButton
+                              icon={Trash2}
+                              size='sm'
+                              variant='danger'
+                              title={t('删除')}
+                              onClick={() => showConfirm({ title: t('确认删除？'), danger: true, okText: t('删除'), onOk: () => handleDeleteRule(rule.id) })}
+                            />
                           </div>
                         </td>
                       </tr>
@@ -522,14 +535,14 @@ export default function SettingsChannelAffinity(props) {
                     <span className={`${miniTag} ${paramTemplateDraft ? '!bg-orange-500/10 !text-orange-600 dark:!text-orange-400 !border-orange-500/20' : '!bg-gray-400/10 !text-ui-text-2 !border-gray-400/20'}`}>
                       {paramTemplateDraft ? t('已设置') : t('未设置')}
                     </span>
-                    <button onClick={() => setParamTemplateEditorVisible(true)} className='text-[11px] px-2 py-0.5 rounded border border-ui-border text-ui-text-2 hover:bg-ui-bg-hover'>{t('可视化编辑')}</button>
-                    <button onClick={() => {
+                    <Button size='sm' variant='secondary' onClick={() => setParamTemplateEditorVisible(true)}>{t('可视化编辑')}</Button>
+                    <Button size='sm' variant='secondary' onClick={() => {
                       const raw = (paramTemplateDraft || '').trim();
                       if (!raw) return;
                       if (!verifyJSON(raw)) return showError(t('JSON 格式不正确'));
                       setParamTemplateDraft(JSON.stringify(JSON.parse(raw), null, 2));
-                    }} className='text-[11px] px-2 py-0.5 rounded border border-ui-border text-ui-text-2 hover:bg-ui-bg-hover'>{t('格式化')}</button>
-                    <button onClick={() => setParamTemplateDraft('')} className='text-[11px] px-2 py-0.5 rounded border border-ui-border text-ui-text-3 hover:bg-ui-bg-hover'>{t('清空')}</button>
+                    }}>{t('格式化')}</Button>
+                    <Button size='sm' variant='ghost' onClick={() => setParamTemplateDraft('')}>{t('清空')}</Button>
                   </div>
                 </div>
                 <textarea value={paramTemplateDraft} onChange={(e) => setParamTemplateDraft(e.target.value)} placeholder='{}' rows={4} className={inputCls + ' font-mono resize-y'} />
@@ -546,9 +559,9 @@ export default function SettingsChannelAffinity(props) {
             <div>
               <div className='flex items-center justify-between mb-2'>
                 <label className='text-xs font-medium text-ui-text-2'>{t('Key 来源')}</label>
-                <button onClick={() => updateEditing({ key_sources: [...(editingRule.key_sources || []), { type: 'gjson', path: '' }] })} className='inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded border border-ui-border text-ui-text-2 hover:bg-ui-bg-hover'>
+                <Button size='sm' variant='secondary' onClick={() => updateEditing({ key_sources: [...(editingRule.key_sources || []), { type: 'gjson', path: '' }] })}>
                   {t('新增')}
-                </button>
+                </Button>
               </div>
               <div className='text-[11px] text-ui-text-3 mb-2'>
                 {t('常用 context key：')} {CONTEXT_KEY_PRESETS.map((p) => <span key={p.key} className={`${miniTag} mr-1 mb-1 !bg-gray-400/10 !text-ui-text-3 !border-ui-border`}>{p.label}</span>)}
@@ -573,11 +586,15 @@ export default function SettingsChannelAffinity(props) {
                         }}
                         placeholder={s.type === 'gjson' ? 'metadata.conversation_id' : 'user_id'}
                         className={inputCls + ' flex-1'} />
-                      <button onClick={() => {
-                        const next = (editingRule.key_sources || []).filter((_, i) => i !== idx);
-                        updateEditing({ key_sources: next });
-                      }} className='p-1 rounded text-ui-text-3 hover:text-ui-danger hover:bg-ui-danger-bg transition-colors'>
-                        </button>
+                      <IconButton
+                        icon={Trash2}
+                        size='sm'
+                        variant='danger'
+                        onClick={() => {
+                          const next = (editingRule.key_sources || []).filter((_, i) => i !== idx);
+                          updateEditing({ key_sources: next });
+                        }}
+                      />
                     </div>
                   );
                 })}

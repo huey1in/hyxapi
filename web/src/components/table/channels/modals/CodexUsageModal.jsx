@@ -527,9 +527,11 @@ const CodexUsageView = ({ t, record, payload, onCopy, onRefresh }) => {
 
       {/* Collapsible raw JSON */}
       <div className='border border-ui-border rounded-xl overflow-hidden'>
-        <button
+        <Button
+          variant='ghost'
+          block
           onClick={() => setShowRawJson((p) => !p)}
-          className='flex items-center justify-between w-full px-4 py-2 text-sm font-medium text-ui-text hover:bg-ui-bg-subtle transition-colors'
+          className='justify-between'
         >
           <span>{tt('原始 JSON')}</span>
           <ChevronDown
@@ -538,7 +540,7 @@ const CodexUsageView = ({ t, record, payload, onCopy, onRefresh }) => {
               showRawJson ? 'rotate-180' : ''
             }`}
           />
-        </button>
+        </Button>
         {showRawJson && (
           <div className='border-t border-ui-border p-3'>
             <div className='mb-2 flex justify-end'>

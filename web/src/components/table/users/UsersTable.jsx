@@ -7,7 +7,9 @@ import { createPortal } from 'react-dom';
 import { Loader2, Edit2, ArrowUp, ArrowDown, Power, MoreHorizontal, Trash2 } from 'lucide-react';
 import { renderQuota, renderNumber } from '../../../helpers';
 import { showConfirm } from '../../common/ConfirmDialog';
+import TableActionBtn from '../common/TableActionBtn';
 import UserSubscriptionsModal from './modals/UserSubscriptionsModal';
+import { Button, IconButton } from '../../ui';
 
 const RoleChip = ({ role, t }) => {
   const map = {
@@ -88,24 +90,6 @@ const InviteCell = ({ user, t }) => (
   </div>
 );
 
-const ActionBtn = ({ children, onClick, danger, disabled, title }) => (
-  <button
-    onClick={(e) => {
-      e.stopPropagation();
-      onClick?.(e);
-    }}
-    disabled={disabled}
-    title={title}
-    className={`inline-flex items-center gap-1 px-2 py-1 text-[11px] rounded transition-colors whitespace-nowrap disabled:opacity-40 ${
-      danger
-        ? 'text-ui-danger hover:bg-ui-danger-bg disabled:hover:bg-transparent'
-        : 'text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-subtle disabled:hover:bg-transparent'
-    }`}
-  >
-    {children}
-  </button>
-);
-
 const RowMenu = ({ items }) => {
   const [open, setOpen] = useState(false);
   const [pos, setPos] = useState({ top: 0, left: 0 });
@@ -133,12 +117,11 @@ const RowMenu = ({ items }) => {
 
   return (
     <div className='relative' ref={btnRef}>
-      <button
+      <IconButton
+        size='sm'
+        icon={MoreHorizontal}
         onClick={handleOpen}
-        className='inline-flex items-center justify-center w-7 h-7 rounded text-ui-text-3 hover:text-ui-text hover:bg-ui-bg-subtle'
-      >
-        <MoreHorizontal size={14} />
-      </button>
+      />
       {open && createPortal(
         <div
           ref={menuRef}
@@ -149,19 +132,20 @@ const RowMenu = ({ items }) => {
             it.divider ? (
               <div key={`d${i}`} className='border-t border-ui-divider' />
             ) : (
-              <button
+              <Button
                 key={i}
+                variant={it.danger ? 'danger' : 'ghost'}
+                size='sm'
+                block
                 onClick={(e) => {
                   e.stopPropagation();
                   setOpen(false);
                   it.onClick?.();
                 }}
-                className={`w-full text-left px-3 py-1.5 text-xs whitespace-nowrap hover:bg-ui-bg-subtle transition-colors ${
-                  it.danger ? 'text-ui-danger' : 'text-ui-text-2 hover:text-ui-text'
-                }`}
+                className='justify-start'
               >
                 {it.label}
-              </button>
+              </Button>
             ),
           )}
         </div>,
@@ -324,17 +308,18 @@ const UsersTable = (usersData) => {
                     ) : (
                       <div className='flex items-center justify-end gap-1'>
                         {u.status === 1 ? (
-                          <ActionBtn danger onClick={() => confirmEnableDisable(u, 'disable')}>
+                          <TableActionBtn bordered={false} danger onClick={() => confirmEnableDisable(u, 'disable')}>
                             <Power size={11} />
                             {t('禁用')}
-                          </ActionBtn>
+                          </TableActionBtn>
                         ) : (
-                          <ActionBtn onClick={() => confirmEnableDisable(u, 'enable')}>
+                          <TableActionBtn bordered={false} onClick={() => confirmEnableDisable(u, 'enable')}>
                             <Power size={11} />
                             {t('启用')}
-                          </ActionBtn>
+                          </TableActionBtn>
                         )}
-                        <ActionBtn
+                        <TableActionBtn
+                          bordered={false}
                           onClick={() => {
                             setEditingUser(u);
                             setShowEditUser(true);
@@ -342,15 +327,15 @@ const UsersTable = (usersData) => {
                         >
                           <Edit2 size={11} />
                           {t('编辑')}
-                        </ActionBtn>
-                        <ActionBtn onClick={() => confirmPromote(u)}>
+                        </TableActionBtn>
+                        <TableActionBtn bordered={false} onClick={() => confirmPromote(u)}>
                           <ArrowUp size={11} />
                           {t('提升')}
-                        </ActionBtn>
-                        <ActionBtn onClick={() => confirmDemote(u)}>
+                        </TableActionBtn>
+                        <TableActionBtn bordered={false} onClick={() => confirmDemote(u)}>
                           <ArrowDown size={11} />
                           {t('降级')}
-                        </ActionBtn>
+                        </TableActionBtn>
                         <RowMenu
                           items={[
                             { label: t('订阅管理'), onClick: () => setSubUser(u) },

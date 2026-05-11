@@ -5,6 +5,7 @@ import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { CheckCircle2, AlertTriangle, Copy, Info } from 'lucide-react';
 import { copy, showSuccess } from '../../../helpers';
+import { Button, Card } from '../../ui';
 
 const parseChannelKeys = (keyData, t) => {
   if (!keyData) return [];
@@ -75,20 +76,16 @@ const ChannelKeyDisplay = ({
               <span className='text-[11px] text-ui-text-3'>
                 {t('共 {{count}} 个密钥', { count: parsedKeys.length })}
               </span>
-              <button
-                onClick={handleCopyAll}
-                className='inline-flex items-center gap-1 px-2.5 py-1 text-[11px] rounded-xl text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-subtle whitespace-nowrap'
-              >
-                <Copy size={11} />
+              <Button variant='ghost' size='sm' onClick={handleCopyAll} icon={Copy}>
                 {t('复制全部')}
-              </button>
+              </Button>
             </div>
           )}
         </div>
 
         <div className='space-y-3 max-h-80 overflow-auto'>
           {parsedKeys.map((it) => (
-            <div key={it.id} className='border border-ui-border rounded-lg p-3 bg-ui-bg'>
+            <Card key={it.id} radius='md' padding='sm'>
               <div className='flex items-center justify-between mb-2'>
                 <span className='text-xs font-semibold text-ui-text-2'>{it.label}</span>
                 <div className='flex items-center gap-1.5'>
@@ -97,13 +94,9 @@ const ChannelKeyDisplay = ({
                       JSON
                     </span>
                   )}
-                  <button
-                    onClick={() => handleCopyKey(it.content)}
-                    className='inline-flex items-center gap-1 px-2 py-0.5 text-[11px] rounded-xl text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-subtle whitespace-nowrap'
-                  >
-                    <Copy size={11} />
+                  <Button variant='ghost' size='sm' onClick={() => handleCopyKey(it.content)} icon={Copy}>
                     {t('复制')}
-                  </button>
+                  </Button>
                 </div>
               </div>
               <div className='bg-ui-bg-subtle rounded-md p-2 max-h-40 overflow-auto'>
@@ -114,7 +107,7 @@ const ChannelKeyDisplay = ({
               {it.type === 'json' && (
                 <p className='mt-1.5 text-[11px] text-ui-text-3'>{t('JSON格式密钥，请确保格式正确')}</p>
               )}
-            </div>
+            </Card>
           ))}
         </div>
 

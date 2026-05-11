@@ -21,6 +21,7 @@ import React, { useState } from 'react';
 import PropTypes from 'prop-types';
 import { useIsMobile } from '../../../hooks/common/useIsMobile';
 import { Eye, EyeOff } from 'lucide-react';
+import { Button } from '../../ui';
 
 /**
  * CardPro 高级卡片组件
@@ -95,14 +96,15 @@ const CardPro = ({
         {isMobile && hasMobileHideableContent && (
           <>
             <div className='w-full mb-2'>
-              <button
+              <Button
+                variant='secondary'
+                size='sm'
+                block
                 onClick={toggleMobileActions}
-                className='w-full flex items-center justify-center gap-1.5 px-3 py-1.5 text-sm border rounded-md'
-                style={{ borderColor: 'var(--semi-color-border)', color: 'var(--semi-color-text-2)' }}
+                icon={showMobileActions ? EyeOff : Eye}
               >
-                {showMobileActions ? <EyeOff size={14} /> : <Eye size={14} />}
                 {showMobileActions ? t('隐藏操作项') : t('显示操作项')}
-              </button>
+              </Button>
             </div>
           </>
         )}

@@ -7,6 +7,7 @@ import { useTranslation } from 'react-i18next';
 import { Search, X, ChevronDown } from 'lucide-react';
 import { useIsMobile } from '../../../../hooks/common/useIsMobile';
 import { getModelCategories } from '../../../../helpers/render';
+import { Button, IconButton } from '../../../ui';
 
 const SingleModelSelectModal = ({
   visible,
@@ -93,9 +94,7 @@ const SingleModelSelectModal = ({
       >
         <div className='flex items-center justify-between gap-3 px-5 py-3.5 border-b border-ui-border'>
           <span className='text-sm font-semibold text-ui-text'>{t('选择模型')}</span>
-          <button onClick={onCancel} className='p-1 rounded text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-subtle'>
-            <X size={16} />
-          </button>
+          <IconButton icon={X} size='sm' onClick={onCancel} />
         </div>
         <div className='p-5 space-y-3 overflow-y-auto flex-1'>
           <div className='relative'>
@@ -117,9 +116,13 @@ const SingleModelSelectModal = ({
                 const isOpen = openCategories[key] ?? idx === 0;
                 return (
                   <div key={key} className='border border-ui-border rounded-md overflow-hidden'>
-                    <button
+                    <Button
+                      variant='ghost'
+                      size='sm'
+                      block
                       onClick={() => setOpenCategories((p) => ({ ...p, [key]: !isOpen }))}
-                      className='flex items-center justify-between w-full px-3 py-2 bg-ui-bg-subtle hover:bg-ui-bg text-sm text-ui-text'
+                      className='justify-between'
+                      iconRight={<ChevronDown size={14} className={`text-ui-text-3 transition-transform ${isOpen ? 'rotate-180' : ''}`} />}
                     >
                       <span className='flex items-center gap-2'>
                         {cat.icon}
@@ -127,8 +130,7 @@ const SingleModelSelectModal = ({
                           {cat.label} ({cat.models.length})
                         </span>
                       </span>
-                      <ChevronDown size={14} className={`text-ui-text-3 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
-                    </button>
+                    </Button>
                     {isOpen && (
                       <div className='grid grid-cols-1 sm:grid-cols-2 gap-1 p-2'>
                         {cat.models.map((model) => (
@@ -152,16 +154,16 @@ const SingleModelSelectModal = ({
           )}
         </div>
         <div className='flex justify-end gap-2 px-5 py-3 border-t border-ui-border'>
-          <button onClick={onCancel} className='inline-flex items-center px-3.5 py-1.5 text-xs font-medium rounded-xl text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-subtle whitespace-nowrap'>
+          <Button variant='ghost' size='sm' onClick={onCancel}>
             {t('取消')}
-          </button>
-          <button
-            onClick={() => onConfirm?.(selectedModel)}
+          </Button>
+          <Button
+            size='sm'
             disabled={!selectedModel}
-            className='inline-flex items-center px-4 py-1.5 text-xs font-semibold rounded-xl bg-ui-accent text-ui-accent-fg hover:bg-ui-accent-hover disabled:opacity-40 whitespace-nowrap'
+            onClick={() => onConfirm?.(selectedModel)}
           >
             {t('确定')}
-          </button>
+          </Button>
         </div>
       </div>
     </div>,

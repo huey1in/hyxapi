@@ -45,13 +45,14 @@ function Collapsible({ title, icon: Icon, children, defaultOpen = false, iconCol
   const iconCls = ICON_COLOR_MAP[iconColor] || ICON_COLOR_MAP.blue;
   return (
     <div className='space-y-3'>
-      <button
-        type='button'
-        className='flex items-center gap-2 w-full text-left group'
+      <Button
+        variant='ghost'
+        block
         onClick={() => setOpen(!open)}
+        className='!justify-start group'
       >
         <div className='flex-1 min-w-0 text-sm font-semibold text-ui-text'>{title}</div>
-      </button>
+      </Button>
       {open && <div className='space-y-3'>{children}</div>}
     </div>
   );

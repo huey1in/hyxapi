@@ -14,9 +14,10 @@ import {
 import { Notice } from '../../../../components/common/form/Primitives';
 import Pagination from '../../../../components/common/table/Pagination';
 import ModalDialog from '../../../../components/common/ModalDialog';
-import { Button } from '../../../../components/ui';
+import { Button, IconButton, Switch, inputClass } from '../../../../components/ui';
+import { Trash2 } from 'lucide-react';
 
-const inputCls = 'w-full rounded-xl border border-ui-border bg-ui-bg-subtle text-ui-text text-xs px-3 py-2 focus:outline-none focus:ring-1 focus:ring-ui-accent/40 disabled:opacity-50';
+const inputCls = inputClass({ variant: 'inline', size: 'md' });
 
 function PriceInput({
   label, value, placeholder, onChange, suffix = PRICE_SUFFIX,
@@ -47,15 +48,12 @@ function PriceInput({
 
 function ToggleSmall({ checked, onChange, disabled = false }) {
   return (
-    <button
-      type='button'
-      role='switch'
+    <Switch
+      size='sm'
+      checked={checked}
+      onChange={onChange}
       disabled={disabled}
-      onClick={() => onChange(!checked)}
-      className={`relative inline-flex h-4 w-7 items-center rounded-full transition-colors disabled:opacity-50 ${checked ? 'bg-ui-accent' : 'bg-ui-bg-subtle border border-ui-border'}`}
-    >
-      <span className={`inline-block h-3 w-3 rounded-full bg-ui-bg-elevated shadow transition-transform ${checked ? 'translate-x-3.5' : 'translate-x-0.5'}`} />
-    </button>
+    />
   );
 }
 
@@ -178,19 +176,23 @@ export default function ModelPricingEditor({
                       </td>
                       <td className='px-3 py-2'>
                         <div className='flex items-center gap-1.5'>
-                          <button onClick={(e) => { e.stopPropagation(); setSelectedModelName(record.name); }}
-                            className={`text-xs hover:underline bg-transparent border-none p-0 cursor-pointer ${isActive ? 'text-blue-600 dark:text-blue-400 font-semibold' : 'text-ui-text'}`}>
+                          <Button variant='link' size='sm' onClick={(e) => { e.stopPropagation(); setSelectedModelName(record.name); }}
+                            className={isActive ? 'font-semibold' : ''}>
                             {record.name}
-                          </button>
+                          </Button>
                           {isSelected && <MiniTag color='green'>{t('已勾选')}</MiniTag>}
                         </div>
                       </td>
                       <td className='px-3 py-2 text-ui-text-2'>{buildSummaryText(record, t)}</td>
                       {allowDeleteModel && (
                         <td className='px-3 py-2'>
-                          <button onClick={(e) => { e.stopPropagation(); deleteModel(record.name); }}
-                            className='p-1 rounded text-ui-text-3 hover:text-ui-danger hover:bg-ui-danger-bg transition-colors'>
-                            </button>
+                          <IconButton
+                            icon={Trash2}
+                            size='sm'
+                            variant='danger'
+                            title={t('删除')}
+                            onClick={(e) => { e.stopPropagation(); deleteModel(record.name); }}
+                          />
                         </td>
                       )}
                     </tr>

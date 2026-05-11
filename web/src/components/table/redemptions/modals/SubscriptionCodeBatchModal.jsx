@@ -12,7 +12,7 @@ import {
   NativeSelect,
   FieldRow,
 } from '../../../common/form/Primitives';
-import { Button, IconButton } from '../../../ui';
+import { Button, IconButton, Card } from '../../../ui';
 
 const SubscriptionCodeBatchModal = ({
   visible,
@@ -144,12 +144,11 @@ const SubscriptionCodeBatchModal = ({
                   n: generated.keys.length,
                 })}
               </div>
-              <pre
-                className='text-[11px] font-mono border border-ui-border rounded-2xl p-3 max-h-72 overflow-auto whitespace-pre-wrap break-all nice-scroll text-ui-text'
-                style={{ backgroundColor: 'var(--page-bg)' }}
-              >
-                {generated.keys.join('\n')}
-              </pre>
+              <Card padding='sm'>
+                <pre className='text-[11px] font-mono max-h-72 overflow-auto whitespace-pre-wrap break-all nice-scroll text-ui-text m-0'>
+                  {generated.keys.join('\n')}
+                </pre>
+              </Card>
             </>
           )}
         </div>

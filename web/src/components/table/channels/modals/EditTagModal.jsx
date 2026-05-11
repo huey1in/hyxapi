@@ -36,7 +36,7 @@ import {
   Notice,
   MultiCombobox,
 } from '../../../common/form/Primitives';
-import { Button } from '../../../ui';
+import { Button, Card } from '../../../ui';
 import { getChannelModels } from '../../../../helpers';
 import { useTranslation } from 'react-i18next';
 
@@ -49,7 +49,7 @@ const SectionCard = ({
   description,
   children,
 }) => (
-  <div className='border border-ui-border rounded-2xl p-4 mb-4'>
+  <Card className='mb-4'>
     <div className='mb-3'>
       <div className='text-sm font-semibold text-ui-text'>{title}</div>
       {description && (
@@ -57,7 +57,7 @@ const SectionCard = ({
       )}
     </div>
     <div className='space-y-4'>{children}</div>
-  </div>
+  </Card>
 );
 
 const EditTagModal = (props) => {

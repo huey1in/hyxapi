@@ -5,6 +5,7 @@
 import React, { useEffect, useState } from 'react';
 import SettingsPerformance from '../../pages/Setting/Performance/SettingsPerformance';
 import { API, showError, toBoolean } from '../../helpers';
+import { Card } from '../ui';
 
 const PerformanceSetting = () => {
   let [inputs, setInputs] = useState({
@@ -55,9 +56,9 @@ const PerformanceSetting = () => {
         <div className='absolute inset-0 z-10 flex items-center justify-center bg-ui-bg/60'>
           </div>
       )}
-      <div className='bg-ui-bg-elevated border border-ui-border rounded-xl p-5'>
+      <Card variant='elevated' padding='lg' radius='md'>
         <SettingsPerformance options={inputs} refresh={onRefresh} />
-      </div>
+      </Card>
     </div>
   );
 };

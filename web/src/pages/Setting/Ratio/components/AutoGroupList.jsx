@@ -6,6 +6,7 @@ import React, { useState, useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { showConfirm } from '../../../../components/common/ConfirmDialog';
 import { Button, IconButton } from '../../../../components/ui';
+import { ChevronUp, ChevronDown, Trash2 } from 'lucide-react';
 
 let _idCounter = 0;
 const uid = () => `ag_${++_idCounter}`;
@@ -96,15 +97,27 @@ export default function AutoGroupList({ value, groupNames = [], onChange }) {
               <option key={n} value={n}>{n}</option>
             ))}
           </select>
-          <button onClick={() => moveUp(index)} disabled={index === 0}
-            className='p-1 rounded text-ui-text-3 hover:text-ui-text hover:bg-ui-bg-hover disabled:opacity-30 transition-colors'>
-            </button>
-          <button onClick={() => moveDown(index)} disabled={index === items.length - 1}
-            className='p-1 rounded text-ui-text-3 hover:text-ui-text hover:bg-ui-bg-hover disabled:opacity-30 transition-colors'>
-            </button>
-          <button onClick={() => removeItem(item._id)}
-            className='p-1 rounded text-ui-text-3 hover:text-ui-danger hover:bg-ui-danger-bg transition-colors'>
-            </button>
+          <IconButton
+            icon={ChevronUp}
+            size='sm'
+            title={t('上移')}
+            disabled={index === 0}
+            onClick={() => moveUp(index)}
+          />
+          <IconButton
+            icon={ChevronDown}
+            size='sm'
+            title={t('下移')}
+            disabled={index === items.length - 1}
+            onClick={() => moveDown(index)}
+          />
+          <IconButton
+            icon={Trash2}
+            size='sm'
+            variant='danger'
+            title={t('删除')}
+            onClick={() => removeItem(item._id)}
+          />
         </div>
       ))}
       <div className='flex justify-center'>

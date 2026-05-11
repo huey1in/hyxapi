@@ -8,12 +8,12 @@
  * the standard label/extra-text layout that Semi's Form provided.
  */
 import React, { useEffect, useRef, useState } from 'react';
-import { Search, X, ChevronDown, Save, Loader2 } from 'lucide-react';
+import { Search, X, ChevronDown, Save } from 'lucide-react';
+import { Button, IconButton, Switch, inputClass } from '../../ui';
 
 // ── shared classes ──────────────────────────────────────
-
-const inputCls =
-  'w-full px-3.5 py-2 text-sm bg-transparent border border-ui-border rounded-xl text-ui-text placeholder:text-ui-text-3 outline-none focus:border-ui-text-3 transition-colors disabled:opacity-60 disabled:cursor-not-allowed';
+// 单一来源：ui/Input 的 inputClass 工厂
+const inputCls = inputClass({ variant: 'admin', size: 'md' });
 
 const errorCls = 'mt-1.5 text-xs text-ui-danger';
 const hintCls = 'mt-1.5 text-xs text-ui-text-3 leading-relaxed';
@@ -136,23 +136,9 @@ export const TextAreaField = ({
 };
 
 // ── Toggle ─────────────────────────────────────────────
-
+// 保持旧 API 名称，内部直通 ui/Switch，所有视觉变化都改 Switch 一处。
 export const Toggle = ({ checked, onChange, disabled }) => (
-  <button
-    type='button'
-    disabled={disabled}
-    onClick={() => onChange?.(!checked)}
-    className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors flex-shrink-0 disabled:opacity-40 ${
-      checked ? 'bg-ui-accent' : 'bg-ui-bg-subtle border border-ui-border'
-    }`}
-  >
-    <span
-      className={`inline-block h-3.5 w-3.5 transform rounded-full transition-transform shadow ${
-        checked ? 'translate-x-[18px]' : 'translate-x-0.5'
-      }`}
-      style={{ background: '#ffffff' }}
-    />
-  </button>
+  <Switch checked={checked} onChange={onChange} disabled={disabled} />
 );
 
 export const ToggleField = ({ label, hint, checked, onChange, disabled }) => (
@@ -221,13 +207,7 @@ export const Chip = ({ children, onRemove, className = '' }) => (
   <span className={`inline-flex items-center gap-1 px-2.5 py-1 text-xs rounded-lg bg-ui-bg-subtle border border-ui-border text-ui-text-2 ${className}`}>
     {children}
     {onRemove && (
-      <button
-        type='button'
-        onClick={onRemove}
-        className='hover:text-ui-text rounded p-0.5'
-      >
-        <X size={10} />
-      </button>
+      <IconButton icon={X} size='xs' onClick={onRemove} aria-label='remove' />
     )}
   </span>
 );
@@ -323,6 +303,7 @@ export const MultiCombobox = ({
         })}
       </div>
       {open && (
+        // MultiCombobox 选项浮层，不是卡片，属于 MultiCombobox 视觉系内部实现
         <div className='border border-ui-border rounded-2xl overflow-hidden shadow-xl' style={{ backgroundColor: 'var(--page-bg)' }}>
           <div className='relative border-b border-ui-border'>
             <Search size={14} className='absolute left-3 top-1/2 -translate-y-1/2 text-ui-text-3 pointer-events-none' />
@@ -349,15 +330,17 @@ export const MultiCombobox = ({
               </div>
             ) : (
               filtered.slice(0, 200).map((o) => (
-                <button
+                <Button
                   key={String(o.value)}
-                  type='button'
+                  variant='ghost'
+                  size='sm'
+                  block
                   onClick={() => add(o.value)}
-                  className='flex items-center gap-2 w-full text-left px-3 py-2 text-sm rounded-lg text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-subtle transition-colors'
+                  className='justify-start'
+                  icon={o.icon ? <span className='flex-shrink-0'>{o.icon}</span> : undefined}
                 >
-                  {o.icon && <span className='flex-shrink-0'>{o.icon}</span>}
                   <span className='truncate'>{o.label || o.value}</span>
-                </button>
+                </Button>
               ))
             )}
           </div>
@@ -398,6 +381,7 @@ export const Combobox = ({
 
   return (
     <div className='relative' ref={ref}>
+      {/* Combobox 触发器：自定义 input-like 外观（带键盘焦点/打开态边框），属于 Combobox 视觉系内部实现 */}
       <button
         type='button'
         disabled={disabled}
@@ -411,6 +395,7 @@ export const Combobox = ({
         <ChevronDown size={14} className={`text-ui-text-3 transition-transform flex-shrink-0 ${open ? 'rotate-180' : ''}`} />
       </button>
       {open && (
+        // Combobox 选项浮层，不是卡片，属于 Combobox 视觉系内部实现
         <div className='absolute z-50 left-0 right-0 mt-1 max-h-72 border border-ui-border rounded-2xl shadow-xl overflow-hidden flex flex-col' style={{ backgroundColor: 'var(--page-bg)' }}>
           <div className='relative border-b border-ui-border flex-shrink-0'>
             <Search size={14} className='absolute left-3 top-1/2 -translate-y-1/2 text-ui-text-3 pointer-events-none' />
@@ -427,13 +412,14 @@ export const Combobox = ({
               <div className='py-3 px-3 text-[13px] text-ui-text-3 text-center'>无匹配项</div>
             ) : (
               filtered.map((o) => (
-                <button
+                <Button
                   key={String(o.value)}
-                  type='button'
+                  variant='ghost'
+                  size='sm'
+                  block
                   onClick={() => { onChange?.(o.value); setOpen(false); setKeyword(''); }}
-                  className={`flex items-center gap-2 w-full text-left px-3 py-2 text-sm rounded-lg hover:bg-ui-bg-subtle transition-colors ${
-                    value === o.value ? 'bg-ui-bg-subtle text-ui-text font-medium' : 'text-ui-text-2 hover:text-ui-text'
-                  }`}
+                  selected={value === o.value}
+                  className={`justify-start ${value === o.value ? 'bg-ui-bg-subtle text-ui-text font-medium' : ''}`}
                 >
                   {renderOption ? renderOption(o, keyword) : (
                     <>
@@ -441,7 +427,7 @@ export const Combobox = ({
                       <span className='truncate'>{o.label || o.value}</span>
                     </>
                   )}
-                </button>
+                </Button>
               ))
             )}
           </div>
@@ -570,6 +556,8 @@ export const RangeSlider = ({
 
 // ── RadioChipGroup ────────────────────────────────────
 // Segmented-button radio replacement (was Semi RadioGroup type='button').
+// 视觉是 segmented control（浅色"凸起" active），不是 toggle 高对比；
+// 属于 RadioChipGroup 视觉系内部实现，使用方仍走 <RadioChipGroup> 组件，不会重复散落。
 
 export const RadioChipGroup = ({ value, onChange, options = [], disabled }) => (
   <div className='inline-flex items-center gap-0.5 p-0.5 bg-ui-bg-subtle rounded-md border border-ui-border'>
@@ -646,14 +634,15 @@ export const SectionWithSave = ({
         <div className='flex items-center justify-end gap-2 pt-2 border-t border-ui-divider'>
           {extraActions}
           {onSave && (
-            <button
+            <Button
+              variant='primary'
+              icon={Save}
+              loading={loading}
+              disabled={!dirty}
               onClick={onSave}
-              disabled={loading || !dirty}
-              className='inline-flex items-center gap-1.5 px-4 py-2 text-sm font-semibold rounded-xl bg-ui-accent text-ui-accent-fg hover:bg-ui-accent-hover hover:shadow-md active:scale-95 disabled:opacity-50 disabled:hover:shadow-none disabled:active:scale-100 transition-all whitespace-nowrap'
             >
-              {loading ? <Loader2 size={11} className='animate-spin' /> : <Save size={11} />}
               {onSaveLabel || (loading ? '保存中...' : '保存')}
-            </button>
+            </Button>
           )}
         </div>
       )}

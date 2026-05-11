@@ -63,17 +63,19 @@ const UserArea = ({
 
     return (
       <div className='relative' ref={ref}>
-        <button
+        <Button
+          variant='ghost'
+          size='md'
           onClick={() => setOpen((o) => !o)}
-          className='inline-flex items-center gap-1.5 h-11 px-3 rounded-xl text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-subtle active:scale-95 transition-all duration-150'
+          iconRight={ChevronDownIcon}
         >
           <span className='text-sm font-medium text-ui-text max-w-[140px] truncate'>
             {userState.user.username}
           </span>
-          <ChevronDownIcon size={16} className='text-ui-text-3' />
-        </button>
+        </Button>
 
         {open && (
+          // menu popover 浮层（下拉菜单），不是数据卡片，保留手写样式
           <div className='absolute right-0 mt-3 w-52 bg-ui-bg-elevated border border-ui-border rounded-2xl shadow-xl overflow-hidden z-50 animate-dropdown'>
             <div className='px-3 pt-3 pb-1.5'>
               <p className='text-[11px] font-semibold text-ui-text-3 uppercase tracking-widest'>
@@ -82,21 +84,26 @@ const UserArea = ({
             </div>
             <div className='px-2 pb-2 flex flex-col gap-0.5'>
               {menuItems.map((item) => (
-                <button
+                <Button
                   key={item.label}
+                  variant='ghost'
+                  size='sm'
+                  block
                   onClick={() => { navigate(item.path); setOpen(false); }}
-                  className='flex items-center w-full px-3 py-2.5 rounded-xl text-sm text-ui-text hover:bg-ui-bg-subtle transition-colors'
+                  className='justify-start'
                 >
                   <span>{item.label}</span>
-                </button>
+                </Button>
               ))}
               <div className='my-1 mx-1 border-t border-ui-divider' />
-              <button
+              <Button
+                variant='danger'
+                block
+                className='!justify-start'
                 onClick={() => { logout(); setOpen(false); }}
-                className='flex items-center w-full px-3 py-2.5 rounded-xl text-sm text-ui-danger hover:bg-ui-danger-bg transition-colors'
               >
                 <span>{t('退出')}</span>
-              </button>
+              </Button>
             </div>
           </div>
         )}

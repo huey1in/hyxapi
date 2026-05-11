@@ -188,10 +188,11 @@ const Collapse = ({ activeKey, onChange, keepDOM, children }) => {
 
 const CollapsePanel = ({ header, children, __open, __onToggle, __keepDOM }) => (
   <div className='border border-ui-border rounded-xl bg-[var(--page-bg)] overflow-hidden'>
-    <button
-      type='button'
+    <Button
+      variant='ghost'
+      block
       onClick={__onToggle}
-      className='w-full flex items-center justify-between gap-2 px-4 py-3 text-sm font-medium text-ui-text hover:bg-ui-bg-subtle/50 transition-colors'
+      className='justify-between'
     >
       <span className='flex items-center gap-2 min-w-0'>
         <ChevronDown
@@ -200,7 +201,7 @@ const CollapsePanel = ({ header, children, __open, __onToggle, __keepDOM }) => (
         />
         <span className='min-w-0'>{header}</span>
       </span>
-    </button>
+    </Button>
     {__keepDOM ? (
       <div style={{ display: __open ? 'block' : 'none' }} className='px-4 pb-4 pt-1 border-t border-ui-border'>
         {children}

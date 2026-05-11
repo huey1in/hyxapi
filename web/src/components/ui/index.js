@@ -10,7 +10,7 @@
 export { default as Button } from './Button';
 export { default as IconButton } from './IconButton';
 
-export { default as Input } from './Input';
+export { default as Input, inputClass } from './Input';
 export { default as Textarea } from './Textarea';
 export { default as NumberInput } from './NumberInput';
 
@@ -20,6 +20,7 @@ export { default as MultiSelect } from './MultiSelect';
 export { default as Dropdown } from './Dropdown';
 
 export { default as Toggle } from './Toggle';
+export { default as Switch } from './Switch';
 export { default as Checkbox } from './Checkbox';
 export { default as Radio, RadioGroup } from './Radio';
 
@@ -27,6 +28,7 @@ export { default as Tag } from './Tag';
 export { default as Card } from './Card';
 
 export { default as Modal } from './Modal';
+export { default as ModalShell } from './ModalShell';
 export { default as ConfirmDialog, showConfirm } from './ConfirmDialog';
 export { default as SlideOver } from './SlideOver';
 

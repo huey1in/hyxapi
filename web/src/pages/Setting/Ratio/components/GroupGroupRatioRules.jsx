@@ -5,7 +5,8 @@
 import React, { useState, useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { showConfirm } from '../../../../components/common/ConfirmDialog';
-import { Button } from '../../../../components/ui';
+import { Button, IconButton, inputClass } from '../../../../components/ui';
+import { Trash2, Plus } from 'lucide-react';
 
 let _idCounter = 0;
 const uid = () => `ggr_${++_idCounter}`;
@@ -41,8 +42,8 @@ export function serializeGroupGroupRatio(rules) {
   return Object.keys(nested).length === 0 ? '' : JSON.stringify(nested, null, 2);
 }
 
-const inputCls = 'flex-1 rounded border border-ui-border bg-ui-bg-subtle text-ui-text text-xs px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-ui-accent/40';
-const numCls = 'w-24 rounded border border-ui-border bg-ui-bg-subtle text-ui-text text-xs px-2 py-1.5 text-right tabular-nums focus:outline-none focus:ring-1 focus:ring-ui-accent/40';
+const inputCls = inputClass({ variant: 'inline', size: 'sm', className: 'flex-1' });
+const numCls = inputClass({ variant: 'inline', size: 'sm', className: 'w-24 text-right tabular-nums' });
 
 function GroupSection({ groupName, items, groupOptions, onUpdate, onRemove, onAdd, t }) {
   const [open, setOpen] = useState(false);
@@ -59,16 +60,17 @@ function GroupSection({ groupName, items, groupOptions, onUpdate, onRemove, onAd
           </span>
         </div>
         <div className='flex items-center gap-1' onClick={(e) => e.stopPropagation()}>
-          <button onClick={() => onAdd(groupName)} className='p-1 rounded text-ui-text-3 hover:text-ui-text hover:bg-ui-bg-hover transition-colors'>
-            </button>
-          <button
+          <IconButton icon={Plus} size='sm' title={t('新增')} onClick={() => onAdd(groupName)} />
+          <IconButton
+            icon={Trash2}
+            size='sm'
+            variant='danger'
+            title={t('删除')}
             onClick={() => showConfirm({
               title: t('确认删除该分组的所有规则？'), danger: true, okText: t('确认'),
               onOk: () => items.forEach((item) => onRemove(item._id)),
             })}
-            className='p-1 rounded text-ui-text-3 hover:text-ui-danger hover:bg-ui-danger-bg transition-colors'
-          >
-            </button>
+          />
         </div>
       </div>
       {open && (
@@ -88,9 +90,12 @@ function GroupSection({ groupName, items, groupOptions, onUpdate, onRemove, onAd
                 onChange={(e) => onUpdate(rule._id, 'ratio', parseFloat(e.target.value) || 0)}
                 className={numCls}
               />
-              <button onClick={() => onRemove(rule._id)}
-                className='p-1 rounded text-ui-text-3 hover:text-ui-danger hover:bg-ui-danger-bg transition-colors'>
-                </button>
+              <IconButton
+                icon={Trash2}
+                size='sm'
+                variant='danger'
+                onClick={() => onRemove(rule._id)}
+              />
             </div>
           ))}
         </div>

@@ -17,7 +17,7 @@ import {
 } from '../../helpers';
 import { UserContext } from '../../context/User';
 import Pagination from '../../components/common/table/Pagination';
-import { Button, IconButton } from '../../components/ui';
+import { Button, IconButton, inputClass } from '../../components/ui';
 
 const PAGE_SIZE = 20;
 
@@ -263,8 +263,7 @@ const LogsView = () => {
     }));
   };
 
-  const inputCls =
-    'w-full px-3 py-2 text-sm bg-transparent border border-ui-border rounded-xl text-ui-text placeholder:text-ui-text-3 outline-none focus:border-ui-text-3 transition-colors';
+  const inputCls = inputClass({ variant: 'admin', size: 'md' });
 
   const cols = [
     t('创建时间'),
@@ -315,14 +314,15 @@ const LogsView = () => {
           >
             <div className='flex flex-wrap gap-1 mb-3'>
               {PRESETS.map((p) => (
-                <button
+                <Button
                   key={p.label}
+                  variant='chip'
+                  size='sm'
                   type='button'
                   onClick={() => applyPreset(p)}
-                  className='px-2.5 py-1 text-xs rounded-xl text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-subtle transition-colors'
                 >
                   {t(p.label)}
-                </button>
+                </Button>
               ))}
             </div>
 

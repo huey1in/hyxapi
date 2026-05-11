@@ -20,6 +20,7 @@ For commercial licensing, please contact support@quantumnous.com
 import React from 'react';
 import { Plus, X, Image } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { IconButton, Switch } from '../ui';
 
 const ImageUrlInput = ({ imageUrls, imageEnabled, onImageUrlsChange, onImageEnabledChange, disabled = false }) => {
   const { t } = useTranslation();
@@ -42,20 +43,22 @@ const ImageUrlInput = ({ imageUrls, imageEnabled, onImageUrlsChange, onImageEnab
         </div>
         <div className='flex items-center gap-2'>
           {/* toggle switch */}
-          <button
-            onClick={() => !disabled && onImageEnabledChange(!imageEnabled)}
+          <Switch
+            size='sm'
+            checked={!!imageEnabled}
             disabled={disabled}
-            className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors disabled:opacity-40 ${imageEnabled ? 'bg-black' : 'bg-ui-bg-subtle'}`}
-          >
-            <span className={`inline-block h-3.5 w-3.5 transform rounded-full bg-ui-bg-elevated transition-transform ${imageEnabled ? 'translate-x-[18px]' : 'translate-x-[2px]'}`} />
-          </button>
-          <button
+            onChange={(v) => onImageEnabledChange(v)}
+            aria-label={t('启用图片')}
+          />
+          <IconButton
+            icon={Plus}
+            size='xs'
+            shape='circle'
+            variant='ghost'
+            title={t('添加图片URL')}
             onClick={handleAddImageUrl}
             disabled={!imageEnabled || disabled}
-            className='w-5 h-5 rounded-full flex items-center justify-center bg-black text-white hover:bg-[#333] transition-colors disabled:opacity-40'
-          >
-            <Plus size={11} />
-          </button>
+          />
         </div>
       </div>
 
@@ -79,13 +82,15 @@ const ImageUrlInput = ({ imageUrls, imageEnabled, onImageUrlsChange, onImageEnab
               disabled={!imageEnabled || disabled}
               className='flex-1 px-2 py-1 text-xs border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-black disabled:cursor-not-allowed bg-ui-bg-elevated'
             />
-            <button
+            <IconButton
+              icon={X}
+              size='sm'
+              shape='circle'
+              tone='red'
+              title={t('删除')}
               onClick={() => handleRemoveImageUrl(index)}
               disabled={!imageEnabled || disabled}
-              className='w-6 h-6 rounded-full flex items-center justify-center text-red-400 hover:text-red-600 hover:bg-red-50 transition-colors disabled:opacity-40'
-            >
-              <X size={12} />
-            </button>
+            />
           </div>
         ))}
       </div>

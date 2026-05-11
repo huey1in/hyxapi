@@ -20,17 +20,20 @@ For commercial licensing, please contact support@quantumnous.com
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { Hash, Thermometer, Target, Repeat, Ban, Shuffle, Check, X } from 'lucide-react';
+import { IconButton } from '../ui';
 
 const inputClass = 'w-full px-3 py-1.5 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-black bg-ui-bg-elevated disabled:opacity-50 disabled:cursor-not-allowed';
 
 const ToggleBtn = ({ enabled, onClick, disabled }) => (
-  <button
+  <IconButton
+    icon={enabled ? Check : X}
     onClick={onClick}
     disabled={disabled}
-    className={`w-5 h-5 rounded-full flex items-center justify-center transition-colors flex-shrink-0 ${enabled ? 'bg-black text-white' : 'border border-gray-300 text-ui-text-3 bg-ui-bg-elevated'} disabled:opacity-40`}
-  >
-    {enabled ? <Check size={10} /> : <X size={10} />}
-  </button>
+    size='xs'
+    shape='circle'
+    variant='outline'
+    selected={enabled}
+  />
 );
 
 const ParamSlider = ({ label, icon, desc, name, value, onChange, onToggle, enabled, disabled, min, max, step }) => (

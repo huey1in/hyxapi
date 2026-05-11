@@ -4,9 +4,9 @@
  */
 import React from 'react';
 import { FieldRow, TextField, Notice } from '../../common/form/Primitives';
-import { Button } from '../../ui';
+import { Button, inputClass } from '../../ui';
 
-const inputCls = 'w-full rounded border border-ui-border bg-ui-bg-subtle text-ui-text text-xs px-3 py-2 focus:outline-none focus:ring-1 focus:ring-ui-accent/40';
+const inputCls = inputClass({ variant: 'inline', size: 'sm' });
 
 export function GitHubOAuthCard({ inputs, setInputs, submitGitHubOAuth, t }) {
   return (

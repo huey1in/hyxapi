@@ -23,6 +23,7 @@ import ThinkingContent from './ThinkingContent';
 import { Loader2, Check, X, Settings, AlertTriangle } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { isAdmin } from '../../helpers/utils';
+import { Button } from '../ui';
 
 const MessageContent = ({
   message,
@@ -69,13 +70,14 @@ const MessageContent = ({
             </div>
             <p className='text-ui-text-2 text-sm break-words'>{errorText}</p>
             {isAdmin() && (
-              <button
+              <Button
+                variant='secondary'
+                size='sm'
+                icon={Settings}
                 onClick={() => window.open('/console/setting?tab=ratio', '_blank')}
-                className='flex items-center gap-1 text-sm px-3 py-1.5 border border-gray-200 rounded-lg hover:bg-ui-bg-subtle transition-colors'
               >
-                <Settings size={14} />
                 {t('前往设置')}
-              </button>
+              </Button>
             )}
           </div>
         </div>
@@ -206,12 +208,25 @@ const MessageContent = ({
             style={{ minHeight: '80px', fontSize: styleState.isMobile ? '14px' : '15px', lineHeight: '1.6' }}
           />
           <div className='flex items-center gap-2 w-full'>
-            <button onClick={onEditCancel} className='flex-1 flex items-center justify-center gap-1 py-1.5 text-sm border border-red-200 text-red-600 rounded-lg hover:bg-red-50 transition-colors'>
-              <X size={14} /> {t('取消')}
-            </button>
-            <button onClick={onEditSave} disabled={!editValue || editValue.trim() === ''} className='flex-1 flex items-center justify-center gap-1 py-1.5 text-sm bg-yellow-500 text-white rounded-lg hover:bg-yellow-600 transition-colors disabled:opacity-50'>
-              <Check size={14} /> {t('保存')}
-            </button>
+            <Button
+              variant='danger'
+              size='sm'
+              icon={X}
+              onClick={onEditCancel}
+              className='flex-1'
+            >
+              {t('取消')}
+            </Button>
+            <Button
+              variant='primary'
+              size='sm'
+              icon={Check}
+              onClick={onEditSave}
+              disabled={!editValue || editValue.trim() === ''}
+              className='flex-1'
+            >
+              {t('保存')}
+            </Button>
           </div>
         </div>
       ) : (

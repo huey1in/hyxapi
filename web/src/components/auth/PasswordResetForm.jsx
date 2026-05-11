@@ -22,6 +22,7 @@ import { API, showError, showInfo, showSuccess } from '../../helpers';
 import Turnstile from 'react-turnstile';
 import { useTranslation } from 'react-i18next';
 import { AUTH_INPUT_CLS as inputClass } from '../common/ui/forms';
+import { Button } from '../ui';
 
 const PasswordResetForm = ({ embedded = false, onSwitchToLogin }) => {
   const { t } = useTranslation();
@@ -105,24 +106,23 @@ const PasswordResetForm = ({ embedded = false, onSwitchToLogin }) => {
           />
         </div>
 
-        <button
+        <Button
+          variant='primary'
+          block
+          size='lg'
           onClick={handleSubmit}
           disabled={loading || disableButton}
-          className='w-full h-11 text-sm font-medium rounded-xl transition-colors bg-ui-accent text-ui-accent-fg hover:bg-ui-accent-hover disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2'
+          loading={loading}
         >
-          {loading && <span className='w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin' />}
           {disableButton ? `${t('重试')} (${countdown})` : t('发送重置邮件')}
-        </button>
+        </Button>
       </div>
 
       <p className='mt-5 pt-4 border-t border-ui-border text-[13px] text-ui-text-3'>
         {t('想起来了？')}{' '}
-        <button
-          onClick={onSwitchToLogin}
-          className='text-ui-text font-medium hover:underline bg-transparent cursor-pointer'
-        >
+        <Button variant='link' onClick={onSwitchToLogin}>
           {t('登录')}
-        </button>
+        </Button>
       </p>
     </>
   );

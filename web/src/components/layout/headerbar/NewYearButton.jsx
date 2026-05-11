@@ -19,6 +19,7 @@ For commercial licensing, please contact support@quantumnous.com
 
 import React, { useState, useRef, useEffect } from 'react';
 import fireworks from 'react-fireworks';
+import { Button, IconButton } from '../../ui';
 
 const NewYearButton = ({ isNewYear }) => {
   const [open, setOpen] = useState(false);
@@ -43,21 +44,23 @@ const NewYearButton = ({ isNewYear }) => {
 
   return (
     <div className='relative' ref={ref}>
-      <button
+      <IconButton
+        icon={<span className='text-xl'>🎉</span>}
         onClick={() => setOpen((o) => !o)}
         aria-label='New Year'
-        className='inline-flex items-center justify-center w-9 h-9 rounded-lg hover:bg-ui-bg-subtle active:scale-90 transition-all duration-150 text-xl'
-      >
-        🎉
-      </button>
+      />
       {open && (
+        // menu popover 浮层（下拉菜单），不是数据卡片，保留手写样式
         <div className='absolute right-0 mt-2 w-48 bg-ui-bg-elevated border border-ui-border rounded-xl shadow-lg py-1 z-50 animate-dropdown'>
-          <button
+          <Button
+            variant='ghost'
+            size='sm'
+            block
             onClick={handleNewYearClick}
-            className='flex w-full px-3 py-2 text-sm text-ui-text hover:bg-ui-bg-subtle transition-colors'
+            className='justify-start'
           >
             Happy New Year!!! 🎉
-          </button>
+          </Button>
         </div>
       )}
     </div>

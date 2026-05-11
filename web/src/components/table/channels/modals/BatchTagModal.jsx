@@ -20,6 +20,7 @@ For commercial licensing, please contact support@quantumnous.com
 import React from 'react';
 import ModalDialog from '../../../common/ModalDialog';
 import { TextField } from '../../../common/form/Primitives';
+import { Button } from '../../../ui';
 
 const BatchTagModal = ({
   showBatchSetTag,
@@ -39,18 +40,12 @@ const BatchTagModal = ({
       width={460}
       footer={
         <>
-          <button
-            onClick={onCancel}
-            className='inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium rounded-xl border border-ui-border text-ui-text hover:bg-ui-bg-subtle transition-colors'
-          >
+          <Button variant='secondary' onClick={onCancel}>
             {t('取消')}
-          </button>
-          <button
-            onClick={batchSetChannelTag}
-            className='inline-flex items-center gap-1.5 px-4 py-2 text-sm font-semibold rounded-xl bg-ui-accent text-ui-accent-fg hover:bg-ui-accent-hover transition-colors'
-          >
+          </Button>
+          <Button onClick={batchSetChannelTag}>
             {t('确定')}
-          </button>
+          </Button>
         </>
       }
     >

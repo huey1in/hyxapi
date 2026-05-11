@@ -7,7 +7,9 @@ Mobile slide-in drawer with public navigation links.
 import React, { useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { X } from 'lucide-react';
 import { useLoginModal } from '../../../context/LoginModal';
+import { Button, IconButton } from '../../ui';
 
 const MobileNavDrawer = ({
   open,
@@ -65,42 +67,32 @@ const MobileNavDrawer = ({
       aria-label='navigation'
     >
       <div className='flex items-center justify-between px-[20px] pt-[18px] pb-[10px]'>
-        <button
-          type='button'
+        <Button
+          variant='bare'
           onClick={() => {
             onClose();
             navigate('/');
           }}
-          className='p-0 border-0 bg-transparent cursor-pointer'
           aria-label='Home'
+          className='text-[22px] font-bold text-ui-text'
+          style={{ letterSpacing: '-0.03em' }}
         >
-          <span
-            className='text-[22px] font-bold text-ui-text'
-            style={{ letterSpacing: '-0.03em' }}
-          >
-            {systemName === 'Routify' ? (
-              <>
-                Rout<span style={{ color: 'var(--ui-brand)' }}>ify</span>
-              </>
-            ) : (
-              systemName || 'Routify'
-            )}
-          </span>
-        </button>
-        <button
+          {systemName === 'Routify' ? (
+            <>
+              Rout<span style={{ color: 'var(--ui-brand)' }}>ify</span>
+            </>
+          ) : (
+            systemName || 'Routify'
+          )}
+        </Button>
+        <IconButton
+          icon={X}
+          size='xl'
+          shape='circle'
+          tone='black'
           onClick={onClose}
           aria-label='Close menu'
-          className='w-[40px] h-[40px] rounded-full bg-black flex items-center justify-center cursor-pointer flex-shrink-0'
-        >
-          <svg width='14' height='14' viewBox='0 0 14 14' fill='none'>
-            <path
-              d='M1 1L13 13M13 1L1 13'
-              stroke='white'
-              strokeWidth='1.8'
-              strokeLinecap='round'
-            />
-          </svg>
-        </button>
+        />
       </div>
 
       <nav className='flex-1 overflow-y-auto px-[20px] mt-2'>
@@ -112,41 +104,43 @@ const MobileNavDrawer = ({
               : location.pathname.startsWith(link.to));
           return (
             <div key={link.itemKey} style={{ borderBottom: '1px solid rgba(0,0,0,0.06)' }}>
-              <button
+              <Button
+                variant='bare'
                 onClick={() => navigateLink(link)}
-                className={`w-full flex items-center justify-between py-[18px] text-[15px] font-medium bg-transparent cursor-pointer ${
-                  isActive ? 'text-ui-text' : 'text-ui-text'
-                }`}
+                className='w-full flex items-center justify-between py-[18px] text-[15px] font-medium text-ui-text'
               >
                 <span>{link.text}</span>
-              </button>
+              </Button>
             </div>
           );
         })}
       </nav>
 
       <div className='p-[20px] flex gap-3'>
-        <button
+        <Button
+          variant='hero'
+          tone='outline'
+          block
           onClick={() => {
             onClose();
             if (userState?.user) navigate('/console');
             else openLoginModal();
           }}
-          className='flex-1 h-[52px] rounded-full border text-[15px] font-semibold text-ui-text bg-transparent cursor-pointer'
-          style={{ borderColor: 'rgb(192, 190, 181)' }}
         >
           {userState?.user ? '控制台' : '登录'}
-        </button>
-        <button
+        </Button>
+        <Button
+          variant='hero'
+          tone='black'
+          block
           onClick={() => {
             onClose();
             if (userState?.user) navigate('/console/playground');
             else openLoginModal('register');
           }}
-          className='flex-1 h-[52px] rounded-full bg-black text-[15px] font-semibold text-white cursor-pointer'
         >
           {userState?.user ? '进入' : '注册'}
-        </button>
+        </Button>
       </div>
     </div>,
     document.body,

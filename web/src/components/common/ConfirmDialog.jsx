@@ -12,6 +12,7 @@
 import React, { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { AlertTriangle } from 'lucide-react';
+import { Button } from '../ui';
 
 const ConfirmDialog = ({
   open,
@@ -61,22 +62,15 @@ const ConfirmDialog = ({
           )}
         </div>
         <div className='flex justify-end gap-2.5 px-6 py-4 border-t border-ui-border'>
-          <button
-            onClick={onCancel}
-            className='px-4 py-2 text-sm font-medium rounded-xl border border-ui-border text-ui-text hover:bg-ui-bg-subtle transition-colors'
-          >
+          <Button variant='secondary' onClick={onCancel}>
             {cancelText}
-          </button>
-          <button
+          </Button>
+          <Button
+            variant={danger ? 'dangerSolid' : 'primary'}
             onClick={onConfirm}
-            className={`px-4 py-2 text-sm font-semibold rounded-xl transition-colors ${
-              danger
-                ? 'bg-ui-danger text-white hover:opacity-90'
-                : 'bg-ui-accent text-ui-accent-fg hover:bg-ui-accent-hover'
-            }`}
           >
             {confirmText}
-          </button>
+          </Button>
         </div>
       </div>
     </div>,

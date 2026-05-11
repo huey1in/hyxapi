@@ -19,6 +19,7 @@ For commercial licensing, please contact support@quantumnous.com
 
 import React from 'react';
 import { Link } from 'lucide-react';
+import { Card } from '../../../../ui';
 
 const ModelEndpoints = ({ modelData, endpointMap = {}, t }) => {
   const renderAPIEndpoints = () => {
@@ -58,7 +59,7 @@ const ModelEndpoints = ({ modelData, endpointMap = {}, t }) => {
   };
 
   return (
-    <div className='border border-ui-border rounded-2xl p-4 mb-6' style={{ backgroundColor: 'var(--page-bg)' }}>
+    <Card className='mb-6'>
       <div className='flex items-center mb-4'>
         <div className='w-7 h-7 rounded-lg bg-purple-500/10 flex items-center justify-center mr-2 shadow-md'>
           <Link size={16} className='text-purple-500' />
@@ -71,7 +72,7 @@ const ModelEndpoints = ({ modelData, endpointMap = {}, t }) => {
         </div>
       </div>
       {renderAPIEndpoints()}
-    </div>
+    </Card>
   );
 };
 

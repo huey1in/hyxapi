@@ -17,71 +17,14 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 
-import React, { useState } from 'react';
-import { Sparkles, Users, ToggleLeft, X, Settings, ChevronDown } from 'lucide-react';
+import React from 'react';
+import { Sparkles, Users, ToggleLeft, X, Settings } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import ParameterControl from './ParameterControl';
 import ImageUrlInput from './ImageUrlInput';
 import ConfigManager from './ConfigManager';
 import CustomRequestEditor from './CustomRequestEditor';
-
-const NativeSelect = ({ value, onChange, options, placeholder, disabled, filter }) => {
-  const [open, setOpen] = useState(false);
-  const [search, setSearch] = useState('');
-
-  const filtered = filter && search
-    ? options.filter((o) => String(o.label || o.value || '').toLowerCase().includes(search.toLowerCase()))
-    : options;
-
-  const selectedLabel = options.find((o) => o.value === value)?.label || value || placeholder;
-
-  return (
-    <div className='relative'>
-      <button
-        type='button'
-        onClick={() => !disabled && setOpen(!open)}
-        disabled={disabled}
-        className='w-full flex items-center justify-between px-3 py-2 text-sm border border-gray-200 rounded-lg bg-ui-bg-elevated disabled:opacity-50 disabled:cursor-not-allowed hover:border-gray-400 transition-colors text-left'
-      >
-        <span className={value ? 'text-ui-text' : 'text-ui-text-3'}>{selectedLabel}</span>
-        <ChevronDown size={14} className='text-ui-text-3 flex-shrink-0' />
-      </button>
-      {open && (
-        <>
-          <div className='fixed inset-0 z-40' onClick={() => setOpen(false)} />
-          <div className='absolute z-50 mt-1 w-full bg-ui-bg-elevated border border-gray-200 rounded-lg shadow-lg overflow-hidden'>
-            {filter && (
-              <div className='p-2 border-b border-gray-100'>
-                <input
-                  type='text'
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                  placeholder='搜索...'
-                  className='w-full px-2 py-1 text-xs border border-gray-200 rounded focus:outline-none'
-                  autoFocus
-                  onClick={(e) => e.stopPropagation()}
-                />
-              </div>
-            )}
-            <div className='max-h-48 overflow-y-auto'>
-              {filtered.map((opt) => (
-                <button
-                  key={opt.value}
-                  type='button'
-                  onClick={() => { onChange(opt.value); setOpen(false); setSearch(''); }}
-                  className={`w-full text-left px-3 py-2 text-sm hover:bg-ui-bg-subtle transition-colors ${opt.value === value ? 'bg-ui-bg-subtle font-medium' : ''}`}
-                >
-                  {opt.label || opt.value}
-                </button>
-              ))}
-              {filtered.length === 0 && <div className='px-3 py-2 text-xs text-ui-text-3'>无匹配结果</div>}
-            </div>
-          </div>
-        </>
-      )}
-    </div>
-  );
-};
+import { Combobox, Switch, IconButton } from '../ui';
 
 const SettingsPanel = ({
   inputs, parameterEnabled, models, groups, styleState,
@@ -105,9 +48,7 @@ const SettingsPanel = ({
           <span className='font-semibold text-ui-text'>{t('模型配置')}</span>
         </div>
         {styleState.isMobile && onCloseSettings && (
-          <button onClick={onCloseSettings} className='w-7 h-7 flex items-center justify-center text-ui-text-3 hover:text-ui-text hover:bg-ui-bg-subtle rounded-lg transition-colors'>
-            <X size={16} />
-          </button>
+          <IconButton icon={X} size='sm' onClick={onCloseSettings} title={t('关闭')} />
         )}
       </div>
 
@@ -133,13 +74,12 @@ const SettingsPanel = ({
             <span className='text-sm font-medium'>{t('分组')}</span>
             {customRequestMode && <span className='text-xs text-orange-600'>({t('已在自定义模式中忽略')})</span>}
           </div>
-          <NativeSelect
+          <Combobox
             value={inputs.group}
             onChange={(v) => onInputChange('group', v)}
             options={groups || []}
             placeholder={t('请选择分组')}
             disabled={customRequestMode}
-            filter
           />
         </div>
 
@@ -150,13 +90,12 @@ const SettingsPanel = ({
             <span className='text-sm font-medium'>{t('模型')}</span>
             {customRequestMode && <span className='text-xs text-orange-600'>({t('已在自定义模式中忽略')})</span>}
           </div>
-          <NativeSelect
+          <Combobox
             value={inputs.model}
             onChange={(v) => onInputChange('model', v)}
             options={models || []}
             placeholder={t('请选择模型')}
             disabled={customRequestMode}
-            filter
           />
         </div>
 
@@ -183,13 +122,13 @@ const SettingsPanel = ({
               <span className='text-sm font-medium'>{t('流式输出')}</span>
               {customRequestMode && <span className='text-xs text-orange-600'>({t('已在自定义模式中忽略')})</span>}
             </div>
-            <button
-              onClick={() => !customRequestMode && onInputChange('stream', !inputs.stream)}
+            <Switch
+              size='sm'
+              checked={!!inputs.stream}
               disabled={customRequestMode}
-              className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors disabled:opacity-40 ${inputs.stream ? 'bg-black' : 'bg-ui-bg-subtle'}`}
-            >
-              <span className={`inline-block h-3.5 w-3.5 transform rounded-full bg-ui-bg-elevated transition-transform ${inputs.stream ? 'translate-x-[18px]' : 'translate-x-[2px]'}`} />
-            </button>
+              onChange={(v) => onInputChange('stream', v)}
+              aria-label={t('流式输出')}
+            />
           </div>
         </div>
       </div>

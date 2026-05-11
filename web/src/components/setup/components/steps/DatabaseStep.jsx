@@ -18,6 +18,7 @@ For commercial licensing, please contact support@quantumnous.com
 */
 
 import React from 'react';
+import { Card } from '../../../ui';
 
 /**
  * 数据库检查步骤组件
@@ -31,7 +32,7 @@ const DatabaseStep = ({ setupStatus, renderNavigationButtons, t }) => {
   return (
     <>
       {setupStatus.database_type === 'sqlite' && (
-        <div className='p-6 rounded-2xl bg-[#fafafa]'>
+        <Card variant='filled' radius='lg' padding='lg'>
           <h3 className='font-semibold text-lg text-ui-text mb-4'>
             {isElectron ? t('本地数据存储') : t('数据库警告')}
           </h3>
@@ -60,25 +61,25 @@ const DatabaseStep = ({ setupStatus, renderNavigationButtons, t }) => {
               </p>
             </div>
           )}
-        </div>
+        </Card>
       )}
 
       {setupStatus.database_type === 'mysql' && (
-        <div className='p-6 rounded-2xl bg-[#fafafa]'>
+        <Card variant='filled' radius='lg' padding='lg'>
           <h3 className='font-semibold text-lg text-ui-text mb-4'>{t('数据库信息')}</h3>
           <p className='text-ui-text-2 text-sm leading-relaxed'>
             {t('您正在使用 MySQL 数据库。MySQL 是一个可靠的关系型数据库管理系统，适合生产环境使用。')}
           </p>
-        </div>
+        </Card>
       )}
 
       {setupStatus.database_type === 'postgres' && (
-        <div className='p-6 rounded-2xl bg-[#fafafa]'>
+        <Card variant='filled' radius='lg' padding='lg'>
           <h3 className='font-semibold text-lg text-ui-text mb-4'>{t('数据库信息')}</h3>
           <p className='text-ui-text-2 text-sm leading-relaxed'>
             {t('您正在使用 PostgreSQL 数据库。PostgreSQL 是一个功能强大的开源关系型数据库系统，提供了出色的可靠性和数据完整性，适合生产环境使用。')}
           </p>
-        </div>
+        </Card>
       )}
       {renderNavigationButtons && renderNavigationButtons()}
     </>

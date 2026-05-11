@@ -4,9 +4,8 @@
  * Stripe/Creem payment flow was removed).
  */
 import React, { useEffect, useState } from 'react';
-import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
-import { X, Loader2 } from 'lucide-react';
+import { X, Loader2, Edit3 } from 'lucide-react';
 import {
   API,
   showError,
@@ -25,16 +24,16 @@ import {
   NumberField,
   FieldRow,
 } from '../../../common/form/Primitives';
-import { Button, IconButton, Tabs as UITabs } from '../../../ui';
+import { Button, IconButton, Tabs as UITabs, Card, ModalShell } from '../../../ui';
 
 const SectionCard = ({ title, hint, children }) => (
-  <div className='border border-ui-border rounded-2xl p-4'>
+  <Card>
     <div className='mb-3'>
       <div className='text-sm font-semibold text-ui-text'>{title}</div>
       {hint && <div className='text-[11px] text-ui-text-3 mt-0.5'>{hint}</div>}
     </div>
     <div className='space-y-3'>{children}</div>
-  </div>
+  </Card>
 );
 
 const DEFAULTS = () => ({
@@ -268,17 +267,13 @@ const EditUserModal = (props) => {
       </SlideOver>
 
       {/* Adjust quota inner modal */}
-      {adjustOpen &&
-        createPortal(
-          <div
-            className='fixed inset-0 z-[130] flex items-center justify-center p-4'
-            style={{ background: 'rgba(0,0,0,0.5)' }}
-            onClick={adjustLoading ? undefined : () => setAdjustOpen(false)}
-          >
-            <div
-              className='bg-ui-bg-elevated border border-ui-border rounded-2xl shadow-2xl w-full max-w-md overflow-hidden'
-              onClick={(e) => e.stopPropagation()}
-            >
+      <ModalShell
+        open={adjustOpen}
+        onClose={adjustLoading ? () => {} : () => setAdjustOpen(false)}
+        closeOnBackdrop={!adjustLoading}
+        maxWidth='28rem'
+        zIndex={300}
+      >
               <div className='flex items-center justify-between gap-3 px-5 py-3.5 border-b border-ui-border'>
                 <span className='flex items-center gap-2 text-sm font-semibold text-ui-text'>
                   <Edit3 size={14} />
@@ -334,10 +329,7 @@ const EditUserModal = (props) => {
                   {t('确认调整')}
                 </Button>
               </div>
-            </div>
-          </div>,
-          document.body,
-        )}
+      </ModalShell>
     </>
   );
 };

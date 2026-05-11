@@ -21,7 +21,7 @@ import { Shield, AlertTriangle, RefreshCw, Loader2 } from 'lucide-react';
 import React, { useEffect, useState } from 'react';
 import ModalDialog from '../../../common/ModalDialog';
 import { TextField, Notice } from '../../../common/form/Primitives';
-import { Button } from '../../../ui';
+import { Button, Card } from '../../../ui';
 
 import { QRCodeSVG } from 'qrcode.react';
 
@@ -188,7 +188,7 @@ const TwoFASetting = ({ t }) => {
   // Backup codes display component
   const BackupCodesDisplay = ({ codes, title, onCopy }) => {
     return (
-      <div className='border border-ui-border rounded-xl p-4' style={{ backgroundColor: 'var(--page-bg)' }}>
+      <Card padding='md' radius='md'>
         <div className='space-y-3'>
           <div className='flex items-center justify-between'>
             <span className='font-semibold text-sm text-ui-text'>
@@ -216,7 +216,7 @@ const TwoFASetting = ({ t }) => {
             {t('复制所有代码')}
           </Button>
         </div>
-      </div>
+      </Card>
     );
   };
 
@@ -315,7 +315,7 @@ const TwoFASetting = ({ t }) => {
 
   return (
     <>
-      <div className='border border-ui-border rounded-xl p-4 w-full' style={{ backgroundColor: 'var(--page-bg)' }}>
+      <Card padding='md' radius='md' className='w-full'>
         <div className='flex flex-col sm:flex-row items-start sm:justify-between gap-4'>
           <div className='flex items-start w-full sm:w-auto'>
             <div className='w-12 h-12 rounded-full bg-slate-100 dark:bg-slate-700 flex items-center justify-center mr-4 flex-shrink-0'>
@@ -384,7 +384,7 @@ const TwoFASetting = ({ t }) => {
             )}
           </div>
         </div>
-      </div>
+      </Card>
 
       {/* 2FA Setup Modal */}
       <ModalDialog

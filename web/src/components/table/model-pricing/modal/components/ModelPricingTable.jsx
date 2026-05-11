@@ -20,6 +20,7 @@ For commercial licensing, please contact support@quantumnous.com
 import React from 'react';
 import { Coins } from 'lucide-react';
 import { calculateModelPrice, getModelPriceItems } from '../../../../../helpers';
+import { Card } from '../../../../ui';
 
 const ModelPricingTable = ({
   modelData,
@@ -139,7 +140,7 @@ const ModelPricingTable = ({
   };
 
   return (
-    <div className='border border-ui-border rounded-2xl p-4' style={{ backgroundColor: 'var(--page-bg)' }}>
+    <Card>
       <div className='flex items-center mb-4'>
         <div className='w-7 h-7 rounded-lg bg-orange-500/10 flex items-center justify-center mr-2 shadow-md'>
           <Coins size={16} className='text-orange-500' />
@@ -166,7 +167,7 @@ const ModelPricingTable = ({
         </div>
       )}
       {renderGroupPriceTable()}
-    </div>
+    </Card>
   );
 };
 

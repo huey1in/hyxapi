@@ -32,6 +32,7 @@ import clsx from 'clsx';
 import { Check, Copy } from 'lucide-react';
 import { copy, rehypeSplitWordsIntoSpans } from '../../../helpers';
 import { useTranslation } from 'react-i18next';
+import { Button } from '../../ui';
 
 // Wrap-friendly languages — let lines break inside the code block.
 const WRAP_LANGUAGES = new Set([
@@ -121,15 +122,16 @@ export function PreCode({ children, ...rest }) {
     <div className='code-block'>
       <div className='code-block-header'>
         <span className='code-block-lang'>{display}</span>
-        <button
-          type='button'
+        <Button
+          variant='ghost'
+          size='sm'
           onClick={handleCopy}
-          className='code-block-copy'
+          icon={copied ? Check : Copy}
           aria-label={t('复制代码')}
+          className='code-block-copy'
         >
-          {copied ? <Check size={12} /> : <Copy size={12} />}
-          <span>{copied ? t('已复制') : t('复制')}</span>
-        </button>
+          {copied ? t('已复制') : t('复制')}
+        </Button>
       </div>
       <pre
         {...rest}

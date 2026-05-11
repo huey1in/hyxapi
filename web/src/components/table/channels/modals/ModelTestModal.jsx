@@ -2,17 +2,14 @@
  * Channel model-test modal — token-system rewrite, no Semi UI.
  */
 import React, { useEffect, useMemo } from 'react';
-import { createPortal } from 'react-dom';
 import { Search, Settings, Info, X, Loader2 } from 'lucide-react';
 import { copy, showError, showInfo, showSuccess } from '../../../../helpers';
 import { MODEL_TABLE_PAGE_SIZE } from '../../../../constants';
 import Pagination from '../../../common/table/Pagination';
-import { Button, IconButton, Toggle as UIToggle } from '../../../ui';
+import { Button, IconButton, ModalShell, Toggle as UIToggle, inputClass } from '../../../ui';
 
-const inputCls =
-  'w-full pl-8 pr-3 py-2 text-sm bg-[var(--page-bg)] border border-ui-border rounded-xl text-ui-text placeholder:text-ui-text-3 outline-none focus:border-ui-text-3 transition-colors';
-const selectCls =
-  'w-full px-3 py-2 text-sm bg-[var(--page-bg)] border border-ui-border rounded-xl text-ui-text outline-none focus:border-ui-text-3 cursor-pointer';
+const inputCls = inputClass({ variant: 'admin', size: 'md', className: 'pl-8 !bg-[var(--page-bg)]' });
+const selectCls = inputClass({ variant: 'admin', size: 'md', className: '!bg-[var(--page-bg)] cursor-pointer' });
 
 const ENDPOINT_OPTIONS_RAW = [
   { value: '', label: '自动检测' },
@@ -80,18 +77,6 @@ const ModelTestModal = ({
     if (streamDisabled && isStreamTest) setIsStreamTest(false);
   }, [streamDisabled, isStreamTest, setIsStreamTest]);
 
-  useEffect(() => {
-    if (!open) return;
-    const onKey = (e) => e.key === 'Escape' && !isBatchTesting && handleCloseModal();
-    const ov = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
-    document.addEventListener('keydown', onKey);
-    return () => {
-      document.body.style.overflow = ov;
-      document.removeEventListener('keydown', onKey);
-    };
-  }, [open, isBatchTesting, handleCloseModal]);
-
   const filteredModels = useMemo(() => {
     if (!currentTestChannel) return [];
     return currentTestChannel.models
@@ -151,16 +136,14 @@ const ModelTestModal = ({
     setSelectedModelKeys(successKeys);
   };
 
-  return createPortal(
-    <div
-      className='fixed inset-0 z-[100] flex items-center justify-center p-4'
-      style={{ background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(2px)', WebkitBackdropFilter: 'blur(2px)' }}
-      onClick={() => !isBatchTesting && handleCloseModal()}
+  return (
+    <ModalShell
+      open={open}
+      onClose={() => !isBatchTesting && handleCloseModal()}
+      maxWidth='48rem'
+      maxHeight='88vh'
+      className='flex flex-col'
     >
-      <div
-        className='bg-ui-bg-elevated border border-ui-border rounded-2xl shadow-2xl w-full max-w-3xl max-h-[88vh] flex flex-col overflow-hidden'
-        onClick={(e) => e.stopPropagation()}
-      >
         {/* Header */}
         <div className='flex items-center justify-between gap-3 px-6 py-4 border-b border-ui-border'>
           <div className='flex items-center gap-2 min-w-0'>
@@ -361,9 +344,7 @@ const ModelTestModal = ({
               : t('批量测试${count}个模型').replace('${count}', filteredModels.length)}
           </Button>
         </div>
-      </div>
-    </div>,
-    document.body,
+    </ModalShell>
   );
 };
 

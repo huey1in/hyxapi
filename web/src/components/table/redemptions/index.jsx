@@ -14,10 +14,9 @@ import { showConfirm } from '../../common/ConfirmDialog';
 import RedemptionsTable from './RedemptionsTable';
 import EditRedemptionModal from './modals/EditRedemptionModal';
 import SubscriptionCodeBatchModal from './modals/SubscriptionCodeBatchModal';
-import { Button, Tabs as UITabs } from '../../ui';
+import { Button, Tabs as UITabs, Card, inputClass } from '../../ui';
 
-const inputCls =
-  'w-full pl-8 pr-3 py-2 text-sm bg-transparent border border-ui-border rounded-xl text-ui-text placeholder:text-ui-text-3 outline-none focus:border-ui-text-3 transition-colors';
+const inputCls = inputClass({ variant: 'admin', size: 'md', className: 'pl-8' });
 
 const RedemptionsPage = () => {
   const { t } = useTranslation();
@@ -232,7 +231,7 @@ const QuotaMode = ({ data, t }) => {
 
   return (
     <>
-      <div className='border border-ui-border rounded-2xl p-4 mb-3 bg-[var(--page-bg)] overflow-hidden flex flex-col md:flex-row md:items-center justify-between gap-2'>
+      <Card className='mb-3 flex flex-col md:flex-row md:items-center justify-between gap-2'>
         <div className='flex flex-wrap items-center gap-1.5'>
           <Button
             icon={Plus}
@@ -291,9 +290,9 @@ const QuotaMode = ({ data, t }) => {
             {t('重置')}
           </Button>
         </form>
-      </div>
+      </Card>
 
-      <div className='border border-ui-border rounded-2xl overflow-hidden bg-[var(--page-bg)]'>
+      <Card padding='none'>
         <RedemptionsTable {...data} />
         {data.tokenCount > 0 && (
           <div className='border-t border-ui-divider'>
@@ -307,7 +306,7 @@ const QuotaMode = ({ data, t }) => {
             />
           </div>
         )}
-      </div>
+      </Card>
     </>
   );
 };
@@ -343,7 +342,7 @@ const SubscriptionMode = ({
   openGenerator,
 }) => (
   <>
-    <div className='border border-ui-border rounded-2xl p-4 mb-3 bg-[var(--page-bg)] overflow-hidden flex flex-col md:flex-row md:items-center justify-between gap-2'>
+    <Card className='mb-3 flex flex-col md:flex-row md:items-center justify-between gap-2'>
       <div className='flex flex-wrap items-center gap-1.5'>
         <Button
           icon={Plus}
@@ -372,7 +371,7 @@ const SubscriptionMode = ({
         <select
           value={planFilter}
           onChange={(e) => setPlanFilter(e.target.value)}
-          className='px-2.5 py-1.5 text-xs bg-transparent border border-ui-border rounded-xl text-ui-text outline-none focus:border-ui-text-3 cursor-pointer'
+          className={inputClass({ variant: 'admin', size: 'sm', className: 'cursor-pointer' })}
         >
           <option value='all'>{t('全部套餐')}</option>
           {plans.map((p) => (
@@ -400,9 +399,9 @@ const SubscriptionMode = ({
           )}
         </div>
       </div>
-    </div>
+    </Card>
 
-    <div className='border border-ui-border rounded-2xl overflow-hidden bg-[var(--page-bg)]'>
+    <Card padding='none'>
       {subLoading ? (
         <div className='py-16 text-center text-ui-text-3 text-sm flex items-center justify-center gap-2'>
           <RefreshCw size={14} className='animate-spin' />
@@ -465,7 +464,7 @@ const SubscriptionMode = ({
           </table>
         </div>
       )}
-    </div>
+    </Card>
   </>
 );
 

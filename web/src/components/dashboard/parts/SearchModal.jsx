@@ -6,6 +6,7 @@ import { createPortal } from 'react-dom';
 import { X } from 'lucide-react';
 import SquircleBox from '../../common/ui/SquircleBox';
 import Dropdown from '../../common/ui/Dropdown';
+import { Button, IconButton, inputClass } from '../../ui';
 
 const toLocalDateTime = (v) => {
   if (!v) return '';
@@ -44,8 +45,7 @@ const SearchModal = ({
   if (!searchModalVisible) return null;
   if (typeof document === 'undefined') return null;
 
-  const inputClass =
-    'w-full px-3 py-2 text-sm border border-ui-border rounded-xl text-ui-text outline-none focus:border-ui-text-3 transition-colors';
+  const inputCls = inputClass({ variant: 'admin', size: 'md' });
   const transparentBg = { backgroundColor: 'transparent', colorScheme: 'light' };
 
   const onChange = (key) => (e) => handleInputChange(e.target.value, key);
@@ -74,13 +74,13 @@ const SearchModal = ({
           <span className='text-sm font-semibold text-ui-text'>
             {t('搜索条件')}
           </span>
-          <button
+          <IconButton
+            icon={X}
+            variant='ghost'
+            size='sm'
             onClick={handleCloseModal}
             aria-label='close'
-            className='p-1 rounded text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-subtle transition-colors'
-          >
-            <X size={16} />
-          </button>
+          />
         </div>
 
         <div className='px-5 py-5'>
@@ -93,7 +93,7 @@ const SearchModal = ({
                 type='datetime-local'
                 value={toLocalDateTime(inputs.start_timestamp)}
                 onChange={onChange('start_timestamp')}
-                className={inputClass}
+                className={inputCls}
                 style={transparentBg}
               />
             </div>
@@ -106,7 +106,7 @@ const SearchModal = ({
                 type='datetime-local'
                 value={toLocalDateTime(inputs.end_timestamp)}
                 onChange={onChange('end_timestamp')}
-                className={inputClass}
+                className={inputCls}
                 style={transparentBg}
               />
             </div>
@@ -135,7 +135,7 @@ const SearchModal = ({
                   value={inputs.username || ''}
                   onChange={onChange('username')}
                   placeholder={t('可选值')}
-                  className={`${inputClass} placeholder:text-ui-text-3`}
+                  className={`${inputCls} placeholder:text-ui-text-3`}
                   style={transparentBg}
                 />
               </div>
@@ -144,18 +144,12 @@ const SearchModal = ({
         </div>
 
         <div className='flex justify-end gap-2 px-5 py-3'>
-          <button
-            onClick={handleCloseModal}
-            className='px-4 py-1.5 text-sm font-medium rounded-lg border border-ui-border text-ui-text hover:bg-ui-bg-subtle transition-colors'
-          >
+          <Button variant='secondary' onClick={handleCloseModal}>
             {t('取消')}
-          </button>
-          <button
-            onClick={handleSearchConfirm}
-            className='px-4 py-1.5 text-sm font-semibold rounded-lg bg-ui-accent text-ui-accent-fg hover:bg-ui-accent-hover transition-colors'
-          >
+          </Button>
+          <Button variant='primary' onClick={handleSearchConfirm}>
             {t('确定')}
-          </button>
+          </Button>
         </div>
         </div>
       </SquircleBox>

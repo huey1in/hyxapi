@@ -8,10 +8,9 @@ import Pagination from '../../common/table/Pagination';
 import UsersTable from './UsersTable';
 import AddUserModal from './modals/AddUserModal';
 import EditUserModal from './modals/EditUserModal';
-import { Button } from '../../ui';
+import { Button, IconButton, Card, inputClass } from '../../ui';
 
-const inputCls =
-  'w-full pl-8 pr-7 py-2 text-sm bg-transparent border border-ui-border rounded-xl text-ui-text placeholder:text-ui-text-3 outline-none focus:border-ui-text-3 transition-colors';
+const inputCls = inputClass({ variant: 'admin', size: 'md', className: 'pl-8 pr-7' });
 
 const UsersPage = () => {
   const data = useUsersData();
@@ -72,7 +71,7 @@ const UsersPage = () => {
         </div>
 
         {/* Filter + actions card */}
-        <div className='border border-ui-border rounded-2xl p-4 mb-3 bg-[var(--page-bg)] overflow-hidden flex flex-col md:flex-row md:items-center justify-between gap-2'>
+        <Card className='mb-3 flex flex-col md:flex-row md:items-center justify-between gap-2'>
           <div className='flex items-center gap-1.5'>
             <Button icon={Plus} onClick={() => setShowAddUser(true)}>
               {t('添加用户')}
@@ -98,13 +97,12 @@ const UsersPage = () => {
                 className={inputCls}
               />
               {keyword && (
-                <button
-                  type='button'
+                <IconButton
+                  icon={X}
+                  size='xs'
                   onClick={() => setKeyword('')}
-                  className='absolute right-1.5 top-1/2 -translate-y-1/2 p-0.5 rounded text-ui-text-3 hover:text-ui-text hover:bg-ui-bg-subtle'
-                >
-                  <X size={11} />
-                </button>
+                  className='absolute right-1.5 top-1/2 -translate-y-1/2'
+                />
               )}
             </div>
             <Button type='submit' variant='ghost' disabled={loading || searching}>
@@ -114,10 +112,10 @@ const UsersPage = () => {
               {t('重置')}
             </Button>
           </form>
-        </div>
+        </Card>
 
         {/* Table card */}
-        <div className='border border-ui-border rounded-2xl overflow-hidden bg-[var(--page-bg)]'>
+        <Card padding='none'>
           <UsersTable {...data} />
           {userCount > 0 && (
             <div className='border-t border-ui-divider'>
@@ -131,7 +129,7 @@ const UsersPage = () => {
               />
             </div>
           )}
-        </div>
+        </Card>
       </div>
 
       <AddUserModal refresh={refresh} visible={showAddUser} handleClose={closeAddUser} />

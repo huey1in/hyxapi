@@ -21,6 +21,7 @@ import React, { useMemo } from 'react';
 import ModalDialog from '../../../common/ModalDialog';
 import { Copy } from 'lucide-react';
 import { copy, showError, showSuccess } from '../../../../helpers';
+import { Button } from '../../../ui';
 
 const parseAuditLine = (line) => {
   if (typeof line !== 'string') {
@@ -163,14 +164,15 @@ const ParamOverrideModal = ({
             </div>
           </div>
 
-          <button
-            className='inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg text-ui-text-3 hover:text-ui-text hover:bg-ui-bg-subtle transition-colors disabled:opacity-50'
+          <Button
+            variant='ghost'
+            size='sm'
+            icon={Copy}
             onClick={copyAll}
             disabled={lines.length === 0}
           >
-            <Copy size={12} />
             {t('复制')}
-          </button>
+          </Button>
         </div>
 
         <hr className='border-ui-divider my-3' />

@@ -4,6 +4,7 @@
 import React, { useState, useEffect, forwardRef, useImperativeHandle } from 'react';
 import ModalDialog from '../common/ModalDialog';
 import Pagination from '../common/table/Pagination';
+import { Button, inputClass } from '../ui';
 
 const OFFICIAL_RATIO_PRESET_ID = -100;
 const MODELS_DEV_PRESET_ID = -101;
@@ -57,7 +58,7 @@ function highlightMatch(text, keyword) {
   );
 }
 
-const selectCls = 'rounded border border-ui-border bg-ui-bg-subtle text-ui-text text-xs px-2 py-1 focus:outline-none focus:ring-1 focus:ring-ui-accent/40';
+const selectCls = inputClass({ variant: 'inline', size: 'sm' });
 const miniTag = 'inline-block text-[10px] px-1.5 py-0.5 rounded-full border font-medium';
 
 const ChannelSelectorModal = forwardRef(
@@ -106,8 +107,8 @@ const ChannelSelectorModal = forwardRef(
         width={900}
         footer={
           <div className='flex justify-end gap-2'>
-            <button onClick={onCancel} className='px-3.5 py-1.5 text-xs rounded-xl border border-ui-border text-ui-text-2 hover:bg-ui-bg-subtle'>{t('取消')}</button>
-            <button onClick={onOk} className='px-3.5 py-1.5 text-xs font-semibold rounded-xl bg-ui-accent text-ui-accent-fg hover:opacity-90'>{t('确定')}</button>
+            <Button variant='secondary' size='sm' onClick={onCancel}>{t('取消')}</Button>
+            <Button variant='primary' size='sm' onClick={onOk}>{t('确定')}</Button>
           </div>
         }
       >

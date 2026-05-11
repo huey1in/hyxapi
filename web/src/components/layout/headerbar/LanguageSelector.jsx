@@ -8,6 +8,7 @@ GlobeIcon trigger and a right-aligned popup.
 import React from 'react';
 import GlobeIcon from './icons/GlobeIcon';
 import Dropdown from '../../common/ui/Dropdown';
+import IconButton from '../../ui/IconButton';
 
 const LANGUAGES = [
   { value: 'zh-CN', label: '简体中文' },
@@ -22,14 +23,14 @@ const LanguageSelector = ({ currentLang, onLanguageChange, t }) => (
     placement='bottom-end'
     popupClassName='w-52'
     renderTrigger={({ onClick, ref }) => (
-      <button
+      <IconButton
         ref={ref}
+        icon={GlobeIcon}
+        variant='ghost'
+        size='md'
         onClick={onClick}
         aria-label={t('common.changeLanguage')}
-        className='inline-flex items-center justify-center w-11 h-11 rounded-xl text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-subtle active:scale-90 transition-all duration-150'
-      >
-        <GlobeIcon size={22} />
-      </button>
+      />
     )}
   />
 );

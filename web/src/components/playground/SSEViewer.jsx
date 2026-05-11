@@ -21,6 +21,7 @@ import React, { useState, useMemo, useCallback } from 'react';
 import { Copy, ChevronDown, ChevronUp, Zap, CheckCircle, XCircle } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { copy, showSuccess, showError } from '../../helpers';
+import { Button, IconButton } from '../ui';
 
 const SSEViewer = ({ sseData }) => {
   const { t } = useTranslation();
@@ -86,9 +87,15 @@ const SSEViewer = ({ sseData }) => {
           <pre className='p-3 bg-gray-900 text-gray-100 rounded-lg overflow-auto text-xs font-mono leading-relaxed'>
             {JSON.stringify(item.parsed, null, 2)}
           </pre>
-          <button onClick={() => handleCopySingle(item)} className='absolute top-2 right-2 w-6 h-6 flex items-center justify-center bg-gray-700/80 text-ui-text-3 rounded hover:bg-gray-600 transition-colors'>
-            <Copy size={11} />
-          </button>
+          <div className='absolute top-2 right-2'>
+            <IconButton
+              icon={Copy}
+              size='xs'
+              variant='ghost'
+              onClick={() => handleCopySingle(item)}
+              title={t('复制')}
+            />
+          </div>
         </div>
         {item.parsed?.choices?.[0] && (
           <div className='flex flex-wrap gap-1.5 text-xs'>
@@ -116,21 +123,29 @@ const SSEViewer = ({ sseData }) => {
           {stats.errors > 0 && <span className='px-1.5 py-0.5 text-xs bg-red-100 text-red-600 rounded-full'>{stats.errors} {t('错误')}</span>}
         </div>
         <div className='flex items-center gap-1'>
-          <button onClick={handleCopyAll} className='flex items-center gap-1 px-2 py-1 text-xs border border-gray-200 rounded-lg hover:bg-ui-bg-subtle transition-colors'>
-            <Copy size={11} />{copied ? t('已复制') : t('复制全部')}
-          </button>
-          <button onClick={handleToggleAll} className='flex items-center gap-1 px-2 py-1 text-xs border border-gray-200 rounded-lg hover:bg-ui-bg-subtle transition-colors'>
-            {expandedKeys.length === parsedSSEData.length ? <><ChevronUp size={11} />{t('收起')}</> : <><ChevronDown size={11} />{t('展开')}</>}
-          </button>
+          <Button variant='secondary' size='sm' icon={Copy} onClick={handleCopyAll}>
+            {copied ? t('已复制') : t('复制全部')}
+          </Button>
+          <Button
+            variant='secondary'
+            size='sm'
+            icon={expandedKeys.length === parsedSSEData.length ? ChevronUp : ChevronDown}
+            onClick={handleToggleAll}
+          >
+            {expandedKeys.length === parsedSSEData.length ? t('收起') : t('展开')}
+          </Button>
         </div>
       </div>
 
       <div className='flex-1 overflow-auto p-3 space-y-2'>
         {parsedSSEData.map((item) => (
           <div key={item.key} className='bg-ui-bg-elevated border border-gray-200 rounded-lg overflow-hidden'>
-            <button
+            <Button
+              variant='ghost'
+              size='sm'
+              block
               onClick={() => toggleItem(item.key)}
-              className='w-full flex items-center gap-2 px-3 py-2 text-left hover:bg-ui-bg-subtle transition-colors'
+              className='justify-start !rounded-none'
             >
               <span className='px-1.5 py-0.5 text-xs bg-ui-bg-subtle text-ui-text-2 rounded-full flex-shrink-0'>#{item.index + 1}</span>
               {item.isDone ? <span className='text-green-600 font-medium text-xs'>[DONE]</span>
@@ -138,7 +153,7 @@ const SSEViewer = ({ sseData }) => {
                 : <span className='text-ui-text-2 text-xs'>{item.parsed?.id || item.parsed?.object || t('SSE 事件')}</span>
               }
               <div className='ml-auto'>{expandedKeys.includes(item.key) ? <ChevronUp size={13} className='text-ui-text-3' /> : <ChevronDown size={13} className='text-ui-text-3' />}</div>
-            </button>
+            </Button>
             {expandedKeys.includes(item.key) && <div className='px-3 pb-3'>{renderSSEItem(item)}</div>}
           </div>
         ))}

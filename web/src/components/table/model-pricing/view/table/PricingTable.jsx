@@ -19,6 +19,7 @@ For commercial licensing, please contact support@quantumnous.com
 
 import React, { useMemo, useState } from 'react';
 import { getPricingTableColumns } from './PricingTableColumns';
+import { Button, Card } from '../../../../ui';
 
 const PricingTable = ({
   filteredModels,
@@ -87,7 +88,7 @@ const PricingTable = ({
 
   if (!filteredModels || filteredModels.length === 0) {
     return (
-      <div className='border border-ui-border rounded-xl overflow-hidden' style={{ backgroundColor: 'var(--page-bg)' }}>
+      <Card padding='none' radius='md'>
         <div className='flex flex-col justify-center items-center py-20 text-ui-text-3'>
           <svg width='150' height='150' viewBox='0 0 150 150' fill='none' className='mb-4 opacity-50'>
             <circle cx='75' cy='75' r='60' stroke='currentColor' strokeWidth='2' strokeDasharray='4 4' />
@@ -95,12 +96,12 @@ const PricingTable = ({
           </svg>
           <span className='text-sm'>{t('搜索无结果')}</span>
         </div>
-      </div>
+      </Card>
     );
   }
 
   return (
-    <div className='border border-ui-border rounded-xl overflow-hidden' style={{ backgroundColor: 'var(--page-bg)' }}>
+    <Card padding='none' radius='md'>
       <div className={compactMode ? 'overflow-x-auto' : 'overflow-x-auto'}>
         <table className='w-full text-sm'>
           <thead>
@@ -169,21 +170,23 @@ const PricingTable = ({
           {filteredBySearch.length} {t('条记录')}
         </span>
         <div className='flex items-center gap-2'>
-          <button
-            className='px-2 py-1 text-xs rounded border border-ui-border text-ui-text hover:bg-ui-bg-subtle disabled:opacity-50'
+          <Button
+            variant='secondary'
+            size='sm'
             disabled={currentPage <= 1}
             onClick={() => setCurrentPage(currentPage - 1)}
           >
             ←
-          </button>
+          </Button>
           <span className='text-xs text-ui-text-2'>{currentPage}/{totalPages || 1}</span>
-          <button
-            className='px-2 py-1 text-xs rounded border border-ui-border text-ui-text hover:bg-ui-bg-subtle disabled:opacity-50'
+          <Button
+            variant='secondary'
+            size='sm'
             disabled={currentPage >= totalPages}
             onClick={() => setCurrentPage(currentPage + 1)}
           >
             →
-          </button>
+          </Button>
           <select
             className='px-2 py-1 text-xs border border-ui-border rounded bg-transparent text-ui-text outline-none'
             value={pageSize}
@@ -198,7 +201,7 @@ const PricingTable = ({
           </select>
         </div>
       </div>
-    </div>
+    </Card>
   );
 };
 

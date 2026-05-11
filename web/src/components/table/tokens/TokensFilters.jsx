@@ -19,7 +19,7 @@ For commercial licensing, please contact support@quantumnous.com
 
 import React, { useRef, useState } from 'react';
 import { Search } from 'lucide-react';
-import { Button } from '../../ui';
+import { Button, inputClass } from '../../ui';
 
 const TokensFilters = ({
   formInitValues,
@@ -94,7 +94,7 @@ const TokensFilters = ({
             value={keyword}
             onChange={(e) => setKeyword(e.target.value)}
             placeholder={t('搜索关键字')}
-            className='w-full pl-9 pr-3 py-2 text-sm bg-transparent border border-ui-border rounded-xl text-ui-text placeholder:text-ui-text-3 outline-none focus:border-ui-text-3 transition-colors'
+            className={inputClass({ variant: 'admin', size: 'md', className: 'pl-9' })}
           />
         </div>
 
@@ -107,7 +107,7 @@ const TokensFilters = ({
             value={token}
             onChange={(e) => setToken(e.target.value)}
             placeholder={t('密钥')}
-            className='w-full pl-9 pr-3 py-2 text-sm bg-transparent border border-ui-border rounded-xl text-ui-text placeholder:text-ui-text-3 outline-none focus:border-ui-text-3 transition-colors'
+            className={inputClass({ variant: 'admin', size: 'md', className: 'pl-9' })}
           />
         </div>
 

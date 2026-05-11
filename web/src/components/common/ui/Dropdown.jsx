@@ -88,6 +88,7 @@ const Dropdown = ({
   const trigger = renderTrigger ? (
     renderTrigger({ open, current, ref: btnRef, onClick: handleToggle })
   ) : (
+    // Dropdown 默认触发器：组件内部实现，业务方通常通过 renderTrigger 覆盖
     <button
       ref={btnRef}
       type='button'
@@ -112,6 +113,7 @@ const Dropdown = ({
         list.map((o) => {
           const sel = o.value === value;
           return (
+            // Dropdown 选项项：Dropdown 视觉系内部实现，业务方使用 <Dropdown> 即可
             <button
               key={String(o.value)}
               type='button'
@@ -149,6 +151,7 @@ const Dropdown = ({
   if (open) {
     if (portal) {
       panel = createPortal(
+        // Dropdown popover 浮层（portal），不是卡片，Dropdown 视觉系内部实现
         <div
           ref={popupRef}
           className={`fixed border border-ui-border rounded-2xl shadow-xl overflow-hidden z-[200] animate-dropdown ${popupClassName}`}
@@ -162,6 +165,7 @@ const Dropdown = ({
       const isTop = placement.startsWith('top');
       const isEnd = placement.endsWith('end');
       panel = (
+        // Dropdown popover 浮层（absolute），不是卡片，Dropdown 视觉系内部实现
         <div
           ref={popupRef}
           className={`absolute ${isEnd ? 'right-0' : 'left-0'} ${

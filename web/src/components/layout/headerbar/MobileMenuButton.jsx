@@ -20,6 +20,7 @@ For commercial licensing, please contact support@quantumnous.com
 import React from 'react';
 import MenuIcon from './icons/MenuIcon';
 import XIcon from './icons/XIcon';
+import IconButton from '../../ui/IconButton';
 
 const MobileMenuButton = ({
   isConsoleRoute,
@@ -32,15 +33,16 @@ const MobileMenuButton = ({
   if (!isConsoleRoute || !isMobile) return null;
 
   const isOpen = isMobile ? drawerOpen : !collapsed;
+  const Icon = isMobile && drawerOpen ? XIcon : MenuIcon;
 
   return (
-    <button
+    <IconButton
+      icon={Icon}
+      variant='ghost'
+      size='md'
       onClick={onToggle}
       aria-label={isOpen ? t('关闭侧边栏') : t('打开侧边栏')}
-      className='inline-flex items-center justify-center w-11 h-11 rounded-xl text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-subtle active:scale-90 transition-all duration-150'
-    >
-      {isMobile && drawerOpen ? <XIcon size={20} /> : <MenuIcon size={20} />}
-    </button>
+    />
   );
 };
 

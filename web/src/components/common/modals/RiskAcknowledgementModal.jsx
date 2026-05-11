@@ -6,6 +6,7 @@ import { createPortal } from 'react-dom';
 import { X } from 'lucide-react';
 import { useIsMobile } from '../../../hooks/common/useIsMobile';
 import MarkdownRenderer from '../markdown/MarkdownRenderer';
+import { Button, IconButton } from '../../ui';
 
 const RiskAcknowledgementModal = React.memo(function RiskAcknowledgementModal({
   visible,
@@ -76,12 +77,7 @@ const RiskAcknowledgementModal = React.memo(function RiskAcknowledgementModal({
           <span className='text-base font-semibold text-ui-text'>
             {title}
           </span>
-          <button
-            onClick={onCancel}
-            className='inline-flex items-center justify-center w-9 h-9 rounded-xl text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-subtle transition-colors'
-          >
-            <X size={16} />
-          </button>
+          <IconButton icon={X} onClick={onCancel} aria-label='close' />
         </div>
         <div className='flex-1 overflow-y-auto nice-scroll p-5 space-y-3'>
           {markdownContent && (
@@ -140,19 +136,16 @@ const RiskAcknowledgementModal = React.memo(function RiskAcknowledgementModal({
           )}
         </div>
         <div className='flex justify-end gap-2 px-5 py-4 border-t border-ui-border'>
-          <button
-            onClick={onCancel}
-            className='inline-flex items-center h-9 px-4 text-sm font-medium rounded-xl border border-ui-border text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-subtle transition-colors whitespace-nowrap'
-          >
+          <Button variant='secondary' onClick={onCancel}>
             {cancelText}
-          </button>
-          <button
+          </Button>
+          <Button
+            variant='dangerSolid'
             disabled={!canConfirm}
             onClick={onConfirm}
-            className='inline-flex items-center h-9 px-4 text-sm font-semibold rounded-xl bg-ui-danger text-white hover:opacity-90 disabled:opacity-40 transition-colors whitespace-nowrap'
           >
             {confirmText}
-          </button>
+          </Button>
         </div>
       </div>
     </div>,

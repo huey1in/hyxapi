@@ -15,6 +15,7 @@ import SettingClaudeModel from '../../pages/Setting/Model/SettingClaudeModel';
 import SettingGrokModel from '../../pages/Setting/Model/SettingGrokModel';
 
 import { API, showError, toBoolean } from '../../helpers';
+import { Button, Card } from '../ui';
 
 const SUB_TABS = [
   { key: 'pricing', label: '模型定价', Comp: ModelPricingCombined },
@@ -118,35 +119,32 @@ const RatioSetting = () => {
   const ActiveComp = SUB_TABS.find((s) => s.key === active)?.Comp || ModelPricingCombined;
 
   return (
-    <div className='bg-ui-bg-elevated border border-ui-border rounded-xl overflow-hidden relative'>
+    <div className='relative'>
       {loading && (
         <div className='absolute inset-0 z-10 flex items-center justify-center bg-ui-bg/60'>
           </div>
       )}
-      {/* Sub-tab bar */}
-      <div className='border-b border-ui-border bg-ui-bg-subtle/40 px-2 py-1.5 overflow-x-auto'>
-        <div className='flex items-center gap-0.5 min-w-max'>
-          {SUB_TABS.map((s) => {
-            const isActive = active === s.key;
-            return (
-              <button
+      <Card variant='elevated' radius='md' padding='none'>
+        {/* Sub-tab bar */}
+        <div className='border-b border-ui-border bg-ui-bg-subtle/40 px-2 py-1.5 overflow-x-auto'>
+          <div className='flex items-center gap-0.5 min-w-max'>
+            {SUB_TABS.map((s) => (
+              <Button
                 key={s.key}
+                variant='tab'
+                size='sm'
+                selected={active === s.key}
                 onClick={() => setActive(s.key)}
-                className={`px-3 py-1.5 text-xs rounded-xl transition-colors whitespace-nowrap ${
-                  isActive
-                    ? 'bg-ui-bg-elevated text-ui-text font-semibold'
-                    : 'text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-subtle'
-                }`}
               >
                 {t(s.label)}
-              </button>
-            );
-          })}
+              </Button>
+            ))}
+          </div>
         </div>
-      </div>
-      <div className='p-5'>
-        <ActiveComp options={inputs} refresh={onRefresh} />
-      </div>
+        <div className='p-5'>
+          <ActiveComp options={inputs} refresh={onRefresh} />
+        </div>
+      </Card>
     </div>
   );
 };

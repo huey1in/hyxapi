@@ -18,6 +18,7 @@ For commercial licensing, please contact support@quantumnous.com
 */
 
 import React from 'react';
+import { Card } from '../../../ui';
 
 /**
  * 完成步骤组件
@@ -38,7 +39,7 @@ const CompleteStep = ({
         {t('请确认以下设置信息，点击"初始化系统"开始配置')}
       </p>
 
-      <div className='p-6 rounded-2xl bg-[#fafafa] mb-8'>
+      <Card variant='filled' radius='lg' padding='lg' className='mb-8'>
         <div className='space-y-4'>
           <div className='flex justify-between items-center pb-4 border-b border-gray-200'>
             <span className='text-sm text-ui-text-2'>{t('数据库类型')}</span>
@@ -69,7 +70,7 @@ const CompleteStep = ({
             </span>
           </div>
         </div>
-      </div>
+      </Card>
 
       {renderNavigationButtons && renderNavigationButtons()}
     </div>

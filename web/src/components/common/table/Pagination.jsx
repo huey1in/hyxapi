@@ -3,6 +3,7 @@
  */
 import React from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { IconButton } from '../../ui';
 
 const Pagination = ({ page, pageSize, total, onChange }) => {
   const totalPages = Math.max(1, Math.ceil((total || 0) / (pageSize || 1)));
@@ -20,23 +21,11 @@ const Pagination = ({ page, pageSize, total, onChange }) => {
         {total > 0 ? `${start}-${end} / ${total}` : '0'}
       </span>
       <div className='flex items-center gap-1'>
-        <button
-          onClick={() => go(page - 1)}
-          disabled={page <= 1}
-          className='inline-flex items-center justify-center w-8 h-8 rounded-lg text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-subtle disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-ui-text-2 transition-colors'
-        >
-          <ChevronLeft size={16} />
-        </button>
+        <IconButton icon={ChevronLeft} size='sm' onClick={() => go(page - 1)} disabled={page <= 1} aria-label='prev' />
         <span className='px-3 py-2 text-ui-text tabular-nums'>
           {page} / {totalPages}
         </span>
-        <button
-          onClick={() => go(page + 1)}
-          disabled={page >= totalPages}
-          className='inline-flex items-center justify-center w-8 h-8 rounded-lg text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-subtle disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-ui-text-2 transition-colors'
-        >
-          <ChevronRight size={16} />
-        </button>
+        <IconButton icon={ChevronRight} size='sm' onClick={() => go(page + 1)} disabled={page >= totalPages} aria-label='next' />
       </div>
     </div>
   );

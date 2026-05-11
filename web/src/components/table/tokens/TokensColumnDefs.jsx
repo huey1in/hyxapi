@@ -25,7 +25,7 @@ import {
   getModelCategories,
   showError,
 } from '../../../helpers';
-import { Tag } from '../../ui';
+import { Tag, Button, IconButton } from '../../ui';
 import { Copy, Eye, EyeOff, ChevronDown } from 'lucide-react';
 import { showConfirm } from '../../common/ConfirmDialog';
 
@@ -113,16 +113,16 @@ const renderTokenKey = (
           className='flex-1 min-w-0 px-3 py-1.5 text-sm bg-transparent text-ui-text outline-none'
         />
         <div className='flex items-center pr-1'>
-          <button
-            className='inline-flex items-center justify-center w-7 h-7 rounded-lg text-ui-text-3 hover:text-ui-text hover:bg-ui-bg-subtle transition-colors'
+          <IconButton
+            size='sm'
+            variant='ghost'
+            icon={revealed ? EyeOff : Eye}
             aria-label='toggle token visibility'
             onClick={async (e) => {
               e.stopPropagation();
               await toggleTokenVisibility(record);
             }}
-          >
-            {revealed ? <EyeOff size={14} /> : <Eye size={14} />}
-          </button>
+          />
           <TokenCopyDropdown
             record={record}
             copyTokenKey={copyTokenKey}
@@ -152,20 +152,23 @@ const TokenCopyDropdown = ({ record, copyTokenKey, copyTokenConnectionString, lo
 
   return (
     <div className='relative' ref={ref}>
-      <button
-        className='inline-flex items-center justify-center w-7 h-7 rounded-lg text-ui-text-3 hover:text-ui-text hover:bg-ui-bg-subtle transition-colors'
+      <IconButton
+        size='sm'
+        variant='ghost'
+        icon={Copy}
         aria-label='copy token key'
         onClick={(e) => {
           e.stopPropagation();
           setOpen(!open);
         }}
-      >
-        <Copy size={14} />
-      </button>
+      />
       {open && (
         <div className='absolute right-0 top-full mt-1 z-50 bg-ui-bg-elevated border border-ui-border rounded-xl shadow-lg py-1 min-w-[140px]'>
-          <button
-            className='w-full text-left px-3 py-1.5 text-sm text-ui-text hover:bg-ui-bg-subtle transition-colors'
+          <Button
+            variant='ghost'
+            size='sm'
+            block
+            className='justify-start'
             onClick={(e) => {
               e.stopPropagation();
               copyTokenKey(record);
@@ -173,9 +176,12 @@ const TokenCopyDropdown = ({ record, copyTokenKey, copyTokenConnectionString, lo
             }}
           >
             {t('复制密钥')}
-          </button>
-          <button
-            className='w-full text-left px-3 py-1.5 text-sm text-ui-text hover:bg-ui-bg-subtle transition-colors'
+          </Button>
+          <Button
+            variant='ghost'
+            size='sm'
+            block
+            className='justify-start'
             onClick={(e) => {
               e.stopPropagation();
               copyTokenConnectionString(record);
@@ -183,7 +189,7 @@ const TokenCopyDropdown = ({ record, copyTokenKey, copyTokenConnectionString, lo
             }}
           >
             {t('复制连接信息')}
-          </button>
+          </Button>
         </div>
       )}
     </div>
@@ -328,39 +334,43 @@ const renderOperations = (
   return (
     <div className='flex flex-wrap gap-1.5'>
       {record.status === 1 ? (
-        <button
-          className='inline-flex items-center gap-1 px-3 py-1.5 text-xs font-semibold rounded-lg bg-ui-danger text-white hover:opacity-90 transition-colors'
+        <Button
+          variant='dangerSolid'
+          size='sm'
           onClick={async () => {
             await manageToken(record.id, 'disable', record);
             await refresh();
           }}
         >
           {t('禁用')}
-        </button>
+        </Button>
       ) : (
-        <button
-          className='inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium rounded-lg border border-ui-border text-ui-text hover:bg-ui-bg-subtle transition-colors'
+        <Button
+          variant='secondary'
+          size='sm'
           onClick={async () => {
             await manageToken(record.id, 'enable', record);
             await refresh();
           }}
         >
           {t('启用')}
-        </button>
+        </Button>
       )}
 
-      <button
-        className='inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium rounded-lg border border-ui-border text-ui-text hover:bg-ui-bg-subtle transition-colors'
+      <Button
+        variant='secondary'
+        size='sm'
         onClick={() => {
           setEditingToken(record);
           setShowEdit(true);
         }}
       >
         {t('编辑')}
-      </button>
+      </Button>
 
-      <button
-        className='inline-flex items-center gap-1 px-3 py-1.5 text-xs font-semibold rounded-lg bg-ui-danger text-white hover:opacity-90 transition-colors'
+      <Button
+        variant='dangerSolid'
+        size='sm'
         onClick={() => {
           showConfirm({
             title: t('确定是否要删除此令牌？'),
@@ -374,7 +384,7 @@ const renderOperations = (
         }}
       >
         {t('删除')}
-      </button>
+      </Button>
     </div>
   );
 };

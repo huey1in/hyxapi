@@ -19,6 +19,7 @@ For commercial licensing, please contact support@quantumnous.com
 
 import React from 'react';
 import { HelpCircle } from 'lucide-react';
+import { IconButton } from '../../../../ui';
 import {
   renderModelTag,
   stringToColor,
@@ -208,16 +209,15 @@ export const getPricingTableColumns = ({
     title: () => (
       <div className='flex items-center space-x-1'>
         <span>{t('倍率')}</span>
-        <button
-          className='text-blue-500 cursor-pointer'
+        <IconButton
+          icon={HelpCircle}
+          size='xs'
           title={t('倍率是为了方便换算不同价格的模型')}
           onClick={() => {
             setModalImageUrl('/ratio.png');
             setIsModalOpenurl(true);
           }}
-        >
-          <HelpCircle size={14} />
-        </button>
+        />
       </div>
     ),
     dataIndex: 'model_ratio',

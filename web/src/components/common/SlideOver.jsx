@@ -7,6 +7,7 @@ import React, { useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { useLocation } from 'react-router-dom';
 import { X } from 'lucide-react';
+import { IconButton } from '../ui';
 
 const SlideOver = ({
   open,
@@ -71,12 +72,7 @@ const SlideOver = ({
           <div className='flex items-center gap-2 min-w-0 flex-1'>{title}</div>
           <div className='flex items-center gap-2 flex-shrink-0'>
             {headerExtra}
-            <button
-              onClick={onClose}
-              className='p-1.5 rounded-lg text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-subtle'
-            >
-              <X size={18} />
-            </button>
+            <IconButton icon={X} onClick={onClose} aria-label='close' />
           </div>
         </div>
 

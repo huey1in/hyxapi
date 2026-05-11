@@ -2,11 +2,10 @@
  * Codex OAuth modal — token-system rewrite.
  */
 import React, { useEffect, useState } from 'react';
-import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
 import { X, Info, Loader2 } from 'lucide-react';
 import { API, copy, showError, showSuccess } from '../../../../helpers';
-import { Button, IconButton } from '../../../ui';
+import { Button, IconButton, ModalShell } from '../../../ui';
 
 const CodexOAuthModal = ({ visible, onCancel, onSuccess }) => {
   const { t } = useTranslation();
@@ -18,15 +17,7 @@ const CodexOAuthModal = ({ visible, onCancel, onSuccess }) => {
     if (!visible) return;
     setAuthorizeUrl('');
     setInput('');
-    const onKey = (e) => e.key === 'Escape' && !loading && onCancel?.();
-    document.addEventListener('keydown', onKey);
-    const ov = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
-    return () => {
-      document.removeEventListener('keydown', onKey);
-      document.body.style.overflow = ov;
-    };
-  }, [visible, loading, onCancel]);
+  }, [visible]);
 
   const startOAuth = async () => {
     setLoading(true);
@@ -74,17 +65,12 @@ const CodexOAuthModal = ({ visible, onCancel, onSuccess }) => {
     }
   };
 
-  if (!visible || typeof document === 'undefined') return null;
-
-  return createPortal(
-    <div
-      className='fixed inset-0 z-[125] flex items-center justify-center p-4'
-      style={{ background: 'rgba(0,0,0,0.5)' }}
+  return (
+    <ModalShell
+      open={visible}
+      onClose={() => !loading && onCancel?.()}
+      maxWidth='42rem'
     >
-      <div
-        className='bg-ui-bg-elevated border border-ui-border rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden'
-        onClick={(e) => e.stopPropagation()}
-      >
         <div className='flex items-center justify-between gap-3 px-5 py-3.5 border-b border-ui-border'>
           <span className='text-sm font-semibold text-ui-text'>{t('Codex 授权')}</span>
           <IconButton icon={X} size='sm' onClick={onCancel} disabled={loading} />
@@ -136,9 +122,7 @@ const CodexOAuthModal = ({ visible, onCancel, onSuccess }) => {
             {t('生成并填入')}
           </Button>
         </div>
-      </div>
-    </div>,
-    document.body,
+    </ModalShell>
   );
 };
 

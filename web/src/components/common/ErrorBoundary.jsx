@@ -1,6 +1,7 @@
 import React from 'react';
 import { AlertTriangle } from 'lucide-react';
 import { withTranslation } from 'react-i18next';
+import { Button } from '../ui';
 
 class ErrorBoundary extends React.Component {
   constructor(props) {
@@ -25,12 +26,9 @@ class ErrorBoundary extends React.Component {
           <p className='text-lg text-gray-600 mb-4'>
             {t('页面渲染出错，请刷新页面重试')}
           </p>
-          <button
-            className='px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors'
-            onClick={() => window.location.reload()}
-          >
+          <Button variant='primary' onClick={() => window.location.reload()}>
             {t('刷新页面')}
-          </button>
+          </Button>
         </div>
       );
     }

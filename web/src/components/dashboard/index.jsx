@@ -18,7 +18,7 @@ import { useDashboardCharts } from '../../hooks/dashboard/useDashboardCharts';
 import MonthlyBarChart from './parts/MonthlyBarChart';
 import InfoCard from './parts/InfoCard';
 import SearchModal from './parts/SearchModal';
-import { Button, IconButton, Tabs as UITabs } from '../ui';
+import { Button, IconButton, Tabs as UITabs, Card } from '../ui';
 
 const Dashboard = () => {
   const { t } = useTranslation();
@@ -220,10 +220,7 @@ const Dashboard = () => {
       <SectionLabel>{t('用量')}</SectionLabel>
       <div className='grid grid-cols-1 lg:grid-cols-2 gap-3 md:gap-4 mb-8'>
         {/* 账户 */}
-        <div
-          className='relative border border-ui-border rounded-2xl p-5'
-          style={{ backgroundColor: 'var(--page-bg)' }}
-        >
+        <Card padding='none' className='relative p-5'>
           <div className='flex items-center justify-between mb-1'>
             <div className='flex items-center gap-2 text-[13px] text-ui-text-2'>
               <Wallet size={16} className='text-ui-text-3' />
@@ -243,13 +240,10 @@ const Dashboard = () => {
             <SubStat label={t('历史消耗')} value={renderQuota(usedTotal)} loading={loading} />
             <SubStat label={t('累计调用')} value={renderNumber(requestCount || 0)} loading={loading} />
           </div>
-        </div>
+        </Card>
 
         {/* 当前周期 */}
-        <div
-          className='border border-ui-border rounded-2xl p-5'
-          style={{ backgroundColor: 'var(--page-bg)' }}
-        >
+        <Card padding='none' className='p-5'>
           <div className='flex items-center gap-2 text-[13px] text-ui-text-2 mb-1'>
             <TrendingUp size={16} className='text-ui-text-3' />
             <span>{t('当前周期消耗')}</span>
@@ -274,7 +268,7 @@ const Dashboard = () => {
             <SubStat label={t('平均 RPM')} value={performanceMetrics?.avgRPM ?? 0} loading={loading} />
             <SubStat label={t('平均 TPM')} value={performanceMetrics?.avgTPM ?? 0} loading={loading} />
           </div>
-        </div>
+        </Card>
       </div>
 
       {/* 图表区 — 独占一行 */}
@@ -292,12 +286,9 @@ const Dashboard = () => {
             />
           </div>
         </div>
-        <div
-          className='border border-ui-border rounded-2xl p-5'
-          style={{ backgroundColor: 'var(--page-bg)' }}
-        >
+        <Card padding='none' className='p-5'>
           {renderChartContent()}
-        </div>
+        </Card>
       </div>
 
       {/* 信息区 — 独占一行 */}

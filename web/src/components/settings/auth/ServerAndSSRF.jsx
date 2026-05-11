@@ -14,6 +14,7 @@ import {
   TagInput,
   RadioChipGroup,
 } from '../../common/form/Primitives';
+import { Button } from '../../ui';
 
 export function ServerCard({ inputs, setInputs, submitServerAddress, t }) {
   return (
@@ -28,12 +29,9 @@ export function ServerCard({ inputs, setInputs, submitServerAddress, t }) {
             placeholder='https://yourdomain.com'
             className='flex-1 rounded border border-ui-border bg-ui-bg-subtle text-ui-text text-xs px-3 py-2 focus:outline-none focus:ring-1 focus:ring-ui-accent/40'
           />
-          <button
-            onClick={submitServerAddress}
-            className='px-3 py-1.5 text-xs font-semibold rounded-xl bg-ui-accent text-ui-accent-fg hover:opacity-90 whitespace-nowrap'
-          >
+          <Button variant='primary' size='sm' onClick={submitServerAddress}>
             {t('更新')}
-          </button>
+          </Button>
         </div>
       </FieldRow>
     </div>
@@ -112,9 +110,9 @@ export function SSRFCard({
         <TagInput value={allowedPorts} onChange={(value) => { setAllowedPorts(value); setInputs((prev) => ({ ...prev, 'fetch_setting.allowed_ports': value })); }} placeholder={t('输入端口后回车，如 80 或 8000-8999')} />
       </div>
 
-      <button onClick={submitSSRF} className='px-3 py-1.5 text-xs font-semibold rounded-xl bg-ui-accent text-ui-accent-fg hover:opacity-90'>
+      <Button variant='primary' size='sm' onClick={submitSSRF}>
         {t('更新 SSRF 防护设置')}
-      </button>
+      </Button>
     </div>
   );
 }

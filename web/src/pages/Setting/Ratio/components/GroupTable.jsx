@@ -5,13 +5,14 @@
 import React, { useState, useCallback, useMemo, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { showConfirm } from '../../../../components/common/ConfirmDialog';
-import { Button } from '../../../../components/ui';
+import { Button, IconButton, inputClass } from '../../../../components/ui';
+import { Trash2 } from 'lucide-react';
 
 let _idCounter = 0;
 const uid = () => `gr_${++_idCounter}`;
 
-const inputCls = 'w-full rounded border border-ui-border bg-ui-bg-subtle text-ui-text text-xs px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-ui-accent/40 disabled:opacity-50';
-const numInputCls = 'w-20 rounded border border-ui-border bg-ui-bg-subtle text-ui-text text-xs px-2 py-1.5 text-right tabular-nums focus:outline-none focus:ring-1 focus:ring-ui-accent/40';
+const inputCls = inputClass({ variant: 'inline', size: 'sm' });
+const numInputCls = inputClass({ variant: 'inline', size: 'sm', className: 'w-20 text-right tabular-nums' });
 
 function parseJSON(str, fallback) {
   if (!str || !str.trim()) return fallback;
@@ -155,12 +156,13 @@ export default function GroupTable({ groupRatio, userUsableGroups, onChange }) {
                       )}
                     </td>
                     <td className='px-3 py-2'>
-                      <button
-                        onClick={() => removeRow(row._id)}
-                        className='p-1 rounded text-ui-text-3 hover:text-ui-danger hover:bg-ui-danger-bg transition-colors'
+                      <IconButton
+                        icon={Trash2}
+                        size='sm'
+                        variant='danger'
                         title={t('删除')}
-                      >
-                        </button>
+                        onClick={() => removeRow(row._id)}
+                      />
                     </td>
                   </tr>
                 ))

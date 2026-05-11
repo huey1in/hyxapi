@@ -22,6 +22,7 @@ import { Code, Zap, Clock, X, Eye, Send } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import CodeViewer from './CodeViewer';
 import SSEViewer from './SSEViewer';
+import { Button, IconButton } from '../ui';
 
 const TABS = [
   { key: 'preview', icon: Eye, label: '预览请求体' },
@@ -48,29 +49,29 @@ const DebugPanel = ({ debugData, activeDebugTab, onActiveDebugTabChange, styleSt
           <span className='font-semibold text-ui-text'>{t('调试信息')}</span>
         </div>
         {styleState.isMobile && onCloseDebugPanel && (
-          <button onClick={onCloseDebugPanel} className='w-7 h-7 flex items-center justify-center text-ui-text-3 hover:text-ui-text hover:bg-ui-bg-subtle rounded-lg transition-colors'>
-            <X size={16} />
-          </button>
+          <IconButton icon={X} size='sm' onClick={onCloseDebugPanel} title={t('关闭')} />
         )}
       </div>
 
       {/* Tab 切换 */}
       <div className='flex gap-1 mb-3 flex-shrink-0 border-b border-gray-200'>
         {TABS.map(({ key, icon: Icon, label }) => (
-          <button
+          <Button
             key={key}
+            variant='tab'
+            size='sm'
+            selected={activeKey === key}
+            icon={Icon}
             onClick={() => handleTabChange(key)}
-            className={`flex items-center gap-1.5 px-3 py-2 text-xs font-medium border-b-2 transition-colors -mb-px ${activeKey === key ? 'border-black text-ui-text' : 'border-transparent text-ui-text-2 hover:text-ui-text'}`}
           >
-            <Icon size={13} />
             {t(label)}
             {key === 'response' && debugData.sseMessages?.length > 0 && (
-              <span className='px-1.5 py-0.5 text-xs bg-blue-100 text-blue-600 rounded-full'>SSE ({debugData.sseMessages.length})</span>
+              <span className='px-1.5 py-0.5 text-xs bg-blue-100 text-blue-600 rounded-full ml-1'>SSE ({debugData.sseMessages.length})</span>
             )}
             {key === 'preview' && customRequestMode && (
-              <span className='px-1.5 py-0.5 text-xs bg-orange-100 text-orange-600 rounded-full'>自定义</span>
+              <span className='px-1.5 py-0.5 text-xs bg-orange-100 text-orange-600 rounded-full ml-1'>自定义</span>
             )}
-          </button>
+          </Button>
         ))}
       </div>
 

@@ -10,6 +10,7 @@ import {
   REDEMPTION_ACTIONS,
 } from '../../../constants/redemption.constants';
 import { showConfirm } from '../../common/ConfirmDialog';
+import TableActionBtn from '../common/TableActionBtn';
 
 const isExpired = (record) =>
   record.status === REDEMPTION_STATUS.UNUSED &&
@@ -44,24 +45,6 @@ const StatusPill = ({ status, record, t }) => {
     </span>
   );
 };
-
-const ActionBtn = ({ children, onClick, disabled, danger, title }) => (
-  <button
-    onClick={(e) => {
-      e.stopPropagation();
-      onClick?.(e);
-    }}
-    disabled={disabled}
-    title={title}
-    className={`inline-flex items-center gap-1 px-2 py-1 text-[11px] rounded border transition-colors whitespace-nowrap disabled:opacity-40 ${
-      danger
-        ? 'border-ui-danger/30 text-ui-danger hover:bg-ui-danger-bg disabled:hover:bg-transparent'
-        : 'border-ui-border text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-subtle disabled:hover:bg-transparent'
-    }`}
-  >
-    {children}
-  </button>
-);
 
 const RedemptionsTable = ({
   redemptions,
@@ -183,11 +166,11 @@ const RedemptionsTable = ({
                 </td>
                 <td className='px-3 py-3 align-middle text-right'>
                   <div className='flex items-center justify-end gap-1'>
-                    <ActionBtn onClick={() => copyText(record.key)} title={record.key}>
+                    <TableActionBtn onClick={() => copyText(record.key)} title={record.key}>
                       <Copy size={11} />
                       {t('复制')}
-                    </ActionBtn>
-                    <ActionBtn
+                    </TableActionBtn>
+                    <TableActionBtn
                       onClick={() => {
                         setEditingRedemption(record);
                         setShowEdit(true);
@@ -196,31 +179,31 @@ const RedemptionsTable = ({
                     >
                       <Edit2 size={11} />
                       {t('编辑')}
-                    </ActionBtn>
+                    </TableActionBtn>
                     {!expired && record.status === REDEMPTION_STATUS.UNUSED && (
-                      <ActionBtn
+                      <TableActionBtn
                         onClick={() =>
                           manageRedemption(record.id, REDEMPTION_ACTIONS.DISABLE, record)
                         }
                       >
                         <Power size={11} />
                         {t('禁用')}
-                      </ActionBtn>
+                      </TableActionBtn>
                     )}
                     {!expired && record.status === REDEMPTION_STATUS.DISABLED && (
-                      <ActionBtn
+                      <TableActionBtn
                         onClick={() =>
                           manageRedemption(record.id, REDEMPTION_ACTIONS.ENABLE, record)
                         }
                       >
                         <Power size={11} />
                         {t('启用')}
-                      </ActionBtn>
+                      </TableActionBtn>
                     )}
-                    <ActionBtn danger onClick={() => handleDelete(record)}>
+                    <TableActionBtn danger onClick={() => handleDelete(record)}>
                       <Trash2 size={11} />
                       {t('删除')}
-                    </ActionBtn>
+                    </TableActionBtn>
                   </div>
                 </td>
               </tr>

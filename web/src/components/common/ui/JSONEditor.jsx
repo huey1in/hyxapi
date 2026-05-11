@@ -5,15 +5,15 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Plus, Trash2, AlertTriangle } from 'lucide-react';
-import { Button, IconButton, Tabs as UITabs } from '../../ui';
+import { Button, IconButton, Tabs as UITabs, Switch, inputClass } from '../../ui';
 
 const generateUniqueId = (() => {
   let counter = 0;
   return () => `kv_${counter++}`;
 })();
 
-const inputCls =
-  'w-full px-2.5 py-1.5 text-xs bg-transparent border border-ui-border rounded-lg text-ui-text placeholder:text-ui-text-3 outline-none focus:border-ui-text-3 transition-colors';
+// 单一来源：ui/Input 的 inputClass 工厂（小尺寸）
+const inputCls = inputClass({ variant: 'admin', size: 'sm' });
 
 const JSONEditor = ({
   value = '',
@@ -212,18 +212,7 @@ const JSONEditor = ({
     if (valueType === 'boolean') {
       return (
         <div className='flex items-center gap-2'>
-          <button
-            type='button'
-            onClick={() => updateValue(pairId, !val)}
-            className={`relative inline-flex h-4 w-7 items-center rounded-full transition-colors ${
-              val ? 'bg-ui-accent' : 'bg-ui-bg-subtle border border-ui-border'
-            }`}
-          >
-            <span
-              className={`inline-block h-3 w-3 transform rounded-full transition-transform shadow ${val ? 'translate-x-[14px]' : 'translate-x-0.5'}`}
-              style={{ background: '#ffffff' }}
-            />
-          </button>
+          <Switch checked={val} onChange={(v) => updateValue(pairId, v)} size='sm' />
           <span className='text-[11px] text-ui-text-3'>{val ? 'true' : 'false'}</span>
         </div>
       );
@@ -388,25 +377,19 @@ const JSONEditor = ({
                     onChange={(e) => updateValue(p.id, e.target.value)}
                     className={inputCls}
                   />
-                  <button
-                    type='button'
+                  <IconButton
+                    icon={Trash2}
+                    size='sm'
+                    variant='danger'
                     onClick={() => removeKeyValue(p.id)}
-                    className='p-1.5 rounded text-ui-danger hover:bg-ui-danger-bg'
-                  >
-                    <Trash2 size={13} />
-                  </button>
+                  />
                 </div>
               );
             })}
             <div className='pt-1 flex justify-center'>
-              <button
-                type='button'
-                onClick={addKeyValue}
-                className='inline-flex items-center gap-1 px-3 py-1 text-[11px] rounded-xl border border-ui-border text-ui-brand hover:bg-ui-bg-subtle whitespace-nowrap'
-              >
-                <Plus size={12} />
+              <Button size='sm' variant='secondary' icon={Plus} onClick={addKeyValue}>
                 {t('添加模型区域')}
-              </button>
+              </Button>
             </div>
           </div>
         </div>
@@ -421,6 +404,7 @@ const JSONEditor = ({
       {label && (
         <label className='block text-xs font-medium text-ui-text-2 mb-1.5'>{label}</label>
       )}
+      {/* JSONEditor 控件框架（input-like wrapper with tabs header），不是数据卡片，属于 JSONEditor 视觉系内部实现 */}
       <div className='border border-ui-border rounded-2xl overflow-hidden'>
         <div className='flex items-center justify-between px-3 py-2 border-b border-ui-border'>
           <UITabs

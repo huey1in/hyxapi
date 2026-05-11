@@ -19,6 +19,7 @@ For commercial licensing, please contact support@quantumnous.com
 
 import React from 'react';
 import ModalDialog from '../../../common/ModalDialog';
+import { Button } from '../../../ui';
 
 const CopyTokensModal = ({
   visible,
@@ -45,18 +46,12 @@ const CopyTokensModal = ({
       title={t('复制令牌')}
       footer={
         <>
-          <button
-            onClick={handleCopyWithName}
-            className='inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium rounded-xl border border-ui-border text-ui-text hover:bg-ui-bg-subtle transition-colors'
-          >
+          <Button variant='secondary' onClick={handleCopyWithName}>
             {t('名称+密钥')}
-          </button>
-          <button
-            onClick={handleCopyKeyOnly}
-            className='inline-flex items-center gap-1.5 px-4 py-2 text-sm font-semibold rounded-xl bg-ui-accent text-ui-accent-fg hover:bg-ui-accent-hover transition-colors'
-          >
+          </Button>
+          <Button onClick={handleCopyKeyOnly}>
             {t('仅密钥')}
-          </button>
+          </Button>
         </>
       }
     >

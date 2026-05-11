@@ -28,6 +28,7 @@ import {
 } from '../../../../../helpers';
 import PricingCardSkeleton from './PricingCardSkeleton';
 import { useMinimumLoadingTime } from '../../../../../hooks/common/useMinimumLoadingTime';
+import { Button, IconButton } from '../../../../ui';
 import { renderLimitedItems } from '../../../../common/ui/RenderUtils';
 import { useIsMobile } from '../../../../../hooks/common/useIsMobile';
 
@@ -261,15 +262,14 @@ const PricingCardView = ({
 
                   <div className='flex items-center space-x-2 ml-3'>
                     {/* 复制按钮 */}
-                    <button
-                      className='inline-flex items-center justify-center w-8 h-8 rounded-lg text-ui-text-3 hover:text-ui-text hover:bg-ui-bg-subtle transition-colors'
+                    <IconButton
+                      icon={Copy}
+                      size='sm'
                       onClick={(e) => {
                         e.stopPropagation();
                         copyText(model.model_name);
                       }}
-                    >
-                      <Copy size={12} />
-                    </button>
+                    />
 
                     {/* 选择框 */}
                     {rowSelection && (
@@ -306,17 +306,16 @@ const PricingCardView = ({
                         <span className='text-xs font-medium text-ui-text'>
                           {t('倍率信息')}
                         </span>
-                        <button
-                          className='text-blue-500 cursor-pointer'
+                        <IconButton
+                          icon={HelpCircle}
+                          size='xs'
                           title={t('倍率是为了方便换算不同价格的模型')}
                           onClick={(e) => {
                             e.stopPropagation();
                             setModalImageUrl('/ratio.png');
                             setIsModalOpenurl(true);
                           }}
-                        >
-                          <HelpCircle size={14} />
-                        </button>
+                        />
                       </div>
                       <div className='grid grid-cols-3 gap-2 text-xs text-ui-text-2'>
                         <div>
@@ -345,23 +344,25 @@ const PricingCardView = ({
       {/* 分页 */}
       {filteredModels.length > 0 && (
         <div className='flex justify-center items-center gap-4 mt-6 py-4 border-t pricing-pagination-divider'>
-          <button
-            className='px-3 py-1.5 text-sm rounded-lg border border-ui-border text-ui-text hover:bg-ui-bg-subtle transition-colors disabled:opacity-50'
+          <Button
+            variant='secondary'
+            size='sm'
             disabled={currentPage <= 1}
             onClick={() => setCurrentPage(currentPage - 1)}
           >
             ←
-          </button>
+          </Button>
           <span className='text-sm text-ui-text-2'>
             {currentPage} / {Math.ceil(filteredModels.length / pageSize)}
           </span>
-          <button
-            className='px-3 py-1.5 text-sm rounded-lg border border-ui-border text-ui-text hover:bg-ui-bg-subtle transition-colors disabled:opacity-50'
+          <Button
+            variant='secondary'
+            size='sm'
             disabled={currentPage >= Math.ceil(filteredModels.length / pageSize)}
             onClick={() => setCurrentPage(currentPage + 1)}
           >
             →
-          </button>
+          </Button>
           <select
             className='px-2 py-1.5 text-sm border border-ui-border rounded-lg bg-transparent text-ui-text outline-none'
             value={pageSize}

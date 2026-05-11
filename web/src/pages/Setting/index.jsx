@@ -18,6 +18,7 @@ import LimitsSetting from '../../components/settings/LimitsSetting';
 import DashboardSetting from '../../components/settings/DashboardSetting';
 import RatioSetting from '../../components/settings/RatioSetting';
 import PerformanceSetting from '../../components/settings/PerformanceSetting';
+import { Button } from '../../components/ui';
 
 const TABS = [
   { key: 'platform', label: '平台设置' },
@@ -85,17 +86,15 @@ const Setting = () => {
             {TABS.map((tb) => {
               const isActive = active === tb.key;
               return (
-                <button
+                <Button
                   key={tb.key}
+                  variant={isActive ? 'secondary' : 'ghost'}
+                  size='sm'
                   onClick={() => onChange(tb.key)}
-                  className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-xl whitespace-nowrap transition-colors flex-shrink-0 ${
-                    isActive
-                      ? 'bg-ui-bg-subtle text-ui-text font-semibold'
-                      : 'text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-subtle'
-                  }`}
+                  className='flex-shrink-0'
                 >
                   {t(tb.label)}
-                </button>
+                </Button>
               );
             })}
           </div>

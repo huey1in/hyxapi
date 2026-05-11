@@ -22,20 +22,7 @@ import { Download, Upload, RotateCcw, Settings2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { exportConfig, importConfig, clearConfig, hasStoredConfig, getConfigTimestamp } from './configStorage';
 import { showSuccess, showError } from '../../helpers';
-import { Button, IconButton, Dropdown } from '../ui';
-
-const ConfirmDialog = ({ title, content, okText, cancelText, onOk, onCancel, danger }) => (
-  <div className='fixed inset-0 z-[9999] flex items-center justify-center bg-black/40'>
-    <div className='bg-ui-bg-elevated rounded-2xl p-6 w-80 shadow-xl'>
-      <h3 className='font-semibold text-ui-text mb-2'>{title}</h3>
-      <p className='text-sm text-ui-text-2 mb-6'>{content}</p>
-      <div className='flex gap-2 justify-end'>
-        <Button variant='secondary' onClick={onCancel}>{cancelText}</Button>
-        <Button variant={danger ? 'dangerSolid' : 'primary'} onClick={onOk}>{okText}</Button>
-      </div>
-    </div>
-  </div>
-);
+import { Button, IconButton, Dropdown, ConfirmDialog } from '../ui';
 
 const ConfigManager = ({ currentConfig, onConfigImport, onConfigReset, styleState, messages }) => {
   const { t } = useTranslation();
@@ -116,7 +103,18 @@ const ConfigManager = ({ currentConfig, onConfigImport, onConfigReset, styleStat
 
   return (
     <>
-      {dialog && <ConfirmDialog {...dialog} />}
+      {dialog && (
+        <ConfirmDialog
+          open
+          title={dialog.title}
+          description={dialog.content}
+          confirmText={dialog.okText}
+          cancelText={dialog.cancelText}
+          danger={dialog.danger}
+          onConfirm={dialog.onOk}
+          onCancel={dialog.onCancel}
+        />
+      )}
       <input ref={fileInputRef} type='file' accept='.json' onChange={handleFileChange} style={{ display: 'none' }} />
 
       {styleState.isMobile ? (

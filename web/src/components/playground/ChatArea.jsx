@@ -22,6 +22,7 @@ import { Eye, EyeOff, Square, Trash2, Send } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { usePlayground } from '../../contexts/PlaygroundContext';
 import { showWarning, showSuccess } from '../../helpers';
+import { Button, IconButton } from '../ui';
 
 const ChatArea = ({
   chatRef,
@@ -119,13 +120,14 @@ const ChatArea = ({
           <span className='text-sm font-medium text-ui-text'>
             {inputs.model || t('选择模型开始对话')}
           </span>
-          <button
+          <Button
+            variant='secondary'
+            size='sm'
+            icon={showDebugPanel ? EyeOff : Eye}
             onClick={onToggleDebugPanel}
-            className='flex items-center gap-1.5 px-3 py-1.5 text-xs border border-gray-200 rounded-lg text-ui-text-2 hover:bg-ui-bg-subtle transition-colors'
           >
-            {showDebugPanel ? <EyeOff size={13} /> : <Eye size={13} />}
             {showDebugPanel ? t('隐藏调试') : t('显示调试')}
-          </button>
+          </Button>
         </div>
       )}
 
@@ -168,13 +170,13 @@ const ChatArea = ({
       <div className='flex-shrink-0 px-4 sm:px-6 py-3 border-t border-gray-200'>
         <div className='flex items-end gap-2'>
           {/* 清空按钮 */}
-          <button
-            onClick={onClearMessages}
+          <IconButton
+            icon={Trash2}
+            shape='circle'
+            tone='red'
             title={t('清空对话')}
-            className='flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-ui-text-3 hover:text-red-500 hover:bg-red-50 transition-colors'
-          >
-            <Trash2 size={15} />
-          </button>
+            onClick={onClearMessages}
+          />
 
           {/* 输入框 */}
           <textarea
@@ -192,20 +194,24 @@ const ChatArea = ({
 
           {/* 停止/发送按钮 */}
           {isGenerating ? (
-            <button
+            <IconButton
+              icon={(props) => <Square {...props} fill='currentColor' />}
+              variant='circleSolid'
+              shape='circle'
+              size='xl'
+              title={t('停止生成')}
               onClick={onStopGenerator}
-              className='flex-shrink-0 w-9 h-9 rounded-full flex items-center justify-center bg-red-500 text-white hover:bg-red-600 transition-colors'
-            >
-              <Square size={14} fill='white' />
-            </button>
+            />
           ) : (
-            <button
+            <IconButton
+              icon={Send}
+              variant='circleSolid'
+              shape='circle'
+              size='xl'
+              title={t('发送')}
               onClick={handleSend}
               disabled={!inputValue.trim()}
-              className='flex-shrink-0 w-9 h-9 rounded-full flex items-center justify-center bg-black text-white hover:bg-[#333] transition-colors disabled:opacity-40'
-            >
-              <Send size={15} />
-            </button>
+            />
           )}
         </div>
         <p className='text-xs text-ui-text-3 mt-1.5 ml-10'>Enter 发送 · Shift+Enter 换行 · Ctrl+V 粘贴图片</p>

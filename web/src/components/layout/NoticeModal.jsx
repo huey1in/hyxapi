@@ -18,7 +18,6 @@ For commercial licensing, please contact support@quantumnous.com
 */
 
 import React, { useEffect, useState, useContext, useMemo } from 'react';
-import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
 import { marked } from 'marked';
 import { Bell, Megaphone, X, Loader2 } from 'lucide-react';
@@ -26,6 +25,7 @@ import { API, showError, getRelativeTime } from '../../helpers';
 import { StatusContext } from '../../context/Status';
 import NotificationEmptyIcon from './icons/NotificationEmptyIcon';
 import AnnouncementEmptyIcon from './icons/AnnouncementEmptyIcon';
+import { Button, IconButton, ModalShell } from '../ui';
 
 const TYPE_COLOR = {
   success: '#22c55e',
@@ -112,18 +112,6 @@ const NoticeModal = ({
     if (visible) setActiveTab(defaultTab);
   }, [defaultTab, visible]);
 
-  useEffect(() => {
-    if (!visible) return;
-    const handleEsc = (e) => e.key === 'Escape' && onClose();
-    document.addEventListener('keydown', handleEsc);
-    const original = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
-    return () => {
-      document.removeEventListener('keydown', handleEsc);
-      document.body.style.overflow = original;
-    };
-  }, [visible, onClose]);
-
   if (!visible) return null;
 
   const tabs = [
@@ -191,23 +179,22 @@ const NoticeModal = ({
     );
   };
 
-  return createPortal(
-    <div
-      className='fixed inset-0 z-[100] flex items-center justify-center p-4'
-      style={{ background: 'rgba(0,0,0,0.5)' }}
-      onClick={onClose}
+  return (
+    <ModalShell
+      open={visible}
+      onClose={onClose}
+      maxWidth='42rem'
+      maxHeight='85vh'
+      className='flex flex-col'
     >
-      <div
-        className='rounded-2xl shadow-2xl border border-ui-border flex flex-col overflow-hidden w-full max-w-2xl max-h-[85vh]'
-        style={{ backgroundColor: 'var(--page-bg)' }}
-        onClick={(e) => e.stopPropagation()}
-      >
         {/* Header */}
         <div className='flex items-center justify-between gap-3 px-5 py-3.5 border-b border-ui-border'>
           <div className='flex items-center gap-4 min-w-0'>
             <span className='text-base font-semibold text-ui-text whitespace-nowrap'>
               {t('系统公告')}
             </span>
+            {/* Segmented control 视觉（"凸起" active），与 RadioChipGroup 同类。
+                此处独立实现因为带 Icon；若再次出现可抽 ui/Segmented 组件。 */}
             <div className='inline-flex bg-ui-bg-subtle rounded-full p-0.5'>
               {tabs.map(({ key, Icon, label }) => (
                 <button
@@ -224,13 +211,14 @@ const NoticeModal = ({
               ))}
             </div>
           </div>
-          <button
+          <IconButton
+            icon={X}
+            variant='ghost'
+            size='sm'
             onClick={onClose}
             aria-label={t('关闭')}
-            className='p-1.5 rounded-lg text-ui-text-2 hover:bg-ui-bg-subtle hover:text-ui-text transition-colors flex-shrink-0'
-          >
-            <X size={18} />
-          </button>
+            className='flex-shrink-0'
+          />
         </div>
 
         {/* Body */}
@@ -240,22 +228,14 @@ const NoticeModal = ({
 
         {/* Footer */}
         <div className='flex justify-end gap-2 px-5 py-3 border-t border-ui-border'>
-          <button
-            onClick={handleCloseTodayNotice}
-            className='px-4 py-1.5 text-sm font-medium rounded-lg border border-ui-border text-ui-text hover:bg-ui-bg-subtle transition-colors'
-          >
+          <Button variant='secondary' size='sm' onClick={handleCloseTodayNotice}>
             {t('今日关闭')}
-          </button>
-          <button
-            onClick={onClose}
-            className='px-4 py-1.5 text-sm font-medium rounded-lg bg-ui-accent text-ui-accent-fg hover:bg-ui-accent-hover transition-colors'
-          >
+          </Button>
+          <Button variant='primary' size='sm' onClick={onClose}>
             {t('关闭公告')}
-          </button>
+          </Button>
         </div>
-      </div>
-    </div>,
-    document.body,
+    </ModalShell>
   );
 };
 

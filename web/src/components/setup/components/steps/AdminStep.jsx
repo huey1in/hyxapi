@@ -18,6 +18,7 @@ For commercial licensing, please contact support@quantumnous.com
 */
 
 import React, { useState } from 'react';
+import { Card } from '../../../ui';
 
 const AdminStep = ({
   setupStatus,
@@ -56,11 +57,11 @@ const AdminStep = ({
   return (
     <>
       {setupStatus.root_init ? (
-        <div className='p-6 rounded-2xl bg-[#fafafa]'>
+        <Card variant='filled' radius='lg' padding='lg'>
           <p className='text-ui-text-2 text-sm leading-relaxed'>
             {t('管理员账号已经初始化过，请继续设置其他参数')}
           </p>
-        </div>
+        </Card>
       ) : (
         <div className='space-y-6'>
           <div>

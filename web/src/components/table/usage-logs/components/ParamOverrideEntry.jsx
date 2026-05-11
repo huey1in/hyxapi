@@ -18,6 +18,7 @@ For commercial licensing, please contact support@quantumnous.com
 */
 
 import React from 'react';
+import { Button } from '../../../ui';
 
 const ParamOverrideEntry = ({ count, onOpen, t }) => {
   return (
@@ -35,13 +36,9 @@ const ParamOverrideEntry = ({ count, onOpen, t }) => {
       >
         {t('{{count}} 项操作', { count })}
       </span>
-      <button
-        type='button'
-        className='text-xs font-semibold text-ui-accent hover:underline'
-        onClick={onOpen}
-      >
+      <Button variant='link' size='sm' onClick={onOpen}>
         {t('查看详情')}
-      </button>
+      </Button>
     </div>
   );
 };

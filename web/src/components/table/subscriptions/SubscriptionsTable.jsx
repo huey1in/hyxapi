@@ -7,6 +7,7 @@ import { Loader2, Edit2, Power, Info, Ticket } from 'lucide-react';
 import { renderQuota } from '../../../helpers';
 import { convertUSDToCurrency } from '../../../helpers/render';
 import { showConfirm } from '../../common/ConfirmDialog';
+import TableActionBtn from '../common/TableActionBtn';
 
 const StatusPill = ({ enabled, t }) => (
   <span
@@ -54,19 +55,6 @@ const formatResetPeriod = (plan, t) => {
   }
   return t('不重置');
 };
-
-const ActionBtn = ({ children, onClick, danger }) => (
-  <button
-    onClick={onClick}
-    className={`inline-flex items-center gap-1 px-2 py-1 text-[11px] rounded border transition-colors whitespace-nowrap ${
-      danger
-        ? 'border-ui-danger/30 text-ui-danger hover:bg-ui-danger-bg'
-        : 'border-ui-border text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-subtle'
-    }`}
-  >
-    {children}
-  </button>
-);
 
 const SubscriptionsTable = ({
   plans,
@@ -189,24 +177,24 @@ const SubscriptionsTable = ({
                   style={{ backgroundColor: 'var(--page-bg)' }}
                 >
                   <div className='flex items-center justify-end gap-1'>
-                    <ActionBtn onClick={() => openCodes?.(record)}>
+                    <TableActionBtn onClick={() => openCodes?.(record)}>
                       <Ticket size={11} />
                       {t('兑换码')}
-                    </ActionBtn>
-                    <ActionBtn onClick={() => openEdit(record)}>
+                    </TableActionBtn>
+                    <TableActionBtn onClick={() => openEdit(record)}>
                       <Edit2 size={11} />
                       {t('编辑')}
-                    </ActionBtn>
+                    </TableActionBtn>
                     {plan.enabled ? (
-                      <ActionBtn danger onClick={() => handleToggle(record)}>
+                      <TableActionBtn danger onClick={() => handleToggle(record)}>
                         <Power size={11} />
                         {t('禁用')}
-                      </ActionBtn>
+                      </TableActionBtn>
                     ) : (
-                      <ActionBtn onClick={() => handleToggle(record)}>
+                      <TableActionBtn onClick={() => handleToggle(record)}>
                         <Power size={11} />
                         {t('启用')}
-                      </ActionBtn>
+                      </TableActionBtn>
                     )}
                   </div>
                 </td>

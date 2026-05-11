@@ -18,22 +18,17 @@ For commercial licensing, please contact support@quantumnous.com
 */
 
 import React from 'react';
+import { Button } from '../../../../ui';
 
 const FilterModalFooter = ({ onReset, onConfirm, t }) => {
   return (
     <div className='flex justify-end gap-2'>
-      <button
-        className='inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium rounded-xl border border-ui-border text-ui-text hover:bg-ui-bg-subtle transition-colors'
-        onClick={onReset}
-      >
+      <Button variant='secondary' onClick={onReset}>
         {t('重置')}
-      </button>
-      <button
-        className='inline-flex items-center gap-1.5 px-4 py-2 text-sm font-semibold rounded-xl bg-ui-accent text-ui-accent-fg hover:bg-ui-accent-hover transition-colors'
-        onClick={onConfirm}
-      >
+      </Button>
+      <Button onClick={onConfirm}>
         {t('确定')}
-      </button>
+      </Button>
     </div>
   );
 };

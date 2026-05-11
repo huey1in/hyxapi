@@ -18,6 +18,7 @@ import {
 import { useIsMobile } from '../../../../hooks/common/useIsMobile';
 import SlideOver from '../../../common/SlideOver';
 import { showConfirm } from '../../../common/ConfirmDialog';
+import { Button, Card, inputClass } from '../../../ui';
 import {
   TextField,
   NumberField,
@@ -25,13 +26,13 @@ import {
 } from '../../../common/form/Primitives';
 
 const SectionCard = ({ title, hint, children }) => (
-  <div className='border border-ui-border rounded-2xl p-4'>
+  <Card>
     <div className='mb-3'>
       <div className='text-sm font-semibold text-ui-text'>{title}</div>
       {hint && <div className='text-[11px] text-ui-text-3 mt-0.5'>{hint}</div>}
     </div>
     <div className='space-y-3'>{children}</div>
-  </div>
+  </Card>
 );
 
 const DEFAULTS = () => ({
@@ -177,19 +178,12 @@ const EditRedemptionModal = (props) => {
       }
       footer={
         <>
-          <button
-            onClick={props.handleClose}
-            className='inline-flex items-center px-3.5 py-1.5 text-xs font-medium rounded-xl text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-subtle whitespace-nowrap'
-          >
+          <Button variant='ghost' size='sm' onClick={props.handleClose}>
             {t('取消')}
-          </button>
-          <button
-            onClick={submit}
-            disabled={loading}
-            className='inline-flex items-center px-4 py-1.5 text-xs font-semibold rounded-xl bg-ui-accent text-ui-accent-fg hover:bg-ui-accent-hover disabled:opacity-50 whitespace-nowrap'
-          >
+          </Button>
+          <Button onClick={submit} loading={loading} size='sm'>
             {loading ? t('提交中...') : t('提交')}
-          </button>
+          </Button>
         </>
       }
       bodyClass='p-5 space-y-4'
@@ -208,7 +202,7 @@ const EditRedemptionModal = (props) => {
             type='datetime-local'
             value={values.expired_time}
             onChange={(e) => set('expired_time', e.target.value)}
-            className='w-full px-3 py-2 text-sm bg-transparent border border-ui-border rounded-xl text-ui-text outline-none focus:border-ui-text-3 transition-colors'
+            className={inputClass({ variant: 'admin', size: 'md' })}
           />
         </FieldRow>
       </SectionCard>

@@ -2644,18 +2644,20 @@ const EditChannelModal = (props) => {
                 renderStringValueSuffix={({ pairKey, value }) => {
                   if (!MODEL_FETCHABLE_CHANNEL_TYPES.has(inputs.type)) return null;
                   const disabled = !String(pairKey ?? '').trim();
+                  const SearchIcon = () => (
+                    <svg width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='currentColor' strokeWidth='2'><circle cx='11' cy='11' r='8'/><path d='m21 21-4.3-4.3'/></svg>
+                  );
                   return (
-                    <button
+                    <IconButton
+                      icon={SearchIcon}
+                      size='sm'
                       title={t('选择模型')}
                       disabled={disabled}
                       onClick={(e) => {
                         e.stopPropagation();
                         openModelMappingValueModal({ pairKey, value });
                       }}
-                      className='p-1 rounded text-ui-text-3 hover:text-ui-text hover:bg-ui-bg-subtle disabled:opacity-40'
-                    >
-                      <svg width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='currentColor' strokeWidth='2'><circle cx='11' cy='11' r='8'/><path d='m21 21-4.3-4.3'/></svg>
-                    </button>
+                    />
                   );
                 }}
                 extraText={t('键为请求中的模型名称，值为要替换的模型名称')}
@@ -2674,15 +2676,17 @@ const EditChannelModal = (props) => {
             </Section>
 
             {/* Advanced settings — collapsible */}
-            <button
+            <Button
+              variant='secondary'
+              block
               onClick={() => toggleAdvancedSettings(!advancedSettingsOpen)}
-              className='flex items-center justify-between w-full px-3 py-2.5 rounded-xl border border-ui-border bg-ui-bg-subtle text-ui-text-2 hover:text-ui-text hover:bg-ui-bg transition-colors'
+              className='justify-between'
             >
               <span className='text-sm font-medium'>{t('高级设置')}</span>
               <span className='text-xs flex items-center gap-1'>
                 {advancedSettingsOpen ? t('收起') : t('展开')}
               </span>
-            </button>
+            </Button>
 
             {advancedSettingsOpen && (
               <div className='space-y-5'>

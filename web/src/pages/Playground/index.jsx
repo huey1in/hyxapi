@@ -54,17 +54,21 @@ const SelectChip = ({
     portal
     popupClassName='w-56'
     renderTrigger={({ open, current, ref, onClick }) => (
-      <button
+      <Button
         ref={ref}
+        variant='ghost'
+        size='sm'
         onClick={onClick}
-        className='inline-flex items-center gap-1 h-9 px-2 md:px-3 rounded-xl text-[13px] font-medium text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-subtle transition-colors max-w-[110px] md:max-w-[150px] min-w-0'
+        iconRight={
+          <ChevronDownIcon
+            size={13}
+            className={`text-ui-text-3 transition-transform flex-shrink-0 ${open ? 'rotate-180' : ''}`}
+          />
+        }
+        className='max-w-[110px] md:max-w-[150px] min-w-0'
       >
         <span className='truncate'>{current?.label || placeholder}</span>
-        <ChevronDownIcon
-          size={13}
-          className={`text-ui-text-3 transition-transform flex-shrink-0 ${open ? 'rotate-180' : ''}`}
-        />
-      </button>
+      </Button>
     )}
   />
 );
@@ -104,15 +108,14 @@ const UserBubble = ({ children, images = [] }) => (
   </div>
 );
 
-const AssistantActionBtn = ({ onClick, title, children }) => (
-  <button
+const AssistantActionBtn = ({ onClick, title, icon }) => (
+  <IconButton
+    icon={icon}
+    size='sm'
     onClick={onClick}
     title={title}
     aria-label={title}
-    className='inline-flex items-center justify-center w-7 h-7 rounded-md text-ui-text-3 hover:text-ui-text hover:bg-ui-bg-subtle transition-colors'
-  >
-    {children}
-  </button>
+  />
 );
 
 const TOPIC_POOL = [
@@ -174,14 +177,18 @@ const AssistantMessage = ({ msg, onRetry, t }) => {
       {msg.status !== 'loading' && msg.status !== 'incomplete' && (
         <div className='flex items-center gap-0.5 -ml-1'>
           {!isError && text && (
-            <AssistantActionBtn onClick={onCopy} title={copied ? t('已复制') : t('复制')}>
-              {copied ? <Check size={13} /> : <Copy size={13} />}
-            </AssistantActionBtn>
+            <AssistantActionBtn
+              onClick={onCopy}
+              title={copied ? t('已复制') : t('复制')}
+              icon={copied ? Check : Copy}
+            />
           )}
           {onRetry && (
-            <AssistantActionBtn onClick={onRetry} title={t('重新生成')}>
-              <RotateCcw size={13} />
-            </AssistantActionBtn>
+            <AssistantActionBtn
+              onClick={onRetry}
+              title={t('重新生成')}
+              icon={RotateCcw}
+            />
           )}
         </div>
       )}
@@ -435,14 +442,15 @@ const Playground = () => {
                 </p>
                 <div className='w-full max-w-2xl grid grid-cols-1 sm:grid-cols-2 gap-3'>
                   {localizedTopics.map(({ key, label }) => (
-                    <button
+                    <Button
                       key={key}
+                      variant='toggle'
                       onClick={() => handlePickTopic(label)}
-                      className='text-left px-4 py-3 rounded-2xl border border-ui-border hover:bg-ui-bg-subtle text-[14px] leading-relaxed text-ui-text transition-colors'
-                      style={{ backgroundColor: 'var(--page-bg)' }}
+                      block
+                      className='!justify-start text-left'
                     >
                       {label}
-                    </button>
+                    </Button>
                   ))}
                 </div>
               </div>
@@ -508,14 +516,16 @@ const Playground = () => {
                       alt=''
                       className='w-16 h-16 rounded-xl border border-ui-border object-cover'
                     />
-                    <button
-                      type='button'
+                    <IconButton
+                      icon={XIcon}
+                      size='sm'
+                      shape='circle'
+                      variant='outline'
+                      tone='red'
                       onClick={() => removePendingImage(i)}
-                      className='absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-ui-bg-elevated border border-ui-border text-ui-text-2 hover:text-ui-text hover:border-ui-text-3 transition-colors flex items-center justify-center shadow-sm'
                       aria-label='remove'
-                    >
-                      <XIcon size={11} />
-                    </button>
+                      className='absolute -top-1.5 -right-1.5'
+                    />
                   </div>
                 ))}
               </div>

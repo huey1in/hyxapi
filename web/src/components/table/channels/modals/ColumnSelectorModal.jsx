@@ -21,6 +21,7 @@ import React from 'react';
 import { Check } from 'lucide-react';
 import ModalDialog from '../../../common/ModalDialog';
 import { getChannelsColumns } from '../ChannelsColumnDefs';
+import { Button } from '../../../ui';
 
 const Checkbox = ({ checked, indeterminate, onChange, children }) => {
   const ref = React.useRef(null);
@@ -112,24 +113,15 @@ const ColumnSelectorModal = ({
       width={560}
       footer={
         <>
-          <button
-            onClick={() => initDefaultColumns()}
-            className='inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium rounded-xl border border-ui-border text-ui-text hover:bg-ui-bg-subtle transition-colors'
-          >
+          <Button variant='secondary' onClick={() => initDefaultColumns()}>
             {t('重置')}
-          </button>
-          <button
-            onClick={close}
-            className='inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium rounded-xl border border-ui-border text-ui-text hover:bg-ui-bg-subtle transition-colors'
-          >
+          </Button>
+          <Button variant='secondary' onClick={close}>
             {t('取消')}
-          </button>
-          <button
-            onClick={close}
-            className='inline-flex items-center gap-1.5 px-4 py-2 text-sm font-semibold rounded-xl bg-ui-accent text-ui-accent-fg hover:bg-ui-accent-hover transition-colors'
-          >
+          </Button>
+          <Button onClick={close}>
             {t('确定')}
-          </button>
+          </Button>
         </>
       }
     >

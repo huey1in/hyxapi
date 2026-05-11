@@ -21,6 +21,7 @@ import React, { useState, useMemo, useCallback } from 'react';
 import { Copy, ChevronDown, ChevronUp } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { copy, showSuccess, showError } from '../../helpers';
+import { IconButton, Button } from '../ui';
 
 const PERFORMANCE_CONFIG = {
   MAX_DISPLAY_LENGTH: 50000, // 最大显示字符数
@@ -178,7 +179,6 @@ const formatContent = (content) => {
 const CodeViewer = ({ content, title, language = 'json' }) => {
   const { t } = useTranslation();
   const [copied, setCopied] = useState(false);
-  const [isHoveringCopy, setIsHoveringCopy] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
 
@@ -284,24 +284,16 @@ const CodeViewer = ({ content, title, language = 'json' }) => {
 
       {/* 复制按钮 */}
       <div
-        style={{
-          ...codeThemeStyles.actionButton,
-          ...(isHoveringCopy ? codeThemeStyles.actionButtonHover : {}),
-          top: warningTop,
-          right: '12px',
-        }}
-        onMouseEnter={() => setIsHoveringCopy(true)}
-        onMouseLeave={() => setIsHoveringCopy(false)}
+        className='absolute right-3 z-10'
+        style={{ top: warningTop }}
       >
-        <Tooltip content={copied ? t('已复制') : t('复制代码')}>
-          <button
-            onClick={handleCopy}
-            title={copied ? t('已复制') : t('复制代码')}
-            style={{ backgroundColor: 'transparent', border: 'none', color: copied ? '#4ade80' : '#d4d4d4', padding: '6px', cursor: 'pointer' }}
-          >
-            <Copy size={14} />
-          </button>
-        </Tooltip>
+        <IconButton
+          icon={Copy}
+          size='sm'
+          variant='ghost'
+          title={copied ? t('已复制') : t('复制代码')}
+          onClick={handleCopy}
+        />
       </div>
 
       {/* 代码内容 */}
@@ -344,28 +336,20 @@ const CodeViewer = ({ content, title, language = 'json' }) => {
 
       {/* 展开/收起按钮 */}
       {contentMetrics.isLarge && !isProcessing && (
-        <div
-          style={{
-            ...codeThemeStyles.actionButton,
-            bottom: '12px',
-            left: '50%',
-            transform: 'translateX(-50%)',
-          }}
-        >
-          <Tooltip content={isExpanded ? t('收起内容') : t('显示完整内容')}>
-            <button
-              onClick={handleToggleExpand}
-              style={{ backgroundColor: 'transparent', border: 'none', color: '#d4d4d4', padding: '6px 12px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}
-            >
-              {isExpanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
-              {isExpanded ? t('收起') : t('展开')}
-              {!isExpanded && (
-                <span style={{ fontSize: '11px', opacity: 0.7, marginLeft: '4px' }}>
-                  (+{Math.round((contentMetrics.length - PERFORMANCE_CONFIG.PREVIEW_LENGTH) / 1000)}K)
-                </span>
-              )}
-            </button>
-          </Tooltip>
+        <div className='absolute bottom-3 left-1/2 -translate-x-1/2 z-10'>
+          <Button
+            variant='ghost'
+            size='sm'
+            icon={isExpanded ? ChevronUp : ChevronDown}
+            onClick={handleToggleExpand}
+          >
+            {isExpanded ? t('收起') : t('展开')}
+            {!isExpanded && (
+              <span className='text-xs opacity-70 ml-1'>
+                (+{Math.round((contentMetrics.length - PERFORMANCE_CONFIG.PREVIEW_LENGTH) / 1000)}K)
+              </span>
+            )}
+          </Button>
         </div>
       )}
     </div>

@@ -23,7 +23,7 @@ import { Loader2, ChevronLeft, ChevronRight, Search } from 'lucide-react';
 import ModalDialog from '../../../common/ModalDialog';
 import { showConfirm } from '../../../common/ConfirmDialog';
 import Select from '../../../common/form/Select';
-import { Button } from '../../../ui';
+import { Button, Card } from '../../../ui';
 import {
   API,
   showError,
@@ -339,7 +339,7 @@ const MultiKeyManageModal = ({ visible, onCancel, channel, onRefresh }) => {
   };
 
   const StatCard = ({ label, count, total, color, percent }) => (
-    <div className='flex-1 bg-ui-bg-elevated border border-ui-border rounded-xl p-3'>
+    <Card variant='elevated' padding='sm' radius='md' className='flex-1'>
       <div className='flex items-center gap-2 mb-2'>
         <span
           className='inline-block w-2 h-2 rounded-full'
@@ -362,7 +362,7 @@ const MultiKeyManageModal = ({ visible, onCancel, channel, onRefresh }) => {
           style={{ width: `${percent}%`, background: color }}
         />
       </div>
-    </div>
+    </Card>
   );
 
   const headerExtra = (
@@ -500,7 +500,7 @@ const MultiKeyManageModal = ({ visible, onCancel, channel, onRefresh }) => {
         </div>
 
         {/* Table */}
-        <div className='border border-ui-border rounded-xl overflow-hidden bg-ui-bg-elevated'>
+        <Card variant='elevated' padding='none' radius='md'>
           {loading ? (
             <div className='flex items-center justify-center py-10 gap-2 text-ui-text-2'>
               <Loader2 size={18} className='animate-spin' />
@@ -617,7 +617,7 @@ const MultiKeyManageModal = ({ visible, onCancel, channel, onRefresh }) => {
               </table>
             </div>
           )}
-        </div>
+        </Card>
 
         {/* Pagination */}
         {keyStatusList.length > 0 && (

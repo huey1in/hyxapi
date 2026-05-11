@@ -5,10 +5,9 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Search, Plus, RefreshCw, Columns3, X } from 'lucide-react';
 import Select from '../../common/form/Select';
-import { Button } from '../../ui';
+import { Button, IconButton, inputClass } from '../../ui';
 
-const inputCls =
-  'w-full pl-9 pr-8 py-2 text-sm bg-ui-bg-elevated border border-ui-border rounded-xl text-ui-text placeholder:text-ui-text-3 outline-none focus:border-ui-text-3 transition-colors';
+const inputCls = inputClass({ variant: 'admin', size: 'md', className: 'pl-9 pr-8 !bg-ui-bg-elevated' });
 
 const ChannelsFilters = ({
   setEditingChannel,
@@ -137,13 +136,13 @@ const SearchInput = ({ value, onChange, placeholder, className = '' }) => (
       className={inputCls}
     />
     {value && (
-      <button
-        type='button'
+      <IconButton
+        size='sm'
+        variant='ghost'
+        icon={X}
         onClick={() => onChange('')}
-        className='absolute right-1.5 top-1/2 -translate-y-1/2 p-0.5 rounded text-ui-text-3 hover:text-ui-text hover:bg-ui-bg-subtle'
-      >
-        <X size={11} />
-      </button>
+        className='absolute right-1 top-1/2 -translate-y-1/2'
+      />
     )}
   </div>
 );

@@ -10,6 +10,7 @@ import {
 } from '../../../../helpers/quota';
 import { useIsMobile } from '../../../../hooks/common/useIsMobile';
 import SlideOver from '../../../common/SlideOver';
+import { Button, Card } from '../../../ui';
 import {
   TextField,
   NumberField,
@@ -54,13 +55,13 @@ const DEFAULTS = {
 };
 
 const SectionCard = ({ title, description, children }) => (
-  <div className='border border-ui-border rounded-2xl p-4'>
+  <Card>
     <div className='mb-4'>
       <div className='text-sm font-semibold text-ui-text'>{title}</div>
       {description && <div className='text-[11px] text-ui-text-3 mt-0.5'>{description}</div>}
     </div>
     <div className='space-y-3'>{children}</div>
-  </div>
+  </Card>
 );
 
 const AddEditSubscriptionModal = ({
@@ -185,19 +186,12 @@ const AddEditSubscriptionModal = ({
       }
       footer={
         <>
-          <button
-            onClick={handleClose}
-            className='inline-flex items-center h-9 px-4 text-sm font-medium rounded-xl border border-ui-border text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-subtle transition-colors whitespace-nowrap'
-          >
+          <Button variant='secondary' onClick={handleClose}>
             {t('取消')}
-          </button>
-          <button
-            onClick={submit}
-            disabled={loading}
-            className='inline-flex items-center h-9 px-4 text-sm font-semibold rounded-xl bg-ui-accent text-ui-accent-fg hover:bg-ui-accent-hover disabled:opacity-50 transition-colors whitespace-nowrap'
-          >
+          </Button>
+          <Button onClick={submit} loading={loading}>
             {loading ? t('提交中...') : isEdit ? t('保存') : t('创建')}
-          </button>
+          </Button>
         </>
       }
       bodyClass='p-5 space-y-4'

@@ -145,16 +145,18 @@ const ModelSelectModal = ({
           return (
             <div key={id} className='border border-ui-border rounded-md overflow-hidden'>
               <div className='flex items-center justify-between px-3 py-2 bg-ui-bg-subtle text-sm text-ui-text'>
-                <button
+                <Button
+                  variant='ghost'
+                  size='sm'
                   onClick={() => setOpenCategories((p) => ({ ...p, [id]: !isOpen }))}
-                  className='flex items-center gap-2 flex-1'
+                  className='flex-1 justify-start'
                 >
                   {c.icon}
                   <span>
                     {c.label} ({c.models.length})
                   </span>
                   <ChevronDown size={14} className={`text-ui-text-3 ml-auto transition-transform ${isOpen ? 'rotate-180' : ''}`} />
-                </button>
+                </Button>
                 <input
                   type='checkbox'
                   checked={allSel}

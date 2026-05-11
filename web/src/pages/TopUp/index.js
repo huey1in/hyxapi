@@ -23,7 +23,7 @@ import {
 } from '../../helpers';
 import { UserContext } from '../../context/User';
 import { StatusContext } from '../../context/Status';
-import { Button, IconButton } from '../../components/ui';
+import { Button, IconButton, inputClass, ModalShell } from '../../components/ui';
 import Pagination from '../../components/common/table/Pagination';
 
 // ── small atoms ────────────────────────────────────────
@@ -43,8 +43,7 @@ const Card = ({ title, action, children, className = '', bodyClass = 'p-5' }) =>
   </div>
 );
 
-const inputCls =
-  'w-full px-3 py-2 text-sm bg-transparent border border-ui-border rounded-xl text-ui-text placeholder:text-ui-text-3 outline-none focus:border-ui-text-3 transition-colors';
+const inputCls = inputClass({ variant: 'admin', size: 'md' });
 
 const PrimaryBtn = ({ children, ...props }) => (
   <Button {...props}>{children}</Button>
@@ -93,32 +92,18 @@ const HistoryModal = ({ open, onClose, t }) => {
     if (open) load(1);
   }, [open]);
 
-  useEffect(() => {
-    if (!open) return;
-    const onKey = (e) => e.key === 'Escape' && onClose();
-    const original = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
-    document.addEventListener('keydown', onKey);
-    return () => {
-      document.body.style.overflow = original;
-      document.removeEventListener('keydown', onKey);
-    };
-  }, [open, onClose]);
-
   if (!open) return null;
   if (typeof document === 'undefined') return null;
 
-  return createPortal(
-    <div
-      className='fixed inset-0 z-[100] flex items-center justify-center p-4'
-      style={{ background: 'rgba(0,0,0,0.5)' }}
-      onClick={onClose}
+  return (
+    <ModalShell
+      open={open}
+      onClose={onClose}
+      maxWidth='42rem'
+      maxHeight='85vh'
+      className='flex flex-col !bg-[var(--page-bg)]'
+      zIndex={100}
     >
-      <div
-        className='border border-ui-border rounded-2xl shadow-2xl w-full max-w-2xl max-h-[85vh] flex flex-col overflow-hidden'
-        style={{ backgroundColor: 'var(--page-bg)' }}
-        onClick={(e) => e.stopPropagation()}
-      >
         <div className='flex items-center justify-between px-5 py-3.5'>
           <span className='text-sm font-semibold text-ui-text'>{t('充值记录')}</span>
           <IconButton icon={X} size='sm' onClick={onClose} />
@@ -158,9 +143,7 @@ const HistoryModal = ({ open, onClose, t }) => {
         {items.length > 0 && (
           <Pagination page={page} pageSize={15} total={total} onChange={load} />
         )}
-      </div>
-    </div>,
-    document.body,
+    </ModalShell>
   );
 };
 
@@ -171,32 +154,18 @@ const TransferModal = ({ open, max, onClose, onConfirm, t }) => {
   useEffect(() => {
     if (open) setAmount(0);
   }, [open]);
-  useEffect(() => {
-    if (!open) return;
-    const onKey = (e) => e.key === 'Escape' && onClose();
-    const ov = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
-    document.addEventListener('keydown', onKey);
-    return () => {
-      document.body.style.overflow = ov;
-      document.removeEventListener('keydown', onKey);
-    };
-  }, [open, onClose]);
 
   if (!open) return null;
   if (typeof document === 'undefined') return null;
 
-  return createPortal(
-    <div
-      className='fixed inset-0 z-[100] flex items-center justify-center p-4'
-      style={{ background: 'rgba(0,0,0,0.5)' }}
-      onClick={onClose}
+  return (
+    <ModalShell
+      open={open}
+      onClose={onClose}
+      maxWidth='24rem'
+      className='!bg-[var(--page-bg)]'
+      zIndex={100}
     >
-      <div
-        className='border border-ui-border rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden'
-        style={{ backgroundColor: 'var(--page-bg)' }}
-        onClick={(e) => e.stopPropagation()}
-      >
         <div className='flex items-center justify-between px-5 py-3.5'>
           <span className='text-sm font-semibold text-ui-text'>{t('划转邀请额度')}</span>
           <IconButton icon={X} size='sm' onClick={onClose} />
@@ -223,9 +192,7 @@ const TransferModal = ({ open, max, onClose, onConfirm, t }) => {
           <GhostBtn onClick={onClose}>{t('取消')}</GhostBtn>
           <PrimaryBtn onClick={() => onConfirm(amount)}>{t('确认')}</PrimaryBtn>
         </div>
-      </div>
-    </div>,
-    document.body,
+    </ModalShell>
   );
 };
 

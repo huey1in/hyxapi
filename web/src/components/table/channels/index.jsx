@@ -17,6 +17,7 @@ import EditChannelModal from './modals/EditChannelModal';
 import EditTagModal from './modals/EditTagModal';
 import MultiKeyManageModal from './modals/MultiKeyManageModal';
 import ChannelUpstreamUpdateModal from './modals/ChannelUpstreamUpdateModal';
+import { Card } from '../../ui';
 
 const ChannelsPage = () => {
   const channelsData = useChannelsData();
@@ -46,12 +47,12 @@ const ChannelsPage = () => {
         )}
 
         {/* Filters card (top) */}
-        <div className='border border-ui-border rounded-2xl p-4 mb-3 space-y-3 bg-[var(--page-bg)] overflow-hidden'>
+        <Card className='mb-3 space-y-3'>
           <ChannelsFilters {...channelsData} />
           <div className='border-t border-ui-divider pt-3'>
             <ChannelsActions {...channelsData} />
           </div>
-        </div>
+        </Card>
 
         {/* Tabs */}
         {!channelsData.enableTagMode && (
@@ -61,7 +62,7 @@ const ChannelsPage = () => {
         )}
 
         {/* Table card */}
-        <div className='border border-ui-border rounded-2xl overflow-hidden bg-[var(--page-bg)]'>
+        <Card padding='none'>
           <ChannelsTable {...channelsData} />
           <div className='border-t border-ui-divider'>
             <Pagination
@@ -73,7 +74,7 @@ const ChannelsPage = () => {
               onPageSizeChange={channelsData.handlePageSizeChange}
             />
           </div>
-        </div>
+        </Card>
       </div>
 
       {/* Modals */}

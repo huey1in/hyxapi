@@ -26,7 +26,7 @@ import {
   showError,
 } from '../../../../helpers';
 import { TextField, FieldRow, Toggle, ToggleField } from '../../../common/form/Primitives';
-import { Button, Tabs as UITabs } from '../../../ui';
+import { Button, Tabs as UITabs, Card } from '../../../ui';
 import CodeViewer from '../../../playground/CodeViewer';
 import { StatusContext } from '../../../../context/Status';
 import { UserContext } from '../../../../context/User';
@@ -217,7 +217,7 @@ const NotificationSettings = ({
   ];
 
   return (
-    <div className='border border-ui-border rounded-2xl' style={{ backgroundColor: 'var(--page-bg)' }}>
+    <Card padding='none'>
       {/* Card header */}
       <div className='flex items-center p-4 pb-0'>
         <div className='w-8 h-8 rounded-full bg-blue-500/10 flex items-center justify-center mr-3'>
@@ -496,7 +496,7 @@ const NotificationSettings = ({
                 {t('您可以个性化设置侧边栏的要显示功能')}
               </span>
             </div>
-            <div className='border border-ui-border rounded-xl p-4' style={{ backgroundColor: 'var(--page-bg)' }}>
+            <Card padding='md' radius='md'>
               {sectionConfigs.map((section) => (
                 <div key={section.key} className='mb-6 last:mb-0'>
                   {/* Section header with toggle */}
@@ -520,12 +520,14 @@ const NotificationSettings = ({
                     {section.modules
                       .filter((module) => isAllowedByAdmin(section.key, module.key))
                       .map((module) => (
-                        <div
+                        <Card
                           key={module.key}
-                          className={`border border-ui-border rounded-xl p-4 hover:border-blue-300 transition-all duration-200 ${
+                          interactive
+                          padding='md'
+                          radius='md'
+                          className={
                             sidebarModulesUser[section.key]?.enabled !== false ? '' : 'opacity-50'
-                          }`}
-                          style={{ backgroundColor: 'var(--page-bg)' }}
+                          }
                         >
                           <div className='flex justify-between items-center h-full'>
                             <div className='flex-1 text-left'>
@@ -544,12 +546,12 @@ const NotificationSettings = ({
                               />
                             </div>
                           </div>
-                        </div>
+                        </Card>
                       ))}
                   </div>
                 </div>
               ))}
-            </div>
+            </Card>
           </div>
         )}
       </div>
@@ -575,7 +577,7 @@ const NotificationSettings = ({
           </Button>
         )}
       </div>
-    </div>
+    </Card>
   );
 };
 

@@ -44,7 +44,7 @@ import {
   MultiCombobox,
   Combobox,
 } from '../../../common/form/Primitives';
-import { Button } from '../../../ui';
+import { Button, Card } from '../../../ui';
 
 const SectionCard = ({ icon: Icon, iconColor = 'blue', title, description, children }) => {
   const colorMap = {
@@ -53,7 +53,7 @@ const SectionCard = ({ icon: Icon, iconColor = 'blue', title, description, child
     purple: 'bg-purple-500/10 text-purple-600 dark:text-purple-400',
   };
   return (
-    <div className='border border-ui-border rounded-2xl p-4 mb-4'>
+    <Card className='mb-4'>
       <div className='flex items-center mb-3'>
         {Icon && (
           <span className={`inline-flex items-center justify-center w-8 h-8 rounded-lg mr-2 ${colorMap[iconColor] || colorMap.blue}`}>
@@ -66,7 +66,7 @@ const SectionCard = ({ icon: Icon, iconColor = 'blue', title, description, child
         </div>
       </div>
       <div className='space-y-4'>{children}</div>
-    </div>
+    </Card>
   );
 };
 

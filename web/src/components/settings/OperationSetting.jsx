@@ -12,11 +12,12 @@ import React, { useEffect, useState } from 'react';
 import SettingsGeneral from '../../pages/Setting/Operation/SettingsGeneral';
 import OtherSetting from './OtherSetting';
 import { API, showError, toBoolean } from '../../helpers';
+import { Card } from '../ui';
 
 const TokenCard = ({ children, className = '' }) => (
-  <div className={`bg-ui-bg-elevated border border-ui-border rounded-xl p-5 ${className}`}>
+  <Card variant='elevated' padding='lg' radius='md' className={className}>
     {children}
-  </div>
+  </Card>
 );
 
 const OperationSetting = () => {

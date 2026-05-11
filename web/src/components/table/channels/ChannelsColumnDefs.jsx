@@ -44,6 +44,7 @@ import {
 } from '@douyinfe/semi-icons';
 import { AlertTriangle } from 'lucide-react';
 import { FaRandom } from 'react-icons/fa';
+import { Button, IconButton } from '../../ui';
 
 // Render functions
 const renderType = (type, record = {}, t) => {
@@ -705,50 +706,57 @@ export const getChannelsColumns = ({
                 className='overflow-hidden'
                 aria-label={t('测试单个渠道操作项目组')}
               >
-                <button
-                  className='px-2 py-1 text-xs rounded-l border border-ui-border bg-ui-bg-elevated text-ui-text hover:bg-ui-bg-subtle transition-colors'
+                <Button
+                  variant='secondary'
+                  size='sm'
+                  className='rounded-r-none'
                   onClick={() => testChannel(record, '')}
                 >
                   {t('测试')}
-                </button>
-                <button
-                  className='px-1.5 py-1 text-xs rounded-r border border-l-0 border-ui-border bg-ui-bg-elevated text-ui-text hover:bg-ui-bg-subtle transition-colors'
+                </Button>
+                <IconButton
+                  size='sm'
+                  variant='ghost'
+                  className='rounded-l-none'
+                  icon={IconTreeTriangleDown}
                   onClick={() => {
                     setCurrentTestChannel(record);
                     setShowModelTestModal(true);
                   }}
-                >
-                  <IconTreeTriangleDown />
-                </button>
+                />
               </SplitButtonGroup>
 
               {record.status === 1 ? (
-                <button
-                  className='px-2 py-1 text-xs rounded border border-red-300 bg-red-50 text-red-600 hover:bg-red-100 transition-colors dark:bg-red-900/20 dark:border-red-700 dark:text-red-400'
+                <Button
+                  variant='danger'
+                  size='sm'
                   onClick={() => manageChannel(record.id, 'disable', record)}
                 >
                   {t('禁用')}
-                </button>
+                </Button>
               ) : (
-                <button
-                  className='px-2 py-1 text-xs rounded border border-ui-border bg-ui-bg-elevated text-ui-text hover:bg-ui-bg-subtle transition-colors'
+                <Button
+                  variant='secondary'
+                  size='sm'
                   onClick={() => manageChannel(record.id, 'enable', record)}
                 >
                   {t('启用')}
-                </button>
+                </Button>
               )}
 
               {record.channel_info?.is_multi_key ? (
                 <SplitButtonGroup aria-label={t('多密钥渠道操作项目组')}>
-                  <button
-                    className='px-2 py-1 text-xs rounded-l border border-ui-border bg-ui-bg-elevated text-ui-text hover:bg-ui-bg-subtle transition-colors'
+                  <Button
+                    variant='secondary'
+                    size='sm'
+                    className='rounded-r-none'
                     onClick={() => {
                       setEditingChannel(record);
                       setShowEdit(true);
                     }}
                   >
                     {t('编辑')}
-                  </button>
+                  </Button>
                   <Dropdown
                     trigger='click'
                     position='bottomRight'
@@ -764,23 +772,25 @@ export const getChannelsColumns = ({
                       },
                     ]}
                   >
-                    <button
-                      className='px-1.5 py-1 text-xs rounded-r border border-l-0 border-ui-border bg-ui-bg-elevated text-ui-text hover:bg-ui-bg-subtle transition-colors'
-                    >
-                      <IconTreeTriangleDown />
-                    </button>
+                    <IconButton
+                      size='sm'
+                      variant='ghost'
+                      className='rounded-l-none'
+                      icon={IconTreeTriangleDown}
+                    />
                   </Dropdown>
                 </SplitButtonGroup>
               ) : (
-                <button
-                  className='px-2 py-1 text-xs rounded border border-ui-border bg-ui-bg-elevated text-ui-text hover:bg-ui-bg-subtle transition-colors'
+                <Button
+                  variant='secondary'
+                  size='sm'
                   onClick={() => {
                     setEditingChannel(record);
                     setShowEdit(true);
                   }}
                 >
                   {t('编辑')}
-                </button>
+                </Button>
               )}
 
               <Dropdown
@@ -789,9 +799,7 @@ export const getChannelsColumns = ({
                 getPopupContainer={() => document.body}
                 menu={moreMenuItems}
               >
-                <button className='px-1.5 py-1 text-xs rounded border border-ui-border bg-ui-bg-elevated text-ui-text hover:bg-ui-bg-subtle transition-colors'>
-                  <IconMore />
-                </button>
+                <IconButton size='sm' variant='ghost' icon={IconMore} />
               </Dropdown>
             </div>
           );
@@ -799,27 +807,30 @@ export const getChannelsColumns = ({
           // 标签操作按钮
           return (
             <div className='flex items-center flex-wrap gap-2'>
-              <button
-                className='px-2 py-1 text-xs rounded border border-ui-border bg-ui-bg-elevated text-ui-text hover:bg-ui-bg-subtle transition-colors'
+              <Button
+                variant='secondary'
+                size='sm'
                 onClick={() => manageTag(record.key, 'enable')}
               >
                 {t('启用全部')}
-              </button>
-              <button
-                className='px-2 py-1 text-xs rounded border border-ui-border bg-ui-bg-elevated text-ui-text hover:bg-ui-bg-subtle transition-colors'
+              </Button>
+              <Button
+                variant='secondary'
+                size='sm'
                 onClick={() => manageTag(record.key, 'disable')}
               >
                 {t('禁用全部')}
-              </button>
-              <button
-                className='px-2 py-1 text-xs rounded border border-ui-border bg-ui-bg-elevated text-ui-text hover:bg-ui-bg-subtle transition-colors'
+              </Button>
+              <Button
+                variant='secondary'
+                size='sm'
                 onClick={() => {
                   setShowEditTag(true);
                   setEditingTag(record.key);
                 }}
               >
                 {t('编辑')}
-              </button>
+              </Button>
             </div>
           );
         }

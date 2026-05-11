@@ -55,7 +55,7 @@ const fmtDateTime = (ts) => {
 // ── select primitives reused inside the form modal ──────
 // Use the shared Dropdown for the group picker.
 import Dropdown from '../../components/common/ui/Dropdown';
-import { Button, IconButton, Tabs as UITabs } from '../../components/ui';
+import { Button, IconButton, Tabs as UITabs, Card, inputClass } from '../../components/ui';
 
 // ── token form modal (create/edit) ──────────────────────
 const FormSection = ({ title, children }) => (
@@ -191,8 +191,7 @@ const TokenFormModal = ({ open, token, onClose, onSaved, t }) => {
   if (!open) return null;
   if (typeof document === 'undefined') return null;
 
-  const inputCls =
-    'w-full px-3 py-2 text-sm bg-transparent border border-ui-border rounded-xl text-ui-text outline-none focus:border-ui-text-3 transition-colors';
+  const inputCls = inputClass({ variant: 'admin', size: 'md' });
   const transparentBg = { backgroundColor: 'transparent', colorScheme: 'light' };
 
   return createPortal(
@@ -337,9 +336,12 @@ const useTokens = () => {
 };
 
 const StepCard = ({ num, title, desc, onClick }) => (
-  <div
+  <Card
+    variant='elevated'
+    radius='lg'
+    padding='md'
     onClick={onClick}
-    className={`p-4 rounded-2xl border border-ui-border bg-ui-bg-elevated transition-colors ${onClick ? 'cursor-pointer hover:bg-ui-bg-subtle' : ''}`}
+    interactive={!!onClick}
   >
     <div
       className='text-[13px] text-ui-text-3 font-medium mb-2 tabular-nums'
@@ -348,7 +350,7 @@ const StepCard = ({ num, title, desc, onClick }) => (
     </div>
     <div className='text-[15px] font-medium text-ui-text mb-1'>{title}</div>
     <div className='text-xs text-ui-text-3 leading-relaxed'>{desc}</div>
-  </div>
+  </Card>
 );
 
 const KeyRow = ({ token, revealed, keyValue, onToggle, onCopy, onEdit, onDelete, t }) => {

@@ -20,6 +20,7 @@ import {
   Notice,
   Chip,
 } from '../../../components/common/form/Primitives';
+import { Button } from '../../../components/ui';
 
 const thinkingExample = JSON.stringify(
   ['moonshotai/kimi-k2-thinking', 'kimi-k2-thinking'],
@@ -212,27 +213,15 @@ export default function SettingGlobalModel(props) {
           />
         </FieldRow>
         <div className='flex flex-wrap items-center gap-2'>
-          <button
-            type='button'
-            onClick={() => set(POLICY_KEY)(policyExample)}
-            className='px-2.5 py-1 text-[11px] rounded-xl border border-ui-border text-ui-text-2 hover:bg-ui-bg-hover'
-          >
+          <Button size='sm' variant='secondary' onClick={() => set(POLICY_KEY)(policyExample)}>
             {t('填充模板（指定渠道）')}
-          </button>
-          <button
-            type='button'
-            onClick={() => set(POLICY_KEY)(policyAllChannelsExample)}
-            className='px-2.5 py-1 text-[11px] rounded-xl border border-ui-border text-ui-text-2 hover:bg-ui-bg-hover'
-          >
+          </Button>
+          <Button size='sm' variant='secondary' onClick={() => set(POLICY_KEY)(policyAllChannelsExample)}>
             {t('填充模板（全渠道）')}
-          </button>
-          <button
-            type='button'
-            onClick={formatPolicy}
-            className='px-2.5 py-1 text-[11px] rounded-xl border border-ui-border text-ui-text-2 hover:bg-ui-bg-hover'
-          >
+          </Button>
+          <Button size='sm' variant='secondary' onClick={formatPolicy}>
             {t('格式化 JSON')}
-          </button>
+          </Button>
         </div>
       </div>
 

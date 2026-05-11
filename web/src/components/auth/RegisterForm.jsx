@@ -81,16 +81,9 @@ function evaluatePassword(pw) {
 }
 
 const OAuthButton = ({ onClick, loading, disabled, children, icon }) => (
-  <button
-    onClick={onClick}
-    disabled={loading || disabled}
-    className='w-full flex items-center justify-center gap-3 px-4 py-2.5 text-sm font-medium border border-ui-border rounded-lg bg-[var(--page-bg)] hover:bg-ui-bg-subtle text-ui-text transition-colors disabled:opacity-50 disabled:cursor-not-allowed'
-  >
-    {loading ? (
-      <span className='w-4 h-4 border-2 border-ui-text-3 border-t-transparent rounded-full animate-spin' />
-    ) : icon}
-    <span>{children}</span>
-  </button>
+  <Button variant='oauth' block onClick={onClick} loading={loading} disabled={disabled} icon={icon}>
+    {children}
+  </Button>
 );
 
 const RegisterForm = ({ embedded = false, onSuccess, onSwitchToLogin }) => {
@@ -623,12 +616,9 @@ const RegisterForm = ({ embedded = false, onSuccess, onSwitchToLogin }) => {
         : renderOAuthOptions()}
       <p className='mt-5 pt-4 border-t border-ui-border text-[13px] text-ui-text-3'>
         {t('已有账户？')}{' '}
-        <button
-          onClick={onSwitchToLogin}
-          className='text-ui-text font-medium hover:underline bg-transparent cursor-pointer'
-        >
+        <Button variant='link' onClick={onSwitchToLogin}>
           {t('登录')}
-        </button>
+        </Button>
       </p>
     </>
   );

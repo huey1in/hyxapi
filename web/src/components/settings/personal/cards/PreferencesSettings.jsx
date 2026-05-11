@@ -24,6 +24,7 @@ import { API, showSuccess, showError } from "../../../../helpers";
 import { UserContext } from "../../../../context/User";
 import { normalizeLanguage } from "../../../../i18n/language";
 import { NativeSelect } from "../../../common/form/Primitives";
+import { Card } from "../../../ui";
 
 // Language options with native names
 const languageOptions = [
@@ -120,7 +121,7 @@ const PreferencesSettings = ({ t }) => {
 	};
 
 	return (
-		<div className="border border-ui-border rounded-2xl p-4" style={{ backgroundColor: 'var(--page-bg)' }}>
+		<Card padding='md'>
 			{/* Card Header */}
 			<div className="flex items-center mb-4">
 				<div className="w-8 h-8 rounded-full bg-violet-500/10 flex items-center justify-center mr-3">
@@ -136,7 +137,7 @@ const PreferencesSettings = ({ t }) => {
 				</div>
 			</div>
 			{/* Language Setting Card */}
-			<div className="border border-ui-border rounded-xl p-4" style={{ backgroundColor: 'var(--page-bg)' }}>
+			<Card padding='md' radius='md'>
 				<div className="flex flex-col sm:flex-row items-start sm:items-center sm:justify-between gap-4">
 					<div className="flex items-start w-full sm:w-auto">
 						<div className="w-12 h-12 rounded-full bg-violet-50 dark:bg-violet-900/30 flex items-center justify-center mr-4 flex-shrink-0">
@@ -160,7 +161,7 @@ const PreferencesSettings = ({ t }) => {
 						/>
 					</div>
 				</div>
-			</div>
+			</Card>
 
 			{/* Additional info */}
 			<div className="mt-4 text-xs text-ui-text-2 dark:text-ui-text-3">
@@ -170,7 +171,7 @@ const PreferencesSettings = ({ t }) => {
 					)}
 				</span>
 			</div>
-		</div>
+		</Card>
 	);
 };
 

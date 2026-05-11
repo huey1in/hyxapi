@@ -20,6 +20,7 @@ For commercial licensing, please contact support@quantumnous.com
 import React from 'react';
 import { Info } from 'lucide-react';
 import { stringToColor } from '../../../../../helpers';
+import { Card } from '../../../../ui';
 
 const ModelBasicInfo = ({ modelData, vendorsMap = {}, t }) => {
   // 获取模型描述（使用后端真实数据）
@@ -55,7 +56,7 @@ const ModelBasicInfo = ({ modelData, vendorsMap = {}, t }) => {
   };
 
   return (
-    <div className='border border-ui-border rounded-2xl p-4 mb-6' style={{ backgroundColor: 'var(--page-bg)' }}>
+    <Card className='mb-6'>
       <div className='flex items-center mb-4'>
         <div className='w-7 h-7 rounded-lg bg-blue-500/10 flex items-center justify-center mr-2 shadow-md'>
           <Info size={16} className='text-blue-500' />
@@ -87,7 +88,7 @@ const ModelBasicInfo = ({ modelData, vendorsMap = {}, t }) => {
           </div>
         )}
       </div>
-    </div>
+    </Card>
   );
 };
 

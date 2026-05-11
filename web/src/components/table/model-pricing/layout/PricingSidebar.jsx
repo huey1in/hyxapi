@@ -26,6 +26,7 @@ import PricingTags from '../filter/PricingTags';
 
 import { resetPricingFilters } from '../../../../helpers/utils';
 import { usePricingFilterCounts } from '../../../../hooks/model-pricing/usePricingFilterCounts';
+import { Button } from '../../../ui';
 
 const PricingSidebar = ({
   showWithRecharge,
@@ -93,12 +94,9 @@ const PricingSidebar = ({
     <div className='p-2'>
       <div className='flex items-center justify-between mb-6'>
         <div className='text-lg font-semibold text-ui-text'>{t('筛选')}</div>
-        <button
-          onClick={handleResetFilters}
-          className='inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium rounded-xl border border-ui-border text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-subtle transition-colors'
-        >
+        <Button variant='secondary' onClick={handleResetFilters}>
           {t('重置')}
-        </button>
+        </Button>
       </div>
 
       <PricingVendors

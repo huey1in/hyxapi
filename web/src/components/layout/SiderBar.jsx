@@ -161,7 +161,7 @@ const SiderBar = ({ onNavigate = () => {} }) => {
         </SkeletonWrapper>
       </div>
 
-      {/* 桌面端右侧凸出 tab */}
+      {/* 桌面端右侧凸出 tab — 14×44 异形 hit 区（非按钮原子，是 SiderBar 视觉系内部实现） */}
       <button
         onClick={toggleCollapsed}
         aria-label={collapsed ? '展开侧边栏' : '收起侧边栏'}

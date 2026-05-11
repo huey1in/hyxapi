@@ -3,72 +3,44 @@
  * 公告 / 用户协议 / 隐私政策 + 检查更新 Modal
  */
 import React, { useContext, useEffect, useRef, useState } from 'react';
-import { createPortal } from 'react-dom';
 import { API, showError, showSuccess, timestamp2string } from '../../helpers';
 import { marked } from 'marked';
+import { X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { StatusContext } from '../../context/Status';
 import { FieldRow, TextAreaField, Notice } from '../common/form/Primitives';
-import { Button, IconButton } from '../ui';
+import { Button, IconButton, ModalShell } from '../ui';
 
 const LEGAL_USER_AGREEMENT_KEY = 'legal.user_agreement';
 const LEGAL_PRIVACY_POLICY_KEY = 'legal.privacy_policy';
 
 function UpdateModal({ open, onClose, tagName, content, t }) {
-  useEffect(() => {
-    if (!open) return;
-    const onKey = (e) => e.key === 'Escape' && onClose?.();
-    const original = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
-    document.addEventListener('keydown', onKey);
-    return () => {
-      document.body.style.overflow = original;
-      document.removeEventListener('keydown', onKey);
-    };
-  }, [open, onClose]);
-
-  if (!open || typeof document === 'undefined') return null;
-
-  return createPortal(
-    <div
-      className='fixed inset-0 z-[200] flex items-center justify-center p-4'
-      style={{ background: 'rgba(0,0,0,0.45)' }}
-      onClick={onClose}
-    >
-      <div
-        className='bg-ui-bg-elevated border border-ui-border rounded-2xl shadow-2xl w-full max-w-[600px] max-h-[80vh] overflow-hidden flex flex-col'
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className='flex items-center justify-between px-5 pt-4 pb-3 border-b border-ui-divider'>
-          <h3 className='text-sm font-semibold text-ui-text'>
-            {t('新版本')}：{tagName}
-          </h3>
-          <button
-            onClick={onClose}
-            className='w-7 h-7 inline-flex items-center justify-center rounded-md text-ui-text-3 hover:text-ui-text hover:bg-ui-bg-subtle transition-colors'
-          >
-            </button>
-        </div>
-        <div
-          className='flex-1 overflow-y-auto px-5 py-4 text-xs text-ui-text-2 leading-relaxed prose prose-xs dark:prose-invert max-w-none'
-          dangerouslySetInnerHTML={{ __html: content }}
-        />
-        <div className='flex justify-end gap-2 px-5 py-3 border-t border-ui-divider'>
-          <Button variant='secondary' size='sm' onClick={onClose}>
-            {t('关闭')}
-          </Button>
-          <a
-            href={`https://github.com/Calcium-Ion/new-api/releases/tag/${tagName}`}
-            target='_blank'
-            rel='noreferrer'
-            className='inline-flex items-center gap-1 px-3.5 py-1.5 text-xs font-semibold rounded-xl bg-ui-accent text-ui-accent-fg hover:opacity-90'
-          >
-            {t('详情')}
-          </a>
-        </div>
+  return (
+    <ModalShell open={open} onClose={onClose} maxWidth={600} maxHeight='80vh' className='flex flex-col'>
+      <div className='flex items-center justify-between px-5 pt-4 pb-3 border-b border-ui-divider'>
+        <h3 className='text-sm font-semibold text-ui-text'>
+          {t('新版本')}：{tagName}
+        </h3>
+        <IconButton icon={X} size='sm' onClick={onClose} aria-label='close' />
       </div>
-    </div>,
-    document.body,
+      <div
+        className='flex-1 overflow-y-auto px-5 py-4 text-xs text-ui-text-2 leading-relaxed prose prose-xs dark:prose-invert max-w-none'
+        dangerouslySetInnerHTML={{ __html: content }}
+      />
+      <div className='flex justify-end gap-2 px-5 py-3 border-t border-ui-divider'>
+        <Button variant='secondary' size='sm' onClick={onClose}>
+          {t('关闭')}
+        </Button>
+        <a
+          href={`https://github.com/Calcium-Ion/new-api/releases/tag/${tagName}`}
+          target='_blank'
+          rel='noreferrer'
+          className='inline-flex items-center gap-1 px-3.5 py-1.5 text-xs font-semibold rounded-xl bg-ui-accent text-ui-accent-fg hover:opacity-90'
+        >
+          {t('详情')}
+        </a>
+      </div>
+    </ModalShell>
   );
 }
 

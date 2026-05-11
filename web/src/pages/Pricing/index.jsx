@@ -14,7 +14,7 @@ import {
 import { useSearchParams } from 'react-router-dom';
 import * as LobeIcons from '@lobehub/icons';
 import { API, showError, showSuccess, copy } from '../../helpers';
-import { Button } from '../../components/ui';
+import { Button, IconButton, Card, inputClass } from '../../components/ui';
 
 const formatPrice = (n) => {
   if (n === 0 || n === null || n === undefined) return '0';
@@ -86,33 +86,34 @@ const FilterGroup = ({ label, children, defaultOpen = true }) => {
   const [open, setOpen] = useState(defaultOpen);
   return (
     <div className='mb-5'>
-      <button
+      <Button
+        variant='ghost'
+        size='sm'
+        block
         onClick={() => setOpen((o) => !o)}
-        className='flex items-center justify-between w-full pb-2 mb-1'
+        className='!justify-between pb-2 mb-1 !px-0'
       >
         <span className='text-[11px] font-semibold uppercase tracking-widest text-ui-text-3'>{label}</span>
         <ChevronDown size={12} className={`text-ui-text-3 shrink-0 transition-transform ${open ? '' : '-rotate-90'}`} />
-      </button>
+      </Button>
       {open && <div className='space-y-0.5'>{children}</div>}
     </div>
   );
 };
 
 const FilterItem = ({ label, count, active, onClick }) => (
-  <button
+  <Button
+    variant={active ? 'secondary' : 'ghost'}
+    size='sm'
+    block
     onClick={onClick}
-    className={`flex items-center justify-between w-full px-3 py-2 rounded-lg text-sm transition-all duration-150 text-left ${
-      active
-        ? 'bg-ui-bg-subtle text-ui-text font-medium'
-        : 'text-ui-text-2 hover:bg-ui-bg-subtle hover:text-ui-text'
-    }`}
-   
+    className='!justify-between'
   >
-    <span className='truncate flex-1'>{label}</span>
+    <span className='truncate flex-1 text-left'>{label}</span>
     {count != null && (
       <span className='text-ui-text-3 text-[11px] ml-2 tabular-nums'>{count}</span>
     )}
-  </button>
+  </Button>
 );
 
 const PricingPage = () => {
@@ -268,7 +269,7 @@ const PricingPage = () => {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder={t('搜索模型...')}
-            className='w-full pl-8 pr-3 py-2 text-sm bg-ui-bg-elevated border border-ui-border rounded-xl text-ui-text placeholder:text-ui-text-3 outline-none focus:border-ui-text-3 transition-colors'
+            className={inputClass({ variant: 'admin', size: 'md', className: 'pl-8 !bg-ui-bg-elevated' })}
            
           />
         </div>
@@ -300,12 +301,15 @@ const PricingPage = () => {
           />
         ))}
         {sortedVendors.length > 6 && (
-          <button
+          <Button
+            variant='ghost'
+            size='sm'
+            block
             onClick={() => setVendorsExpanded((e) => !e)}
-            className='w-full py-1.5 text-[13px] text-ui-text-3 hover:text-ui-text-2 transition-colors text-left'
+            className='!justify-start text-ui-text-3'
           >
             {vendorsExpanded ? t('收起') : t('+{{n}} 更多').replace('{{n}}', sortedVendors.length - 6)}
-          </button>
+          </Button>
         )}
       </FilterGroup>
 
@@ -347,7 +351,7 @@ const PricingPage = () => {
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder={t('搜索模型...')}
-              className='w-full pl-8 pr-3 py-2 text-sm bg-ui-bg-elevated border border-ui-border rounded-xl text-ui-text placeholder:text-ui-text-3 outline-none focus:border-ui-text-3 transition-colors'
+              className={inputClass({ variant: 'admin', size: 'md', className: 'pl-8 !bg-ui-bg-elevated' })}
             />
           </div>
           <Button
@@ -406,10 +410,10 @@ const PricingPage = () => {
                     onClick={() => setVendorFilter(String(vendorFilter) === String(v.id) ? 'all' : v.id)} />
                 ))}
                 {sortedVendors.length > 6 && (
-                  <button onClick={() => setVendorsExpanded((e) => !e)}
-                    className='w-full py-1.5 text-[13px] text-ui-text-3 hover:text-ui-text-2 transition-colors text-left px-3'>
+                  <Button variant='ghost' size='sm' block onClick={() => setVendorsExpanded((e) => !e)}
+                    className='!justify-start text-ui-text-3'>
                     {vendorsExpanded ? t('收起') : t('+{{n}} 更多').replace('{{n}}', sortedVendors.length - 6)}
-                  </button>
+                  </Button>
                 )}
               </FilterGroup>
               <FilterGroup label={t('协议')} defaultOpen={false}>
@@ -468,7 +472,7 @@ const PricingPage = () => {
           {loading && models.length === 0 ? (
             <div className='grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4'>
               {[...Array(6)].map((_, i) => (
-                <div key={i} className='border border-ui-border rounded-2xl h-44 animate-pulse' style={{ backgroundColor: 'var(--page-bg)' }} />
+                <Card key={i} variant='plain' radius='lg' padding='none' className='h-44 animate-pulse' />
               ))}
             </div>
           ) : filtered.length === 0 ? (
@@ -495,17 +499,14 @@ const PricingPage = () => {
                         </div>
                         <span className='text-[11px] text-ui-text-3 font-medium truncate'>{vendor.name}</span>
                         <div className='flex-1' />
-                        <button
+                        <IconButton
+                          icon={isCopied ? Check : Copy}
+                          size='sm'
+                          tone={isCopied ? 'green' : 'default'}
                           onClick={(e) => onCopyName(e, m.model_name)}
                           title={t('复制模型 ID')}
-                          className='p-1.5 rounded-lg hover:bg-ui-bg-subtle transition-all shrink-0 opacity-0 group-hover:opacity-100'
-                        >
-                          {isCopied ? (
-                            <Check size={12} className='text-ui-brand' />
-                          ) : (
-                            <Copy size={12} className='text-ui-text-3' />
-                          )}
-                        </button>
+                          className='opacity-0 group-hover:opacity-100 transition-opacity'
+                        />
                       </div>
                       <h3
                         className='text-[15px] font-semibold text-ui-text mt-2.5 line-clamp-2 leading-snug'
@@ -670,9 +671,9 @@ const ModelDetailView = ({
 
       {/* Description */}
       {model.description && (
-        <div className='mb-8 p-4 rounded-xl bg-ui-bg-subtle text-sm text-ui-text-2 leading-relaxed'>
+        <Card variant='filled' radius='md' padding='md' className='mb-8 text-sm text-ui-text-2 leading-relaxed'>
           {model.description}
-        </div>
+        </Card>
       )}
 
       {/* Current pricing summary */}
@@ -819,10 +820,12 @@ const ModelDetailView = ({
             {model.supported_endpoint_types.map((ep) => {
               const info = endpointMap[ep];
               return (
-                <div
+                <Card
                   key={ep}
-                  className='px-3 py-2 rounded-2xl border border-ui-border min-w-[180px]'
-                  style={{ backgroundColor: 'var(--page-bg)' }}
+                  variant='plain'
+                  radius='lg'
+                  padding='none'
+                  className='px-3 py-2 min-w-[180px]'
                 >
                   <div className='text-sm font-medium text-ui-text'>{endpointLabel(ep)}</div>
                   {info && typeof info === 'object' && (
@@ -831,7 +834,7 @@ const ModelDetailView = ({
                       {info.path && <span>{info.path}</span>}
                     </div>
                   )}
-                </div>
+                </Card>
               );
             })}
           </div>

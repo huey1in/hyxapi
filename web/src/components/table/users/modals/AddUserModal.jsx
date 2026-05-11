@@ -7,7 +7,7 @@ import { API, showError, showSuccess } from '../../../../helpers';
 import { useIsMobile } from '../../../../hooks/common/useIsMobile';
 import SlideOver from '../../../common/SlideOver';
 import { TextField, FieldRow } from '../../../common/form/Primitives';
-import { Button } from '../../../ui';
+import { Button, Card } from '../../../ui';
 
 const AddUserModal = (props) => {
   const { t } = useTranslation();
@@ -74,7 +74,7 @@ const AddUserModal = (props) => {
       }
       bodyClass='p-5'
     >
-      <div className='border border-ui-border rounded-2xl p-4'>
+      <Card>
         <div className='mb-3'>
           <div className='text-sm font-semibold text-ui-text'>{t('用户信息')}</div>
           <div className='text-[11px] text-ui-text-3 mt-0.5'>{t('创建新用户账户')}</div>
@@ -112,7 +112,7 @@ const AddUserModal = (props) => {
           />
         </FieldRow>
         </div>
-      </div>
+      </Card>
     </SlideOver>
   );
 };

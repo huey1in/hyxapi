@@ -19,6 +19,7 @@ For commercial licensing, please contact support@quantumnous.com
 
 import React from 'react';
 import ModalDialog from '../../../common/ModalDialog';
+import { Button } from '../../../ui';
 
 const DeleteTokensModal = ({
   visible,
@@ -34,18 +35,12 @@ const DeleteTokensModal = ({
       title={t('批量删除令牌')}
       footer={
         <>
-          <button
-            onClick={onCancel}
-            className='px-4 py-2 text-sm font-medium rounded-xl border border-ui-border text-ui-text hover:bg-ui-bg-subtle transition-colors'
-          >
+          <Button variant='secondary' onClick={onCancel}>
             {t('取消')}
-          </button>
-          <button
-            onClick={onConfirm}
-            className='px-4 py-2 text-sm font-semibold rounded-xl bg-ui-danger text-white hover:opacity-90 transition-colors'
-          >
+          </Button>
+          <Button variant='dangerSolid' onClick={onConfirm}>
             {t('确定')}
-          </button>
+          </Button>
         </>
       }
     >

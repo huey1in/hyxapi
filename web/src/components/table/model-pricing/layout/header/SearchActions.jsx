@@ -20,6 +20,7 @@ For commercial licensing, please contact support@quantumnous.com
 import React, { memo, useCallback } from 'react';
 import { Search, Copy, Filter } from 'lucide-react';
 import Select from '../../../../common/form/Select';
+import { Button, Switch } from '../../../../ui';
 
 const SearchActions = memo(
   ({
@@ -78,14 +79,13 @@ const SearchActions = memo(
           />
         </div>
 
-        <button
-          className='inline-flex items-center gap-1.5 px-4 py-2 text-sm font-semibold rounded-xl bg-ui-accent text-ui-accent-fg hover:bg-ui-accent-hover transition-colors disabled:opacity-50'
+        <Button
+          icon={Copy}
           onClick={handleCopyClick}
           disabled={selectedRowKeys.length === 0}
         >
-          <Copy size={14} />
           {t('复制')}
-        </button>
+        </Button>
 
         {!isMobile && (
           <>
@@ -95,15 +95,7 @@ const SearchActions = memo(
             {supportsCurrencyDisplay && (
               <div className='flex items-center gap-2'>
                 <span className='text-sm text-ui-text-2'>{t('充值价格显示')}</span>
-                <label className='relative inline-flex items-center cursor-pointer'>
-                  <input
-                    type='checkbox'
-                    className='sr-only peer'
-                    checked={showWithRecharge}
-                    onChange={(e) => setShowWithRecharge(e.target.checked)}
-                  />
-                  <div className="w-9 h-5 bg-ui-bg-subtle border border-ui-border rounded-full peer peer-checked:bg-ui-accent peer-checked:border-ui-accent transition-colors after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:after:translate-x-full" />
-                </label>
+                <Switch checked={showWithRecharge} onChange={setShowWithRecharge} size='sm' />
               </div>
             )}
 
@@ -123,43 +115,37 @@ const SearchActions = memo(
             {/* 显示倍率开关 */}
             <div className='flex items-center gap-2'>
               <span className='text-sm text-ui-text-2'>{t('倍率')}</span>
-              <label className='relative inline-flex items-center cursor-pointer'>
-                <input
-                  type='checkbox'
-                  className='sr-only peer'
-                  checked={showRatio}
-                  onChange={(e) => setShowRatio(e.target.checked)}
-                />
-                <div className="w-9 h-5 bg-ui-bg-subtle border border-ui-border rounded-full peer peer-checked:bg-ui-accent peer-checked:border-ui-accent transition-colors after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:after:translate-x-full" />
-              </label>
+              <Switch checked={showRatio} onChange={setShowRatio} size='sm' />
             </div>
 
             {/* 视图模式切换按钮 */}
-            <button
-              className={`inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium rounded-xl border transition-colors ${viewMode === 'table' ? 'bg-ui-accent text-ui-accent-fg border-ui-accent' : 'border-ui-border text-ui-text hover:bg-ui-bg-subtle'}`}
+            <Button
+              variant='toggle'
+              selected={viewMode === 'table'}
               onClick={handleViewModeToggle}
             >
               {t('表格视图')}
-            </button>
+            </Button>
 
             {/* Token单位切换按钮 */}
-            <button
-              className={`inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium rounded-xl border transition-colors ${tokenUnit === 'K' ? 'bg-ui-accent text-ui-accent-fg border-ui-accent' : 'border-ui-border text-ui-text hover:bg-ui-bg-subtle'}`}
+            <Button
+              variant='toggle'
+              selected={tokenUnit === 'K'}
               onClick={handleTokenUnitToggle}
             >
               {tokenUnit}
-            </button>
+            </Button>
           </>
         )}
 
         {isMobile && (
-          <button
-            className='inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium rounded-xl border border-ui-border text-ui-text hover:bg-ui-bg-subtle transition-colors'
+          <Button
+            variant='secondary'
+            icon={Filter}
             onClick={handleFilterClick}
           >
-            <Filter size={14} />
             {t('筛选')}
-          </button>
+          </Button>
         )}
       </div>
     );

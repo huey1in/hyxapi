@@ -22,6 +22,7 @@ import { API, showError } from '../../../helpers';
 import { Loader2, FileX } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import MarkdownRenderer from '../markdown/MarkdownRenderer';
+import { Card } from '../../ui';
 
 // Check whether content is a URL.
 const isUrl = (content) => {
@@ -158,7 +159,7 @@ const DocumentRenderer = ({ apiEndpoint, title, cacheKey, emptyMessage }) => {
   if (isUrl(content)) {
     return (
       <div className='flex justify-center items-center min-h-screen bg-ui-bg-subtle p-4'>
-        <div className='border border-ui-border rounded-2xl p-4 max-w-md w-full' style={{ backgroundColor: 'var(--page-bg)' }}>
+        <Card className='max-w-md w-full'>
           <div className='text-center'>
             <span className='text-xl font-semibold mb-4 block'>
               {title}
@@ -172,12 +173,12 @@ const DocumentRenderer = ({ apiEndpoint, title, cacheKey, emptyMessage }) => {
               rel='noopener noreferrer'
               title={content.trim()}
               aria-label={`${t('访问' + title)}: ${content.trim()}`}
-              className='inline-block px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors'
+              className='inline-flex items-center justify-center px-6 py-3 text-sm font-semibold rounded-xl bg-ui-accent text-ui-accent-fg hover:bg-ui-accent-hover transition-colors'
             >
               {t('访问' + title)}
             </a>
           </div>
-        </div>
+        </Card>
       </div>
     );
   }

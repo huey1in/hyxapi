@@ -7,7 +7,6 @@ Modern minimalist personal-settings page.
 import React, { useContext, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { createPortal } from 'react-dom';
 import {
   Copy, Check, RefreshCw, X, ChevronRight, ShieldAlert,
 } from 'lucide-react';
@@ -18,7 +17,7 @@ import {
 import { UserContext } from '../../context/User';
 import { normalizeLanguage } from '../../i18n/language';
 import Dropdown from '../common/ui/Dropdown';
-import { Button, IconButton, Toggle as UIToggle } from '../ui';
+import { Button, IconButton, ModalShell as UIModalShell, Toggle as UIToggle, inputClass } from '../ui';
 
 // ── atoms ───────────────────────────────────────────────
 
@@ -42,8 +41,7 @@ const Card = ({ title, icon: Icon, action, children, className = '', bodyClass =
   </div>
 );
 
-const inputCls =
-  'w-full px-3 py-2 text-sm bg-transparent border border-ui-border rounded-xl text-ui-text placeholder:text-ui-text-3 outline-none focus:border-ui-text-3 transition-colors';
+const inputCls = inputClass({ variant: 'admin', size: 'md' });
 
 const PrimaryBtn = ({ children, ...props }) => (
   <Button {...props}>{children}</Button>
@@ -85,40 +83,27 @@ const Field = ({ label, children, hint }) => (
 // ── modal shell ─────────────────────────────────────────
 
 const ModalShell = ({ open, title, onClose, children, footer, max = 'max-w-md' }) => {
-  useEffect(() => {
-    if (!open) return;
-    const onKey = (e) => e.key === 'Escape' && onClose();
-    const ov = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
-    document.addEventListener('keydown', onKey);
-    return () => {
-      document.body.style.overflow = ov;
-      document.removeEventListener('keydown', onKey);
-    };
-  }, [open, onClose]);
-  if (!open || typeof document === 'undefined') return null;
-  return createPortal(
-    <div
-      className='fixed inset-0 z-[100] flex items-center justify-center p-4'
-      style={{ background: 'rgba(0,0,0,0.5)' }}
-      onClick={onClose}
-    >
-      <div
-        className={`border border-ui-border rounded-2xl shadow-2xl w-full ${max} overflow-hidden`}
-        style={{ backgroundColor: 'var(--page-bg)' }}
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className='flex items-center justify-between px-5 py-3.5'>
-          <span className='text-sm font-semibold text-ui-text'>{title}</span>
-          <IconButton icon={X} size='sm' onClick={onClose} />
-        </div>
-        <div className='p-5'>{children}</div>
-        {footer && (
-          <div className='flex justify-end gap-2 px-5 py-3'>{footer}</div>
-        )}
+  // Map legacy max-w-* to ModalShell maxWidth (default sm/md/lg/xl/2xl/3xl)
+  const widthMap = {
+    'max-w-sm': '24rem',
+    'max-w-md': '28rem',
+    'max-w-lg': '32rem',
+    'max-w-xl': '36rem',
+    'max-w-2xl': '42rem',
+    'max-w-3xl': '48rem',
+  };
+  const maxWidth = widthMap[max] || '28rem';
+  return (
+    <UIModalShell open={open} onClose={onClose} maxWidth={maxWidth}>
+      <div className='flex items-center justify-between px-5 py-3.5'>
+        <span className='text-sm font-semibold text-ui-text'>{title}</span>
+        <IconButton icon={X} size='sm' onClick={onClose} />
       </div>
-    </div>,
-    document.body,
+      <div className='p-5'>{children}</div>
+      {footer && (
+        <div className='flex justify-end gap-2 px-5 py-3'>{footer}</div>
+      )}
+    </UIModalShell>
   );
 };
 

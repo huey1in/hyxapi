@@ -13,7 +13,7 @@ import {
   getUptimeStatusText,
 } from '../../../helpers/dashboard';
 import { UPTIME_STATUS_MAP } from '../../../constants/dashboard.constants';
-import { IconButton, Tabs as UITabs } from '../../ui';
+import { IconButton, Tabs as UITabs, Button, Card } from '../../ui';
 
 // ── primitives ──────────────────────────────────────────
 
@@ -128,16 +128,20 @@ const FaqRow = ({ q, a }) => {
   const [open, setOpen] = useState(false);
   return (
     <div>
-      <button
+      <Button
+        variant='ghost'
+        block
         onClick={() => setOpen((o) => !o)}
-        className='flex items-center justify-between gap-3 w-full px-5 py-3.5 text-left text-[13px] text-ui-text hover:bg-ui-bg-subtle/50 transition-colors'
+        className='justify-between'
+        iconRight={
+          <ChevronDownIcon
+            size={14}
+            className={`text-ui-text-3 flex-shrink-0 transition-transform ${open ? '' : '-rotate-90'}`}
+          />
+        }
       >
-        <span className='flex-1 font-medium'>{q}</span>
-        <ChevronDownIcon
-          size={14}
-          className={`text-ui-text-3 flex-shrink-0 transition-transform ${open ? '' : '-rotate-90'}`}
-        />
-      </button>
+        <span className='flex-1 font-medium text-left'>{q}</span>
+      </Button>
       {open && (
         <div className='px-5 pb-3.5 pt-0 text-[13px] text-ui-text-2 leading-relaxed'>
           {a}
@@ -264,36 +268,35 @@ const InfoCard = ({
   if (tabs.length === 0) return null;
 
   return (
-    <div
-      className='h-full flex flex-col border border-ui-border rounded-2xl overflow-hidden'
-      style={{ backgroundColor: 'var(--page-bg)' }}
-    >
-      {/* Tab bar */}
-      <div className='px-2 pt-2 pb-2 border-b border-ui-border overflow-x-auto scrollbar-hide flex-shrink-0'>
-        <UITabs
-          size='sm'
-          value={active}
-          onChange={setActive}
-          items={tabs.map(({ key, label }) => ({ value: key, label: t(label) }))}
-        />
-      </div>
-
-      {/* Body */}
-      <div className='flex-1 min-h-0 overflow-hidden'>
-        {active === 'api' && <ApiInfoList items={apiInfoData} loading={loading} t={t} />}
-        {active === 'news' && <AnnouncementsList items={announcementData} loading={loading} t={t} />}
-        {active === 'faq' && <FaqList items={faqData} loading={loading} t={t} />}
-        {active === 'uptime' && (
-          <UptimeList
-            data={uptimeData}
-            loading={uptimeLoading}
-            activeGroup={activeUptimeTab}
-            setActiveGroup={setActiveUptimeTab}
-            t={t}
+    <Card
+      padding='none'
+      className='h-full flex flex-col'
+      bodyClassName='flex-1 min-h-0 overflow-hidden'
+      header={
+        <div className='overflow-x-auto scrollbar-hide'>
+          <UITabs
+            size='sm'
+            value={active}
+            onChange={setActive}
+            items={tabs.map(({ key, label }) => ({ value: key, label: t(label) }))}
           />
-        )}
-      </div>
-    </div>
+        </div>
+      }
+      headerClassName='px-2 py-2 flex-shrink-0'
+    >
+      {active === 'api' && <ApiInfoList items={apiInfoData} loading={loading} t={t} />}
+      {active === 'news' && <AnnouncementsList items={announcementData} loading={loading} t={t} />}
+      {active === 'faq' && <FaqList items={faqData} loading={loading} t={t} />}
+      {active === 'uptime' && (
+        <UptimeList
+          data={uptimeData}
+          loading={uptimeLoading}
+          activeGroup={activeUptimeTab}
+          setActiveGroup={setActiveUptimeTab}
+          t={t}
+        />
+      )}
+    </Card>
   );
 };
 

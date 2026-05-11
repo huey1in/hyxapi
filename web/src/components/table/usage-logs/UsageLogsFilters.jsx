@@ -19,6 +19,7 @@ For commercial licensing, please contact support@quantumnous.com
 
 import React, { useState, useRef, useEffect } from 'react';
 import { Search } from 'lucide-react';
+import { Button, inputClass } from '../../ui';
 
 const LogsFilters = ({
   formInitValues,
@@ -64,7 +65,7 @@ const LogsFilters = ({
     }, 100);
   };
 
-  const inputCls = 'w-full pl-9 pr-3 py-2 text-sm bg-transparent border border-ui-border rounded-xl text-ui-text placeholder:text-ui-text-3 outline-none focus:border-ui-text-3 transition-colors';
+  const inputCls = inputClass({ variant: 'admin', size: 'md', className: 'pl-9' });
 
   return (
     <form
@@ -80,14 +81,14 @@ const LogsFilters = ({
               value={values.start_timestamp || ''}
               onChange={(e) => setValues((prev) => ({ ...prev, start_timestamp: e.target.value }))}
               placeholder={t('开始时间')}
-              className='flex-1 px-3 py-2 text-sm bg-transparent border border-ui-border rounded-xl text-ui-text placeholder:text-ui-text-3 outline-none focus:border-ui-text-3 transition-colors'
+              className={inputClass({ variant: 'admin', size: 'md', className: 'flex-1' })}
             />
             <input
               type='datetime-local'
               value={values.end_timestamp || ''}
               onChange={(e) => setValues((prev) => ({ ...prev, end_timestamp: e.target.value }))}
               placeholder={t('结束时间')}
-              className='flex-1 px-3 py-2 text-sm bg-transparent border border-ui-border rounded-xl text-ui-text placeholder:text-ui-text-3 outline-none focus:border-ui-text-3 transition-colors'
+              className={inputClass({ variant: 'admin', size: 'md', className: 'flex-1' })}
             />
           </div>
 
@@ -174,7 +175,7 @@ const LogsFilters = ({
                   refresh();
                 }, 0);
               }}
-              className='w-full sm:w-auto min-w-[120px] px-3 py-2 text-sm bg-transparent border border-ui-border rounded-xl text-ui-text outline-none focus:border-ui-text-3 transition-colors cursor-pointer'
+              className={inputClass({ variant: 'admin', size: 'md', className: 'sm:w-auto min-w-[120px] cursor-pointer' })}
             >
               <option value='0'>{t('全部')}</option>
               <option value='1'>{t('充值')}</option>
@@ -187,27 +188,27 @@ const LogsFilters = ({
           </div>
 
           <div className='flex gap-2 w-full sm:w-auto justify-end'>
-            <button
+            <Button
               type='submit'
+              variant='ghost'
               disabled={loading}
-              className='inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium rounded-xl border border-ui-border text-ui-text hover:bg-ui-bg-subtle transition-colors disabled:opacity-50'
             >
               {t('查询')}
-            </button>
-            <button
+            </Button>
+            <Button
               type='button'
+              variant='ghost'
               onClick={handleReset}
-              className='inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium rounded-xl border border-ui-border text-ui-text hover:bg-ui-bg-subtle transition-colors'
             >
               {t('重置')}
-            </button>
-            <button
+            </Button>
+            <Button
               type='button'
+              variant='ghost'
               onClick={() => setShowColumnSelector(true)}
-              className='inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium rounded-xl border border-ui-border text-ui-text hover:bg-ui-bg-subtle transition-colors'
             >
               {t('列设置')}
-            </button>
+            </Button>
           </div>
         </div>
       </div>

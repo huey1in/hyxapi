@@ -17,6 +17,7 @@ import {
 import { renderQuota, renderQuotaWithAmount, getChannelIcon } from '../../../helpers';
 import { CHANNEL_OPTIONS } from '../../../constants';
 import { showConfirm } from '../../common/ConfirmDialog';
+import { Button, IconButton } from '../../ui';
 
 // ── small helpers ───────────────────────────────────────
 
@@ -172,13 +173,13 @@ const RowMenu = ({ items }) => {
 
   return (
     <>
-      <button
+      <IconButton
         ref={btnRef}
+        size='sm'
+        variant='ghost'
+        icon={MoreHorizontal}
         onClick={(e) => { e.stopPropagation(); setOpen((p) => !p); }}
-        className='inline-flex items-center justify-center w-8 h-8 rounded-lg text-ui-text-3 hover:text-ui-text hover:bg-ui-bg-subtle transition-colors'
-      >
-        <MoreHorizontal size={14} />
-      </button>
+      />
       {open && createPortal(
         <div
           ref={popRef}
@@ -186,17 +187,16 @@ const RowMenu = ({ items }) => {
           style={{ top: pos.top, left: pos.left }}
         >
           {items.map((it, i) => (
-            <button
+            <Button
               key={i}
+              variant={it.danger ? 'danger' : 'ghost'}
+              size='sm'
+              block
               onClick={(e) => { e.stopPropagation(); setOpen(false); it.onClick?.(); }}
-              className={`w-full text-left px-3 py-2 text-sm rounded-lg whitespace-nowrap transition-colors ${
-                it.danger
-                  ? 'text-ui-danger hover:bg-ui-danger-bg'
-                  : 'text-ui-text hover:bg-ui-bg-subtle'
-              }`}
+              className='justify-start'
             >
               {it.label}
-            </button>
+            </Button>
           ))}
         </div>,
         document.body,
@@ -332,13 +332,14 @@ const ChannelsTable = (channelsData) => {
           <div className='flex items-center gap-2 text-xs tabular-nums'>
             <span className='text-ui-text-2'>{renderQuota(record.used_quota)}</span>
             <span className='text-ui-text-3'>/</span>
-            <button
+            <Button
+              variant='link'
+              size='sm'
               onClick={(e) => { e.stopPropagation(); updateChannelBalance(record); }}
-              className='text-ui-text hover:text-ui-brand transition-colors'
               title={record.type === 57 ? t('查看 Codex 帐号信息与用量') : t('点击更新余额')}
             >
               {record.type === 57 ? t('帐号信息') : renderQuotaWithAmount(record.balance)}
-            </button>
+            </Button>
           </div>
         );
 
@@ -541,17 +542,14 @@ const ChannelsTable = (channelsData) => {
 };
 
 const ActionBtn = ({ children, onClick, danger, title }) => (
-  <button
-    onClick={(e) => { e.stopPropagation(); onClick?.(e); }}
+  <Button
+    variant={danger ? 'danger' : 'secondary'}
+    size='sm'
     title={title}
-    className={`inline-flex items-center gap-1 px-2 h-7 text-xs font-medium rounded-lg transition-colors whitespace-nowrap ${
-      danger
-        ? 'text-ui-danger hover:bg-ui-danger-bg'
-        : 'text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-subtle'
-    }`}
+    onClick={(e) => { e.stopPropagation(); onClick?.(e); }}
   >
     {children}
-  </button>
+  </Button>
 );
 
 export default ChannelsTable;

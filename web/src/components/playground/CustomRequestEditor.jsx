@@ -20,6 +20,7 @@ For commercial licensing, please contact support@quantumnous.com
 import React, { useState, useEffect } from 'react';
 import { Code, Edit, Check, X, AlertTriangle } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { Button, Switch } from '../ui';
 
 const CustomRequestEditor = ({ customRequestMode, customRequestBody, onCustomRequestModeChange, onCustomRequestBodyChange, defaultPayload }) => {
   const { t } = useTranslation();
@@ -84,12 +85,12 @@ const CustomRequestEditor = ({ customRequestMode, customRequestBody, onCustomReq
           <Code size={14} className='text-ui-text-3' />
           <span className='text-sm font-medium'>{t('自定义请求体模式')}</span>
         </div>
-        <button
-          onClick={handleModeToggle}
-          className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${customRequestMode ? 'bg-black' : 'bg-ui-bg-subtle'}`}
-        >
-          <span className={`inline-block h-3.5 w-3.5 transform rounded-full bg-ui-bg-elevated transition-transform ${customRequestMode ? 'translate-x-[18px]' : 'translate-x-[2px]'}`} />
-        </button>
+        <Switch
+          size='sm'
+          checked={!!customRequestMode}
+          onChange={handleModeToggle}
+          aria-label={t('自定义请求体模式')}
+        />
       </div>
 
       {customRequestMode && (
@@ -107,13 +108,15 @@ const CustomRequestEditor = ({ customRequestMode, customRequestBody, onCustomReq
                   ? <span className='flex items-center gap-1 text-green-600 text-xs'><Check size={12} />{t('格式正确')}</span>
                   : <span className='flex items-center gap-1 text-red-500 text-xs'><X size={12} />{t('格式错误')}</span>
                 }
-                <button
+                <Button
+                  variant='ghost'
+                  size='sm'
+                  icon={Edit}
                   onClick={formatJson}
                   disabled={!isValid}
-                  className='flex items-center gap-1 px-2 py-1 text-xs border border-gray-200 rounded-lg hover:bg-ui-bg-subtle transition-colors disabled:opacity-40'
                 >
-                  <Edit size={11} />{t('格式化')}
-                </button>
+                  {t('格式化')}
+                </Button>
               </div>
             </div>
 
