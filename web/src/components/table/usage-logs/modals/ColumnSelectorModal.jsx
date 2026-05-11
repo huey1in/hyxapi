@@ -20,6 +20,7 @@ For commercial licensing, please contact support@quantumnous.com
 import React from 'react';
 import ModalDialog from '../../../common/ModalDialog';
 import { getLogsColumns } from '../UsageLogsColumnDefs';
+import { Button, Tabs as UITabs } from '../../../ui';
 
 const ColumnSelectorModal = ({
   showColumnSelector,
@@ -64,54 +65,29 @@ const ColumnSelectorModal = ({
       title={t('列设置')}
       footer={
         <>
-          <button
-            onClick={() => initDefaultColumns()}
-            className='px-4 py-2 text-sm font-medium rounded-xl border border-ui-border text-ui-text hover:bg-ui-bg-subtle transition-colors'
-          >
+          <Button variant='secondary' onClick={() => initDefaultColumns()}>
             {t('重置')}
-          </button>
-          <button
-            onClick={() => setShowColumnSelector(false)}
-            className='px-4 py-2 text-sm font-medium rounded-xl border border-ui-border text-ui-text hover:bg-ui-bg-subtle transition-colors'
-          >
+          </Button>
+          <Button variant='secondary' onClick={() => setShowColumnSelector(false)}>
             {t('取消')}
-          </button>
-          <button
-            onClick={() => setShowColumnSelector(false)}
-            className='inline-flex items-center gap-1.5 px-4 py-2 text-sm font-semibold rounded-xl bg-ui-accent text-ui-accent-fg hover:bg-ui-accent-hover transition-colors'
-          >
+          </Button>
+          <Button onClick={() => setShowColumnSelector(false)}>
             {t('确定')}
-          </button>
+          </Button>
         </>
       }
     >
       <div style={{ marginBottom: 20 }}>
         <div style={{ marginBottom: 16 }}>
           <div style={{ marginBottom: 8, fontWeight: 600 }} className='text-sm text-ui-text'>{t('计费显示模式')}</div>
-          <div className='flex gap-1 p-1 bg-ui-bg-subtle rounded-xl'>
-            <button
-              type='button'
-              onClick={() => handleBillingDisplayModeChange('price')}
-              className={`flex-1 px-3 py-1.5 text-sm rounded-lg transition-colors ${
-                billingDisplayMode === 'price'
-                  ? 'bg-ui-bg-elevated text-ui-text font-medium shadow-sm'
-                  : 'text-ui-text-2 hover:text-ui-text'
-              }`}
-            >
-              {isTokensDisplay ? t('价格模式') : t('价格模式（默认）')}
-            </button>
-            <button
-              type='button'
-              onClick={() => handleBillingDisplayModeChange('ratio')}
-              className={`flex-1 px-3 py-1.5 text-sm rounded-lg transition-colors ${
-                billingDisplayMode === 'ratio'
-                  ? 'bg-ui-bg-elevated text-ui-text font-medium shadow-sm'
-                  : 'text-ui-text-2 hover:text-ui-text'
-              }`}
-            >
-              {isTokensDisplay ? t('倍率模式（默认）') : t('倍率模式')}
-            </button>
-          </div>
+          <UITabs
+            value={billingDisplayMode}
+            onChange={handleBillingDisplayModeChange}
+            items={[
+              { value: 'price', label: isTokensDisplay ? t('价格模式') : t('价格模式（默认）') },
+              { value: 'ratio', label: isTokensDisplay ? t('倍率模式（默认）') : t('倍率模式') },
+            ]}
+          />
         </div>
         <label className='flex items-center gap-2 cursor-pointer'>
           <input

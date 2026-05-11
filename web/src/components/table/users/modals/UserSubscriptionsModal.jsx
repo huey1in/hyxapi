@@ -10,6 +10,7 @@ import SlideOver from '../../../common/SlideOver';
 import { showConfirm } from '../../../common/ConfirmDialog';
 import { NativeSelect, FieldRow } from '../../../common/form/Primitives';
 import Pagination from '../../../common/table/Pagination';
+import { Button } from '../../../ui';
 
 const formatTs = (ts) => (ts ? new Date(ts * 1000).toLocaleString() : '—');
 
@@ -192,7 +193,7 @@ const UserSubscriptionsModal = ({ visible, onCancel, user, t, onSuccess }) => {
       width={isMobile ? window.innerWidth : 920}
       title={
         <>
-          <span className='inline-flex items-center px-2 py-0.5 text-[11px] font-medium rounded-xl bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20'>
+          <span className='inline-flex items-center px-2 py-0.5 text-[11px] font-medium rounded-xl bg-blue-500/10 text-blue-600 dark:text-blue-400'>
             {t('管理')}
           </span>
           <span className='text-base font-semibold text-ui-text truncate'>
@@ -226,14 +227,13 @@ const UserSubscriptionsModal = ({ visible, onCancel, user, t, onSuccess }) => {
               ]}
             />
           </div>
-          <button
+          <Button
+            icon={creating ? Loader2 : Plus}
             onClick={createSubscription}
             disabled={creating || !selectedPlanId}
-            className='inline-flex items-center justify-center gap-1.5 px-4 py-2 text-sm font-semibold rounded-xl bg-ui-accent text-ui-accent-fg hover:bg-ui-accent-hover disabled:opacity-50 whitespace-nowrap'
           >
-            {creating ? <Loader2 size={13} className='animate-spin' /> : <Plus size={13} />}
             {t('新增订阅')}
-          </button>
+          </Button>
         </div>
       </div>
 
@@ -242,14 +242,15 @@ const UserSubscriptionsModal = ({ visible, onCancel, user, t, onSuccess }) => {
         <div className='text-xs text-ui-text-3'>
           {t('共 {{n}} 条订阅记录', { n: subs.length })}
         </div>
-        <button
+        <Button
+          size='sm'
+          variant='secondary'
+          icon={RefreshCw}
           onClick={loadUserSubscriptions}
           disabled={loading}
-          className='inline-flex items-center gap-1 px-2.5 py-1 text-[11px] rounded-xl border border-ui-border text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-subtle disabled:opacity-40 whitespace-nowrap'
         >
-          <RefreshCw size={11} className={loading ? 'animate-spin' : ''} />
           {t('刷新')}
-        </button>
+        </Button>
       </div>
 
       {/* List */}
@@ -319,21 +320,23 @@ const UserSubscriptionsModal = ({ visible, onCancel, user, t, onSuccess }) => {
                       </td>
                       <td className='px-3 py-3 align-middle text-right'>
                         <div className='flex items-center justify-end gap-1'>
-                          <button
+                          <Button
+                            size='sm'
+                            icon={Ban}
                             onClick={() => invalidateSubscription(sub.id)}
                             disabled={!active || cancelled}
-                            className='inline-flex items-center gap-1 px-2 py-1 text-[11px] rounded border border-amber-500/30 text-amber-600 dark:text-amber-400 hover:bg-amber-500/10 disabled:opacity-40 disabled:hover:bg-transparent whitespace-nowrap'
+                            className='bg-amber-500/10 text-amber-600 dark:text-amber-400 hover:bg-amber-500/20'
                           >
-                            <Ban size={11} />
                             {t('作废')}
-                          </button>
-                          <button
+                          </Button>
+                          <Button
+                            size='sm'
+                            variant='danger'
+                            icon={Trash2}
                             onClick={() => deleteSubscription(sub.id)}
-                            className='inline-flex items-center gap-1 px-2 py-1 text-[11px] rounded border border-ui-danger/30 text-ui-danger hover:bg-ui-danger-bg whitespace-nowrap'
                           >
-                            <Trash2 size={11} />
                             {t('删除')}
-                          </button>
+                          </Button>
                         </div>
                       </td>
                     </tr>

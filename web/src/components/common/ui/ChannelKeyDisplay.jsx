@@ -77,7 +77,7 @@ const ChannelKeyDisplay = ({
               </span>
               <button
                 onClick={handleCopyAll}
-                className='inline-flex items-center gap-1 px-2.5 py-1 text-[11px] rounded-xl border border-ui-border text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-subtle whitespace-nowrap'
+                className='inline-flex items-center gap-1 px-2.5 py-1 text-[11px] rounded-xl text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-subtle whitespace-nowrap'
               >
                 <Copy size={11} />
                 {t('复制全部')}
@@ -93,13 +93,13 @@ const ChannelKeyDisplay = ({
                 <span className='text-xs font-semibold text-ui-text-2'>{it.label}</span>
                 <div className='flex items-center gap-1.5'>
                   {it.type === 'json' && (
-                    <span className='inline-flex items-center px-2 py-0.5 text-[11px] rounded-xl font-medium bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20'>
+                    <span className='inline-flex items-center px-2 py-0.5 text-[11px] rounded-xl font-medium bg-blue-500/10 text-blue-600 dark:text-blue-400'>
                       JSON
                     </span>
                   )}
                   <button
                     onClick={() => handleCopyKey(it.content)}
-                    className='inline-flex items-center gap-1 px-2 py-0.5 text-[11px] rounded-xl border border-ui-border text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-subtle whitespace-nowrap'
+                    className='inline-flex items-center gap-1 px-2 py-0.5 text-[11px] rounded-xl text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-subtle whitespace-nowrap'
                   >
                     <Copy size={11} />
                     {t('复制')}

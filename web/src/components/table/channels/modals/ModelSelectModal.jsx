@@ -9,6 +9,7 @@ import { useIsMobile } from '../../../../hooks/common/useIsMobile';
 import { Search, X, Info, ChevronDown } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { getModelCategories } from '../../../../helpers/render';
+import { Button, IconButton, Tabs as UITabs } from '../../../ui';
 
 const ModelSelectModal = ({
   visible,
@@ -209,7 +210,7 @@ const ModelSelectModal = ({
       onClick={onCancel}
     >
       <div
-        className={`border border-ui-border rounded-[28px] shadow-2xl w-full ${
+        className={`border border-ui-border rounded-[20px] shadow-2xl w-full ${
           isMobile ? 'max-w-full' : 'max-w-3xl'
         } max-h-[88vh] flex flex-col overflow-hidden`}
         style={{ backgroundColor: 'var(--page-bg)' }}
@@ -218,29 +219,18 @@ const ModelSelectModal = ({
         <div className='flex items-center justify-between gap-3 px-5 py-3.5 border-b border-ui-border'>
           <span className='text-sm font-semibold text-ui-text'>{t('选择模型')}</span>
           <div className='flex items-center gap-1'>
-            {newModels.length > 0 && (
-              <button
-                onClick={() => setActiveTab('new')}
-                className={`px-2.5 py-1 text-xs rounded-xl transition-colors ${
-                  activeTab === 'new' ? 'bg-ui-bg-subtle text-ui-text font-semibold border border-ui-text-3' : 'border border-ui-border text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-subtle'
-                }`}
-              >
-                {t('新获取的模型')} ({newModels.length})
-              </button>
+            {(newModels.length > 0 || existingModels.length > 0) && (
+              <UITabs
+                size='sm'
+                value={activeTab}
+                onChange={setActiveTab}
+                items={[
+                  newModels.length > 0 && { value: 'new', label: `${t('新获取的模型')} (${newModels.length})` },
+                  existingModels.length > 0 && { value: 'existing', label: `${t('已有的模型')} (${existingModels.length})` },
+                ].filter(Boolean)}
+              />
             )}
-            {existingModels.length > 0 && (
-              <button
-                onClick={() => setActiveTab('existing')}
-                className={`px-2.5 py-1 text-xs rounded-xl transition-colors ${
-                  activeTab === 'existing' ? 'bg-ui-bg-subtle text-ui-text font-semibold border border-ui-text-3' : 'border border-ui-border text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-subtle'
-                }`}
-              >
-                {t('已有的模型')} ({existingModels.length})
-              </button>
-            )}
-            <button onClick={onCancel} className='ml-1 p-1 rounded text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-subtle'>
-              <X size={16} />
-            </button>
+            <IconButton icon={X} size='sm' onClick={onCancel} className='ml-1' />
           </div>
         </div>
 
@@ -284,15 +274,12 @@ const ModelSelectModal = ({
             );
           })()}
           <div className='flex gap-2'>
-            <button onClick={onCancel} className='inline-flex items-center px-3.5 py-1.5 text-xs font-medium rounded-xl border border-ui-border text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-subtle whitespace-nowrap'>
+            <Button size='sm' variant='ghost' onClick={onCancel}>
               {t('取消')}
-            </button>
-            <button
-              onClick={() => onConfirm?.(checkedList)}
-              className='inline-flex items-center px-4 py-1.5 text-xs font-semibold rounded-xl bg-ui-accent text-ui-accent-fg hover:bg-ui-accent-hover whitespace-nowrap'
-            >
+            </Button>
+            <Button size='sm' onClick={() => onConfirm?.(checkedList)}>
               {t('确定')}
-            </button>
+            </Button>
           </div>
         </div>
       </div>

@@ -35,6 +35,7 @@ import MarkdownRenderer from '../../components/common/markdown/MarkdownRenderer'
 
 // 紧凑的内嵌选择器（chip 触发，popup 向上 + portal）
 import Dropdown from '../../components/common/ui/Dropdown';
+import { Button, IconButton } from '../../components/ui';
 
 const SelectChip = ({
   options,
@@ -420,7 +421,7 @@ const Playground = () => {
               <div className='h-full flex flex-col items-center justify-center text-center px-6'>
                 <h2
                   className='text-3xl md:text-5xl font-bold text-ui-text mb-3'
-                  style={{ fontFamily: "'Space Grotesk', sans-serif", letterSpacing: '-0.025em' }}
+                  style={{ letterSpacing: '-0.025em' }}
                 >
                   {greeting}
                   {username && (
@@ -496,7 +497,7 @@ const Playground = () => {
       {/* Input area: single integrated card */}
       <div className='shrink-0 px-3 md:px-4 pb-4 pt-2'>
         <div className='max-w-3xl mx-auto'>
-          <div className='bg-ui-bg-elevated border border-ui-border rounded-[28px] shadow-sm overflow-hidden focus-within:border-ui-text-3 transition-colors'>
+          <div className='bg-ui-bg-elevated border border-ui-border rounded-[20px] shadow-sm overflow-hidden focus-within:border-ui-text-3 transition-colors'>
             {/* Pending image previews */}
             {pendingImages.length > 0 && (
               <div className='flex flex-wrap gap-2 px-4 pt-4'>
@@ -551,15 +552,13 @@ const Playground = () => {
             {/* Bottom toolbar */}
             <div className='flex items-center justify-between gap-2 px-3 pb-3 min-w-0'>
               <div className='flex items-center gap-1 min-w-0 flex-1 overflow-hidden'>
-                <button
-                  type='button'
+                <IconButton
+                  icon={ImagePlus}
                   onClick={() => fileInputRef.current?.click()}
                   title={t('上传图片')}
                   aria-label={t('上传图片')}
-                  className='inline-flex items-center justify-center w-9 h-9 rounded-xl text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-subtle transition-colors flex-shrink-0'
-                >
-                  <ImagePlus size={16} />
-                </button>
+                  className='flex-shrink-0'
+                />
                 <SelectChip
                   options={groups}
                   value={inputs.group}
@@ -577,32 +576,31 @@ const Playground = () => {
               </div>
               <div className='flex items-center gap-1.5 flex-shrink-0'>
                 {message.length > 0 && (
-                  <button
+                  <IconButton
+                    icon={Trash2}
                     onClick={handleClear}
                     title={t('新对话')}
                     aria-label='clear'
-                    className='inline-flex items-center justify-center w-9 h-9 rounded-xl text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-subtle transition-colors'
-                  >
-                    <Trash2 size={15} />
-                  </button>
+                  />
                 )}
                 {isGenerating ? (
-                  <button
+                  <IconButton
+                    icon={Square}
+                    variant='solid'
+                    size='lg'
                     onClick={onStopGenerator}
                     aria-label='stop'
-                    className='inline-flex items-center justify-center w-10 h-10 rounded-xl bg-ui-bg-subtle text-ui-text hover:bg-ui-border transition-colors'
-                  >
-                    <Square size={14} fill='currentColor' />
-                  </button>
+                    className='bg-ui-bg-subtle text-ui-text hover:bg-ui-border'
+                  />
                 ) : (
-                  <button
+                  <IconButton
+                    icon={Send}
+                    variant='solid'
+                    size='lg'
                     onClick={handleSend}
                     disabled={!canSend}
                     aria-label='send'
-                    className='inline-flex items-center justify-center w-10 h-10 rounded-xl bg-ui-accent text-ui-accent-fg hover:bg-ui-accent-hover disabled:opacity-30 disabled:hover:bg-ui-accent transition-all duration-150 active:scale-95'
-                  >
-                    <Send size={15} />
-                  </button>
+                  />
                 )}
               </div>
             </div>

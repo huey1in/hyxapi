@@ -40,7 +40,7 @@ const HeaderLogo = ({
         <SkeletonWrapper loading={isLoading} type='title' width={120} height={24}>
           <span
             className='text-2xl font-bold text-ui-text transition-opacity group-hover:opacity-80'
-            style={{ fontFamily: "'Space Grotesk', sans-serif", letterSpacing: '-0.03em' }}
+            style={{ letterSpacing: '-0.03em' }}
           >
             {systemName === 'Routify' ? (
               <>

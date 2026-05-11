@@ -204,7 +204,7 @@
   overflow: hidden;
   background: #000000;
   border: 1px solid rgba(255, 255, 255, 0.1);
-  font-family: 'JetBrains Mono', 'Fira Code', 'Consolas', 'Monaco', 'Courier New', monospace;
+  font-family: 'JetBrains Mono', 'SF Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
 }
 
 .code-block-header {
@@ -342,7 +342,7 @@
   padding: 1px 6px;
   border-radius: 4px;
   font-size: 0.9em;
-  font-family: 'JetBrains Mono', 'Fira Code', 'Consolas', 'Monaco', 'Courier New', monospace;
+  font-family: 'JetBrains Mono', 'SF Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
 }
 
 .user-message .inline-code {
@@ -463,7 +463,7 @@
   box-shadow: 0 1px 0 var(--semi-color-border);
   color: var(--semi-color-text-0);
   display: inline-block;
-  font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+  font-family: 'JetBrains Mono', 'SF Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
   font-size: 0.85em;
   font-weight: 700;
   line-height: 1;

@@ -23,13 +23,14 @@ import {
 } from '../../helpers';
 import { UserContext } from '../../context/User';
 import { StatusContext } from '../../context/Status';
+import { Button, IconButton } from '../../components/ui';
 import Pagination from '../../components/common/table/Pagination';
 
 // ── small atoms ────────────────────────────────────────
 
 const Card = ({ title, action, children, className = '', bodyClass = 'p-5' }) => (
   <div
-    className={`border border-ui-border rounded-[28px] ${className}`}
+    className={`border border-ui-border rounded-[20px] ${className}`}
     style={{ backgroundColor: 'var(--page-bg)' }}
   >
     {(title || action) && (
@@ -46,21 +47,11 @@ const inputCls =
   'w-full px-3 py-2 text-sm bg-transparent border border-ui-border rounded-xl text-ui-text placeholder:text-ui-text-3 outline-none focus:border-ui-text-3 transition-colors';
 
 const PrimaryBtn = ({ children, ...props }) => (
-  <button
-    {...props}
-    className={`inline-flex items-center justify-center gap-1.5 px-4 py-2 text-sm font-semibold rounded-lg bg-ui-accent text-ui-accent-fg hover:bg-ui-accent-hover hover:shadow-md active:scale-95 disabled:opacity-50 disabled:hover:shadow-none disabled:active:scale-100 transition-all ${props.className || ''}`}
-  >
-    {children}
-  </button>
+  <Button {...props}>{children}</Button>
 );
 
 const GhostBtn = ({ children, ...props }) => (
-  <button
-    {...props}
-    className={`inline-flex items-center justify-center gap-1.5 px-4 py-2 text-sm font-medium rounded-lg border border-ui-border text-ui-text hover:bg-ui-bg-subtle transition-colors ${props.className || ''}`}
-  >
-    {children}
-  </button>
+  <Button variant='secondary' {...props}>{children}</Button>
 );
 
 // ── topup history modal ─────────────────────────────────
@@ -130,12 +121,7 @@ const HistoryModal = ({ open, onClose, t }) => {
       >
         <div className='flex items-center justify-between px-5 py-3.5'>
           <span className='text-sm font-semibold text-ui-text'>{t('充值记录')}</span>
-          <button
-            onClick={onClose}
-            className='p-1 rounded text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-subtle'
-          >
-            <X size={16} />
-          </button>
+          <IconButton icon={X} size='sm' onClick={onClose} />
         </div>
         <div className='flex-1 overflow-y-auto'>
           {loading && items.length === 0 ? (
@@ -213,9 +199,7 @@ const TransferModal = ({ open, max, onClose, onConfirm, t }) => {
       >
         <div className='flex items-center justify-between px-5 py-3.5'>
           <span className='text-sm font-semibold text-ui-text'>{t('划转邀请额度')}</span>
-          <button onClick={onClose} className='p-1 rounded text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-subtle'>
-            <X size={16} />
-          </button>
+          <IconButton icon={X} size='sm' onClick={onClose} />
         </div>
         <div className='p-5 space-y-3'>
           <div>
@@ -440,24 +424,23 @@ const TopUp = () => {
         <div className='flex items-center justify-between gap-3 mb-5'>
           <h1
             className='text-2xl md:text-3xl font-medium text-ui-text'
-            style={{ fontFamily: "'Space Grotesk', sans-serif", letterSpacing: '-0.02em' }}
+            style={{ letterSpacing: '-0.02em' }}
           >
             {t('钱包管理')}
           </h1>
           <div className='flex items-center gap-1'>
-            <button
+            <IconButton
+              icon={RefreshCw}
               onClick={refreshUser}
               title={t('刷新')}
-              className='inline-flex items-center justify-center w-9 h-9 rounded-lg text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-subtle transition-colors'
-            >
-              <RefreshCw size={14} className={refreshing ? 'animate-spin' : ''} />
-            </button>
+              className={refreshing ? '[&_svg]:animate-spin' : ''}
+            />
           </div>
         </div>
 
         {/* Balance hero */}
         <div
-          className='relative overflow-hidden border border-ui-border rounded-[28px] p-6 md:p-8 mb-5'
+          className='relative overflow-hidden border border-ui-border rounded-[20px] p-6 md:p-8 mb-5'
           style={{ backgroundColor: 'var(--page-bg)' }}
         >
           <div className='relative z-10 grid grid-cols-1 md:grid-cols-3 gap-6'>
@@ -467,7 +450,7 @@ const TopUp = () => {
               </div>
               <div
                 className='text-4xl md:text-5xl font-medium text-ui-text tabular-nums'
-                style={{ fontFamily: "'Space Grotesk', sans-serif", letterSpacing: '-0.02em' }}
+                style={{ letterSpacing: '-0.02em' }}
               >
                 {renderQuota(quota)}
               </div>
@@ -683,17 +666,14 @@ const TopUp = () => {
             </p>
             <div className='flex flex-wrap gap-1.5 mb-3'>
               {[10, 50, 100, 500].map((amt) => (
-                <button
+                <Button
                   key={amt}
+                  size='sm'
+                  variant={topUpCount === amt ? 'secondary' : 'ghost'}
                   onClick={() => setTopUpCount(amt)}
-                  className={`px-3 py-1.5 text-xs rounded-md transition-colors ${
-                    topUpCount === amt
-                      ? 'bg-ui-bg-subtle text-ui-text font-semibold border border-ui-text-3'
-                      : 'border border-ui-border text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-subtle'
-                  }`}
                 >
                   ${amt}
-                </button>
+                </Button>
               ))}
               <input
                 type='number'
@@ -714,13 +694,14 @@ const TopUp = () => {
         <Card
           title={<span>{t('邀请奖励')}</span>}
           action={
-            <button
+            <Button
+              size='sm'
+              variant='ghost'
               onClick={() => setShowTransfer(true)}
               disabled={affQuota <= 0}
-              className='inline-flex items-center px-2.5 py-1 text-xs rounded-md text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-subtle disabled:opacity-40 disabled:hover:bg-transparent transition-colors'
             >
               {t('划转到余额')}
-            </button>
+            </Button>
           }
         >
           <div className='grid grid-cols-3 gap-4 mb-4'>
@@ -749,12 +730,12 @@ const TopUp = () => {
               <code className='flex-1 text-[12px] font-mono text-ui-text-2 truncate select-all'>
                 {affLink}
               </code>
-              <button
+              <IconButton
+                icon={copyingAff ? Check : Copy}
+                size='sm'
                 onClick={copyAff}
-                className='inline-flex items-center justify-center w-8 h-8 rounded-md text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-elevated transition-colors flex-shrink-0'
-              >
-                {copyingAff ? <Check size={14} className='text-ui-brand' /> : <Copy size={14} />}
-              </button>
+                className='flex-shrink-0'
+              />
             </div>
           )}
         </Card>

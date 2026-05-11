@@ -96,10 +96,10 @@ const ActionBtn = ({ children, onClick, danger, disabled, title }) => (
     }}
     disabled={disabled}
     title={title}
-    className={`inline-flex items-center gap-1 px-2 py-1 text-[11px] rounded border transition-colors whitespace-nowrap disabled:opacity-40 ${
+    className={`inline-flex items-center gap-1 px-2 py-1 text-[11px] rounded transition-colors whitespace-nowrap disabled:opacity-40 ${
       danger
-        ? 'border-ui-danger/30 text-ui-danger hover:bg-ui-danger-bg disabled:hover:bg-transparent'
-        : 'border-ui-border text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-subtle disabled:hover:bg-transparent'
+        ? 'text-ui-danger hover:bg-ui-danger-bg disabled:hover:bg-transparent'
+        : 'text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-subtle disabled:hover:bg-transparent'
     }`}
   >
     {children}
@@ -318,7 +318,7 @@ const UsersTable = (usersData) => {
                   <td className='px-3 py-3 align-middle'>
                     <InviteCell user={u} t={t} />
                   </td>
-                  <td className='px-3 py-3 align-middle text-right sticky right-0 bg-ui-bg-elevated'>
+                  <td className='px-3 py-3 align-middle text-right sticky right-0 bg-[var(--page-bg)]'>
                     {deleted ? (
                       <span className='text-[11px] text-ui-text-3'>—</span>
                     ) : (

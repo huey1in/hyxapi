@@ -23,6 +23,7 @@ import {
   ToggleRight,
 } from 'lucide-react';
 import Pagination from './Pagination';
+import { Button } from '../../ui';
 
 const CrudSection = ({
   title,
@@ -115,55 +116,41 @@ const CrudSection = ({
         </div>
         <div className='flex items-center gap-2 flex-wrap'>
           {onToggleEnabled !== undefined && (
-            <button
-              type='button'
+            <Button
+              size='sm'
+              variant='secondary'
+              icon={enabled ? ToggleRight : ToggleLeft}
               onClick={() => onToggleEnabled(!enabled)}
-              className='inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs rounded-xl border border-ui-border text-ui-text-2 hover:bg-ui-bg-hover'
             >
-              {enabled ? (
-                <ToggleRight size={14} className='text-emerald-500' />
-              ) : (
-                <ToggleLeft size={14} className='text-ui-text-3' />
-              )}
               {enableLabel}
-            </button>
+            </Button>
           )}
           {onAdd && (
-            <button
-              type='button'
-              onClick={onAdd}
-              className='inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium rounded-xl bg-ui-accent text-ui-accent-fg hover:opacity-90'
-            >
-              <Plus size={12} />
+            <Button size='sm' icon={Plus} onClick={onAdd}>
               {addLabel}
-            </button>
+            </Button>
           )}
           {onBatchDelete && (
-            <button
-              type='button'
+            <Button
+              size='sm'
+              variant='danger'
+              icon={Trash2}
               onClick={onBatchDelete}
               disabled={!selectedRowKeys.length}
-              className='inline-flex items-center gap-1 px-2.5 py-1.5 text-xs rounded-xl border border-ui-danger/30 text-ui-danger hover:bg-ui-danger-bg disabled:opacity-40'
             >
-              <Trash2 size={12} />
               {batchDeleteLabel}
               {selectedRowKeys.length > 0 && ` (${selectedRowKeys.length})`}
-            </button>
+            </Button>
           )}
           {onSave && (
-            <button
-              type='button'
+            <Button
+              size='sm'
+              icon={saveLoading ? Loader2 : Save}
               onClick={onSave}
               disabled={saveLoading || saveDisabled}
-              className='inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-xl bg-ui-accent text-ui-accent-fg hover:opacity-90 disabled:opacity-50'
             >
-              {saveLoading ? (
-                <Loader2 size={11} className='animate-spin' />
-              ) : (
-                <Save size={11} />
-              )}
               {saveLabel}
-            </button>
+            </Button>
           )}
         </div>
       </div>

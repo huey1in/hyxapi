@@ -20,6 +20,8 @@ import {
 } from '../../../components/common/form/Primitives';
 import { createPortal } from 'react-dom';
 import GroupTable from './components/GroupTable';
+import { Button, IconButton, Tabs as UITabs } from '../../../components/ui';
+import { X as XIcon } from 'lucide-react';
 
 const OPTION_KEYS = [
   'GroupRatio',
@@ -86,16 +88,15 @@ function GuideSideSheet({ open, onClose, t }) {
           <div className='flex items-center gap-2'>
             <span className='text-sm font-semibold text-ui-text'>{t('分组设置使用说明')}</span>
           </div>
-          <button onClick={onClose} className='w-7 h-7 inline-flex items-center justify-center rounded-md text-ui-text-3 hover:text-ui-text hover:bg-ui-bg-subtle'>
-            </button>
+          <IconButton icon={XIcon} size='sm' onClick={onClose} />
         </div>
-        <div className='flex gap-0 px-5 border-b border-ui-divider overflow-x-auto'>
-          {tabs.map((tb) => (
-            <button key={tb.key} onClick={() => setTab(tb.key)}
-              className={`px-3 py-2 text-xs font-medium whitespace-nowrap border-b-2 transition-colors ${tab === tb.key ? 'border-ui-accent text-ui-accent' : 'border-transparent text-ui-text-3 hover:text-ui-text-2'}`}>
-              {tb.label}
-            </button>
-          ))}
+        <div className='px-5 border-b border-ui-divider'>
+          <UITabs
+            variant='underline'
+            value={tab}
+            onChange={setTab}
+            items={tabs.map((tb) => ({ value: tb.key, label: tb.label }))}
+          />
         </div>
         <div className='flex-1 overflow-y-auto px-5 py-4 space-y-4 text-xs text-ui-text-2 leading-relaxed'>
           {tab === 'overview' && (
@@ -213,12 +214,9 @@ export default function GroupRatioSettings(props) {
           </div>
         </div>
         <div className='flex items-center gap-2'>
-          <button
-            onClick={() => setShowGuide(true)}
-            className='inline-flex items-center gap-1 px-2.5 py-1.5 text-xs rounded-xl border border-ui-border text-ui-text-2 hover:bg-ui-bg-hover'
-          >
+          <Button size='sm' variant='secondary' onClick={() => setShowGuide(true)}>
             {t('使用说明')}
-          </button>
+          </Button>
         </div>
       </div>
 
@@ -260,13 +258,9 @@ export default function GroupRatioSettings(props) {
 
       {/* Save bar */}
       <div className='flex items-center justify-end gap-2 pt-2 border-t border-ui-divider'>
-        <button
-          onClick={submit}
-          disabled={loading}
-          className='inline-flex items-center gap-1.5 px-4 py-1.5 text-xs font-semibold rounded-xl bg-ui-accent text-ui-accent-fg hover:opacity-90 disabled:opacity-50'
-        >
+        <Button onClick={submit} disabled={loading}>
           {t('保存分组相关设置')}
-        </button>
+        </Button>
       </div>
 
       <GuideSideSheet open={showGuide} onClose={() => setShowGuide(false)} t={t} />

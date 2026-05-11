@@ -36,6 +36,7 @@ import {
   Notice,
   MultiCombobox,
 } from '../../../common/form/Primitives';
+import { Button } from '../../../ui';
 import { getChannelModels } from '../../../../helpers';
 import { useTranslation } from 'react-i18next';
 
@@ -391,13 +392,12 @@ const EditTagModal = (props) => {
 
   const title = (
     <div className='flex items-center gap-2'>
-      <span className='inline-flex items-center px-2 py-0.5 text-[11px] rounded-xl font-medium bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20'>
+      <span className='inline-flex items-center px-2 py-0.5 text-[11px] rounded-xl font-medium bg-blue-500/10 text-blue-600 dark:text-blue-400'>
         {t('编辑')}
       </span>
       <h3
         className='text-base font-semibold text-ui-text m-0'
         style={{
-          fontFamily: "'Space Grotesk', sans-serif",
           letterSpacing: '-0.02em',
         }}
       >
@@ -408,25 +408,16 @@ const EditTagModal = (props) => {
 
   const footer = (
     <>
-      <button
-        onClick={handleClose}
-        className='inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium rounded-xl border border-ui-border text-ui-text hover:bg-ui-bg-subtle transition-colors'
-      >
-        <X size={14} />
+      <Button variant='secondary' icon={X} onClick={handleClose}>
         {t('取消')}
-      </button>
-      <button
+      </Button>
+      <Button
+        icon={loading ? Loader2 : Save}
         onClick={() => formApiRef.current?.submitForm()}
         disabled={loading}
-        className='inline-flex items-center gap-1.5 px-4 py-2 text-sm font-semibold rounded-xl bg-ui-accent text-ui-accent-fg hover:bg-ui-accent-hover transition-colors disabled:opacity-60'
       >
-        {loading ? (
-          <Loader2 size={14} className='animate-spin' />
-        ) : (
-          <Save size={14} />
-        )}
         {t('保存')}
-      </button>
+      </Button>
     </>
   );
 
@@ -495,12 +486,9 @@ const EditTagModal = (props) => {
                   onChange={(value) => setCustomModel(value.trim())}
                 />
               </div>
-              <button
-                onClick={addCustomModels}
-                className='inline-flex items-center gap-1.5 px-4 py-2 text-sm font-semibold rounded-xl bg-ui-accent text-ui-accent-fg hover:bg-ui-accent-hover transition-colors whitespace-nowrap'
-              >
+              <Button onClick={addCustomModels}>
                 {t('填入')}
-              </button>
+              </Button>
             </div>
           </FieldRow>
 
@@ -508,9 +496,9 @@ const EditTagModal = (props) => {
             label={t('模型重定向')}
             extra={
               <>
-                <button
-                  type='button'
-                  className='text-xs text-ui-accent hover:underline'
+                <Button
+                  variant='link'
+                  size='sm'
                   onClick={() =>
                     handleInputChange(
                       'model_mapping',
@@ -519,10 +507,10 @@ const EditTagModal = (props) => {
                   }
                 >
                   {t('填入模板')}
-                </button>
-                <button
-                  type='button'
-                  className='text-xs text-ui-accent hover:underline'
+                </Button>
+                <Button
+                  variant='link'
+                  size='sm'
                   onClick={() =>
                     handleInputChange(
                       'model_mapping',
@@ -531,14 +519,14 @@ const EditTagModal = (props) => {
                   }
                 >
                   {t('清空重定向')}
-                </button>
-                <button
-                  type='button'
-                  className='text-xs text-ui-accent hover:underline'
+                </Button>
+                <Button
+                  variant='link'
+                  size='sm'
                   onClick={() => handleInputChange('model_mapping', '')}
                 >
                   {t('不更改')}
-                </button>
+                </Button>
               </>
             }
           >
@@ -561,21 +549,15 @@ const EditTagModal = (props) => {
             label={t('参数覆盖')}
             extra={
               <>
-                <button
-                  type='button'
-                  className='text-xs text-ui-accent hover:underline'
-                  onClick={() =>
+                <Button variant='link' size='sm' onClick={() =>
                     handleInputChange(
                       'param_override',
                       JSON.stringify({ temperature: 0 }, null, 2),
                     )
-                  }
-                >
-                  {t('旧格式模板')}
-                </button>
-                <button
-                  type='button'
-                  className='text-xs text-ui-accent hover:underline'
+                  }>{t('旧格式模板')}</Button>
+                <Button
+                  variant='link'
+                  size='sm'
                   onClick={() =>
                     handleInputChange(
                       'param_override',
@@ -604,14 +586,8 @@ const EditTagModal = (props) => {
                   }
                 >
                   {t('新格式模板')}
-                </button>
-                <button
-                  type='button'
-                  className='text-xs text-ui-accent hover:underline'
-                  onClick={() => handleInputChange('param_override', null)}
-                >
-                  {t('不更改')}
-                </button>
+                </Button>
+                <Button variant='link' size='sm' onClick={() => handleInputChange('param_override', null)}>{t('不更改')}</Button>
               </>
             }
           >
@@ -635,9 +611,9 @@ const EditTagModal = (props) => {
             label={t('请求头覆盖')}
             extra={
               <>
-                <button
-                  type='button'
-                  className='text-xs text-ui-accent hover:underline'
+                <Button
+                  variant='link'
+                  size='sm'
                   onClick={() =>
                     handleInputChange(
                       'header_override',
@@ -654,14 +630,8 @@ const EditTagModal = (props) => {
                   }
                 >
                   {t('填入模板')}
-                </button>
-                <button
-                  type='button'
-                  className='text-xs text-ui-accent hover:underline'
-                  onClick={() => handleInputChange('header_override', null)}
-                >
-                  {t('不更改')}
-                </button>
+                </Button>
+                <Button variant='link' size='sm' onClick={() => handleInputChange('header_override', null)}>{t('不更改')}</Button>
               </>
             }
             hint={

@@ -197,10 +197,12 @@ const PageLayout = () => {
       </header>
       <div
         style={{
-          overflow: isMobile ? 'visible' : 'auto',
+          overflow: isMobile ? 'visible' : 'hidden',
           display: 'flex',
           flexDirection: 'column',
           paddingTop: headerOffset,
+          flex: '1 1 0%',
+          minHeight: 0,
         }}
       >
         {showSider && (
@@ -255,7 +257,8 @@ const PageLayout = () => {
                 ? `calc(${consoleGutter} + var(--sidebar-current-width))`
                 : '0',
             marginRight: isMobile || !isConsoleRoute ? '0' : consoleGutter,
-            flex: '1 1 auto',
+            flex: '1 1 0%',
+            minHeight: 0,
             display: 'flex',
             flexDirection: 'column',
             transition: 'margin-left 0.35s cubic-bezier(0.16, 1, 0.3, 1)',
@@ -263,8 +266,9 @@ const PageLayout = () => {
         >
           <main
             style={{
-              flex: '1 0 auto',
-              overflowY: isMobile ? 'visible' : 'hidden',
+              flex: '1 1 0%',
+              minHeight: 0,
+              overflowY: isMobile ? 'visible' : 'auto',
               WebkitOverflowScrolling: 'touch',
               padding: shouldInnerPadding ? (isMobile ? '5px' : '0 24px 24px') : '0',
               position: 'relative',

@@ -9,6 +9,7 @@ import { marked } from 'marked';
 import { useTranslation } from 'react-i18next';
 import { StatusContext } from '../../context/Status';
 import { FieldRow, TextAreaField, Notice } from '../common/form/Primitives';
+import { Button, IconButton } from '../ui';
 
 const LEGAL_USER_AGREEMENT_KEY = 'legal.user_agreement';
 const LEGAL_PRIVACY_POLICY_KEY = 'legal.privacy_policy';
@@ -53,12 +54,9 @@ function UpdateModal({ open, onClose, tagName, content, t }) {
           dangerouslySetInnerHTML={{ __html: content }}
         />
         <div className='flex justify-end gap-2 px-5 py-3 border-t border-ui-divider'>
-          <button
-            onClick={onClose}
-            className='px-3.5 py-1.5 text-xs rounded-xl border border-ui-border text-ui-text-2 hover:bg-ui-bg-subtle'
-          >
+          <Button variant='secondary' size='sm' onClick={onClose}>
             {t('关闭')}
-          </button>
+          </Button>
           <a
             href={`https://github.com/Calcium-Ion/new-api/releases/tag/${tagName}`}
             target='_blank'
@@ -164,13 +162,14 @@ const OtherSetting = () => {
             <div className='text-sm font-semibold text-ui-text'>{t('通用设置')}</div>
             <div className='text-[11px] text-ui-text-3 mt-0.5'>{t('公告 / 用户协议 / 隐私政策')}</div>
           </div>
-          <button
+          <Button
+            size='sm'
+            variant='secondary'
             onClick={checkUpdate}
             disabled={!!loadingKeys.CheckUpdate}
-            className='inline-flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-xl border border-ui-border text-ui-text-2 hover:bg-ui-bg-hover disabled:opacity-50'
           >
             {t('检查更新')}
-          </button>
+          </Button>
         </div>
 
         {fields.map((f) => (
@@ -185,13 +184,13 @@ const OtherSetting = () => {
               />
             </FieldRow>
             <div className='flex justify-end'>
-              <button
+              <Button
+                size='sm'
                 onClick={() => updateOption(f.key, inputs[f.key], f.successMsg)}
                 disabled={!!loadingKeys[f.key]}
-                className='inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-xl bg-ui-accent text-ui-accent-fg hover:opacity-90 disabled:opacity-50'
               >
                 {t('保存')}
-              </button>
+              </Button>
             </div>
           </div>
         ))}

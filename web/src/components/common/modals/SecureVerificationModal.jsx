@@ -6,6 +6,7 @@ import React, { useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
 import { AlertTriangle, Shield, X, Loader2 } from 'lucide-react';
+import { Button, IconButton, Tabs as UITabs } from '../../ui';
 
 const SecureVerificationModal = ({
   visible,
@@ -55,9 +56,7 @@ const SecureVerificationModal = ({
         >
           <div className='flex items-center justify-between gap-3 px-5 py-3.5 border-b border-ui-border'>
             <span className='text-sm font-semibold text-ui-text'>{title || t('安全验证')}</span>
-            <button onClick={onCancel} className='p-1 rounded text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-subtle'>
-              <X size={16} />
-            </button>
+            <IconButton icon={X} size='sm' onClick={onCancel} />
           </div>
           <div className='py-8 px-5 text-center'>
             <AlertTriangle size={40} className='text-amber-500 mx-auto mb-3' />
@@ -68,12 +67,9 @@ const SecureVerificationModal = ({
             <p className='text-sm text-ui-text-3 mt-1'>{t('请前往个人设置 → 安全设置进行配置。')}</p>
           </div>
           <div className='flex justify-end px-5 py-3 border-t border-ui-border'>
-            <button
-              onClick={onCancel}
-              className='inline-flex items-center px-4 py-1.5 text-xs font-semibold rounded-xl bg-ui-accent text-ui-accent-fg hover:bg-ui-accent-hover whitespace-nowrap'
-            >
+            <Button onClick={onCancel}>
               {t('确定')}
-            </button>
+            </Button>
           </div>
         </div>
       </div>,
@@ -93,13 +89,7 @@ const SecureVerificationModal = ({
       >
         <div className='flex items-center justify-between gap-3 px-5 py-3.5 border-b border-ui-border'>
           <span className='text-sm font-semibold text-ui-text'>{title || t('安全验证')}</span>
-          <button
-            onClick={onCancel}
-            disabled={loading}
-            className='p-1 rounded text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-subtle disabled:opacity-40'
-          >
-            <X size={16} />
-          </button>
+          <IconButton icon={X} size='sm' onClick={onCancel} disabled={loading} />
         </div>
 
         <div className='p-5 space-y-3'>
@@ -107,23 +97,16 @@ const SecureVerificationModal = ({
 
           {/* Tabs */}
           {has2FA && hasPasskey && passkeySupported && (
-            <div className='flex border-b border-ui-border -mx-5 px-5'>
-              <button
-                onClick={() => onMethodSwitch?.('2fa')}
-                className={`px-3 py-1.5 text-sm border-b-2 -mb-px transition-colors ${
-                  method === '2fa' ? 'border-ui-text text-ui-text font-semibold' : 'border-transparent text-ui-text-2 hover:text-ui-text'
-                }`}
-              >
-                {t('两步验证')}
-              </button>
-              <button
-                onClick={() => onMethodSwitch?.('passkey')}
-                className={`px-3 py-1.5 text-sm border-b-2 -mb-px transition-colors ${
-                  method === 'passkey' ? 'border-ui-text text-ui-text font-semibold' : 'border-transparent text-ui-text-2 hover:text-ui-text'
-                }`}
-              >
-                Passkey
-              </button>
+            <div className='-mx-5 px-5'>
+              <UITabs
+                variant='underline'
+                value={method}
+                onChange={(v) => onMethodSwitch?.(v)}
+                items={[
+                  { value: '2fa', label: t('两步验证') },
+                  { value: 'passkey', label: 'Passkey' },
+                ]}
+              />
             </div>
           )}
 
@@ -160,21 +143,17 @@ const SecureVerificationModal = ({
         </div>
 
         <div className='flex justify-end gap-2 px-5 py-3 border-t border-ui-border'>
-          <button
-            onClick={onCancel}
-            disabled={loading}
-            className='inline-flex items-center px-3.5 py-1.5 text-xs font-medium rounded-xl border border-ui-border text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-subtle disabled:opacity-40 whitespace-nowrap'
-          >
+          <Button variant='secondary' size='sm' onClick={onCancel} disabled={loading}>
             {t('取消')}
-          </button>
-          <button
+          </Button>
+          <Button
+            size='sm'
+            icon={loading ? Loader2 : undefined}
             onClick={() => onVerify(method, code)}
             disabled={loading || (method === '2fa' && !code?.trim())}
-            className='inline-flex items-center gap-1.5 px-4 py-1.5 text-xs font-semibold rounded-xl bg-ui-accent text-ui-accent-fg hover:bg-ui-accent-hover disabled:opacity-50 whitespace-nowrap'
           >
-            {loading && <Loader2 size={11} className='animate-spin' />}
             {method === 'passkey' ? t('验证 Passkey') : t('验证')}
-          </button>
+          </Button>
         </div>
       </div>
     </div>,

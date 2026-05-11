@@ -18,6 +18,7 @@ import { useDashboardCharts } from '../../hooks/dashboard/useDashboardCharts';
 import MonthlyBarChart from './parts/MonthlyBarChart';
 import InfoCard from './parts/InfoCard';
 import SearchModal from './parts/SearchModal';
+import { Button, IconButton, Tabs as UITabs } from '../ui';
 
 const Dashboard = () => {
   const { t } = useTranslation();
@@ -183,25 +184,22 @@ const Dashboard = () => {
         <div className='flex items-center justify-between mb-6'>
         <h1
           className='text-2xl md:text-3xl font-medium text-ui-text'
-          style={{ fontFamily: "'Space Grotesk', sans-serif", letterSpacing: '-0.02em' }}
+          style={{ letterSpacing: '-0.02em' }}
         >
           {t('概览')}
         </h1>
         <div className='flex items-center gap-2'>
-          <button
-            onClick={dashboardData.showSearchModal}
-            className='inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm border border-ui-border text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-subtle transition-colors'
-          >
+          <Button variant='secondary' onClick={dashboardData.showSearchModal}>
             {t('筛选时间')}
-          </button>
-          <button
+          </Button>
+          <IconButton
+            icon={RefreshCw}
+            size='lg'
             onClick={handleRefresh}
             disabled={loading}
             title={t('刷新')}
-            className='inline-flex items-center justify-center w-10 h-10 rounded-xl text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-subtle border border-ui-border transition-colors disabled:opacity-50'
-          >
-            <RefreshCw size={15} className={loading ? 'animate-spin' : ''} />
-          </button>
+            className={`border border-ui-border ${loading ? '[&_svg]:animate-spin' : ''}`}
+          />
         </div>
       </div>
 
@@ -231,17 +229,13 @@ const Dashboard = () => {
               <Wallet size={16} className='text-ui-text-3' />
               <span>{t('当前余额')}</span>
             </div>
-            <button
-              onClick={() => navigate('/console/topup')}
-              className='inline-flex items-center gap-1 px-2.5 py-1 text-[11px] font-medium rounded-lg bg-ui-accent text-ui-accent-fg hover:bg-ui-accent-hover transition-colors'
-            >
-              <Plus size={11} />
+            <Button size='sm' icon={Plus} onClick={() => navigate('/console/topup')}>
               {t('充值')}
-            </button>
+            </Button>
           </div>
           <div
             className='mt-2 text-[34px] font-semibold text-ui-text leading-none tabular-nums min-h-[34px] flex items-center'
-            style={{ fontFamily: "'Space Grotesk', sans-serif", letterSpacing: '-0.02em' }}
+            style={{ letterSpacing: '-0.02em' }}
           >
             {loading ? <Spinner size={22} /> : renderQuota(balance)}
           </div>
@@ -262,7 +256,7 @@ const Dashboard = () => {
           </div>
           <div
             className='mt-2 text-[34px] font-semibold text-ui-text leading-none tabular-nums min-h-[34px] flex items-center'
-            style={{ fontFamily: "'Space Grotesk', sans-serif", letterSpacing: '-0.02em' }}
+            style={{ letterSpacing: '-0.02em' }}
           >
             {loading ? <Spinner size={22} /> : renderQuota(periodQuota)}
           </div>
@@ -289,20 +283,13 @@ const Dashboard = () => {
           <span className='text-[11px] font-semibold uppercase tracking-widest text-ui-text-3 flex-shrink-0'>
             {t('数据分析')}
           </span>
-          <div className='flex items-center gap-0.5 overflow-x-auto scrollbar-hide -mx-1 px-1'>
-            {chartTabs.map((tb) => (
-              <button
-                key={tb.key}
-                onClick={() => setChartTab(tb.key)}
-                className={`px-2.5 py-1 text-[11px] rounded-xl transition-colors whitespace-nowrap flex-shrink-0 ${
-                  chartTab === tb.key
-                    ? 'bg-ui-bg-subtle text-ui-text font-medium'
-                    : 'text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-subtle'
-                }`}
-              >
-                {tb.label}
-              </button>
-            ))}
+          <div className='overflow-x-auto scrollbar-hide -mx-1 px-1'>
+            <UITabs
+              size='sm'
+              value={chartTab}
+              onChange={setChartTab}
+              items={chartTabs.map((tb) => ({ value: tb.key, label: tb.label }))}
+            />
           </div>
         </div>
         <div
@@ -353,7 +340,7 @@ const SubStat = ({ label, value, loading }) => (
     </div>
     <div
       className='text-[15px] font-semibold text-ui-text tabular-nums truncate'
-      style={{ fontFamily: "'Space Grotesk', sans-serif", letterSpacing: '-0.01em' }}
+      style={{ letterSpacing: '-0.01em' }}
     >
       {loading ? <Spinner size={14} /> : value}
     </div>

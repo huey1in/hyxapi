@@ -135,6 +135,11 @@ export default {
       'semi-color-data-19': 'var(--semi-color-data-19)',
     },
     extend: {
+      fontFamily: {
+        sans: ["'Space Grotesk'", "'Noto Sans SC'", '-apple-system', 'BlinkMacSystemFont', "'Segoe UI'", 'sans-serif'],
+        mono: ["'JetBrains Mono'", "'SF Mono'", 'ui-monospace', 'monospace'],
+        display: ["'Space Grotesk'", 'sans-serif'],
+      },
       colors: {
         'ui-bg':            'var(--ui-bg)',
         'ui-bg-elevated':   'var(--ui-bg-elevated)',

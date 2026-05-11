@@ -44,6 +44,7 @@ import { StatusContext } from '../../context/Status';
 import { useTranslation } from 'react-i18next';
 import { SiDiscord } from 'react-icons/si';
 import { AUTH_INPUT_CLS as inputClass } from '../common/ui/forms';
+import { Button } from '../ui';
 
 const usernamePattern = /^[A-Za-z0-9_\-.]{1,20}$/;
 
@@ -421,12 +422,13 @@ const RegisterForm = ({ embedded = false, onSuccess, onSwitchToLogin }) => {
         <div className='flex-1 h-px bg-ui-border' />
       </div>
 
-      <button
+      <Button
+        size='lg'
+        className='w-full'
         onClick={() => { setEmailRegisterLoading(true); setShowEmailRegister(true); setEmailRegisterLoading(false); }}
-        className='w-full py-2.5 text-sm font-medium rounded-lg transition-colors bg-ui-accent text-ui-accent-fg hover:bg-ui-accent-hover'
       >
         {t('使用 用户名 注册')}
-      </button>
+      </Button>
     </div>
   );
 
@@ -528,16 +530,15 @@ const RegisterForm = ({ embedded = false, onSuccess, onSwitchToLogin }) => {
                 onChange={(e) => handleChange('email', e.target.value)}
                 className={inputClass + ' flex-1'}
               />
-              <button
+              <Button
+                variant='secondary'
+                size='sm'
                 onClick={sendVerificationCode}
                 disabled={disableButton || verificationCodeLoading}
-                className='px-3 py-2 text-sm font-medium border border-black rounded-lg hover:bg-ui-bg-subtle transition-colors disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap flex items-center gap-1'
+                loading={verificationCodeLoading}
               >
-                {verificationCodeLoading && (
-                  <span className='w-3 h-3 border-2 border-ui-text-3 border-t-transparent rounded-full animate-spin' />
-                )}
                 {disableButton ? `${t('重新发送')} (${countdown})` : t('获取验证码')}
-              </button>
+              </Button>
             </div>
           </div>
 
@@ -556,22 +557,24 @@ const RegisterForm = ({ embedded = false, onSuccess, onSwitchToLogin }) => {
 
       {renderTerms()}
 
-      <button
+      <Button
+        size='lg'
+        className='w-full h-11'
         onClick={handleSubmit}
         disabled={registerLoading || ((hasUserAgreement || hasPrivacyPolicy) && !agreedToTerms)}
-        className='w-full h-11 text-sm font-medium rounded-xl transition-colors bg-ui-accent text-ui-accent-fg hover:bg-ui-accent-hover disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2'
+        loading={registerLoading}
       >
-        {registerLoading && <span className='w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin' />}
         {t('注册')}
-      </button>
+      </Button>
 
       {hasOAuthRegisterOptions && (
-        <button
+        <Button
+          variant='secondary'
+          className='w-full h-10'
           onClick={() => { setOtherRegisterOptionsLoading(true); setShowEmailRegister(false); setOtherRegisterOptionsLoading(false); }}
-          className='w-full h-10 text-sm border border-ui-border rounded-xl text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-subtle transition-all duration-150'
         >
           {t('其他注册选项')}
-        </button>
+        </Button>
       )}
     </div>
     );
@@ -583,13 +586,14 @@ const RegisterForm = ({ embedded = false, onSuccess, onSwitchToLogin }) => {
       open={showWeChatLoginModal}
       onClose={() => setShowWeChatLoginModal(false)}
       footer={
-        <button
-          className='w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50'
+        <Button
+          className='w-full'
           onClick={onSubmitWeChatVerificationCode}
           disabled={wechatCodeSubmitLoading}
+          loading={wechatCodeSubmitLoading}
         >
-          {wechatCodeSubmitLoading ? '...' : t('登录')}
-        </button>
+          {t('登录')}
+        </Button>
       }
     >
       <div className='flex flex-col items-center'>

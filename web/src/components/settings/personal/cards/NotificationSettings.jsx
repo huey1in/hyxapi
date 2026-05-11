@@ -26,6 +26,7 @@ import {
   showError,
 } from '../../../../helpers';
 import { TextField, FieldRow, Toggle, ToggleField } from '../../../common/form/Primitives';
+import { Button, Tabs as UITabs } from '../../../ui';
 import CodeViewer from '../../../playground/CodeViewer';
 import { StatusContext } from '../../../../context/Status';
 import { UserContext } from '../../../../context/User';
@@ -233,20 +234,13 @@ const NotificationSettings = ({
       </div>
 
       {/* Tabs */}
-      <div className='flex gap-1 px-4 mt-4 border-b border-ui-border'>
-        {tabs.map((tab) => (
-          <button
-            key={tab.key}
-            onClick={() => setActiveTabKey(tab.key)}
-            className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
-              activeTabKey === tab.key
-                ? 'border-ui-accent text-ui-text'
-                : 'border-transparent text-ui-text-2 hover:text-ui-text'
-            }`}
-          >
-            {tab.label}
-          </button>
-        ))}
+      <div className='px-4 mt-4'>
+        <UITabs
+          variant='underline'
+          value={activeTabKey}
+          onChange={setActiveTabKey}
+          items={tabs.map((tab) => ({ value: tab.key, label: tab.label }))}
+        />
       </div>
 
       {/* Tab content */}
@@ -564,28 +558,21 @@ const NotificationSettings = ({
       <div className='flex justify-end gap-3 px-4 py-3 border-t border-ui-border'>
         {activeTabKey === 'sidebar' ? (
           <>
-            <button
-              onClick={resetSidebarModules}
-              className='inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium rounded-xl border border-ui-border text-ui-text hover:bg-ui-bg-subtle transition-colors'
-            >
+            <Button variant='secondary' onClick={resetSidebarModules}>
               {t('重置为默认')}
-            </button>
-            <button
+            </Button>
+            <Button
+              icon={sidebarLoading ? Loader2 : undefined}
               onClick={saveSidebarSettings}
               disabled={sidebarLoading}
-              className='inline-flex items-center gap-1.5 px-4 py-2 text-sm font-semibold rounded-xl bg-ui-accent text-ui-accent-fg hover:bg-ui-accent-hover transition-colors disabled:opacity-50'
             >
-              {sidebarLoading && <Loader2 size={14} className='animate-spin' />}
               {t('保存设置')}
-            </button>
+            </Button>
           </>
         ) : (
-          <button
-            onClick={handleSubmit}
-            className='inline-flex items-center gap-1.5 px-4 py-2 text-sm font-semibold rounded-xl bg-ui-accent text-ui-accent-fg hover:bg-ui-accent-hover transition-colors disabled:opacity-50'
-          >
+          <Button onClick={handleSubmit}>
             {t('保存设置')}
-          </button>
+          </Button>
         )}
       </div>
     </div>

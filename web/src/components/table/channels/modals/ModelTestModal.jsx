@@ -7,6 +7,7 @@ import { Search, Settings, Info, X, Loader2 } from 'lucide-react';
 import { copy, showError, showInfo, showSuccess } from '../../../../helpers';
 import { MODEL_TABLE_PAGE_SIZE } from '../../../../constants';
 import Pagination from '../../../common/table/Pagination';
+import { Button, IconButton, Toggle as UIToggle } from '../../../ui';
 
 const inputCls =
   'w-full pl-8 pr-3 py-2 text-sm bg-[var(--page-bg)] border border-ui-border rounded-xl text-ui-text placeholder:text-ui-text-3 outline-none focus:border-ui-text-3 transition-colors';
@@ -48,21 +49,7 @@ const StatusPill = ({ kind, children }) => {
 };
 
 const Toggle = ({ checked, onChange, disabled }) => (
-  <button
-    type='button'
-    disabled={disabled}
-    onClick={() => onChange(!checked)}
-    className={`relative inline-flex h-4 w-7 items-center rounded-full transition-colors flex-shrink-0 disabled:opacity-40 ${
-      checked ? 'bg-ui-accent' : 'bg-ui-bg-subtle border border-ui-border'
-    }`}
-  >
-    <span
-      className={`inline-block h-3 w-3 transform rounded-full transition-transform shadow ${
-        checked ? 'translate-x-[14px]' : 'translate-x-0.5'
-      }`}
-      style={{ background: '#ffffff' }}
-    />
-  </button>
+  <UIToggle checked={checked} onChange={onChange} disabled={disabled} size='sm' />
 );
 
 const ModelTestModal = ({
@@ -179,7 +166,7 @@ const ModelTestModal = ({
           <div className='flex items-center gap-2 min-w-0'>
             <span
               className='text-base font-semibold text-ui-text truncate'
-              style={{ fontFamily: "'Space Grotesk', sans-serif", letterSpacing: '-0.02em' }}
+              style={{ letterSpacing: '-0.02em' }}
             >
               {currentTestChannel.name}
             </span>
@@ -187,13 +174,7 @@ const ModelTestModal = ({
               {t('共')} {totalModels} {t('个模型')}
             </span>
           </div>
-          <button
-            onClick={handleCloseModal}
-            disabled={isBatchTesting}
-            className='w-8 h-8 rounded-lg flex items-center justify-center text-ui-text-3 hover:text-ui-text hover:bg-ui-bg-subtle disabled:opacity-40'
-          >
-            <X size={16} />
-          </button>
+          <IconButton icon={X} size='sm' onClick={handleCloseModal} disabled={isBatchTesting} />
         </div>
 
         {/* Body */}
@@ -242,18 +223,12 @@ const ModelTestModal = ({
               />
             </div>
             <div className='flex items-center gap-1.5'>
-              <button
-                onClick={handleCopySelected}
-                className='inline-flex items-center gap-1.5 px-3.5 py-2 text-sm rounded-xl border border-ui-border text-ui-text hover:bg-ui-bg-subtle transition-colors whitespace-nowrap'
-              >
+              <Button variant='secondary' onClick={handleCopySelected}>
                 {t('复制已选')}
-              </button>
-              <button
-                onClick={handleSelectSuccess}
-                className='inline-flex items-center gap-1.5 px-3.5 py-2 text-sm rounded-xl border border-ui-border text-ui-text hover:bg-ui-bg-subtle transition-colors whitespace-nowrap'
-              >
+              </Button>
+              <Button variant='secondary' onClick={handleSelectSuccess}>
                 {t('选择成功')}
-              </button>
+              </Button>
             </div>
           </div>
 
@@ -322,13 +297,14 @@ const ModelTestModal = ({
                                     {r.message}
                                   </span>
                                   {r.errorCode === 'model_price_error' && (
-                                    <button
+                                    <Button
+                                      size='sm'
+                                      icon={Settings}
                                       onClick={() => window.open('/console/setting?tab=ratio', '_blank')}
-                                      className='inline-flex items-center gap-1 px-2.5 py-1 text-[11px] rounded-xl border border-amber-500/30 text-amber-600 dark:text-amber-400 hover:bg-amber-500/10 transition-colors w-fit'
+                                      className='bg-amber-500/10 text-amber-600 dark:text-amber-400 hover:bg-amber-500/20 w-fit'
                                     >
-                                      <Settings size={10} />
                                       {t('前往设置')}
-                                    </button>
+                                    </Button>
                                   )}
                                 </div>
                               )}
@@ -336,14 +312,15 @@ const ModelTestModal = ({
                           )}
                         </td>
                         <td className='px-3 py-2.5 align-middle text-right'>
-                          <button
+                          <Button
+                            size='sm'
+                            variant='secondary'
+                            icon={testing ? Loader2 : undefined}
                             onClick={() => testChannel(currentTestChannel, model, selectedEndpointType, isStreamTest)}
                             disabled={testing}
-                            className='inline-flex items-center gap-1 px-3 py-1.5 text-xs rounded-lg border border-ui-border text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-subtle disabled:opacity-50 transition-colors whitespace-nowrap'
                           >
-                            {testing && <Loader2 size={14} className='animate-spin' />}
                             {t('测试')}
-                          </button>
+                          </Button>
                         </td>
                       </tr>
                     );
@@ -366,30 +343,23 @@ const ModelTestModal = ({
         {/* Footer */}
         <div className='flex justify-end gap-2 px-6 py-4 border-t border-ui-border'>
           {isBatchTesting ? (
-            <button
-              onClick={handleCloseModal}
-              className='inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium rounded-xl border border-ui-danger/40 text-ui-danger hover:bg-ui-danger-bg transition-colors whitespace-nowrap'
-            >
+            <Button variant='danger' onClick={handleCloseModal}>
               {t('停止测试')}
-            </button>
+            </Button>
           ) : (
-            <button
-              onClick={handleCloseModal}
-              className='inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium rounded-xl border border-ui-border text-ui-text hover:bg-ui-bg-subtle transition-colors whitespace-nowrap'
-            >
+            <Button variant='secondary' onClick={handleCloseModal}>
               {t('取消')}
-            </button>
+            </Button>
           )}
-          <button
+          <Button
+            icon={isBatchTesting ? Loader2 : undefined}
             onClick={batchTestModels}
             disabled={isBatchTesting}
-            className='inline-flex items-center gap-1.5 px-5 py-2 text-sm font-semibold rounded-xl bg-ui-accent text-ui-accent-fg hover:bg-ui-accent-hover hover:shadow-md active:scale-95 disabled:opacity-50 transition-all whitespace-nowrap'
           >
-            {isBatchTesting && <Loader2 size={14} className='animate-spin' />}}
             {isBatchTesting
               ? t('测试中...')
               : t('批量测试${count}个模型').replace('${count}', filteredModels.length)}
-          </button>
+          </Button>
         </div>
       </div>
     </div>,

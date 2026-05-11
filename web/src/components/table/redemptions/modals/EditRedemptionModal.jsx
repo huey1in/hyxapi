@@ -162,10 +162,10 @@ const EditRedemptionModal = (props) => {
       title={
         <>
           <span
-            className={`inline-flex items-center px-2 py-0.5 text-[11px] font-medium rounded-xl border ${
+            className={`inline-flex items-center px-2 py-0.5 text-[11px] font-medium rounded-xl ${
               isEdit
-                ? 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20'
-                : 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20'
+                ? 'bg-blue-500/10 text-blue-600 dark:text-blue-400'
+                : 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'
             }`}
           >
             {isEdit ? t('更新') : t('新建')}
@@ -179,7 +179,7 @@ const EditRedemptionModal = (props) => {
         <>
           <button
             onClick={props.handleClose}
-            className='inline-flex items-center px-3.5 py-1.5 text-xs font-medium rounded-xl border border-ui-border text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-subtle whitespace-nowrap'
+            className='inline-flex items-center px-3.5 py-1.5 text-xs font-medium rounded-xl text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-subtle whitespace-nowrap'
           >
             {t('取消')}
           </button>

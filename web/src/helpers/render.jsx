@@ -852,7 +852,7 @@ const measureTextWidth = (
   style = {
     fontSize: '14px',
     fontFamily:
-      '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+      "'Space Grotesk', 'Noto Sans SC', -apple-system, BlinkMacSystemFont, sans-serif",
   },
   containerWidth,
 ) => {

@@ -63,6 +63,8 @@ import ParamOverrideEditorModal from './ParamOverrideEditorModal';
 import JSONEditor from '../../../common/ui/JSONEditor';
 import SecureVerificationModal from '../../../common/modals/SecureVerificationModal';
 import StatusCodeRiskGuardModal from './StatusCodeRiskGuardModal';
+import { Button, Tabs as UITabs, IconButton } from '../../../ui';
+import { X as XIcon } from 'lucide-react';
 import ChannelKeyDisplay from '../../../common/ui/ChannelKeyDisplay';
 import { useSecureVerification } from '../../../../hooks/common/useSecureVerification';
 import { parseChannelConnectionString } from '../../../../helpers/token';
@@ -1890,7 +1892,7 @@ const EditChannelModal = (props) => {
         width={isMobile ? window.innerWidth : 600}
         title={
           <>
-            <span className='inline-flex items-center px-2 py-0.5 text-[11px] font-medium rounded-xl bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20'>
+            <span className='inline-flex items-center px-2 py-0.5 text-[11px] font-medium rounded-xl bg-blue-500/10 text-blue-600 dark:text-blue-400'>
               {isEdit ? t('编辑') : t('新建')}
             </span>
             <span className='text-base font-semibold text-ui-text truncate'>
@@ -1900,29 +1902,19 @@ const EditChannelModal = (props) => {
         }
         headerExtra={
           !isEdit ? (
-            <button
-              onClick={pasteFromClipboard}
-              className='inline-flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-lg border border-ui-border text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-subtle transition-colors whitespace-nowrap'
-            >
-              <Zap size={14} />
+            <Button variant='secondary' size='sm' icon={Zap} onClick={pasteFromClipboard}>
               {t('从剪贴板粘贴配置')}
-            </button>
+            </Button>
           ) : null
         }
         footer={
           <>
-            <button
-              onClick={handleCancel}
-              className='inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium rounded-xl border border-ui-border text-ui-text hover:bg-ui-bg-subtle transition-colors whitespace-nowrap'
-            >
+            <Button variant='secondary' onClick={handleCancel}>
               {t('取消')}
-            </button>
-            <button
-              onClick={submit}
-              className='inline-flex items-center gap-1.5 px-5 py-2 text-sm font-semibold rounded-xl bg-ui-accent text-ui-accent-fg hover:bg-ui-accent-hover hover:shadow-md active:scale-95 transition-all whitespace-nowrap'
-            >
+            </Button>
+            <Button onClick={submit}>
               {t('提交')}
-            </button>
+            </Button>
           </>
         }
         bodyClass='p-5'
@@ -1940,18 +1932,12 @@ const EditChannelModal = (props) => {
                 kind='info'
                 action={
                   <div className='flex gap-1'>
-                    <button
-                      onClick={() => applyClipboardConfig(clipboardConfig)}
-                      className='inline-flex items-center px-2.5 py-1 text-[11px] rounded-xl bg-ui-accent text-ui-accent-fg hover:bg-ui-accent-hover whitespace-nowrap'
-                    >
+                    <Button size='sm' onClick={() => applyClipboardConfig(clipboardConfig)}>
                       {t('自动填入')}
-                    </button>
-                    <button
-                      onClick={() => setClipboardConfig(null)}
-                      className='inline-flex items-center px-2.5 py-1 text-[11px] rounded-xl border border-ui-border text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-subtle whitespace-nowrap'
-                    >
+                    </Button>
+                    <Button size='sm' variant='ghost' onClick={() => setClipboardConfig(null)}>
                       {t('忽略')}
-                    </button>
+                    </Button>
                   </div>
                 }
               >
@@ -1966,12 +1952,9 @@ const EditChannelModal = (props) => {
                   kind='info'
                   action={
                     ionetMetadata?.deployment_id ? (
-                      <button
-                        onClick={handleOpenIonetDeployment}
-                        className='inline-flex items-center gap-1 px-2.5 py-1 text-[11px] rounded-xl border border-ui-border text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-subtle whitespace-nowrap'
-                      >
+                      <Button size='sm' variant='ghost' onClick={handleOpenIonetDeployment}>
                         {t('查看关联部署')}
-                      </button>
+                      </Button>
                     ) : null
                   }
                 >
@@ -2151,36 +2134,25 @@ const EditChannelModal = (props) => {
                       hint={batch ? t('支持多文件') : t('仅支持 JSON 文件')}
                       extra={
                         !batch && (
-                          <div className='flex items-center gap-1'>
-                            <button
-                              onClick={() => {
+                          <UITabs
+                            size='sm'
+                            value={useManualInput ? 'manual' : 'file'}
+                            onChange={(v) => {
+                              if (v === 'file') {
                                 setUseManualInput(false);
                                 handleInputChange('key', '');
-                              }}
-                              className={`px-2.5 py-1 text-[11px] rounded-xl border ${
-                                !useManualInput
-                                  ? 'border-ui-text-3 bg-ui-bg-subtle text-ui-text font-medium'
-                                  : 'border-ui-border text-ui-text-2 hover:bg-ui-bg-subtle'
-                              }`}
-                            >
-                              {t('文件上传')}
-                            </button>
-                            <button
-                              onClick={() => {
+                              } else {
                                 setUseManualInput(true);
                                 setVertexKeys([]);
                                 setVertexFileList([]);
                                 setInputs((prev) => ({ ...prev, vertex_files: [] }));
-                              }}
-                              className={`px-2.5 py-1 text-[11px] rounded-xl border ${
-                                useManualInput
-                                  ? 'border-ui-text-3 bg-ui-bg-subtle text-ui-text font-medium'
-                                  : 'border-ui-border text-ui-text-2 hover:bg-ui-bg-subtle'
-                              }`}
-                            >
-                              {t('手动输入')}
-                            </button>
-                          </div>
+                              }
+                            }}
+                            items={[
+                              { value: 'file', label: t('文件上传') },
+                              { value: 'manual', label: t('手动输入') },
+                            ]}
+                          />
                         )
                       }
                     >
@@ -2253,48 +2225,45 @@ const EditChannelModal = (props) => {
                     extra={
                       <div className='flex flex-wrap items-center gap-1'>
                         {isCodex && (
-                          <button
+                          <Button
+                            size='sm'
+                            variant='ghost'
                             onClick={() => setCodexOAuthModalVisible(true)}
                             disabled={isIonetLocked}
-                            className='inline-flex items-center px-2 py-0.5 text-[11px] rounded-xl border border-ui-border text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-subtle whitespace-nowrap disabled:opacity-50'
                           >
                             {t('Codex 授权')}
-                          </button>
+                          </Button>
                         )}
                         {isCodex && isEdit && (
-                          <button
+                          <Button
+                            size='sm'
+                            variant='ghost'
+                            icon={codexCredentialRefreshing ? Loader2 : undefined}
                             onClick={handleRefreshCodexCredential}
                             disabled={isIonetLocked || codexCredentialRefreshing}
-                            className='inline-flex items-center gap-1 px-2 py-0.5 text-[11px] rounded-xl border border-ui-border text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-subtle whitespace-nowrap disabled:opacity-50'
                           >
-                            {codexCredentialRefreshing && <Loader2 size={10} className='animate-spin' />}
                             {t('刷新凭证')}
-                          </button>
+                          </Button>
                         )}
                         {isCodex && (
-                          <button
+                          <Button
+                            size='sm'
+                            variant='ghost'
                             onClick={() => formatJsonField('key')}
                             disabled={isIonetLocked}
-                            className='inline-flex items-center px-2 py-0.5 text-[11px] rounded-xl border border-ui-border text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-subtle whitespace-nowrap disabled:opacity-50'
                           >
                             {t('格式化')}
-                          </button>
+                          </Button>
                         )}
                         {batch && inputs.type !== 41 && (
-                          <button
-                            onClick={deduplicateKeys}
-                            className='inline-flex items-center px-2 py-0.5 text-[11px] rounded-xl border border-ui-border text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-subtle whitespace-nowrap'
-                          >
+                          <Button size='sm' variant='ghost' onClick={deduplicateKeys}>
                             {t('密钥去重')}
-                          </button>
+                          </Button>
                         )}
                         {isEdit && (
-                          <button
-                            onClick={handleShow2FAModal}
-                            className='inline-flex items-center px-2 py-0.5 text-[11px] rounded-xl border border-ui-border text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-subtle whitespace-nowrap'
-                          >
+                          <Button size='sm' variant='ghost' onClick={handleShow2FAModal}>
                             {t('查看密钥')}
-                          </button>
+                          </Button>
                         )}
                       </div>
                     }
@@ -2565,34 +2534,26 @@ const EditChannelModal = (props) => {
                 extra={
                   <div className='flex flex-wrap items-center gap-1'>
                     {MODEL_FETCHABLE_CHANNEL_TYPES.has(inputs.type) && (
-                      <button
-                        onClick={() => fetchUpstreamModelList('models')}
-                        className='inline-flex items-center px-2 py-0.5 text-[11px] rounded-xl border border-ui-border text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-subtle whitespace-nowrap'
-                      >
+                      <Button size='sm' variant='ghost' onClick={() => fetchUpstreamModelList('models')}>
                         {t('获取模型列表')}
-                      </button>
+                      </Button>
                     )}
-                    <button
-                      onClick={() => handleInputChange('models', fullModels)}
-                      className='inline-flex items-center px-2 py-0.5 text-[11px] rounded-xl border border-ui-border text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-subtle whitespace-nowrap'
-                    >
+                    <Button size='sm' variant='ghost' onClick={() => handleInputChange('models', fullModels)}>
                       {t('填入所有模型')}
-                    </button>
-                    <button
+                    </Button>
+                    <Button
+                      size='sm'
+                      variant='ghost'
                       onClick={() => {
                         if (inputs.models.length === 0) { showInfo(t('没有模型可以复制')); return; }
                         try { copy(inputs.models.join(',')); showSuccess(t('模型列表已复制到剪贴板')); } catch { showError(t('复制失败')); }
                       }}
-                      className='inline-flex items-center px-2 py-0.5 text-[11px] rounded-xl border border-ui-border text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-subtle whitespace-nowrap'
                     >
                       {t('复制所有模型')}
-                    </button>
-                    <button
-                      onClick={() => handleInputChange('models', [])}
-                      className='inline-flex items-center px-2 py-0.5 text-[11px] rounded-xl border border-ui-danger/30 text-ui-danger hover:bg-ui-danger-bg whitespace-nowrap'
-                    >
+                    </Button>
+                    <Button size='sm' variant='danger' onClick={() => handleInputChange('models', [])}>
                       {t('清除所有模型')}
-                    </button>
+                    </Button>
                   </div>
                 }
               >
@@ -2611,8 +2572,10 @@ const EditChannelModal = (props) => {
                   <div className='flex flex-wrap items-center gap-1 mt-2'>
                     <span className='text-[11px] text-ui-text-3 mr-1'>{t('快速添加分组')}:</span>
                     {modelGroups.map((group) => (
-                      <button
+                      <Button
                         key={group.name}
+                        size='sm'
+                        variant='ghost'
                         onClick={() => {
                           let items = [];
                           try {
@@ -2627,10 +2590,9 @@ const EditChannelModal = (props) => {
                           );
                           handleInputChange('models', merged);
                         }}
-                        className='inline-flex items-center px-2 py-0.5 text-[11px] rounded-xl border border-ui-border text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-subtle whitespace-nowrap'
                       >
                         {group.name}
-                      </button>
+                      </Button>
                     ))}
                   </div>
                 )}
@@ -2644,12 +2606,9 @@ const EditChannelModal = (props) => {
                     onChange={(v) => setCustomModel(v.trim())}
                     placeholder={t('输入自定义模型名称')}
                   />
-                  <button
-                    onClick={addCustomModels}
-                    className='inline-flex items-center px-3.5 py-2 text-sm rounded-xl bg-ui-accent text-ui-accent-fg hover:bg-ui-accent-hover whitespace-nowrap'
-                  >
+                  <Button onClick={addCustomModels}>
                     {t('填入')}
-                  </button>
+                  </Button>
                 </div>
               </FieldRow>
 
@@ -2779,42 +2738,27 @@ const EditChannelModal = (props) => {
                     hint={t('此项可选，用于覆盖请求参数。不支持覆盖 stream 参数')}
                     extra={
                       <div className='flex items-center gap-1'>
-                        <button
-                          onClick={() => setParamOverrideEditorVisible(true)}
-                          className='inline-flex items-center px-2.5 py-1 text-[11px] rounded-xl bg-ui-accent text-ui-accent-fg hover:bg-ui-accent-hover whitespace-nowrap'
-                        >
+                        <Button size='sm' onClick={() => setParamOverrideEditorVisible(true)}>
                           {t('可视化编辑')}
-                        </button>
-                        <button
-                          onClick={() => applyParamOverrideTemplate('operations', 'fill')}
-                          className='inline-flex items-center px-2.5 py-1 text-[11px] rounded-xl border border-ui-border text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-subtle whitespace-nowrap'
-                        >
+                        </Button>
+                        <Button size='sm' variant='ghost' onClick={() => applyParamOverrideTemplate('operations', 'fill')}>
                           {t('填充新模板')}
-                        </button>
-                        <button
-                          onClick={() => applyParamOverrideTemplate('legacy', 'fill')}
-                          className='inline-flex items-center px-2.5 py-1 text-[11px] rounded-xl border border-ui-border text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-subtle whitespace-nowrap'
-                        >
+                        </Button>
+                        <Button size='sm' variant='ghost' onClick={() => applyParamOverrideTemplate('legacy', 'fill')}>
                           {t('填充旧模板')}
-                        </button>
-                        <button
-                          onClick={clearParamOverride}
-                          className='inline-flex items-center px-2.5 py-1 text-[11px] rounded-xl border border-ui-danger/30 text-ui-danger hover:bg-ui-danger-bg whitespace-nowrap'
-                        >
+                        </Button>
+                        <Button size='sm' variant='danger' onClick={clearParamOverride}>
                           {t('清空')}
-                        </button>
+                        </Button>
                       </div>
                     }
                   >
                     <div className='rounded-md p-3 border border-ui-border bg-ui-bg-subtle'>
                       <div className='flex items-center justify-between mb-2'>
                         <Chip>{paramOverrideMeta.tagLabel}</Chip>
-                        <button
-                          onClick={copyParamOverrideJson}
-                          className='inline-flex items-center px-2 py-0.5 text-[11px] rounded-xl border border-ui-border text-ui-text-2 hover:text-ui-text hover:bg-ui-bg whitespace-nowrap'
-                        >
+                        <Button size='sm' variant='secondary' onClick={copyParamOverrideJson}>
                           {t('复制')}
-                        </button>
+                        </Button>
                       </div>
                       <pre className='m-0 text-[11px] leading-5 whitespace-pre-wrap break-all max-h-56 overflow-auto text-ui-text-2 font-mono'>
                         {paramOverrideMeta.preview}
@@ -2828,31 +2772,30 @@ const EditChannelModal = (props) => {
                     hint={t('支持变量：渠道密钥 {api_key}')}
                     extra={
                       <div className='flex items-center gap-1'>
-                        <button
+                        <Button
+                          size='sm'
+                          variant='ghost'
                           onClick={() =>
                             handleInputChange(
                               'header_override',
                               JSON.stringify({ '*': true, 're:^X-Trace-.*$': true, 'X-Foo': '{client_header:X-Foo}', Authorization: 'Bearer {api_key}', 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36 Edg/139.0.0.0' }, null, 2),
                             )
                           }
-                          className='inline-flex items-center px-2 py-0.5 text-[11px] rounded-xl border border-ui-border text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-subtle whitespace-nowrap'
                         >
                           {t('填入模板')}
-                        </button>
-                        <button
+                        </Button>
+                        <Button
+                          size='sm'
+                          variant='ghost'
                           onClick={() =>
                             handleInputChange('header_override', JSON.stringify({ '*': true }, null, 2))
                           }
-                          className='inline-flex items-center px-2 py-0.5 text-[11px] rounded-xl border border-ui-border text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-subtle whitespace-nowrap'
                         >
                           {t('填入透传模版')}
-                        </button>
-                        <button
-                          onClick={() => formatJsonField('header_override')}
-                          className='inline-flex items-center px-2 py-0.5 text-[11px] rounded-xl border border-ui-border text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-subtle whitespace-nowrap'
-                        >
+                        </Button>
+                        <Button size='sm' variant='ghost' onClick={() => formatJsonField('header_override')}>
                           {t('格式化')}
-                        </button>
+                        </Button>
                       </div>
                     }
                   >
@@ -3089,21 +3032,16 @@ const EditChannelModal = (props) => {
             onClick={resetKeyDisplayState}
           >
             <div
-              className='border border-ui-border rounded-[28px] shadow-2xl w-full max-w-2xl max-h-[88vh] flex flex-col overflow-hidden'
+              className='border border-ui-border rounded-[20px] shadow-2xl w-full max-w-2xl max-h-[88vh] flex flex-col overflow-hidden'
               style={{ backgroundColor: 'var(--page-bg)' }}
               onClick={(e) => e.stopPropagation()}
             >
               <div className='flex items-center justify-between gap-3 px-6 py-4 border-b border-ui-border'>
                 <span
                   className='text-base font-semibold text-ui-text'
-                  style={{ fontFamily: "'Space Grotesk', sans-serif", letterSpacing: '-0.02em' }}
+                  style={{ letterSpacing: '-0.02em' }}
                 >{t('渠道密钥信息')}</span>
-                <button
-                  onClick={resetKeyDisplayState}
-                  className='w-8 h-8 rounded-lg flex items-center justify-center text-ui-text-3 hover:text-ui-text hover:bg-ui-bg-subtle'
-                >
-                  <svg width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='currentColor' strokeWidth='2'><path d='M18 6 6 18M6 6l12 12'/></svg>
-                </button>
+                <IconButton icon={XIcon} size='sm' onClick={resetKeyDisplayState} />
               </div>
               <div className='flex-1 overflow-y-auto p-5'>
                 <ChannelKeyDisplay
@@ -3115,12 +3053,9 @@ const EditChannelModal = (props) => {
                 />
               </div>
               <div className='flex justify-end gap-2 px-6 py-4 border-t border-ui-border'>
-                <button
-                  onClick={resetKeyDisplayState}
-                  className='inline-flex items-center px-5 py-2 text-sm font-semibold rounded-xl bg-ui-accent text-ui-accent-fg hover:bg-ui-accent-hover whitespace-nowrap'
-                >
+                <Button onClick={resetKeyDisplayState}>
                   {t('完成')}
-                </button>
+                </Button>
               </div>
             </div>
           </div>,
@@ -3136,14 +3071,14 @@ const EditChannelModal = (props) => {
             onClick={() => closeMissingModelsModal('cancel')}
           >
             <div
-              className='border border-ui-border rounded-[28px] shadow-2xl w-full max-w-md overflow-hidden'
+              className='border border-ui-border rounded-[20px] shadow-2xl w-full max-w-md overflow-hidden'
               style={{ backgroundColor: 'var(--page-bg)' }}
               onClick={(e) => e.stopPropagation()}
             >
               <div className='px-6 py-5'>
                 <h3
                   className='flex items-center gap-2 text-base font-semibold text-ui-text mb-2'
-                  style={{ fontFamily: "'Space Grotesk', sans-serif", letterSpacing: '-0.02em' }}
+                  style={{ letterSpacing: '-0.02em' }}
                 >
                   <AlertTriangle size={15} className='text-amber-500' />
                   {t('模型未加入列表，可能无法调用')}
@@ -3151,7 +3086,7 @@ const EditChannelModal = (props) => {
                 <div className='text-sm text-ui-text-2 leading-relaxed'>
                   {t('模型重定向里的下列模型尚未添加到“模型”列表，调用时会因为缺少可用模型而失败：')}
                 </div>
-                <div className='font-mono text-xs break-all text-ui-danger mt-2 px-3 py-2 rounded-lg bg-ui-danger-bg border border-ui-danger/30'>
+                <div className='font-mono text-xs break-all text-ui-danger mt-2 px-3 py-2 rounded-lg bg-ui-danger-bg'>
                   {missingModelsModal.models.join(', ')}
                 </div>
                 <div className='mt-3 text-sm text-ui-text-2'>
@@ -3159,24 +3094,15 @@ const EditChannelModal = (props) => {
                 </div>
               </div>
               <div className='flex justify-end gap-2 px-6 py-4 border-t border-ui-border'>
-                <button
-                  onClick={() => closeMissingModelsModal('cancel')}
-                  className='inline-flex items-center px-4 py-2 text-sm font-medium rounded-xl border border-ui-border text-ui-text hover:bg-ui-bg-subtle whitespace-nowrap'
-                >
+                <Button variant='secondary' onClick={() => closeMissingModelsModal('cancel')}>
                   {t('返回修改')}
-                </button>
-                <button
-                  onClick={() => closeMissingModelsModal('submit')}
-                  className='inline-flex items-center px-4 py-2 text-sm font-medium rounded-xl border border-ui-border text-ui-text hover:bg-ui-bg-subtle whitespace-nowrap'
-                >
+                </Button>
+                <Button variant='secondary' onClick={() => closeMissingModelsModal('submit')}>
                   {t('直接提交')}
-                </button>
-                <button
-                  onClick={() => closeMissingModelsModal('add')}
-                  className='inline-flex items-center px-5 py-2 text-sm font-semibold rounded-xl bg-ui-accent text-ui-accent-fg hover:bg-ui-accent-hover whitespace-nowrap'
-                >
+                </Button>
+                <Button onClick={() => closeMissingModelsModal('add')}>
                   {t('添加后提交')}
-                </button>
+                </Button>
               </div>
             </div>
           </div>,

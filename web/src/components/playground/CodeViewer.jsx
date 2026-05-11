@@ -32,7 +32,7 @@ const codeThemeStyles = {
   container: {
     backgroundColor: '#1e1e1e',
     color: '#d4d4d4',
-    fontFamily: 'Consolas, "Courier New", Monaco, "SF Mono", monospace',
+    fontFamily: "'JetBrains Mono', 'SF Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace",
     fontSize: '13px',
     lineHeight: '1.4',
     borderRadius: '8px',

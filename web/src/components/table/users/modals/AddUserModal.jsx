@@ -7,6 +7,7 @@ import { API, showError, showSuccess } from '../../../../helpers';
 import { useIsMobile } from '../../../../hooks/common/useIsMobile';
 import SlideOver from '../../../common/SlideOver';
 import { TextField, FieldRow } from '../../../common/form/Primitives';
+import { Button } from '../../../ui';
 
 const AddUserModal = (props) => {
   const { t } = useTranslation();
@@ -55,7 +56,7 @@ const AddUserModal = (props) => {
       width={isMobile ? window.innerWidth : 600}
       title={
         <>
-          <span className='inline-flex items-center px-2 py-0.5 text-[11px] font-medium rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20'>
+          <span className='inline-flex items-center px-2 py-0.5 text-[11px] font-medium rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'>
             {t('新建')}
           </span>
           <span className='text-base font-semibold text-ui-text truncate'>{t('添加用户')}</span>
@@ -63,19 +64,12 @@ const AddUserModal = (props) => {
       }
       footer={
         <>
-          <button
-            onClick={props.handleClose}
-            className='inline-flex items-center h-9 px-4 text-sm font-medium rounded-xl border border-ui-border text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-subtle transition-colors whitespace-nowrap'
-          >
+          <Button variant='secondary' onClick={props.handleClose}>
             {t('取消')}
-          </button>
-          <button
-            onClick={submit}
-            disabled={loading}
-            className='inline-flex items-center h-9 px-4 text-sm font-semibold rounded-xl bg-ui-accent text-ui-accent-fg hover:bg-ui-accent-hover disabled:opacity-50 transition-colors whitespace-nowrap'
-          >
+          </Button>
+          <Button onClick={submit} disabled={loading}>
             {loading ? t('提交中...') : t('创建')}
-          </button>
+          </Button>
         </>
       }
       bodyClass='p-5'

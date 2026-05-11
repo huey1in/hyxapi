@@ -18,6 +18,7 @@ import {
   DateTimeField,
 } from '../../../components/common/form/Primitives';
 import { showConfirm } from '../../../components/common/ConfirmDialog';
+import { Button } from '../../../components/ui';
 
 const DEFAULTS = {
   LogConsumeEnabled: false,
@@ -138,13 +139,14 @@ export default function SettingsLog(props) {
           label={t('清除历史日志')}
           hint={t('将清除选定时间之前的所有日志')}
           extra={
-            <button
+            <Button
+              variant='danger'
+              size='sm'
               onClick={cleanHistory}
               disabled={cleaning}
-              className='inline-flex items-center gap-1 px-2.5 py-1 text-[11px] rounded-xl border border-ui-danger/30 text-ui-danger hover:bg-ui-danger-bg disabled:opacity-50 whitespace-nowrap'
             >
               {t('清除历史日志')}
-            </button>
+            </Button>
           }
         >
           <DateTimeField value={historyAt} onChange={setHistoryAt} />

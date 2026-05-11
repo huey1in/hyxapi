@@ -18,6 +18,7 @@ For commercial licensing, please contact support@quantumnous.com
 */
 import { API, showError, showSuccess } from '../../helpers';
 import React, { useState } from 'react';
+import { Button } from '../ui';
 
 const TwoFAVerification = ({ onSuccess, onBack, isModal = false }) => {
   const [loading, setLoading] = useState(false);
@@ -89,35 +90,35 @@ const TwoFAVerification = ({ onSuccess, onBack, isModal = false }) => {
             />
           </div>
 
-          <button
+          <Button
             type='submit'
+            className='w-full mb-4'
             disabled={loading}
-            className='w-full px-4 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors mb-4'
+            loading={loading}
           >
             {loading ? '验证中...' : '验证并登录'}
-          </button>
+          </Button>
         </form>
 
         <hr style={{ borderColor: 'var(--semi-color-border)' }} />
 
         <div style={{ textAlign: 'center' }}>
-          <button
-            className='text-blue-500 hover:text-blue-600 text-sm mr-4'
+          <Button
+            variant='link'
+            size='sm'
+            className='mr-4'
             onClick={() => {
               setUseBackupCode(!useBackupCode);
               setVerificationCode('');
             }}
           >
             {useBackupCode ? '使用认证器验证码' : '使用备用码'}
-          </button>
+          </Button>
 
           {onBack && (
-            <button
-              className='text-blue-500 hover:text-blue-600 text-sm'
-              onClick={onBack}
-            >
+            <Button variant='link' size='sm' onClick={onBack}>
               返回登录
-            </button>
+            </Button>
           )}
         </div>
 
@@ -169,35 +170,35 @@ const TwoFAVerification = ({ onSuccess, onBack, isModal = false }) => {
             />
           </div>
 
-          <button
+          <Button
             type='submit'
+            className='w-full mb-4'
             disabled={loading}
-            className='w-full px-4 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors mb-4'
+            loading={loading}
           >
             {loading ? '验证中...' : '验证并登录'}
-          </button>
+          </Button>
         </form>
 
         <hr style={{ borderColor: 'var(--semi-color-border)', margin: '16px 0' }} />
 
         <div style={{ textAlign: 'center' }}>
-          <button
-            className='text-blue-500 hover:text-blue-600 text-sm mr-4'
+          <Button
+            variant='link'
+            size='sm'
+            className='mr-4'
             onClick={() => {
               setUseBackupCode(!useBackupCode);
               setVerificationCode('');
             }}
           >
             {useBackupCode ? '使用认证器验证码' : '使用备用码'}
-          </button>
+          </Button>
 
           {onBack && (
-            <button
-              className='text-blue-500 hover:text-blue-600 text-sm'
-              onClick={onBack}
-            >
+            <Button variant='link' size='sm' onClick={onBack}>
               返回登录
-            </button>
+            </Button>
           )}
         </div>
 

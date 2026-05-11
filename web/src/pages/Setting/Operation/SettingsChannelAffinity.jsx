@@ -29,6 +29,7 @@ import {
   Chip,
 } from '../../../components/common/form/Primitives';
 import { showConfirm } from '../../../components/common/ConfirmDialog';
+import { Button } from '../../../components/ui';
 
 const KEY_ENABLED = 'channel_affinity_setting.enabled';
 const KEY_SWITCH_ON_SUCCESS = 'channel_affinity_setting.switch_on_success';
@@ -380,18 +381,18 @@ export default function SettingsChannelAffinity(props) {
             if (v === 'json') setInputs((prev) => ({ ...prev, [KEY_RULES]: rulesToJson(rules) }));
             setEditMode(v);
           }} options={[{ value: 'visual', label: t('可视化') }, { value: 'json', label: t('JSON 模式') }]} />
-          <button onClick={appendTemplates} className='inline-flex items-center gap-1 px-2.5 py-1.5 text-xs rounded-xl border border-ui-border text-ui-text-2 hover:bg-ui-bg-hover'>
+          <Button size='sm' variant='secondary' onClick={appendTemplates}>
             {t('填充模版')}
-          </button>
-          <button onClick={openAddModal} className='inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium rounded-xl bg-ui-accent text-ui-accent-fg hover:opacity-90'>
+          </Button>
+          <Button size='sm' onClick={openAddModal}>
             {t('新增规则')}
-          </button>
-          <button onClick={refreshCacheStats} disabled={cacheLoading} className='inline-flex items-center gap-1 px-2.5 py-1.5 text-xs rounded-xl border border-ui-border text-ui-text-2 hover:bg-ui-bg-hover disabled:opacity-50'>
+          </Button>
+          <Button size='sm' variant='secondary' onClick={refreshCacheStats} disabled={cacheLoading}>
             {t('刷新缓存')}
-          </button>
-          <button onClick={clearAllCache} className='inline-flex items-center gap-1 px-2.5 py-1.5 text-xs rounded-xl border border-ui-danger/30 text-ui-danger hover:bg-ui-danger-bg'>
+          </Button>
+          <Button size='sm' variant='danger' onClick={clearAllCache}>
             {t('清空全部缓存')}
-          </button>
+          </Button>
         </div>
 
         {editMode === 'visual' ? (
@@ -585,8 +586,8 @@ export default function SettingsChannelAffinity(props) {
 
             {/* Footer */}
             <div className='flex justify-end gap-2 pt-3 border-t border-ui-divider'>
-              <button onClick={() => { setModalVisible(false); setEditingRule(null); }} className='px-3.5 py-1.5 text-xs rounded-xl border border-ui-border text-ui-text-2 hover:bg-ui-bg-subtle'>{t('取消')}</button>
-              <button onClick={handleModalSave} className='px-3.5 py-1.5 text-xs font-semibold rounded-xl bg-ui-accent text-ui-accent-fg hover:opacity-90'>{t('保存')}</button>
+              <Button variant='secondary' onClick={() => { setModalVisible(false); setEditingRule(null); }}>{t('取消')}</Button>
+              <Button onClick={handleModalSave}>{t('保存')}</Button>
             </div>
           </div>
         )}

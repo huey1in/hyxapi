@@ -73,7 +73,7 @@ const Setting = () => {
         <div className='flex items-center justify-between gap-3 mb-5'>
           <h1
             className='text-2xl md:text-3xl font-medium text-ui-text'
-            style={{ fontFamily: "'Space Grotesk', sans-serif", letterSpacing: '-0.02em' }}
+            style={{ letterSpacing: '-0.02em' }}
           >
             {t('系统设置')}
           </h1>
@@ -90,8 +90,8 @@ const Setting = () => {
                   onClick={() => onChange(tb.key)}
                   className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-xl whitespace-nowrap transition-colors flex-shrink-0 ${
                     isActive
-                      ? 'bg-ui-bg-subtle text-ui-text font-semibold border border-ui-text-3'
-                      : 'border border-transparent text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-subtle'
+                      ? 'bg-ui-bg-subtle text-ui-text font-semibold'
+                      : 'text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-subtle'
                   }`}
                 >
                   {t(tb.label)}

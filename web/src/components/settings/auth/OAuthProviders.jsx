@@ -4,6 +4,7 @@
  */
 import React from 'react';
 import { FieldRow, TextField, Notice } from '../../common/form/Primitives';
+import { Button } from '../../ui';
 
 const inputCls = 'w-full rounded border border-ui-border bg-ui-bg-subtle text-ui-text text-xs px-3 py-2 focus:outline-none focus:ring-1 focus:ring-ui-accent/40';
 
@@ -22,7 +23,7 @@ export function GitHubOAuthCard({ inputs, setInputs, submitGitHubOAuth, t }) {
           <input type='password' value={inputs.GitHubClientSecret || ''} onChange={(e) => setInputs((prev) => ({ ...prev, GitHubClientSecret: e.target.value }))} placeholder={t('敏感信息不会发送到前端显示')} className={inputCls} />
         </FieldRow>
       </div>
-      <button onClick={submitGitHubOAuth} className='px-3 py-1.5 text-xs font-semibold rounded-xl bg-ui-accent text-ui-accent-fg hover:opacity-90'>{t('保存 GitHub OAuth 设置')}</button>
+      <Button size='sm' onClick={submitGitHubOAuth}>{t('保存 GitHub OAuth 设置')}</Button>
     </div>
   );
 }
@@ -42,7 +43,7 @@ export function DiscordOAuthCard({ inputs, setInputs, submitDiscordOAuth, t }) {
           <input type='password' value={inputs['discord.client_secret'] || ''} onChange={(e) => setInputs((prev) => ({ ...prev, 'discord.client_secret': e.target.value }))} placeholder={t('敏感信息不会发送到前端显示')} className={inputCls} />
         </FieldRow>
       </div>
-      <button onClick={submitDiscordOAuth} className='px-3 py-1.5 text-xs font-semibold rounded-xl bg-ui-accent text-ui-accent-fg hover:opacity-90'>{t('保存 Discord OAuth 设置')}</button>
+      <Button size='sm' onClick={submitDiscordOAuth}>{t('保存 Discord OAuth 设置')}</Button>
     </div>
   );
 }
@@ -70,7 +71,7 @@ export function LinuxDOOAuthCard({ inputs, setInputs, submitLinuxDOOAuth, t }) {
           <input value={inputs.LinuxDOMinimumTrustLevel || ''} onChange={(e) => setInputs((prev) => ({ ...prev, LinuxDOMinimumTrustLevel: e.target.value }))} className={inputCls} />
         </FieldRow>
       </div>
-      <button onClick={submitLinuxDOOAuth} className='px-3 py-1.5 text-xs font-semibold rounded-xl bg-ui-accent text-ui-accent-fg hover:opacity-90'>{t('保存 Linux DO OAuth 设置')}</button>
+      <Button size='sm' onClick={submitLinuxDOOAuth}>{t('保存 Linux DO OAuth 设置')}</Button>
     </div>
   );
 }
@@ -88,7 +89,7 @@ export function TelegramCard({ inputs, setInputs, submitTelegramSettings, t }) {
           <input value={inputs.TelegramBotName || ''} onChange={(e) => setInputs((prev) => ({ ...prev, TelegramBotName: e.target.value }))} className={inputCls} />
         </FieldRow>
       </div>
-      <button onClick={submitTelegramSettings} className='px-3 py-1.5 text-xs font-semibold rounded-xl bg-ui-accent text-ui-accent-fg hover:opacity-90'>{t('保存 Telegram 登录设置')}</button>
+      <Button size='sm' onClick={submitTelegramSettings}>{t('保存 Telegram 登录设置')}</Button>
     </div>
   );
 }

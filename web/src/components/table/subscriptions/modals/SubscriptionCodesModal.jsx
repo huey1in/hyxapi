@@ -12,6 +12,7 @@ import {
   NumberField,
   FieldRow,
 } from '../../../common/form/Primitives';
+import { Button, IconButton } from '../../../ui';
 
 const StatusPill = ({ status, t }) => {
   const enabled = status === 1;
@@ -146,7 +147,7 @@ const SubscriptionCodesModal = ({ visible, onClose, plan, t }) => {
       onClick={generating ? undefined : onClose}
     >
       <div
-        className='border border-ui-border rounded-[28px] shadow-2xl w-full max-w-3xl max-h-[88vh] flex flex-col overflow-hidden'
+        className='border border-ui-border rounded-[20px] shadow-2xl w-full max-w-3xl max-h-[88vh] flex flex-col overflow-hidden'
         style={{ backgroundColor: 'var(--page-bg)' }}
         onClick={(e) => e.stopPropagation()}
       >
@@ -162,12 +163,7 @@ const SubscriptionCodesModal = ({ visible, onClose, plan, t }) => {
               </span>
             )}
           </div>
-          <button
-            onClick={onClose}
-            className='inline-flex items-center justify-center w-9 h-9 rounded-xl text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-subtle transition-colors'
-          >
-            <X size={16} />
-          </button>
+          <IconButton icon={X} onClick={onClose} />
         </div>
 
         {/* Body */}
@@ -193,14 +189,13 @@ const SubscriptionCodesModal = ({ visible, onClose, plan, t }) => {
                   max={200}
                 />
               </FieldRow>
-              <button
+              <Button
+                icon={generating ? Loader2 : Plus}
                 onClick={generate}
                 disabled={generating}
-                className='inline-flex items-center justify-center gap-1.5 h-9 px-4 text-sm font-semibold rounded-xl bg-ui-accent text-ui-accent-fg hover:bg-ui-accent-hover disabled:opacity-50 transition-colors whitespace-nowrap'
               >
-                {generating ? <Loader2 size={13} className='animate-spin' /> : <Plus size={13} />}
                 {t('生成')}
-              </button>
+              </Button>
             </div>
           </SectionCard>
 
@@ -214,22 +209,23 @@ const SubscriptionCodesModal = ({ visible, onClose, plan, t }) => {
             }
             headerExtra={
               <>
-                <button
+                <Button
+                  size='sm'
+                  variant='secondary'
+                  icon={Copy}
                   onClick={handleCopyAllUnused}
                   disabled={unusedCount === 0}
-                  className='inline-flex items-center gap-1 h-8 px-2.5 text-[11px] rounded-lg border border-ui-border text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-subtle disabled:opacity-40 transition-colors whitespace-nowrap'
                 >
-                  <Copy size={11} />
                   {t('复制未使用')}
-                </button>
-                <button
+                </Button>
+                <IconButton
+                  icon={RefreshCw}
+                  size='sm'
                   onClick={load}
                   disabled={loading}
                   title={t('刷新')}
-                  className='inline-flex items-center justify-center w-8 h-8 rounded-lg text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-subtle disabled:opacity-40 transition-colors'
-                >
-                  <RefreshCw size={12} className={loading ? 'animate-spin' : ''} />
-                </button>
+                  className={loading ? '[&_svg]:animate-spin' : ''}
+                />
               </>
             }
           >
@@ -260,20 +256,19 @@ const SubscriptionCodesModal = ({ visible, onClose, plan, t }) => {
                       )}
                     </div>
                     <StatusPill status={c.status} t={t} />
-                    <button
+                    <IconButton
+                      icon={Copy}
+                      size='sm'
                       onClick={() => handleCopy(c.key)}
-                      className='inline-flex items-center justify-center w-8 h-8 rounded-lg text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-subtle flex-shrink-0 transition-colors'
                       title={t('复制')}
-                    >
-                      <Copy size={13} />
-                    </button>
-                    <button
+                    />
+                    <IconButton
+                      icon={Trash2}
+                      size='sm'
+                      variant='danger'
                       onClick={() => removeCode(c.id)}
-                      className='inline-flex items-center justify-center w-8 h-8 rounded-lg text-ui-danger hover:bg-ui-danger-bg flex-shrink-0 transition-colors'
                       title={t('删除')}
-                    >
-                      <Trash2 size={13} />
-                    </button>
+                    />
                   </div>
                 ))}
               </div>
@@ -283,12 +278,9 @@ const SubscriptionCodesModal = ({ visible, onClose, plan, t }) => {
 
         {/* Footer */}
         <div className='flex justify-end gap-2 px-5 py-4 border-t border-ui-border flex-shrink-0'>
-          <button
-            onClick={onClose}
-            className='inline-flex items-center h-9 px-4 text-sm font-semibold rounded-xl bg-ui-accent text-ui-accent-fg hover:bg-ui-accent-hover transition-colors whitespace-nowrap'
-          >
+          <Button onClick={onClose}>
             {t('完成')}
-          </button>
+          </Button>
         </div>
       </div>
     </div>,

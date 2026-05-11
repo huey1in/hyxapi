@@ -13,6 +13,7 @@ import {
   getUptimeStatusText,
 } from '../../../helpers/dashboard';
 import { UPTIME_STATUS_MAP } from '../../../constants/dashboard.constants';
+import { IconButton, Tabs as UITabs } from '../../ui';
 
 // ── primitives ──────────────────────────────────────────
 
@@ -63,21 +64,21 @@ const ApiInfoList = ({ items, loading, t }) => {
               </span>
             </div>
             <div className='flex items-center gap-0.5 flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity'>
-              <button
+              <IconButton
+                icon={() => <CopyIcon size={12} />}
+                size='sm'
                 onClick={() => handleCopyUrl(item.url, t)}
                 title={t('复制')}
-                className='p-1.5 rounded-md text-ui-text-3 hover:text-ui-text hover:bg-ui-bg-subtle transition-colors'
-              >
-                <CopyIcon size={12} />
-              </button>
+                className='w-7 h-7'
+              />
               {item.url && (
-                <button
+                <IconButton
+                  icon={() => <SpeedIcon size={12} />}
+                  size='sm'
                   onClick={() => handleSpeedTest(item.url)}
                   title={t('测速')}
-                  className='p-1.5 rounded-md text-ui-text-3 hover:text-ui-text hover:bg-ui-bg-subtle transition-colors'
-                >
-                  <SpeedIcon size={12} />
-                </button>
+                  className='w-7 h-7'
+                />
               )}
             </div>
           </div>
@@ -171,20 +172,13 @@ const UptimeList = ({ data, loading, activeGroup, setActiveGroup, t }) => {
   return (
     <div className='h-full flex flex-col'>
       {groups.length > 1 && (
-        <div className='flex gap-0.5 px-3 py-2 border-b border-ui-divider overflow-x-auto scrollbar-hide flex-shrink-0'>
-          {groups.map((g) => (
-            <button
-              key={g.key}
-              onClick={() => setActiveGroup(g.key)}
-              className={`px-2.5 py-1 text-[11px] rounded-xl transition-colors whitespace-nowrap ${
-                activeGroup === g.key
-                  ? 'bg-ui-bg-subtle text-ui-text font-medium'
-                  : 'text-ui-text-2 hover:text-ui-text'
-              }`}
-            >
-              {g.label}
-            </button>
-          ))}
+        <div className='px-3 py-2 border-b border-ui-divider overflow-x-auto scrollbar-hide flex-shrink-0'>
+          <UITabs
+            size='sm'
+            value={activeGroup}
+            onChange={setActiveGroup}
+            items={groups.map((g) => ({ value: g.key, label: g.label }))}
+          />
         </div>
       )}
       {monitors.length === 0 ? (
@@ -275,23 +269,13 @@ const InfoCard = ({
       style={{ backgroundColor: 'var(--page-bg)' }}
     >
       {/* Tab bar */}
-      <div className='flex items-center gap-0.5 px-2 pt-2 pb-2 border-b border-ui-border overflow-x-auto scrollbar-hide flex-shrink-0'>
-        {tabs.map(({ key, label }) => {
-          const isActive = active === key;
-          return (
-            <button
-              key={key}
-              onClick={() => setActive(key)}
-              className={`inline-flex items-center px-2.5 py-1.5 rounded-lg text-[12px] font-medium transition-colors whitespace-nowrap ${
-                isActive
-                  ? 'bg-ui-bg-subtle text-ui-text'
-                  : 'text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-subtle/60'
-              }`}
-            >
-              {t(label)}
-            </button>
-          );
-        })}
+      <div className='px-2 pt-2 pb-2 border-b border-ui-border overflow-x-auto scrollbar-hide flex-shrink-0'>
+        <UITabs
+          size='sm'
+          value={active}
+          onChange={setActive}
+          items={tabs.map(({ key, label }) => ({ value: key, label: t(label) }))}
+        />
       </div>
 
       {/* Body */}

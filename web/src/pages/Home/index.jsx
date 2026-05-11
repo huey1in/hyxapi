@@ -27,6 +27,7 @@ import { useIsMobile } from '../../hooks/common/useIsMobile';
 import { StatusContext } from '../../context/Status';
 import { useActualTheme } from '../../context/Theme';
 import { UserContext } from '../../context/User';
+import { Button } from '../../components/ui';
 import { useLoginModal } from '../../context/LoginModal';
 import NoticeModal from '../../components/layout/NoticeModal';
 
@@ -394,7 +395,7 @@ const Home = () => {
 
   const hasCustomContent = homePageContentLoaded && homePageContent !== '';
 
-  const heading = { fontFamily: "'Space Grotesk', sans-serif", letterSpacing: '-0.025em' };
+  const heading = { letterSpacing: '-0.025em' };
 
   return (
     <div className='w-full overflow-x-hidden bg-[#f8f8f6] dark:bg-[#1a1a18]'>
@@ -454,17 +455,14 @@ const Home = () => {
                   </p>
 
                   <div className='flex flex-wrap items-center gap-3'>
-                    <button
-                      onClick={handleStart}
-                      className='inline-flex items-center gap-2 px-6 py-3 text-[15px] font-semibold rounded-xl bg-ui-accent text-ui-accent-fg hover:bg-ui-accent-hover hover:shadow-md active:scale-95 transition-all duration-200'
-                    >
+                    <Button size='lg' onClick={handleStart}>
                       {t('免费开始')} →
-                    </button>
+                    </Button>
                     {showDocs && (
                       <a href={docsLink} target='_blank' rel='noopener noreferrer'>
-                        <button className='inline-flex items-center px-6 py-3 text-[15px] font-medium rounded-xl border border-ui-border text-ui-text bg-ui-bg-elevated hover:bg-ui-bg-subtle active:scale-95 transition-all duration-200'>
+                        <Button size='lg' variant='secondary'>
                           {t('查看文档')} →
-                        </button>
+                        </Button>
                       </a>
                     )}
                   </div>
@@ -709,17 +707,14 @@ const Home = () => {
                   {t('免费注册，分钟级接入。兼容你现有的 SDK 和工作流。')}
                 </p>
                 <div className='flex flex-wrap items-center gap-3'>
-                  <button
-                    onClick={handleStart}
-                    className='inline-flex items-center gap-2 px-6 py-3 text-[15px] font-semibold rounded-xl bg-ui-accent text-ui-accent-fg hover:bg-ui-accent-hover hover:shadow-md active:scale-95 transition-all duration-200'
-                  >
+                  <Button size='lg' onClick={handleStart}>
                     {t('免费开始')} →
-                  </button>
+                  </Button>
                   {showDocs && (
                     <a href={docsLink} target='_blank' rel='noopener noreferrer'>
-                      <button className='inline-flex items-center px-6 py-3 text-[15px] font-medium rounded-xl border border-ui-border text-ui-text bg-ui-bg-elevated hover:bg-ui-bg-subtle active:scale-95 transition-all duration-200'>
+                      <Button size='lg' variant='secondary'>
                         {t('查看文档')} →
-                      </button>
+                      </Button>
                     </a>
                   )}
                 </div>

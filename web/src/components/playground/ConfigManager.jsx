@@ -22,6 +22,7 @@ import { Download, Upload, RotateCcw, Settings2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { exportConfig, importConfig, clearConfig, hasStoredConfig, getConfigTimestamp } from './configStorage';
 import { showSuccess, showError } from '../../helpers';
+import { Button, IconButton, Dropdown } from '../ui';
 
 const ConfirmDialog = ({ title, content, okText, cancelText, onOk, onCancel, danger }) => (
   <div className='fixed inset-0 z-[9999] flex items-center justify-center bg-black/40'>
@@ -29,8 +30,8 @@ const ConfirmDialog = ({ title, content, okText, cancelText, onOk, onCancel, dan
       <h3 className='font-semibold text-ui-text mb-2'>{title}</h3>
       <p className='text-sm text-ui-text-2 mb-6'>{content}</p>
       <div className='flex gap-2 justify-end'>
-        <button onClick={onCancel} className='px-4 py-2 text-sm border border-gray-200 rounded-lg hover:bg-ui-bg-subtle transition-colors'>{cancelText}</button>
-        <button onClick={onOk} className={`px-4 py-2 text-sm text-white rounded-lg transition-colors ${danger ? 'bg-red-500 hover:bg-red-600' : 'bg-black hover:bg-[#333]'}`}>{okText}</button>
+        <Button variant='secondary' onClick={onCancel}>{cancelText}</Button>
+        <Button variant={danger ? 'dangerSolid' : 'primary'} onClick={onOk}>{okText}</Button>
       </div>
     </div>
   </div>
@@ -119,34 +120,35 @@ const ConfigManager = ({ currentConfig, onConfigImport, onConfigReset, styleStat
       <input ref={fileInputRef} type='file' accept='.json' onChange={handleFileChange} style={{ display: 'none' }} />
 
       {styleState.isMobile ? (
-        <div className='relative'>
-          <button onClick={() => setShowMenu(!showMenu)} className='w-8 h-8 flex items-center justify-center text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-subtle rounded-lg transition-colors'>
-            <Settings2 size={16} />
-          </button>
-          {showMenu && (
-            <div className='absolute left-0 top-9 bg-ui-bg-elevated border border-gray-200 rounded-xl shadow-lg z-50 py-1 w-36'>
-              <button onClick={handleExport} className={`${btnBase} w-full text-ui-text hover:bg-ui-bg-subtle`}><Download size={13} />{t('导出配置')}</button>
-              <button onClick={handleImportClick} className={`${btnBase} w-full text-ui-text hover:bg-ui-bg-subtle`}><Upload size={13} />{t('导入配置')}</button>
-              <div className='h-px bg-ui-bg-subtle my-1' />
-              <button onClick={handleReset} className={`${btnBase} w-full text-red-600 hover:bg-red-50`}><RotateCcw size={13} />{t('重置配置')}</button>
-            </div>
-          )}
-        </div>
+        <Dropdown
+          placement='bottom-start'
+          trigger={<IconButton icon={Settings2} size='sm' />}
+          items={[
+            { label: t('导出配置'), onClick: handleExport },
+            { label: t('导入配置'), onClick: handleImportClick },
+            { label: t('重置配置'), onClick: handleReset, danger: true },
+          ]}
+        />
       ) : (
         <div className='space-y-2'>
           <div className='flex items-center justify-between'>
             <span className='text-xs text-ui-text-3'>{getConfigStatus()}</span>
-            <button onClick={handleReset} title={t('重置配置')} className='w-6 h-6 flex items-center justify-center text-red-400 hover:text-red-600 hover:bg-red-50 rounded-full transition-colors'>
-              <RotateCcw size={12} />
-            </button>
+            <IconButton
+              icon={RotateCcw}
+              size='sm'
+              variant='danger'
+              title={t('重置配置')}
+              onClick={handleReset}
+              className='w-6 h-6'
+            />
           </div>
           <div className='flex gap-2'>
-            <button onClick={handleExport} className='flex-1 flex items-center justify-center gap-1.5 py-1.5 text-xs bg-black text-white rounded-lg hover:bg-[#333] transition-colors'>
-              <Download size={11} />{t('导出')}
-            </button>
-            <button onClick={handleImportClick} className='flex-1 flex items-center justify-center gap-1.5 py-1.5 text-xs border border-gray-200 rounded-lg hover:bg-ui-bg-subtle transition-colors'>
-              <Upload size={11} />{t('导入')}
-            </button>
+            <Button size='sm' icon={Download} onClick={handleExport} className='flex-1'>
+              {t('导出')}
+            </Button>
+            <Button size='sm' variant='secondary' icon={Upload} onClick={handleImportClick} className='flex-1'>
+              {t('导入')}
+            </Button>
           </div>
         </div>
       )}

@@ -20,6 +20,7 @@ import {
   RadioChipGroup,
 } from '../../../components/common/form/Primitives';
 import { showConfirm } from '../../../components/common/ConfirmDialog';
+import { Button } from '../../../components/ui';
 
 function formatBytes(bytes, decimals = 2) {
   if (bytes == null || isNaN(bytes)) return '0 Bytes';
@@ -331,14 +332,14 @@ export default function SettingsPerformance(props) {
                 />
               </FieldRow>
               <FieldRow label=' '>
-                <button
-                  type='button'
+                <Button
+                  size='sm'
+                  variant='danger'
                   onClick={cleanupLogFiles}
                   disabled={logCleanupLoading}
-                  className='inline-flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-xl border border-ui-danger/30 text-ui-danger hover:bg-ui-danger-bg disabled:opacity-50'
                 >
                   {t('清理日志文件')}
-                </button>
+                </Button>
               </FieldRow>
             </div>
           </>
@@ -356,10 +357,12 @@ export default function SettingsPerformance(props) {
             <div className='text-sm font-semibold text-ui-text'>{t('性能监控')}</div>
           </div>
           <div className='flex items-center gap-2'>
-            <button onClick={fetchStats} className='inline-flex items-center gap-1 px-2.5 py-1.5 text-xs rounded-xl border border-ui-border text-ui-text-2 hover:bg-ui-bg-hover'>
+            <Button size='sm' variant='secondary' onClick={fetchStats}>
               {t('刷新')}
-            </button>
-            <button
+            </Button>
+            <Button
+              size='sm'
+              variant='secondary'
               onClick={() =>
                 showConfirm({
                   title: t('确认清理不活跃的磁盘缓存？'),
@@ -369,16 +372,15 @@ export default function SettingsPerformance(props) {
                   onOk: clearDiskCache,
                 })
               }
-              className='inline-flex items-center gap-1 px-2.5 py-1.5 text-xs rounded-xl border border-ui-border text-ui-text-2 hover:bg-ui-bg-hover'
             >
               {t('清理缓存')}
-            </button>
-            <button onClick={resetStats} className='inline-flex items-center gap-1 px-2.5 py-1.5 text-xs rounded-xl border border-ui-border text-ui-text-2 hover:bg-ui-bg-hover'>
+            </Button>
+            <Button size='sm' variant='secondary' onClick={resetStats}>
               {t('重置统计')}
-            </button>
-            <button onClick={forceGC} className='inline-flex items-center gap-1 px-2.5 py-1.5 text-xs rounded-xl border border-ui-border text-ui-text-2 hover:bg-ui-bg-hover'>
+            </Button>
+            <Button size='sm' variant='secondary' onClick={forceGC}>
               {t('执行 GC')}
-            </button>
+            </Button>
           </div>
         </div>
 

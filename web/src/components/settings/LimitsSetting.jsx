@@ -4,7 +4,6 @@
 
 import React, { useEffect, useState } from 'react';
 import SettingsCreditLimit from '../../pages/Setting/Operation/SettingsCreditLimit';
-import SettingsCheckin from '../../pages/Setting/Operation/SettingsCheckin';
 import RequestRateLimit from '../../pages/Setting/RateLimit/SettingsRequestRateLimit';
 import SettingsMonitoring from '../../pages/Setting/Operation/SettingsMonitoring';
 import SettingsLog from '../../pages/Setting/Operation/SettingsLog';
@@ -24,9 +23,6 @@ const LimitsSetting = () => {
     QuotaForInviter: 0,
     QuotaForInvitee: 0,
     'quota_setting.enable_free_model_pre_consume': true,
-    'checkin_setting.enabled': false,
-    'checkin_setting.min_quota': 1000,
-    'checkin_setting.max_quota': 10000,
     ModelRequestRateLimitEnabled: false,
     ModelRequestRateLimitCount: 0,
     ModelRequestRateLimitSuccessCount: 1000,
@@ -96,9 +92,6 @@ const LimitsSetting = () => {
       )}
       <TokenCard>
         <SettingsCreditLimit options={inputs} refresh={onRefresh} />
-      </TokenCard>
-      <TokenCard>
-        <SettingsCheckin options={inputs} refresh={onRefresh} />
       </TokenCard>
       <TokenCard>
         <RequestRateLimit options={inputs} refresh={onRefresh} />

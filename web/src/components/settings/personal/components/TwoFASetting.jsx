@@ -21,6 +21,7 @@ import { Shield, AlertTriangle, RefreshCw, Loader2 } from 'lucide-react';
 import React, { useEffect, useState } from 'react';
 import ModalDialog from '../../../common/ModalDialog';
 import { TextField, Notice } from '../../../common/form/Primitives';
+import { Button } from '../../../ui';
 
 import { QRCodeSVG } from 'qrcode.react';
 
@@ -211,12 +212,9 @@ const TwoFASetting = ({ t }) => {
           </div>
 
           <div className='border-t border-ui-border my-3' />
-          <button
-            onClick={onCopy}
-            className='inline-flex items-center justify-center gap-1.5 px-4 py-2 text-sm font-semibold rounded-xl bg-ui-accent text-ui-accent-fg hover:bg-ui-accent-hover transition-colors w-full'
-          >
+          <Button className='w-full' onClick={onCopy}>
             {t('复制所有代码')}
-          </button>
+          </Button>
         </div>
       </div>
     );
@@ -226,22 +224,17 @@ const TwoFASetting = ({ t }) => {
   const renderSetupModalFooter = () => (
     <>
       {currentStep > 0 && (
-        <button
-          onClick={() => setCurrentStep(currentStep - 1)}
-          className='inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium rounded-xl border border-ui-border text-ui-text hover:bg-ui-bg-subtle transition-colors'
-        >
+        <Button variant='secondary' onClick={() => setCurrentStep(currentStep - 1)}>
           {t('上一步')}
-        </button>
+        </Button>
       )}
       {currentStep < 2 ? (
-        <button
-          onClick={() => setCurrentStep(currentStep + 1)}
-          className='inline-flex items-center gap-1.5 px-4 py-2 text-sm font-semibold rounded-xl bg-ui-accent text-ui-accent-fg hover:bg-ui-accent-hover transition-colors'
-        >
+        <Button onClick={() => setCurrentStep(currentStep + 1)}>
           {t('下一步')}
-        </button>
+        </Button>
       ) : (
-        <button
+        <Button
+          icon={loading ? Loader2 : undefined}
           disabled={loading || !verificationCode}
           onClick={() => {
             if (!verificationCode) {
@@ -250,11 +243,9 @@ const TwoFASetting = ({ t }) => {
             }
             handleEnable2FA();
           }}
-          className='inline-flex items-center gap-1.5 px-4 py-2 text-sm font-semibold rounded-xl bg-ui-accent text-ui-accent-fg hover:bg-ui-accent-hover transition-colors disabled:opacity-50'
         >
-          {loading && <Loader2 size={14} className='animate-spin' />}
           {t('完成设置并启用两步验证')}
-        </button>
+        </Button>
       )}
     </>
   );
@@ -262,24 +253,24 @@ const TwoFASetting = ({ t }) => {
   // Disable modal footer
   const renderDisableModalFooter = () => (
     <>
-      <button
+      <Button
+        variant='secondary'
         onClick={() => {
           setDisableModalVisible(false);
           setVerificationCode('');
           setConfirmDisable(false);
         }}
-        className='inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium rounded-xl border border-ui-border text-ui-text hover:bg-ui-bg-subtle transition-colors'
       >
         {t('取消')}
-      </button>
-      <button
+      </Button>
+      <Button
+        variant='dangerSolid'
+        icon={loading ? Loader2 : undefined}
         disabled={loading || !confirmDisable || !verificationCode}
         onClick={handleDisable2FA}
-        className='inline-flex items-center gap-1.5 px-4 py-2 text-sm font-semibold rounded-xl bg-ui-danger text-white hover:opacity-90 transition-opacity disabled:opacity-50'
       >
-        {loading && <Loader2 size={14} className='animate-spin' />}
         {t('确认禁用')}
-      </button>
+      </Button>
     </>
   );
 
@@ -287,39 +278,37 @@ const TwoFASetting = ({ t }) => {
   const renderRegenerateModalFooter = () => {
     if (backupCodes.length > 0) {
       return (
-        <button
+        <Button
           onClick={() => {
             setBackupModalVisible(false);
             setVerificationCode('');
             setBackupCodes([]);
           }}
-          className='inline-flex items-center gap-1.5 px-4 py-2 text-sm font-semibold rounded-xl bg-ui-accent text-ui-accent-fg hover:bg-ui-accent-hover transition-colors'
         >
           {t('完成')}
-        </button>
+        </Button>
       );
     }
 
     return (
       <>
-        <button
+        <Button
+          variant='secondary'
           onClick={() => {
             setBackupModalVisible(false);
             setVerificationCode('');
             setBackupCodes([]);
           }}
-          className='inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium rounded-xl border border-ui-border text-ui-text hover:bg-ui-bg-subtle transition-colors'
         >
           {t('取消')}
-        </button>
-        <button
+        </Button>
+        <Button
+          icon={loading ? Loader2 : undefined}
           disabled={loading || !verificationCode}
           onClick={handleRegenerateBackupCodes}
-          className='inline-flex items-center gap-1.5 px-4 py-2 text-sm font-semibold rounded-xl bg-ui-accent text-ui-accent-fg hover:bg-ui-accent-hover transition-colors disabled:opacity-50'
         >
-          {loading && <Loader2 size={14} className='animate-spin' />}
           {t('生成新的备用码')}
-        </button>
+        </Button>
       </>
     );
   };
@@ -370,28 +359,27 @@ const TwoFASetting = ({ t }) => {
           </div>
           <div className='flex flex-col space-y-2 w-full sm:w-auto'>
             {!status.enabled ? (
-              <button
+              <Button
+                icon={loading ? Loader2 : undefined}
                 onClick={handleSetup2FA}
                 disabled={loading}
-                className='inline-flex items-center justify-center gap-1.5 px-4 py-2 text-sm font-semibold rounded-xl bg-ui-accent text-ui-accent-fg hover:bg-ui-accent-hover transition-colors disabled:opacity-50'
               >
-                {loading && <Loader2 size={14} className='animate-spin' />}
                 {t('启用验证')}
-              </button>
+              </Button>
             ) : (
               <div className='flex flex-col space-y-2'>
-                <button
+                <Button
+                  variant='dangerSolid'
                   onClick={() => setDisableModalVisible(true)}
-                  className='inline-flex items-center justify-center gap-1.5 px-4 py-2 text-sm font-semibold rounded-xl bg-ui-danger text-white hover:opacity-90 transition-opacity disabled:opacity-50'
                 >
                   {t('禁用两步验证')}
-                </button>
-                <button
+                </Button>
+                <Button
+                  variant='secondary'
                   onClick={() => setBackupModalVisible(true)}
-                  className='inline-flex items-center justify-center gap-1.5 px-4 py-2 text-sm font-medium rounded-xl border border-ui-border text-ui-text hover:bg-ui-bg-subtle transition-colors'
                 >
                   {t('重新生成备用码')}
-                </button>
+                </Button>
               </div>
             )}
           </div>

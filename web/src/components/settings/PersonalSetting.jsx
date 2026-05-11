@@ -18,12 +18,13 @@ import {
 import { UserContext } from '../../context/User';
 import { normalizeLanguage } from '../../i18n/language';
 import Dropdown from '../common/ui/Dropdown';
+import { Button, IconButton, Toggle as UIToggle } from '../ui';
 
 // ── atoms ───────────────────────────────────────────────
 
 const Card = ({ title, icon: Icon, action, children, className = '', bodyClass = 'p-5' }) => (
   <div
-    className={`border border-ui-border rounded-[28px] ${className}`}
+    className={`border border-ui-border rounded-[20px] ${className}`}
     style={{ backgroundColor: 'var(--page-bg)' }}
   >
     {(title || action) && (
@@ -45,30 +46,15 @@ const inputCls =
   'w-full px-3 py-2 text-sm bg-transparent border border-ui-border rounded-xl text-ui-text placeholder:text-ui-text-3 outline-none focus:border-ui-text-3 transition-colors';
 
 const PrimaryBtn = ({ children, ...props }) => (
-  <button
-    {...props}
-    className={`inline-flex items-center justify-center gap-1.5 px-4 py-2 text-sm font-semibold rounded-lg bg-ui-accent text-ui-accent-fg hover:bg-ui-accent-hover hover:shadow-md active:scale-95 disabled:opacity-50 disabled:hover:shadow-none disabled:active:scale-100 transition-all whitespace-nowrap ${props.className || ''}`}
-  >
-    {children}
-  </button>
+  <Button {...props}>{children}</Button>
 );
 
 const GhostBtn = ({ children, ...props }) => (
-  <button
-    {...props}
-    className={`inline-flex items-center justify-center gap-1.5 px-3.5 py-1.5 text-xs font-medium rounded-xl border border-ui-border text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-subtle transition-colors whitespace-nowrap ${props.className || ''}`}
-  >
-    {children}
-  </button>
+  <Button variant='secondary' size='sm' {...props}>{children}</Button>
 );
 
 const DangerBtn = ({ children, ...props }) => (
-  <button
-    {...props}
-    className={`inline-flex items-center justify-center gap-1.5 px-3.5 py-1.5 text-xs font-medium rounded-xl border border-ui-danger/40 text-ui-danger hover:bg-ui-danger-bg transition-colors whitespace-nowrap ${props.className || ''}`}
-  >
-    {children}
-  </button>
+  <Button variant='danger' size='sm' {...props}>{children}</Button>
 );
 
 const Row = ({ icon: Icon, title, desc, children }) => (
@@ -124,9 +110,7 @@ const ModalShell = ({ open, title, onClose, children, footer, max = 'max-w-md' }
       >
         <div className='flex items-center justify-between px-5 py-3.5'>
           <span className='text-sm font-semibold text-ui-text'>{title}</span>
-          <button onClick={onClose} className='p-1 rounded text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-subtle'>
-            <X size={16} />
-          </button>
+          <IconButton icon={X} size='sm' onClick={onClose} />
         </div>
         <div className='p-5'>{children}</div>
         {footer && (
@@ -281,7 +265,7 @@ const PersonalSetting = () => {
         <div className='flex items-center justify-between gap-3 mb-5'>
           <h1
             className='text-2xl md:text-3xl font-medium text-ui-text'
-            style={{ fontFamily: "'Space Grotesk', sans-serif", letterSpacing: '-0.02em' }}
+            style={{ letterSpacing: '-0.02em' }}
           >
             {t('个人设置')}
           </h1>
@@ -289,19 +273,19 @@ const PersonalSetting = () => {
 
         {/* Hero */}
         <div
-          className='relative overflow-hidden border border-ui-border rounded-[28px] p-6 md:p-7 mb-5'
+          className='relative overflow-hidden border border-ui-border rounded-[20px] p-6 md:p-7 mb-5'
           style={{ backgroundColor: 'var(--page-bg)' }}
         >
           <div className='relative z-10 flex flex-col md:flex-row md:items-center gap-5'>
             <div className='flex-1 min-w-0'>
               <div
                 className='text-2xl md:text-3xl font-medium text-ui-text truncate'
-                style={{ fontFamily: "'Space Grotesk', sans-serif", letterSpacing: '-0.02em' }}
+                style={{ letterSpacing: '-0.02em' }}
               >
                 {username}
               </div>
               <div className='flex flex-wrap items-center gap-1.5 mt-2'>
-                <span className='inline-flex items-center px-2 py-0.5 text-[11px] font-medium rounded-xl bg-ui-bg-subtle border border-ui-border text-ui-text-2'>
+                <span className='inline-flex items-center px-2 py-0.5 text-[11px] font-medium rounded-xl bg-ui-bg-subtle text-ui-text-2'>
                   {roleLabel}
                 </span>
               </div>
@@ -400,19 +384,7 @@ const ToggleRow = ({ label, desc, value, onChange }) => (
       <div className='text-sm text-ui-text'>{label}</div>
       {desc && <div className='text-[11px] text-ui-text-3 mt-0.5'>{desc}</div>}
     </div>
-    <button
-      onClick={() => onChange(!value)}
-      className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors flex-shrink-0 ${
-        value ? 'bg-ui-accent' : 'bg-ui-bg-subtle border border-ui-border'
-      }`}
-    >
-      <span
-        className={`inline-block h-3.5 w-3.5 transform rounded-full transition-transform shadow ${
-          value ? 'translate-x-[18px]' : 'translate-x-0.5'
-        }`}
-        style={{ background: '#ffffff' }}
-      />
-    </button>
+    <UIToggle checked={value} onChange={onChange} />
   </div>
 );
 
@@ -618,13 +590,13 @@ const DeleteAccountModal = ({ open, onClose, username, onDeleted, t }) => {
       footer={
         <>
           <GhostBtn onClick={onClose}>{t('取消')}</GhostBtn>
-          <button
+          <Button
+            variant='dangerSolid'
             onClick={submit}
             disabled={deleting || confirmText !== username}
-            className='inline-flex items-center justify-center gap-1.5 px-4 py-2 text-sm font-semibold rounded-lg bg-ui-danger text-white hover:opacity-90 active:scale-95 disabled:opacity-40 disabled:active:scale-100 transition-all whitespace-nowrap'
           >
             {deleting ? t('删除中...') : t('永久删除')}
-          </button>
+          </Button>
         </>
       }
     >

@@ -21,6 +21,7 @@ import React, { useState } from 'react';
 import { showError } from '../../../helpers';
 import CopyTokensModal from './modals/CopyTokensModal';
 import DeleteTokensModal from './modals/DeleteTokensModal';
+import { Button } from '../../ui';
 
 const TokensActions = ({
   selectedKeys,
@@ -61,31 +62,31 @@ const TokensActions = ({
   return (
     <>
       <div className='flex flex-wrap gap-2 w-full md:w-auto order-2 md:order-1'>
-        <button
-          className='inline-flex items-center gap-1.5 px-4 py-2 text-sm font-semibold rounded-xl bg-ui-accent text-ui-accent-fg hover:bg-ui-accent-hover transition-colors disabled:opacity-50 flex-1 md:flex-initial'
+        <Button
+          className='flex-1 md:flex-initial'
           onClick={() => {
-            setEditingToken({
-              id: undefined,
-            });
+            setEditingToken({ id: undefined });
             setShowEdit(true);
           }}
         >
           {t('添加令牌')}
-        </button>
+        </Button>
 
-        <button
-          className='inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium rounded-xl border border-ui-border text-ui-text hover:bg-ui-bg-subtle transition-colors flex-1 md:flex-initial'
+        <Button
+          variant='secondary'
+          className='flex-1 md:flex-initial'
           onClick={handleCopySelectedTokens}
         >
           {t('复制所选令牌')}
-        </button>
+        </Button>
 
-        <button
-          className='inline-flex items-center gap-1.5 px-4 py-2 text-sm font-semibold rounded-xl bg-ui-danger text-white hover:opacity-90 transition-colors w-full md:w-auto'
+        <Button
+          variant='dangerSolid'
+          className='w-full md:w-auto'
           onClick={handleDeleteSelectedTokens}
         >
           {t('删除所选令牌')}
-        </button>
+        </Button>
       </div>
 
       <CopyTokensModal

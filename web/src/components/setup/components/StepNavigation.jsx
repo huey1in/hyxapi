@@ -18,6 +18,7 @@ For commercial licensing, please contact support@quantumnous.com
 */
 
 import React from 'react';
+import { Button } from '../../ui';
 
 /**
  * 步骤导航组件
@@ -35,31 +36,21 @@ const StepNavigation = ({
   return (
     <div className='flex justify-end items-center pt-12 gap-4'>
       {currentStep > 0 && (
-        <button
-          onClick={prev}
-          className='px-6 py-3 text-sm border border-gray-300 rounded-lg text-ui-text-2 bg-ui-bg-elevated hover:bg-ui-bg-subtle transition-colors font-medium'
-        >
+        <Button size='lg' variant='secondary' onClick={prev}>
           {t('上一步')}
-        </button>
+        </Button>
       )}
 
       {currentStep < steps.length - 1 && (
-        <button
-          onClick={next}
-          className='px-8 py-3 text-sm rounded-lg transition-colors font-medium bg-black text-white hover:bg-[#333333]'
-        >
+        <Button size='lg' onClick={next}>
           {t('下一步')}
-        </button>
+        </Button>
       )}
 
       {currentStep === steps.length - 1 && (
-        <button
-          onClick={onSubmit}
-          disabled={loading}
-          className='px-8 py-3 text-sm rounded-lg transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed bg-black text-white hover:bg-[#333333]'
-        >
+        <Button size='lg' onClick={onSubmit} disabled={loading} loading={loading}>
           {loading ? t('初始化中...') : t('初始化系统')}
-        </button>
+        </Button>
       )}
     </div>
   );

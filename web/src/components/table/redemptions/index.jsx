@@ -14,27 +14,10 @@ import { showConfirm } from '../../common/ConfirmDialog';
 import RedemptionsTable from './RedemptionsTable';
 import EditRedemptionModal from './modals/EditRedemptionModal';
 import SubscriptionCodeBatchModal from './modals/SubscriptionCodeBatchModal';
+import { Button, Tabs as UITabs } from '../../ui';
 
 const inputCls =
-  'w-full pl-8 pr-3 py-1.5 text-xs bg-transparent border border-ui-border rounded-md text-ui-text placeholder:text-ui-text-3 outline-none focus:border-ui-text-3 transition-colors';
-
-const Tabs = ({ active, onChange, items }) => (
-  <div className='flex items-center gap-1'>
-    {items.map((it) => (
-      <button
-        key={it.value}
-        onClick={() => onChange(it.value)}
-        className={`px-3 py-1.5 text-xs rounded-xl transition-colors whitespace-nowrap ${
-          active === it.value
-            ? 'bg-ui-bg-subtle text-ui-text font-semibold border border-ui-text-3'
-            : 'border border-ui-border text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-subtle'
-        }`}
-      >
-        {it.label}
-      </button>
-    ))}
-  </div>
-);
+  'w-full pl-8 pr-3 py-2 text-sm bg-transparent border border-ui-border rounded-xl text-ui-text placeholder:text-ui-text-3 outline-none focus:border-ui-text-3 transition-colors';
 
 const RedemptionsPage = () => {
   const { t } = useTranslation();
@@ -160,18 +143,18 @@ const RedemptionsPage = () => {
   };
 
   return (
-    <div className='px-4 pt-8 pb-6 md:px-6 md:pt-10 md:pb-8'>
+    <div className='px-4 pt-8 pb-6 md:px-6 md:pt-10 md:pb-8 overflow-x-hidden'>
       <div className='max-w-[1400px] mx-auto'>
         {/* Header */}
         <div className='flex items-center justify-between gap-3 mb-5'>
           <h1
-            className='text-2xl md:text-3xl font-medium text-ui-text'
-            style={{ fontFamily: "'Space Grotesk', sans-serif", letterSpacing: '-0.02em' }}
+            className='text-2xl font-semibold text-ui-text'
+            style={{ letterSpacing: '-0.02em' }}
           >
             {t('兑换码管理')}
           </h1>
-          <Tabs
-            active={tab}
+          <UITabs
+            value={tab}
             onChange={setTab}
             items={[
               { value: 'quota', label: t('额度兑换码') },
@@ -249,32 +232,31 @@ const QuotaMode = ({ data, t }) => {
 
   return (
     <>
-      <div className='bg-ui-bg-elevated border border-ui-border rounded-xl p-3 mb-3 flex flex-col md:flex-row md:items-center justify-between gap-2'>
+      <div className='border border-ui-border rounded-2xl p-4 mb-3 bg-[var(--page-bg)] overflow-hidden flex flex-col md:flex-row md:items-center justify-between gap-2'>
         <div className='flex flex-wrap items-center gap-1.5'>
-          <button
+          <Button
+            icon={Plus}
             onClick={() => {
               data.setEditingRedemption({ id: undefined });
               data.setShowEdit(true);
             }}
-            className='inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-xl bg-ui-accent text-ui-accent-fg hover:bg-ui-accent-hover whitespace-nowrap'
           >
-            <Plus size={12} />
             {t('添加兑换码')}
-          </button>
-          <button
+          </Button>
+          <Button
+            variant='ghost'
             onClick={data.batchCopyRedemptions}
             disabled={!data.selectedKeys.length}
-            className='inline-flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-xl border border-ui-border text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-subtle disabled:opacity-40 whitespace-nowrap'
           >
             {t('复制所选')}
-          </button>
-          <button
+          </Button>
+          <Button
+            variant='danger'
+            icon={Trash2}
             onClick={data.batchDeleteRedemptions}
-            className='inline-flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-xl border border-ui-danger/40 text-ui-danger hover:bg-ui-danger-bg whitespace-nowrap'
           >
-            <Trash2 size={12} />
             {t('清除失效')}
-          </button>
+          </Button>
         </div>
         <form
           onSubmit={(e) => {
@@ -302,24 +284,16 @@ const QuotaMode = ({ data, t }) => {
               </button>
             )}
           </div>
-          <button
-            type='submit'
-            disabled={data.searching}
-            className='inline-flex items-center px-3 py-1.5 text-xs rounded-xl border border-ui-border text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-subtle whitespace-nowrap disabled:opacity-50'
-          >
+          <Button type='submit' variant='ghost' disabled={data.searching}>
             {data.searching ? t('查询中...') : t('查询')}
-          </button>
-          <button
-            type='button'
-            onClick={reset}
-            className='inline-flex items-center px-3 py-1.5 text-xs rounded-xl border border-ui-border text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-subtle whitespace-nowrap'
-          >
+          </Button>
+          <Button type='button' variant='ghost' onClick={reset}>
             {t('重置')}
-          </button>
+          </Button>
         </form>
       </div>
 
-      <div className='bg-ui-bg-elevated border border-ui-border rounded-xl overflow-hidden'>
+      <div className='border border-ui-border rounded-2xl overflow-hidden bg-[var(--page-bg)]'>
         <RedemptionsTable {...data} />
         {data.tokenCount > 0 && (
           <div className='border-t border-ui-divider'>
@@ -369,31 +343,30 @@ const SubscriptionMode = ({
   openGenerator,
 }) => (
   <>
-    <div className='bg-ui-bg-elevated border border-ui-border rounded-xl p-3 mb-3 flex flex-col md:flex-row md:items-center justify-between gap-2'>
+    <div className='border border-ui-border rounded-2xl p-4 mb-3 bg-[var(--page-bg)] overflow-hidden flex flex-col md:flex-row md:items-center justify-between gap-2'>
       <div className='flex flex-wrap items-center gap-1.5'>
-        <button
+        <Button
+          icon={Plus}
           onClick={openGenerator}
           disabled={plans.length === 0}
-          className='inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-xl bg-ui-accent text-ui-accent-fg hover:bg-ui-accent-hover disabled:opacity-50 whitespace-nowrap'
         >
-          <Plus size={12} />
           {t('生成订阅兑换码')}
-        </button>
-        <button
+        </Button>
+        <Button
+          variant='ghost'
+          icon={RefreshCw}
           onClick={loadSubscriptionCodes}
           disabled={subLoading}
-          className='inline-flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-xl border border-ui-border text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-subtle disabled:opacity-50 whitespace-nowrap'
         >
-          <RefreshCw size={12} className={subLoading ? 'animate-spin' : ''} />
           {t('刷新')}
-        </button>
-        <button
+        </Button>
+        <Button
+          variant='ghost'
           onClick={copyAllUnusedSub}
           disabled={!filteredSubCodes.some((c) => c.status === 1)}
-          className='inline-flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-xl border border-ui-border text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-subtle disabled:opacity-40 whitespace-nowrap'
         >
           {t('复制未使用')}
-        </button>
+        </Button>
       </div>
       <div className='flex items-center gap-1.5'>
         <select
@@ -429,7 +402,7 @@ const SubscriptionMode = ({
       </div>
     </div>
 
-    <div className='bg-ui-bg-elevated border border-ui-border rounded-xl overflow-hidden'>
+    <div className='border border-ui-border rounded-2xl overflow-hidden bg-[var(--page-bg)]'>
       {subLoading ? (
         <div className='py-16 text-center text-ui-text-3 text-sm flex items-center justify-center gap-2'>
           <RefreshCw size={14} className='animate-spin' />
@@ -466,22 +439,24 @@ const SubscriptionMode = ({
                   </td>
                   <td className='px-3 py-3 align-middle text-right'>
                     <div className='flex items-center justify-end gap-1'>
-                      <button
+                      <Button
+                        size='sm'
+                        variant='ghost'
                         onClick={async () => {
                           if (await copy(c.key)) showSuccess(t('已复制'));
                           else showError(t('复制失败'));
                         }}
-                        className='inline-flex items-center px-2 py-1 text-[11px] rounded border border-ui-border text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-subtle whitespace-nowrap'
                       >
                         {t('复制')}
-                      </button>
-                      <button
+                      </Button>
+                      <Button
+                        size='sm'
+                        variant='danger'
+                        icon={Trash2}
                         onClick={() => deleteSubscriptionCode(c.id)}
-                        className='inline-flex items-center gap-1 px-2 py-1 text-[11px] rounded border border-ui-danger/30 text-ui-danger hover:bg-ui-danger-bg whitespace-nowrap'
                       >
-                        <Trash2 size={11} />
                         {t('删除')}
-                      </button>
+                      </Button>
                     </div>
                   </td>
                 </tr>

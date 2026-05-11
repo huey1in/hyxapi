@@ -18,6 +18,7 @@ import {
   TextAreaField,
 } from '../../../components/common/form/Primitives';
 import { showConfirm } from '../../../components/common/ConfirmDialog';
+import { Button } from '../../../components/ui';
 
 const JSON_FIELDS = [
   'ModelRatio',
@@ -145,13 +146,9 @@ export default function ModelRatioSettings(props) {
       onSave={submit}
       onSaveLabel={t('保存模型倍率设置')}
       extraActions={
-        <button
-          type='button'
-          onClick={resetModelRatio}
-          className='inline-flex items-center gap-1 px-2.5 py-1.5 text-xs rounded-xl border border-ui-danger/30 text-ui-danger hover:bg-ui-danger-bg'
-        >
+        <Button size='sm' variant='danger' onClick={resetModelRatio}>
           {t('重置模型倍率')}
-        </button>
+        </Button>
       }
     >
       {fields.map((f) => (

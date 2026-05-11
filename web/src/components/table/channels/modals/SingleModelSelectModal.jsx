@@ -85,7 +85,7 @@ const SingleModelSelectModal = ({
       onClick={onCancel}
     >
       <div
-        className={`border border-ui-border rounded-[28px] shadow-2xl w-full ${
+        className={`border border-ui-border rounded-[20px] shadow-2xl w-full ${
           isMobile ? 'max-w-full' : 'max-w-2xl'
         } max-h-[88vh] flex flex-col overflow-hidden`}
         style={{ backgroundColor: 'var(--page-bg)' }}
@@ -152,7 +152,7 @@ const SingleModelSelectModal = ({
           )}
         </div>
         <div className='flex justify-end gap-2 px-5 py-3 border-t border-ui-border'>
-          <button onClick={onCancel} className='inline-flex items-center px-3.5 py-1.5 text-xs font-medium rounded-xl border border-ui-border text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-subtle whitespace-nowrap'>
+          <button onClick={onCancel} className='inline-flex items-center px-3.5 py-1.5 text-xs font-medium rounded-xl text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-subtle whitespace-nowrap'>
             {t('取消')}
           </button>
           <button

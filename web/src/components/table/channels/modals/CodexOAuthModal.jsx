@@ -6,6 +6,7 @@ import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
 import { X, Info, Loader2 } from 'lucide-react';
 import { API, copy, showError, showSuccess } from '../../../../helpers';
+import { Button, IconButton } from '../../../ui';
 
 const CodexOAuthModal = ({ visible, onCancel, onSuccess }) => {
   const { t } = useTranslation();
@@ -86,13 +87,7 @@ const CodexOAuthModal = ({ visible, onCancel, onSuccess }) => {
       >
         <div className='flex items-center justify-between gap-3 px-5 py-3.5 border-b border-ui-border'>
           <span className='text-sm font-semibold text-ui-text'>{t('Codex 授权')}</span>
-          <button
-            onClick={onCancel}
-            disabled={loading}
-            className='p-1 rounded text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-subtle disabled:opacity-40'
-          >
-            <X size={16} />
-          </button>
+          <IconButton icon={X} size='sm' onClick={onCancel} disabled={loading} />
         </div>
         <div className='p-5 space-y-3'>
           <div className='flex items-start gap-2 px-3 py-2 rounded-xl border border-blue-500/30 bg-blue-500/5'>
@@ -102,21 +97,20 @@ const CodexOAuthModal = ({ visible, onCancel, onSuccess }) => {
             </div>
           </div>
           <div className='flex flex-wrap items-center gap-2'>
-            <button
+            <Button
+              icon={loading ? Loader2 : undefined}
               onClick={startOAuth}
               disabled={loading}
-              className='inline-flex items-center gap-1.5 px-4 py-2 text-sm font-semibold rounded-xl bg-ui-accent text-ui-accent-fg hover:bg-ui-accent-hover disabled:opacity-50 whitespace-nowrap'
             >
-              {loading && <Loader2 size={12} className='animate-spin' />}
               {t('打开授权页面')}
-            </button>
-            <button
+            </Button>
+            <Button
+              variant='secondary'
               disabled={!authorizeUrl || loading}
               onClick={() => copy(authorizeUrl)}
-              className='inline-flex items-center px-3 py-2 text-sm rounded-xl border border-ui-border text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-subtle disabled:opacity-40 whitespace-nowrap'
             >
               {t('复制授权链接')}
-            </button>
+            </Button>
           </div>
           <input
             type='text'
@@ -130,21 +124,17 @@ const CodexOAuthModal = ({ visible, onCancel, onSuccess }) => {
           </p>
         </div>
         <div className='flex justify-end gap-2 px-5 py-3 border-t border-ui-border'>
-          <button
-            onClick={onCancel}
-            disabled={loading}
-            className='inline-flex items-center px-3.5 py-1.5 text-xs font-medium rounded-xl border border-ui-border text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-subtle disabled:opacity-40 whitespace-nowrap'
-          >
+          <Button variant='secondary' size='sm' onClick={onCancel} disabled={loading}>
             {t('取消')}
-          </button>
-          <button
+          </Button>
+          <Button
+            size='sm'
+            icon={loading ? Loader2 : undefined}
             onClick={completeOAuth}
             disabled={loading}
-            className='inline-flex items-center gap-1.5 px-4 py-1.5 text-xs font-semibold rounded-xl bg-ui-accent text-ui-accent-fg hover:bg-ui-accent-hover disabled:opacity-50 whitespace-nowrap'
           >
-            {loading && <Loader2 size={11} className='animate-spin' />}
             {t('生成并填入')}
-          </button>
+          </Button>
         </div>
       </div>
     </div>,

@@ -8,9 +8,10 @@ import Pagination from '../../common/table/Pagination';
 import UsersTable from './UsersTable';
 import AddUserModal from './modals/AddUserModal';
 import EditUserModal from './modals/EditUserModal';
+import { Button } from '../../ui';
 
 const inputCls =
-  'w-full pl-8 pr-7 py-1.5 text-xs bg-transparent border border-ui-border rounded-md text-ui-text placeholder:text-ui-text-3 outline-none focus:border-ui-text-3 transition-colors';
+  'w-full pl-8 pr-7 py-2 text-sm bg-transparent border border-ui-border rounded-xl text-ui-text placeholder:text-ui-text-3 outline-none focus:border-ui-text-3 transition-colors';
 
 const UsersPage = () => {
   const data = useUsersData();
@@ -58,36 +59,32 @@ const UsersPage = () => {
   };
 
   return (
-    <div className='px-4 pt-8 pb-6 md:px-6 md:pt-10 md:pb-8'>
+    <div className='px-4 pt-8 pb-6 md:px-6 md:pt-10 md:pb-8 overflow-x-hidden'>
       <div className='max-w-[1400px] mx-auto'>
         {/* Header */}
         <div className='flex items-center justify-between gap-3 mb-5'>
           <h1
-            className='text-2xl md:text-3xl font-medium text-ui-text'
-            style={{ fontFamily: "'Space Grotesk', sans-serif", letterSpacing: '-0.02em' }}
+            className='text-2xl font-semibold text-ui-text'
+            style={{ letterSpacing: '-0.02em' }}
           >
             {t('用户管理')}
           </h1>
         </div>
 
         {/* Filter + actions card */}
-        <div className='bg-ui-bg-elevated border border-ui-border rounded-xl p-3 mb-3 flex flex-col md:flex-row md:items-center justify-between gap-2'>
+        <div className='border border-ui-border rounded-2xl p-4 mb-3 bg-[var(--page-bg)] overflow-hidden flex flex-col md:flex-row md:items-center justify-between gap-2'>
           <div className='flex items-center gap-1.5'>
-            <button
-              onClick={() => setShowAddUser(true)}
-              className='inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-xl bg-ui-accent text-ui-accent-fg hover:bg-ui-accent-hover active:scale-95 transition-all whitespace-nowrap'
-            >
-              <Plus size={12} />
+            <Button icon={Plus} onClick={() => setShowAddUser(true)}>
               {t('添加用户')}
-            </button>
-            <button
+            </Button>
+            <Button
+              variant='ghost'
+              icon={RefreshCw}
               onClick={refresh}
               disabled={loading || searching}
-              className='inline-flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-xl border border-ui-border text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-subtle disabled:opacity-50 transition-colors whitespace-nowrap'
             >
-              <RefreshCw size={12} className={loading || searching ? 'animate-spin' : ''} />
               {t('刷新')}
-            </button>
+            </Button>
           </div>
 
           <form onSubmit={onSearch} className='flex flex-wrap items-center gap-1.5'>
@@ -110,25 +107,17 @@ const UsersPage = () => {
                 </button>
               )}
             </div>
-            <button
-              type='submit'
-              disabled={loading || searching}
-              className='inline-flex items-center px-3 py-1.5 text-xs rounded-xl border border-ui-border text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-subtle disabled:opacity-50 whitespace-nowrap'
-            >
+            <Button type='submit' variant='ghost' disabled={loading || searching}>
               {searching ? t('查询中...') : t('查询')}
-            </button>
-            <button
-              type='button'
-              onClick={onReset}
-              className='inline-flex items-center px-3 py-1.5 text-xs rounded-xl border border-ui-border text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-subtle whitespace-nowrap'
-            >
+            </Button>
+            <Button type='button' variant='ghost' onClick={onReset}>
               {t('重置')}
-            </button>
+            </Button>
           </form>
         </div>
 
         {/* Table card */}
-        <div className='bg-ui-bg-elevated border border-ui-border rounded-xl overflow-hidden'>
+        <div className='border border-ui-border rounded-2xl overflow-hidden bg-[var(--page-bg)]'>
           <UsersTable {...data} />
           {userCount > 0 && (
             <div className='border-t border-ui-divider'>

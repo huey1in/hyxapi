@@ -5,6 +5,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Search, Plus, RefreshCw, Columns3, X } from 'lucide-react';
 import Select from '../../common/form/Select';
+import { Button } from '../../ui';
 
 const inputCls =
   'w-full pl-9 pr-8 py-2 text-sm bg-ui-bg-elevated border border-ui-border rounded-xl text-ui-text placeholder:text-ui-text-3 outline-none focus:border-ui-text-3 transition-colors';
@@ -73,36 +74,35 @@ const ChannelsFilters = ({
   );
 
   return (
-    <div className='flex flex-col md:flex-row justify-between items-stretch gap-2 w-full'>
-      <div className='flex flex-wrap items-center gap-1.5'>
-        <button
+    <div className='flex flex-col md:flex-row justify-between items-stretch gap-2 w-full min-w-0'>
+      <div className='flex flex-wrap items-center gap-1.5 flex-shrink-0'>
+        <Button
+          icon={Plus}
           onClick={() => {
             setEditingChannel({ id: undefined });
             setShowEdit(true);
           }}
-          className='inline-flex items-center gap-1.5 px-3.5 py-2 text-sm font-semibold rounded-xl bg-ui-accent text-ui-accent-fg hover:bg-ui-accent-hover active:scale-95 transition-all whitespace-nowrap'
         >
-          <Plus size={14} />
           {t('添加渠道')}
-        </button>
-        <button
+        </Button>
+        <Button
+          variant='ghost'
+          icon={RefreshCw}
           onClick={refresh}
           disabled={loading || searching}
-          className='inline-flex items-center gap-1.5 px-3.5 py-2 text-sm rounded-xl border border-ui-border text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-subtle transition-colors whitespace-nowrap disabled:opacity-50'
         >
-          <RefreshCw size={14} className={loading || searching ? 'animate-spin' : ''} />
           {t('刷新')}
-        </button>
-        <button
+        </Button>
+        <Button
+          variant='ghost'
+          icon={Columns3}
           onClick={() => setShowColumnSelector(true)}
-          className='inline-flex items-center gap-1.5 px-3.5 py-2 text-sm rounded-xl border border-ui-border text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-subtle transition-colors whitespace-nowrap'
         >
-          <Columns3 size={14} />
           {t('列设置')}
-        </button>
+        </Button>
       </div>
 
-      <form onSubmit={submit} className='flex flex-wrap items-center gap-1.5 md:flex-nowrap'>
+      <form onSubmit={submit} className='flex flex-wrap items-center gap-1.5 md:flex-nowrap min-w-0'>
         <SearchInput value={keyword} onChange={setKeyword} placeholder={t('ID/名称/密钥/地址')} className='w-full md:w-56' />
         <SearchInput value={model} onChange={setModel} placeholder={t('模型关键字')} className='w-full md:w-40' />
         <Select
@@ -115,20 +115,12 @@ const ChannelsFilters = ({
           options={groupItems}
           className='w-full md:w-36'
         />
-        <button
-          type='submit'
-          disabled={loading || searching}
-          className='inline-flex items-center gap-1.5 px-3.5 py-2 text-sm rounded-xl border border-ui-border text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-subtle transition-colors whitespace-nowrap disabled:opacity-50'
-        >
+        <Button type='submit' variant='ghost' disabled={loading || searching}>
           {searching ? t('查询中...') : t('查询')}
-        </button>
-        <button
-          type='button'
-          onClick={reset}
-          className='inline-flex items-center gap-1.5 px-3.5 py-2 text-sm rounded-xl border border-ui-border text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-subtle transition-colors whitespace-nowrap'
-        >
+        </Button>
+        <Button variant='ghost' onClick={reset}>
           {t('重置')}
-        </button>
+        </Button>
       </form>
     </div>
   );

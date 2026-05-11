@@ -17,6 +17,7 @@ import {
 } from '../../helpers';
 import { UserContext } from '../../context/User';
 import Pagination from '../../components/common/table/Pagination';
+import { Button, IconButton } from '../../components/ui';
 
 const PAGE_SIZE = 20;
 
@@ -285,29 +286,23 @@ const LogsView = () => {
         <div className='flex items-center justify-between gap-3 mb-5'>
           <h1
             className='text-2xl md:text-3xl font-medium text-ui-text'
-            style={{ fontFamily: "'Space Grotesk', sans-serif", letterSpacing: '-0.02em' }}
+            style={{ letterSpacing: '-0.02em' }}
           >
             {t('日志')}
           </h1>
           <div className='flex items-center gap-1'>
-            <button
+            <IconButton
+              icon={Filter}
               onClick={() => setShowFilters((s) => !s)}
               title={t('筛选')}
-              className={`inline-flex items-center justify-center w-9 h-9 rounded-xl transition-colors ${
-                showFilters
-                  ? 'bg-ui-bg-subtle text-ui-text'
-                  : 'text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-subtle'
-              }`}
-            >
-              <Filter size={14} />
-            </button>
-            <button
+              className={showFilters ? 'bg-ui-bg-subtle text-ui-text' : ''}
+            />
+            <IconButton
+              icon={RefreshCw}
               onClick={() => load(page)}
               title={t('刷新')}
-              className='inline-flex items-center justify-center w-9 h-9 rounded-xl text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-subtle transition-colors'
-            >
-              <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />
-            </button>
+              className={loading ? '[&_svg]:animate-spin' : ''}
+            />
           </div>
         </div>
 
@@ -315,7 +310,7 @@ const LogsView = () => {
         {showFilters && (
           <form
             onSubmit={onSearch}
-            className='border border-ui-border rounded-[28px] p-4 mb-4'
+            className='border border-ui-border rounded-[20px] p-4 mb-4'
             style={{ backgroundColor: 'var(--page-bg)' }}
           >
             <div className='flex flex-wrap gap-1 mb-3'>
@@ -401,21 +396,19 @@ const LogsView = () => {
             </div>
 
             <div className='flex justify-end gap-2'>
-              <button type='button' onClick={reset}
-                className='px-3.5 py-1.5 text-sm font-medium rounded-lg border border-ui-border text-ui-text hover:bg-ui-bg-subtle transition-colors'>
+              <Button type='button' size='sm' variant='secondary' onClick={reset}>
                 {t('重置')}
-              </button>
-              <button type='submit'
-                className='px-3.5 py-1.5 text-sm font-semibold rounded-lg bg-ui-accent text-ui-accent-fg hover:bg-ui-accent-hover transition-colors'>
+              </Button>
+              <Button type='submit' size='sm'>
                 {t('查询')}
-              </button>
+              </Button>
             </div>
           </form>
         )}
 
         {/* Table */}
         <div
-          className='border border-ui-border rounded-[28px] overflow-hidden'
+          className='border border-ui-border rounded-[20px] overflow-hidden'
           style={{ backgroundColor: 'var(--page-bg)' }}
         >
           <div className='overflow-x-auto nice-scroll'>

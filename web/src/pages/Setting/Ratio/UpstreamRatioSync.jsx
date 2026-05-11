@@ -14,6 +14,7 @@ import { useTranslation } from 'react-i18next';
 import ChannelSelectorModal from '../../../components/settings/ChannelSelectorModal';
 import ModalDialog from '../../../components/common/ModalDialog';
 import Pagination from '../../../components/common/table/Pagination';
+import { Button } from '../../../components/ui';
 import { Notice } from '../../../components/common/form/Primitives';
 
 const OFFICIAL_RATIO_PRESET_ID = -100;
@@ -41,8 +42,8 @@ function ConflictConfirmModal({ t, visible, items, onOk, onCancel }) {
       width={700}
       footer={
         <div className='flex justify-end gap-2'>
-          <button onClick={onCancel} className='px-3.5 py-1.5 text-xs rounded-xl border border-ui-border text-ui-text-2 hover:bg-ui-bg-subtle'>{t('取消')}</button>
-          <button onClick={onOk} className='px-3.5 py-1.5 text-xs font-semibold rounded-xl bg-ui-accent text-ui-accent-fg hover:opacity-90'>{t('确定')}</button>
+          <Button variant='secondary' size='sm' onClick={onCancel}>{t('取消')}</Button>
+          <Button size='sm' onClick={onOk}>{t('确定')}</Button>
         </div>
       }
     >
@@ -281,14 +282,20 @@ export default function UpstreamRatioSync(props) {
     <div className='space-y-4'>
       {/* Toolbar */}
       <div className='flex flex-wrap items-center gap-2'>
-        <button onClick={() => { setModalVisible(true); if (!allChannels.length) fetchAllChannels(); }}
-          className='inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium rounded-xl border border-ui-border text-ui-text-2 hover:bg-ui-bg-hover'>
+        <Button
+          size='sm'
+          variant='secondary'
+          onClick={() => { setModalVisible(true); if (!allChannels.length) fetchAllChannels(); }}
+        >
           {t('选择同步渠道')}
-        </button>
-        <button onClick={applySync} disabled={!Object.keys(resolutions).length}
-          className='inline-flex items-center gap-1 px-3 py-1.5 text-xs font-semibold rounded-xl bg-ui-accent text-ui-accent-fg hover:opacity-90 disabled:opacity-40'>
+        </Button>
+        <Button
+          size='sm'
+          onClick={applySync}
+          disabled={!Object.keys(resolutions).length}
+        >
           {t('应用同步')}
-        </button>
+        </Button>
         <div className='relative flex-1 min-w-[180px] max-w-[220px]'>
           <input type='text' value={searchKeyword} onChange={(e) => setSearchKeyword(e.target.value)}
             placeholder={t('搜索模型名称')}

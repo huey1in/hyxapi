@@ -23,6 +23,7 @@ import { Loader2, ChevronLeft, ChevronRight, Search } from 'lucide-react';
 import ModalDialog from '../../../common/ModalDialog';
 import { showConfirm } from '../../../common/ConfirmDialog';
 import Select from '../../../common/form/Select';
+import { Button } from '../../../ui';
 import {
   API,
   showError,
@@ -438,16 +439,19 @@ const MultiKeyManageModal = ({ visible, onCancel, channel, onRefresh }) => {
             />
           </div>
           <div className='flex flex-wrap items-center gap-2'>
-            <button
+            <Button
+              size='sm'
+              variant='secondary'
+              icon={loading ? Loader2 : undefined}
               onClick={() => loadKeyStatus(currentPage, pageSize)}
               disabled={loading}
-              className='inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg border border-ui-border text-ui-text hover:bg-ui-bg-subtle transition-colors disabled:opacity-60'
             >
-              {loading && <Loader2 size={12} className='animate-spin' />}
               {t('刷新')}
-            </button>
+            </Button>
             {manualDisabledCount + autoDisabledCount > 0 && (
-              <button
+              <Button
+                size='sm'
+                icon={operationLoading.enable_all ? Loader2 : undefined}
                 onClick={() =>
                   showConfirm({
                     title: t('确定要启用所有密钥吗？'),
@@ -455,16 +459,15 @@ const MultiKeyManageModal = ({ visible, onCancel, channel, onRefresh }) => {
                   })
                 }
                 disabled={operationLoading.enable_all}
-                className='inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg bg-ui-accent text-ui-accent-fg hover:bg-ui-accent-hover transition-colors disabled:opacity-60'
               >
-                {operationLoading.enable_all && (
-                  <Loader2 size={12} className='animate-spin' />
-                )}
                 {t('启用全部')}
-              </button>
+              </Button>
             )}
             {enabledCount > 0 && (
-              <button
+              <Button
+                size='sm'
+                variant='dangerSolid'
+                icon={operationLoading.disable_all ? Loader2 : undefined}
                 onClick={() =>
                   showConfirm({
                     title: t('确定要禁用所有的密钥吗？'),
@@ -473,15 +476,13 @@ const MultiKeyManageModal = ({ visible, onCancel, channel, onRefresh }) => {
                   })
                 }
                 disabled={operationLoading.disable_all}
-                className='inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg bg-ui-danger text-white hover:opacity-90 transition-opacity disabled:opacity-60'
               >
-                {operationLoading.disable_all && (
-                  <Loader2 size={12} className='animate-spin' />
-                )}
                 {t('禁用全部')}
-              </button>
+              </Button>
             )}
-            <button
+            <Button
+              size='sm'
+              icon={operationLoading.delete_disabled ? Loader2 : undefined}
               onClick={() =>
                 showConfirm({
                   title: t('确定要删除所有已自动禁用的密钥吗？'),
@@ -491,13 +492,10 @@ const MultiKeyManageModal = ({ visible, onCancel, channel, onRefresh }) => {
                 })
               }
               disabled={operationLoading.delete_disabled}
-              className='inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg bg-amber-500 text-white hover:opacity-90 transition-opacity disabled:opacity-60'
+              className='bg-amber-500 text-white hover:opacity-90'
             >
-              {operationLoading.delete_disabled && (
-                <Loader2 size={12} className='animate-spin' />
-              )}
               {t('删除自动禁用密钥')}
-            </button>
+            </Button>
           </div>
         </div>
 
@@ -576,57 +574,41 @@ const MultiKeyManageModal = ({ visible, onCancel, channel, onRefresh }) => {
                       <td className='px-3 py-3'>
                         <div className='flex items-center gap-2 justify-end'>
                           {record.status === 1 ? (
-                            <button
-                              disabled={
-                                operationLoading[`disable_${record.index}`]
-                              }
+                            <Button
+                              size='sm'
+                              variant='dangerSolid'
+                              icon={operationLoading[`disable_${record.index}`] ? Loader2 : undefined}
+                              disabled={operationLoading[`disable_${record.index}`]}
                               onClick={() => handleDisableKey(record.index)}
-                              className='inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium rounded-lg bg-ui-danger text-white hover:opacity-90 transition-opacity disabled:opacity-60'
                             >
-                              {operationLoading[`disable_${record.index}`] && (
-                                <Loader2
-                                  size={11}
-                                  className='animate-spin'
-                                />
-                              )}
                               {t('禁用')}
-                            </button>
+                            </Button>
                           ) : (
-                            <button
-                              disabled={
-                                operationLoading[`enable_${record.index}`]
-                              }
+                            <Button
+                              size='sm'
+                              icon={operationLoading[`enable_${record.index}`] ? Loader2 : undefined}
+                              disabled={operationLoading[`enable_${record.index}`]}
                               onClick={() => handleEnableKey(record.index)}
-                              className='inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold rounded-lg bg-ui-accent text-ui-accent-fg hover:bg-ui-accent-hover transition-colors disabled:opacity-60'
                             >
-                              {operationLoading[`enable_${record.index}`] && (
-                                <Loader2
-                                  size={11}
-                                  className='animate-spin'
-                                />
-                              )}
                               {t('启用')}
-                            </button>
+                            </Button>
                           )}
-                          <button
+                          <Button
+                            size='sm'
+                            variant='dangerSolid'
+                            icon={operationLoading[`delete_${record.index}`] ? Loader2 : undefined}
                             disabled={operationLoading[`delete_${record.index}`]}
                             onClick={() =>
                               showConfirm({
                                 title: t('确定要删除此密钥吗？'),
-                                content: t(
-                                  '此操作不可撤销，将永久删除该密钥',
-                                ),
+                                content: t('此操作不可撤销，将永久删除该密钥'),
                                 danger: true,
                                 onOk: () => handleDeleteKey(record.index),
                               })
                             }
-                            className='inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium rounded-lg bg-ui-danger text-white hover:opacity-90 transition-opacity disabled:opacity-60'
                           >
-                            {operationLoading[`delete_${record.index}`] && (
-                              <Loader2 size={11} className='animate-spin' />
-                            )}
                             {t('删除')}
-                          </button>
+                          </Button>
                         </div>
                       </td>
                     </tr>
@@ -658,23 +640,25 @@ const MultiKeyManageModal = ({ visible, onCancel, channel, onRefresh }) => {
               </div>
             </div>
             <div className='flex items-center gap-1'>
-              <button
+              <Button
+                size='sm'
+                variant='secondary'
+                icon={ChevronLeft}
                 disabled={currentPage <= 1}
                 onClick={() => handlePageChange(currentPage - 1)}
-                className='inline-flex items-center justify-center w-8 h-8 rounded-lg border border-ui-border text-ui-text-2 hover:bg-ui-bg-subtle disabled:opacity-40 disabled:cursor-not-allowed'
-              >
-                <ChevronLeft size={14} />
-              </button>
+                className='w-8 h-8 px-0'
+              />
               <span className='px-2 tabular-nums'>
                 {currentPage} / {totalPagesComputed}
               </span>
-              <button
+              <Button
+                size='sm'
+                variant='secondary'
+                icon={ChevronRight}
                 disabled={currentPage >= totalPagesComputed}
                 onClick={() => handlePageChange(currentPage + 1)}
-                className='inline-flex items-center justify-center w-8 h-8 rounded-lg border border-ui-border text-ui-text-2 hover:bg-ui-bg-subtle disabled:opacity-40 disabled:cursor-not-allowed'
-              >
-                <ChevronRight size={14} />
-              </button>
+                className='w-8 h-8 px-0'
+              />
             </div>
           </div>
         )}

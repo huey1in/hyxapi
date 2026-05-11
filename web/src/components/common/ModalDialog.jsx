@@ -44,7 +44,7 @@ const ModalDialog = ({
         <div className='flex items-center justify-between px-6 pt-5 pb-4 border-b border-ui-border'>
           <h3
             className='text-base font-semibold text-ui-text'
-            style={{ fontFamily: "'Space Grotesk', sans-serif", letterSpacing: '-0.02em' }}
+            style={{ letterSpacing: '-0.02em' }}
           >
             {title}
           </h3>

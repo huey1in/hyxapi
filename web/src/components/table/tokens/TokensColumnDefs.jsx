@@ -25,6 +25,7 @@ import {
   getModelCategories,
   showError,
 } from '../../../helpers';
+import { Tag } from '../../ui';
 import { Copy, Eye, EyeOff, ChevronDown } from 'lucide-react';
 import { showConfirm } from '../../common/ConfirmDialog';
 
@@ -45,26 +46,26 @@ function renderTimestamp(timestamp) {
 const renderStatus = (text, record, t) => {
   const enabled = text === 1;
 
-  let colorCls = 'bg-gray-500/10 text-gray-600 dark:text-gray-400 border-gray-500/20';
+  let color = 'gray';
   let tagText = t('未知状态');
   if (enabled) {
-    colorCls = 'bg-green-500/10 text-green-600 dark:text-green-400 border-green-500/20';
+    color = 'green';
     tagText = t('已启用');
   } else if (text === 2) {
-    colorCls = 'bg-red-500/10 text-red-600 dark:text-red-400 border-red-500/20';
+    color = 'red';
     tagText = t('已禁用');
   } else if (text === 3) {
-    colorCls = 'bg-yellow-500/10 text-yellow-600 dark:text-yellow-400 border-yellow-500/20';
+    color = 'amber';
     tagText = t('已过期');
   } else if (text === 4) {
-    colorCls = 'bg-gray-500/10 text-gray-600 dark:text-gray-400 border-gray-500/20';
+    color = 'gray';
     tagText = t('已耗尽');
   }
 
   return (
-    <span className={`inline-flex items-center px-2 py-0.5 text-[11px] rounded-md font-medium border ${colorCls}`}>
+    <Tag color={color} size='sm'>
       {tagText}
-    </span>
+    </Tag>
   );
 };
 

@@ -44,7 +44,7 @@ const LogsActions = ({
       ) : (
         <div className='flex flex-wrap gap-2'>
           <span
-            className='inline-flex items-center px-3 py-1.5 text-xs font-medium rounded-lg bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20'
+            className='inline-flex items-center px-3 py-1.5 text-xs font-medium rounded-lg bg-blue-500/10 text-blue-600 dark:text-blue-400'
             style={{ boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)' }}
           >
             {t('消耗额度')}: {renderQuota(stat.quota)}

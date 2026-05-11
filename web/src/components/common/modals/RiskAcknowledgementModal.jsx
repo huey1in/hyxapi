@@ -67,7 +67,7 @@ const RiskAcknowledgementModal = React.memo(function RiskAcknowledgementModal({
       style={{ background: 'rgba(0,0,0,0.5)' }}
     >
       <div
-        className={`border border-ui-border rounded-[28px] shadow-2xl w-full ${
+        className={`border border-ui-border rounded-[20px] shadow-2xl w-full ${
           isMobile ? 'max-w-full max-h-[90vh]' : 'max-w-3xl max-h-[80vh]'
         } flex flex-col overflow-hidden`}
         style={{ backgroundColor: 'var(--page-bg)' }}

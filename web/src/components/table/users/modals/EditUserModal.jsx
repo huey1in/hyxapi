@@ -25,6 +25,7 @@ import {
   NumberField,
   FieldRow,
 } from '../../../common/form/Primitives';
+import { Button, IconButton, Tabs as UITabs } from '../../../ui';
 
 const SectionCard = ({ title, hint, children }) => (
   <div className='border border-ui-border rounded-2xl p-4'>
@@ -166,7 +167,7 @@ const EditUserModal = (props) => {
         width={isMobile ? window.innerWidth : 600}
         title={
           <>
-            <span className='inline-flex items-center px-2 py-0.5 text-[11px] font-medium rounded-xl bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20'>
+            <span className='inline-flex items-center px-2 py-0.5 text-[11px] font-medium rounded-xl bg-blue-500/10 text-blue-600 dark:text-blue-400'>
               {isEdit ? t('编辑') : t('新建')}
             </span>
             <span className='text-base font-semibold text-ui-text truncate'>
@@ -176,19 +177,12 @@ const EditUserModal = (props) => {
         }
         footer={
           <>
-            <button
-              onClick={props.handleClose}
-              className='inline-flex items-center px-3.5 py-1.5 text-xs font-medium rounded-xl border border-ui-border text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-subtle whitespace-nowrap'
-            >
+            <Button variant='ghost' onClick={props.handleClose}>
               {t('取消')}
-            </button>
-            <button
-              onClick={submit}
-              disabled={loading}
-              className='inline-flex items-center px-4 py-1.5 text-xs font-semibold rounded-xl bg-ui-accent text-ui-accent-fg hover:bg-ui-accent-hover disabled:opacity-50 whitespace-nowrap'
-            >
+            </Button>
+            <Button onClick={submit} disabled={loading}>
               {loading ? t('提交中...') : t('提交')}
-            </button>
+            </Button>
           </>
         }
         bodyClass='p-5 space-y-6'
@@ -254,17 +248,17 @@ const EditUserModal = (props) => {
                         {Number(quotaToDisplayAmount(values.quota || 0).toFixed(6))}
                       </span>
                     </span>
-                    <button
-                      type='button'
+                    <Button
+                      size='sm'
+                      variant='ghost'
                       onClick={() => {
                         setAdjustMode('add');
                         setAdjustAmount('');
                         setAdjustOpen(true);
                       }}
-                      className='inline-flex items-center gap-1 px-2.5 py-1 text-[11px] rounded-lg border border-ui-border text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-subtle whitespace-nowrap'
                     >
                       {t('调整额度')}
-                    </button>
+                    </Button>
                   </div>
                 </FieldRow>
               </SectionCard>
@@ -290,39 +284,24 @@ const EditUserModal = (props) => {
                   <Edit3 size={14} />
                   {t('调整额度')}
                 </span>
-                <button
-                  onClick={() => setAdjustOpen(false)}
-                  disabled={adjustLoading}
-                  className='p-1 rounded text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-subtle disabled:opacity-40'
-                >
-                  <X size={16} />
-                </button>
+                <IconButton icon={X} size='sm' onClick={() => setAdjustOpen(false)} disabled={adjustLoading} />
               </div>
               <div className='p-5 space-y-3'>
                 <p className='text-xs text-ui-text-3'>{previewText()}</p>
                 <FieldRow label={t('操作')}>
-                  <div className='flex items-center gap-1'>
-                    {[
-                      { v: 'add', l: t('添加') },
-                      { v: 'subtract', l: t('减少') },
-                      { v: 'override', l: t('覆盖') },
-                    ].map((m) => (
-                      <button
-                        key={m.v}
-                        onClick={() => {
-                          setAdjustMode(m.v);
-                          setAdjustAmount('');
-                        }}
-                        className={`flex-1 px-2.5 py-1.5 text-xs rounded-xl transition-colors ${
-                          adjustMode === m.v
-                            ? 'bg-ui-bg-subtle text-ui-text font-semibold border border-ui-text-3'
-                            : 'border border-ui-border text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-subtle'
-                        }`}
-                      >
-                        {m.l}
-                      </button>
-                    ))}
-                  </div>
+                  <UITabs
+                    size='sm'
+                    value={adjustMode}
+                    onChange={(v) => {
+                      setAdjustMode(v);
+                      setAdjustAmount('');
+                    }}
+                    items={[
+                      { value: 'add', label: t('添加') },
+                      { value: 'subtract', label: t('减少') },
+                      { value: 'override', label: t('覆盖') },
+                    ]}
+                  />
                 </FieldRow>
                 <FieldRow label={t('金额')}>
                   <TextField
@@ -338,21 +317,22 @@ const EditUserModal = (props) => {
                 </FieldRow>
               </div>
               <div className='flex justify-end gap-2 px-5 py-3 border-t border-ui-border'>
-                <button
+                <Button
+                  variant='secondary'
+                  size='sm'
                   onClick={() => setAdjustOpen(false)}
                   disabled={adjustLoading}
-                  className='inline-flex items-center px-3.5 py-1.5 text-xs font-medium rounded-xl border border-ui-border text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-subtle disabled:opacity-40 whitespace-nowrap'
                 >
                   {t('取消')}
-                </button>
-                <button
+                </Button>
+                <Button
+                  size='sm'
+                  icon={adjustLoading ? Loader2 : undefined}
                   onClick={submitAdjust}
                   disabled={adjustLoading}
-                  className='inline-flex items-center gap-1.5 px-4 py-1.5 text-xs font-semibold rounded-xl bg-ui-accent text-ui-accent-fg hover:bg-ui-accent-hover disabled:opacity-50 whitespace-nowrap'
                 >
-                  {adjustLoading && <Loader2 size={11} className='animate-spin' />}
                   {t('确认调整')}
-                </button>
+                </Button>
               </div>
             </div>
           </div>,

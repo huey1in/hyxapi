@@ -123,7 +123,7 @@ const CustomRequestEditor = ({ customRequestMode, customRequestBody, onCustomReq
               placeholder='{"model": "gpt-4o", "messages": [...], ...}'
               rows={10}
               className={`w-full px-3 py-2 text-xs border rounded-lg resize-y focus:outline-none focus:ring-2 focus:ring-black bg-ui-bg-elevated ${!isValid ? 'border-red-400' : 'border-gray-200'}`}
-              style={{ fontFamily: 'Consolas, Monaco, "Courier New", monospace', lineHeight: '1.5', minHeight: '160px' }}
+              style={{ fontFamily: "'JetBrains Mono', 'SF Mono', ui-monospace, Menlo, Consolas, monospace", lineHeight: '1.5', minHeight: '160px' }}
             />
 
             {!isValid && errorMessage && (

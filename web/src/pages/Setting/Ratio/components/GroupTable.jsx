@@ -5,6 +5,7 @@
 import React, { useState, useCallback, useMemo, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { showConfirm } from '../../../../components/common/ConfirmDialog';
+import { Button } from '../../../../components/ui';
 
 let _idCounter = 0;
 const uid = () => `gr_${++_idCounter}`;
@@ -169,12 +170,9 @@ export default function GroupTable({ groupRatio, userUsableGroups, onChange }) {
         </div>
       </div>
       <div className='flex justify-center'>
-        <button
-          onClick={addRow}
-          className='inline-flex items-center gap-1 px-3 py-1.5 text-xs rounded-xl border border-ui-border text-ui-text-2 hover:bg-ui-bg-hover'
-        >
+        <Button size='sm' variant='secondary' onClick={addRow}>
           {t('添加分组')}
-        </button>
+        </Button>
       </div>
       {duplicateNames.size > 0 && (
         <div className='text-xs text-amber-600 dark:text-amber-400'>

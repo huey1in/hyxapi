@@ -1,5 +1,5 @@
 /*
- * Subscription plans admin page — page-bg + rounded-[28px] redesign to
+ * Subscription plans admin page — page-bg + rounded-[20px] redesign to
  * match Log / Token / User style.
  */
 import React, { useState } from 'react';
@@ -8,6 +8,7 @@ import { useSubscriptionsData } from '../../../hooks/subscriptions/useSubscripti
 import Pagination from '../../common/table/Pagination';
 import SubscriptionsTable from './SubscriptionsTable';
 import AddEditSubscriptionModal from './modals/AddEditSubscriptionModal';
+import { Button, IconButton } from '../../ui';
 import SubscriptionCodesModal from './modals/SubscriptionCodesModal';
 
 const SubscriptionsPage = () => {
@@ -41,26 +42,21 @@ const SubscriptionsPage = () => {
         <div className='flex items-center justify-between gap-3 mb-5'>
           <h1
             className='text-2xl md:text-3xl font-medium text-ui-text'
-            style={{ fontFamily: "'Space Grotesk', sans-serif", letterSpacing: '-0.02em' }}
+            style={{ letterSpacing: '-0.02em' }}
           >
             {t('订阅管理')}
           </h1>
           <div className='flex items-center gap-1'>
-            <button
+            <IconButton
+              icon={RefreshCw}
               onClick={refresh}
               disabled={loading}
               title={t('刷新')}
-              className='inline-flex items-center justify-center w-9 h-9 rounded-xl text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-subtle transition-colors disabled:opacity-50'
-            >
-              <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />
-            </button>
-            <button
-              onClick={openCreate}
-              className='inline-flex items-center gap-1.5 px-3 h-9 rounded-xl text-sm font-medium bg-ui-accent text-ui-accent-fg hover:bg-ui-accent-hover transition-colors whitespace-nowrap'
-            >
-              <Plus size={14} />
+              className={loading ? '[&_svg]:animate-spin' : ''}
+            />
+            <Button icon={Plus} onClick={openCreate}>
               {t('新建套餐')}
-            </button>
+            </Button>
           </div>
         </div>
 
@@ -77,7 +73,7 @@ const SubscriptionsPage = () => {
 
         {/* Table */}
         <div
-          className='border border-ui-border rounded-[28px] overflow-hidden'
+          className='border border-ui-border rounded-[20px] overflow-hidden'
           style={{ backgroundColor: 'var(--page-bg)' }}
         >
           <SubscriptionsTable {...data} openCodes={(record) => setCodesPlan(record)} />

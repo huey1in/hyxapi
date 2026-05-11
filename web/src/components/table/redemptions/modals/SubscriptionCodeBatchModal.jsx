@@ -12,6 +12,7 @@ import {
   NativeSelect,
   FieldRow,
 } from '../../../common/form/Primitives';
+import { Button, IconButton } from '../../../ui';
 
 const SubscriptionCodeBatchModal = ({
   visible,
@@ -93,7 +94,7 @@ const SubscriptionCodeBatchModal = ({
       onClick={generating ? undefined : onClose}
     >
       <div
-        className='border border-ui-border rounded-[28px] shadow-2xl w-full max-w-lg overflow-hidden'
+        className='border border-ui-border rounded-[20px] shadow-2xl w-full max-w-lg overflow-hidden'
         style={{ backgroundColor: 'var(--page-bg)' }}
         onClick={(e) => e.stopPropagation()}
       >
@@ -102,13 +103,7 @@ const SubscriptionCodeBatchModal = ({
           <span className='text-base font-semibold text-ui-text truncate'>
             {generated ? t('生成成功') : t('生成订阅兑换码')}
           </span>
-          <button
-            onClick={onClose}
-            disabled={generating}
-            className='inline-flex items-center justify-center w-9 h-9 rounded-xl text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-subtle disabled:opacity-40 transition-colors'
-          >
-            <X size={16} />
-          </button>
+          <IconButton icon={X} onClick={onClose} disabled={generating} />
         </div>
 
         {/* Body */}
@@ -163,43 +158,28 @@ const SubscriptionCodeBatchModal = ({
         <div className='flex justify-end gap-2 px-5 py-4 border-t border-ui-border'>
           {!generated ? (
             <>
-              <button
-                onClick={onClose}
-                disabled={generating}
-                className='inline-flex items-center h-9 px-4 text-sm font-medium rounded-xl border border-ui-border text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-subtle disabled:opacity-40 transition-colors whitespace-nowrap'
-              >
+              <Button variant='secondary' onClick={onClose} disabled={generating}>
                 {t('取消')}
-              </button>
-              <button
+              </Button>
+              <Button
+                icon={generating ? Loader2 : Plus}
                 onClick={generate}
                 disabled={generating || !planId}
-                className='inline-flex items-center gap-1.5 h-9 px-4 text-sm font-semibold rounded-xl bg-ui-accent text-ui-accent-fg hover:bg-ui-accent-hover disabled:opacity-50 transition-colors whitespace-nowrap'
               >
-                {generating ? <Loader2 size={13} className='animate-spin' /> : <Plus size={13} />}
                 {t('生成')}
-              </button>
+              </Button>
             </>
           ) : (
             <>
-              <button
-                onClick={() => setGenerated(null)}
-                className='inline-flex items-center h-9 px-4 text-sm font-medium rounded-xl border border-ui-border text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-subtle transition-colors whitespace-nowrap'
-              >
+              <Button variant='secondary' onClick={() => setGenerated(null)}>
                 {t('再生成')}
-              </button>
-              <button
-                onClick={copyAll}
-                className='inline-flex items-center gap-1.5 h-9 px-4 text-sm rounded-xl border border-ui-border text-ui-text hover:bg-ui-bg-subtle transition-colors whitespace-nowrap'
-              >
-                <Copy size={13} />
+              </Button>
+              <Button variant='secondary' icon={Copy} onClick={copyAll}>
                 {t('复制全部')}
-              </button>
-              <button
-                onClick={onClose}
-                className='inline-flex items-center h-9 px-4 text-sm font-semibold rounded-xl bg-ui-accent text-ui-accent-fg hover:bg-ui-accent-hover transition-colors whitespace-nowrap'
-              >
+              </Button>
+              <Button onClick={onClose}>
                 {t('完成')}
-              </button>
+              </Button>
             </>
           )}
         </div>

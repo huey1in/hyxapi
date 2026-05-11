@@ -14,6 +14,7 @@ import { NativeSelect } from '../../../components/common/form/Primitives';
 import CrudSection from '../../../components/common/table/CrudSection';
 import ModalDialog from '../../../components/common/ModalDialog';
 import { showConfirm } from '../../../components/common/ConfirmDialog';
+import { Button } from '../../../components/ui';
 
 const TYPE_OPTIONS = [
   { value: 'default', label: '默认' },
@@ -193,12 +194,12 @@ const SettingsAnnouncements = ({ options, refresh }) => {
       key: 'action', title: t('操作'), width: 130,
       render: (_, row) => (
         <div className='flex items-center gap-1'>
-          <button onClick={() => openEdit(row)} className='inline-flex items-center gap-1 px-2 py-1 text-[11px] rounded-xl border border-ui-border text-ui-text-2 hover:bg-ui-bg-hover'>
+          <Button size='sm' variant='secondary' onClick={() => openEdit(row)}>
             {t('编辑')}
-          </button>
-          <button onClick={() => handleDelete(row)} className='inline-flex items-center gap-1 px-2 py-1 text-[11px] rounded-xl border border-ui-danger/30 text-ui-danger hover:bg-ui-danger-bg'>
+          </Button>
+          <Button size='sm' variant='danger' onClick={() => handleDelete(row)}>
             {t('删除')}
-          </button>
+          </Button>
         </div>
       ),
     },
@@ -236,8 +237,8 @@ const SettingsAnnouncements = ({ options, refresh }) => {
         width={600}
         footer={
           <div className='flex justify-end gap-2'>
-            <button onClick={() => setShowModal(false)} className='px-3.5 py-1.5 text-xs rounded-xl border border-ui-border text-ui-text-2 hover:bg-ui-bg-subtle'>{t('取消')}</button>
-            <button onClick={handleSave} disabled={modalLoading} className='px-3.5 py-1.5 text-xs font-semibold rounded-xl bg-ui-accent text-ui-accent-fg hover:opacity-90 disabled:opacity-50'>{t('保存')}</button>
+            <Button variant='secondary' onClick={() => setShowModal(false)}>{t('取消')}</Button>
+            <Button onClick={handleSave} disabled={modalLoading}>{t('保存')}</Button>
           </div>
         }
       >
@@ -298,7 +299,7 @@ const SettingsAnnouncements = ({ options, refresh }) => {
         width={800}
         footer={
           <div className='flex justify-end gap-2'>
-            <button onClick={() => setShowContentFull(false)} className='px-3.5 py-1.5 text-xs rounded-xl border border-ui-border text-ui-text-2 hover:bg-ui-bg-subtle'>{t('确定')}</button>
+            <Button variant='secondary' onClick={() => setShowContentFull(false)}>{t('确定')}</Button>
           </div>
         }
       >

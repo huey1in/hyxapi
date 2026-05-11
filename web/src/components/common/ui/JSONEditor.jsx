@@ -5,6 +5,7 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Plus, Trash2, AlertTriangle } from 'lucide-react';
+import { Button, IconButton, Tabs as UITabs } from '../../ui';
 
 const generateUniqueId = (() => {
   let counter = 0;
@@ -317,25 +318,19 @@ const JSONEditor = ({
               )}
             </div>
             {renderValueInput(pair.id, pair.key, pair.value)}
-            <button
-              type='button'
+            <IconButton
+              icon={Trash2}
+              size='sm'
+              variant='danger'
               onClick={() => removeKeyValue(pair.id)}
-              className='p-1.5 rounded text-ui-danger hover:bg-ui-danger-bg'
-            >
-              <Trash2 size={13} />
-            </button>
+            />
           </div>
         );
       })}
       <div className='pt-1.5 flex justify-center'>
-        <button
-          type='button'
-          onClick={addKeyValue}
-          className='inline-flex items-center gap-1 px-3 py-1 text-[11px] rounded-xl border border-ui-border text-ui-brand hover:bg-ui-bg-subtle whitespace-nowrap'
-        >
-          <Plus size={12} />
+        <Button size='sm' variant='secondary' icon={Plus} onClick={addKeyValue}>
           {t('添加键值对')}
-        </button>
+        </Button>
       </div>
     </div>
   );
@@ -428,34 +423,19 @@ const JSONEditor = ({
       )}
       <div className='border border-ui-border rounded-2xl overflow-hidden'>
         <div className='flex items-center justify-between px-3 py-2 border-b border-ui-border'>
-          <div className='flex items-center gap-1'>
-            <button
-              type='button'
-              onClick={() => editMode === 'manual' && toggleEditMode()}
-              className={`px-2.5 py-1 text-[11px] rounded-xl transition-colors ${
-                editMode === 'visual' ? 'bg-ui-bg-subtle text-ui-text font-semibold border border-ui-text-3' : 'border border-transparent text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-subtle'
-              }`}
-            >
-              {t('可视化')}
-            </button>
-            <button
-              type='button'
-              onClick={() => editMode === 'visual' && toggleEditMode()}
-              className={`px-2.5 py-1 text-[11px] rounded-xl transition-colors ${
-                editMode === 'manual' ? 'bg-ui-bg-subtle text-ui-text font-semibold border border-ui-text-3' : 'border border-transparent text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-subtle'
-              }`}
-            >
-              {t('手动编辑')}
-            </button>
-          </div>
+          <UITabs
+            size='sm'
+            value={editMode}
+            onChange={(v) => editMode !== v && toggleEditMode()}
+            items={[
+              { value: 'visual', label: t('可视化') },
+              { value: 'manual', label: t('手动编辑') },
+            ]}
+          />
           {template && templateLabel && (
-            <button
-              type='button'
-              onClick={fillTemplate}
-              className='inline-flex items-center px-2 py-0.5 text-[11px] rounded-xl border border-ui-border text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-subtle whitespace-nowrap'
-            >
+            <Button size='sm' variant='ghost' onClick={fillTemplate}>
               {templateLabel}
-            </button>
+            </Button>
           )}
         </div>
         <div className='p-3 space-y-2'>

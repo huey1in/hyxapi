@@ -44,6 +44,7 @@ import {
   MultiCombobox,
   Combobox,
 } from '../../../common/form/Primitives';
+import { Button } from '../../../ui';
 
 const SectionCard = ({ icon: Icon, iconColor = 'blue', title, description, children }) => {
   const colorMap = {
@@ -314,7 +315,7 @@ const EditTokenModal = (props) => {
       title={
         <div className='flex items-center gap-2'>
           {isEdit ? (
-            <span className='inline-flex items-center px-2 py-0.5 text-[11px] rounded-md font-medium bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20'>
+            <span className='inline-flex items-center px-2 py-0.5 text-[11px] rounded-md font-medium bg-blue-500/10 text-blue-600 dark:text-blue-400'>
               {t('更新')}
             </span>
           ) : (
@@ -329,21 +330,20 @@ const EditTokenModal = (props) => {
       }
       footer={
         <>
-          <button
+          <Button
+            icon={loading ? Loader2 : Save}
             onClick={submit}
             disabled={loading}
-            className='inline-flex items-center gap-1.5 px-4 py-2 text-sm font-semibold rounded-xl bg-ui-accent text-ui-accent-fg hover:bg-ui-accent-hover transition-colors disabled:opacity-50'
           >
-            {loading ? <Loader2 size={14} className='animate-spin' /> : <Save size={14} />}
             {t('提交')}
-          </button>
-          <button
+          </Button>
+          <Button
+            variant='secondary'
+            icon={X}
             onClick={handleCancel}
-            className='inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium rounded-xl border border-ui-border text-ui-text hover:bg-ui-bg-subtle transition-colors'
           >
-            <X size={14} />
             {t('取消')}
-          </button>
+          </Button>
         </>
       }
     >
@@ -401,34 +401,18 @@ const EditTokenModal = (props) => {
 
             <FieldRow label={t('过期时间快捷设置')}>
               <div className='flex flex-wrap gap-2'>
-                <button
-                  type='button'
-                  onClick={() => setExpiredTime(0, 0, 0, 0)}
-                  className='px-3 py-1.5 text-xs font-medium rounded-lg bg-ui-accent/10 text-ui-accent hover:bg-ui-accent/20 transition-colors'
-                >
+                <Button size='sm' onClick={() => setExpiredTime(0, 0, 0, 0)}>
                   {t('永不过期')}
-                </button>
-                <button
-                  type='button'
-                  onClick={() => setExpiredTime(1, 0, 0, 0)}
-                  className='px-3 py-1.5 text-xs font-medium rounded-lg border border-ui-border text-ui-text hover:bg-ui-bg-subtle transition-colors'
-                >
+                </Button>
+                <Button size='sm' variant='secondary' onClick={() => setExpiredTime(1, 0, 0, 0)}>
                   {t('一个月')}
-                </button>
-                <button
-                  type='button'
-                  onClick={() => setExpiredTime(0, 1, 0, 0)}
-                  className='px-3 py-1.5 text-xs font-medium rounded-lg border border-ui-border text-ui-text hover:bg-ui-bg-subtle transition-colors'
-                >
+                </Button>
+                <Button size='sm' variant='secondary' onClick={() => setExpiredTime(0, 1, 0, 0)}>
                   {t('一天')}
-                </button>
-                <button
-                  type='button'
-                  onClick={() => setExpiredTime(0, 0, 1, 0)}
-                  className='px-3 py-1.5 text-xs font-medium rounded-lg border border-ui-border text-ui-text hover:bg-ui-bg-subtle transition-colors'
-                >
+                </Button>
+                <Button size='sm' variant='secondary' onClick={() => setExpiredTime(0, 0, 1, 0)}>
                   {t('一小时')}
-                </button>
+                </Button>
               </div>
             </FieldRow>
 
@@ -464,15 +448,16 @@ const EditTokenModal = (props) => {
             </FieldRow>
 
             <div>
-              <button
-                type='button'
-                className='text-xs text-ui-text-2 cursor-pointer'
+              <Button
+                variant='link'
+                size='sm'
+                className='text-ui-text-2 hover:no-underline'
                 onClick={() => setShowQuotaInput((v) => !v)}
               >
                 {showQuotaInput
                   ? `▾ ${t('收起原生额度输入')}`
                   : `▸ ${t('使用原生额度输入')}`}
-              </button>
+              </Button>
               {showQuotaInput && (
                 <div className='mt-2'>
                   <FieldRow label={t('额度')}>

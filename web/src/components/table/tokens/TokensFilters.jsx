@@ -19,6 +19,7 @@ For commercial licensing, please contact support@quantumnous.com
 
 import React, { useRef, useState } from 'react';
 import { Search } from 'lucide-react';
+import { Button } from '../../ui';
 
 const TokensFilters = ({
   formInitValues,
@@ -111,21 +112,23 @@ const TokensFilters = ({
         </div>
 
         <div className='flex gap-2 w-full md:w-auto'>
-          <button
+          <Button
             type='submit'
+            variant='secondary'
             disabled={loading || searching}
-            className='inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium rounded-xl border border-ui-border text-ui-text hover:bg-ui-bg-subtle transition-colors disabled:opacity-50 flex-1 md:flex-initial md:w-auto'
+            className='flex-1 md:flex-initial md:w-auto'
           >
             {t('查询')}
-          </button>
+          </Button>
 
-          <button
+          <Button
             type='button'
+            variant='secondary'
             onClick={handleReset}
-            className='inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium rounded-xl border border-ui-border text-ui-text hover:bg-ui-bg-subtle transition-colors flex-1 md:flex-initial md:w-auto'
+            className='flex-1 md:flex-initial md:w-auto'
           >
             {t('重置')}
-          </button>
+          </Button>
         </div>
       </div>
     </form>

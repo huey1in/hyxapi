@@ -51,7 +51,7 @@ const ConfirmDialog = ({
         <div className='px-6 pt-6 pb-4'>
           <h3
             className='flex items-center gap-2 text-lg font-semibold text-ui-text mb-2'
-            style={{ fontFamily: "'Space Grotesk', sans-serif", letterSpacing: '-0.02em' }}
+            style={{ letterSpacing: '-0.02em' }}
           >
             {danger && <AlertTriangle size={18} className='text-ui-danger' />}
             {title}

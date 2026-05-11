@@ -50,11 +50,9 @@ import TwoFAVerification from './TwoFAVerification';
 import { useTranslation } from 'react-i18next';
 import { SiDiscord } from 'react-icons/si';
 import { AUTH_INPUT_CLS as inputClass } from '../common/ui/forms';
+import { Button } from '../ui';
 
-const baiFontStyle = {
-  fontFamily:
-    "'Space Grotesk', Season-Sans, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
-};
+const baiFontStyle = {};
 
 // BAI-style 2-column OAuth tile with icon + name
 const OAuthTile = ({ onClick, loading, disabled, name, icon }) => (
@@ -446,13 +444,14 @@ const LoginForm = ({ embedded = false, onSuccess, onSwitchToRegister, onSwitchTo
       <div>
         <div className='flex items-center justify-between mb-1.5'>
           <label className='text-sm font-medium text-ui-text'>{t('密码')}</label>
-          <button
-            type='button'
+          <Button
+            variant='link'
+            size='sm'
+            className='text-ui-text-3 hover:no-underline hover:text-ui-text'
             onClick={onSwitchToReset}
-            className='text-xs text-ui-text-3 hover:text-ui-text transition-colors'
           >
             {t('忘记密码？')}
-          </button>
+          </Button>
         </div>
         <input
           type='password'
@@ -466,22 +465,24 @@ const LoginForm = ({ embedded = false, onSuccess, onSwitchToRegister, onSwitchTo
 
       {renderTerms()}
 
-      <button
+      <Button
+        size='lg'
+        className='w-full h-11'
         onClick={handleSubmit}
         disabled={loginLoading || ((hasUserAgreement || hasPrivacyPolicy) && !agreedToTerms)}
-        className='w-full h-11 text-sm font-medium rounded-xl transition-colors bg-ui-accent text-ui-accent-fg hover:bg-ui-accent-hover disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2'
+        loading={loginLoading}
       >
-        {loginLoading && <span className='w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin' />}
         {t('继续')}
-      </button>
+      </Button>
 
       {hasOAuthLoginOptions && (
-        <button
+        <Button
+          variant='secondary'
+          className='w-full h-10'
           onClick={() => { setOtherLoginOptionsLoading(true); setShowEmailLogin(false); setOtherLoginOptionsLoading(false); }}
-          className='w-full h-10 text-sm border border-ui-border rounded-xl text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-subtle transition-all duration-150'
         >
           {t('其他登录选项')}
-        </button>
+        </Button>
       )}
     </div>
   );
@@ -500,12 +501,14 @@ const LoginForm = ({ embedded = false, onSuccess, onSwitchToRegister, onSwitchTo
       {!status.self_use_mode_enabled && (
         <p className='mt-5 pt-4 border-t border-ui-border text-[13px] text-ui-text-3'>
           {t('没有账户？')}{' '}
-          <button
+          <Button
+            variant='link'
+            size='sm'
+            className='text-ui-text font-medium px-0'
             onClick={onSwitchToRegister}
-            className='text-ui-text font-medium hover:underline bg-transparent cursor-pointer'
           >
             {t('注册')}
-          </button>
+          </Button>
         </p>
       )}
     </>
@@ -523,13 +526,14 @@ const LoginForm = ({ embedded = false, onSuccess, onSwitchToRegister, onSwitchTo
       open={showWeChatLoginModal}
       onClose={() => setShowWeChatLoginModal(false)}
       footer={
-        <button
-          className='w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50'
+        <Button
+          className='w-full'
           onClick={onSubmitWeChatVerificationCode}
           disabled={wechatCodeSubmitLoading}
+          loading={wechatCodeSubmitLoading}
         >
-          {wechatCodeSubmitLoading ? '...' : t('登录')}
-        </button>
+          {t('登录')}
+        </Button>
       }
     >
       <div className='flex flex-col items-center'>

@@ -10,8 +10,6 @@
  */
 import React, { useEffect, useState } from 'react';
 import SettingsGeneral from '../../pages/Setting/Operation/SettingsGeneral';
-import SettingsHeaderNavModules from '../../pages/Setting/Operation/SettingsHeaderNavModules';
-import SettingsSidebarModulesAdmin from '../../pages/Setting/Operation/SettingsSidebarModulesAdmin';
 import OtherSetting from './OtherSetting';
 import { API, showError, toBoolean } from '../../helpers';
 
@@ -81,12 +79,6 @@ const OperationSetting = () => {
       )}
       <TokenCard>
         <SettingsGeneral options={inputs} refresh={onRefresh} />
-      </TokenCard>
-      <TokenCard>
-        <SettingsHeaderNavModules options={inputs} refresh={onRefresh} />
-      </TokenCard>
-      <TokenCard>
-        <SettingsSidebarModulesAdmin options={inputs} refresh={onRefresh} />
       </TokenCard>
       <TokenCard>
         <OtherSetting />

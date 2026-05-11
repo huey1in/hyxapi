@@ -28,41 +28,28 @@ import {
   CLAUDE_CLI_HEADER_PASSTHROUGH_TEMPLATE,
   CODEX_CLI_HEADER_PASSTHROUGH_TEMPLATE,
 } from '../../../../constants/channel-affinity-template.constants';
+import { Button, IconButton } from '../../../ui';
 
 // ── Local UI helpers (token-system replacements for Semi UI primitives) ──
 
 const Btn = ({ variant = 'tertiary', size = 'md', icon, iconOnly, className = '', children, ...rest }) => {
-  const sizeCls = size === 'small'
-    ? 'px-2.5 py-1 text-xs'
-    : 'px-4 py-2 text-sm';
-  let variantCls = '';
-  if (variant === 'primary') {
-    variantCls = 'font-semibold rounded-xl bg-ui-accent text-ui-accent-fg hover:bg-ui-accent-hover transition-colors';
-  } else if (variant === 'danger') {
-    variantCls = 'font-semibold rounded-xl bg-ui-danger text-white hover:opacity-90 transition-opacity';
-  } else if (variant === 'danger-borderless') {
-    variantCls = 'font-medium rounded-lg text-ui-danger hover:bg-ui-danger/10 transition-colors';
-  } else {
-    variantCls = 'font-medium rounded-xl border border-ui-border text-ui-text hover:bg-ui-bg-subtle transition-colors';
-  }
+  // Map legacy variant names to ui Button variants
+  const uiVariant = variant === 'primary'
+    ? 'primary'
+    : variant === 'danger'
+      ? 'dangerSolid'
+      : variant === 'danger-borderless'
+        ? 'danger'
+        : 'secondary';
+  const uiSize = size === 'small' ? 'sm' : 'md';
   if (iconOnly) {
-    return (
-      <button
-        className={`inline-flex items-center justify-center w-8 h-8 rounded-lg text-ui-text-3 hover:text-ui-text hover:bg-ui-bg-subtle ${className}`}
-        {...rest}
-      >
-        {icon}
-      </button>
-    );
+    return <IconButton icon={() => icon} size='sm' className={className} {...rest} />;
   }
   return (
-    <button
-      className={`inline-flex items-center gap-1.5 whitespace-nowrap ${sizeCls} ${variantCls} ${className}`}
-      {...rest}
-    >
+    <Button variant={uiVariant} size={uiSize} className={className} {...rest}>
       {icon}
       {children}
-    </button>
+    </Button>
   );
 };
 
@@ -262,23 +249,19 @@ const Modal = ({
       onClick={onCancel}
     >
       <div
-        className='border border-ui-border rounded-[28px] shadow-2xl flex flex-col overflow-hidden'
+        className='border border-ui-border rounded-[20px] shadow-2xl flex flex-col overflow-hidden'
         style={{ width: `min(${width}px, 96vw)`, maxHeight: '90vh', backgroundColor: 'var(--page-bg)' }}
         onClick={(e) => e.stopPropagation()}
       >
         {title !== null && (
           <div className='flex items-center justify-between gap-3 px-5 py-3.5 border-b border-ui-border'>
             <span className='text-sm font-semibold text-ui-text'>{title}</span>
-            <button onClick={onCancel} className='p-1 rounded text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-subtle'>
-              <X size={16} />
-            </button>
+            <IconButton icon={X} size='sm' onClick={onCancel} />
           </div>
         )}
         {title === null && (
           <div className='flex justify-end px-3 pt-3'>
-            <button onClick={onCancel} className='p-1 rounded text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-subtle'>
-              <X size={16} />
-            </button>
+            <IconButton icon={X} size='sm' onClick={onCancel} />
           </div>
         )}
         <div className='flex-1 overflow-y-auto' style={{ padding: 16, ...bodyStyle }}>
@@ -288,19 +271,13 @@ const Modal = ({
           <div className='flex justify-end gap-2 px-5 py-3 border-t border-ui-border'>{footerProp}</div>
         ) : showDefaultFooter ? (
           <div className='flex justify-end gap-2 px-5 py-3 border-t border-ui-border'>
-            <button
-              onClick={onCancel}
-              className='inline-flex items-center px-3.5 py-1.5 text-xs font-medium rounded-xl border border-ui-border text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-subtle whitespace-nowrap'
-            >
+            <Button variant='ghost' size='sm' onClick={onCancel}>
               {cancelText || '取消'}
-            </button>
+            </Button>
             {onOk && (
-              <button
-                onClick={onOk}
-                className='inline-flex items-center px-4 py-1.5 text-xs font-semibold rounded-xl bg-ui-accent text-ui-accent-fg hover:bg-ui-accent-hover whitespace-nowrap'
-              >
+              <Button size='sm' onClick={onOk}>
                 {okText || '确定'}
-              </button>
+              </Button>
             )}
           </div>
         ) : null}

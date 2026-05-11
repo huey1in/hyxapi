@@ -89,7 +89,7 @@ const SiderBar = ({ onNavigate = () => {} }) => {
         className={`flex items-center mx-2 px-3 py-2 mb-1 rounded-lg text-sm font-medium text-ui-text transition-all duration-150 hover:bg-ui-bg-subtle active:scale-[0.98] ${
           active ? 'bg-ui-bg-subtle' : ''
         }`}
-        style={{ fontFamily: "'Plus Jakarta Sans', 'Space Grotesk', sans-serif", letterSpacing: '-0.01em' }}
+        style={{ letterSpacing: '-0.01em' }}
       >
         {text}
       </Link>

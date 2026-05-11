@@ -25,6 +25,7 @@ import WalletIcon from './icons/WalletIcon';
 import LogOutIcon from './icons/LogOutIcon';
 import SkeletonWrapper from '../components/SkeletonWrapper';
 import { useLoginModal } from '../../../context/LoginModal';
+import { Button } from '../../ui';
 
 const UserArea = ({
   userState,
@@ -107,21 +108,16 @@ const UserArea = ({
 
   return (
     <div className='flex items-center gap-2'>
-      <button
-        type='button'
-        onClick={openLoginModal}
-        className='px-4 py-2 text-sm font-medium text-ui-text-2 hover:text-ui-text transition-colors cursor-pointer bg-transparent'
-      >
+      <Button variant='ghost' onClick={openLoginModal}>
         {t('登录')}
-      </button>
+      </Button>
       {showRegisterButton && (
-        <button
-          type='button'
+        <Button
+          className='hidden md:inline-flex'
           onClick={() => openLoginModal('register')}
-          className='hidden md:inline-flex items-center px-5 py-2 text-sm font-semibold bg-ui-accent text-ui-accent-fg rounded-lg transition-all duration-200 hover:bg-ui-accent-hover hover:shadow-md active:scale-95 cursor-pointer border-0'
         >
           {t('注册')}
-        </button>
+        </Button>
       )}
     </div>
   );

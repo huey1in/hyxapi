@@ -55,6 +55,7 @@ const fmtDateTime = (ts) => {
 // ── select primitives reused inside the form modal ──────
 // Use the shared Dropdown for the group picker.
 import Dropdown from '../../components/common/ui/Dropdown';
+import { Button, IconButton, Tabs as UITabs } from '../../components/ui';
 
 // ── token form modal (create/edit) ──────────────────────
 const FormSection = ({ title, children }) => (
@@ -218,7 +219,7 @@ const TokenFormModal = ({ open, token, onClose, onSaved, t }) => {
             <div>
               <h2
                 className='text-lg font-semibold text-ui-text'
-                style={{ fontFamily: "'Space Grotesk', sans-serif", letterSpacing: '-0.015em' }}
+                style={{ letterSpacing: '-0.015em' }}
               >
                 {isEdit ? t('编辑 API key') : t('创建 API key')}
               </h2>
@@ -226,12 +227,7 @@ const TokenFormModal = ({ open, token, onClose, onSaved, t }) => {
                 {isEdit ? t('修改名称、配额或有效期') : t('为这个 API key 起一个名称')}
               </p>
             </div>
-            <button
-              onClick={onClose}
-              className='p-1.5 -mr-1 rounded-lg text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-subtle transition-colors'
-            >
-              <X size={16} />
-            </button>
+            <IconButton icon={X} size='sm' onClick={onClose} className='-mr-1' />
           </div>
 
           <div className='px-6 pb-2 space-y-6'>
@@ -290,36 +286,25 @@ const TokenFormModal = ({ open, token, onClose, onSaved, t }) => {
                     className={inputCls}
                     style={transparentBg}
                   />
-                  <button
-                    type='button'
+                  <Button
+                    variant={expiredTime === -1 ? 'secondary' : 'ghost'}
+                    size='sm'
                     onClick={() => setExpiredTime(-1)}
-                    className={`px-3 py-2 text-xs rounded-xl border whitespace-nowrap transition-colors ${
-                      expiredTime === -1
-                        ? 'border-ui-text-3 bg-ui-bg-subtle text-ui-text font-medium'
-                        : 'border-ui-border text-ui-text-2 hover:bg-ui-bg-subtle'
-                    }`}
                   >
                     {t('永不')}
-                  </button>
+                  </Button>
                 </div>
               </FormField>
             </FormSection>
           </div>
 
           <div className='flex items-center justify-end gap-2 px-6 py-3.5'>
-            <button
-              onClick={onClose}
-              className='px-4 py-1.5 text-sm font-medium rounded-lg border border-ui-border text-ui-text hover:bg-ui-bg-subtle transition-colors'
-            >
+            <Button variant='secondary' size='sm' onClick={onClose}>
               {t('取消')}
-            </button>
-            <button
-              onClick={submit}
-              disabled={submitting}
-              className='px-4 py-1.5 text-sm font-semibold rounded-lg bg-ui-accent text-ui-accent-fg hover:bg-ui-accent-hover hover:shadow-md active:scale-95 disabled:opacity-50 disabled:hover:shadow-none disabled:active:scale-100 transition-all'
-            >
+            </Button>
+            <Button size='sm' onClick={submit} disabled={submitting}>
               {submitting ? t('提交中...') : isEdit ? t('保存') : t('创建')}
-            </button>
+            </Button>
           </div>
         </div>
       </SquircleBox>
@@ -358,7 +343,6 @@ const StepCard = ({ num, title, desc, onClick }) => (
   >
     <div
       className='text-[13px] text-ui-text-3 font-medium mb-2 tabular-nums'
-      style={{ fontFamily: "'Space Grotesk', sans-serif" }}
     >
       {num}
     </div>
@@ -380,7 +364,6 @@ const KeyRow = ({ token, revealed, keyValue, onToggle, onCopy, onEdit, onDelete,
       className='py-4 px-5 border border-ui-border rounded-[28px] flex flex-col md:flex-row md:items-center gap-3 md:gap-6'
       style={{
         backgroundColor: 'var(--page-bg)',
-        fontFamily: "'Space Grotesk', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
       }}
     >
       <div className='flex-1 min-w-0'>
@@ -388,32 +371,26 @@ const KeyRow = ({ token, revealed, keyValue, onToggle, onCopy, onEdit, onDelete,
           <span className='text-[15px] font-medium text-ui-text truncate'>
             {token.name || `Token #${token.id}`}
           </span>
-          <button
-            onClick={onEdit}
-            title={t('编辑')}
-            className='inline-flex items-center justify-center w-6 h-6 rounded-md text-ui-text-3 hover:text-ui-text hover:bg-ui-bg-subtle transition-colors'
-          >
-            <Pencil size={12} />
-          </button>
+          <IconButton icon={Pencil} size='sm' onClick={onEdit} title={t('编辑')} className='w-6 h-6' />
         </div>
         <div className='flex items-center gap-2'>
           <code className='text-[13px] font-mono text-ui-text-2 tabular-nums truncate'>
             {display}
           </code>
-          <button
+          <IconButton
+            icon={revealed ? EyeOff : Eye}
+            size='sm'
             onClick={onToggle}
             title={revealed ? t('隐藏密钥') : t('显示密钥')}
-            className='inline-flex items-center justify-center w-6 h-6 rounded-md text-ui-text-3 hover:text-ui-text hover:bg-ui-bg-subtle transition-colors flex-shrink-0'
-          >
-            {revealed ? <EyeOff size={12} /> : <Eye size={12} />}
-          </button>
-          <button
+            className='w-6 h-6 flex-shrink-0'
+          />
+          <IconButton
+            icon={Copy}
+            size='sm'
             onClick={onCopy}
             title={t('复制')}
-            className='inline-flex items-center justify-center w-6 h-6 rounded-md text-ui-text-3 hover:text-ui-text hover:bg-ui-bg-subtle transition-colors flex-shrink-0'
-          >
-            <Copy size={12} />
-          </button>
+            className='w-6 h-6 flex-shrink-0'
+          />
         </div>
       </div>
 
@@ -445,13 +422,13 @@ const KeyRow = ({ token, revealed, keyValue, onToggle, onCopy, onEdit, onDelete,
         </div>
       </div>
 
-      <button
+      <IconButton
+        icon={Trash2}
+        variant='danger'
         onClick={onDelete}
         title={t('删除')}
-        className='inline-flex items-center justify-center w-9 h-9 rounded-xl text-ui-text-3 hover:text-ui-danger hover:bg-ui-danger-bg transition-colors flex-shrink-0 self-end md:self-center'
-      >
-        <Trash2 size={15} />
-      </button>
+        className='flex-shrink-0 self-end md:self-center'
+      />
     </div>
   );
 };
@@ -547,13 +524,14 @@ const CodeBlock = ({ sample, t }) => {
     >
       <div className='flex items-center justify-between px-5 py-2.5'>
         <span className='text-[13px] text-ui-text-2 font-medium tabular-nums'>{sample.lang}</span>
-        <button
+        <Button
+          variant='ghost'
+          size='sm'
+          icon={copied ? Check : Copy}
           onClick={onCopy}
-          className='inline-flex items-center gap-1 px-2 py-1 text-[12px] text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-elevated rounded-xl transition-colors'
         >
-          {copied ? <Check size={12} /> : <Copy size={12} />}
           {copied ? t('已复制') : t('复制')}
-        </button>
+        </Button>
       </div>
       <pre
         className='px-5 pb-5 pt-1 text-[12.5px] leading-relaxed text-ui-text overflow-x-auto bg-transparent'
@@ -634,7 +612,7 @@ const Tokens = () => {
         {/* Title */}
         <h1
           className='text-2xl md:text-3xl font-medium text-ui-text mb-6'
-          style={{ fontFamily: "'Space Grotesk', sans-serif", letterSpacing: '-0.02em' }}
+          style={{ letterSpacing: '-0.02em' }}
         >
           {t('令牌')}
         </h1>
@@ -643,25 +621,26 @@ const Tokens = () => {
         <section className='mb-10'>
           <div className='flex items-center justify-between gap-3 mb-3 pb-3 border-b border-ui-border'>
             <h2 className='text-[15px] font-semibold text-ui-text'>API keys</h2>
-            <button
+            <IconButton
+              icon={RefreshCw}
+              size='sm'
               onClick={() => reload()}
               title={t('刷新')}
-              className='inline-flex items-center justify-center w-8 h-8 rounded-lg text-ui-text-3 hover:text-ui-text hover:bg-ui-bg-subtle transition-colors'
-            >
-              <RefreshCw size={13} className={loading ? 'animate-spin' : ''} />
-            </button>
+              className={loading ? '[&_svg]:animate-spin' : ''}
+            />
           </div>
           <div className='flex items-start justify-between gap-4 mb-4'>
             <p className='text-xs text-ui-text-3 leading-relaxed flex-1'>
               {t('创建 API key 用以在你的应用或第三方客户端中使用 Routify 的服务，请妥善保存。不要与他人共享你的 API key，或将其暴露在浏览器或其他客户端代码中。')}
             </p>
-            <button
+            <Button
+              variant='secondary'
+              size='sm'
+              icon={Plus}
               onClick={() => { setEditing(null); setEditOpen(true); }}
-              className='inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-lg border border-ui-border text-ui-text hover:bg-ui-bg-subtle transition-colors whitespace-nowrap'
             >
-              <Plus size={13} />
               {t('创建 API key')}
-            </button>
+            </Button>
           </div>
 
           {loading && tokens.length === 0 ? (
@@ -692,20 +671,13 @@ const Tokens = () => {
           <h2 className='text-[15px] font-semibold text-ui-text mb-3 pb-3 border-b border-ui-border'>
             {t('调用示例')}
           </h2>
-          <div className='flex items-center gap-1 mb-3 border-b border-ui-border'>
-            {Object.entries(samples).map(([k, v]) => (
-              <button
-                key={k}
-                onClick={() => setActiveTab(k)}
-                className={`px-3 py-2 text-sm transition-colors -mb-px border-b-2 ${
-                  activeTab === k
-                    ? 'border-ui-text text-ui-text font-medium'
-                    : 'border-transparent text-ui-text-2 hover:text-ui-text'
-                }`}
-              >
-                {v.label}
-              </button>
-            ))}
+          <div className='mb-3'>
+            <UITabs
+              variant='underline'
+              value={activeTab}
+              onChange={setActiveTab}
+              items={Object.entries(samples).map(([k, v]) => ({ value: k, label: v.label }))}
+            />
           </div>
           <CodeBlock sample={samples[activeTab]} t={t} />
         </section>

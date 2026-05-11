@@ -55,17 +55,12 @@ const MobileNavDrawer = ({
     onClose();
   };
 
-  const itemFontStyle = {
-    fontFamily:
-      "Season-Sans, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif",
-  };
-
   return createPortal(
     <div
       className={`fixed inset-0 z-[100] flex flex-col transition-transform duration-300 ease-in-out ${
         open ? 'translate-x-0' : 'translate-x-full'
       }`}
-      style={{ backgroundColor: '#F5F3EC', ...itemFontStyle }}
+      style={{ backgroundColor: '#F5F3EC' }}
       role='dialog'
       aria-label='navigation'
     >
@@ -81,7 +76,7 @@ const MobileNavDrawer = ({
         >
           <span
             className='text-[22px] font-bold text-ui-text'
-            style={{ fontFamily: "'Space Grotesk', sans-serif", letterSpacing: '-0.03em' }}
+            style={{ letterSpacing: '-0.03em' }}
           >
             {systemName === 'Routify' ? (
               <>

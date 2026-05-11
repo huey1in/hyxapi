@@ -14,6 +14,7 @@ import {
 import { Notice } from '../../../../components/common/form/Primitives';
 import Pagination from '../../../../components/common/table/Pagination';
 import ModalDialog from '../../../../components/common/ModalDialog';
+import { Button } from '../../../../components/ui';
 
 const inputCls = 'w-full rounded-xl border border-ui-border bg-ui-bg-subtle text-ui-text text-xs px-3 py-2 focus:outline-none focus:ring-1 focus:ring-ui-accent/40 disabled:opacity-50';
 
@@ -111,17 +112,21 @@ export default function ModelPricingEditor({
       {/* Toolbar */}
       <div className='flex flex-wrap items-center gap-2'>
         {allowAddModel && (
-          <button onClick={() => setAddVisible(true)} className='inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium rounded-xl bg-ui-accent text-ui-accent-fg hover:opacity-90'>
+          <Button size='sm' onClick={() => setAddVisible(true)}>
             {t('添加模型')}
-          </button>
+          </Button>
         )}
-        <button onClick={handleSubmit} disabled={loading} className='inline-flex items-center gap-1 px-3 py-1.5 text-xs font-semibold rounded-xl bg-ui-accent text-ui-accent-fg hover:opacity-90 disabled:opacity-50'>
+        <Button size='sm' onClick={handleSubmit} disabled={loading}>
           {t('应用更改')}
-        </button>
-        <button disabled={!selectedModel || selectedModelNames.length === 0} onClick={() => setBatchVisible(true)}
-          className='inline-flex items-center gap-1 px-3 py-1.5 text-xs rounded-xl border border-ui-border text-ui-text-2 hover:bg-ui-bg-hover disabled:opacity-40'>
+        </Button>
+        <Button
+          size='sm'
+          variant='secondary'
+          disabled={!selectedModel || selectedModelNames.length === 0}
+          onClick={() => setBatchVisible(true)}
+        >
           {t('批量应用当前模型价格')}{selectedModelNames.length > 0 ? ` (${selectedModelNames.length})` : ''}
-        </button>
+        </Button>
         <div className='relative flex-1 min-w-[180px] max-w-[220px]'>
           <input type='text' value={searchText} onChange={(e) => setSearchText(e.target.value)} placeholder={t('搜索模型名称')}
             className='w-full rounded-md border border-ui-border bg-ui-bg-subtle text-ui-text text-xs pl-8 pr-3 py-1.5 focus:outline-none focus:ring-1 focus:ring-ui-accent/40' />
@@ -276,8 +281,8 @@ export default function ModelPricingEditor({
         <ModalDialog open={addVisible} onClose={() => { setAddVisible(false); setNewModelName(''); }} title={t('添加模型')} width={400}
           footer={
             <div className='flex justify-end gap-2'>
-              <button onClick={() => { setAddVisible(false); setNewModelName(''); }} className='px-3.5 py-1.5 text-xs rounded-xl border border-ui-border text-ui-text-2 hover:bg-ui-bg-subtle'>{t('取消')}</button>
-              <button onClick={handleAddModel} className='px-3.5 py-1.5 text-xs font-semibold rounded-xl bg-ui-accent text-ui-accent-fg hover:opacity-90'>{t('确定')}</button>
+              <Button variant='secondary' size='sm' onClick={() => { setAddVisible(false); setNewModelName(''); }}>{t('取消')}</Button>
+              <Button size='sm' onClick={handleAddModel}>{t('确定')}</Button>
             </div>
           }>
           <input type='text' value={newModelName} onChange={(e) => setNewModelName(e.target.value)} placeholder={t('输入模型名称，例如 gpt-4.1')} className={inputCls} onKeyDown={(e) => e.key === 'Enter' && handleAddModel()} />
@@ -288,8 +293,8 @@ export default function ModelPricingEditor({
       <ModalDialog open={batchVisible} onClose={() => setBatchVisible(false)} title={t('批量应用当前模型价格')} width={500}
         footer={
           <div className='flex justify-end gap-2'>
-            <button onClick={() => setBatchVisible(false)} className='px-3.5 py-1.5 text-xs rounded-xl border border-ui-border text-ui-text-2 hover:bg-ui-bg-subtle'>{t('取消')}</button>
-            <button onClick={() => { if (applySelectedModelPricing()) setBatchVisible(false); }} className='px-3.5 py-1.5 text-xs font-semibold rounded-xl bg-ui-accent text-ui-accent-fg hover:opacity-90'>{t('确定')}</button>
+            <Button variant='secondary' size='sm' onClick={() => setBatchVisible(false)}>{t('取消')}</Button>
+            <Button size='sm' onClick={() => { if (applySelectedModelPricing()) setBatchVisible(false); }}>{t('确定')}</Button>
           </div>
         }>
         <div className='text-xs text-ui-text-2'>

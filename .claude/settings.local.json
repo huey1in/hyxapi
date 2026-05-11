@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npx vite *)",
+      "Bash(grep -v \":0$\")",
+      "Bash(sort -t: -k2 -nr)",
+      "Bash(perl -i -0pe \"s|<button\\\\s+type='button'\\\\s+className='text-xs text-ui-accent hover:underline'\\\\s+onClick=\\\\{\\([^}]+\\(?:\\\\{[^}]*\\\\}[^}]*\\)*\\)\\\\}\\\\s*>\\\\s*\\\\{t\\\\\\('\\([^']+\\)'\\\\\\)\\\\}\\\\s*</button>|<Button variant='link' size='sm' onClick={\\\\1}>{t\\('\\\\2'\\)}</Button>|gs\" components/table/channels/modals/EditTagModal.jsx)",
+      "Bash(awk -F: '{sum += $2} END {print \"Remaining <button>: \" sum}')",
+      "Bash(awk -F: '{sum += $2} END {print \"Remaining <select>: \" sum}')",
+      "Bash(awk -F: '{sum += $2} END {print \"Remaining inline tag spans: \" sum}')"
+    ]
+  }
+}

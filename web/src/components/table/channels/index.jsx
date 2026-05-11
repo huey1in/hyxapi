@@ -24,13 +24,13 @@ const ChannelsPage = () => {
   const t = channelsData.t;
 
   return (
-    <div className='px-4 pt-8 pb-6 md:px-6 md:pt-10 md:pb-8'>
+    <div className='px-4 pt-8 pb-6 md:px-6 md:pt-10 md:pb-8 overflow-x-hidden'>
       <div className='max-w-[1400px] mx-auto'>
         {/* Header */}
         <div className='flex items-center justify-between gap-3 mb-5'>
           <h1
             className='text-2xl font-semibold text-ui-text'
-            style={{ fontFamily: "'Space Grotesk', sans-serif", letterSpacing: '-0.02em' }}
+            style={{ letterSpacing: '-0.02em' }}
           >
             {t('渠道管理')}
           </h1>
@@ -46,7 +46,7 @@ const ChannelsPage = () => {
         )}
 
         {/* Filters card (top) */}
-        <div className='border border-ui-border rounded-2xl p-4 mb-3 space-y-3 bg-[var(--page-bg)]'>
+        <div className='border border-ui-border rounded-2xl p-4 mb-3 space-y-3 bg-[var(--page-bg)] overflow-hidden'>
           <ChannelsFilters {...channelsData} />
           <div className='border-t border-ui-divider pt-3'>
             <ChannelsActions {...channelsData} />

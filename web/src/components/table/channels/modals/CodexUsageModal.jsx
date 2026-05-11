@@ -23,6 +23,7 @@ import { ChevronDown, Loader2 } from 'lucide-react';
 import ModalDialog from '../../../common/ModalDialog';
 import { API, showError } from '../../../../helpers';
 import { MOBILE_BREAKPOINT } from '../../../../hooks/common/useIsMobile';
+import { Button } from '../../../ui';
 
 const clampPercent = (value) => {
   const v = Number(value);
@@ -246,13 +247,15 @@ const AccountInfoValue = ({ t, label, value, onCopy, monospace = false }) => {
         >
           {hasValue ? text : '-'}
         </div>
-        <button
+        <Button
+          size='sm'
+          variant='secondary'
+          className='shrink-0'
           onClick={() => hasValue && onCopy?.(text)}
           disabled={!hasValue}
-          className='shrink-0 px-2 py-0.5 text-[11px] rounded-xl border border-ui-border text-ui-text-2 hover:bg-ui-bg-subtle disabled:opacity-40 disabled:cursor-not-allowed transition-colors'
         >
           {tt('复制')}
-        </button>
+        </Button>
       </div>
     </div>
   );
@@ -424,12 +427,9 @@ const CodexUsageView = ({ t, record, payload, onCopy, onRefresh }) => {
               </Tag>
             </div>
           </div>
-          <button
-            onClick={onRefresh}
-            className='inline-flex items-center gap-1.5 px-3 py-1 text-xs font-medium rounded-lg border border-ui-border text-ui-text hover:bg-ui-bg-subtle transition-colors'
-          >
+          <Button size='sm' variant='secondary' onClick={onRefresh}>
             {tt('刷新')}
-          </button>
+          </Button>
         </div>
 
         <div className='mt-2 rounded-lg bg-ui-bg-subtle px-3 py-2 space-y-2'>
@@ -542,13 +542,14 @@ const CodexUsageView = ({ t, record, payload, onCopy, onRefresh }) => {
         {showRawJson && (
           <div className='border-t border-ui-border p-3'>
             <div className='mb-2 flex justify-end'>
-              <button
+              <Button
+                size='sm'
+                variant='secondary'
                 onClick={() => onCopy?.(rawText)}
                 disabled={!rawText}
-                className='inline-flex items-center gap-1.5 px-3 py-1 text-xs font-medium rounded-lg border border-ui-border text-ui-text hover:bg-ui-bg-subtle disabled:opacity-50 disabled:cursor-not-allowed transition-colors'
               >
                 {tt('复制')}
-              </button>
+              </Button>
             </div>
             <pre className='max-h-[50vh] overflow-y-auto rounded-lg bg-ui-bg-subtle p-3 text-xs text-ui-text'>
               {rawText}
@@ -623,12 +624,9 @@ const CodexUsageLoader = ({ t, record, initialPayload, onCopy }) => {
       <div className='flex flex-col gap-3'>
         <span className='text-sm text-ui-danger'>{tt('获取用量失败')}</span>
         <div className='flex justify-end'>
-          <button
-            onClick={fetchUsage}
-            className='inline-flex items-center gap-1.5 px-3 py-1 text-xs font-medium rounded-lg border border-ui-border text-ui-text hover:bg-ui-bg-subtle transition-colors'
-          >
+          <Button size='sm' variant='secondary' onClick={fetchUsage}>
             {tt('刷新')}
-          </button>
+          </Button>
         </div>
       </div>
     );
@@ -659,12 +657,9 @@ const CodexUsageHost = ({ t, record, payload, onCopy, onClose }) => {
       title={tt('Codex 帐号与用量')}
       width={getCodexUsageModalWidth()}
       footer={
-        <button
-          onClick={handleClose}
-          className='inline-flex items-center gap-1.5 px-4 py-2 text-sm font-semibold rounded-xl bg-ui-accent text-ui-accent-fg hover:bg-ui-accent-hover transition-colors'
-        >
+        <Button onClick={handleClose}>
           {tt('关闭')}
-        </button>
+        </Button>
       }
     >
       <CodexUsageLoader

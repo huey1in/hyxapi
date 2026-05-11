@@ -1,10 +1,11 @@
 /*
  * Channels actions bar — batch ops + display toggles, all in token style.
  */
-import React, { useState, useRef, useEffect } from 'react';
+import React from 'react';
 import { ChevronDown, Trash2, Tag as TagIcon } from 'lucide-react';
 import { showConfirm } from '../../common/ConfirmDialog';
 import Select from '../../common/form/Select';
+import { Button, Dropdown } from '../../ui';
 
 const Toggle = ({ checked, onChange }) => (
   <button
@@ -58,21 +59,8 @@ const ChannelsActions = ({
   setActivePage,
   t,
 }) => {
-  const [menuOpen, setMenuOpen] = useState(false);
-  const menuRef = useRef(null);
-
-  useEffect(() => {
-    if (!menuOpen) return;
-    const onClick = (e) => {
-      if (menuRef.current && !menuRef.current.contains(e.target)) setMenuOpen(false);
-    };
-    document.addEventListener('mousedown', onClick);
-    return () => document.removeEventListener('mousedown', onClick);
-  }, [menuOpen]);
-
   const confirm = (title, content, onOk, danger) => () => {
     showConfirm({ title, content, onOk, danger });
-    setMenuOpen(false);
   };
 
   const onIdSortChange = (v) => {
@@ -126,10 +114,12 @@ const ChannelsActions = ({
   ];
 
   return (
-    <div className='flex flex-col md:flex-row justify-between gap-2 w-full'>
+    <div className='flex flex-col md:flex-row justify-between gap-2 w-full min-w-0'>
       {/* Left: batch ops */}
       <div className='flex flex-wrap items-center gap-1.5'>
-        <button
+        <Button
+          variant='danger'
+          icon={Trash2}
           disabled={!enableBatchDelete}
           onClick={() =>
             showConfirm({
@@ -139,45 +129,27 @@ const ChannelsActions = ({
               onOk: () => batchDeleteChannels(),
             })
           }
-          className='inline-flex items-center gap-1.5 px-3.5 py-2 text-sm rounded-xl border border-ui-danger/40 text-ui-danger hover:bg-ui-danger-bg disabled:opacity-40 disabled:hover:bg-transparent transition-colors whitespace-nowrap'
         >
-          <Trash2 size={14} />
           {t('删除所选')}
-        </button>
-        <button
+        </Button>
+        <Button
+          variant='ghost'
+          icon={TagIcon}
           disabled={!enableBatchDelete}
           onClick={() => setShowBatchSetTag(true)}
-          className='inline-flex items-center gap-1.5 px-3.5 py-2 text-sm rounded-xl border border-ui-border text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-subtle disabled:opacity-40 disabled:hover:bg-transparent transition-colors whitespace-nowrap'
         >
-          <TagIcon size={14} />
           {t('批量设置标签')}
-        </button>
+        </Button>
 
-        <div className='relative' ref={menuRef}>
-          <button
-            onClick={() => setMenuOpen((p) => !p)}
-            className='inline-flex items-center gap-1.5 px-3.5 py-2 text-sm rounded-xl border border-ui-border text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-subtle transition-colors whitespace-nowrap'
-          >
-            {t('批量操作')}
-            <ChevronDown size={14} />
-          </button>
-          {menuOpen && (
-            <div className='absolute z-30 left-0 mt-1 min-w-[220px] bg-ui-bg-elevated border border-ui-border rounded-xl shadow-lg overflow-hidden'>
-              {menuItems.map((it, i) => (
-                <button
-                  key={i}
-                  onClick={it.onClick}
-                  disabled={it.loading}
-                  className={`w-full text-left px-3 py-2.5 text-sm hover:bg-ui-bg-subtle transition-colors disabled:opacity-50 ${
-                    it.danger ? 'text-ui-danger' : it.primary ? 'text-ui-brand font-medium' : 'text-ui-text-2 hover:text-ui-text'
-                  }`}
-                >
-                  {it.label}{it.loading ? '...' : ''}
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
+        <Dropdown
+          placement='bottom-start'
+          items={menuItems}
+          trigger={
+            <Button variant='ghost' iconRight={ChevronDown}>
+              {t('批量操作')}
+            </Button>
+          }
+        />
       </div>
 
       {/* Right: toggles + status filter */}

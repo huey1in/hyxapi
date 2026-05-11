@@ -5,6 +5,7 @@
 import React, { useState, useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { showConfirm } from '../../../../components/common/ConfirmDialog';
+import { Button } from '../../../../components/ui';
 
 let _idCounter = 0;
 const uid = () => `gsu_${++_idCounter}`;
@@ -185,9 +186,9 @@ export default function GroupSpecialUsableRules({ value, groupNames = [], onChan
             <option value=''>{t('选择用户分组')}</option>
             {groupOptions.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
           </select>
-          <button onClick={addNewGroup} className='inline-flex items-center gap-1 px-3 py-1.5 text-xs rounded-xl border border-ui-border text-ui-text-2 hover:bg-ui-bg-hover'>
+          <Button size='sm' variant='secondary' onClick={addNewGroup}>
             {t('添加分组规则')}
-          </button>
+          </Button>
         </div>
       </div>
     );
@@ -205,9 +206,9 @@ export default function GroupSpecialUsableRules({ value, groupNames = [], onChan
           <option value=''>{t('选择用户分组')}</option>
           {groupOptions.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
         </select>
-        <button onClick={addNewGroup} className='inline-flex items-center gap-1 px-3 py-1.5 text-xs rounded-xl border border-ui-border text-ui-text-2 hover:bg-ui-bg-hover'>
+        <Button size='sm' variant='secondary' onClick={addNewGroup}>
           {t('添加分组规则')}
-        </button>
+        </Button>
       </div>
     </div>
   );

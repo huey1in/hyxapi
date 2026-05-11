@@ -14,6 +14,7 @@ import {
 import { useSearchParams } from 'react-router-dom';
 import * as LobeIcons from '@lobehub/icons';
 import { API, showError, showSuccess, copy } from '../../helpers';
+import { Button } from '../../components/ui';
 
 const formatPrice = (n) => {
   if (n === 0 || n === null || n === undefined) return '0';
@@ -105,7 +106,7 @@ const FilterItem = ({ label, count, active, onClick }) => (
         ? 'bg-ui-bg-subtle text-ui-text font-medium'
         : 'text-ui-text-2 hover:bg-ui-bg-subtle hover:text-ui-text'
     }`}
-    style={{ fontFamily: "'Plus Jakarta Sans', 'Space Grotesk', sans-serif" }}
+   
   >
     <span className='truncate flex-1'>{label}</span>
     {count != null && (
@@ -268,17 +269,18 @@ const PricingPage = () => {
             onChange={(e) => setSearch(e.target.value)}
             placeholder={t('搜索模型...')}
             className='w-full pl-8 pr-3 py-2 text-sm bg-ui-bg-elevated border border-ui-border rounded-xl text-ui-text placeholder:text-ui-text-3 outline-none focus:border-ui-text-3 transition-colors'
-            style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
+           
           />
         </div>
-        <button
+        <Button
+          variant='secondary'
+          size='sm'
+          icon={RefreshCw}
           onClick={load}
           disabled={loading}
           title={t('刷新')}
-          className='inline-flex items-center justify-center w-9 h-9 rounded-xl text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-subtle border border-ui-border transition-colors disabled:opacity-50 shrink-0'
-        >
-          <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />
-        </button>
+          className={`w-9 h-9 px-0 shrink-0 ${loading ? '[&_svg]:animate-spin' : ''}`}
+        />
       </div>
       <nav className='space-y-0.5'>
       <FilterGroup label={t('品牌')}>
@@ -348,22 +350,19 @@ const PricingPage = () => {
               className='w-full pl-8 pr-3 py-2 text-sm bg-ui-bg-elevated border border-ui-border rounded-xl text-ui-text placeholder:text-ui-text-3 outline-none focus:border-ui-text-3 transition-colors'
             />
           </div>
-          <button
+          <Button
+            variant={vendorFilter !== 'all' || endpointFilter !== 'all' || group !== 'all' ? 'primary' : 'secondary'}
+            icon={SlidersHorizontal}
             onClick={() => setShowMobileFilters(true)}
-            className={`inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm border transition-colors shrink-0 ${
-              vendorFilter !== 'all' || endpointFilter !== 'all' || group !== 'all'
-                ? 'bg-ui-accent text-ui-accent-fg border-transparent'
-                : 'bg-ui-bg-elevated border-ui-border text-ui-text-2'
-            }`}
+            className='shrink-0'
           >
-            <SlidersHorizontal size={14} />
             {t('筛选')}
             {(vendorFilter !== 'all' || endpointFilter !== 'all' || group !== 'all') && (
               <span className='text-xs font-medium'>
                 {[vendorFilter !== 'all', endpointFilter !== 'all', group !== 'all'].filter(Boolean).length}
               </span>
             )}
-          </button>
+          </Button>
         </div>
       </div>
 
@@ -387,12 +386,14 @@ const PricingPage = () => {
             {/* Header */}
             <div className='flex items-center justify-between px-5 py-3 border-b border-ui-border'>
               <span className='text-sm font-semibold text-ui-text'>{t('筛选')}</span>
-              <button
+              <Button
+                variant='link'
+                size='sm'
                 onClick={() => { setVendorFilter('all'); setEndpointFilter('all'); setGroup('all'); }}
-                className='text-xs text-ui-text-3 hover:text-ui-text transition-colors'
+                className='text-ui-text-3 hover:no-underline'
               >
                 {t('重置')}
-              </button>
+              </Button>
             </div>
             {/* Content */}
             <div className='overflow-y-auto px-5 py-4 flex-1'>
@@ -426,12 +427,13 @@ const PricingPage = () => {
             </div>
             {/* Footer */}
             <div className='px-5 py-4 border-t border-ui-border'>
-              <button
+              <Button
+                size='lg'
+                className='w-full h-11'
                 onClick={() => setShowMobileFilters(false)}
-                className='w-full h-11 bg-ui-accent text-ui-accent-fg rounded-xl text-sm font-medium hover:bg-ui-accent-hover transition-colors'
               >
                 {t('查看')} {filtered.length} {t('个模型')}
-              </button>
+              </Button>
             </div>
           </div>
         </div>
@@ -507,7 +509,7 @@ const PricingPage = () => {
                       </div>
                       <h3
                         className='text-[15px] font-semibold text-ui-text mt-2.5 line-clamp-2 leading-snug'
-                        style={{ fontFamily: "'Plus Jakarta Sans', 'Space Grotesk', sans-serif", letterSpacing: '-0.01em' }}
+                        style={{ letterSpacing: '-0.01em' }}
                       >
                         {m.model_name}
                       </h3>
@@ -632,13 +634,15 @@ const ModelDetailView = ({
   return (
     <div className='max-w-4xl mx-auto px-4 lg:px-6 py-6'>
       {/* Top bar */}
-      <button
+      <Button
+        variant='ghost'
+        size='sm'
+        icon={ArrowLeft}
         onClick={onClose}
-        className='inline-flex items-center gap-1.5 mb-5 px-2.5 py-1.5 -ml-2.5 rounded-xl text-sm text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-subtle transition-colors'
+        className='mb-5 -ml-2.5'
       >
-        <ArrowLeft size={14} />
         {t('返回')}
-      </button>
+      </Button>
 
       {/* Header */}
       <div className='flex items-start gap-4 mb-8'>
@@ -649,18 +653,19 @@ const ModelDetailView = ({
           <div className='text-xs text-ui-text-3 mb-1'>{v.name}</div>
           <h1
             className='text-2xl md:text-3xl font-semibold text-ui-text break-all'
-            style={{ fontFamily: "'Space Grotesk', sans-serif", letterSpacing: '-0.015em' }}
+            style={{ letterSpacing: '-0.015em' }}
           >
             {model.model_name}
           </h1>
         </div>
-        <button
+        <Button
+          variant='secondary'
+          size='sm'
+          icon={isCopied ? Check : Copy}
           onClick={(e) => onCopy(e, model.model_name)}
-          className='inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs border border-ui-border text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-subtle transition-colors'
         >
-          {isCopied ? <Check size={13} /> : <Copy size={13} />}
           {isCopied ? t('已复制') : t('复制 ID')}
-        </button>
+        </Button>
       </div>
 
       {/* Description */}
@@ -680,7 +685,7 @@ const ModelDetailView = ({
           )}
         </h2>
         <div
-          className='border border-ui-border rounded-[28px] divide-y divide-ui-divider'
+          className='border border-ui-border rounded-[20px] divide-y divide-ui-divider'
           style={{ backgroundColor: 'var(--page-bg)' }}
         >
           {isPerCall ? (
@@ -716,7 +721,7 @@ const ModelDetailView = ({
             {t('各分组定价')}
           </h2>
           <div
-            className='border border-ui-border rounded-[28px] overflow-hidden'
+            className='border border-ui-border rounded-[20px] overflow-hidden'
             style={{ backgroundColor: 'var(--page-bg)' }}
           >
             <table className='w-full text-sm'>
@@ -769,7 +774,7 @@ const ModelDetailView = ({
           {t('元数据')}
         </h2>
         <div
-          className='border border-ui-border rounded-[28px] p-5 grid grid-cols-2 md:grid-cols-3 gap-x-6 gap-y-4'
+          className='border border-ui-border rounded-[20px] p-5 grid grid-cols-2 md:grid-cols-3 gap-x-6 gap-y-4'
           style={{ backgroundColor: 'var(--page-bg)' }}
         >
           <Stat label={t('计费类型')} value={isPerCall ? t('按次') : t('按 token')} mono={false} />
