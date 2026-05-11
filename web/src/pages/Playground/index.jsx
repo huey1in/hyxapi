@@ -13,8 +13,8 @@ import React, {
 import { useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { usePageTitle } from '../../hooks/common/usePageTitle';
-import { Send, Square, Trash2, RotateCcw, Copy, Check, AlertCircle, ImagePlus, X as XIcon } from 'lucide-react';
-import ChevronDownIcon from '../../components/layout/headerbar/icons/ChevronDownIcon';
+import { Send, Square, Trash2, RotateCcw, Copy, Check, AlertCircle, ImagePlus, X as XIcon, ChevronDown } from 'lucide-react';
+const ChevronDownIcon = (props) => <ChevronDown {...props} />;
 
 import { UserContext } from '../../context/User';
 import { usePlaygroundState } from '../../hooks/playground/usePlaygroundState';
@@ -31,45 +31,21 @@ import {
   getTextContent,
 } from '../../helpers';
 import { MESSAGE_ROLES } from '../../constants/playground.constants';
-import MarkdownRenderer from '../../components/common/markdown/MarkdownRenderer';
+import MarkdownRenderer from '../../components/business/markdown/MarkdownRenderer';
 
-// 紧凑的内嵌选择器（chip 触发，popup 向上 + portal）
-import Dropdown from '../../components/common/ui/Dropdown';
-import { Button, IconButton } from '../../components/ui';
+import { Button, IconButton, Select } from '../../components/ui';
+const Dropdown = Select;
 
-const SelectChip = ({
-  options,
-  value,
-  onChange,
-  placeholder,
-  emptyText,
-}) => (
+const SelectChip = ({ options, value, onChange, placeholder, emptyText }) => (
   <Dropdown
-    options={options}
+    options={(options || []).map((o) => (typeof o === 'string' ? { value: o, label: o } : o))}
     value={value}
     onChange={onChange}
     placeholder={placeholder}
     emptyText={emptyText}
     placement='top-start'
-    portal
-    popupClassName='w-56'
-    renderTrigger={({ open, current, ref, onClick }) => (
-      <Button
-        ref={ref}
-        variant='ghost'
-        size='sm'
-        onClick={onClick}
-        iconRight={
-          <ChevronDownIcon
-            size={13}
-            className={`text-ui-text-3 transition-transform flex-shrink-0 ${open ? 'rotate-180' : ''}`}
-          />
-        }
-        className='max-w-[110px] md:max-w-[150px] min-w-0'
-      >
-        <span className='truncate'>{current?.label || placeholder}</span>
-      </Button>
-    )}
+    width={150}
+    size={32}
   />
 );
 

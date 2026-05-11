@@ -1,0 +1,50 @@
+/* Prism 主题 —— 与项目中性灰 + 一点点彩色 token 对齐。
+ * 亮色：浅彩色；暗色（html.dark）：稍亮 token。 */
+
+code[class*='language-'],
+pre[class*='language-'] {
+  font-family: 'Menlo', 'Consolas', 'SF Mono', 'JetBrains Mono', ui-monospace, monospace;
+  color: var(--ui-text);
+  text-shadow: none;
+  background: none;
+  tab-size: 2;
+}
+
+/* 参考 slack-ochin 配色 */
+:root {
+  --tok-comment:  #999988;
+  --tok-punct:    #892b8a;
+  --tok-keyword:  #892b8a;
+  --tok-tag:      #d59300;
+  --tok-string:   #379d4a;
+  --tok-number:   #892b8a;
+  --tok-function: #d59300;
+  --tok-property: #B1108E;
+  --tok-attr:     #B1108E;
+  --tok-builtin:  #0072f5;
+}
+html.dark {
+  --tok-comment:  #71717a;
+  --tok-punct:    #c4b5fd;
+  --tok-keyword:  #c4b5fd;
+  --tok-tag:      #fbbf24;
+  --tok-string:   #6ee7b7;
+  --tok-number:   #c4b5fd;
+  --tok-function: #fbbf24;
+  --tok-property: #f0abfc;
+  --tok-attr:     #f0abfc;
+  --tok-builtin:  #93c5fd;
+}
+
+.token.comment, .token.prolog, .token.cdata { color: var(--tok-comment); font-style: italic; }
+.token.punctuation { color: var(--tok-punct); }
+.token.keyword, .token.boolean, .token.null, .token.important { color: var(--tok-keyword); }
+.token.tag, .token.deleted, .token.symbol { color: var(--tok-tag); }
+.token.string, .token.char, .token.url, .token.regex, .token.inserted { color: var(--tok-string); }
+.token.number, .token.constant { color: var(--tok-number); }
+.token.function, .token.class-name { color: var(--tok-function); }
+.token.property, .token.attr-name { color: var(--tok-attr); }
+.token.builtin { color: var(--tok-builtin); }
+.token.operator, .token.entity, .token.variable { color: var(--ui-text); }
+.token.bold { font-weight: 600; }
+.token.italic { font-style: italic; }

@@ -1,13 +1,10 @@
-/*
-Copyright (C) 2025 QuantumNous
-
-Channels admin page entry.
-*/
-
 import React from 'react';
 import { usePageTitle } from '../../hooks/common/usePageTitle';
-import ChannelsPage from '../../components/table/channels';
+import ChannelsPage from '../../components/business/channels';
 
-const Channel = () => <ChannelsPage />;
+const Channel = () => {
+  usePageTitle('渠道管理');
+  return <ChannelsPage />;
+};
 
 export default Channel;

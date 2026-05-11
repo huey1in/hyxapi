@@ -1,324 +1,87 @@
 /*
-Copyright (C) 2025 QuantumNous
+ * App — 路由 + 主壳
+ *
+ * 16 个业务页面：
+ *   公共：     /  /pricing  /forbidden  /privacy-policy  /user-agreement
+ *   私有：    /console (Dashboard)  /console/playground  /console/token  /console/log
+ *             /console/topup  /console/personal*（待补）
+ *   管理员：  /console/subscription  /console/channel  /console/redemption
+ *             /console/user  /console/setting
+ *   独立壳：  /setup
+ *
+ * SetupCheck / OAuth / PasswordReset / AuthLegacy 等会在 Phase 2 接入。
+ */
 
-This program is free software: you can redistribute it and/or modify
-it under the terms of the GNU Affero General Public License as
-published by the Free Software Foundation, either version 3 of the
-License, or (at your option) any later version.
+import React from 'react';
+import { Navigate, Route, Routes, useParams } from 'react-router-dom';
+import { PrivateRoute, AdminRoute } from './helpers';
 
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-GNU Affero General Public License for more details.
+import PageLayout from './layout/PageLayout';
+import OAuth2Callback from './components/business/auth/OAuth2Callback';
 
-You should have received a copy of the GNU Affero General Public License
-along with this program. If not, see <https://www.gnu.org/licenses/>.
-
-For commercial licensing, please contact support@quantumnous.com
-*/
-
-import React, { lazy, Suspense, useContext, useEffect, useMemo } from 'react';
-import { Navigate, Route, Routes, useLocation, useNavigate, useParams } from 'react-router-dom';
-import Loading from './components/common/ui/Loading';
-import { ConfirmHost } from './components/common/ConfirmDialog';
-import User from './pages/User';
-import { AuthRedirect, PrivateRoute, AdminRoute } from './helpers';
-import Forbidden from './pages/Forbidden';
-import Setting from './pages/Setting';
-import { StatusContext } from './context/Status';
-import { useLoginModal } from './context/LoginModal';
-
-import PasswordResetConfirm from './components/auth/PasswordResetConfirm';
-import Channel from './pages/Channel';
-import Token from './pages/Token';
-import Redemption from './pages/Redemption';
-import TopUp from './pages/TopUp';
-import Log from './pages/Log';
+import Home from './pages/Home';
+import Dashboard from './pages/Dashboard';
 import Pricing from './pages/Pricing';
 import Playground from './pages/Playground';
+import TopUp from './pages/TopUp';
 import Subscription from './pages/Subscription';
-import OAuth2Callback from './components/auth/OAuth2Callback';
-import PersonalSetting from './components/settings/PersonalSetting';
+import Token from './pages/Token';
+import Redemption from './pages/Redemption';
+import Log from './pages/Log';
+import Channel from './pages/Channel';
+import User from './pages/User';
+import Setting from './pages/Setting';
 import Setup from './pages/Setup';
-import SetupCheck from './components/layout/SetupCheck';
+import Forbidden from './pages/Forbidden';
+import PrivacyPolicy from './pages/PrivacyPolicy';
+import UserAgreement from './pages/UserAgreement';
+import Personal from './pages/Personal';
 
-const Home = lazy(() => import('./pages/Home'));
-const Dashboard = lazy(() => import('./pages/Dashboard'));
-const UserAgreement = lazy(() => import('./pages/UserAgreement'));
-const PrivacyPolicy = lazy(() => import('./pages/PrivacyPolicy'));
+const NotFoundRedirect = () => {
+  let loggedIn = false;
+  try { loggedIn = !!localStorage.getItem('user'); } catch {}
+  return <Navigate to={loggedIn ? '/console' : '/'} replace />;
+};
 
-function DynamicOAuth2Callback() {
+const DynamicOAuth = () => {
   const { provider } = useParams();
   return <OAuth2Callback type={provider} />;
-}
+};
 
-function NotFoundRedirect() {
-  let isLoggedIn = false;
-  try { isLoggedIn = !!localStorage.getItem('user'); } catch {}
-  return <Navigate to={isLoggedIn ? '/console' : '/'} replace />;
-}
+const App = () => (
+  <Routes>
+    <Route path='/setup' element={<Setup />} />
 
-// Legacy auth URLs — preserve any aff/expired/code query params and pop the
-// LoginModal in the requested mode, then jump back to the home page so
-// invitation links like /register?aff=XXXX still work.
-function AuthLegacyRoute({ mode }) {
-  const { openLoginModal } = useLoginModal();
-  const navigate = useNavigate();
-  const { search } = useLocation();
-  useEffect(() => {
-    let aff = '';
-    try {
-      const params = new URLSearchParams(search);
-      aff = params.get('aff') || '';
-      if (aff) localStorage.setItem('aff', aff);
-    } catch {}
-    let isLoggedIn = false;
-    try { isLoggedIn = !!localStorage.getItem('user'); } catch {}
-    const base = isLoggedIn ? '/console' : '/';
-    // Keep the aff query on the redirected URL too so RegisterForm's
-    // top-level `URLSearchParams(window.location.search)` reads it as
-    // well, not just the localStorage fallback.
-    const to = aff ? `${base}?aff=${encodeURIComponent(aff)}` : base;
-    navigate(to, { replace: true });
-    if (!isLoggedIn) openLoginModal(mode);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-  return null;
-}
+    {/* OAuth 回调（不挂主壳，独立处理） */}
+    <Route path='/oauth/github'   element={<OAuth2Callback type='github' />} />
+    <Route path='/oauth/discord'  element={<OAuth2Callback type='discord' />} />
+    <Route path='/oauth/oidc'     element={<OAuth2Callback type='oidc' />} />
+    <Route path='/oauth/linuxdo'  element={<OAuth2Callback type='linuxdo' />} />
+    <Route path='/oauth/:provider' element={<DynamicOAuth />} />
 
-function App() {
-  const location = useLocation();
-  const [statusState] = useContext(StatusContext);
+    <Route element={<PageLayout />}>
+      <Route path='/' element={<Home />} />
+      <Route path='/pricing' element={<Pricing />} />
+      <Route path='/forbidden' element={<Forbidden />} />
+      <Route path='/privacy-policy' element={<PrivacyPolicy />} />
+      <Route path='/user-agreement' element={<UserAgreement />} />
 
-  // 获取模型广场权限配置
-  const pricingRequireAuth = useMemo(() => {
-    const headerNavModulesConfig = statusState?.status?.HeaderNavModules;
-    if (headerNavModulesConfig) {
-      try {
-        const modules = JSON.parse(headerNavModulesConfig);
+      <Route path='/console'             element={<PrivateRoute><Dashboard /></PrivateRoute>} />
+      <Route path='/console/playground'  element={<PrivateRoute><Playground /></PrivateRoute>} />
+      <Route path='/console/token'       element={<PrivateRoute><Token /></PrivateRoute>} />
+      <Route path='/console/log'         element={<PrivateRoute><Log /></PrivateRoute>} />
+      <Route path='/console/topup'       element={<PrivateRoute><TopUp /></PrivateRoute>} />
+      <Route path='/console/personal'    element={<PrivateRoute><Personal /></PrivateRoute>} />
 
-        // 处理向后兼容性：如果pricing是boolean，默认不需要登录
-        if (typeof modules.pricing === 'boolean') {
-          return false; // 默认不需要登录鉴权
-        }
+      <Route path='/console/subscription' element={<AdminRoute><Subscription /></AdminRoute>} />
+      <Route path='/console/channel'      element={<AdminRoute><Channel /></AdminRoute>} />
+      <Route path='/console/redemption'   element={<AdminRoute><Redemption /></AdminRoute>} />
+      <Route path='/console/user'         element={<AdminRoute><User /></AdminRoute>} />
+      <Route path='/console/setting'      element={<AdminRoute><Setting /></AdminRoute>} />
 
-        // 如果是对象格式，使用requireAuth配置
-        return modules.pricing?.requireAuth === true;
-      } catch (error) {
-        console.error('解析顶栏模块配置失败:', error);
-        return false; // 默认不需要登录
-      }
-    }
-    return false; // 默认不需要登录
-  }, [statusState?.status?.HeaderNavModules]);
-
-  return (
-    <SetupCheck>
-      <ConfirmHost />
-      <Routes>
-        <Route
-          path='/'
-          element={
-            <Suspense fallback={<Loading></Loading>} key={location.pathname}>
-              <Home />
-            </Suspense>
-          }
-        />
-        <Route
-          path='/setup'
-          element={
-            <Suspense fallback={<Loading></Loading>} key={location.pathname}>
-              <Setup />
-            </Suspense>
-          }
-        />
-        <Route path='/forbidden' element={<Forbidden />} />
-        <Route
-          path='/console/subscription'
-          element={
-            <AdminRoute>
-              <Subscription />
-            </AdminRoute>
-          }
-        />
-        <Route
-          path='/console/channel'
-          element={
-            <AdminRoute>
-              <Channel />
-            </AdminRoute>
-          }
-        />
-        <Route
-          path='/console/token'
-          element={
-            <PrivateRoute>
-              <Token />
-            </PrivateRoute>
-          }
-        />
-        <Route
-          path='/console/playground'
-          element={
-            <PrivateRoute>
-              <Playground />
-            </PrivateRoute>
-          }
-        />
-        <Route
-          path='/console/redemption'
-          element={
-            <AdminRoute>
-              <Redemption />
-            </AdminRoute>
-          }
-        />
-        <Route
-          path='/console/user'
-          element={
-            <AdminRoute>
-              <User />
-            </AdminRoute>
-          }
-        />
-        <Route
-          path='/user/reset'
-          element={
-            <Suspense fallback={<Loading></Loading>} key={location.pathname}>
-              <PasswordResetConfirm />
-            </Suspense>
-          }
-        />
-        <Route path='/login' element={<AuthLegacyRoute mode='login' />} />
-        <Route path='/register' element={<AuthLegacyRoute mode='register' />} />
-        <Route path='/reset' element={<AuthLegacyRoute mode='reset' />} />
-        <Route
-          path='/oauth/github'
-          element={
-            <Suspense fallback={<Loading></Loading>} key={location.pathname}>
-              <OAuth2Callback type='github'></OAuth2Callback>
-            </Suspense>
-          }
-        />
-        <Route
-          path='/oauth/discord'
-          element={
-            <Suspense fallback={<Loading></Loading>} key={location.pathname}>
-              <OAuth2Callback type='discord'></OAuth2Callback>
-            </Suspense>
-          }
-        />
-        <Route
-          path='/oauth/oidc'
-          element={
-            <Suspense fallback={<Loading></Loading>}>
-              <OAuth2Callback type='oidc'></OAuth2Callback>
-            </Suspense>
-          }
-        />
-        <Route
-          path='/oauth/linuxdo'
-          element={
-            <Suspense fallback={<Loading></Loading>} key={location.pathname}>
-              <OAuth2Callback type='linuxdo'></OAuth2Callback>
-            </Suspense>
-          }
-        />
-        <Route
-          path='/oauth/:provider'
-          element={
-            <Suspense fallback={<Loading></Loading>} key={location.pathname}>
-              <DynamicOAuth2Callback />
-            </Suspense>
-          }
-        />
-        <Route
-          path='/console/setting'
-          element={
-            <AdminRoute>
-              <Suspense fallback={<Loading></Loading>} key={location.pathname}>
-                <Setting />
-              </Suspense>
-            </AdminRoute>
-          }
-        />
-        <Route
-          path='/console/personal'
-          element={
-            <PrivateRoute>
-              <Suspense fallback={<Loading></Loading>} key={location.pathname}>
-                <PersonalSetting />
-              </Suspense>
-            </PrivateRoute>
-          }
-        />
-        <Route
-          path='/console/topup'
-          element={
-            <PrivateRoute>
-              <Suspense fallback={<Loading></Loading>} key={location.pathname}>
-                <TopUp />
-              </Suspense>
-            </PrivateRoute>
-          }
-        />
-        <Route
-          path='/console/log'
-          element={
-            <PrivateRoute>
-              <Log />
-            </PrivateRoute>
-          }
-        />
-        <Route
-          path='/console'
-          element={
-            <PrivateRoute>
-              <Suspense fallback={<Loading></Loading>} key={location.pathname}>
-                <Dashboard />
-              </Suspense>
-            </PrivateRoute>
-          }
-        />
-        <Route
-          path='/pricing'
-          element={
-            pricingRequireAuth ? (
-              <PrivateRoute>
-                <Suspense
-                  fallback={<Loading></Loading>}
-                  key={location.pathname}
-                >
-                  <Pricing />
-                </Suspense>
-              </PrivateRoute>
-            ) : (
-              <Suspense fallback={<Loading></Loading>} key={location.pathname}>
-                <Pricing />
-              </Suspense>
-            )
-          }
-        />
-        <Route
-          path='/user-agreement'
-          element={
-            <Suspense fallback={<Loading></Loading>} key={location.pathname}>
-              <UserAgreement />
-            </Suspense>
-          }
-        />
-        <Route
-          path='/privacy-policy'
-          element={
-            <Suspense fallback={<Loading></Loading>} key={location.pathname}>
-              <PrivacyPolicy />
-            </Suspense>
-          }
-        />
-        <Route path='*' element={<NotFoundRedirect />} />
-      </Routes>
-    </SetupCheck>
-  );
-}
+      <Route path='*' element={<NotFoundRedirect />} />
+    </Route>
+  </Routes>
+);
 
 export default App;

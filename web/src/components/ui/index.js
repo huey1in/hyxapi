@@ -1,42 +1,57 @@
-/*
- * UI 设计系统统一入口
+/**
+ * Routify UI library — 业务端统一从此处 import。
  *
- * 所有业务代码应该从这里导入组件：
- *   import { Button, Input, Tag, Card } from '@/components/ui';
- *
- * 不要再从 common/form/Primitives、common/ui/Dropdown 等旧路径导入。
+ *   import { Button, Card, Modal } from '@/components/ui';
  */
 
-export { default as Button } from './Button';
-export { default as IconButton } from './IconButton';
+export { default as Button }     from './button/Button';
+export { default as IconButton } from './button/IconButton';
 
-export { default as Input, inputClass } from './Input';
-export { default as Textarea } from './Textarea';
-export { default as NumberInput } from './NumberInput';
+export { default as Tag }        from './feedback/Tag';
+export { default as Loading }    from './feedback/Loading';
+export { default as Skeleton }   from './feedback/Skeleton';
+export { default as Tooltip }    from './feedback/Tooltip';
+export { default as Notice }     from './feedback/Notice';
+export { default as Progress }   from './feedback/Progress';
+export {
+  default as ToastContainer,
+  showToast, showSuccess, showError, showInfo, showWarning,
+} from './feedback/Toast';
 
-export { default as Select } from './Select';
-export { default as Combobox } from './Combobox';
-export { default as MultiSelect } from './MultiSelect';
-export { default as Dropdown } from './Dropdown';
+export { default as Divider }     from './display/Divider';
+export { default as EmptyState }  from './display/EmptyState';
+export { default as CodeBlock }   from './display/CodeBlock';
+export { default as Accordion }   from './display/Accordion';
 
-export { default as Toggle } from './Toggle';
-export { default as Switch } from './Switch';
-export { default as Checkbox } from './Checkbox';
-export { default as Radio, RadioGroup } from './Radio';
+export { default as Card }        from './card/Card';
+export { default as SectionCard } from './card/SectionCard';
 
-export { default as Tag } from './Tag';
-export { default as Card } from './Card';
+export { default as Input, inputStyle, resolveWidth } from './input/Input';
+export { default as Textarea }    from './input/Textarea';
+export { default as NumberInput } from './input/NumberInput';
+export { default as TagInput }    from './input/TagInput';
+export { default as Slider }      from './input/Slider';
+export { default as FieldRow }    from './input/FieldRow';
 
-export { default as Modal } from './Modal';
-export { default as ModalShell } from './ModalShell';
-export { default as ConfirmDialog, showConfirm } from './ConfirmDialog';
-export { default as SlideOver } from './SlideOver';
+export { default as Select }      from './select/Select';
+export { default as Combobox }    from './select/Combobox';
+export { default as MultiSelect } from './select/MultiSelect';
 
-export { default as Tabs } from './Tabs';
-export { default as Pagination } from './Pagination';
-export { default as Loading } from './Loading';
-export { default as Skeleton } from './Skeleton';
-export { default as Tooltip } from './Tooltip';
+export { default as Switch }      from './toggle/Switch';
+export { default as Checkbox }    from './toggle/Checkbox';
+export { default as Radio, RadioGroup } from './toggle/Radio';
 
-// 设计 token（仅当需要在自定义场景中复用 token 时引用）
-export * as tokens from './tokens';
+export { default as Modal }         from './modal/Modal';
+export { default as ModalShell }    from './modal/ModalShell';
+export { default as ConfirmDialog } from './modal/ConfirmDialog';
+export { default as SlideOver }     from './modal/SlideOver';
+export { default as Drawer }        from './modal/Drawer';
+
+export { default as Tabs }       from './layout/Tabs';
+export { default as Table }      from './layout/Table';
+export { default as Pagination } from './layout/Pagination';
+export { default as Steps }      from './layout/Steps';
+export { default as Breadcrumb } from './layout/Breadcrumb';
+export { default as PageShell }  from './layout/PageShell';
+
+export { default as ThemeToggle, useTheme } from './theme/ThemeToggle';

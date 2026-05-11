@@ -1,0 +1,165 @@
+/*
+ * EditRedemptionModal — 与 web-backup 同构。
+ */
+
+import React, { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import { API, downloadTextAsFile, showError, showSuccess, renderQuota, getCurrencyConfig } from '../../../../helpers';
+import { quotaToDisplayAmount, displayAmountToQuota } from '../../../../helpers/quota';
+import { useIsMobile } from '../../../../hooks/common/useIsMobile';
+import { showConfirm } from '../../confirm';
+import { SlideOver, Button, Card, Input, NumberInput, FieldRow } from '../../../ui';
+
+const SectionCard = ({ title, hint, children }) => (
+  <Card>
+    <div className='mb-3'>
+      <div className='text-sm font-semibold text-ui-text'>{title}</div>
+      {hint && <div className='text-[11px] text-ui-text-3 mt-0.5'>{hint}</div>}
+    </div>
+    <div className='space-y-3'>{children}</div>
+  </Card>
+);
+
+const DEFAULTS = () => ({
+  name: '', quota: 100000,
+  amount: Number(quotaToDisplayAmount(100000).toFixed(6)),
+  count: 1, expired_time: '',
+});
+
+const EditRedemptionModal = (props) => {
+  const { t } = useTranslation();
+  const isEdit = props.editingRedemption?.id !== undefined;
+  const isMobile = useIsMobile();
+  const [loading, setLoading] = useState(false);
+  const [showQuotaInput, setShowQuotaInput] = useState(false);
+  const [values, setValues] = useState(DEFAULTS());
+  const set = (k, v) => setValues((p) => ({ ...p, [k]: v }));
+
+  const loadRedemption = async () => {
+    setLoading(true);
+    try {
+      const res = await API.get(`/api/redemption/${props.editingRedemption.id}`);
+      const { success, message, data } = res.data;
+      if (success) {
+        const expired_time = data.expired_time === 0 ? '' : new Date(data.expired_time * 1000).toISOString().slice(0, 16);
+        setValues({
+          ...DEFAULTS(),
+          name: data.name || '',
+          quota: data.quota || 0,
+          amount: Number(quotaToDisplayAmount(data.quota || 0).toFixed(6)),
+          count: 1, expired_time,
+        });
+      } else showError(message);
+    } catch (e) { showError(e.message); }
+    finally { setLoading(false); }
+  };
+
+  useEffect(() => {
+    if (!props.visiable) return;
+    if (isEdit) loadRedemption(); else setValues(DEFAULTS());
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [props.visiable, props.editingRedemption?.id]);
+
+  const onAmountChange = (v) => {
+    const a = v == null || v === '' ? 0 : v;
+    setValues((p) => ({ ...p, amount: a, quota: displayAmountToQuota(a) }));
+  };
+  const onQuotaChange = (v) => {
+    const q = v == null || v === '' ? 0 : v;
+    setValues((p) => ({ ...p, quota: q, amount: Number(quotaToDisplayAmount(q).toFixed(6)) }));
+  };
+
+  const submit = async () => {
+    let name = values.name;
+    if (!isEdit && !name) name = renderQuota(values.quota);
+    if (!values.quota || values.quota <= 0) { showError(t('请输入金额')); return; }
+    setLoading(true);
+    const body = {
+      ...values, name,
+      count: parseInt(values.count) || 1,
+      quota: displayAmountToQuota(values.amount),
+      expired_time: values.expired_time ? Math.floor(new Date(values.expired_time).getTime() / 1000) : 0,
+    };
+    try {
+      const res = isEdit
+        ? await API.put('/api/redemption/', { ...body, id: parseInt(props.editingRedemption.id) })
+        : await API.post('/api/redemption/', body);
+      const { success, message, data } = res.data;
+      if (success) {
+        showSuccess(isEdit ? t('兑换码更新成功！') : t('兑换码创建成功！'));
+        props.refresh();
+        props.handleClose();
+        if (!isEdit && data) {
+          const text = data.join('\n');
+          showConfirm({
+            title: t('兑换码创建成功'),
+            content: t('是否下载为文本文件？'),
+            okText: t('下载'), cancelText: t('取消'),
+            onOk: () => downloadTextAsFile(text, `${body.name}.txt`),
+          });
+        }
+      } else showError(message);
+    } catch (e) { showError(e.message); }
+    finally { setLoading(false); }
+  };
+
+  return (
+    <SlideOver
+      open={!!props.visiable}
+      onClose={props.handleClose}
+      placement={isEdit ? 'right' : 'left'}
+      width={isMobile ? window.innerWidth : 600}
+      title={
+        <>
+          <span className={`inline-flex items-center px-2 py-0.5 text-[11px] font-medium rounded-xl ${isEdit ? 'bg-blue-500/10 text-blue-600 dark:text-blue-400' : 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'}`}>
+            {isEdit ? t('更新') : t('新建')}
+          </span>
+          <span className='text-base font-semibold text-ui-text truncate'>{isEdit ? t('更新兑换码信息') : t('创建新的兑换码')}</span>
+        </>
+      }
+      footer={
+        <>
+          <Button variant='toggle' onClick={props.handleClose}>{t('取消')}</Button>
+          <Button onClick={submit} loading={loading}>{loading ? t('提交中...') : t('提交')}</Button>
+        </>
+      }
+    >
+      <div className='p-5 space-y-4'>
+        <SectionCard title={t('基本信息')} hint={t('设置兑换码的基本信息')}>
+          <FieldRow label={t('名称')} required={isEdit}>
+            <Input value={values.name} onChange={(v) => set('name', v)} placeholder={t('请输入名称（留空时自动以额度命名）')} />
+          </FieldRow>
+          <FieldRow label={t('过期时间')} hint={t('留空表示永不过期')}>
+            <Input type='datetime-local' value={values.expired_time} onChange={(v) => set('expired_time', v)} />
+          </FieldRow>
+        </SectionCard>
+
+        <SectionCard title={t('额度设置')} hint={t('设置兑换码的额度和数量')}>
+          <FieldRow label={t('金额')}>
+            <Input
+              type='number' step='0.000001' min='0'
+              value={values.amount}
+              onChange={(v) => onAmountChange(parseFloat(v) || 0)}
+              prefix={<span className='text-ui-text-3 text-xs'>{getCurrencyConfig().symbol}</span>}
+            />
+          </FieldRow>
+          <button type='button' onClick={() => setShowQuotaInput((v) => !v)} className='text-[11px] text-ui-text-3 hover:text-ui-text'>
+            {showQuotaInput ? `▾ ${t('收起原生额度输入')}` : `▸ ${t('使用原生额度输入')}`}
+          </button>
+          {showQuotaInput && (
+            <FieldRow label={t('额度')}>
+              <NumberInput value={values.quota} onChange={onQuotaChange} min={1} />
+            </FieldRow>
+          )}
+          {!isEdit && (
+            <FieldRow label={t('生成数量')}>
+              <NumberInput value={values.count} onChange={(v) => set('count', Math.max(1, Math.floor(v)))} min={1} />
+            </FieldRow>
+          )}
+        </SectionCard>
+      </div>
+    </SlideOver>
+  );
+};
+
+export default EditRedemptionModal;

@@ -1,13 +1,10 @@
-/*
-Copyright (C) 2025 QuantumNous
-
-Redemption code admin page entry.
-*/
-
 import React from 'react';
 import { usePageTitle } from '../../hooks/common/usePageTitle';
-import RedemptionsPage from '../../components/table/redemptions';
+import RedemptionsPage from '../../components/business/redemptions';
 
-const Redemption = () => <RedemptionsPage />;
+const Redemption = () => {
+  usePageTitle('兑换码管理');
+  return <RedemptionsPage />;
+};
 
 export default Redemption;

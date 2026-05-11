@@ -16,8 +16,7 @@ import {
   isAdmin,
 } from '../../helpers';
 import { UserContext } from '../../context/User';
-import Pagination from '../../components/common/table/Pagination';
-import { Button, IconButton, inputClass } from '../../components/ui';
+import { Button, IconButton, Pagination, inputStyle } from '../../components/ui';
 
 const PAGE_SIZE = 20;
 
@@ -263,7 +262,7 @@ const LogsView = () => {
     }));
   };
 
-  const inputCls = inputClass({ variant: 'admin', size: 'md' });
+  const inputCls = 'h-9 px-3 text-sm border border-ui-border rounded-xl bg-transparent text-ui-text outline-none focus:border-ui-text-3 transition-colors placeholder:text-ui-text-3 disabled:opacity-50 w-full';
 
   const cols = [
     t('创建时间'),

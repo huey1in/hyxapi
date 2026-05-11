@@ -1,13 +1,10 @@
-/*
-Copyright (C) 2025 QuantumNous
-
-Subscription admin page entry.
-*/
-
 import React from 'react';
 import { usePageTitle } from '../../hooks/common/usePageTitle';
-import SubscriptionsPage from '../../components/table/subscriptions';
+import SubscriptionsPage from '../../components/business/subscriptions';
 
-const Subscription = () => <SubscriptionsPage />;
+const Subscription = () => {
+  usePageTitle('订阅管理');
+  return <SubscriptionsPage />;
+};
 
 export default Subscription;

@@ -47,41 +47,15 @@ function Tag({ color, children, prefixIcon, suffixIcon, onClick, size, shape }) 
 import { copy, showSuccess, showError } from './utils';
 import { MOBILE_BREAKPOINT } from '../hooks/common/useIsMobile';
 import { visit } from 'unist-util-visit';
-import * as LobeIcons from '@lobehub/icons';
-import {
-  OpenAI,
-  Claude,
-  Gemini,
-  Moonshot,
-  Zhipu,
-  Qwen,
-  DeepSeek,
-  Minimax,
-  Wenxin,
-  Spark,
-  Midjourney,
-  Hunyuan,
-  Cohere,
-  Cloudflare,
-  Ai360,
-  Yi,
-  Jina,
-  Mistral,
-  XAI,
-  Ollama,
-  Doubao,
-  Suno,
-  Xinference,
-  OpenRouter,
-  Dify,
-  Coze,
-  SiliconCloud,
-  FastGPT,
-  Kling,
-  Jimeng,
-  Perplexity,
-  Replicate,
-} from '@lobehub/icons';
+/* @lobehub/icons 暂未安装：用空注册表 + null 替代，业务方走 fallback 渲染 */
+const LobeIcons = {};
+const OpenAI = null, Claude = null, Gemini = null, Moonshot = null, Zhipu = null,
+  Qwen = null, DeepSeek = null, Minimax = null, Wenxin = null, Spark = null,
+  Midjourney = null, Hunyuan = null, Cohere = null, Cloudflare = null, Ai360 = null,
+  Yi = null, Jina = null, Mistral = null, XAI = null, Ollama = null, Doubao = null,
+  Suno = null, Xinference = null, OpenRouter = null, Dify = null, Coze = null,
+  SiliconCloud = null, FastGPT = null, Kling = null, Jimeng = null, Perplexity = null,
+  Replicate = null;
 
 import {
   LayoutDashboard,

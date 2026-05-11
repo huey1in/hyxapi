@@ -1,13 +1,10 @@
-/*
-Copyright (C) 2025 QuantumNous
-
-User admin page entry.
-*/
-
 import React from 'react';
 import { usePageTitle } from '../../hooks/common/usePageTitle';
-import UsersPage from '../../components/table/users';
+import UsersPage from '../../components/business/users';
 
-const User = () => <UsersPage />;
+const User = () => {
+  usePageTitle('用户管理');
+  return <UsersPage />;
+};
 
 export default User;

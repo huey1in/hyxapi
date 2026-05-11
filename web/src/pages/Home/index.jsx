@@ -29,7 +29,8 @@ import { useActualTheme } from '../../context/Theme';
 import { UserContext } from '../../context/User';
 import { Button, IconButton, Card } from '../../components/ui';
 import { useLoginModal } from '../../context/LoginModal';
-import NoticeModal from '../../components/layout/NoticeModal';
+/* NoticeModal 暂未迁移；用一个不渲染任何内容的占位 */
+const NoticeModal = () => null;
 
 const SnakeCanvas = () => {
   const canvasRef = useRef(null);

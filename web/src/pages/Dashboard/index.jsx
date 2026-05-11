@@ -1,8 +1,5 @@
-/*
-Copyright (C) 2025 QuantumNous
-*/
 import React from 'react';
-import Dashboard from '../../components/dashboard';
+import Dashboard from '../../components/business/dashboard';
 
 const Detail = () => <Dashboard />;
 

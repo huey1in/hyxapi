@@ -1,5 +1,8 @@
 web/node_modules/
 web/dist/
+web/storybook-static/
+web-backup/
+.DS_Store
 *.db
 *.log
 .env
