@@ -1,8 +1,9 @@
 /*
- * 仪表盘内容 wrapper — token shell.
+ * 仪表盘内容 wrapper — page-bg + rounded-[20px] style.
  */
 
 import React, { useEffect, useState, useMemo } from 'react';
+import { Loader2 } from 'lucide-react';
 import { API, showError, showSuccess, toBoolean } from '../../helpers';
 import { showConfirm } from '../common/ConfirmDialog';
 import SettingsAPIInfo from '../../pages/Setting/Dashboard/SettingsAPIInfo';
@@ -12,13 +13,13 @@ import SettingsUptimeKuma from '../../pages/Setting/Dashboard/SettingsUptimeKuma
 import SettingsDataDashboard from '../../pages/Setting/Dashboard/SettingsDataDashboard';
 import { Card } from '../ui';
 
-const TokenCard = ({ children, className = '' }) => (
-  <Card variant='elevated' padding='lg' radius='md' className={className}>
+const SectionCard = ({ children, className = '' }) => (
+  <Card variant='plain' padding='lg' radius='xxl' className={className}>
     {children}
   </Card>
 );
 
-const DashboardSetting = () => {
+const DashboardSetting = ({ registerRefresh }) => {
   let [inputs, setInputs] = useState({
     'console_setting.api_info': '',
     'console_setting.announcements': '',
@@ -72,7 +73,8 @@ const DashboardSetting = () => {
 
   useEffect(() => {
     onRefresh();
-  }, []);
+    registerRefresh?.(onRefresh);
+  }, []); // eslint-disable-line
 
   const hasLegacyData = useMemo(() => {
     const legacyKeys = ['ApiInfo', 'Announcements', 'FAQ', 'UptimeKumaUrl', 'UptimeKumaSlug'];
@@ -107,25 +109,26 @@ const DashboardSetting = () => {
   return (
     <div className='space-y-3 relative'>
       {loading && (
-        <div className='absolute inset-0 z-10 flex items-center justify-center bg-ui-bg/60'>
-          </div>
+        <div className='absolute inset-0 z-10 flex items-center justify-center bg-[var(--page-bg)]/60 rounded-[20px]'>
+          <Loader2 size={20} className='animate-spin text-ui-text-3' />
+        </div>
       )}
 
-      <TokenCard>
+      <SectionCard>
         <SettingsDataDashboard options={inputs} refresh={onRefresh} />
-      </TokenCard>
-      <TokenCard>
+      </SectionCard>
+      <SectionCard>
         <SettingsAnnouncements options={inputs} refresh={onRefresh} />
-      </TokenCard>
-      <TokenCard>
+      </SectionCard>
+      <SectionCard>
         <SettingsAPIInfo options={inputs} refresh={onRefresh} />
-      </TokenCard>
-      <TokenCard>
+      </SectionCard>
+      <SectionCard>
         <SettingsFAQ options={inputs} refresh={onRefresh} />
-      </TokenCard>
-      <TokenCard>
+      </SectionCard>
+      <SectionCard>
         <SettingsUptimeKuma options={inputs} refresh={onRefresh} />
-      </TokenCard>
+      </SectionCard>
     </div>
   );
 };

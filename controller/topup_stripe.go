@@ -264,19 +264,6 @@ func fulfillOrder(ctx context.Context, event stripe.Event, referenceId string, c
 
 	LockOrder(referenceId)
 	defer UnlockOrder(referenceId)
-	payload := map[string]any{
-		"customer":     customerId,
-		"amount_total": event.GetObjectValue("amount_total"),
-		"currency":     strings.ToUpper(event.GetObjectValue("currency")),
-		"event_type":   string(event.Type),
-	}
-	if err := model.CompleteSubscriptionOrder(referenceId, common.GetJsonString(payload), model.PaymentMethodStripe); err == nil {
-		logger.LogInfo(ctx, fmt.Sprintf("Stripe 订阅订单处理成功 trade_no=%s event_type=%s client_ip=%s", referenceId, string(event.Type), callerIp))
-		return
-	} else if err != nil && !errors.Is(err, model.ErrSubscriptionOrderNotFound) {
-		logger.LogError(ctx, fmt.Sprintf("Stripe 订阅订单处理失败 trade_no=%s event_type=%s client_ip=%s error=%q", referenceId, string(event.Type), callerIp, err.Error()))
-		return
-	}
 
 	err := model.Recharge(referenceId, customerId, callerIp)
 	if err != nil {
@@ -302,16 +289,8 @@ func sessionExpired(ctx context.Context, event stripe.Event) {
 		return
 	}
 
-	// Subscription order expiration
 	LockOrder(referenceId)
 	defer UnlockOrder(referenceId)
-	if err := model.ExpireSubscriptionOrder(referenceId, model.PaymentMethodStripe); err == nil {
-		logger.LogInfo(ctx, fmt.Sprintf("Stripe 订阅订单已过期 trade_no=%s", referenceId))
-		return
-	} else if err != nil && !errors.Is(err, model.ErrSubscriptionOrderNotFound) {
-		logger.LogError(ctx, fmt.Sprintf("Stripe 订阅订单过期处理失败 trade_no=%s error=%q", referenceId, err.Error()))
-		return
-	}
 
 	err := model.UpdatePendingTopUpStatus(referenceId, model.PaymentMethodStripe, common.TopUpStatusExpired)
 	if errors.Is(err, model.ErrTopUpNotFound) {
@@ -386,7 +365,8 @@ func genStripeLink(referenceId string, customerId string, email string, amount i
 }
 
 func GetChargedAmount(count float64, user model.User) float64 {
-	topUpGroupRatio := common.GetTopupGroupRatio(user.Group)
+	_ = user // 用户分组概念已删除，充值倍率统一走 "default"
+	topUpGroupRatio := common.GetTopupGroupRatio("default")
 	if topUpGroupRatio == 0 {
 		topUpGroupRatio = 1
 	}

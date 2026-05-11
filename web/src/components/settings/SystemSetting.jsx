@@ -3,6 +3,7 @@
  * Composes auth sub-components from auth/*.jsx.
  */
 import React, { useEffect, useState } from 'react';
+import { Loader2 } from 'lucide-react';
 import {
   API,
   removeTrailingSlash,
@@ -15,8 +16,15 @@ import { ServerCard, SSRFCard } from './auth/ServerAndSSRF';
 import LoginRegisterCard from './auth/LoginRegister';
 import { PasskeyCard, EmailWhitelistCard, SMTPCard, TurnstileCard } from './auth/PasskeyAndMisc';
 import { GitHubOAuthCard, DiscordOAuthCard, LinuxDOOAuthCard, TelegramCard } from './auth/OAuthProviders';
+import { Card } from '../ui';
 
-const SystemSetting = () => {
+const SectionCard = ({ children, className = '' }) => (
+  <Card variant='plain' padding='lg' radius='xxl' className={className}>
+    {children}
+  </Card>
+);
+
+const SystemSetting = ({ registerRefresh }) => {
   const { t } = useTranslation();
   const [inputs, setInputs] = useState({
     PasswordLoginEnabled: '',
@@ -134,7 +142,10 @@ const SystemSetting = () => {
     setLoading(false);
   };
 
-  useEffect(() => { getOptions(); }, []);
+  useEffect(() => {
+    getOptions();
+    registerRefresh?.(getOptions);
+  }, []); // eslint-disable-line
 
   const updateOptions = async (options) => {
     setLoading(true);
@@ -233,48 +244,59 @@ const SystemSetting = () => {
   if (!isLoaded) {
     return (
       <div className='flex items-center justify-center h-64'>
-        </div>
+        <Loader2 size={20} className='animate-spin text-ui-text-3' />
+      </div>
     );
   }
 
-  const sectionGap = <div className='border-t border-ui-divider' />;
-
   return (
-    <div className='space-y-6'>
-      <ServerCard inputs={inputs} setInputs={setInputs} submitServerAddress={submitServerAddress} t={t} />
-      {sectionGap}
-      <SSRFCard
-        inputs={inputs} setInputs={setInputs}
-        domainFilterMode={domainFilterMode} setDomainFilterMode={setDomainFilterMode}
-        ipFilterMode={ipFilterMode} setIpFilterMode={setIpFilterMode}
-        domainList={domainList} setDomainList={setDomainList}
-        ipList={ipList} setIpList={setIpList}
-        allowedPorts={allowedPorts} setAllowedPorts={setAllowedPorts}
-        handleCheckboxChange={(key, e) => updateOptions([{ key, value: e.target.checked }])}
-        submitSSRF={submitSSRF} t={t}
-      />
-      {sectionGap}
-      <LoginRegisterCard inputs={inputs} updateOptions={updateOptions} t={t} />
-      {sectionGap}
-      <PasskeyCard inputs={inputs} setInputs={setInputs} submitPasskeySettings={submitPasskeySettings} t={t} />
-      {sectionGap}
-      <EmailWhitelistCard
-        inputs={inputs} updateOptions={updateOptions}
-        emailDomainWhitelist={emailDomainWhitelist} setEmailDomainWhitelist={setEmailDomainWhitelist}
-        emailToAdd={emailToAdd} setEmailToAdd={setEmailToAdd} t={t}
-      />
-      {sectionGap}
-      <SMTPCard inputs={inputs} setInputs={setInputs} submitSMTP={submitSMTP} t={t} />
-      {sectionGap}
-      <GitHubOAuthCard inputs={inputs} setInputs={setInputs} submitGitHubOAuth={submitGitHubOAuth} t={t} />
-      {sectionGap}
-      <DiscordOAuthCard inputs={inputs} setInputs={setInputs} submitDiscordOAuth={submitDiscordOAuth} t={t} />
-      {sectionGap}
-      <LinuxDOOAuthCard inputs={inputs} setInputs={setInputs} submitLinuxDOOAuth={submitLinuxDOOAuth} t={t} />
-      {sectionGap}
-      <TelegramCard inputs={inputs} setInputs={setInputs} submitTelegramSettings={submitTelegramSettings} t={t} />
-      {sectionGap}
-      <TurnstileCard inputs={inputs} setInputs={setInputs} submitTurnstile={submitTurnstile} t={t} />
+    <div className='space-y-3'>
+      <SectionCard>
+        <ServerCard inputs={inputs} setInputs={setInputs} submitServerAddress={submitServerAddress} t={t} />
+      </SectionCard>
+      <SectionCard>
+        <SSRFCard
+          inputs={inputs} setInputs={setInputs}
+          domainFilterMode={domainFilterMode} setDomainFilterMode={setDomainFilterMode}
+          ipFilterMode={ipFilterMode} setIpFilterMode={setIpFilterMode}
+          domainList={domainList} setDomainList={setDomainList}
+          ipList={ipList} setIpList={setIpList}
+          allowedPorts={allowedPorts} setAllowedPorts={setAllowedPorts}
+          handleCheckboxChange={(key, e) => updateOptions([{ key, value: e.target.checked }])}
+          submitSSRF={submitSSRF} t={t}
+        />
+      </SectionCard>
+      <SectionCard>
+        <LoginRegisterCard inputs={inputs} updateOptions={updateOptions} t={t} />
+      </SectionCard>
+      <SectionCard>
+        <PasskeyCard inputs={inputs} setInputs={setInputs} submitPasskeySettings={submitPasskeySettings} t={t} />
+      </SectionCard>
+      <SectionCard>
+        <EmailWhitelistCard
+          inputs={inputs} updateOptions={updateOptions}
+          emailDomainWhitelist={emailDomainWhitelist} setEmailDomainWhitelist={setEmailDomainWhitelist}
+          emailToAdd={emailToAdd} setEmailToAdd={setEmailToAdd} t={t}
+        />
+      </SectionCard>
+      <SectionCard>
+        <SMTPCard inputs={inputs} setInputs={setInputs} submitSMTP={submitSMTP} t={t} />
+      </SectionCard>
+      <SectionCard>
+        <GitHubOAuthCard inputs={inputs} setInputs={setInputs} submitGitHubOAuth={submitGitHubOAuth} t={t} />
+      </SectionCard>
+      <SectionCard>
+        <DiscordOAuthCard inputs={inputs} setInputs={setInputs} submitDiscordOAuth={submitDiscordOAuth} t={t} />
+      </SectionCard>
+      <SectionCard>
+        <LinuxDOOAuthCard inputs={inputs} setInputs={setInputs} submitLinuxDOOAuth={submitLinuxDOOAuth} t={t} />
+      </SectionCard>
+      <SectionCard>
+        <TelegramCard inputs={inputs} setInputs={setInputs} submitTelegramSettings={submitTelegramSettings} t={t} />
+      </SectionCard>
+      <SectionCard>
+        <TurnstileCard inputs={inputs} setInputs={setInputs} submitTurnstile={submitTurnstile} t={t} />
+      </SectionCard>
     </div>
   );
 };

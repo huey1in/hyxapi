@@ -261,16 +261,10 @@ func RecalculateTaskQuotaByTokens(ctx context.Context, task *model.Task, totalTo
 		return
 	}
 
-	// 获取用户和组的倍率信息
+	// 获取分组倍率信息（用户分组概念已删除，task.Group 缺省回落到 "default"）
 	group := task.Group
 	if group == "" {
-		user, err := model.GetUserById(task.UserId, false)
-		if err == nil {
-			group = user.Group
-		}
-	}
-	if group == "" {
-		return
+		group = "default"
 	}
 
 	groupRatio := ratio_setting.GetGroupRatio(group)

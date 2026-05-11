@@ -4,6 +4,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { Loader2 } from 'lucide-react';
 
 import ModelPricingCombined from '../../pages/Setting/Ratio/ModelPricingCombined';
 import GroupRatioSettings from '../../pages/Setting/Ratio/GroupRatioSettings';
@@ -38,7 +39,7 @@ const PRETTY_JSON_KEYS = new Set([
   'global.chat_completions_to_responses_policy',
 ]);
 
-const RatioSetting = () => {
+const RatioSetting = ({ registerRefresh }) => {
   const { t } = useTranslation();
   const [active, setActive] = useState('pricing');
 
@@ -113,6 +114,7 @@ const RatioSetting = () => {
 
   useEffect(() => {
     onRefresh();
+    registerRefresh?.(onRefresh);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -121,12 +123,13 @@ const RatioSetting = () => {
   return (
     <div className='relative'>
       {loading && (
-        <div className='absolute inset-0 z-10 flex items-center justify-center bg-ui-bg/60'>
-          </div>
+        <div className='absolute inset-0 z-10 flex items-center justify-center bg-[var(--page-bg)]/60 rounded-[20px]'>
+          <Loader2 size={20} className='animate-spin text-ui-text-3' />
+        </div>
       )}
-      <Card variant='elevated' radius='md' padding='none'>
+      <Card variant='plain' radius='xxl' padding='none'>
         {/* Sub-tab bar */}
-        <div className='border-b border-ui-border bg-ui-bg-subtle/40 px-2 py-1.5 overflow-x-auto'>
+        <div className='border-b border-ui-border px-2 py-1.5 overflow-x-auto'>
           <div className='flex items-center gap-0.5 min-w-max'>
             {SUB_TABS.map((s) => (
               <Button

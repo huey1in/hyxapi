@@ -3,9 +3,8 @@
  * separate ColumnDefs file needed.
  */
 import React from 'react';
-import { Loader2, Edit2, Power, Info, Ticket } from 'lucide-react';
+import { Loader2, Edit2, Power, Info, Ticket, Trash2 } from 'lucide-react';
 import { renderQuota } from '../../../helpers';
-import { convertUSDToCurrency } from '../../../helpers/render';
 import { showConfirm } from '../../common/ConfirmDialog';
 import TableActionBtn from '../common/TableActionBtn';
 
@@ -56,12 +55,37 @@ const formatResetPeriod = (plan, t) => {
   return t('不重置');
 };
 
+const parseJsonList = (raw) => {
+  if (Array.isArray(raw)) return raw;
+  if (typeof raw !== 'string' || !raw.trim()) return [];
+  try {
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+};
+
+const formatLimitsSummary = (plan, t) => {
+  const groups = parseJsonList(plan?.allowed_groups);
+  const models = parseJsonList(plan?.allowed_models);
+  const concurrent = Number(plan?.concurrent_limit || 0);
+  const rpm = Number(plan?.rpm_limit || 0);
+  const parts = [];
+  parts.push(groups.length > 0 ? `${t('分组')}：${groups.length}` : `${t('分组')}：${t('不限')}`);
+  parts.push(models.length > 0 ? `${t('模型')}：${models.length}` : `${t('模型')}：${t('不限')}`);
+  parts.push(concurrent > 0 ? `${t('并发')}：${concurrent}` : `${t('并发')}：${t('不限')}`);
+  parts.push(rpm > 0 ? `RPM：${rpm}` : `RPM：${t('不限')}`);
+  return parts;
+};
+
 const SubscriptionsTable = ({
   plans,
   loading,
   openEdit,
   openCodes,
   setPlanEnabled,
+  deletePlan,
   t,
 }) => {
   if (loading) {
@@ -89,6 +113,20 @@ const SubscriptionsTable = ({
     });
   };
 
+  const handleDelete = (record) => {
+    const plan = record?.plan;
+    if (!plan) return;
+    showConfirm({
+      title: t('确认删除套餐'),
+      content: t(
+        '将删除套餐「{{title}}」及其所有未使用的兑换码。已激活的用户订阅历史不受影响。该操作不可恢复，是否继续？',
+        { title: plan.title || `#${plan.id}` },
+      ),
+      danger: true,
+      onOk: () => deletePlan?.(record),
+    });
+  };
+
   return (
     <div className='overflow-x-auto nice-scroll'>
       <table className='w-full text-sm border-collapse' style={{ minWidth: '1100px' }}>
@@ -96,13 +134,11 @@ const SubscriptionsTable = ({
           <tr className='border-b border-ui-border'>
             <th className='text-left px-4 py-3 text-[12px] font-medium text-ui-text-2 whitespace-nowrap w-16'>ID</th>
             <th className='text-left px-4 py-3 text-[12px] font-medium text-ui-text-2 whitespace-nowrap min-w-[180px]'>{t('套餐')}</th>
-            <th className='text-left px-4 py-3 text-[12px] font-medium text-ui-text-2 whitespace-nowrap min-w-[100px]'>{t('价格')}</th>
-            <th className='text-left px-4 py-3 text-[12px] font-medium text-ui-text-2 whitespace-nowrap min-w-[90px]'>{t('购买上限')}</th>
             <th className='text-left px-4 py-3 text-[12px] font-medium text-ui-text-2 whitespace-nowrap min-w-[80px]'>{t('优先级')}</th>
             <th className='text-left px-4 py-3 text-[12px] font-medium text-ui-text-2 whitespace-nowrap min-w-[100px]'>{t('有效期')}</th>
             <th className='text-left px-4 py-3 text-[12px] font-medium text-ui-text-2 whitespace-nowrap min-w-[80px]'>{t('重置')}</th>
             <th className='text-left px-4 py-3 text-[12px] font-medium text-ui-text-2 whitespace-nowrap min-w-[100px]'>{t('总额度')}</th>
-            <th className='text-left px-4 py-3 text-[12px] font-medium text-ui-text-2 whitespace-nowrap min-w-[100px]'>{t('升级分组')}</th>
+            <th className='text-left px-4 py-3 text-[12px] font-medium text-ui-text-2 whitespace-nowrap min-w-[220px]'>{t('访问限制')}</th>
             <th className='text-left px-4 py-3 text-[12px] font-medium text-ui-text-2 whitespace-nowrap min-w-[80px]'>{t('状态')}</th>
             <th
               className='text-right px-4 py-3 text-[12px] font-medium text-ui-text-2 whitespace-nowrap sticky right-0 min-w-[220px]'
@@ -115,9 +151,8 @@ const SubscriptionsTable = ({
         <tbody>
           {plans.map((record) => {
             const plan = record?.plan || {};
-            const limit = Number(plan.max_purchase_per_user || 0);
             const total = Number(plan.total_amount || 0);
-            const group = plan.upgrade_group || '';
+            const limitsParts = formatLimitsSummary(plan, t);
             return (
               <tr key={plan.id} className='border-b border-ui-divider last:border-b-0 hover:bg-ui-bg-subtle/50 transition-colors'>
                 <td className='px-4 py-3 align-middle text-[13px] text-ui-text-3 tabular-nums'>#{plan.id}</td>
@@ -132,16 +167,6 @@ const SubscriptionsTable = ({
                       </div>
                     )}
                   </div>
-                </td>
-                <td className='px-4 py-3 align-middle'>
-                  <span className='text-[13px] font-semibold text-emerald-600 dark:text-emerald-400 tabular-nums whitespace-nowrap'>
-                    {convertUSDToCurrency(Number(plan.price_amount || 0), 2)}
-                  </span>
-                </td>
-                <td className='px-4 py-3 align-middle text-[13px] tabular-nums'>
-                  <span className={limit > 0 ? 'text-ui-text-2' : 'text-ui-text-3'}>
-                    {limit > 0 ? limit : t('不限')}
-                  </span>
                 </td>
                 <td className='px-4 py-3 align-middle text-[13px] text-ui-text-3 tabular-nums'>
                   {Number(plan.sort_order || 0)}
@@ -164,10 +189,17 @@ const SubscriptionsTable = ({
                     <span className='text-ui-text-3'>{t('不限')}</span>
                   )}
                 </td>
-                <td className='px-4 py-3 align-middle text-[13px]'>
-                  <span className={group ? 'text-ui-text-2' : 'text-ui-text-3'}>
-                    {group || t('不升级')}
-                  </span>
+                <td className='px-4 py-3 align-middle text-[12px]'>
+                  <div className='flex flex-wrap gap-1.5'>
+                    {limitsParts.map((p, idx) => (
+                      <span
+                        key={idx}
+                        className='inline-flex items-center px-1.5 py-0.5 text-[10.5px] rounded-md bg-ui-bg-subtle text-ui-text-2 whitespace-nowrap'
+                      >
+                        {p}
+                      </span>
+                    ))}
+                  </div>
                 </td>
                 <td className='px-4 py-3 align-middle'>
                   <StatusPill enabled={plan.enabled} t={t} />
@@ -196,6 +228,10 @@ const SubscriptionsTable = ({
                         {t('启用')}
                       </TableActionBtn>
                     )}
+                    <TableActionBtn danger onClick={() => handleDelete(record)}>
+                      <Trash2 size={11} />
+                      {t('删除')}
+                    </TableActionBtn>
                   </div>
                 </td>
               </tr>

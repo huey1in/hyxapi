@@ -6,7 +6,6 @@ import (
 
 	"github.com/QuantumNous/new-api/common"
 	"github.com/QuantumNous/new-api/model"
-	"github.com/QuantumNous/new-api/setting/ratio_setting"
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 )
@@ -118,38 +117,23 @@ func AdminCreateSubscriptionPlan(c *gin.Context) {
 		common.ApiErrorMsg(c, "套餐标题不能为空")
 		return
 	}
-	if req.Plan.PriceAmount < 0 {
-		common.ApiErrorMsg(c, "价格不能为负数")
-		return
-	}
-	if req.Plan.PriceAmount > 9999 {
-		common.ApiErrorMsg(c, "价格不能超过9999")
-		return
-	}
-	if req.Plan.Currency == "" {
-		req.Plan.Currency = "USD"
-	}
-	req.Plan.Currency = "USD"
 	if req.Plan.DurationUnit == "" {
 		req.Plan.DurationUnit = model.SubscriptionDurationMonth
 	}
 	if req.Plan.DurationValue <= 0 && req.Plan.DurationUnit != model.SubscriptionDurationCustom {
 		req.Plan.DurationValue = 1
 	}
-	if req.Plan.MaxPurchasePerUser < 0 {
-		common.ApiErrorMsg(c, "购买上限不能为负数")
-		return
-	}
 	if req.Plan.TotalAmount < 0 {
 		common.ApiErrorMsg(c, "总额度不能为负数")
 		return
 	}
-	req.Plan.UpgradeGroup = strings.TrimSpace(req.Plan.UpgradeGroup)
-	if req.Plan.UpgradeGroup != "" {
-		if _, ok := ratio_setting.GetGroupRatioCopy()[req.Plan.UpgradeGroup]; !ok {
-			common.ApiErrorMsg(c, "升级分组不存在")
-			return
-		}
+	if req.Plan.ConcurrentLimit < 0 {
+		common.ApiErrorMsg(c, "并发限制不能为负数")
+		return
+	}
+	if req.Plan.RPMLimit < 0 {
+		common.ApiErrorMsg(c, "RPM 限制不能为负数")
+		return
 	}
 	req.Plan.QuotaResetPeriod = model.NormalizeResetPeriod(req.Plan.QuotaResetPeriod)
 	if req.Plan.QuotaResetPeriod == model.SubscriptionResetCustom && req.Plan.QuotaResetCustomSeconds <= 0 {
@@ -180,39 +164,24 @@ func AdminUpdateSubscriptionPlan(c *gin.Context) {
 		common.ApiErrorMsg(c, "套餐标题不能为空")
 		return
 	}
-	if req.Plan.PriceAmount < 0 {
-		common.ApiErrorMsg(c, "价格不能为负数")
-		return
-	}
-	if req.Plan.PriceAmount > 9999 {
-		common.ApiErrorMsg(c, "价格不能超过9999")
-		return
-	}
 	req.Plan.Id = id
-	if req.Plan.Currency == "" {
-		req.Plan.Currency = "USD"
-	}
-	req.Plan.Currency = "USD"
 	if req.Plan.DurationUnit == "" {
 		req.Plan.DurationUnit = model.SubscriptionDurationMonth
 	}
 	if req.Plan.DurationValue <= 0 && req.Plan.DurationUnit != model.SubscriptionDurationCustom {
 		req.Plan.DurationValue = 1
 	}
-	if req.Plan.MaxPurchasePerUser < 0 {
-		common.ApiErrorMsg(c, "购买上限不能为负数")
-		return
-	}
 	if req.Plan.TotalAmount < 0 {
 		common.ApiErrorMsg(c, "总额度不能为负数")
 		return
 	}
-	req.Plan.UpgradeGroup = strings.TrimSpace(req.Plan.UpgradeGroup)
-	if req.Plan.UpgradeGroup != "" {
-		if _, ok := ratio_setting.GetGroupRatioCopy()[req.Plan.UpgradeGroup]; !ok {
-			common.ApiErrorMsg(c, "升级分组不存在")
-			return
-		}
+	if req.Plan.ConcurrentLimit < 0 {
+		common.ApiErrorMsg(c, "并发限制不能为负数")
+		return
+	}
+	if req.Plan.RPMLimit < 0 {
+		common.ApiErrorMsg(c, "RPM 限制不能为负数")
+		return
 	}
 	req.Plan.QuotaResetPeriod = model.NormalizeResetPeriod(req.Plan.QuotaResetPeriod)
 	if req.Plan.QuotaResetPeriod == model.SubscriptionResetCustom && req.Plan.QuotaResetCustomSeconds <= 0 {
@@ -225,20 +194,18 @@ func AdminUpdateSubscriptionPlan(c *gin.Context) {
 		updateMap := map[string]interface{}{
 			"title":                      req.Plan.Title,
 			"subtitle":                   req.Plan.Subtitle,
-			"price_amount":               req.Plan.PriceAmount,
-			"currency":                   req.Plan.Currency,
 			"duration_unit":              req.Plan.DurationUnit,
 			"duration_value":             req.Plan.DurationValue,
 			"custom_seconds":             req.Plan.CustomSeconds,
 			"enabled":                    req.Plan.Enabled,
 			"sort_order":                 req.Plan.SortOrder,
-			"stripe_price_id":            req.Plan.StripePriceId,
-			"creem_product_id":           req.Plan.CreemProductId,
-			"max_purchase_per_user":      req.Plan.MaxPurchasePerUser,
 			"total_amount":               req.Plan.TotalAmount,
-			"upgrade_group":              req.Plan.UpgradeGroup,
 			"quota_reset_period":         req.Plan.QuotaResetPeriod,
 			"quota_reset_custom_seconds": req.Plan.QuotaResetCustomSeconds,
+			"allowed_groups":             req.Plan.AllowedGroups,
+			"allowed_models":             req.Plan.AllowedModels,
+			"concurrent_limit":           req.Plan.ConcurrentLimit,
+			"rpm_limit":                  req.Plan.RPMLimit,
 			"updated_at":                 common.GetTimestamp(),
 		}
 		if err := tx.Model(&model.SubscriptionPlan{}).Where("id = ?", id).Updates(updateMap).Error; err != nil {
@@ -270,6 +237,34 @@ func AdminUpdateSubscriptionPlanStatus(c *gin.Context) {
 		return
 	}
 	if err := model.DB.Model(&model.SubscriptionPlan{}).Where("id = ?", id).Update("enabled", *req.Enabled).Error; err != nil {
+		common.ApiError(c, err)
+		return
+	}
+	model.InvalidateSubscriptionPlanCache(id)
+	common.ApiSuccess(c, nil)
+}
+
+// AdminDeleteSubscriptionPlan 删除订阅套餐（含未使用的兑换码）。
+// 已被用户激活的 UserSubscription 历史记录保留（仅外键引用 plan_id，可孤立）。
+func AdminDeleteSubscriptionPlan(c *gin.Context) {
+	id, _ := strconv.Atoi(c.Param("id"))
+	if id <= 0 {
+		common.ApiErrorMsg(c, "无效的ID")
+		return
+	}
+	err := model.DB.Transaction(func(tx *gorm.DB) error {
+		// 删除该套餐下所有未使用的兑换码（已使用的保留作为审计）
+		if err := tx.Where("plan_id = ? AND status = ?", id, model.SubscriptionRedemptionStatusEnabled).
+			Delete(&model.SubscriptionRedemption{}).Error; err != nil {
+			return err
+		}
+		// 删除套餐本身
+		if err := tx.Where("id = ?", id).Delete(&model.SubscriptionPlan{}).Error; err != nil {
+			return err
+		}
+		return nil
+	})
+	if err != nil {
 		common.ApiError(c, err)
 		return
 	}

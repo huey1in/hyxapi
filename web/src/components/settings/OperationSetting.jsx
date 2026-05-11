@@ -1,26 +1,22 @@
 /*
  * 平台设置 wrapper —
  *   通用（链接/汇率/Token显示/全局开关）
- *   顶栏导航模块
- *   侧边栏模块（管理员）
  *   公告 / 用户协议 / 隐私政策（来自 OtherSetting）
- *
- * Token-system shell only; the leaf SettingsXxx forms are still Semi
- * inside (see Phase 3 of settings rewrite roadmap).
  */
 import React, { useEffect, useState } from 'react';
+import { Loader2 } from 'lucide-react';
 import SettingsGeneral from '../../pages/Setting/Operation/SettingsGeneral';
 import OtherSetting from './OtherSetting';
 import { API, showError, toBoolean } from '../../helpers';
 import { Card } from '../ui';
 
-const TokenCard = ({ children, className = '' }) => (
-  <Card variant='elevated' padding='lg' radius='md' className={className}>
+const SectionCard = ({ children, className = '' }) => (
+  <Card variant='plain' padding='lg' radius='xxl' className={className}>
     {children}
   </Card>
 );
 
-const OperationSetting = () => {
+const OperationSetting = ({ registerRefresh }) => {
   let [inputs, setInputs] = useState({
     TopUpLink: '',
     'general_setting.docs_link': '',
@@ -70,20 +66,22 @@ const OperationSetting = () => {
 
   useEffect(() => {
     onRefresh();
-  }, []);
+    registerRefresh?.(onRefresh);
+  }, []); // eslint-disable-line
 
   return (
     <div className='space-y-3 relative'>
       {loading && (
-        <div className='absolute inset-0 z-10 flex items-center justify-center bg-ui-bg/60'>
-          </div>
+        <div className='absolute inset-0 z-10 flex items-center justify-center bg-[var(--page-bg)]/60 rounded-[20px]'>
+          <Loader2 size={20} className='animate-spin text-ui-text-3' />
+        </div>
       )}
-      <TokenCard>
+      <SectionCard>
         <SettingsGeneral options={inputs} refresh={onRefresh} />
-      </TokenCard>
-      <TokenCard>
+      </SectionCard>
+      <SectionCard>
         <OtherSetting />
-      </TokenCard>
+      </SectionCard>
     </div>
   );
 };

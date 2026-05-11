@@ -7,7 +7,6 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"github.com/QuantumNous/new-api/common"
 	"github.com/QuantumNous/new-api/logger"
@@ -298,18 +297,9 @@ func handleCheckoutCompleted(c *gin.Context, event *CreemWebhookEvent) {
 		return
 	}
 
-	// Try complete subscription order first
+	// 锁单防止重复处理
 	LockOrder(referenceId)
 	defer UnlockOrder(referenceId)
-	if err := model.CompleteSubscriptionOrder(referenceId, common.GetJsonString(event), model.PaymentMethodCreem); err == nil {
-		logger.LogInfo(c.Request.Context(), fmt.Sprintf("Creem 订阅订单处理成功 trade_no=%s creem_order_id=%s", referenceId, event.Object.Order.Id))
-		c.Status(http.StatusOK)
-		return
-	} else if err != nil && !errors.Is(err, model.ErrSubscriptionOrderNotFound) {
-		logger.LogError(c.Request.Context(), fmt.Sprintf("Creem 订阅订单处理失败 trade_no=%s creem_order_id=%s error=%q", referenceId, event.Object.Order.Id, err.Error()))
-		c.AbortWithStatus(http.StatusInternalServerError)
-		return
-	}
 
 	// 验证订单类型，目前只处理一次性付款（充值）
 	if event.Object.Order.Type != "onetime" {

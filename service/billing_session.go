@@ -311,37 +311,33 @@ func NewBillingSession(c *gin.Context, relayInfo *relaycommon.RelayInfo, preCons
 		return session, nil
 	}
 
-	switch pref {
-	case "subscription_only":
-		return trySubscription()
-	case "wallet_only":
-		return tryWallet()
-	case "wallet_first":
-		session, err := tryWallet()
-		if err != nil {
-			if err.GetErrorCode() == types.ErrorCodeInsufficientUserQuota {
-				return trySubscription()
-			}
-			return nil, err
-		}
-		return session, nil
-	case "subscription_first":
-		fallthrough
-	default:
-		hasSub, subCheckErr := model.HasActiveUserSubscription(relayInfo.UserId)
-		if subCheckErr != nil {
-			return nil, types.NewError(subCheckErr, types.ErrorCodeQueryDataError, types.ErrOptionWithSkipRetry())
-		}
-		if !hasSub {
-			return tryWallet()
-		}
-		session, apiErr := trySubscription()
-		if apiErr != nil {
-			if apiErr.GetErrorCode() == types.ErrorCodeInsufficientUserQuota {
-				return tryWallet()
-			}
-			return nil, apiErr
-		}
-		return session, nil
+	// 新方案：按"请求的 channel 分组"决定走订阅还是钱包
+	//   - 用户有 active 订阅，且 usingGroup ∈ AllowedGroups → 走订阅扣费（订阅不足时报错，不回落）
+	//   - 否则走钱包扣费（正常扣 user.Quota）
+	// 用户偏好 BillingPreference 已不再生效（保留字段以保兼容，不读取）
+	_ = pref
+
+	sub, subErr := model.GetActiveUserSubscription(relayInfo.UserId)
+	if subErr != nil {
+		return nil, types.NewError(subErr, types.ErrorCodeQueryDataError, types.ErrOptionWithSkipRetry())
 	}
+	useSubscription := false
+	if sub != nil {
+		// 若订阅未指定 AllowedGroups（全部允许）或当前 usingGroup 在列表内，走订阅
+		groups := sub.ParseAllowedGroups()
+		if groups == nil {
+			useSubscription = true
+		} else {
+			for _, g := range groups {
+				if g == relayInfo.UsingGroup {
+					useSubscription = true
+					break
+				}
+			}
+		}
+	}
+	if useSubscription {
+		return trySubscription()
+	}
+	return tryWallet()
 }

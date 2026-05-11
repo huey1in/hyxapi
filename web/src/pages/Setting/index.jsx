@@ -2,13 +2,13 @@
 Copyright (C) 2025 QuantumNous
 
 System settings — token-system page shell + 6-tab navigation.
-Tabs render as horizontal pills (consistent with channels/pricing/etc).
-Sub-tabs within each section use their own internal nav.
+Style matches Token/Log/Subscription pages: page-bg + rounded-[20px] cards.
 */
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import { RefreshCw } from 'lucide-react';
 import { usePageTitle } from '../../hooks/common/usePageTitle';
 
 import SystemSetting from '../../components/settings/SystemSetting';
@@ -18,7 +18,7 @@ import LimitsSetting from '../../components/settings/LimitsSetting';
 import DashboardSetting from '../../components/settings/DashboardSetting';
 import RatioSetting from '../../components/settings/RatioSetting';
 import PerformanceSetting from '../../components/settings/PerformanceSetting';
-import { Button } from '../../components/ui';
+import { Button, IconButton } from '../../components/ui';
 
 const TABS = [
   { key: 'platform', label: '平台设置' },
@@ -43,6 +43,8 @@ const Setting = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const [active, setActive] = useState('platform');
+  const [refreshBusy, setRefreshBusy] = useState(false);
+  const activeRefreshRef = useRef(null);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -55,9 +57,27 @@ const Setting = () => {
     navigate(`?tab=${key}`);
   };
 
+  const handleRefresh = async () => {
+    const fn = activeRefreshRef.current;
+    if (typeof fn !== 'function' || refreshBusy) return;
+    setRefreshBusy(true);
+    try {
+      await fn();
+    } finally {
+      setRefreshBusy(false);
+    }
+  };
+
+  const registerRefresh = (fn) => {
+    activeRefreshRef.current = fn;
+  };
+
   if (!isRoot()) {
     return (
-      <div className='px-4 pt-8 pb-6 md:px-6 md:pt-10 md:pb-8'>
+      <div
+        className='px-4 pt-8 pb-6 md:px-6 md:pt-10 md:pb-8'
+        style={{ backgroundColor: 'var(--page-bg)' }}
+      >
         <div className='max-w-[1400px] mx-auto py-16 text-center text-ui-text-3 text-sm'>
           {t('需要超级管理员权限')}
         </div>
@@ -65,10 +85,11 @@ const Setting = () => {
     );
   }
 
-  const Active = TABS.find((t) => t.key === active) || TABS[0];
-
   return (
-    <div className='px-4 pt-8 pb-6 md:px-6 md:pt-10 md:pb-8'>
+    <div
+      className='px-4 pt-8 pb-6 md:px-6 md:pt-10 md:pb-8'
+      style={{ backgroundColor: 'var(--page-bg)' }}
+    >
       <div className='max-w-[1400px] mx-auto'>
         {/* Header */}
         <div className='flex items-center justify-between gap-3 mb-5'>
@@ -78,10 +99,22 @@ const Setting = () => {
           >
             {t('系统设置')}
           </h1>
+          <div className='flex items-center gap-1'>
+            <IconButton
+              icon={RefreshCw}
+              onClick={handleRefresh}
+              disabled={refreshBusy}
+              title={t('刷新')}
+              className={refreshBusy ? '[&_svg]:animate-spin' : ''}
+            />
+          </div>
         </div>
 
         {/* Tabs */}
-        <div className='bg-ui-bg-elevated border border-ui-border rounded-xl p-1 mb-3 overflow-x-auto'>
+        <div
+          className='border border-ui-border rounded-[20px] p-1 mb-4 overflow-x-auto'
+          style={{ backgroundColor: 'var(--page-bg)' }}
+        >
           <div className='flex items-center gap-1 min-w-max'>
             {TABS.map((tb) => {
               const isActive = active === tb.key;
@@ -102,12 +135,12 @@ const Setting = () => {
 
         {/* Content */}
         <div>
-          {active === 'platform' && <OperationSetting />}
-          {active === 'models' && <RatioSetting />}
-          {active === 'limits' && <LimitsSetting />}
-          {active === 'dashboard' && <DashboardSetting />}
-          {active === 'auth' && <SystemSetting />}
-          {active === 'performance' && <PerformanceSetting />}
+          {active === 'platform' && <OperationSetting registerRefresh={registerRefresh} />}
+          {active === 'models' && <RatioSetting registerRefresh={registerRefresh} />}
+          {active === 'limits' && <LimitsSetting registerRefresh={registerRefresh} />}
+          {active === 'dashboard' && <DashboardSetting registerRefresh={registerRefresh} />}
+          {active === 'auth' && <SystemSetting registerRefresh={registerRefresh} />}
+          {active === 'performance' && <PerformanceSetting registerRefresh={registerRefresh} />}
         </div>
       </div>
     </div>

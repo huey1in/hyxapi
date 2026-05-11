@@ -138,10 +138,14 @@ const TokenFormModal = ({ open, token, onClose, onSaved, t }) => {
           label: info.desc || value,
         }));
         setGroupOptions(opts);
-        if (!group && opts[0]) setGroup(opts[0].value);
+        // 仅在"新建场景且当前 token 完全没有 group"时用第一个选项兜底。
+        // 编辑场景下 token.group 已由上一个 effect 设置，绝不能用闭包 group 判断（会读到旧快照导致选错）。
+        if (!token?.id && !token?.group && opts[0]) {
+          setGroup((cur) => cur || opts[0].value);
+        }
       }
     }).catch(() => {});
-  }, [open]);
+  }, [open, token?.id, token?.group]);
 
   useEffect(() => {
     if (!open) return;
@@ -436,72 +440,113 @@ const KeyRow = ({ token, revealed, keyValue, onToggle, onCopy, onEdit, onDelete,
 };
 
 // ── code samples ────────────────────────────────────────
-const buildSamples = (apiBase) => ({
-  curl: {
-    label: 'cURL',
-    lang: 'Shell',
-    hljsLang: 'bash',
-    code: `curl -X POST "${apiBase}/v1/chat/completions" \\
-  -H "Authorization: Bearer YOUR_API_KEY" \\
-  -H "Content-Type: application/json" \\
-  -d '{
-    "model": "gpt-4o-mini",
-    "messages": [
-      { "role": "user", "content": "Hello World" }
-    ],
-    "stream": true,
-    "temperature": 0.7
-  }'`,
-  },
-  python: {
-    label: 'Python',
-    lang: 'Python',
-    hljsLang: 'python',
-    code: `import requests
+// 这些示例是配置 Claude Code / Codex / Gemini CLI 等开发工具的环境变量。
+// 用户登录后会自动填入选中令牌的真实 key；直接复制粘贴到终端执行即可。
+const TOOL_INSTALL = {
+  claude: {
+    macos: `# 安装 Node.js（如已安装可跳过）
+brew install node
 
-response = requests.post(
-    "${apiBase}/v1/chat/completions",
-    headers={
-        "Authorization": "Bearer YOUR_API_KEY",
-        "Content-Type": "application/json",
+# 安装 Claude Code
+npm install -g @anthropic-ai/claude-code`,
+    linux: `# 安装 Node.js（如已安装可跳过）
+curl -fsSL https://deb.nodesource.com/setup_lts.x | sudo -E bash -
+sudo apt-get install -y nodejs
+
+# 安装 Claude Code
+sudo npm install -g @anthropic-ai/claude-code`,
+    windows: `# 在 PowerShell 中执行
+# 1) 安装 Node.js（如已安装可跳过）
+winget install OpenJS.NodeJS.LTS
+
+# 2) 安装 Claude Code
+npm install -g @anthropic-ai/claude-code`,
+  },
+  codex: {
+    macos: `# 安装 Node.js（如已安装可跳过）
+brew install node
+
+# 安装 OpenAI Codex CLI
+npm install -g @openai/codex`,
+    linux: `# 安装 Node.js（如已安装可跳过）
+curl -fsSL https://deb.nodesource.com/setup_lts.x | sudo -E bash -
+sudo apt-get install -y nodejs
+
+# 安装 OpenAI Codex CLI
+sudo npm install -g @openai/codex`,
+    windows: `# 在 PowerShell 中执行
+# 1) 安装 Node.js（如已安装可跳过）
+winget install OpenJS.NodeJS.LTS
+
+# 2) 安装 OpenAI Codex CLI
+npm install -g @openai/codex`,
+  },
+  gemini: {
+    macos: `# 安装 Node.js（如已安装可跳过）
+brew install node
+
+# 安装 Gemini CLI
+npm install -g @google/gemini-cli`,
+    linux: `# 安装 Node.js（如已安装可跳过）
+curl -fsSL https://deb.nodesource.com/setup_lts.x | sudo -E bash -
+sudo apt-get install -y nodejs
+
+# 安装 Gemini CLI
+sudo npm install -g @google/gemini-cli`,
+    windows: `# 在 PowerShell 中执行
+# 1) 安装 Node.js（如已安装可跳过）
+winget install OpenJS.NodeJS.LTS
+
+# 2) 安装 Gemini CLI
+npm install -g @google/gemini-cli`,
+  },
+};
+
+const buildSamples = (apiBase, apiKey) => {
+  const key = apiKey || 'YOUR_API_KEY';
+  return {
+    claude: {
+      label: 'Claude Code',
+      lang: 'Shell',
+      hljsLang: 'bash',
+      code: `export ANTHROPIC_BASE_URL="${apiBase}"
+export ANTHROPIC_AUTH_TOKEN="${key}"
+claude`,
     },
-    json={
-        "model": "gpt-4o-mini",
-        "messages": [
-            {"role": "user", "content": "Hello World"}
-        ],
-        "stream": True,
-        "temperature": 0.7,
+    codex: {
+      label: 'OpenAI Codex',
+      lang: 'Shell',
+      hljsLang: 'bash',
+      code: `export OPENAI_BASE_URL="${apiBase}/v1"
+export OPENAI_API_KEY="${key}"
+codex`,
     },
-)
-print(response.text)`,
-  },
-  nodejs: {
-    label: 'Node.js',
-    lang: 'JavaScript',
-    hljsLang: 'javascript',
-    code: `const response = await fetch('${apiBase}/v1/chat/completions', {
-  method: 'POST',
-  headers: {
-    Authorization: 'Bearer YOUR_API_KEY',
-    'Content-Type': 'application/json',
-  },
-  body: JSON.stringify({
-    model: 'gpt-4o-mini',
-    messages: [{ role: 'user', content: 'Hello World' }],
-    stream: true,
-    temperature: 0.7,
-  }),
-});
-const data = await response.json();
-console.log(data);`,
-  },
-});
+    gemini: {
+      label: 'Gemini CLI',
+      lang: 'Shell',
+      hljsLang: 'bash',
+      code: `export GEMINI_API_BASE="${apiBase}"
+export GEMINI_API_KEY="${key}"
+gemini`,
+    },
+  };
+};
+
+// 复制时剥离注释行（# 开头）和空行，让用户粘到终端就是干净的可执行命令。
+// PowerShell 注释也是 # 开头，所以这套规则同时适用 bash/zsh/powershell。
+const stripCommentsForCopy = (code) =>
+  String(code || '')
+    .split('\n')
+    .filter((line) => {
+      const t = line.trim();
+      return t !== '' && !t.startsWith('#');
+    })
+    .join('\n');
 
 const CodeBlock = ({ sample, t }) => {
   const [copied, setCopied] = useState(false);
   const onCopy = async () => {
-    const ok = await copy(sample.code);
+    const ok = await copy(stripCommentsForCopy(sample.code));
     if (ok) {
       setCopied(true);
       showSuccess(t('已复制'));
@@ -559,10 +604,19 @@ const Tokens = () => {
   const [editOpen, setEditOpen] = useState(false);
   const [editing, setEditing] = useState(null);
   const [confirmRm, setConfirmRm] = useState(null);
-  const [activeTab, setActiveTab] = useState('curl');
+  const [activeTab, setActiveTab] = useState('claude');
+  const [sampleTokenId, setSampleTokenId] = useState(null);
+  const [activeOS, setActiveOS] = useState(() => {
+    if (typeof navigator === 'undefined') return 'macos';
+    const ua = navigator.userAgent.toLowerCase();
+    if (ua.includes('mac')) return 'macos';
+    if (ua.includes('win')) return 'windows';
+    return 'linux';
+  });
 
   const apiBase = typeof window !== 'undefined' ? window.location.origin : '';
-  const samples = useMemo(() => buildSamples(apiBase), [apiBase]);
+  const sampleKey = sampleTokenId ? keyMap[sampleTokenId] : null;
+  const samples = useMemo(() => buildSamples(apiBase, sampleKey), [apiBase, sampleKey]);
 
   const ensureKey = async (id) => {
     if (keyMap[id]) return keyMap[id];
@@ -574,6 +628,25 @@ const Tokens = () => {
     showError(data.message || t('获取密钥失败'));
     return null;
   };
+
+  // 当 tokens 加载完成时，默认选第一个用于示例，并预拉 key
+  useEffect(() => {
+    if (!tokens?.length) {
+      setSampleTokenId(null);
+      return;
+    }
+    if (sampleTokenId && tokens.some((t) => t.id === sampleTokenId)) return;
+    const first = tokens[0];
+    setSampleTokenId(first.id);
+    if (!keyMap[first.id]) ensureKey(first.id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tokens]);
+
+  // 切换示例令牌时确保对应 key 已拉取
+  useEffect(() => {
+    if (sampleTokenId && !keyMap[sampleTokenId]) ensureKey(sampleTokenId);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sampleTokenId]);
 
   const onToggle = async (token) => {
     if (revealed[token.id]) { setRevealed((r) => ({ ...r, [token.id]: false })); return; }
@@ -673,13 +746,73 @@ const Tokens = () => {
           <h2 className='text-[15px] font-semibold text-ui-text mb-3 pb-3 border-b border-ui-border'>
             {t('调用示例')}
           </h2>
-          <div className='mb-3'>
-            <UITabs
-              variant='underline'
-              value={activeTab}
-              onChange={setActiveTab}
-              items={Object.entries(samples).map(([k, v]) => ({ value: k, label: v.label }))}
+          <div className='flex items-end justify-between gap-3 mb-3'>
+            <div className='flex-1 min-w-0'>
+              <UITabs
+                variant='underline'
+                value={activeTab}
+                onChange={setActiveTab}
+                items={Object.entries(samples).map(([k, v]) => ({ value: k, label: v.label }))}
+              />
+            </div>
+            {tokens.length > 0 && (
+              <div className='flex items-center gap-2 text-xs text-ui-text-2 flex-shrink-0 pb-1'>
+                <span className='text-ui-text-3'>{t('使用令牌')}</span>
+                <Dropdown
+                  options={tokens.map((tok) => ({
+                    value: tok.id,
+                    label: tok.name || `#${tok.id}`,
+                  }))}
+                  value={sampleTokenId}
+                  onChange={setSampleTokenId}
+                  placeholder={t('选择令牌')}
+                  popupClassName='min-w-[180px]'
+                  triggerClassName='!py-1.5 !px-2.5 !text-xs'
+                />
+                {!sampleKey && sampleTokenId && (
+                  <span className='text-ui-text-3'>{t('加载密钥中…')}</span>
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* OS 选择 */}
+          <div className='flex items-center gap-2 mb-3'>
+            <span className='text-xs text-ui-text-3'>{t('操作系统')}</span>
+            {[
+              { v: 'macos', l: 'macOS' },
+              { v: 'linux', l: 'Linux' },
+              { v: 'windows', l: 'Windows' },
+            ].map((os) => (
+              <Button
+                key={os.v}
+                variant={activeOS === os.v ? 'secondary' : 'ghost'}
+                size='sm'
+                onClick={() => setActiveOS(os.v)}
+              >
+                {os.l}
+              </Button>
+            ))}
+          </div>
+
+          {/* 1. 安装 */}
+          <div className='mb-2 text-[13px] font-medium text-ui-text-2'>
+            {t('① 安装 {{tool}}', { tool: samples[activeTab].label })}
+          </div>
+          <div className='mb-4'>
+            <CodeBlock
+              sample={{
+                lang: activeOS === 'windows' ? 'PowerShell' : 'Shell',
+                hljsLang: activeOS === 'windows' ? 'powershell' : 'bash',
+                code: TOOL_INSTALL[activeTab][activeOS],
+              }}
+              t={t}
             />
+          </div>
+
+          {/* 2. 配置并启动 */}
+          <div className='mb-2 text-[13px] font-medium text-ui-text-2'>
+            {t('② 配置并启动')}
           </div>
           <CodeBlock sample={samples[activeTab]} t={t} />
         </section>

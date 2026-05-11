@@ -1,8 +1,9 @@
 /*
- * 限制与监控 wrapper — token shell, leaf forms still Semi.
+ * 限制与监控 wrapper — page-bg + rounded-[20px] style.
  */
 
 import React, { useEffect, useState } from 'react';
+import { Loader2 } from 'lucide-react';
 import SettingsCreditLimit from '../../pages/Setting/Operation/SettingsCreditLimit';
 import RequestRateLimit from '../../pages/Setting/RateLimit/SettingsRequestRateLimit';
 import SettingsMonitoring from '../../pages/Setting/Operation/SettingsMonitoring';
@@ -11,13 +12,13 @@ import SettingsSensitiveWords from '../../pages/Setting/Operation/SettingsSensit
 import { API, showError, toBoolean } from '../../helpers';
 import { Card } from '../ui';
 
-const TokenCard = ({ children, className = '' }) => (
-  <Card variant='elevated' padding='lg' radius='md' className={className}>
+const SectionCard = ({ children, className = '' }) => (
+  <Card variant='plain' padding='lg' radius='xxl' className={className}>
     {children}
   </Card>
 );
 
-const LimitsSetting = () => {
+const LimitsSetting = ({ registerRefresh }) => {
   let [inputs, setInputs] = useState({
     QuotaForNewUser: 0,
     PreConsumedQuota: 0,
@@ -83,29 +84,31 @@ const LimitsSetting = () => {
 
   useEffect(() => {
     onRefresh();
-  }, []);
+    registerRefresh?.(onRefresh);
+  }, []); // eslint-disable-line
 
   return (
     <div className='space-y-3 relative'>
       {loading && (
-        <div className='absolute inset-0 z-10 flex items-center justify-center bg-ui-bg/60'>
-          </div>
+        <div className='absolute inset-0 z-10 flex items-center justify-center bg-[var(--page-bg)]/60 rounded-[20px]'>
+          <Loader2 size={20} className='animate-spin text-ui-text-3' />
+        </div>
       )}
-      <TokenCard>
+      <SectionCard>
         <SettingsCreditLimit options={inputs} refresh={onRefresh} />
-      </TokenCard>
-      <TokenCard>
+      </SectionCard>
+      <SectionCard>
         <RequestRateLimit options={inputs} refresh={onRefresh} />
-      </TokenCard>
-      <TokenCard>
+      </SectionCard>
+      <SectionCard>
         <SettingsMonitoring options={inputs} refresh={onRefresh} />
-      </TokenCard>
-      <TokenCard>
+      </SectionCard>
+      <SectionCard>
         <SettingsLog options={inputs} refresh={onRefresh} />
-      </TokenCard>
-      <TokenCard>
+      </SectionCard>
+      <SectionCard>
         <SettingsSensitiveWords options={inputs} refresh={onRefresh} />
-      </TokenCard>
+      </SectionCard>
     </div>
   );
 };

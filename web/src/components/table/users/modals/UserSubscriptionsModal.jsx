@@ -4,7 +4,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Loader2, Plus, RefreshCw, Trash2, Ban } from 'lucide-react';
 import { API, showError, showSuccess } from '../../../../helpers';
-import { convertUSDToCurrency } from '../../../../helpers/render';
 import { useIsMobile } from '../../../../hooks/common/useIsMobile';
 import SlideOver from '../../../common/SlideOver';
 import { showConfirm } from '../../../common/ConfirmDialog';
@@ -219,10 +218,7 @@ const UserSubscriptionsModal = ({ visible, onCancel, user, t, onSuccess }) => {
                 { value: '', label: t('请选择订阅套餐') },
                 ...plans.map((p) => ({
                   value: String(p?.plan?.id),
-                  label: `${p?.plan?.title || ''} (${convertUSDToCurrency(
-                    Number(p?.plan?.price_amount || 0),
-                    2,
-                  )})${p?.plan?.enabled ? '' : ` · ${t('已禁用')}`}`,
+                  label: `${p?.plan?.title || ''}${p?.plan?.enabled ? '' : ` · ${t('已禁用')}`}`,
                 })),
               ]}
             />

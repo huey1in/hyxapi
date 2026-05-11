@@ -379,19 +379,18 @@ func TokenAuth() func(c *gin.Context) {
 
 		userCache.WriteContext(c)
 
-		usingGroup := userCache.Group
-		tokenGroup := token.Group
-		if tokenGroup != "" {
-			// Verify token group exists in UserUsableGroups
-			if !ratio_setting.ContainsGroupRatio(tokenGroup) {
-				abortWithOpenAiMessage(c, http.StatusForbidden, fmt.Sprintf("分组 %s 已被弃用", tokenGroup))
-				return
-			}
-			if _, ok := service.GetUserUsableGroups("")[tokenGroup]; !ok {
-				abortWithOpenAiMessage(c, http.StatusForbidden, fmt.Sprintf("分组 %s 不存在", tokenGroup))
-				return
-			}
-			usingGroup = tokenGroup
+		// 用户分组概念已删除：usingGroup 完全由 token.Group 决定，空值默认 "default"
+		usingGroup := strings.TrimSpace(token.Group)
+		if usingGroup == "" {
+			usingGroup = "default"
+		}
+		if !ratio_setting.ContainsGroupRatio(usingGroup) {
+			abortWithOpenAiMessage(c, http.StatusForbidden, fmt.Sprintf("分组 %s 已被弃用", usingGroup))
+			return
+		}
+		if _, ok := service.GetUserUsableGroups("")[usingGroup]; !ok {
+			abortWithOpenAiMessage(c, http.StatusForbidden, fmt.Sprintf("分组 %s 不存在", usingGroup))
+			return
 		}
 		common.SetContextKey(c, constant.ContextKeyUsingGroup, usingGroup)
 

@@ -1,6 +1,6 @@
 /*
- * Add / edit subscription plan — SlideOver with SectionCard layout to
- * match EditChannel / EditTag style.
+ * Add / edit subscription plan — SlideOver with SectionCard layout.
+ * 新方案：删除价格/币种/购买上限/支付ID等销售字段，加入 AllowedGroups / AllowedModels / ConcurrentLimit / RPMLimit 限制字段。
  */
 import React, { useEffect, useState } from 'react';
 import { API, showError, showSuccess } from '../../../../helpers';
@@ -17,6 +17,8 @@ import {
   NativeSelect,
   ToggleField,
   FieldRow,
+  TagInput,
+  MultiCombobox,
 } from '../../../common/form/Primitives';
 
 const durationUnitOptions = (t) => [
@@ -38,8 +40,6 @@ const resetPeriodOptions = (t) => [
 const DEFAULTS = {
   title: '',
   subtitle: '',
-  price_amount: 0,
-  currency: 'USD',
   duration_unit: 'month',
   duration_value: 1,
   custom_seconds: 0,
@@ -47,11 +47,12 @@ const DEFAULTS = {
   quota_reset_custom_seconds: 0,
   enabled: true,
   sort_order: 0,
-  max_purchase_per_user: 0,
   total_amount: 0,
-  upgrade_group: '',
-  stripe_price_id: '',
-  creem_product_id: '',
+  // 新方案：访问限制
+  allowed_groups: [],
+  allowed_models: [],
+  concurrent_limit: 0,
+  rpm_limit: 0,
 };
 
 const SectionCard = ({ title, description, children }) => (
@@ -63,6 +64,17 @@ const SectionCard = ({ title, description, children }) => (
     <div className='space-y-3'>{children}</div>
   </Card>
 );
+
+const parseListField = (raw) => {
+  if (Array.isArray(raw)) return raw;
+  if (typeof raw !== 'string' || !raw.trim()) return [];
+  try {
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+};
 
 const AddEditSubscriptionModal = ({
   visible,
@@ -86,8 +98,6 @@ const AddEditSubscriptionModal = ({
       ...DEFAULTS,
       title: p.title || '',
       subtitle: p.subtitle || '',
-      price_amount: Number(p.price_amount || 0),
-      currency: 'USD',
       duration_unit: p.duration_unit || 'month',
       duration_value: Number(p.duration_value || 1),
       custom_seconds: Number(p.custom_seconds || 0),
@@ -95,11 +105,11 @@ const AddEditSubscriptionModal = ({
       quota_reset_custom_seconds: Number(p.quota_reset_custom_seconds || 0),
       enabled: p.enabled !== false,
       sort_order: Number(p.sort_order || 0),
-      max_purchase_per_user: Number(p.max_purchase_per_user || 0),
       total_amount: Number(quotaToDisplayAmount(p.total_amount || 0).toFixed(2)),
-      upgrade_group: p.upgrade_group || '',
-      stripe_price_id: p.stripe_price_id || '',
-      creem_product_id: p.creem_product_id || '',
+      allowed_groups: parseListField(p.allowed_groups),
+      allowed_models: parseListField(p.allowed_models),
+      concurrent_limit: Number(p.concurrent_limit || 0),
+      rpm_limit: Number(p.rpm_limit || 0),
     };
   };
 
@@ -128,8 +138,6 @@ const AddEditSubscriptionModal = ({
       const payload = {
         plan: {
           ...values,
-          price_amount: Number(values.price_amount || 0),
-          currency: 'USD',
           duration_value: Number(values.duration_value || 0),
           custom_seconds: Number(values.custom_seconds || 0),
           quota_reset_period: values.quota_reset_period || 'never',
@@ -138,9 +146,11 @@ const AddEditSubscriptionModal = ({
               ? Number(values.quota_reset_custom_seconds || 0)
               : 0,
           sort_order: Number(values.sort_order || 0),
-          max_purchase_per_user: Number(values.max_purchase_per_user || 0),
           total_amount: displayAmountToQuota(values.total_amount),
-          upgrade_group: values.upgrade_group || '',
+          allowed_groups: JSON.stringify(values.allowed_groups || []),
+          allowed_models: JSON.stringify(values.allowed_models || []),
+          concurrent_limit: Number(values.concurrent_limit || 0),
+          rpm_limit: Number(values.rpm_limit || 0),
         },
       };
       const res = isEdit
@@ -159,8 +169,6 @@ const AddEditSubscriptionModal = ({
       setLoading(false);
     }
   };
-
-  const groupChoices = ['', ...groupOptions];
 
   return (
     <SlideOver
@@ -199,7 +207,7 @@ const AddEditSubscriptionModal = ({
       {/* Basic info */}
       <SectionCard
         title={t('基本信息')}
-        description={t('套餐的基本信息和定价')}
+        description={t('套餐的标题、副标题与展示顺序')}
       >
         <FieldRow label={t('套餐标题')} required>
           <TextField
@@ -215,32 +223,12 @@ const AddEditSubscriptionModal = ({
             placeholder={t('例如：适合轻度使用')}
           />
         </FieldRow>
-        <div className='grid grid-cols-1 sm:grid-cols-2 gap-3'>
-          <FieldRow label={t('实付金额')} required>
-            <NumberField
-              value={values.price_amount}
-              onChange={(v) => set('price_amount', v)}
-              min={0}
-              step={0.01}
-            />
-          </FieldRow>
-          <FieldRow label={t('币种')} hint={t('由全站货币展示设置统一控制')}>
-            <TextField value={values.currency} disabled />
-          </FieldRow>
-          <FieldRow label={t('排序')}>
-            <NumberField
-              value={values.sort_order}
-              onChange={(v) => set('sort_order', Math.floor(v))}
-            />
-          </FieldRow>
-          <FieldRow label={t('购买上限')} hint={t('0 表示不限')}>
-            <NumberField
-              value={values.max_purchase_per_user}
-              onChange={(v) => set('max_purchase_per_user', Math.floor(v))}
-              min={0}
-            />
-          </FieldRow>
-        </div>
+        <FieldRow label={t('排序')}>
+          <NumberField
+            value={values.sort_order}
+            onChange={(v) => set('sort_order', Math.floor(v))}
+          />
+        </FieldRow>
         <div className='pt-1'>
           <ToggleField
             label={t('启用状态')}
@@ -250,10 +238,10 @@ const AddEditSubscriptionModal = ({
         </div>
       </SectionCard>
 
-      {/* Quota & group */}
+      {/* Quota */}
       <SectionCard
-        title={t('额度与分组')}
-        description={t('订阅期间分配给用户的可用额度与升级分组')}
+        title={t('额度')}
+        description={t('订阅期间分配给用户的可用额度（在订阅允许的分组内消耗）')}
       >
         <FieldRow
           label={t('总额度')}
@@ -267,20 +255,51 @@ const AddEditSubscriptionModal = ({
             step={0.01}
           />
         </FieldRow>
+      </SectionCard>
+
+      {/* Access limits */}
+      <SectionCard
+        title={t('访问限制')}
+        description={t('限定订阅可使用的模型分组、模型名、并发与 RPM')}
+      >
         <FieldRow
-          label={t('升级分组')}
-          hint={t('购买或手动新增订阅会升级到该分组；当套餐失效/过期或手动作废/删除后，将回退到升级前分组。回退不会立即生效，通常会有几分钟延迟。')}
+          label={t('允许的模型分组')}
+          hint={t('为空表示不限制。可多选 channel 分组。')}
         >
-          <NativeSelect
-            value={values.upgrade_group}
-            onChange={(v) => set('upgrade_group', v)}
+          <MultiCombobox
+            value={values.allowed_groups}
+            onChange={(v) => set('allowed_groups', v)}
             disabled={groupLoading}
-            options={groupChoices.map((g) => ({
-              value: g,
-              label: g === '' ? t('不升级') : g,
-            }))}
+            options={(groupOptions || []).map((g) => ({ value: g, label: g }))}
+            placeholder={t('选择允许的分组')}
           />
         </FieldRow>
+        <FieldRow
+          label={t('允许的模型')}
+          hint={t('为空表示不限制。输入模型名后回车添加；逗号或换行分隔可批量添加。')}
+        >
+          <TagInput
+            value={values.allowed_models}
+            onChange={(v) => set('allowed_models', v)}
+            placeholder={t('如：gpt-4o,claude-3-5-sonnet')}
+          />
+        </FieldRow>
+        <div className='grid grid-cols-1 sm:grid-cols-2 gap-3'>
+          <FieldRow label={t('并发限制')} hint={t('0 表示不限')}>
+            <NumberField
+              value={values.concurrent_limit}
+              onChange={(v) => set('concurrent_limit', Math.max(0, Math.floor(v)))}
+              min={0}
+            />
+          </FieldRow>
+          <FieldRow label={t('RPM 限制')} hint={t('每分钟请求数，0 表示不限')}>
+            <NumberField
+              value={values.rpm_limit}
+              onChange={(v) => set('rpm_limit', Math.max(0, Math.floor(v)))}
+              min={0}
+            />
+          </FieldRow>
+        </div>
       </SectionCard>
 
       {/* Duration */}

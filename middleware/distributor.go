@@ -52,6 +52,56 @@ func Distribute() func(c *gin.Context) {
 			}
 		} else {
 			// Select a channel for the user
+			// load subscription limits (一个用户最多一个 active 订阅)
+			var subscriptionConcurrentRelease func()
+			if userIdAny, ok := common.GetContextKey(c, constant.ContextKeyUserId); ok {
+				if uid, _ := userIdAny.(int); uid > 0 {
+					if sub, _ := model.GetActiveUserSubscription(uid); sub != nil {
+						common.SetContextKey(c, constant.ContextKeySubscriptionId, sub.Id)
+						common.SetContextKey(c, constant.ContextKeySubscriptionAllowedModels, sub.ParseAllowedModels())
+						common.SetContextKey(c, constant.ContextKeySubscriptionAllowedGroups, sub.ParseAllowedGroups())
+						common.SetContextKey(c, constant.ContextKeySubscriptionConcurrentLimit, sub.ConcurrentLimit)
+						common.SetContextKey(c, constant.ContextKeySubscriptionRPMLimit, sub.RPMLimit)
+
+						// RPM 限制（同步检查）
+						if sub.RPMLimit > 0 {
+							if !checkSubscriptionRPM(c, sub.Id, sub.RPMLimit) {
+								return
+							}
+						}
+						// 并发限制：获取名额，c.Next 完成后释放
+						if sub.ConcurrentLimit > 0 {
+							release, ok := acquireSubscriptionConcurrent(c, sub.Id, sub.ConcurrentLimit)
+							if !ok {
+								return
+							}
+							subscriptionConcurrentRelease = release
+						}
+					}
+				}
+			}
+			if subscriptionConcurrentRelease != nil {
+				defer subscriptionConcurrentRelease()
+			}
+
+			// 订阅级模型限制：取严交集
+			if subModelsAny, ok := common.GetContextKey(c, constant.ContextKeySubscriptionAllowedModels); ok {
+				if subModels, ok := subModelsAny.([]string); ok && len(subModels) > 0 {
+					matchName := ratio_setting.FormatMatchingModelName(modelRequest.Model)
+					allowed := false
+					for _, m := range subModels {
+						if m == matchName || m == modelRequest.Model {
+							allowed = true
+							break
+						}
+					}
+					if !allowed {
+						abortWithOpenAiMessage(c, http.StatusForbidden, i18n.T(c, i18n.MsgDistributorTokenModelForbidden, map[string]any{"Model": modelRequest.Model}))
+						return
+					}
+				}
+			}
+
 			// check token model mapping
 			modelLimitEnable := common.GetContextKeyBool(c, constant.ContextKeyTokenModelLimitEnabled)
 			if modelLimitEnable {
@@ -79,6 +129,22 @@ func Distribute() func(c *gin.Context) {
 					return
 				}
 				usingGroup := common.GetContextKeyString(c, constant.ContextKeyUsingGroup)
+				// 订阅级分组限制：如果用户订阅指定了 AllowedGroups，则 token 当前 group 必须在允许列表内
+				if subGroupsAny, ok := common.GetContextKey(c, constant.ContextKeySubscriptionAllowedGroups); ok {
+					if subGroups, ok := subGroupsAny.([]string); ok && len(subGroups) > 0 {
+						allowed := false
+						for _, g := range subGroups {
+							if g == usingGroup {
+								allowed = true
+								break
+							}
+						}
+						if !allowed {
+							abortWithOpenAiMessage(c, http.StatusForbidden, i18n.T(c, i18n.MsgDistributorGroupAccessDenied))
+							return
+						}
+					}
+				}
 				// check path is /pg/chat/completions
 				if strings.HasPrefix(c.Request.URL.Path, "/pg/chat/completions") {
 					playgroundRequest := &dto.PlayGroundRequest{}

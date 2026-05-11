@@ -20,6 +20,13 @@ const (
 	ContextKeyTokenModelLimit        ContextKey = "token_model_limit"
 	ContextKeyTokenCrossGroupRetry   ContextKey = "token_cross_group_retry"
 
+	/* subscription related keys (订阅限制：模型/分组/并发/RPM) */
+	ContextKeySubscriptionId              ContextKey = "subscription_id"
+	ContextKeySubscriptionAllowedModels   ContextKey = "subscription_allowed_models"
+	ContextKeySubscriptionAllowedGroups   ContextKey = "subscription_allowed_groups"
+	ContextKeySubscriptionConcurrentLimit ContextKey = "subscription_concurrent_limit"
+	ContextKeySubscriptionRPMLimit        ContextKey = "subscription_rpm_limit"
+
 	/* channel related keys */
 	ContextKeyChannelId                ContextKey = "channel_id"
 	ContextKeyChannelName              ContextKey = "channel_name"
@@ -48,7 +55,6 @@ const (
 	ContextKeyUserQuota   ContextKey = "user_quota"
 	ContextKeyUserStatus  ContextKey = "user_status"
 	ContextKeyUserEmail   ContextKey = "user_email"
-	ContextKeyUserGroup   ContextKey = "user_group"
 	ContextKeyUsingGroup  ContextKey = "group"
 	ContextKeyUserName    ContextKey = "username"
 

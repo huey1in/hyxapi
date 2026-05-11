@@ -95,7 +95,6 @@ func setupLogin(user *model.User, c *gin.Context) {
 	session.Set("username", user.Username)
 	session.Set("role", user.Role)
 	session.Set("status", user.Status)
-	session.Set("group", user.Group)
 	err := session.Save()
 	if err != nil {
 		common.ApiErrorI18n(c, i18n.MsgUserSessionSaveFailed)
@@ -110,7 +109,6 @@ func setupLogin(user *model.User, c *gin.Context) {
 			"display_name": user.DisplayName,
 			"role":         user.Role,
 			"status":       user.Status,
-			"group":        user.Group,
 		},
 	})
 }
@@ -429,7 +427,6 @@ func GetSelf(c *gin.Context) {
 		"oidc_id":           user.OidcId,
 		"wechat_id":         user.WeChatId,
 		"telegram_id":       user.TelegramId,
-		"group":             user.Group,
 		"quota":             user.Quota,
 		"used_quota":        user.UsedQuota,
 		"request_count":     user.RequestCount,
@@ -548,13 +545,9 @@ func GetUserModels(c *gin.Context) {
 	if err != nil {
 		id = c.GetInt("id")
 	}
-	user, err := model.GetUserCache(id)
-	if err != nil {
-		common.ApiError(c, err)
-		return
-	}
+	_ = id // 用户分组已删，模型列表对所有用户一致；保留 id 解析仅作 API 形态兼容
 	groupFilter := c.Query("group")
-	usable := service.GetUserUsableGroups(user.Group)
+	usable := service.GetUserUsableGroups("")
 	var models []string
 	if groupFilter != "" {
 		// Only return models for the requested group, after verifying the user can access it.

@@ -232,6 +232,8 @@ func migrateDB() error {
 	if err := migrateTokenModelLimitsToText(); err != nil {
 		return err
 	}
+	// Drop legacy user group columns (用户分组概念已删除)
+	dropLegacyUserGroupColumns()
 
 	err := DB.AutoMigrate(
 		&Channel{},
@@ -253,7 +255,6 @@ func migrateDB() error {
 		&TwoFA{},
 		&TwoFABackupCode{},
 		&Checkin{},
-		&SubscriptionOrder{},
 		&UserSubscription{},
 		&SubscriptionPreConsumeRecord{},
 		&CustomOAuthProvider{},
@@ -613,4 +614,53 @@ func PingDB() error {
 	lastPingTime = time.Now()
 	common.SysLog("Database pinged successfully")
 	return nil
+}
+
+// dropLegacyUserGroupColumns 删除已废弃的"用户分组"相关列：
+//   - users.group
+//   - subscription_plans.upgrade_group
+//   - user_subscriptions.upgrade_group / prev_user_group
+//
+// 这些列由 PR 5 移除；本函数幂等，首次执行时 DROP，列已不存在则跳过。
+func dropLegacyUserGroupColumns() {
+	type colSpec struct {
+		table   string
+		column  string
+		model   interface{} // SQLite Migrator.DropColumn 需要 struct 类型用于重建表
+	}
+	specs := []colSpec{
+		{"users", "group", &User{}},
+		{"subscription_plans", "upgrade_group", &SubscriptionPlan{}},
+		{"user_subscriptions", "upgrade_group", &UserSubscription{}},
+		{"user_subscriptions", "prev_user_group", &UserSubscription{}},
+	}
+
+	for _, s := range specs {
+		if !DB.Migrator().HasTable(s.table) {
+			continue
+		}
+		if !DB.Migrator().HasColumn(s.model, s.column) {
+			continue
+		}
+		var sql string
+		switch {
+		case common.UsingPostgreSQL:
+			sql = fmt.Sprintf(`ALTER TABLE %q DROP COLUMN IF EXISTS %q`, s.table, s.column)
+		case common.UsingMySQL:
+			sql = fmt.Sprintf("ALTER TABLE `%s` DROP COLUMN `%s`", s.table, s.column)
+		default:
+			// SQLite — 用 Migrator 抽象，必须传 struct 而非表名
+			if err := DB.Migrator().DropColumn(s.model, s.column); err != nil {
+				common.SysLog(fmt.Sprintf("dropLegacyUserGroupColumns: SQLite drop %s.%s failed: %v", s.table, s.column, err))
+			} else {
+				common.SysLog(fmt.Sprintf("dropLegacyUserGroupColumns: dropped %s.%s", s.table, s.column))
+			}
+			continue
+		}
+		if err := DB.Exec(sql).Error; err != nil {
+			common.SysLog(fmt.Sprintf("dropLegacyUserGroupColumns: drop %s.%s failed: %v", s.table, s.column, err))
+		} else {
+			common.SysLog(fmt.Sprintf("dropLegacyUserGroupColumns: dropped %s.%s", s.table, s.column))
+		}
+	}
 }

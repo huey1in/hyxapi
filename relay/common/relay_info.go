@@ -88,8 +88,7 @@ type RelayInfo struct {
 	TokenKey          string
 	TokenGroup        string
 	UserId            int
-	UsingGroup        string // 使用的分组，当auto跨分组重试时，会变动
-	UserGroup         string // 用户所在分组
+	UsingGroup        string // 使用的分组（来自 token.Group，auto 跨分组重试时会变动）
 	TokenUnlimited    bool
 	StartTime         time.Time
 	FirstResponseTime time.Time
@@ -248,8 +247,8 @@ func (info *RelayInfo) ToString() string {
 	fmt.Fprintf(b, "FinalPreConsumedQuota: %d, ", info.FinalPreConsumedQuota)
 
 	// User & token info (mask secrets)
-	fmt.Fprintf(b, "User{ Id: %d, Email: %q, Group: %q, UsingGroup: %q, Quota: %d }, ",
-		info.UserId, common.MaskEmail(info.UserEmail), info.UserGroup, info.UsingGroup, info.UserQuota)
+	fmt.Fprintf(b, "User{ Id: %d, Email: %q, UsingGroup: %q, Quota: %d }, ",
+		info.UserId, common.MaskEmail(info.UserEmail), info.UsingGroup, info.UserQuota)
 	fmt.Fprintf(b, "Token{ Id: %d, Unlimited: %t, Key: ***masked*** }, ", info.TokenId, info.TokenUnlimited)
 
 	// Time info
@@ -423,9 +422,9 @@ func genBaseRelayInfo(c *gin.Context, request dto.Request) *RelayInfo {
 	//paramOverride := common.GetContextKeyStringMap(c, constant.ContextKeyChannelParamOverride)
 
 	tokenGroup := common.GetContextKeyString(c, constant.ContextKeyTokenGroup)
-	// 当令牌分组为空时，表示使用用户分组
+	// 用户分组概念已删除：tokenGroup 空时默认 "default"
 	if tokenGroup == "" {
-		tokenGroup = common.GetContextKeyString(c, constant.ContextKeyUserGroup)
+		tokenGroup = "default"
 	}
 
 	startTime := common.GetContextKeyTime(c, constant.ContextKeyRequestStartTime)
@@ -452,7 +451,6 @@ func genBaseRelayInfo(c *gin.Context, request dto.Request) *RelayInfo {
 		RequestId:  reqId,
 		UserId:     common.GetContextKeyInt(c, constant.ContextKeyUserId),
 		UsingGroup: common.GetContextKeyString(c, constant.ContextKeyUsingGroup),
-		UserGroup:  common.GetContextKeyString(c, constant.ContextKeyUserGroup),
 		UserQuota:  common.GetContextKeyInt(c, constant.ContextKeyUserQuota),
 		UserEmail:  common.GetContextKeyString(c, constant.ContextKeyUserEmail),
 
