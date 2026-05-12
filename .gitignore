@@ -1,7 +1,9 @@
 web/node_modules/
 web/dist/
+web/.vite/
 web/storybook-static/
 web-backup/
+web.zip
 .DS_Store
 *.db
 *.log
