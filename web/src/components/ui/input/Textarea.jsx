@@ -5,6 +5,7 @@
  * rows:        默认 3
  * autoResize:  true 时根据内容自动调高
  * invalid:     红边框
+ * footer:      可选 ReactNode；渲染在 textarea 同一边框内的底部（聊天 toolbar 模式）
  */
 
 import React, { useEffect, useRef } from 'react';
@@ -22,6 +23,7 @@ const Textarea = React.forwardRef(function Textarea(
     disabled = false,
     size = 36,
     width,
+    footer,
     ...rest
   },
   refExternal,
@@ -47,10 +49,9 @@ const Textarea = React.forwardRef(function Textarea(
 
   const s = inputStyle({ variant: 'admin', size });
   const w = resolveWidth(width);
-  /* textarea 行高由 rows 决定，不锁死高度 */
   const { height: _h, ...flatStyle } = s.style;
 
-  return (
+  const inner = (
     <textarea
       ref={setRef}
       value={value ?? ''}
@@ -58,16 +59,34 @@ const Textarea = React.forwardRef(function Textarea(
       onChange={handleChange}
       placeholder={placeholder}
       disabled={disabled}
-      style={{ ...flatStyle, paddingTop: 8, paddingBottom: 8, ...w.style }}
-      className={cn(
-        s.className,
-        w.className,
-        'resize-none',
-        invalid && '!border-ui-danger',
-      )}
+      style={footer
+        ? { paddingLeft: flatStyle.paddingLeft, paddingRight: flatStyle.paddingRight, paddingTop: 10, paddingBottom: 6, fontSize: flatStyle.fontSize, backgroundColor: 'transparent' }
+        : { ...flatStyle, paddingTop: 8, paddingBottom: 8 }}
+      className={footer
+        ? 'block w-full resize-none border-0 outline-none focus:ring-0 text-ui-text-1 placeholder:text-ui-text-3'
+        : cn(s.className, 'resize-none', invalid && '!border-ui-danger')}
       {...rest}
     />
   );
+
+  if (footer) {
+    return (
+      <div
+        style={w.style}
+        className={cn(
+          'rounded-xl border bg-transparent transition-colors',
+          invalid ? 'border-ui-danger' : 'border-ui-border focus-within:border-ui-text-3',
+          w.className,
+        )}
+      >
+        {inner}
+        <div className='px-2 pb-2'>{footer}</div>
+      </div>
+    );
+  }
+
+  return React.cloneElement(inner, { style: { ...inner.props.style, ...w.style }, className: cn(inner.props.className, w.className) });
 });
 
 export default Textarea;
+

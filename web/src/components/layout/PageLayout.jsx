@@ -1,0 +1,62 @@
+import React, { useEffect, useContext } from 'react';
+import { Outlet, useLocation } from 'react-router-dom';
+import HeaderBar from './HeaderBar';
+import SiderBar from './SiderBar';
+import FooterBar from './FooterBar';
+import LoginModal from './LoginModal';
+import { UserContext } from '../../context/User';
+import { StatusContext } from '../../context/Status';
+import { API, getSystemName, showError, setStatusData, setUserData, updateAPI } from '../../helpers';
+
+const PageLayout = () => {
+  const [, userDispatch] = useContext(UserContext);
+  const [, statusDispatch] = useContext(StatusContext);
+  const location = useLocation();
+  const isConsoleRoute = location.pathname.startsWith('/console');
+
+  useEffect(() => {
+    const raw = localStorage.getItem('user');
+    if (raw) {
+      try {
+        const u = JSON.parse(raw);
+        setUserData?.(u);
+        updateAPI();
+        userDispatch({ type: 'login', payload: u });
+      } catch {}
+    }
+    (async () => {
+      try {
+        const res = await API.get('/api/status');
+        if (res?.data?.success) {
+          statusDispatch({ type: 'set', payload: res.data.data });
+          setStatusData(res.data.data);
+        }
+      } catch (e) { showError('Failed to load status'); }
+    })();
+  }, []);  // eslint-disable-line
+
+  useEffect(() => {
+    document.title = getSystemName() || 'Routify';
+  }, [location.pathname]);
+
+  return (
+    <div
+      className='flex flex-col h-screen'
+      style={{ backgroundColor: 'var(--page-bg)' }}
+    >
+      <HeaderBar />
+      <div className='flex-1 flex min-h-0'>
+        {isConsoleRoute && <SiderBar />}
+        <main className='flex-1 min-w-0 overflow-y-auto flex flex-col'>
+          <div className='flex-1'>
+            <Outlet />
+          </div>
+          {!isConsoleRoute && <FooterBar />}
+        </main>
+      </div>
+      <LoginModal />
+    </div>
+  );
+};
+
+export default PageLayout;

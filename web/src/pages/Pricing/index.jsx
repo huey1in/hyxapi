@@ -1,194 +1,188 @@
-/*
- * Pricing — 模型广场（与 web-backup 同构的简化版）
- *
- * 左侧筛选 Sidebar + 右侧 Card 网格 + 详情侧滑。
- * 去掉了 @lobehub/icons 渲染（统一用首字母 fallback）。
- */
-
 import React, { useEffect, useMemo, useState } from 'react';
-import { useTranslation } from 'react-i18next';
-import { usePageTitle } from '../../hooks/common/usePageTitle';
-import { Search, RefreshCw, Copy, X } from 'lucide-react';
+import { Search, Copy, LayoutGrid, Rows3 } from 'lucide-react';
 import { API, showError, showSuccess, copy } from '../../helpers';
 import {
-  Button, IconButton, Card, Input, Checkbox, SlideOver, Tag, Loading,
+  PageShell, Card, Button, IconButton, Input, Select, Table, Tag, Modal, Loading,
 } from '../../components/ui';
-import { cn } from '../../components/ui/tokens';
-
-const formatPrice = (n) => {
-  if (n === 0 || n == null) return '0';
-  if (n < 0.01) return n.toFixed(4);
-  if (n < 1) return n.toFixed(3);
-  if (n < 100) return n.toFixed(2);
-  return n.toFixed(1);
-};
-
-const hashHue = (s) => {
-  let h = 0;
-  for (let i = 0; i < (s || '').length; i++) h = (h * 31 + s.charCodeAt(i)) | 0;
-  return Math.abs(h) % 360;
-};
-
-const VendorAvatar = ({ name, size = 20 }) => {
-  const initial = (name || '?').trim().charAt(0).toUpperCase();
-  return (
-    <span
-      className='inline-flex items-center justify-center rounded-full text-[10px] font-semibold text-white shrink-0'
-      style={{ width: size, height: size, background: `hsl(${hashHue(name)} 50% 55%)` }}
-    >
-      {initial}
-    </span>
-  );
-};
 
 const PricingPage = () => {
-  const { t } = useTranslation();
-  usePageTitle(t('模型广场'));
-
   const [models, setModels] = useState([]);
+  const [vendors, setVendors] = useState({});
+  const [groupRatio, setGroupRatio] = useState({});
+  const [usableGroups, setUsableGroups] = useState({});
   const [loading, setLoading] = useState(true);
-  const [keyword, setKeyword] = useState('');
-  const [selectedVendors, setSelectedVendors] = useState([]);
-  const [selectedGroups, setSelectedGroups] = useState([]);
-  const [selectedModel, setSelectedModel] = useState(null);
+  const [search, setSearch] = useState('');
+  const [vendorFilter, setVendorFilter] = useState('all');
+  const [group, setGroup] = useState('all');
+  const [view, setView] = useState(() => localStorage.getItem('pricing-view') || 'table');
+  const [detail, setDetail] = useState(null);
+  const switchView = (v) => { setView(v); localStorage.setItem('pricing-view', v); };
 
-  const fetchModels = async () => {
-    setLoading(true);
-    try {
-      const res = await API.get('/api/pricing');
-      if (res.data?.success) setModels(res.data.data || []);
-      else showError(res.data?.message || t('加载失败'));
-    } catch (e) { showError(e.message); }
-    finally { setLoading(false); }
+  useEffect(() => {
+    (async () => {
+      try {
+        const { data } = await API.get('/api/pricing');
+        if (data.success) {
+          setModels(data.data || []);
+          const vmap = {};
+          (data.vendors || []).forEach((v) => { vmap[v.id] = v; });
+          setVendors(vmap);
+          setGroupRatio(data.group_ratio || {});
+          setUsableGroups(data.usable_group || {});
+        } else showError(data.message);
+      } catch (e) { showError(e); } finally { setLoading(false); }
+    })();
+  }, []);
+
+  const groupMul = group === 'all' ? 1 : (groupRatio[group] ?? 1);
+
+  const filtered = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    return (models || []).filter((m) => {
+      if (q && !m.model_name?.toLowerCase().includes(q)) return false;
+      if (vendorFilter !== 'all' && m.vendor_id !== Number(vendorFilter)) return false;
+      if (group !== 'all' && Array.isArray(m.enable_groups) && !m.enable_groups.includes(group)) return false;
+      return true;
+    });
+  }, [models, search, vendorFilter, group]);
+
+  const compute = (m) => {
+    if (m.quota_type === 1) {
+      const dollar = (m.model_price || 0) * groupMul;
+      return `$${dollar.toFixed(4)} / 次`;
+    }
+    const promptPerM = (m.model_ratio || 0) * 2 * groupMul;
+    const completionPerM = promptPerM * (m.completion_ratio || 1);
+    return `$${promptPerM.toFixed(3)} / $${completionPerM.toFixed(3)} per 1M`;
   };
 
-  useEffect(() => { fetchModels(); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, []);
+  const vendorOptions = [
+    { value: 'all', label: '全部厂商' },
+    ...Object.values(vendors).map((v) => ({ value: String(v.id), label: v.name })),
+  ];
 
-  const allVendors = useMemo(() => Array.from(new Set(models.map((m) => m.vendor).filter(Boolean))).sort(), [models]);
-  const allGroups  = useMemo(() => Array.from(new Set(models.flatMap((m) => m.groups || m.enable_groups || []).filter(Boolean))).sort(), [models]);
+  const groupOptions = [
+    { value: 'all', label: '默认分组' },
+    ...Object.entries(usableGroups).map(([k, v]) => ({ value: k, label: v?.desc || k })),
+  ];
 
-  const filtered = models.filter((m) => {
-    if (keyword && !`${m.model_name} ${m.vendor || ''}`.toLowerCase().includes(keyword.toLowerCase())) return false;
-    if (selectedVendors.length && !selectedVendors.includes(m.vendor)) return false;
-    const groups = m.groups || m.enable_groups || [];
-    if (selectedGroups.length && !groups.some((g) => selectedGroups.includes(g))) return false;
-    return true;
-  });
-
-  const toggle = (list, setList, v) => setList(list.includes(v) ? list.filter((x) => x !== v) : [...list, v]);
-  const reset = () => { setKeyword(''); setSelectedVendors([]); setSelectedGroups([]); };
-
-  const onCopyModelId = async (id) => {
-    if (await copy(id)) showSuccess(t('已复制'));
-    else showError(t('复制失败'));
-  };
+  const columns = [
+    { key: 'model_name', title: '模型', render: (r) => (
+        <div className='flex items-center gap-2'>
+          <span className='font-mono text-xs'>{r.model_name}</span>
+          <IconButton icon={Copy} onClick={() => { copy(r.model_name); showSuccess('已复制'); }} />
+        </div>
+      ) },
+    { key: 'vendor', title: '厂商', render: (r) => vendors[r.vendor_id]?.name || '-' },
+    { key: 'endpoints', title: '端点', render: (r) =>
+        <div className='flex flex-wrap gap-1'>
+          {(r.supported_endpoint_types || []).slice(0, 3).map((e) => <Tag key={e} color='blue'>{e}</Tag>)}
+        </div> },
+    { key: 'price', title: `价格 (×${groupMul})`, render: (r) => <span className='font-mono text-xs'>{compute(r)}</span> },
+    { key: 'groups', title: '可用分组', render: (r) =>
+        <div className='flex flex-wrap gap-1'>
+          {(r.enable_groups || []).slice(0, 3).map((g) => <Tag key={g}>{g}</Tag>)}
+        </div> },
+  ];
 
   return (
-    <div className='px-4 pt-8 pb-6 md:px-6 md:pt-10 md:pb-8' style={{ backgroundColor: 'var(--page-bg)' }}>
-      <div className='max-w-[1400px] mx-auto'>
-        <div className='flex items-center justify-between mb-5'>
-          <h1 className='text-2xl md:text-3xl font-medium text-ui-text' style={{ letterSpacing: '-0.02em' }}>
-            {t('模型广场')}
-          </h1>
-          <IconButton icon={RefreshCw} onClick={fetchModels} className={loading ? '[&_svg]:animate-spin' : ''} title={t('刷新')} />
+    <PageShell
+      title='模型定价'
+      actions={
+        <div className='flex items-center gap-1'>
+          <IconButton icon={Rows3}    title='表格视图' selected={view === 'table'} onClick={() => switchView('table')} />
+          <IconButton icon={LayoutGrid} title='卡片视图' selected={view === 'card'}  onClick={() => switchView('card')} />
         </div>
+      }
+    >
+      <Card className='mb-4'>
+        <div className='flex flex-wrap items-center gap-3'>
+          <Input
+            placeholder='搜索模型名'
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className='flex-1 min-w-[200px]'
+          />
+          <div className='w-48'>
+            <Select value={vendorFilter} onChange={setVendorFilter} options={vendorOptions} />
+          </div>
+          <div className='w-48'>
+            <Select value={group} onChange={setGroup} options={groupOptions} />
+          </div>
+        </div>
+      </Card>
 
-        <div className='flex gap-4'>
-          {/* Sidebar */}
-          <aside className='hidden md:block w-60 flex-shrink-0'>
-            <Card>
-              <Input
-                value={keyword} onChange={setKeyword} placeholder={t('搜索模型')}
-                prefix={<Search size={14} />}
-                suffix={keyword ? <IconButton size='xs' icon={X} onClick={() => setKeyword('')} /> : null}
-                width='full'
-              />
-              <FilterSection title={t('厂商')} options={allVendors} selected={selectedVendors} onToggle={(v) => toggle(selectedVendors, setSelectedVendors, v)} />
-              <FilterSection title={t('分组')} options={allGroups}  selected={selectedGroups}  onToggle={(v) => toggle(selectedGroups, setSelectedGroups, v)} />
-              <Button block onClick={reset}>{t('重置筛选')}</Button>
-            </Card>
-          </aside>
-
-          {/* Grid */}
-          <div className='flex-1 min-w-0'>
-            {loading
-              ? <div className='py-16 flex justify-center'><Loading label={t('加载模型中...')} /></div>
-              : filtered.length === 0
-                ? <Card><div className='py-12 text-center text-sm text-ui-text-3'>{t('没有匹配的模型')}</div></Card>
-                : (
-                  <div className='grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3'>
-                    {filtered.map((m) => (
-                      <Card key={m.model_name} interactive='hover' onClick={() => setSelectedModel(m)}>
-                        <div className='flex items-center gap-2 mb-2'>
-                          <VendorAvatar name={m.vendor} size={20} />
-                          <span className='text-sm font-medium text-ui-text truncate'>{m.model_name}</span>
-                        </div>
-                        {m.vendor && <div className='text-xs text-ui-text-3 mb-2'>{m.vendor}</div>}
-                        <div className='flex flex-wrap gap-1 mb-2'>
-                          {(m.groups || m.enable_groups || []).slice(0, 4).map((g) => <Tag key={g} size='sm'>{g}</Tag>)}
-                        </div>
-                        <div className='text-xs text-ui-text-2 tabular-nums space-x-3'>
-                          {m.input_price != null  && <span>↑ ${formatPrice(m.input_price)}/M</span>}
-                          {m.output_price != null && <span>↓ ${formatPrice(m.output_price)}/M</span>}
-                        </div>
-                      </Card>
+      {loading ? <Loading /> : (
+        <>
+          <p className='text-sm text-ui-text-3 mb-3'>共 {filtered.length} 个模型 · 点击查看详情</p>
+          {view === 'table' ? (
+            <Table columns={columns} rows={filtered} size='sm' rowKey='model_name' onRowClick={(r) => setDetail(r)} />
+          ) : (
+            <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3'>
+              {filtered.map((m) => (
+                <Card key={m.model_name} interactive='hover' onClick={() => setDetail(m)}>
+                  <div className='font-mono text-xs text-ui-text-1 break-all mb-2'>{m.model_name}</div>
+                  <div className='text-xs text-ui-text-3 mb-3'>{vendors[m.vendor_id]?.name || '未知厂商'}</div>
+                  <div className='text-sm text-ui-text-1 font-mono mb-3'>{compute(m)}</div>
+                  <div className='flex flex-wrap gap-1'>
+                    {(m.supported_endpoint_types || []).slice(0, 4).map((e) => (
+                      <Tag key={e} color='blue'>{e}</Tag>
                     ))}
                   </div>
-                )}
-          </div>
-        </div>
-      </div>
+                </Card>
+              ))}
+            </div>
+          )}
+        </>
+      )}
 
-      <SlideOver
-        open={!!selectedModel}
-        onClose={() => setSelectedModel(null)}
-        placement='right'
-        width={560}
-        title={selectedModel && (
-          <span className='text-base font-semibold text-ui-text inline-flex items-center gap-2'>
-            <VendorAvatar name={selectedModel.vendor} />
-            {selectedModel.model_name}
-          </span>
-        )}
-      >
-        {selectedModel && (
-          <div className='p-6 space-y-4 text-sm'>
-            <div className='flex items-center gap-2'>
-              <span className='text-ui-text-3'>{t('模型 ID')}</span>
-              <span className='font-mono text-ui-text break-all'>{selectedModel.model_name}</span>
-              <IconButton size='sm' icon={Copy} onClick={() => onCopyModelId(selectedModel.model_name)} />
-            </div>
-            {selectedModel.vendor && <div><span className='text-ui-text-3'>{t('厂商')}：</span>{selectedModel.vendor}</div>}
-            {selectedModel.description && <p className='text-ui-text-2 leading-relaxed'>{selectedModel.description}</p>}
-            <div>
-              <div className='text-xs uppercase text-ui-text-3 mb-1.5'>{t('可用分组')}</div>
-              <div className='flex flex-wrap gap-1'>{(selectedModel.groups || selectedModel.enable_groups || []).map((g) => <Tag key={g} size='sm'>{g}</Tag>)}</div>
-            </div>
-            <div>
-              <div className='text-xs uppercase text-ui-text-3 mb-1.5'>{t('价格')}</div>
-              <div className='font-mono text-ui-text tabular-nums space-y-0.5'>
-                {selectedModel.input_price  != null && <div>{t('输入')}：${formatPrice(selectedModel.input_price)} / 1M tokens</div>}
-                {selectedModel.output_price != null && <div>{t('输出')}：${formatPrice(selectedModel.output_price)} / 1M tokens</div>}
+      {detail && (
+        <Modal open title={detail.model_name} onClose={() => setDetail(null)} hideFooter width={560}>
+          <div className='space-y-4 text-sm'>
+            <div className='grid grid-cols-2 gap-3'>
+              <div>
+                <div className='text-xs text-ui-text-3 mb-1'>厂商</div>
+                <div className='text-ui-text-1'>{vendors[detail.vendor_id]?.name || '-'}</div>
+              </div>
+              <div>
+                <div className='text-xs text-ui-text-3 mb-1'>当前价格倍率</div>
+                <div className='text-ui-text-1'>× {groupMul}</div>
+              </div>
+              <div>
+                <div className='text-xs text-ui-text-3 mb-1'>计费类型</div>
+                <div className='text-ui-text-1'>{detail.quota_type === 1 ? '按次计费' : '按 Token 计费'}</div>
+              </div>
+              <div>
+                <div className='text-xs text-ui-text-3 mb-1'>价格</div>
+                <div className='text-ui-text-1 font-mono'>{compute(detail)}</div>
               </div>
             </div>
+            <div>
+              <div className='text-xs text-ui-text-3 mb-2'>支持端点</div>
+              <div className='flex flex-wrap gap-1'>
+                {(detail.supported_endpoint_types || []).map((e) => <Tag key={e} color='blue'>{e}</Tag>)}
+              </div>
+            </div>
+            <div>
+              <div className='text-xs text-ui-text-3 mb-2'>可用分组</div>
+              <div className='flex flex-wrap gap-1'>
+                {(detail.enable_groups || []).map((g) => <Tag key={g}>{g}</Tag>)}
+              </div>
+            </div>
+            {detail.description && (
+              <div>
+                <div className='text-xs text-ui-text-3 mb-1'>说明</div>
+                <p className='text-ui-text-1 leading-relaxed'>{detail.description}</p>
+              </div>
+            )}
+            <div className='flex justify-end'>
+              <Button onClick={() => setDetail(null)}>关闭</Button>
+            </div>
           </div>
-        )}
-      </SlideOver>
-    </div>
+        </Modal>
+      )}
+    </PageShell>
   );
 };
-
-const FilterSection = ({ title, options, selected, onToggle }) => (
-  <div className='mt-4'>
-    <div className='text-[11px] uppercase tracking-wider text-ui-text-3 mb-2'>{title}</div>
-    <div className='space-y-1 max-h-[180px] overflow-y-auto'>
-      {options.length === 0
-        ? <div className='text-xs text-ui-text-3 py-1'>—</div>
-        : options.map((opt) => (
-          <Checkbox key={opt} checked={selected.includes(opt)} onChange={() => onToggle(opt)} label={opt} />
-        ))}
-    </div>
-  </div>
-);
 
 export default PricingPage;

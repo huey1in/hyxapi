@@ -19,7 +19,7 @@ For commercial licensing, please contact support@quantumnous.com
 
 import { toastConstants } from '../constants';
 import React from 'react';
-import { showSuccess as _tSuccess, showError as _tError, showInfo as _tInfo, showWarning as _tWarning } from '../components/ui/feedback/Toast';
+import { showToast } from '../components/ui';
 import {
   THINK_TAG_REGEX,
   MESSAGE_ROLES,
@@ -128,39 +128,39 @@ export function showError(error) {
           // 由 api.js 的 handleUnauthorized 通过 routify:auth-required 事件统一处理
           return;
         case 429:
-          _tError('错误：请求次数过多，请稍后再试！');
+          showToast({ type: 'error', message: '错误：请求次数过多，请稍后再试！' });
           break;
         case 500:
-          _tError('错误：服务器内部错误，请联系管理员！');
+          showToast({ type: 'error', message: '错误：服务器内部错误，请联系管理员！' });
           break;
         case 405:
-          _tInfo('本站仅作演示之用，无服务端！');
+          showToast({ type: 'info', message: '本站仅作演示之用，无服务端！' });
           break;
         default:
-          _tError('错误：' + error.message);
+          showToast({ type: 'error', message: '错误：' + error.message });
       }
       return;
     }
-    _tError('错误：' + error.message);
+    showToast({ type: 'error', message: '错误：' + error.message });
   } else {
-    _tError('错误：' + error);
+    showToast({ type: 'error', message: '错误：' + error });
   }
 }
 
 export function showWarning(message) {
-  _tWarning(message);
+  showToast({ type: 'warning', message });
 }
 
 export function showSuccess(message) {
-  _tSuccess(message);
+  showToast({ type: 'success', message });
 }
 
 export function showInfo(message) {
-  _tInfo(message);
+  showToast({ type: 'info', message });
 }
 
 export function showNotice(message) {
-  _tInfo(message);
+  showToast({ type: 'info', message });
 }
 
 export function openPage(url) {

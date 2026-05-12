@@ -4,7 +4,7 @@
  * 业务端禁止传 className —— 视觉与布局通过 props 表达。
  *
  * variant:
- *   primary | toggle (+selected) | chip (+selected)
+ *   primary | secondary | oauth | link | toggle (+selected) | chip (+selected)
  *
  * size:     sm | md (默认) | lg
  * icon / iconRight: lucide 组件 或 React 节点
@@ -22,7 +22,10 @@ import { Loader2 } from 'lucide-react';
 import { cn, SIZE_PADDING, SIZE_TEXT, SIZE_GAP, SIZE_ICON, FOCUS_RING } from '../tokens';
 
 const VARIANT_STYLES = {
-  primary: 'bg-ui-accent text-ui-accent-fg hover:bg-ui-accent-hover',
+  primary:   'bg-ui-accent text-ui-accent-fg hover:bg-ui-accent-hover',
+  secondary: 'bg-ui-bg-subtle text-ui-text hover:bg-ui-divider font-medium',
+  oauth:     'border border-ui-border bg-[var(--page-bg)] hover:bg-ui-bg-subtle text-ui-text font-medium !rounded-lg',
+  link:      'text-ui-accent hover:underline !px-0 !py-0',
 };
 
 const TOGGLE_STYLES = {

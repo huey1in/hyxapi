@@ -1,169 +1,166 @@
-/*
- * Setting — 系统设置（6 个 Tab + 自适应 Option 编辑器）
- *
- * 通过 GET /api/option/ 拉全量配置，按 tab 前缀过滤后渲染对应输入控件
- * （Switch / NumberInput / Textarea / Input），逐条 PUT /api/option/ 保存。
- *
- * 不与 backup 的精细分卡 1:1，但提供完整的系统配置访问能力。
- */
-
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
-import { useTranslation } from 'react-i18next';
-import { RefreshCw } from 'lucide-react';
-import { usePageTitle } from '../../hooks/common/usePageTitle';
+import React, { useEffect, useState } from 'react';
+import { RefreshCw, Save } from 'lucide-react';
 import { API, showError, showSuccess, isRoot } from '../../helpers';
 import {
-  Button, IconButton, Card, Input, NumberInput, Textarea, Switch, FieldRow, Loading, Notice,
+  PageShell, Card, Button, IconButton, Input, NumberInput, Textarea, Switch, Tabs, Loading, EmptyState,
 } from '../../components/ui';
-import { cn } from '../../components/ui/tokens';
+import { Lock } from 'lucide-react';
 
 const TABS = [
-  { key: 'platform',    label: '平台设置',    prefixes: ['SystemName', 'Footer', 'HomePage', 'ServerAddress', 'WorkerUrl', 'WorkerValidKey', 'PriceUSDRate', 'QuotaPerUnit', 'DisplayInCurrency', 'DisplayTokenStatEnabled', 'CheckSensitiveEnabled', 'SelfUseModeEnabled', 'DemoSiteEnabled', 'Footer', 'Notice'] },
-  { key: 'models',      label: '模型与定价',  prefixes: ['ModelRatio', 'GroupRatio', 'CompletionRatio', 'ChannelAffinity', 'GeminiModel', 'ClaudeModel', 'GrokModel', 'GlobalModel'] },
-  { key: 'limits',      label: '限制与监控',  prefixes: ['QuotaForNewUser', 'QuotaForInviter', 'QuotaForInvitee', 'MaxConsumeQuotaPerDay', 'AutoDisableChannelEnabled', 'AutomaticEnableChannelEnabled', 'MonitoringRules', 'SensitiveWords', 'ModelRequestRateLimit', 'RateLimit', 'ChannelDisable'] },
-  { key: 'dashboard',   label: '仪表盘内容',  prefixes: ['Announcements', 'FAQ', 'APIInfo', 'UptimeKuma', 'DataDashboard'] },
-  { key: 'auth',        label: '用户认证',    prefixes: ['EmailVerification', 'PasswordLoginEnabled', 'PasswordRegisterEnabled', 'GitHubOAuthEnabled', 'GitHubClient', 'GoogleOAuthEnabled', 'WeChatAuthEnabled', 'LinuxDoOAuthEnabled', 'discord', 'OIDCEnabled', 'TurnstileEnabled', 'TurnstileSiteKey', 'TurnstileSecretKey', 'passkey', 'SMTP', 'RegisterEnabled', 'EmailDomain', 'EmailAlias'] },
-  { key: 'performance', label: '性能',        prefixes: ['MemoryCacheEnabled', 'CacheRequestEnabled', 'BatchUpdate', 'GenRequestEnabled'] },
+  { key: 'platform',    label: '平台' },
+  { key: 'auth',        label: '认证' },
+  { key: 'pricing',     label: '定价/分组' },
+  { key: 'limits',      label: '限制' },
+  { key: 'dashboard',   label: '仪表盘' },
+  { key: 'performance', label: '性能' },
 ];
 
-const LEGACY_KEY_MAP = { operation: 'platform', ratio: 'models', ratelimit: 'limits', system: 'auth', other: 'platform' };
+const TAB_KEYS = {
+  platform: ['SystemName', 'ServerAddress', 'TopUpLink', 'ChatLink', 'Footer', 'Logo', 'HomePageContent'],
+  auth: ['EmailVerificationEnabled', 'EmailDomainRestrictionEnabled', 'GitHubOAuthEnabled', 'GoogleOAuthEnabled', 'WeChatAuthEnabled', 'TurnstileCheckEnabled', 'RegisterEnabled', 'PasswordRegisterEnabled', 'PasswordLoginEnabled'],
+  pricing: ['ModelRatio', 'CompletionRatio', 'GroupRatio', 'ModelPrice', 'UsergroupRatio'],
+  limits: ['ChannelDisableThreshold', 'AutomaticDisableChannelEnabled', 'AutomaticEnableChannelEnabled', 'QuotaForNewUser', 'QuotaForInviter', 'QuotaForInvitee', 'PreConsumedQuota'],
+  dashboard: ['DataExportEnabled', 'DataExportInterval', 'DataExportDefaultTime', 'LogConsumeEnabled'],
+  performance: ['StreamCacheQueueLength', 'BatchUpdateEnabled', 'BatchUpdateInterval', 'MemoryCacheEnabled', 'CacheKeyPrefix'],
+};
 
-const Setting = () => {
-  const { t } = useTranslation();
-  usePageTitle(t('系统设置'));
-  const navigate = useNavigate();
-  const location = useLocation();
-  const [active, setActive] = useState('platform');
-  const [options, setOptions] = useState({});
-  const [loading, setLoading] = useState(true);
+const MULTILINE_KEYS = new Set(['HomePageContent', 'Footer']);
+const JSON_KEYS = new Set(['ModelRatio', 'CompletionRatio', 'GroupRatio', 'ModelPrice', 'UsergroupRatio']);
+const BOOL_KEYS = new Set([
+  'EmailVerificationEnabled', 'EmailDomainRestrictionEnabled',
+  'GitHubOAuthEnabled', 'GoogleOAuthEnabled', 'WeChatAuthEnabled',
+  'TurnstileCheckEnabled', 'RegisterEnabled', 'PasswordRegisterEnabled', 'PasswordLoginEnabled',
+  'AutomaticDisableChannelEnabled', 'AutomaticEnableChannelEnabled',
+  'DataExportEnabled', 'LogConsumeEnabled',
+  'BatchUpdateEnabled', 'MemoryCacheEnabled',
+]);
+const NUMBER_KEYS = new Set([
+  'ChannelDisableThreshold',
+  'QuotaForNewUser', 'QuotaForInviter', 'QuotaForInvitee', 'PreConsumedQuota',
+  'DataExportInterval', 'StreamCacheQueueLength', 'BatchUpdateInterval',
+]);
 
-  const fetchOptions = useCallback(async () => {
-    setLoading(true);
+const toBool = (v) => v === true || v === 'true' || v === '1';
+
+const JSONField = ({ value, onChange }) => {
+  const [err, setErr] = useState(null);
+  const validate = (v) => {
+    if (!v?.trim()) { setErr(null); return; }
+    try { JSON.parse(v); setErr(null); } catch (e) { setErr(e.message); }
+  };
+  const format = () => {
     try {
-      const res = await API.get('/api/option/');
-      if (res.data?.success) {
-        const map = {};
-        (res.data.data || []).forEach((o) => { map[o.key] = o.value; });
-        setOptions(map);
-      } else showError(res.data?.message);
-    } catch (e) { showError(e); }
-    finally { setLoading(false); }
-  }, []);
-
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const tab = params.get('tab');
-    setActive(LEGACY_KEY_MAP[tab] || tab || 'platform');
-  }, [location.search]);
-
-  useEffect(() => { fetchOptions(); }, [fetchOptions]);
-
-  const onChange = (k) => { setActive(k); navigate(`?tab=${k}`); };
-
-  if (!isRoot()) {
-    return (
-      <div className='px-4 pt-8 pb-6 md:px-6 md:pt-10 md:pb-8' style={{ backgroundColor: 'var(--page-bg)' }}>
-        <div className='max-w-[1400px] mx-auto py-16 text-center text-ui-text-3 text-sm'>{t('需要超级管理员权限')}</div>
-      </div>
-    );
-  }
-
+      const obj = JSON.parse(value || '{}');
+      onChange(JSON.stringify(obj, null, 2));
+      setErr(null);
+    } catch (e) { setErr(e.message); }
+  };
+  useEffect(() => { validate(value); }, [value]);
   return (
-    <div className='px-4 pt-8 pb-6 md:px-6 md:pt-10 md:pb-8' style={{ backgroundColor: 'var(--page-bg)' }}>
-      <div className='max-w-[1400px] mx-auto'>
-        <div className='flex items-center justify-between gap-3 mb-5'>
-          <h1 className='text-2xl md:text-3xl font-medium text-ui-text' style={{ letterSpacing: '-0.02em' }}>{t('系统设置')}</h1>
-          <IconButton icon={RefreshCw} onClick={fetchOptions} disabled={loading} title={t('刷新')} className={loading ? '[&_svg]:animate-spin' : ''} />
-        </div>
-
-        <div className='border border-ui-border rounded-[20px] p-1 mb-4 overflow-x-auto' style={{ backgroundColor: 'var(--page-bg)' }}>
-          <div className='flex items-center gap-1 min-w-max'>
-            {TABS.map((tb) => {
-              const isActive = active === tb.key;
-              return (
-                <button key={tb.key} type='button' onClick={() => onChange(tb.key)}
-                  className={cn(
-                    'flex-shrink-0 px-3 py-1.5 text-sm rounded-xl transition-colors',
-                    isActive ? 'bg-ui-bg-subtle text-ui-text' : 'text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-subtle/60',
-                  )}>{t(tb.label)}</button>
-              );
-            })}
-          </div>
-        </div>
-
-        {loading
-          ? <div className='py-16 flex justify-center'><Loading label={t('加载中...')} /></div>
-          : <TabContent tabKey={active} options={options} reload={fetchOptions} t={t} />}
+    <div>
+      <Textarea value={value} onChange={onChange} rows={8} className='font-mono text-xs' />
+      <div className='flex items-center justify-between mt-1'>
+        <span className={`text-xs ${err ? 'text-ui-danger' : 'text-ui-text-3'}`}>
+          {err ? `JSON 错误: ${err}` : 'JSON 格式正确'}
+        </span>
+        <Button size='sm' variant='toggle' onClick={format} disabled={!!err}>格式化</Button>
       </div>
     </div>
   );
 };
 
-const TabContent = ({ tabKey, options, reload, t }) => {
-  const tab = TABS.find((x) => x.key === tabKey);
-  const keys = useMemo(() => {
-    if (!tab) return [];
-    return Object.keys(options).filter((k) => tab.prefixes.some((p) => k.startsWith(p))).sort();
-  }, [tab, options]);
+const SettingPage = () => {
+  const root = isRoot();
+  const [active, setActive] = useState('platform');
+  const [options, setOptions] = useState({});
+  const [dirty, setDirty] = useState({});
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
 
-  if (!tab) return null;
+  const load = async () => {
+    setLoading(true);
+    try {
+      const { data } = await API.get('/api/option/');
+      if (data.success) {
+        const map = {};
+        (data.data || []).forEach((it) => { map[it.key] = it.value; });
+        setOptions(map);
+        setDirty({});
+      } else showError(data.message);
+    } catch (e) { showError(e); } finally { setLoading(false); }
+  };
+  useEffect(() => { if (root) load(); else setLoading(false); }, []);
 
-  if (keys.length === 0) {
+  if (!root) {
     return (
-      <Card>
-        <Notice kind='info'>{t('当前分组下没有可配置项，或后端未返回相关 Option。')}</Notice>
-      </Card>
+      <PageShell title='系统设置'>
+        <EmptyState icon={Lock} title='无权访问' description='仅超级管理员可访问系统设置' />
+      </PageShell>
     );
   }
 
-  return (
-    <Card>
-      <div className='mb-4'>
-        <div className='text-sm font-semibold text-ui-text'>{t(tab.label)}</div>
-        <div className='text-[11px] text-ui-text-3 mt-0.5'>{t('修改后点击 "保存" 立即生效')}</div>
-      </div>
-      <div className='space-y-3'>
-        {keys.map((k) => <OptionRow key={k} optKey={k} optValue={options[k]} onSaved={reload} t={t} />)}
-      </div>
-    </Card>
-  );
-};
-
-const isBool = (v) => v === 'true' || v === 'false';
-const isJsonLike = (v) => typeof v === 'string' && (v.trim().startsWith('{') || v.trim().startsWith('['));
-const isNumberLike = (v) => /^-?\d+(\.\d+)?$/.test(String(v ?? ''));
-
-const OptionRow = ({ optKey, optValue, onSaved, t }) => {
-  const [value, setValue] = useState(optValue);
-  const [saving, setSaving] = useState(false);
-  useEffect(() => setValue(optValue), [optValue]);
+  const set = (k, v) => setDirty((p) => ({ ...p, [k]: v }));
+  const val = (k) => (dirty[k] !== undefined ? dirty[k] : (options[k] ?? ''));
 
   const save = async () => {
+    const keys = Object.keys(dirty);
+    if (keys.length === 0) return showSuccess('无变更');
     setSaving(true);
     try {
-      const res = await API.put('/api/option/', { key: optKey, value: String(value) });
-      if (res.data?.success) { showSuccess(`${t('已保存')} ${optKey}`); onSaved(); }
-      else showError(res.data?.message);
-    } catch (e) { showError(e); }
-    finally { setSaving(false); }
+      for (const k of keys) {
+        const v = String(dirty[k] ?? '');
+        const { data } = await API.put('/api/option/', { key: k, value: v });
+        if (!data.success) { showError(`${k}: ${data.message}`); return; }
+      }
+      showSuccess('已保存');
+      load();
+    } catch (e) { showError(e); } finally { setSaving(false); }
   };
 
-  const renderInput = () => {
-    if (isBool(optValue))      return <Switch checked={value === 'true'} onChange={(v) => setValue(v ? 'true' : 'false')} />;
-    if (isJsonLike(optValue))  return <Textarea value={value || ''} onChange={setValue} rows={6} />;
-    if (isNumberLike(optValue) && String(optValue).length < 16) return <NumberInput value={Number(value)} onChange={(v) => setValue(String(v))} />;
-    return <Input value={value || ''} onChange={setValue} />;
-  };
+  const keys = TAB_KEYS[active] || [];
 
   return (
-    <FieldRow label={optKey}>
-      <div className='flex items-center gap-2'>
-        <div className='flex-1'>{renderInput()}</div>
-        <Button onClick={save} loading={saving}>{t('保存')}</Button>
+    <PageShell
+      title='系统设置'
+      actions={
+        <>
+          <IconButton icon={RefreshCw} title='刷新' onClick={load} />
+          <Button icon={Save} loading={saving} onClick={save} disabled={Object.keys(dirty).length === 0}>
+            保存{Object.keys(dirty).length > 0 ? ` (${Object.keys(dirty).length})` : ''}
+          </Button>
+        </>
+      }
+    >
+      <div className='mb-4'>
+        <Tabs
+          items={TABS.map((t) => ({ value: t.key, label: t.label }))}
+          value={active}
+          onChange={setActive}
+        />
       </div>
-    </FieldRow>
+
+      {loading ? <Loading /> : (
+        <Card>
+          <div className='space-y-4'>
+            {keys.map((k) => (
+              <div key={k} className='grid grid-cols-1 md:grid-cols-[260px_1fr] gap-3 md:gap-6 md:items-start'>
+                <label className='text-sm text-ui-text-1 font-mono pt-2'>{k}</label>
+                {BOOL_KEYS.has(k)
+                  ? <div className='pt-1.5'><Switch checked={toBool(val(k))} onChange={(v) => set(k, v ? 'true' : 'false')} /></div>
+                  : NUMBER_KEYS.has(k)
+                    ? <NumberInput value={Number(val(k)) || 0} onChange={(v) => set(k, String(v ?? 0))} />
+                    : JSON_KEYS.has(k)
+                      ? <JSONField value={val(k)} onChange={(v) => set(k, v)} />
+                      : MULTILINE_KEYS.has(k)
+                        ? <Textarea value={val(k)} onChange={(v) => set(k, v)} rows={4} />
+                        : <Input value={val(k)} onChange={(e) => set(k, e.target.value)} />}
+              </div>
+            ))}
+          </div>
+        </Card>
+      )}
+    </PageShell>
   );
 };
 
-export default Setting;
+export default SettingPage;

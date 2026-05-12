@@ -47,15 +47,39 @@ function Tag({ color, children, prefixIcon, suffixIcon, onClick, size, shape }) 
 import { copy, showSuccess, showError } from './utils';
 import { MOBILE_BREAKPOINT } from '../hooks/common/useIsMobile';
 import { visit } from 'unist-util-visit';
-/* @lobehub/icons 暂未安装：用空注册表 + null 替代，业务方走 fallback 渲染 */
-const LobeIcons = {};
-const OpenAI = null, Claude = null, Gemini = null, Moonshot = null, Zhipu = null,
-  Qwen = null, DeepSeek = null, Minimax = null, Wenxin = null, Spark = null,
-  Midjourney = null, Hunyuan = null, Cohere = null, Cloudflare = null, Ai360 = null,
-  Yi = null, Jina = null, Mistral = null, XAI = null, Ollama = null, Doubao = null,
-  Suno = null, Xinference = null, OpenRouter = null, Dify = null, Coze = null,
-  SiliconCloud = null, FastGPT = null, Kling = null, Jimeng = null, Perplexity = null,
-  Replicate = null;
+import * as LobeIcons from '@lobehub/icons';
+import {
+  OpenAI,
+  Claude,
+  Gemini,
+  Moonshot,
+  Zhipu,
+  Qwen,
+  DeepSeek,
+  Minimax,
+  Wenxin,
+  Spark,
+  Midjourney,
+  Hunyuan,
+  Cohere,
+  Cloudflare,
+  Ai360,
+  Yi,
+  Jina,
+  Mistral,
+  XAI,
+  Ollama,
+  Doubao,
+  Suno,
+  Xinference,
+  OpenRouter,
+  Dify,
+  Coze,
+  SiliconCloud,
+  Kling,
+  Perplexity,
+  Replicate,
+} from '@lobehub/icons';
 
 import {
   LayoutDashboard,
@@ -383,14 +407,14 @@ export function getChannelIcon(channelType) {
     case 50: // 可灵 Kling
       return <Kling.Color size={iconSize} />;
     case 51: // 即梦 Jimeng
-      return <Jimeng.Color size={iconSize} />;
+      return <Kling.Color size={iconSize} />;
     case 54: // 豆包视频 Doubao Video
       return <Doubao.Color size={iconSize} />;
     case 56: // Replicate
       return <Replicate size={iconSize} />;
     case 8: // 自定义渠道
     case 22: // 知识库：FastGPT
-      return <FastGPT.Color size={iconSize} />;
+      return <Dify.Color size={iconSize} />;
     case 21: // 知识库：AI Proxy
     case 44: // 嵌入模型：MokaAI M3E
     default:

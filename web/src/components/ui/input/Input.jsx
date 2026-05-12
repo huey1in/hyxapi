@@ -23,6 +23,7 @@ import { cn } from '../tokens';
 
 const VARIANT = {
   admin:  'border border-ui-border rounded-xl bg-transparent text-ui-text outline-none focus:border-ui-text-3 transition-colors',
+  auth:   'border border-ui-border rounded-lg bg-transparent text-ui-text outline-none focus:ring-2 focus:ring-ui-accent transition-shadow',
   inline: 'border border-ui-border rounded bg-ui-bg-subtle text-ui-text outline-none focus:ring-1 focus:ring-ui-accent/40 transition-shadow',
 };
 const COMMON = 'placeholder:text-ui-text-3 disabled:opacity-50 disabled:cursor-not-allowed';
@@ -89,10 +90,15 @@ const Input = React.forwardRef(function Input(
           'border rounded-xl bg-transparent transition-colors',
           invalid ? 'border-ui-danger' : 'border-ui-border focus-within:border-ui-text-3',
         )
-      : cn(
-          'border rounded bg-ui-bg-subtle transition-shadow focus-within:ring-1 focus-within:ring-ui-accent/40',
-          invalid ? 'border-ui-danger' : 'border-ui-border',
-        );
+      : variant === 'auth'
+        ? cn(
+            'border rounded-lg bg-transparent transition-shadow focus-within:ring-2 focus-within:ring-ui-accent',
+            invalid ? 'border-ui-danger' : 'border-ui-border',
+          )
+        : cn(
+            'border rounded bg-ui-bg-subtle transition-shadow focus-within:ring-1 focus-within:ring-ui-accent/40',
+            invalid ? 'border-ui-danger' : 'border-ui-border',
+          );
 
   const padX = Math.max(8, Math.round(size * 0.34));
   const fz = fontSizeFor(size);
