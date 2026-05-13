@@ -11,7 +11,7 @@ import User          from './pages/User';
 import Redemption    from './pages/Redemption';
 import Subscription  from './pages/Subscription';
 import TopUp         from './pages/TopUp';
-import Chat         from './pages/Chat';
+// import Chat         from './pages/Chat';
 import Pricing       from './pages/Pricing';
 import Setting       from './pages/Setting';
 import Setup         from './pages/Setup';
@@ -40,7 +40,7 @@ const App = () => (
       <Route path='/console/redemption'       element={<Redemption />} />
       <Route path='/console/subscription'     element={<Subscription />} />
       <Route path='/console/topup'            element={<TopUp />} />
-      <Route path='/console/chat'             element={<Chat />} />
+      {/* <Route path='/console/chat'             element={<Chat />} /> */}
       <Route path='/console/setting'          element={<Setting />} />
       <Route path='/console/personal'         element={<Personal />} />
 

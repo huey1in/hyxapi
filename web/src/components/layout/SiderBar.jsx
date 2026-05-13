@@ -1,45 +1,37 @@
-import React, { useEffect, useState } from 'react';
+import React, { useContext, useState } from 'react';
 import { NavLink } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import {
+  BarChart3, Key, FileText, Wallet, User,
+  Radio, CreditCard, Ticket, Users, Settings,
+  ChevronLeft,
+} from 'lucide-react';
 import { isAdmin, isRoot } from '../../helpers';
+import { UserContext } from '../../context/User';
 import { cn } from '../ui/tokens';
 
 const LS_KEY = 'sidebar-collapsed';
-const EXPANDED = 200;
-const COLLAPSED = 56;
+const EXPANDED = 256;
+const COLLAPSED = 57;
 
-const SECTIONS = [
-  {
-    label: '工作台',
-    items: [
-      { to: '/console',            label: '概览', end: true },
-      { to: '/console/chat',       label: '对话' },
-      { to: '/console/token',      label: 'API Keys' },
-      { to: '/console/log',        label: '日志' },
-    ],
-  },
-  {
-    label: '账户',
-    items: [
-      { to: '/console/topup',    label: '钱包' },
-      { to: '/console/personal', label: '个人设置' },
-    ],
-  },
-  {
-    label: '管理',
-    admin: true,
-    items: [
-      { to: '/console/channel',      label: '渠道管理' },
-      { to: '/console/subscription', label: '订阅管理' },
-      { to: '/console/redemption',   label: '兑换码管理' },
-      { to: '/console/user',         label: '用户管理' },
-      { to: '/console/setting',      label: '系统设置', root: true },
-    ],
-  },
+const NAV_ITEMS = [
+  { to: '/console',            label: '概览',     icon: BarChart3, end: true },
+  { to: '/console/token',      label: 'API',      icon: Key },
+  { to: '/console/topup',      label: '充值',     icon: Wallet },
+  { to: '/console/log',        label: '日志',     icon: FileText },
+  { to: '/console/personal',   label: '个人设置', icon: User },
+  { divider: true, admin: true },
+  { to: '/console/channel',      label: '渠道管理',   icon: Radio,      admin: true },
+  { to: '/console/subscription', label: '订阅管理',   icon: CreditCard, admin: true },
+  { to: '/console/redemption',   label: '兑换码管理', icon: Ticket,     admin: true },
+  { to: '/console/user',         label: '用户管理',   icon: Users,      admin: true },
+  { divider: true, root: true },
+  { to: '/console/setting',      label: '系统设置',   icon: Settings,   root: true },
 ];
 
 const SiderBar = () => {
   const { t } = useTranslation();
+  const [userState] = useContext(UserContext);
   const admin = isAdmin();
   const root = isRoot();
   const [collapsed, setCollapsed] = useState(() => {
@@ -54,79 +46,57 @@ const SiderBar = () => {
     });
   };
 
+  const items = NAV_ITEMS.filter((it) => {
+    if (it.admin && !admin) return false;
+    if (it.root && !root) return false;
+    return true;
+  });
+
   return (
     <aside
-      className='flex-shrink-0 h-full relative'
+      className='relative flex-shrink-0 h-full flex flex-col border-r border-[#eeeeee]'
       style={{
         width: collapsed ? COLLAPSED : EXPANDED,
-        transition: 'width 0.35s cubic-bezier(0.16, 1, 0.3, 1)',
+        transition: 'width 0.2s cubic-bezier(0.16, 1, 0.3, 1)',
         backgroundColor: 'var(--page-bg)',
-        overflow: 'visible',
       }}
     >
-      <div
-        className='h-full overflow-hidden'
-        style={{
-          opacity: collapsed ? 0 : 1,
-          pointerEvents: collapsed ? 'none' : 'auto',
-          transition: collapsed
-            ? 'opacity 0.12s ease'
-            : 'opacity 0.2s ease 0.15s',
-        }}
-      >
-        <nav className='flex flex-col gap-1 py-4 px-3 h-full overflow-y-auto ui-scrollbar'>
-          {SECTIONS.map((section) => {
-            if (section.admin && !admin) return null;
-            const items = section.items.filter((it) => !it.root || root);
-            if (items.length === 0) return null;
-            return (
-              <div key={section.label} className='mb-3 last:mb-0'>
-                <div className='px-3 mt-2 mb-2 text-[11px] font-semibold uppercase tracking-wider text-ui-text-3'>
-                  {t(section.label)}
-                </div>
-                <div className='flex flex-col gap-1'>
-                  {items.map((item) => (
-                    <NavLink
-                      key={item.to}
-                      to={item.to}
-                      end={item.end}
-                      className={({ isActive }) =>
-                        cn(
-                          'group relative flex items-center px-3 py-2 rounded-lg text-sm transition-all duration-200',
-                          'hover:bg-ui-accent/10 hover:text-ui-text-1 hover:translate-x-0.5',
-                          isActive
-                            ? 'text-ui-text-1 font-medium'
-                            : 'text-ui-text-2',
-                        )
-                      }
-                    >
-                      {({ isActive }) => (
-                        <>
-                          <span
-                            aria-hidden
-                            className={cn(
-                              'absolute left-0 top-1/2 -translate-y-1/2 w-[3px] rounded-r-full bg-ui-accent transition-all',
-                              isActive ? 'h-5 opacity-100' : 'h-0 opacity-0',
-                            )}
-                          />
-                          <span>{t(item.label)}</span>
-                        </>
-                      )}
-                    </NavLink>
-                  ))}
-                </div>
-              </div>
-            );
-          })}
-        </nav>
+      <div className={cn('flex items-center h-[52px] px-4', collapsed && 'justify-center')}>
+        {!collapsed && <span className='text-[18px] font-semibold text-ui-text tracking-tight'>Console</span>}
+        {collapsed && <span className='text-[18px] font-semibold text-ui-text'>C</span>}
       </div>
 
-      {/* 凸出 tab：14x44 异形，半圆右边 */}
+      <nav className='flex-1 flex flex-col gap-1 py-2 px-[10px] overflow-y-auto overflow-x-hidden'>
+        {items.map((item, idx) => {
+          if (item.divider) {
+            return <div key={`div-${idx}`} className='my-1.5 mx-1 h-px bg-[#eeeeee]' />;
+          }
+          const Icon = item.icon;
+          return (
+            <NavLink
+              key={item.to}
+              to={item.to}
+              end={item.end}
+              className={({ isActive }) =>
+                cn(
+                  'flex items-center gap-2 h-9 px-[10px] rounded-lg text-sm transition-all duration-100 whitespace-nowrap',
+                  isActive
+                    ? 'bg-[#F2F0E9] font-medium text-[#000]'
+                    : 'text-[#000] hover:bg-[#F2F0E9]',
+                )
+              }
+            >
+              <Icon size={22} className='flex-shrink-0' />
+              {!collapsed && <span>{t(item.label)}</span>}
+            </NavLink>
+          );
+        })}
+      </nav>
+
       <button
         onClick={toggle}
         aria-label={collapsed ? '展开侧边栏' : '收起侧边栏'}
-        title={collapsed ? '展开侧边栏' : '收起侧边栏'}
-        className='hidden md:flex absolute top-1/2 -translate-y-1/2 items-center justify-center cursor-pointer hover:bg-ui-bg-subtle transition-colors'
+        className='hidden md:flex absolute top-1/2 -translate-y-1/2 items-center justify-center cursor-pointer hover:bg-[var(--ui-bg-subtle)] transition-colors'
         style={{
           right: '-14px',
           width: '14px',
@@ -138,23 +108,14 @@ const SiderBar = () => {
           zIndex: 10,
         }}
       >
-        <svg
-          width='8'
-          height='8'
-          viewBox='0 0 8 12'
-          fill='none'
-          stroke='currentColor'
-          strokeWidth='1.75'
-          strokeLinecap='round'
-          strokeLinejoin='round'
-          className='text-ui-text-3'
+        <ChevronLeft
+          size={12}
+          className='text-[var(--ui-text-3)]'
           style={{
-            transform: collapsed ? 'rotate(0deg)' : 'rotate(180deg)',
+            transform: collapsed ? 'rotate(180deg)' : 'rotate(0deg)',
             transition: 'transform 0.2s ease',
           }}
-        >
-          <path d='M2 1l4 5-4 5' />
-        </svg>
+        />
       </button>
     </aside>
   );

@@ -1,19 +1,18 @@
 /*
- * CodeBlock — 等宽代码块（Menlo + Prism 高亮 + 顶部条 + 折叠 + 复制）
+ * CodeBlock — 等宽代码块（Menlo + Prism 高亮 + 顶部条 + 复制）
  *
- * 顶栏：左侧折叠 chevron + 语言图标/标签，右侧复制按钮。
+ * 顶栏：左侧语言图标/标签，右侧复制按钮。
  *
  * code:      string
  * language:  Prism 语言 key（jsx/tsx/ts/json/bash/css/markdown/javascript/python）
  * title:     代替语言名展示在顶栏（可选）
  * showLineNumbers
  * maxHeight  滚动
- * defaultCollapsed
  * inline     行内代码
  */
 
 import React, { useState, useMemo } from 'react';
-import { Copy, Check, ChevronDown } from 'lucide-react';
+import { Copy, Check } from 'lucide-react';
 import { cn } from '../tokens';
 import Prism from 'prismjs';
 import 'prismjs/components/prism-jsx';
@@ -69,13 +68,11 @@ const CodeBlock = ({
   title,
   showLineNumbers = false,
   maxHeight,
-  defaultCollapsed = false,
   inline = false,
   children,
 }) => {
   const content = String(code || children || '');
   const [copied, setCopied] = useState(false);
-  const [collapsed, setCollapsed] = useState(defaultCollapsed);
 
   const html = useMemo(() => highlight(content, language), [content, language]);
   const isHighlighted = html !== content;
@@ -95,15 +92,7 @@ const CodeBlock = ({
 
   return (
     <div className='rounded-xl overflow-hidden' style={{ backgroundColor: 'var(--ui-code-bg)' }}>
-      <div className='flex items-center gap-2 px-2 py-1.5 text-xs select-none'>
-        <button
-          type='button'
-          onClick={() => setCollapsed((c) => !c)}
-          className='inline-flex items-center justify-center w-6 h-6 rounded-md text-ui-text-2 hover:text-ui-text hover:bg-ui-bg-subtle transition'
-          aria-label={collapsed ? 'expand' : 'collapse'}
-        >
-          <ChevronDown size={14} className={cn('transition-transform', collapsed && '-rotate-90')} />
-        </button>
+      <div className='flex items-center gap-2 px-3 py-1.5 text-xs select-none'>
         <img src={`${ICON_BASE}/${meta.icon}`} alt='' width={16} height={16} className='flex-shrink-0' />
         <span className='text-ui-text-2 truncate flex-1'>{title || meta.label}</span>
         <button
@@ -115,28 +104,26 @@ const CodeBlock = ({
           {copied ? <Check size={14} /> : <Copy size={14} />}
         </button>
       </div>
-      {!collapsed && (
-        <pre
-          className={cn('px-4 py-3 overflow-auto text-[12.5px] leading-relaxed font-mono text-ui-text', `language-${language || 'text'}`)}
-          style={maxHeight ? { maxHeight } : undefined}
-        >
-          {showLineNumbers ? (
-            <code className={cn('block', `language-${language || 'text'}`)}>
-              {lines.map((ln, i) => {
-                const renderedLine = isHighlighted ? highlight(ln || ' ', language) : (ln || ' ');
-                return (
-                  <span key={i} className='flex'>
-                    <span className='select-none mr-4 w-6 text-right text-ui-text-3 tabular-nums flex-shrink-0'>{i + 1}</span>
-                    <span className='flex-1' dangerouslySetInnerHTML={{ __html: renderedLine }} />
-                  </span>
-                );
-              })}
-            </code>
-          ) : (
-            <code className={`language-${language || 'text'}`} dangerouslySetInnerHTML={{ __html: html }} />
-          )}
-        </pre>
-      )}
+      <pre
+        className={cn('px-4 py-3 overflow-auto text-[12.5px] leading-relaxed font-mono text-ui-text', `language-${language || 'text'}`)}
+        style={maxHeight ? { maxHeight } : undefined}
+      >
+        {showLineNumbers ? (
+          <code className={cn('block', `language-${language || 'text'}`)}>
+            {lines.map((ln, i) => {
+              const renderedLine = isHighlighted ? highlight(ln || ' ', language) : (ln || ' ');
+              return (
+                <span key={i} className='flex'>
+                  <span className='select-none mr-4 w-6 text-right text-ui-text-3 tabular-nums flex-shrink-0'>{i + 1}</span>
+                  <span className='flex-1' dangerouslySetInnerHTML={{ __html: renderedLine }} />
+                </span>
+              );
+            })}
+          </code>
+        ) : (
+          <code className={`language-${language || 'text'}`} dangerouslySetInnerHTML={{ __html: html }} />
+        )}
+      </pre>
     </div>
   );
 };

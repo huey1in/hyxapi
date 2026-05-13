@@ -1,21 +1,10 @@
 import React, { useContext, useEffect, useState } from 'react';
-import { Filter, RefreshCw } from 'lucide-react';
-import { API, showError, renderQuota, timestamp2string } from '../../helpers';
+import { Filter, RefreshCw, ChevronDown } from 'lucide-react';
+import { API, showError, renderNumber, renderQuota, timestamp2string } from '../../helpers';
 import { UserContext } from '../../context/User';
-import {
-  PageShell, Card, Button, IconButton, Input, Select, Table, Pagination, Tag, Modal, Loading,
-} from '../../components/ui';
+import { Button, IconButton, Input, Select, Pagination, Loading } from '../../components/ui';
 
 const PAGE_SIZE = 20;
-
-const TYPE_LABELS = {
-  1: { color: 'green',  text: '充值' },
-  2: { color: 'blue',   text: '消费' },
-  3: { color: 'grey',   text: '管理' },
-  4: { color: 'grey',   text: '系统' },
-  5: { color: 'red',    text: '错误' },
-  6: { color: 'amber',  text: '退款' },
-};
 
 const TYPE_OPTIONS = [
   { value: 0, label: '全部' },
@@ -27,6 +16,14 @@ const TYPE_OPTIONS = [
   { value: 6, label: '退款' },
 ];
 
+const TYPE_LABELS = {
+  1: '充值', 2: '消费', 3: '管理', 4: '系统', 5: '错误', 6: '退款',
+};
+
+const TYPE_COLORS = {
+  1: '#22c55e', 2: '#000', 3: '#3b82f6', 4: '#8b5cf6', 5: '#ef4444', 6: '#f59e0b',
+};
+
 const LogPage = () => {
   const [userState] = useContext(UserContext);
   const isAdmin = (userState?.user?.role || 1) >= 10;
@@ -35,7 +32,7 @@ const LogPage = () => {
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
   const [showFilters, setShowFilters] = useState(false);
-  const [detail, setDetail] = useState(null);
+  const [expanded, setExpanded] = useState(null);
   const [filters, setFilters] = useState({
     token_name: '', model_name: '', group: '', request_id: '',
     channel: '', username: '', type: 0,
@@ -45,6 +42,7 @@ const LogPage = () => {
 
   const load = async (p = 1, fl = filters) => {
     setLoading(true);
+    setExpanded(null);
     try {
       const params = new URLSearchParams({
         p: String(p), size: String(PAGE_SIZE),
@@ -75,113 +73,251 @@ const LogPage = () => {
     setFilters(empty); load(1, empty);
   };
 
-  const columns = [
-    { key: 'created_at', title: '时间', render: (r) => timestamp2string(r.created_at) },
-    { key: 'type', title: '类型', render: (r) => {
-        const t = TYPE_LABELS[r.type] || TYPE_LABELS[3];
-        return <Tag color={t.color}>{t.text}</Tag>;
-      } },
-    { key: 'model_name', title: '模型', render: (r) => r.model_name || '-' },
-    { key: 'token_used', title: 'Tokens', render: (r) => (r.prompt_tokens || 0) + (r.completion_tokens || 0) || '-' },
-    ...(isAdmin ? [
-      { key: 'username', title: '用户', render: (r) => r.username || '-' },
-      { key: 'channel', title: '渠道', render: (r) => r.channel || '-' },
-    ] : []),
-    { key: 'quota', title: '消耗', render: (r) => r.quota > 0 ? renderQuota(r.quota, 4) : '-' },
-    { key: 'use_time', title: '用时', render: (r) => r.use_time ? `${r.use_time}s` : '-' },
-  ];
+  const toggle = (id) => setExpanded((prev) => prev === id ? null : id);
 
   return (
-    <PageShell
-      title='日志'
-      actions={
-        <>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 28, width: '100%', maxWidth: 960, marginInline: 'auto', padding: '24px 16px' }}>
+      {/* 标题 */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <span style={{ fontSize: 18, fontWeight: 600, color: '#000' }}>积分明细</span>
+        <div style={{ display: 'flex', gap: 6 }}>
           <IconButton icon={Filter} title='筛选' selected={showFilters} onClick={() => setShowFilters((s) => !s)} />
           <IconButton icon={RefreshCw} title='刷新' onClick={() => load(page)} />
-        </>
-      }
-    >
+        </div>
+      </div>
+
+      {/* 筛选面板 */}
       {showFilters && (
-        <Card className='mb-4'>
-          <div className='grid grid-cols-2 md:grid-cols-4 gap-3'>
+        <div style={{ padding: 16, border: '1px solid #e9e9e9', borderRadius: 16, display: 'flex', flexDirection: 'column', gap: 12 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 10 }}>
             <div>
-              <label className='block text-xs text-ui-text-2 mb-1'>类型</label>
+              <div style={{ fontSize: 12, color: '#999', marginBottom: 4 }}>类型</div>
               <Select value={filters.type} onChange={(v) => f('type')(Number(v))} options={TYPE_OPTIONS} />
             </div>
             <div>
-              <label className='block text-xs text-ui-text-2 mb-1'>令牌名</label>
-              <Input value={filters.token_name} onChange={f('token_name')} />
+              <div style={{ fontSize: 12, color: '#999', marginBottom: 4 }}>令牌名</div>
+              <Input value={filters.token_name} onChange={f('token_name')} width='full' />
             </div>
             <div>
-              <label className='block text-xs text-ui-text-2 mb-1'>模型</label>
-              <Input value={filters.model_name} onChange={f('model_name')} />
+              <div style={{ fontSize: 12, color: '#999', marginBottom: 4 }}>模型</div>
+              <Input value={filters.model_name} onChange={f('model_name')} width='full' />
             </div>
             <div>
-              <label className='block text-xs text-ui-text-2 mb-1'>分组</label>
-              <Input value={filters.group} onChange={f('group')} />
+              <div style={{ fontSize: 12, color: '#999', marginBottom: 4 }}>分组</div>
+              <Input value={filters.group} onChange={f('group')} width='full' />
             </div>
             {isAdmin && (
               <>
                 <div>
-                  <label className='block text-xs text-ui-text-2 mb-1'>渠道</label>
-                  <Input value={filters.channel} onChange={f('channel')} />
+                  <div style={{ fontSize: 12, color: '#999', marginBottom: 4 }}>渠道</div>
+                  <Input value={filters.channel} onChange={f('channel')} width='full' />
                 </div>
                 <div>
-                  <label className='block text-xs text-ui-text-2 mb-1'>用户名</label>
-                  <Input value={filters.username} onChange={f('username')} />
+                  <div style={{ fontSize: 12, color: '#999', marginBottom: 4 }}>用户名</div>
+                  <Input value={filters.username} onChange={f('username')} width='full' />
                 </div>
               </>
             )}
             <div>
-              <label className='block text-xs text-ui-text-2 mb-1'>Request ID</label>
-              <Input value={filters.request_id} onChange={f('request_id')} />
+              <div style={{ fontSize: 12, color: '#999', marginBottom: 4 }}>Request ID</div>
+              <Input value={filters.request_id} onChange={f('request_id')} width='full' />
             </div>
           </div>
-          <div className='flex justify-end gap-2 mt-4'>
+          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
             <Button variant='toggle' onClick={reset}>重置</Button>
             <Button onClick={() => load(1)}>搜索</Button>
           </div>
-        </Card>
+        </div>
       )}
 
+      {/* 列表 */}
       {loading ? <Loading /> : (
         <>
-          <Table columns={columns} rows={rows} size='sm' onRowClick={(r) => setDetail(r)} />
-          <div className='mt-4 flex justify-end'>
+          {rows.length === 0 ? (
+            <div style={{ padding: '48px 0', textAlign: 'center', color: '#999', fontSize: 14 }}>暂无数据</div>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              {rows.map((r) => (
+                <LogCard key={r.id} row={r} isAdmin={isAdmin} open={expanded === r.id} onToggle={() => toggle(r.id)} />
+              ))}
+            </div>
+          )}
+          <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
             <Pagination total={total} pageSize={PAGE_SIZE} page={page} onChange={(p) => load(p)} />
           </div>
         </>
       )}
-
-      {detail && (
-        <Modal open title={`日志 #${detail.id} 详情`} onClose={() => setDetail(null)} hideFooter width={640}>
-          <div className='space-y-3 text-sm'>
-            <Row label='时间' value={timestamp2string(detail.created_at)} />
-            <Row label='类型' value={<Tag color={(TYPE_LABELS[detail.type] || TYPE_LABELS[3]).color}>{(TYPE_LABELS[detail.type] || TYPE_LABELS[3]).text}</Tag>} />
-            <Row label='模型' value={detail.model_name || '-'} />
-            {isAdmin && <Row label='用户' value={detail.username || '-'} />}
-            {isAdmin && <Row label='渠道' value={detail.channel ?? '-'} />}
-            <Row label='Token 用量' value={`${detail.prompt_tokens || 0} → ${detail.completion_tokens || 0}`} />
-            <Row label='消耗' value={detail.quota > 0 ? renderQuota(detail.quota, 4) : '-'} />
-            <Row label='用时' value={detail.use_time ? `${detail.use_time}s` : '-'} />
-            <Row label='Request ID' value={detail.request_id || '-'} mono />
-            <Row label='IP' value={detail.ip || '-'} mono />
-            <Row label='UA' value={detail.user_agent || '-'} mono />
-            <Row label='Content' value={detail.content || '-'} multiline />
-            <div className='flex justify-end'>
-              <Button onClick={() => setDetail(null)}>关闭</Button>
-            </div>
-          </div>
-        </Modal>
-      )}
-    </PageShell>
+    </div>
   );
 };
 
-const Row = ({ label, value, mono, multiline }) => (
-  <div className='grid grid-cols-[100px_1fr] gap-3 items-start'>
-    <span className='text-ui-text-3 text-xs uppercase tracking-wide pt-0.5'>{label}</span>
-    <span className={`text-ui-text-1 ${mono ? 'font-mono text-xs' : ''} ${multiline ? 'whitespace-pre-wrap break-all' : ''}`}>{value}</span>
+// ── 单条日志卡片 ──────────────────────────────────────
+
+const LogCard = ({ row: r, isAdmin, open, onToggle }) => {
+  const totalTokens = (r.prompt_tokens || 0) + (r.completion_tokens || 0);
+  const typeColor = TYPE_COLORS[r.type] || '#999';
+
+  let other = null;
+  try { if (r.other) other = typeof r.other === 'string' ? JSON.parse(r.other) : r.other; } catch {}
+  const cacheHit = other?.cache_tokens || 0;
+  const cacheWrite = other?.cache_write_tokens || other?.cache_creation_tokens || 0;
+
+  return (
+    <div
+      style={{
+        border: '1px solid #e9e9e9',
+        borderRadius: 16,
+        overflow: 'hidden',
+        transition: 'box-shadow 0.2s',
+        boxShadow: open ? '0 2px 12px rgba(0,0,0,0.04)' : 'none',
+      }}
+    >
+      {/* 主行 */}
+      <div
+        onClick={onToggle}
+        style={{
+          display: 'grid',
+          gridTemplateColumns: '1fr auto',
+          gap: 12,
+          padding: '14px 18px',
+          cursor: 'pointer',
+          transition: 'background 0.15s',
+        }}
+        onMouseEnter={(e) => { e.currentTarget.style.background = '#F2F0E9'; }}
+        onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; }}
+      >
+        {/* 左侧信息 */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8, minWidth: 0 }}>
+          {/* 第一行：模型 + 类型 */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <span style={{ fontSize: 14, fontWeight: 500, color: '#000', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              {r.model_name || '系统操作'}
+            </span>
+            <span style={{
+              display: 'inline-flex', alignItems: 'center',
+              height: 20, paddingInline: 8, borderRadius: 10,
+              fontSize: 11, fontWeight: 500, color: typeColor,
+              background: `${typeColor}12`,
+            }}>
+              {TYPE_LABELS[r.type] || '系统'}
+            </span>
+          </div>
+          {/* 第二行：Token 用量 pills */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+            <TokenPill value={totalTokens} variant='total' />
+            <TokenPill value={r.prompt_tokens || 0} variant='input' label='输入' />
+            <TokenPill value={r.completion_tokens || 0} variant='output' label='输出' />
+            <TokenPill value={cacheHit} variant='cache' label='缓存命中' />
+            <TokenPill value={cacheWrite} variant='cacheWrite' label='缓存创建' />
+          </div>
+        </div>
+
+        {/* 右侧：积分 + 时间 + 展开 */}
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', justifyContent: 'space-between', gap: 4 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            {r.quota > 0 && (
+              <span style={{ fontSize: 14, fontWeight: 600, color: '#000', fontVariantNumeric: 'tabular-nums' }}>
+                {renderQuota(r.quota)}
+              </span>
+            )}
+            <ChevronDown
+              size={14}
+              style={{
+                color: '#999',
+                transform: open ? 'rotate(180deg)' : 'rotate(0deg)',
+                transition: 'transform 0.2s',
+              }}
+            />
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12, color: '#999' }}>
+            <span>{timestamp2string(r.created_at)}</span>
+            {r.use_time > 0 && <span>· {r.use_time}s</span>}
+          </div>
+        </div>
+      </div>
+
+      {/* 展开详情 */}
+      {open && (
+        <div style={{ padding: '12px 18px 16px', borderTop: '1px solid #eeeeee', background: '#FFFDF7' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px 24px', fontSize: 13 }}>
+            <DetailItem label='Token 名称' value={r.token_name || '-'} />
+            <DetailItem label='分组' value={r.group || '-'} />
+            <DetailItem label='Prompt Tokens' value={renderNumber(r.prompt_tokens || 0)} />
+            <DetailItem label='Completion Tokens' value={renderNumber(r.completion_tokens || 0)} />
+            {cacheHit > 0 && <DetailItem label='缓存命中' value={renderNumber(cacheHit)} />}
+            {cacheWrite > 0 && <DetailItem label='缓存创建' value={renderNumber(cacheWrite)} />}
+            {other?.cache_creation_ratio != null && <DetailItem label='缓存创建倍率' value={other.cache_creation_ratio} />}
+            {other?.cache_ratio != null && <DetailItem label='缓存倍率' value={other.cache_ratio} />}
+            {other?.model_ratio != null && <DetailItem label='模型倍率' value={other.model_ratio} />}
+            {other?.completion_ratio != null && <DetailItem label='补全倍率' value={other.completion_ratio} />}
+            {other?.group_ratio != null && <DetailItem label='分组倍率' value={other.group_ratio} />}
+            {other?.model_price != null && <DetailItem label='模型价格' value={other.model_price === 0 ? '默认' : other.model_price} />}
+            {other?.user_group_ratio != null && <DetailItem label='用户分组倍率' value={other.user_group_ratio === 0 ? '默认' : other.user_group_ratio} />}
+            {other?.frt != null && other.frt > 0 && <DetailItem label='首字耗时' value={`${other.frt}ms`} />}
+            {other?.wallet && <DetailItem label='计费来源' value={other.wallet} />}
+            {other?.request_convert && <DetailItem label='请求转换' value={other.request_convert} />}
+            {other?.request_path && <DetailItem label='请求路径' value={other.request_path} mono />}
+            {other?.usage_semantic && <DetailItem label='Usage 语义' value={other.usage_semantic} />}
+            {other?.stream_status && <DetailItem label='流式状态' value={other.stream_status} />}
+            {isAdmin && other?.channel_id != null && <DetailItem label='渠道 ID' value={other.channel_id} />}
+            <DetailItem label='Request ID' value={r.request_id || '-'} mono />
+            <DetailItem label='IP' value={r.ip || '-'} mono />
+            {isAdmin && <DetailItem label='用户 ID' value={r.user_id ?? '-'} />}
+            {r.content && (
+              <div style={{ gridColumn: '1 / -1' }}>
+                <DetailItem label='Content' value={r.content} multiline />
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+// ── Token 用量 Pill ─────────────────────────────────────
+
+const TokenPill = ({ value, variant, label }) => {
+  if (value === 0 && variant !== 'total') return null;
+  const formatted = renderNumber(value);
+  if (variant === 'total') {
+    return (
+      <span style={{
+        display: 'inline-flex', alignItems: 'center', gap: 4,
+        height: 24, paddingInline: 10, borderRadius: 12,
+        fontSize: 12, fontWeight: 600, color: '#fff', background: '#222',
+      }}>
+        {formatted}
+      </span>
+    );
+  }
+  const isCache = variant === 'cache' || variant === 'cacheWrite';
+  return (
+    <span style={{
+      display: 'inline-flex', alignItems: 'center', gap: 4,
+      height: 24, paddingInline: 8, borderRadius: 12,
+      fontSize: 11, color: isCache ? '#8b5cf6' : '#666',
+      border: `1px solid ${isCache ? '#e9d5ff' : '#e3e3e3'}`,
+      background: isCache ? '#faf5ff' : '#FFFDF7',
+    }}>
+      <span style={{ fontSize: 10, color: isCache ? '#a78bfa' : '#999' }}>{label}</span>
+      {formatted}
+    </span>
+  );
+};
+
+// ── 详情行 ──────────────────────────────────────────────
+
+const DetailItem = ({ label, value, mono, multiline }) => (
+  <div style={{ display: 'flex', gap: 8 }}>
+    <span style={{ color: '#999', width: 110, flexShrink: 0, fontSize: 12 }}>{label}</span>
+    <span style={{
+      color: '#000', fontSize: 13,
+      fontFamily: mono ? "'JetBrains Mono', monospace" : 'inherit',
+      whiteSpace: multiline ? 'pre-wrap' : 'normal',
+      wordBreak: multiline ? 'break-all' : 'normal',
+      overflow: 'hidden', textOverflow: 'ellipsis',
+    }}>{value}</span>
   </div>
 );
 

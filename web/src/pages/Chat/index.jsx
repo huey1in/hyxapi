@@ -1,11 +1,99 @@
-import React, { useContext, useEffect, useMemo, useRef, useState } from 'react';
-import {
-  Send, Square, Trash2, Copy, Check, AlertCircle, RotateCcw, ImagePlus, X,
-} from 'lucide-react';
-import { API, showError, showSuccess, showWarning, copy as copyText } from '../../helpers';
+/*
+Copyright (C) 2025 QuantumNous
+
+Simplified chat-style playground (no params/debug panel).
+*/
+
+import React, {
+  useContext,
+  useEffect,
+  useRef,
+  useState,
+} from 'react';
+import { useSearchParams } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
+import { usePageTitle } from '../../hooks/common/usePageTitle';
+import { Send, Square, Trash2, RotateCcw, Copy, Check, AlertCircle, ImagePlus, X as XIcon, ChevronDown } from 'lucide-react';
+const ChevronDownIcon = (props) => <ChevronDown {...props} />;
+
 import { UserContext } from '../../context/User';
-import { Button, IconButton, Select, Textarea } from '../../components/ui';
-import { cn } from '../../components/ui/tokens';
+import { usePlaygroundState } from '../../hooks/playground/usePlaygroundState';
+import { useApiRequest } from '../../hooks/playground/useApiRequest';
+import { useDataLoader } from '../../hooks/playground/useDataLoader';
+import {
+  showWarning,
+  showSuccess,
+  copy,
+  buildApiPayload,
+  buildMessageContent,
+  createMessage,
+  createLoadingAssistantMessage,
+  getTextContent,
+} from '../../helpers';
+import { MESSAGE_ROLES } from '../../constants/playground.constants';
+import MarkdownRenderer from '../../components/common/markdown/MarkdownRenderer';
+
+import { Button, IconButton, Select } from '../../components/ui';
+
+const Dropdown = ({ options, value, onChange, placeholder, emptyText, placement, ...rest }) => (
+  <Select options={options} value={value} onChange={onChange} placeholder={placeholder} emptyText={emptyText} placement={placement} width={150} size={32} />
+);
+
+const SelectChip = ({ options, value, onChange, placeholder, emptyText }) => (
+  <Dropdown
+    options={(options || []).map((o) => typeof o === 'string' ? { value: o, label: o } : o)}
+    value={value}
+    onChange={onChange}
+    placeholder={placeholder}
+    emptyText={emptyText}
+    placement='top-start'
+  />
+);
+
+// 从消息中抽取图片 URL 列表
+const getMessageImages = (msg) => {
+  if (!msg || !Array.isArray(msg.content)) return [];
+  return msg.content
+    .filter((p) => p?.type === 'image_url' && p?.image_url?.url)
+    .map((p) => p.image_url.url);
+};
+
+const UserBubble = ({ children, images = [] }) => (
+  <div className='flex justify-end px-2 min-w-0'>
+    <div className='max-w-[85%] md:max-w-[75%] min-w-0 flex flex-col items-end gap-2'>
+      {images.length > 0 && (
+        <div className='flex flex-wrap gap-1.5 justify-end'>
+          {images.map((url, i) => (
+            <img
+              key={i}
+              src={url}
+              alt=''
+              className='max-w-[200px] max-h-[180px] rounded-xl border border-ui-border object-cover'
+            />
+          ))}
+        </div>
+      )}
+      {children && (
+        <div
+          className='rounded-2xl rounded-br-md px-4 py-2.5 text-sm leading-relaxed bg-ui-bg-subtle text-ui-text border border-ui-border max-w-full'
+          style={{ overflowWrap: 'anywhere', wordBreak: 'break-word' }}
+        >
+          {children}
+        </div>
+      )}
+    </div>
+  </div>
+);
+
+const AssistantActionBtn = ({ onClick, title, icon }) => (
+  <IconButton
+    icon={icon}
+    size='sm'
+    onClick={onClick}
+    title={title}
+    aria-label={title}
+  />
+);
 
 const TOPIC_POOL = [
   '帮我写一段 Python 网络爬虫的示例代码',
@@ -36,56 +124,48 @@ const sampleTopics = (n) => {
   return out;
 };
 
-const UserBubble = ({ children, images = [] }) => (
-  <div className='flex justify-end px-2 min-w-0'>
-    <div className='max-w-[85%] md:max-w-[75%] min-w-0 flex flex-col items-end gap-2'>
-      {images.length > 0 && (
-        <div className='flex flex-wrap gap-1.5 justify-end'>
-          {images.map((url, i) => (
-            <img key={i} src={url} alt=''
-              className='max-w-[200px] max-h-[180px] rounded-xl border border-ui-border object-cover' />
-          ))}
-        </div>
-      )}
-      {children && (
-        <div
-          className='rounded-2xl rounded-br-md px-4 py-2.5 text-sm leading-relaxed bg-ui-bg-subtle text-ui-text-1 border border-ui-border max-w-full'
-          style={{ overflowWrap: 'anywhere', wordBreak: 'break-word' }}
-        >
-          {children}
-        </div>
-      )}
-    </div>
-  </div>
-);
-
-const AssistantMessage = ({ msg, onRetry }) => {
-  const [copied, setCopied] = useState(false);
-  const onCopy = async () => {
-    if (!msg.content) return;
-    const ok = await copyText(msg.content);
-    if (ok) { setCopied(true); showSuccess('已复制'); setTimeout(() => setCopied(false), 1500); }
-  };
+const AssistantMessage = ({ msg, onRetry, t }) => {
+  const text = getTextContent(msg);
   const isError = msg.status === 'error';
+  const [copied, setCopied] = useState(false);
+
+  const onCopy = async () => {
+    if (!text) return;
+    const ok = await copy(text);
+    if (ok) {
+      setCopied(true);
+      showSuccess(t('已复制'));
+      setTimeout(() => setCopied(false), 1500);
+    }
+  };
+
   return (
     <div className='flex flex-col gap-1.5 px-4'>
       {isError ? (
         <div className='flex items-start gap-2 text-ui-danger text-sm leading-relaxed'>
           <AlertCircle size={15} className='flex-shrink-0 mt-0.5' />
-          <span className='whitespace-pre-wrap break-words'>{msg.content || msg.error || '请求失败'}</span>
+          <span className='whitespace-pre-wrap break-words'>{text || msg.error || t('请求失败')}</span>
         </div>
       ) : (
-        <div className='text-sm text-ui-text-1 leading-relaxed whitespace-pre-wrap break-words'>
-          {msg.content || ''}
+        <div className='text-sm text-ui-text leading-relaxed'>
+          <MarkdownRenderer content={text || ''} />
         </div>
       )}
-      {msg.status !== 'loading' && (
+      {msg.status !== 'loading' && msg.status !== 'incomplete' && (
         <div className='flex items-center gap-0.5 -ml-1'>
-          {!isError && msg.content && (
-            <IconButton size='sm' icon={copied ? Check : Copy} onClick={onCopy} title={copied ? '已复制' : '复制'} aria-label='copy' />
+          {!isError && text && (
+            <AssistantActionBtn
+              onClick={onCopy}
+              title={copied ? t('已复制') : t('复制')}
+              icon={copied ? Check : Copy}
+            />
           )}
           {onRetry && (
-            <IconButton size='sm' icon={RotateCcw} onClick={onRetry} title='重新生成' aria-label='retry' />
+            <AssistantActionBtn
+              onClick={onRetry}
+              title={t('重新生成')}
+              icon={RotateCcw}
+            />
           )}
         </div>
       )}
@@ -93,106 +173,140 @@ const AssistantMessage = ({ msg, onRetry }) => {
   );
 };
 
-const ChatPage = () => {
+const Playground = () => {
+  const { t } = useTranslation();
+  usePageTitle(t('对话'));
   const [userState] = useContext(UserContext);
-  const [models, setModels] = useState([]);
-  const [model, setModel] = useState('');
-  const [groups, setGroups] = useState([]);
-  const [group, setGroup] = useState('');
-  const [messages, setMessages] = useState([]);
-  const [draft, setDraft] = useState('');
-  const [pendingImages, setPendingImages] = useState([]);
-  const [sending, setSending] = useState(false);
-  const [topics] = useState(() => sampleTopics(4));
-  const abortRef = useRef(null);
+  const [searchParams] = useSearchParams();
   const scrollRef = useRef(null);
   const inputRef = useRef(null);
+  const [draft, setDraft] = useState('');
+  const [pendingImages, setPendingImages] = useState([]);
+  const [chatVersion, setChatVersion] = useState(0);
   const fileInputRef = useRef(null);
 
+  const state = usePlaygroundState();
+  const {
+    inputs,
+    parameterEnabled,
+    models,
+    groups,
+    message,
+    sseSourceRef,
+    handleInputChange,
+    saveMessagesImmediately,
+    setModels,
+    setGroups,
+    setMessage,
+    setDebugData,
+    setActiveDebugTab,
+    debouncedSaveConfig,
+  } = state;
+
+  const { sendRequest, onStopGenerator } = useApiRequest(
+    setMessage,
+    setDebugData,
+    setActiveDebugTab,
+    sseSourceRef,
+    saveMessagesImmediately,
+  );
+
+  useDataLoader(userState, inputs, handleInputChange, setModels, setGroups);
+
+  const isGenerating = message.some(
+    (m) => m.status === 'loading' || m.status === 'incomplete',
+  );
+
   useEffect(() => {
-    (async () => {
-      try {
-        const res = await API.get('/api/user/self/groups');
-        if (res.data?.success && res.data.data) {
-          const opts = Object.entries(res.data.data).map(([value, info]) => ({
-            value,
-            label: info?.desc || value,
-          }));
-          setGroups(opts);
-          if (opts[0]) setGroup(opts[0].value);
-        }
-      } catch {}
-    })();
+    if (!inputs.stream) handleInputChange('stream', true);
   }, []);
 
-  // Reload model list whenever the selected group changes.
   useEffect(() => {
-    (async () => {
-      try {
-        const params = group ? `?group=${encodeURIComponent(group)}` : '';
-        const res = await API.get(`/api/user/models${params}`);
-        const list = res.data?.success ? res.data.data : (res.data?.data || []);
-        const names = Array.isArray(list) ? list.map((m) => m.id || m).filter(Boolean) : [];
-        setModels(names);
-        if (!names.includes(model)) setModel(names[0] || '');
-      } catch {
-        setModels([]);
-      }
-    })();
-  }, [group]); // eslint-disable-line react-hooks/exhaustive-deps
+    if (searchParams.get('expired')) {
+      showWarning(t('登录过期，请重新登录！'));
+    }
+  }, [searchParams, t]);
 
   useEffect(() => {
-    scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: 'smooth' });
-  }, [messages, sending]);
+    debouncedSaveConfig();
+  }, [inputs, parameterEnabled, debouncedSaveConfig]);
 
-  const isGenerating = sending;
-  const canSend = (draft.trim() || pendingImages.length > 0) && !sending && model;
+  useEffect(() => {
+    if (scrollRef.current) {
+      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+    }
+  }, [message]);
 
-  const greeting = () => {
-    const hour = new Date().getHours();
-    if (hour < 6) return '夜深了';
-    if (hour < 12) return '早上好';
-    if (hour < 14) return '中午好';
-    if (hour < 18) return '下午好';
-    return '晚上好';
+  // Persist whenever messages settle into a terminal state (complete / error)
+  useEffect(() => {
+    if (message.length === 0) return;
+    const last = message[message.length - 1];
+    if (last.status === 'complete' || last.status === 'error') {
+      saveMessagesImmediately(message);
+    }
+  }, [message, saveMessagesImmediately]);
+
+  const handleSend = () => {
+    const text = draft.trim();
+    const images = pendingImages.slice();
+    if ((!text && images.length === 0) || isGenerating) return;
+    if (!inputs.model) {
+      showWarning(t('请先选择一个模型'));
+      return;
+    }
+    setDraft('');
+    setPendingImages([]);
+    if (inputRef.current) inputRef.current.style.height = 'auto';
+    inputRef.current?.focus();
+
+    const userMessage = createMessage(
+      MESSAGE_ROLES.USER,
+      buildMessageContent(text, images, images.length > 0),
+    );
+    const loading = createLoadingAssistantMessage();
+
+    setMessage((prev) => {
+      const next = [...prev, userMessage];
+      // 临时把图片塞进 inputs，让 buildApiPayload 也带上
+      const inputsWithImages = images.length > 0
+        ? { ...inputs, imageEnabled: true, imageUrls: images }
+        : inputs;
+      const payload = buildApiPayload(next, null, inputsWithImages, parameterEnabled);
+      sendRequest(payload, true);
+      const all = [...next, loading];
+      setTimeout(() => saveMessagesImmediately(all), 0);
+      return all;
+    });
   };
 
-  const buildContent = (text, images) => {
-    if (!images.length) return text;
-    const parts = [];
-    if (text) parts.push({ type: 'text', text });
-    images.forEach((url) => parts.push({ type: 'image_url', image_url: { url } }));
-    return parts;
+  const handleKeyDown = (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleSend();
+    }
   };
 
-  const renderUserContent = (m) => {
-    if (typeof m.content === 'string') return { text: m.content, images: [] };
-    if (!Array.isArray(m.content)) return { text: '', images: [] };
-    const images = m.content.filter((p) => p?.type === 'image_url').map((p) => p.image_url.url);
-    const text = m.content.filter((p) => p?.type === 'text').map((p) => p.text).join('');
-    return { text, images };
-  };
-
-  const removePendingImage = (i) => setPendingImages((p) => p.filter((_, idx) => idx !== i));
-
-  const fileToDataUrl = (file) => new Promise((resolve, reject) => {
-    const r = new FileReader();
-    r.onload = () => resolve(r.result);
-    r.onerror = reject;
-    r.readAsDataURL(file);
-  });
+  const fileToDataUrl = (file) =>
+    new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
 
   const handleAddImages = async (files) => {
     if (!files || files.length === 0) return;
-    const urls = [];
-    for (const f of files) {
-      if (!f.type.startsWith('image/')) continue;
-      try { urls.push(await fileToDataUrl(f)); } catch {}
+    const arr = Array.from(files).filter((f) => f.type.startsWith('image/'));
+    if (arr.length === 0) return;
+    try {
+      const dataUrls = await Promise.all(arr.map(fileToDataUrl));
+      setPendingImages((prev) => [...prev, ...dataUrls].slice(0, 8));
+    } catch (e) {
+      showWarning(t('图片读取失败'));
     }
-    if (urls.length) setPendingImages((p) => [...p, ...urls]);
   };
 
-  const handlePaste = async (e) => {
+  const handlePaste = (e) => {
     const items = e.clipboardData?.items;
     if (!items) return;
     const files = [];
@@ -202,265 +316,283 @@ const ChatPage = () => {
         if (f) files.push(f);
       }
     }
-    if (files.length) {
+    if (files.length > 0) {
       e.preventDefault();
-      await handleAddImages(files);
+      handleAddImages(files);
     }
   };
 
-  const handlePickTopic = (text) => {
-    setDraft(text);
-    setTimeout(() => {
-      inputRef.current?.focus();
-      if (inputRef.current) {
-        inputRef.current.style.height = 'auto';
-        inputRef.current.style.height = `${Math.min(inputRef.current.scrollHeight, 260)}px`;
-      }
-    }, 0);
+  const removePendingImage = (i) => {
+    setPendingImages((prev) => prev.filter((_, idx) => idx !== i));
   };
 
   const handleClear = () => {
-    setMessages([]);
-    setDraft('');
-    setPendingImages([]);
-  };
-
-  const sendRequest = async (history) => {
-    setSending(true);
-    setMessages((p) => [...p, { id: `a-${Date.now()}`, role: 'assistant', content: '', status: 'loading' }]);
-    const ctrl = new AbortController();
-    abortRef.current = ctrl;
-    try {
-      const resp = await fetch('/chat/completions', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'New-API-User': String(userState?.user?.id || JSON.parse(localStorage.getItem('user') || '{}').id || ''),
-        },
-        body: JSON.stringify({ model, messages: history, stream: true, group }),
-        signal: ctrl.signal,
-        credentials: 'include',
-      });
-      if (!resp.ok) {
-        const t = await resp.text();
-        throw new Error(t || `HTTP ${resp.status}`);
-      }
-      const reader = resp.body.getReader();
-      const decoder = new TextDecoder();
-      let buffer = '';
-      let accumulated = '';
-      while (true) {
-        const { value, done } = await reader.read();
-        if (done) break;
-        buffer += decoder.decode(value, { stream: true });
-        const lines = buffer.split('\n');
-        buffer = lines.pop();
-        for (const ln of lines) {
-          const s = ln.trim();
-          if (!s.startsWith('data:')) continue;
-          const payload = s.slice(5).trim();
-          if (payload === '[DONE]') continue;
-          try {
-            const obj = JSON.parse(payload);
-            const delta = obj.choices?.[0]?.delta?.content || '';
-            if (delta) {
-              accumulated += delta;
-              setMessages((prev) => {
-                const next = prev.slice();
-                next[next.length - 1] = { ...next[next.length - 1], content: accumulated, status: 'incomplete' };
-                return next;
-              });
-            }
-          } catch {}
-        }
-      }
-      setMessages((prev) => {
-        const next = prev.slice();
-        next[next.length - 1] = { ...next[next.length - 1], status: 'complete' };
-        return next;
-      });
-    } catch (e) {
-      if (e.name !== 'AbortError') {
-        setMessages((prev) => {
-          const next = prev.slice();
-          next[next.length - 1] = { ...next[next.length - 1], status: 'error', error: e.message };
-          return next;
-        });
-        showError(e.message || '请求失败');
-      } else {
-        setMessages((prev) => {
-          const next = prev.slice();
-          next[next.length - 1] = { ...next[next.length - 1], status: 'complete' };
-          return next;
-        });
-      }
-    } finally {
-      setSending(false);
-      abortRef.current = null;
+    // 先中断可能正在进行的流，避免后续 chunk 又把消息塞回来
+    if (isGenerating) {
+      try { onStopGenerator(); } catch {}
     }
-  };
-
-  const handleSend = async () => {
-    const text = draft.trim();
-    const imgs = pendingImages.slice();
-    if ((!text && imgs.length === 0) || sending) return;
-    if (!model) return showWarning('请先选择一个模型');
-
-    setDraft('');
+    setMessage([]);
     setPendingImages([]);
-    if (inputRef.current) inputRef.current.style.height = 'auto';
-
-    const userMsg = { id: `u-${Date.now()}`, role: 'user', content: buildContent(text, imgs) };
-    const history = [...messages, userMsg];
-    setMessages(history);
-    await sendRequest(history.map(({ id, status, error, ...rest }) => rest));
+    // 强制 chat 区域整体重新挂载，绕过 MarkdownContent 等 React.memo 缓存
+    setChatVersion((v) => v + 1);
+    // 多个 tick 后再保存一次空数组，确保任何 in-flight 的 setMessage 都已结算
+    setTimeout(() => {
+      setMessage([]);
+      saveMessagesImmediately([]);
+    }, 0);
+    setTimeout(() => {
+      setMessage([]);
+      saveMessagesImmediately([]);
+      setChatVersion((v) => v + 1);
+    }, 200);
   };
 
-  const handleRetry = async (idx) => {
-    if (sending) return;
-    const history = messages.slice(0, idx).filter((m) => m.role !== 'assistant' || m.status === 'complete');
-    setMessages(messages.slice(0, idx));
-    await sendRequest(history.map(({ id, status, error, ...rest }) => rest));
-  };
-
-  const onStop = () => abortRef.current?.abort();
-
-  const handleKeyDown = (e) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      handleSend();
+  const handleRetry = (assistantIdx) => {
+    if (isGenerating) return;
+    const upTo = message.slice(0, assistantIdx);
+    if (upTo.length === 0 || upTo[upTo.length - 1].role !== MESSAGE_ROLES.USER) {
+      showWarning(t('找不到对应的用户消息'));
+      return;
     }
+    if (!inputs.model) {
+      showWarning(t('请先选择一个模型'));
+      return;
+    }
+    const loading = createLoadingAssistantMessage();
+    const next = [...upTo, loading];
+    setMessage(next);
+    const payload = buildApiPayload(upTo, null, inputs, parameterEnabled);
+    sendRequest(payload, true);
+    setTimeout(() => saveMessagesImmediately(next), 0);
   };
 
-  const localizedTopics = useMemo(() => topics.map((t) => ({ key: t, label: t })), [topics]);
-  const username = userState?.user?.username || '';
+  const canSend = (!!draft.trim() || pendingImages.length > 0) && !!inputs.model;
+
+  const [topics] = useState(() => sampleTopics(4));
+
+  const handlePickTopic = (text) => {
+    setDraft(text);
+    requestAnimationFrame(() => {
+      const el = inputRef.current;
+      if (!el) return;
+      el.focus();
+      el.style.height = 'auto';
+      el.style.height = `${Math.min(el.scrollHeight, 260)}px`;
+    });
+  };
+
+  const localizedTopics = topics.map((text) => ({ key: text, label: t(text) }));
 
   return (
-    <div className='flex flex-col h-[calc(100vh-64px)]' style={{ backgroundColor: 'var(--page-bg)' }}>
+    <div
+      className='flex flex-col h-full'
+      style={{ backgroundColor: 'var(--page-bg)' }}
+    >
       {/* Messages */}
-      <div ref={scrollRef} className='flex-1 overflow-y-auto ui-scrollbar'>
-        {messages.length === 0 ? (
-          <div className='h-full flex flex-col items-center justify-center text-center px-6'>
-            <h2 className='text-3xl md:text-5xl font-bold text-ui-text-1 mb-3' style={{ letterSpacing: '-0.025em' }}>
-              {greeting()}
-              {username && <>，<span className='text-ui-accent'>{username}</span></>}
-            </h2>
-            <p className='text-ui-text-2 text-sm md:text-base mb-8'>今天想聊点什么？</p>
-            <div className='w-full max-w-2xl grid grid-cols-1 sm:grid-cols-2 gap-3'>
-              {localizedTopics.map(({ key, label }) => (
-                <Button key={key} variant='toggle' block onClick={() => handlePickTopic(label)} justify='start'>
-                  {label}
-                </Button>
-              ))}
-            </div>
-          </div>
+      <div ref={scrollRef} className='flex-1 overflow-y-auto scrollbar-hide'>
+        {message.length === 0 ? (
+          (() => {
+            const username = userState?.user?.username || '';
+            const hour = new Date().getHours();
+            const greeting =
+              hour < 6 ? t('夜深了')
+              : hour < 12 ? t('早上好')
+              : hour < 14 ? t('中午好')
+              : hour < 18 ? t('下午好')
+              : t('晚上好');
+            return (
+              <div className='h-full flex flex-col items-center justify-center text-center px-6'>
+                <h2
+                  className='text-3xl md:text-5xl font-bold text-ui-text mb-3'
+                  style={{ letterSpacing: '-0.025em' }}
+                >
+                  {greeting}
+                  {username && (
+                    <>
+                      ，<span className='text-ui-brand'>{username}</span>
+                    </>
+                  )}
+                </h2>
+                <p className='text-ui-text-2 text-sm md:text-base mb-8'>
+                  {t('今天想聊点什么？')}
+                </p>
+                <div className='w-full max-w-2xl grid grid-cols-1 sm:grid-cols-2 gap-3'>
+                  {localizedTopics.map(({ key, label }) => (
+                    <Button
+                      key={key}
+                      variant='toggle'
+                      onClick={() => handlePickTopic(label)}
+                      block
+                      className='!justify-start text-left'
+                    >
+                      {label}
+                    </Button>
+                  ))}
+                </div>
+              </div>
+            );
+          })()
         ) : (
-          <div className='max-w-3xl mx-auto pt-10 pb-6 px-2 space-y-5'>
-            {messages.map((msg, idx) => {
-              const isUser = msg.role === 'user';
-              const isLoading = !isUser && !msg.content && msg.status !== 'error' && msg.status !== 'complete';
+          <div key={`chat-${chatVersion}`} className='max-w-3xl mx-auto pt-10 pb-6 px-2 space-y-5'>
+            {message.map((msg, idx) => {
+              const isUser = msg.role === MESSAGE_ROLES.USER;
+              // loading dot 持续到真正有文字 / 失败 / 正式 complete 之前
+              const text = getTextContent(msg);
+              const isLoading =
+                !isUser &&
+                !text &&
+                msg.status !== 'error' &&
+                msg.status !== 'complete';
+
               if (isLoading) {
                 return (
                   <div key={msg.id} className='flex justify-start px-4 pt-1'>
-                    <span className='inline-block w-2.5 h-2.5 rounded-full bg-ui-text-1 animate-pulse' />
+                    <span
+                      className='inline-block w-2.5 h-2.5 rounded-full bg-ui-text'
+                      style={{ animation: 'breath 1.4s ease-in-out infinite' }}
+                    />
                   </div>
                 );
               }
+
               if (isUser) {
-                const { text, images } = renderUserContent(msg);
+                const imgs = getMessageImages(msg);
+                const text = getTextContent(msg);
                 return (
-                  <UserBubble key={msg.id} images={images}>
+                  <UserBubble key={msg.id} images={imgs}>
                     {text && <span className='whitespace-pre-wrap'>{text}</span>}
                   </UserBubble>
                 );
               }
-              return <AssistantMessage key={msg.id} msg={msg} onRetry={() => handleRetry(idx)} />;
+
+              return (
+                <AssistantMessage
+                  key={msg.id}
+                  msg={msg}
+                  onRetry={() => handleRetry(idx)}
+                  t={t}
+                />
+              );
             })}
           </div>
         )}
       </div>
 
-      {/* Input area */}
+      {/* Input area: single integrated card */}
       <div className='shrink-0 px-3 md:px-4 pb-4 pt-2'>
-        <div className='max-w-3xl mx-auto space-y-2'>
-          {pendingImages.length > 0 && (
-            <div className='flex flex-wrap gap-2'>
-              {pendingImages.map((url, i) => (
-                <div key={i} className='relative group'>
-                  <img src={url} alt='' className='w-16 h-16 rounded-xl border border-ui-border object-cover' />
-                  <button
-                    onClick={() => removePendingImage(i)}
-                    className='absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-[var(--page-bg)] border border-ui-border flex items-center justify-center text-ui-text-2 hover:text-ui-danger'
-                    aria-label='remove'
-                  >
-                    <X size={11} />
-                  </button>
-                </div>
-              ))}
-            </div>
-          )}
-
-          <Textarea
-            ref={inputRef}
-            value={draft}
-            onChange={setDraft}
-            onKeyDown={handleKeyDown}
-            onPaste={handlePaste}
-            rows={3}
-            width='full'
-            size={44}
-            autoResize
-            placeholder='发消息给模型，Enter 发送 / Shift + Enter 换行'
-            footer={
-              <div className='flex items-center justify-between gap-2'>
-                <div className='flex items-center gap-1.5'>
-                  <IconButton icon={ImagePlus} onClick={() => fileInputRef.current?.click()} title='上传图片' aria-label='上传图片' />
-                  {groups.length > 0 && (
-                    <Select
-                      value={group}
-                      onChange={setGroup}
-                      options={groups}
-                      placeholder='分组'
-                      placement='top-start'
-                      size={32}
-                      width={128}
+        <div className='max-w-3xl mx-auto'>
+          <div className='bg-ui-bg-elevated border border-ui-border rounded-[20px] shadow-sm overflow-hidden focus-within:border-ui-text-3 transition-colors'>
+            {/* Pending image previews */}
+            {pendingImages.length > 0 && (
+              <div className='flex flex-wrap gap-2 px-4 pt-4'>
+                {pendingImages.map((url, i) => (
+                  <div key={i} className='relative group'>
+                    <img
+                      src={url}
+                      alt=''
+                      className='w-16 h-16 rounded-xl border border-ui-border object-cover'
                     />
-                  )}
-                  <Select
-                    value={model}
-                    onChange={setModel}
-                    options={models.map((m) => ({ value: m, label: m }))}
-                    placeholder='选择模型'
-                    placement='top-start'
-                    size={32}
-                    width={180}
-                  />
-                </div>
-                <div className='flex items-center gap-1.5'>
-                  {messages.length > 0 && (
-                    <IconButton icon={Trash2} onClick={handleClear} title='新对话' aria-label='clear' />
-                  )}
-                  {isGenerating ? (
-                    <IconButton icon={Square} size='lg' onClick={onStop} aria-label='stop' />
-                  ) : (
-                    <IconButton icon={Send} size='lg' onClick={handleSend} disabled={!canSend} aria-label='send' />
-                  )}
-                </div>
+                    <IconButton
+                      icon={XIcon}
+                      size='sm'
+                      shape='circle'
+                      variant='outline'
+                      tone='red'
+                      onClick={() => removePendingImage(i)}
+                      aria-label='remove'
+                      className='absolute -top-1.5 -right-1.5'
+                    />
+                  </div>
+                ))}
               </div>
-            }
-          />
+            )}
 
-          <input
-            ref={fileInputRef}
-            type='file'
-            accept='image/*'
-            multiple
-            hidden
-            onChange={(e) => { handleAddImages(e.target.files); e.target.value = ''; }}
-          />
+            <textarea
+              ref={inputRef}
+              value={draft}
+              onChange={(e) => setDraft(e.target.value)}
+              onKeyDown={handleKeyDown}
+              onPaste={handlePaste}
+              rows={1}
+              placeholder={t('发消息给模型，Enter 发送 / Shift + Enter 换行')}
+              className='block w-full resize-none border-0 outline-none focus:ring-0 px-5 pt-4 pb-1 text-[15px] leading-relaxed text-ui-text placeholder:text-ui-text-3'
+              style={{ minHeight: '92px', maxHeight: '260px', backgroundColor: 'transparent' }}
+              onInput={(e) => {
+                e.target.style.height = 'auto';
+                e.target.style.height = `${Math.min(e.target.scrollHeight, 260)}px`;
+              }}
+            />
 
-          <p className='text-center text-[11px] text-ui-text-3'>
-            模型可能产生不准确的信息，请核实重要内容
+            <input
+              ref={fileInputRef}
+              type='file'
+              accept='image/*'
+              multiple
+              hidden
+              onChange={(e) => {
+                handleAddImages(e.target.files);
+                e.target.value = '';
+              }}
+            />
+
+            {/* Bottom toolbar */}
+            <div className='flex items-center justify-between gap-2 px-3 pb-3 min-w-0'>
+              <div className='flex items-center gap-1 min-w-0 flex-1 overflow-hidden'>
+                <IconButton
+                  icon={ImagePlus}
+                  onClick={() => fileInputRef.current?.click()}
+                  title={t('上传图片')}
+                  aria-label={t('上传图片')}
+                  className='flex-shrink-0'
+                />
+                <SelectChip
+                  options={groups}
+                  value={inputs.group}
+                  onChange={(v) => handleInputChange('group', v)}
+                  placeholder={t('分组')}
+                  emptyText={t('暂无可用分组')}
+                />
+                <SelectChip
+                  options={models}
+                  value={inputs.model}
+                  onChange={(v) => handleInputChange('model', v)}
+                  placeholder={t('选择模型')}
+                  emptyText={t('暂无可用模型')}
+                />
+              </div>
+              <div className='flex items-center gap-1.5 flex-shrink-0'>
+                {message.length > 0 && (
+                  <IconButton
+                    icon={Trash2}
+                    onClick={handleClear}
+                    title={t('新对话')}
+                    aria-label='clear'
+                  />
+                )}
+                {isGenerating ? (
+                  <IconButton
+                    icon={Square}
+                    variant='solid'
+                    size='lg'
+                    onClick={onStopGenerator}
+                    aria-label='stop'
+                    className='bg-ui-bg-subtle text-ui-text hover:bg-ui-border'
+                  />
+                ) : (
+                  <IconButton
+                    icon={Send}
+                    variant='solid'
+                    size='lg'
+                    onClick={handleSend}
+                    disabled={!canSend}
+                    aria-label='send'
+                  />
+                )}
+              </div>
+            </div>
+          </div>
+          <p className='mt-2 text-center text-[11px] text-ui-text-3'>
+            {t('模型可能产生不准确的信息，请核实重要内容')}
           </p>
         </div>
       </div>
@@ -468,4 +600,4 @@ const ChatPage = () => {
   );
 };
 
-export default ChatPage;
+export default Playground;

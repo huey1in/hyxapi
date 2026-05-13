@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { Plus, Search, Pencil, Trash2, ShieldCheck, ShieldOff, ArrowUp, ArrowDown } from 'lucide-react';
-import { API, showError, showSuccess, renderQuota, timestamp2string } from '../../helpers';
+import { API, showError, showSuccess, renderQuota } from '../../helpers';
 import {
   PageShell, Card, Button, IconButton, Input, Table, Pagination,
-  Tag, Modal, ConfirmDialog, Loading,
+  Tag, Modal, SlideOver, ConfirmDialog, Loading,
 } from '../../components/ui';
 
 const PAGE_SIZE = 20;
@@ -51,17 +51,32 @@ const UserPage = () => {
   const columns = [
     { key: 'id', title: 'ID', width: 70 },
     { key: 'username', title: '用户名' },
-    { key: 'display_name', title: '显示名', render: (r) => r.display_name || '-' },
     { key: 'email', title: '邮箱', render: (r) => r.email || '-' },
-    { key: 'quota', title: '余额', render: (r) => renderQuota(r.quota || 0, 2) },
-    { key: 'used_quota', title: '已用', render: (r) => renderQuota(r.used_quota || 0, 2) },
+    { key: 'quota', title: '额度', render: (r) => {
+        const remaining = r.quota || 0;
+        const used = r.used_quota || 0;
+        const total = remaining + used;
+        const pct = total > 0 ? Math.min(100, (used / total) * 100) : 0;
+        return (
+          <div style={{ minWidth: 120 }}>
+            <div className='flex justify-between text-xs mb-1'>
+              <span style={{ color: '#666' }}>已用 {renderQuota(used, 2)}</span>
+              <span style={{ color: '#999' }}>{renderQuota(total, 2)}</span>
+            </div>
+            <div style={{ height: 6, borderRadius: 3, background: '#F2F0E9', overflow: 'hidden' }}>
+              <div style={{ height: '100%', borderRadius: 3, width: `${pct}%`, background: pct > 80 ? '#e74c3c' : '#000', transition: 'width 0.3s' }} />
+            </div>
+          </div>
+        );
+      } },
     { key: 'role', title: '角色', render: (r) => {
         const t = ROLE_TAG[r.role] || ROLE_TAG[1];
         return <Tag color={t.color}>{t.text}</Tag>;
       } },
+    { key: 'aff_count', title: '邀请', render: (r) => r.aff_count || 0 },
+    { key: 'aff_quota', title: '收益', render: (r) => renderQuota(r.aff_quota || 0, 2) },
     { key: 'status', title: '状态', render: (r) =>
         r.status === 1 ? <Tag color='green'>正常</Tag> : <Tag color='grey'>已禁用</Tag> },
-    { key: 'created_time', title: '创建时间', render: (r) => timestamp2string(r.created_time) },
     { key: 'ops', title: '操作', align: 'right', render: (r) => (
         <div className='flex justify-end gap-1'>
           <IconButton icon={Pencil} title='编辑' onClick={() => setEditing({ ...r })} />
@@ -91,11 +106,11 @@ const UserPage = () => {
       <Card className='mb-4'>
         <div className='flex gap-2'>
           <Input
-            placeholder='搜索用户名/邮箱/显示名'
+            placeholder='搜索用户名/邮箱'
             value={keyword}
-            onChange={(e) => setKeyword(e.target.value)}
+            onChange={setKeyword}
             onKeyDown={(e) => e.key === 'Enter' && load(1, keyword)}
-            className='flex-1'
+            width={240}
           />
           <Button icon={Search} onClick={() => load(1, keyword)}>搜索</Button>
         </div>
@@ -146,28 +161,29 @@ const UserEditModal = ({ user, onClose, onSaved }) => {
     } catch (e) { showError(e); } finally { setSaving(false); }
   };
   return (
-    <Modal open title={isNew ? '新建用户' : `编辑用户 #${user.id}`} onClose={onClose} onConfirm={save} loading={saving}>
-      <div className='space-y-4'>
+    <SlideOver open title={<span className='text-lg font-semibold'>{isNew ? '新建用户' : `编辑用户 #${user.id}`}</span>} onClose={onClose} width={440}
+      footer={<><Button variant='toggle' onClick={onClose}>取消</Button><Button loading={saving} onClick={save}>{isNew ? '创建' : '保存'}</Button></>}>
+      <div className='px-6 pb-6 space-y-4'>
         <div>
           <label className='block text-sm text-ui-text-2 mb-1.5'>用户名</label>
-          <Input value={form.username || ''} onChange={u('username')} disabled={!isNew} />
+          <Input value={form.username || ''} onChange={u('username')} disabled={!isNew} width='full' />
         </div>
         {isNew && (
           <div>
             <label className='block text-sm text-ui-text-2 mb-1.5'>密码</label>
-            <Input type='password' value={form.password || ''} onChange={u('password')} />
+            <Input type='password' value={form.password || ''} onChange={u('password')} width='full' />
           </div>
         )}
         <div>
           <label className='block text-sm text-ui-text-2 mb-1.5'>显示名</label>
-          <Input value={form.display_name || ''} onChange={u('display_name')} />
+          <Input value={form.display_name || ''} onChange={u('display_name')} width='full' />
         </div>
         <div>
           <label className='block text-sm text-ui-text-2 mb-1.5'>邮箱</label>
-          <Input value={form.email || ''} onChange={u('email')} />
+          <Input value={form.email || ''} onChange={u('email')} width='full' />
         </div>
       </div>
-    </Modal>
+    </SlideOver>
   );
 };
 

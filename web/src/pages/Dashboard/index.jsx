@@ -1,108 +1,56 @@
 import React, { useContext, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Wallet, TrendingUp, Activity, KeyRound } from 'lucide-react';
-import { API, renderQuota, renderNumber } from '../../helpers';
+import { RefreshCw, ChevronDown, Copy, Globe, Megaphone, HelpCircle, Activity } from 'lucide-react';
+import { API, renderNumber, renderQuota, showSuccess, copy, getRelativeTime } from '../../helpers';
 import { UserContext } from '../../context/User';
-import { PageShell, Card, Button, Loading } from '../../components/ui';
+import { StatusContext } from '../../context/Status';
+import { IconButton, Loading } from '../../components/ui';
+import { UPTIME_STATUS_MAP } from '../../constants/dashboard.constants';
 
-const StatCard = ({ icon: Icon, label, value, hint }) => (
-  <Card>
-    <div className='flex items-center justify-between mb-3'>
-      <span className='text-sm text-ui-text-2'>{label}</span>
-      <Icon size={18} className='text-ui-text-3' />
-    </div>
-    <div className='text-2xl font-semibold text-ui-text-1'>{value}</div>
-    {hint && <div className='text-xs text-ui-text-3 mt-1'>{hint}</div>}
-  </Card>
-);
+const MONTHS = ['1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月'];
 
-const Sparkline = ({ points, height = 160 }) => {
-  if (!points || points.length === 0) {
-    return <p className='text-sm text-ui-text-3 py-8 text-center'>暂无数据</p>;
+const BarChart = ({ data, height = 180 }) => {
+  if (!data || data.length === 0) {
+    return <p className='text-sm text-[#999] py-8 text-center'>暂无数据</p>;
   }
-  const W = 800;
-  const H = height;
-  const max = Math.max(1, ...points.map((p) => p.value));
-  const min = 0;
-  const range = max - min || 1;
-  const stepX = W / Math.max(1, points.length - 1);
-  const coords = points.map((p, i) => [i * stepX, H - ((p.value - min) / range) * (H - 24) - 4]);
-  const path = coords.map((c, i) => (i === 0 ? `M${c[0]},${c[1]}` : `L${c[0]},${c[1]}`)).join(' ');
-  const area = `${path} L${coords[coords.length - 1][0]},${H} L0,${H} Z`;
-  return (
-    <svg viewBox={`0 0 ${W} ${H}`} className='w-full' preserveAspectRatio='none' height={H}>
-      <defs>
-        <linearGradient id='spark-fill' x1='0' y1='0' x2='0' y2='1'>
-          <stop offset='0%' stopColor='var(--ui-accent)' stopOpacity='0.35' />
-          <stop offset='100%' stopColor='var(--ui-accent)' stopOpacity='0' />
-        </linearGradient>
-      </defs>
-      <path d={area} fill='url(#spark-fill)' />
-      <path d={path} fill='none' stroke='var(--ui-accent)' strokeWidth='2' />
-      {coords.map(([x, y], i) => (
-        <circle key={i} cx={x} cy={y} r='2' fill='var(--ui-accent)' />
-      ))}
-    </svg>
-  );
-};
+  const max = Math.max(1, ...data.map((d) => d.value));
+  const ticks = 6;
+  const step = Math.ceil(max / ticks);
+  const yLabels = Array.from({ length: ticks + 1 }, (_, i) => step * (ticks - i));
 
-const PIE_COLORS = ['#3b82f6', '#ef4444', '#10b981', '#f59e0b', '#8b5cf6', '#06b6d4', '#ec4899', '#84cc16', '#f97316', '#a3a3a3'];
-
-const Donut = ({ slices, size = 180 }) => {
-  if (!slices || slices.length === 0) {
-    return <p className='text-sm text-ui-text-3 py-8 text-center'>暂无数据</p>;
-  }
-  const total = slices.reduce((s, x) => s + x.value, 0) || 1;
-  const r = size / 2 - 10;
-  const cx = size / 2;
-  const cy = size / 2;
-  let acc = 0;
-  const arcs = slices.map((s, i) => {
-    const a0 = (acc / total) * Math.PI * 2;
-    acc += s.value;
-    const a1 = (acc / total) * Math.PI * 2;
-    const large = a1 - a0 > Math.PI ? 1 : 0;
-    const x0 = cx + r * Math.sin(a0);
-    const y0 = cy - r * Math.cos(a0);
-    const x1 = cx + r * Math.sin(a1);
-    const y1 = cy - r * Math.cos(a1);
-    const d = `M${cx},${cy} L${x0},${y0} A${r},${r} 0 ${large} 1 ${x1},${y1} Z`;
-    return { d, color: PIE_COLORS[i % PIE_COLORS.length], label: s.label, value: s.value, pct: (s.value / total) * 100 };
-  });
   return (
-    <div className='flex items-center gap-6 flex-wrap'>
-      <svg width={size} height={size}>
-        {arcs.map((a, i) => <path key={i} d={a.d} fill={a.color} />)}
-        <circle cx={cx} cy={cy} r={r * 0.55} fill='var(--page-bg)' />
-      </svg>
-      <ul className='flex-1 min-w-[200px] space-y-1.5 text-sm'>
-        {arcs.map((a, i) => (
-          <li key={i} className='flex items-center justify-between gap-3'>
-            <span className='flex items-center gap-2 min-w-0'>
-              <span className='w-2.5 h-2.5 rounded-sm shrink-0' style={{ background: a.color }} />
-              <span className='text-ui-text-1 truncate font-mono text-xs'>{a.label}</span>
-            </span>
-            <span className='text-ui-text-3 tabular-nums text-xs whitespace-nowrap'>{a.pct.toFixed(1)}%</span>
-          </li>
+    <div className='flex gap-2' style={{ height }}>
+      <div className='flex flex-col justify-between text-[12px] text-[#999] tabular-nums pr-1' style={{ width: 44 }}>
+        {yLabels.map((v, i) => (
+          <span key={i}>{v >= 1000 ? `${(v/1000).toFixed(v >= 10000 ? 0 : 1)}K` : v}</span>
         ))}
-      </ul>
+      </div>
+      <div className='flex-1 flex items-end gap-[3px]'>
+        {data.map((d, i) => {
+          const pct = max > 0 ? (d.value / max) * 100 : 0;
+          return (
+            <div key={i} className='flex-1 flex flex-col items-center gap-1'>
+              <div className='w-full flex justify-center' style={{ height: height - 24 }}>
+                <div
+                  className='w-full max-w-[28px] rounded-t transition-all'
+                  style={{ height: `${pct}%`, background: '#222222' }}
+                />
+              </div>
+              <span className='text-[11px] text-[#999]'>{d.label}</span>
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 };
-
-const RANGE_OPTIONS = [
-  { value: 1, label: '近 1 天' },
-  { value: 7, label: '近 7 天' },
-  { value: 30, label: '近 30 天' },
-];
 
 const Dashboard = () => {
   const navigate = useNavigate();
   const [userState] = useContext(UserContext);
+  const [statusState] = useContext(StatusContext);
   const [stats, setStats] = useState(null);
-  const [series, setSeries] = useState([]);
-  const [modelSlices, setModelSlices] = useState([]);
-  const [range, setRange] = useState(7);
+  const [monthlyData, setMonthlyData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [chartLoading, setChartLoading] = useState(false);
 
@@ -110,104 +58,319 @@ const Dashboard = () => {
     (async () => {
       try {
         const res = await API.get('/api/user/self');
-        const { success, data } = res.data || {};
-        if (success) setStats(data);
+        if (res.data?.success) setStats(res.data.data);
       } catch {} finally { setLoading(false); }
     })();
+    loadChart();
+    loadUptime();
   }, []);
 
-  const loadChart = async (days) => {
+  const loadChart = async () => {
     setChartLoading(true);
     try {
       const end = Math.floor(Date.now() / 1000);
-      const start = end - days * 86400;
-      const res = await API.get(`/api/data/self/?start_timestamp=${start}&end_timestamp=${end}&default_time=hour`);
+      const start = end - 365 * 86400;
+      const res = await API.get(`/api/data/self/?start_timestamp=${start}&end_timestamp=${end}&default_time=month`);
       const list = res.data?.success ? (res.data.data || []) : [];
-      // aggregate by created_at (string) → sum quota
-      const map = new Map();
-      const byModel = new Map();
+      const byMonth = new Map();
       list.forEach((it) => {
-        const k = it.Day || it.day || it.Time || it.created_at;
+        const k = it.Day || it.day || it.Time || it.created_at || '';
         const q = it.Quota || it.quota || 0;
-        if (k) map.set(k, (map.get(k) || 0) + q);
-        const m = it.ModelName || it.model_name || 'unknown';
-        byModel.set(m, (byModel.get(m) || 0) + q);
+        const month = new Date(k).getMonth();
+        if (!isNaN(month)) byMonth.set(month, (byMonth.get(month) || 0) + q);
       });
-      const arr = Array.from(map.entries())
-        .sort(([a], [b]) => String(a).localeCompare(String(b)))
-        .map(([time, value]) => ({ time, value }));
-      setSeries(arr);
-      const slices = Array.from(byModel.entries())
-        .filter(([, v]) => v > 0)
-        .sort((a, b) => b[1] - a[1])
-        .slice(0, 10)
-        .map(([label, value]) => ({ label, value }));
-      setModelSlices(slices);
-    } catch {
-      setSeries([]); setModelSlices([]);
-    } finally {
-      setChartLoading(false);
-    }
+      const now = new Date();
+      const result = [];
+      for (let i = 11; i >= 0; i--) {
+        const m = (now.getMonth() - i + 12) % 12;
+        result.push({ label: MONTHS[m], value: byMonth.get(m) || 0 });
+      }
+      setMonthlyData(result);
+    } catch { setMonthlyData([]); }
+    finally { setChartLoading(false); }
   };
-  useEffect(() => { loadChart(range); }, [range]);
+
+  const [uptimeData, setUptimeData] = useState([]);
+  const [uptimeLoading, setUptimeLoading] = useState(false);
+
+  const loadUptime = async () => {
+    setUptimeLoading(true);
+    try {
+      const res = await API.get('/api/uptime/status');
+      if (res.data?.success) setUptimeData(res.data.data || []);
+    } catch {} finally { setUptimeLoading(false); }
+  };
+
+  const status = statusState?.status || {};
+  const announcements = useMemo(() => {
+    return (status.announcements || []).slice(0, 10).map((it) => {
+      const d = it?.publishDate ? new Date(it.publishDate) : null;
+      const time = d && !isNaN(d.getTime())
+        ? `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+        : '';
+      return { ...it, time, relative: getRelativeTime(it.publishDate) };
+    });
+  }, [status.announcements]);
+  const apiInfoData = status.api_info || [];
+  const faqData = status.faq || [];
+
+  const apiInfoEnabled = status.api_info_enabled ?? true;
+  const announcementsEnabled = status.announcements_enabled ?? true;
+  const faqEnabled = status.faq_enabled ?? true;
+  const uptimeEnabled = status.uptime_kuma_enabled ?? true;
 
   const u = stats || userState?.user || {};
-  const totalUsed = useMemo(() => series.reduce((s, p) => s + p.value, 0), [series]);
+
+  if (loading) return <div className='p-8'><Loading /></div>;
 
   return (
-    <PageShell
-      title='仪表盘'
-      actions={
-        <>
-          <Button size='sm' variant='toggle' onClick={() => navigate('/console/topup')}>充值</Button>
-          <Button size='sm' onClick={() => navigate('/console/token')}>新建 API Key</Button>
-        </>
-      }
-    >
-      {loading ? (
-        <Loading />
-      ) : (
-        <div className='space-y-6'>
-          <div className='grid grid-cols-2 md:grid-cols-4 gap-4'>
-            <StatCard icon={Wallet} label='可用余额' value={renderQuota(u.quota || 0, 2)} />
-            <StatCard icon={TrendingUp} label='已用额度' value={renderQuota(u.used_quota || 0, 2)} />
-            <StatCard icon={Activity} label='请求次数' value={renderNumber(u.request_count || 0)} />
-            <StatCard icon={KeyRound} label='用户分组' value={u.group || '-'} />
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 28, width: '100%', maxWidth: 960, marginInline: 'auto', padding: '24px 16px' }}>
+      {/* 页面标题 */}
+      <h1 style={{ fontSize: 18, fontWeight: 600, color: '#000', paddingBlockEnd: 8 }}>用量信息</h1>
+
+      {/* 统计卡片 */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 12 }}>
+        {/* 积分余额 */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingBlock: 26, paddingInline: 20, border: '1px solid #e9e9e9', borderRadius: 26 }}>
+          <div>
+            <div style={{ fontSize: 14, fontWeight: 400, color: '#8f8f8f', marginBottom: 8 }}>可用额度</div>
+            <div style={{ fontSize: 28, fontWeight: 700, color: '#000' }}>{renderQuota(u.quota || 0)}</div>
+            <div style={{ fontSize: 12, color: '#999', marginTop: 4 }}>累计已使用: {renderQuota(u.used_quota || 0)}</div>
           </div>
-
-          <Card>
-            <div className='flex items-center justify-between mb-4'>
-              <div>
-                <h3 className='text-base font-semibold text-ui-text-1'>使用趋势</h3>
-                <p className='text-xs text-ui-text-3 mt-1'>
-                  区间合计 {renderQuota(totalUsed, 2)} · {series.length} 个数据点
-                </p>
-              </div>
-              <div className='flex items-center gap-1'>
-                {RANGE_OPTIONS.map((opt) => (
-                  <Button
-                    key={opt.value}
-                    size='sm'
-                    variant='toggle'
-                    selected={range === opt.value}
-                    onClick={() => setRange(opt.value)}
-                  >
-                    {opt.label}
-                  </Button>
-                ))}
-              </div>
+          <button
+            onClick={() => navigate('/console/topup')}
+            style={{
+              cursor: 'pointer',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              height: 32, paddingInline: 16, border: 'none', borderRadius: 24,
+              fontSize: 14, color: '#000',
+              backgroundImage: 'linear-gradient(136deg, #daf5fe, #ffeddf, #daf5fe, #ffeddf)',
+              backgroundSize: '300% 300%',
+            }}
+          >+ 充值</button>
+        </div>
+        {/* 本月消费 */}
+        <div style={{ display: 'flex', alignItems: 'center', paddingBlock: 26, paddingInline: 20, border: '1px solid #e9e9e9', borderRadius: 26 }}>
+          <div>
+            <div style={{ fontSize: 14, fontWeight: 400, color: '#8f8f8f', marginBottom: 8 }}>本月消费</div>
+            <div style={{ fontSize: 28, fontWeight: 700, color: '#000' }}>
+              {renderQuota(monthlyData.length > 0 ? monthlyData[monthlyData.length - 1].value : 0)}
             </div>
-            {chartLoading ? <Loading /> : <Sparkline points={series} />}
-          </Card>
+          </div>
+        </div>
+      </div>
 
-          <Card>
-            <h3 className='text-base font-semibold text-ui-text-1 mb-1'>模型用量分布</h3>
-            <p className='text-xs text-ui-text-3 mb-4'>同时间区间，按 quota 占比 Top 10</p>
-            {chartLoading ? <Loading /> : <Donut slices={modelSlices} />}
-          </Card>
+      {/* 每月用量 */}
+      <div style={{ paddingBlock: '16px 8px', paddingInline: 16, border: '1px solid #e9e9e9', borderRadius: 26 }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBlockEnd: 8 }}>
+          <span style={{ fontSize: 18, fontWeight: 600, color: '#000' }}>每月用量</span>
+          <IconButton icon={RefreshCw} onClick={loadChart} disabled={chartLoading} title='刷新' />
+        </div>
+        <div style={{ position: 'relative' }}>
+          <div style={{ opacity: chartLoading ? 0.4 : 1, transition: 'opacity 0.3s ease' }}>
+            <BarChart data={monthlyData} />
+          </div>
+          {chartLoading && (
+            <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <Loading size='sm' />
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* 信息面板 */}
+      <InfoPanels
+        apiInfoEnabled={apiInfoEnabled}
+        announcementsEnabled={announcementsEnabled}
+        faqEnabled={faqEnabled}
+        uptimeEnabled={uptimeEnabled}
+        apiInfoData={apiInfoData}
+        announcements={announcements}
+        faqData={faqData}
+        uptimeData={uptimeData}
+        uptimeLoading={uptimeLoading}
+      />
+    </div>
+  );
+};
+
+// ── Info Panels ─────────────────────────────────────────
+
+const TABS = [
+  { key: 'api', label: 'API 信息', Icon: Globe },
+  { key: 'news', label: '系统公告', Icon: Megaphone },
+  { key: 'faq', label: '常见问答', Icon: HelpCircle },
+  { key: 'uptime', label: '服务状态', Icon: Activity },
+];
+
+const InfoPanels = ({ apiInfoEnabled, announcementsEnabled, faqEnabled, uptimeEnabled, apiInfoData, announcements, faqData, uptimeData, uptimeLoading }) => {
+  const tabs = useMemo(() => {
+    const out = [];
+    if (apiInfoEnabled) out.push(TABS[0]);
+    if (announcementsEnabled) out.push(TABS[1]);
+    if (faqEnabled) out.push(TABS[2]);
+    if (uptimeEnabled) out.push(TABS[3]);
+    return out;
+  }, [apiInfoEnabled, announcementsEnabled, faqEnabled, uptimeEnabled]);
+
+  const [active, setActive] = useState(tabs[0]?.key || 'api');
+  const [uptimeGroup, setUptimeGroup] = useState('0');
+
+  if (tabs.length === 0) return null;
+
+  return (
+    <div style={{ border: '1px solid #e9e9e9', borderRadius: 26, overflow: 'hidden' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '12px 16px', borderBottom: '1px solid #eeeeee' }}>
+        {tabs.map(({ key, label, Icon }) => (
+          <button
+            key={key}
+            onClick={() => setActive(key)}
+            style={{
+              cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 5,
+              height: 30, paddingInline: 12, borderRadius: 15, border: 'none',
+              fontSize: 13, fontWeight: active === key ? 500 : 400,
+              color: active === key ? '#000' : '#666',
+              background: active === key ? '#F2F0E9' : 'transparent',
+              transition: 'background 0.15s, color 0.15s',
+            }}
+          >
+            <Icon size={13} />
+            {label}
+          </button>
+        ))}
+      </div>
+      <div style={{ maxHeight: 420, overflowY: 'auto' }}>
+        {active === 'api' && <ApiInfoSection data={apiInfoData} />}
+        {active === 'news' && <AnnouncementsSection data={announcements} />}
+        {active === 'faq' && <FaqSection data={faqData} />}
+        {active === 'uptime' && <UptimeSection data={uptimeData} loading={uptimeLoading} group={uptimeGroup} setGroup={setUptimeGroup} />}
+      </div>
+    </div>
+  );
+};
+
+const EmptyState = ({ text }) => (
+  <div style={{ padding: '48px 16px', textAlign: 'center', color: '#999', fontSize: 13 }}>{text}</div>
+);
+
+const ApiInfoSection = ({ data }) => {
+  if (!data?.length) return <EmptyState text='暂无 API 信息' />;
+  return (
+    <div>
+      {data.map((item, i) => (
+        <div key={i} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 18px', borderBottom: i < data.length - 1 ? '1px solid #eeeeee' : 'none' }}>
+          <div style={{ minWidth: 0, flex: 1 }}>
+            <div style={{ fontSize: 14, fontWeight: 500, color: '#000', marginBottom: 2 }}>{item.route || item.name || '-'}</div>
+            <div style={{ fontSize: 12, fontFamily: 'monospace', color: '#666', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.url}</div>
+          </div>
+          <button
+            onClick={async () => { if (await copy(item.url)) showSuccess('已复制'); }}
+            style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', width: 28, height: 28, border: 'none', borderRadius: 6, background: 'transparent', color: '#999', flexShrink: 0 }}
+          >
+            <Copy size={14} />
+          </button>
+        </div>
+      ))}
+    </div>
+  );
+};
+
+const AnnouncementsSection = ({ data }) => {
+  if (!data?.length) return <EmptyState text='暂无公告' />;
+  const colorMap = { success: '#22c55e', warning: '#f59e0b', error: '#ef4444' };
+  return (
+    <div>
+      {data.map((item, i) => (
+        <div key={i} style={{ padding: '12px 18px', borderBottom: i < data.length - 1 ? '1px solid #eeeeee' : 'none' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+            <span style={{ width: 6, height: 6, borderRadius: '50%', background: colorMap[item.type] || '#999', flexShrink: 0 }} />
+            <span style={{ fontSize: 12, color: '#999' }}>{item.relative ? `${item.relative} · ` : ''}{item.time}</span>
+          </div>
+          <div style={{ fontSize: 14, color: '#000', lineHeight: 1.6, paddingLeft: 14 }}>{item.content}</div>
+        </div>
+      ))}
+    </div>
+  );
+};
+
+const FaqSection = ({ data }) => {
+  if (!data?.length) return <EmptyState text='暂无问答' />;
+  return (
+    <div>
+      {data.map((item, i) => <FaqItem key={i} item={item} last={i === data.length - 1} />)}
+    </div>
+  );
+};
+
+const FaqItem = ({ item, last }) => {
+  const [open, setOpen] = useState(false);
+  return (
+    <div style={{ borderBottom: last ? 'none' : '1px solid #eeeeee' }}>
+      <button
+        onClick={() => setOpen((o) => !o)}
+        style={{
+          cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          width: '100%', padding: '12px 18px', border: 'none', background: 'transparent',
+          fontSize: 14, color: '#000', textAlign: 'left',
+        }}
+      >
+        <span style={{ flex: 1 }}>{item.question}</span>
+        <ChevronDown size={14} style={{ color: '#999', transform: open ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }} />
+      </button>
+      {open && (
+        <div style={{ padding: '0 18px 12px', fontSize: 13, color: '#666', lineHeight: 1.6 }}>{item.answer}</div>
+      )}
+    </div>
+  );
+};
+
+const UptimeSection = ({ data, loading, group, setGroup }) => {
+  if (loading) return <div style={{ padding: '32px 0', textAlign: 'center' }}><Loading size='sm' /></div>;
+  if (!data?.length) return <EmptyState text='暂无监控服务' />;
+
+  const groups = data.map((g, i) => ({ key: String(i), label: g.categoryName }));
+  const current = data[Number(group) || 0];
+  const monitors = current?.monitorList || [];
+
+  return (
+    <div>
+      {groups.length > 1 && (
+        <div style={{ display: 'flex', gap: 4, padding: '10px 16px', borderBottom: '1px solid #eeeeee', overflowX: 'auto' }}>
+          {groups.map((g) => (
+            <button
+              key={g.key}
+              onClick={() => setGroup(g.key)}
+              style={{
+                cursor: 'pointer', height: 26, paddingInline: 10, borderRadius: 13, border: 'none',
+                fontSize: 12, fontWeight: group === g.key ? 500 : 400,
+                color: group === g.key ? '#000' : '#666',
+                background: group === g.key ? '#F2F0E9' : 'transparent',
+                whiteSpace: 'nowrap', transition: 'background 0.15s',
+              }}
+            >{g.label}</button>
+          ))}
         </div>
       )}
-    </PageShell>
+      {monitors.length === 0 ? <EmptyState text='暂无监控' /> : (
+        <div>
+          {monitors.map((m, i) => {
+            const statusInfo = UPTIME_STATUS_MAP[m.status] || {};
+            const color = statusInfo.color || '#999';
+            const pct = ((m.uptime || 0) * 100).toFixed(2);
+            return (
+              <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 18px', borderBottom: i < monitors.length - 1 ? '1px solid #eeeeee' : 'none' }}>
+                <span style={{ width: 7, height: 7, borderRadius: '50%', background: color, flexShrink: 0 }} />
+                <span style={{ flex: 1, fontSize: 14, color: '#000' }}>{m.name}</span>
+                <div style={{ width: 80, height: 4, borderRadius: 2, background: '#F2F0E9', overflow: 'hidden' }}>
+                  <div style={{ height: '100%', borderRadius: 2, background: color, width: `${pct}%`, transition: 'width 0.3s' }} />
+                </div>
+                <span style={{ fontSize: 12, color: '#666', fontVariantNumeric: 'tabular-nums', width: 48, textAlign: 'right' }}>{pct}%</span>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
   );
 };
 

@@ -30,6 +30,7 @@ export let API = axios.create({
   baseURL: import.meta.env.VITE_REACT_APP_SERVER_URL
     ? import.meta.env.VITE_REACT_APP_SERVER_URL
     : '',
+  withCredentials: true,
   headers: {
     'New-API-User': getUserIdFromLocalStorage(),
     'Cache-Control': 'no-store',
@@ -176,10 +177,13 @@ export const buildApiPayload = (
 
   const payload = {
     model: inputs.model,
-    group: inputs.group,
     messages: processedMessages,
     stream: inputs.stream,
   };
+
+  if (inputs.group) {
+    payload.group = inputs.group;
+  }
 
   // 添加启用的参数
   const parameterMappings = {

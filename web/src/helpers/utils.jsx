@@ -52,7 +52,13 @@ export function getSystemName() {
 }
 
 export function getLogo() {
-  // Brand is hardcoded for the TokenC build.
+  const status = localStorage.getItem('status');
+  if (status) {
+    try {
+      const s = JSON.parse(status);
+      if (s.logo) return s.logo;
+    } catch {}
+  }
   return '/logo.png';
 }
 

@@ -1,10 +1,12 @@
 import React, { useEffect, useState } from 'react';
-import { Plus, Pencil, Trash2, Power, PowerOff, Activity, RefreshCw, CheckSquare, Square, Tag as TagIcon } from 'lucide-react';
-import { API, showError, showSuccess, renderQuota, timestamp2string } from '../../helpers';
+import { Plus, Pencil, Trash2, Power, PowerOff, Activity, RefreshCw, CheckSquare, Square, Tag as TagIcon, ChevronDown } from 'lucide-react';
+import { API, showError, showSuccess, renderQuota, timestamp2string, getChannelModels } from '../../helpers';
 import {
-  PageShell, Card, Button, IconButton, Input, NumberInput, Select, Textarea, Table, Pagination,
-  Tag, Modal, ConfirmDialog, Loading,
+  PageShell, Card, Button, IconButton, Input, NumberInput, Select, MultiSelect, Textarea, Table, Pagination,
+  Tag, Modal, SlideOver, ConfirmDialog, Loading, Switch,
 } from '../../components/ui';
+import { cn } from '../../components/ui/tokens';
+import { MODEL_FETCHABLE_CHANNEL_TYPES } from '../../constants/channel.constants';
 
 const PAGE_SIZE = 20;
 
@@ -140,7 +142,6 @@ const ChannelPage = () => {
     { key: 'priority', title: '优先级' },
     { key: 'weight', title: '权重' },
     { key: 'used_quota', title: '已用', render: (r) => renderQuota(r.used_quota || 0, 2) },
-    { key: 'response_time', title: '响应', render: (r) => r.response_time ? `${(r.response_time / 1000).toFixed(2)}s` : '-' },
     { key: 'ops', title: '操作', align: 'right', render: (r) => (
         <div className='flex justify-end gap-1'>
           <IconButton icon={Activity} title='测试' onClick={() => openTest(r)} />
@@ -179,29 +180,27 @@ const ChannelPage = () => {
           <Input
             placeholder='搜索渠道名称/key/分组'
             value={keyword}
-            onChange={(e) => setKeyword(e.target.value)}
+            onChange={setKeyword}
             onKeyDown={(e) => e.key === 'Enter' && load(1, keyword)}
-            className='flex-1 min-w-[200px]'
+            width={240}
           />
-          <div className='w-36'>
-            <Select
-              value={statusF}
-              onChange={(v) => { setStatusF(v); load(1, keyword, v, typeF); }}
-              options={[
-                { value: 'all', label: '全部状态' },
-                { value: '1', label: '启用' },
-                { value: '2', label: '禁用' },
-                { value: '3', label: '自动禁用' },
-              ]}
-            />
-          </div>
-          <div className='w-44'>
-            <Select
-              value={typeF}
-              onChange={(v) => { setTypeF(v); load(1, keyword, statusF, v); }}
-              options={[{ value: 'all', label: '全部类型' }, ...TYPE_OPTIONS.map((o) => ({ value: String(o.value), label: o.label }))]}
-            />
-          </div>
+          <Select
+            value={statusF}
+            onChange={(v) => { setStatusF(v); load(1, keyword, v, typeF); }}
+            width={120}
+            options={[
+              { value: 'all', label: '全部状态' },
+              { value: '1', label: '启用' },
+              { value: '2', label: '禁用' },
+              { value: '3', label: '自动禁用' },
+            ]}
+          />
+          <Select
+            value={typeF}
+            onChange={(v) => { setTypeF(v); load(1, keyword, statusF, v); }}
+            width={120}
+            options={[{ value: 'all', label: '全部类型' }, ...TYPE_OPTIONS.map((o) => ({ value: String(o.value), label: o.label }))]}
+          />
           <Button onClick={() => load(1, keyword)}>搜索</Button>
           <Button
             size='sm'
@@ -298,22 +297,94 @@ const TYPE_OPTIONS = [
   { value: 3,  label: 'Azure OpenAI' },
   { value: 14, label: 'Anthropic Claude' },
   { value: 24, label: 'Google Gemini' },
+  { value: 41, label: 'Vertex AI' },
+  { value: 33, label: 'AWS Bedrock' },
   { value: 17, label: 'Aliyun Qwen' },
-  { value: 16, label: 'Zhipu' },
+  { value: 16, label: 'Zhipu GLM' },
   { value: 25, label: 'Moonshot' },
   { value: 36, label: 'DeepSeek' },
-  { value: 26, label: 'BAAI Baichuan' },
-  { value: 41, label: 'Cohere' },
   { value: 43, label: 'Mistral' },
-  { value: 50, label: 'xAI Grok' },
-  { value: 8,  label: 'Custom OpenAI Compatible' },
+  { value: 48, label: 'xAI Grok' },
+  { value: 20, label: 'OpenRouter' },
+  { value: 40, label: 'SiliconFlow' },
+  { value: 4,  label: 'Ollama' },
+  { value: 34, label: 'Cohere' },
+  { value: 42, label: 'Cloudflare' },
+  { value: 45, label: 'VolcEngine' },
+  { value: 31, label: 'LingYi' },
+  { value: 35, label: 'MiniMax' },
+  { value: 49, label: 'Coze' },
+  { value: 8,  label: '自定义 (OpenAI 兼容)' },
 ];
+
+const MULTI_KEY_MODE_OPTIONS = [
+  { value: 'random', label: '随机' },
+  { value: 'polling', label: '轮询' },
+];
+
+const KeyValueEditor = ({ value, onChange, keyPlaceholder = '键', valuePlaceholder = '值', hint }) => {
+  const parsePairs = (v) => {
+    if (!v) return [];
+    try {
+      const obj = typeof v === 'string' ? JSON.parse(v) : v;
+      return Object.entries(obj).map(([k, val]) => ({ k, v: String(val) }));
+    } catch { return []; }
+  };
+
+  const [pairs, setPairs] = useState(() => parsePairs(value));
+
+  const sync = (newPairs) => {
+    setPairs(newPairs);
+    const obj = {};
+    newPairs.forEach(({ k, v }) => { if (k.trim()) obj[k.trim()] = v; });
+    onChange(Object.keys(obj).length > 0 ? JSON.stringify(obj) : '');
+  };
+
+  const add = () => setPairs((p) => [...p, { k: '', v: '' }]);
+  const remove = (i) => sync(pairs.filter((_, idx) => idx !== i));
+  const update = (i, field, val) => {
+    const next = [...pairs];
+    next[i] = { ...next[i], [field]: val };
+    sync(next);
+  };
+
+  return (
+    <div className='space-y-2'>
+      {hint && <p className='text-xs text-ui-text-3'>{hint}</p>}
+      {pairs.length === 0 && (
+        <p className='text-xs text-ui-text-3 py-2'>暂无数据，点击下方按钮添加键值对</p>
+      )}
+      {pairs.map((p, i) => (
+        <div key={i} className='flex items-center gap-2'>
+          <Input value={p.k} onChange={(v) => update(i, 'k', v)} width='full' placeholder={keyPlaceholder} />
+          <span className='text-ui-text-3 text-xs flex-shrink-0'>→</span>
+          <Input value={p.v} onChange={(v) => update(i, 'v', v)} width='full' placeholder={valuePlaceholder} />
+          <button onClick={() => remove(i)} className='text-ui-text-3 hover:text-red-500 cursor-pointer text-sm flex-shrink-0'>✕</button>
+        </div>
+      ))}
+      <button onClick={add} className='text-xs text-ui-text-2 hover:text-ui-text cursor-pointer underline'>
+        + 添加键值对
+      </button>
+    </div>
+  );
+};
 
 const ChannelEditModal = ({ channel, onClose, onSaved }) => {
   const isEdit = !!channel.id;
-  const [form, setForm] = useState(channel);
+  const [form, setForm] = useState(() => {
+    const setting = channel.setting ? (typeof channel.setting === 'string' ? JSON.parse(channel.setting) : channel.setting) : {};
+    const other_settings = channel.other_settings ? (typeof channel.other_settings === 'string' ? JSON.parse(channel.other_settings) : channel.other_settings) : {};
+    return { ...channel, setting, other_settings };
+  });
+  const [mode, setMode] = useState('single');
+  const [batchPrefix, setBatchPrefix] = useState(false);
+  const [customModel, setCustomModel] = useState('');
+  const [groupOptions, setGroupOptions] = useState([]);
   const [saving, setSaving] = useState(false);
+  const [fetchingModels, setFetchingModels] = useState(false);
   const u = (k) => (v) => setForm((p) => ({ ...p, [k]: v?.target ? v.target.value : v }));
+  const uSetting = (k) => (v) => setForm((p) => ({ ...p, setting: { ...p.setting, [k]: v } }));
+  const uOther = (k) => (v) => setForm((p) => ({ ...p, other_settings: { ...p.other_settings, [k]: v } }));
 
   const save = async () => {
     if (!form.name?.trim()) return showError('请输入渠道名称');
@@ -321,58 +392,462 @@ const ChannelEditModal = ({ channel, onClose, onSaved }) => {
     setSaving(true);
     try {
       const payload = { ...form };
-      const res = isEdit
-        ? await API.put('/api/channel/', payload)
-        : await API.post('/api/channel/', payload);
+      if (payload.setting && typeof payload.setting === 'object') payload.setting = JSON.stringify(payload.setting);
+      if (payload.other_settings && typeof payload.other_settings === 'object') payload.other_settings = JSON.stringify(payload.other_settings);
+      let res;
+      if (isEdit) {
+        res = await API.put('/api/channel/', payload);
+      } else {
+        res = await API.post('/api/channel/', {
+          mode,
+          multi_key_mode: mode === 'multi_to_single' ? (form.multi_key_mode || 'random') : undefined,
+          batch_add_set_key_prefix_2_name: mode === 'batch' ? batchPrefix : undefined,
+          channel: payload,
+        });
+      }
       const { success, message } = res.data || {};
       if (success) { showSuccess(isEdit ? '已更新' : '已创建'); onSaved(); }
       else showError(message);
     } catch (e) { showError(e); } finally { setSaving(false); }
   };
 
+  useEffect(() => {
+    API.get('/api/group/').then((res) => {
+      if (res?.data?.data) setGroupOptions(res.data.data.map((g) => ({ value: g, label: g })));
+    }).catch(() => {});
+  }, []);
+
+  const fetchModels = async () => {
+    if (!isEdit) return;
+    setFetchingModels(true);
+    try {
+      const res = await API.get(`/api/channel/fetch_models/${channel.id}`);
+      const { success, data, message } = res.data || {};
+      if (success && data) {
+        const models = Array.isArray(data) ? data.join(',') : data;
+        setForm((p) => ({ ...p, models }));
+        showSuccess('已获取上游模型列表');
+      } else showError(message || '获取失败');
+    } catch (e) { showError(e); } finally { setFetchingModels(false); }
+  };
+
+  const addCustomModel = () => {
+    if (!customModel.trim()) return;
+    const current = form.models ? form.models.split(',').map((s) => s.trim()).filter(Boolean) : [];
+    if (!current.includes(customModel.trim())) {
+      current.push(customModel.trim());
+      setForm((p) => ({ ...p, models: current.join(',') }));
+    }
+    setCustomModel('');
+  };
+
+  const clearModels = () => setForm((p) => ({ ...p, models: '' }));
+
+  const fillDefaultModels = () => {
+    const defaults = getChannelModels(form.type);
+    if (defaults && defaults.length > 0) {
+      setForm((p) => ({ ...p, models: defaults.join(',') }));
+    } else {
+      showError('该类型暂无默认模型列表');
+    }
+  };
+
+  const fetchModelsFromUrl = async () => {
+    const baseUrl = (form.base_url || '').trim();
+    const key = (form.key || '').split('\n')[0].trim();
+    if (!key) return showError('请先填入密钥');
+    setFetchingModels(true);
+    try {
+      const res = await API.post('/api/channel/fetch_models', {
+        base_url: baseUrl || undefined,
+        type: form.type,
+        key,
+      });
+      const { success, data, message } = res.data || {};
+      if (success && data) {
+        const models = Array.isArray(data) ? data.join(',') : data;
+        setForm((p) => ({ ...p, models }));
+        showSuccess('已从上游获取模型列表');
+      } else showError(message || '获取失败');
+    } catch (e) { showError(e); } finally { setFetchingModels(false); }
+  };
+
+  const isMultiKey = (form.key || '').includes('\n') || form.channel_info?.IsMultiKey;
+  const t = form.type;
+  const isOpenAI = t === 1 || t === 6;
+  const isAzure = t === 3;
+  const isClaude = t === 14;
+  const isVertex = t === 41;
+  const isAWS = t === 33;
+  const isGemini = t === 24;
+  const isOpenRouter = t === 20;
+  const isCoze = t === 49;
+  const needsOther = isAzure || isVertex || isGemini || isCoze;
+
   return (
-    <Modal open title={isEdit ? `编辑渠道 #${channel.id}` : '新建渠道'} onClose={onClose} onConfirm={save} loading={saving} width={600}>
-      <div className='space-y-4'>
-        <div className='grid grid-cols-2 gap-4'>
-          <div>
-            <label className='block text-sm text-ui-text-2 mb-1.5'>名称</label>
-            <Input value={form.name || ''} onChange={u('name')} />
+    <SlideOver
+      open
+      title={<span className='text-lg font-semibold'>{isEdit ? `编辑渠道 #${channel.id}` : '新建渠道'}</span>}
+      onClose={onClose}
+      width={560}
+      footer={
+        <>
+          <Button variant='toggle' onClick={onClose}>取消</Button>
+          <Button loading={saving} onClick={save}>{isEdit ? '保存' : '创建'}</Button>
+        </>
+      }
+    >
+      <div className='px-6 pb-6 space-y-6'>
+        {/* 基本信息 */}
+        <Section title='基本信息'>
+          <div className='grid grid-cols-2 gap-4'>
+            <Field label='类型'>
+              <Select value={form.type} onChange={(v) => u('type')(Number(v))} options={TYPE_OPTIONS} width='full' />
+            </Field>
+            <Field label='名称'>
+              <Input value={form.name || ''} onChange={u('name')} width='full' placeholder='请为渠道命名' />
+            </Field>
           </div>
-          <div>
-            <label className='block text-sm text-ui-text-2 mb-1.5'>类型</label>
-            <Select value={form.type} onChange={(v) => u('type')(Number(v))} options={TYPE_OPTIONS} />
+          {!isEdit && (
+            <Field label='创建模式'>
+              <Select value={mode} onChange={setMode} width='full' options={[
+                { value: 'single', label: '单个创建' },
+                { value: 'batch', label: '批量创建（每行一个 key 创建一个渠道）' },
+                { value: 'multi_to_single', label: '多 Key 合一（多个 key 归入同一渠道）' },
+              ]} />
+            </Field>
+          )}
+        </Section>
+
+        {/* 密钥与连接 */}
+        <Section title='密钥与连接'>
+          <Field label={<>密钥 {isEdit && <span className='text-ui-text-3 text-xs'>(留空不修改)</span>}</>}
+            hint={mode === 'batch' ? '每行一个 key，将创建多个渠道' : mode === 'multi_to_single' ? '每行一个 key，合并为一个渠道' : '请输入渠道对应的鉴权密钥'}>
+            <Textarea value={form.key || ''} onChange={u('key')} rows={mode !== 'single' || isMultiKey ? 5 : 2} placeholder='sk-...' width='full' />
+          </Field>
+          {!isEdit && mode === 'batch' && (
+            <label className='flex items-center gap-2 text-sm text-ui-text-2 cursor-pointer'>
+              <Switch size='sm' checked={batchPrefix} onChange={setBatchPrefix} />
+              将 key 前缀追加到渠道名称
+            </label>
+          )}
+          {(mode === 'multi_to_single' || (isEdit && isMultiKey)) && (
+            <Field label='多 Key 模式'>
+              <Select value={form.multi_key_mode || 'random'} onChange={u('multi_key_mode')} options={MULTI_KEY_MODE_OPTIONS} width='full' />
+            </Field>
+          )}
+          {isOpenAI && (
+            <Field label='组织' hint='不填则为默认组织'>
+              <Input value={form.openai_organization || ''} onChange={u('openai_organization')} width='full' placeholder='org-xxx' />
+            </Field>
+          )}
+          <Field label='API 地址' hint='末尾不要带 /v1 和 /，留空使用默认'>
+            <Input value={form.base_url || ''} onChange={u('base_url')} placeholder='https://api.example.com' width='full' />
+          </Field>
+          {needsOther && (
+            <Field label={isAzure ? 'API Version' : isVertex ? '区域配置 (JSON)' : isCoze ? 'Bot ID' : 'API Version'}
+              hint={isAzure ? '如 2024-02-01' : isVertex ? '如 {"default":"us-central1"}' : ''}>
+              <Input value={form.other || ''} onChange={u('other')} width='full'
+                placeholder={isAzure ? '2024-02-01' : isVertex ? '{"default":"us-central1"}' : isCoze ? 'bot_xxx' : ''} />
+            </Field>
+          )}
+          {isAWS && (
+            <Field label='AWS Key 类型'>
+              <Select value={form.other_settings?.aws_key_type || 'ak_sk'} onChange={uOther('aws_key_type')} width='full'
+                options={[{ value: 'ak_sk', label: 'AK/SK' }, { value: 'api_key', label: 'API Key' }]} />
+            </Field>
+          )}
+          {isVertex && (
+            <Field label='Vertex Key 类型'>
+              <Select value={form.other_settings?.vertex_key_type || 'json'} onChange={uOther('vertex_key_type')} width='full'
+                options={[{ value: 'json', label: 'JSON 凭证' }, { value: 'api_key', label: 'API Key' }]} />
+            </Field>
+          )}
+        </Section>
+
+        {/* 模型配置 */}
+        <Section title='模型配置'>
+          <Field label={
+            <div className='flex items-center justify-between w-full'>
+              <span>支持模型</span>
+              <div className='flex items-center gap-3'>
+                {isEdit && (
+                  <button onClick={fetchModels} disabled={fetchingModels}
+                    className='text-xs text-ui-text-2 hover:text-ui-text cursor-pointer underline'>
+                    {fetchingModels ? '获取中…' : '获取模型列表'}
+                  </button>
+                )}
+                {!isEdit && MODEL_FETCHABLE_CHANNEL_TYPES.has(form.type) && (
+                  <button onClick={fetchModelsFromUrl} disabled={fetchingModels}
+                    className='text-xs text-ui-text-2 hover:text-ui-text cursor-pointer underline'>
+                    {fetchingModels ? '获取中…' : '从上游拉取'}
+                  </button>
+                )}
+                <button onClick={fillDefaultModels} className='text-xs text-ui-text-2 hover:text-ui-text cursor-pointer underline'>填入默认模型</button>
+                <button onClick={clearModels} className='text-xs text-ui-text-2 hover:text-ui-text cursor-pointer underline'>清除所有</button>
+              </div>
+            </div>
+          } hint=''>
+            <ModelTagList
+              models={form.models || ''}
+              onChange={(v) => setForm((p) => ({ ...p, models: v }))}
+            />
+          </Field>
+          <Field label='自定义模型名称'>
+            <div className='flex items-center gap-2'>
+              <Input value={customModel} onChange={setCustomModel} width='full' placeholder='输入自定义模型名称'
+                onKeyDown={(e) => e.key === 'Enter' && addCustomModel()} />
+              <Button variant='toggle' onClick={addCustomModel} style={{ flexShrink: 0 }}>填入</Button>
+            </div>
+          </Field>
+          <Field label='分组'>
+            <MultiSelect
+              options={groupOptions}
+              value={form.group ? form.group.split(',').map((s) => s.trim()).filter(Boolean) : []}
+              onChange={(arr) => setForm((p) => ({ ...p, group: arr.join(',') }))}
+              placeholder='选择分组'
+              width='full'
+            />
+          </Field>
+          <Field label='模型重定向'>
+            <KeyValueEditor value={form.model_mapping || ''} onChange={u('model_mapping')}
+              keyPlaceholder='请求模型名' valuePlaceholder='替换模型名'
+              hint='键为请求中的模型名称，值为要替换的模型名称' />
+          </Field>
+          <Field label='是否自动禁用' hint='仅当系统设置中自动禁用开启时有效'>
+            <Select value={form.auto_ban ?? 1} onChange={(v) => u('auto_ban')(Number(v))} width='full'
+              options={[{ value: 1, label: '是（异常时自动禁用）' }, { value: 0, label: '否（不自动禁用）' }]} />
+          </Field>
+        </Section>
+
+        {/* 高级设置 */}
+        <Section title='高级设置' collapsible>
+          {/* 上游模型管理 */}
+          <div className='space-y-3 pb-3 border-b border-[#eeeeee]'>
+            <span className='text-xs font-medium text-ui-text-2'>上游模型管理</span>
+            <label className='flex items-center gap-2 text-sm text-ui-text-2 cursor-pointer'>
+              <Switch size='sm' checked={!!form.other_settings?.upstream_model_update_check_enabled} onChange={(v) => uOther('upstream_model_update_check_enabled')(v)} />
+              检测上游模型更新
+            </label>
+            <p className='text-xs text-ui-text-3 ml-6 -mt-1'>开启后由后端定时任务检测该渠道上游模型变化</p>
+            <label className='flex items-center gap-2 text-sm text-ui-text-2 cursor-pointer'>
+              <Switch size='sm' checked={!!form.other_settings?.upstream_model_update_auto_sync_enabled} onChange={(v) => uOther('upstream_model_update_auto_sync_enabled')(v)} />
+              自动同步上游模型更新
+            </label>
+            <p className='text-xs text-ui-text-3 ml-6 -mt-1'>开启后检测到新增模型会自动加入当前渠道模型列表</p>
+            <Field label='已忽略模型' hint='支持 regex: 前缀正则匹配'>
+              <Input value={(form.other_settings?.upstream_model_update_ignored_models || []).join(',')}
+                onChange={(v) => uOther('upstream_model_update_ignored_models')(v ? v.split(',').map((s) => s.trim()) : [])}
+                width='full' placeholder='gpt-4.1-nano,regex:^sora-.*$' />
+            </Field>
           </div>
-        </div>
-        <div>
-          <label className='block text-sm text-ui-text-2 mb-1.5'>API Key {isEdit && <span className='text-ui-text-3'>(留空不修改)</span>}</label>
-          <Input value={form.key || ''} onChange={u('key')} placeholder='sk-...' />
-        </div>
-        <div>
-          <label className='block text-sm text-ui-text-2 mb-1.5'>Base URL</label>
-          <Input value={form.base_url || ''} onChange={u('base_url')} placeholder='https://api.example.com' />
-        </div>
-        <div className='grid grid-cols-3 gap-4'>
-          <div>
-            <label className='block text-sm text-ui-text-2 mb-1.5'>分组</label>
-            <Input value={form.group || ''} onChange={u('group')} />
+
+          {/* 请求配置 */}
+          <div className='space-y-4 pb-3 border-b border-[#eeeeee]'>
+            <span className='text-xs font-medium text-ui-text-2'>请求配置</span>
+            <Field label='参数覆盖'>
+              <KeyValueEditor value={form.param_override || ''} onChange={u('param_override')}
+                keyPlaceholder='参数名' valuePlaceholder='参数值'
+                hint='用于覆盖请求参数，不支持覆盖 stream 参数' />
+            </Field>
+            <Field label='请求头覆盖'>
+              <KeyValueEditor value={form.header_override || ''} onChange={u('header_override')}
+                keyPlaceholder='Header 名' valuePlaceholder='Header 值'
+                hint='支持变量：渠道密钥 {api_key}' />
+            </Field>
+            <Field label='状态码复写'>
+              <KeyValueEditor value={form.status_code_mapping || ''} onChange={u('status_code_mapping')}
+                keyPlaceholder='原状态码' valuePlaceholder='复写状态码'
+                hint='键为原状态码，值为要复写的状态码，仅影响本地判断' />
+            </Field>
           </div>
-          <div>
-            <label className='block text-sm text-ui-text-2 mb-1.5'>优先级</label>
-            <NumberInput value={form.priority || 0} onChange={(v) => u('priority')(Number(v))} />
+
+          {/* 渠道行为 */}
+          <div className='space-y-4 pb-3 border-b border-[#eeeeee]'>
+            <span className='text-xs font-medium text-ui-text-2'>渠道行为</span>
+            <div className='grid grid-cols-2 gap-4'>
+              <Field label='渠道标签'>
+                <Input value={form.tag || ''} onChange={u('tag')} width='full' placeholder='可选' />
+              </Field>
+              <Field label='测试模型'>
+                <Input value={form.test_model || ''} onChange={u('test_model')} width='full' placeholder='留空使用第一个' />
+              </Field>
+            </div>
+            <Field label='备注' hint='仅管理员可见'>
+              <Textarea value={form.remark || ''} onChange={u('remark')} rows={2} placeholder='请输入备注' width='full' />
+            </Field>
+            <div className='grid grid-cols-3 gap-4'>
+              <Field label='优先级'>
+                <NumberInput value={form.priority ?? 0} onChange={(v) => u('priority')(Number(v))} width='full' />
+              </Field>
+              <Field label='权重'>
+                <NumberInput value={form.weight ?? 0} onChange={(v) => u('weight')(Number(v))} width='full' />
+              </Field>
+              <Field label='状态'>
+                <Select value={form.status || 1} onChange={(v) => u('status')(Number(v))} width='full'
+                  options={[{ value: 1, label: '启用' }, { value: 2, label: '禁用' }]} />
+              </Field>
+            </div>
           </div>
-          <div>
-            <label className='block text-sm text-ui-text-2 mb-1.5'>权重</label>
-            <NumberInput value={form.weight || 0} onChange={(v) => u('weight')(Number(v))} />
+
+          {/* 字段透传控制 */}
+          <div className='space-y-3 pb-3 border-b border-[#eeeeee]'>
+            <span className='text-xs font-medium text-ui-text-2'>字段透传控制</span>
+            <label className='flex items-start gap-2 text-sm text-ui-text-2 cursor-pointer'>
+              <Switch size='sm' checked={!!form.other_settings?.allow_service_tier} onChange={(v) => uOther('allow_service_tier')(v)} />
+              <div>
+                <div>允许 service_tier 透传</div>
+                <p className='text-xs text-ui-text-3 mt-0.5'>允许透传可能导致实际计费高于预期</p>
+              </div>
+            </label>
+            <label className='flex items-start gap-2 text-sm text-ui-text-2 cursor-pointer'>
+              <Switch size='sm' checked={!!form.other_settings?.disable_store} onChange={(v) => uOther('disable_store')(v)} />
+              <div>
+                <div>禁用 store 透传</div>
+                <p className='text-xs text-ui-text-3 mt-0.5'>开启后可能导致 Codex 无法正常使用</p>
+              </div>
+            </label>
+            <label className='flex items-start gap-2 text-sm text-ui-text-2 cursor-pointer'>
+              <Switch size='sm' checked={!!form.other_settings?.allow_safety_identifier} onChange={(v) => uOther('allow_safety_identifier')(v)} />
+              <div>
+                <div>允许 safety_identifier 透传</div>
+                <p className='text-xs text-ui-text-3 mt-0.5'>默认关闭以保护用户隐私</p>
+              </div>
+            </label>
+            <label className='flex items-start gap-2 text-sm text-ui-text-2 cursor-pointer'>
+              <Switch size='sm' checked={!!form.other_settings?.allow_include_obfuscation} onChange={(v) => uOther('allow_include_obfuscation')(v)} />
+              <div>
+                <div>允许 stream_options.include_obfuscation 透传</div>
+                <p className='text-xs text-ui-text-3 mt-0.5'>默认关闭以避免客户端关闭安全保护</p>
+              </div>
+            </label>
+            {isClaude && (
+              <>
+                <label className='flex items-center gap-2 text-sm text-ui-text-2 cursor-pointer'>
+                  <Switch size='sm' checked={!!form.other_settings?.claude_beta_query} onChange={(v) => uOther('claude_beta_query')(v)} />
+                  Claude Beta Query (?beta=true)
+                </label>
+                <label className='flex items-center gap-2 text-sm text-ui-text-2 cursor-pointer'>
+                  <Switch size='sm' checked={!!form.other_settings?.allow_inference_geo} onChange={(v) => uOther('allow_inference_geo')(v)} />
+                  允许 inference_geo 透传
+                </label>
+                <label className='flex items-center gap-2 text-sm text-ui-text-2 cursor-pointer'>
+                  <Switch size='sm' checked={!!form.other_settings?.allow_speed} onChange={(v) => uOther('allow_speed')(v)} />
+                  允许 speed 参数透传
+                </label>
+              </>
+            )}
+            {isOpenRouter && (
+              <label className='flex items-center gap-2 text-sm text-ui-text-2 cursor-pointer'>
+                <Switch size='sm' checked={!!form.other_settings?.openrouter_enterprise} onChange={(v) => uOther('openrouter_enterprise')(v)} />
+                OpenRouter Enterprise 模式
+              </label>
+            )}
+            {isAzure && (
+              <Field label='Azure Responses API Version'>
+                <Input value={form.other_settings?.azure_responses_version || ''} onChange={uOther('azure_responses_version')} width='full' placeholder='2024-02-01' />
+              </Field>
+            )}
           </div>
-        </div>
-        <div>
-          <label className='block text-sm text-ui-text-2 mb-1.5'>支持模型（逗号分隔）</label>
-          <Textarea value={form.models || ''} onChange={u('models')} rows={3}
-            placeholder='gpt-4o,gpt-4-turbo,claude-3-5-sonnet' />
-        </div>
+
+          {/* 额外设置 */}
+          <div className='space-y-4'>
+            <span className='text-xs font-medium text-ui-text-2'>额外设置</span>
+            <label className='flex items-start gap-2 text-sm text-ui-text-2 cursor-pointer'>
+              <Switch size='sm' checked={!!form.setting?.ForceFormat} onChange={(v) => uSetting('ForceFormat')(v)} />
+              <div>
+                <div>强制格式化</div>
+                <p className='text-xs text-ui-text-3 mt-0.5'>强制将响应格式化为 OpenAI 标准格式</p>
+              </div>
+            </label>
+            <label className='flex items-start gap-2 text-sm text-ui-text-2 cursor-pointer'>
+              <Switch size='sm' checked={!!form.setting?.ThinkingToContent} onChange={(v) => uSetting('ThinkingToContent')(v)} />
+              <div>
+                <div>思考内容转换</div>
+                <p className='text-xs text-ui-text-3 mt-0.5'>将 reasoning_content 转换为 &lt;think&gt; 标签拼接到内容中</p>
+              </div>
+            </label>
+            <label className='flex items-start gap-2 text-sm text-ui-text-2 cursor-pointer'>
+              <Switch size='sm' checked={!!form.setting?.PassThroughBodyEnabled} onChange={(v) => uSetting('PassThroughBodyEnabled')(v)} />
+              <div>
+                <div>透传请求体</div>
+                <p className='text-xs text-ui-text-3 mt-0.5'>启用请求体透传功能</p>
+              </div>
+            </label>
+            <Field label='代理地址' hint='支持 socks5 协议'>
+              <Input value={form.setting?.Proxy || ''} onChange={uSetting('Proxy')} width='full' placeholder='socks5://user:pass@host:port' />
+            </Field>
+            <Field label='系统提示词'>
+              <Textarea value={form.setting?.SystemPrompt || ''} onChange={uSetting('SystemPrompt')} rows={3} placeholder='输入系统提示词' width='full' />
+            </Field>
+            <label className='flex items-start gap-2 text-sm text-ui-text-2 cursor-pointer'>
+              <Switch size='sm' checked={!!form.setting?.SystemPromptOverride} onChange={(v) => uSetting('SystemPromptOverride')(v)} />
+              <div>
+                <div>系统提示词覆盖</div>
+                <p className='text-xs text-ui-text-3 mt-0.5'>用户优先：如果用户请求中指定了系统提示词，将优先使用用户的设置。关闭则拼接到用户提示词前面</p>
+              </div>
+            </label>
+          </div>
+        </Section>
       </div>
-    </Modal>
+    </SlideOver>
   );
 };
+
+const ModelTagList = ({ models, onChange }) => {
+  const list = models ? models.split(',').map((s) => s.trim()).filter(Boolean) : [];
+  const remove = (idx) => {
+    const next = list.filter((_, i) => i !== idx);
+    onChange(next.join(','));
+  };
+
+  if (list.length === 0) {
+    return <p className='text-xs text-ui-text-3 py-2'>暂无模型，请通过上方按钮添加或手动输入</p>;
+  }
+
+  return (
+    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, padding: '8px 0', maxHeight: 180, overflowY: 'auto' }}>
+      {list.map((m, i) => (
+        <span key={`${m}-${i}`} style={{
+          display: 'inline-flex', alignItems: 'center', gap: 4,
+          height: 26, paddingInline: 10, borderRadius: 13,
+          fontSize: 12, color: '#000', background: '#F2F0E9',
+        }}>
+          {m}
+          <button onClick={() => remove(i)} style={{ cursor: 'pointer', border: 'none', background: 'none', color: '#999', fontSize: 14, lineHeight: 1, padding: 0 }}>×</button>
+        </span>
+      ))}
+    </div>
+  );
+};
+
+const Section = ({ title, collapsible, children }) => {
+  const [open, setOpen] = useState(!collapsible);
+  return (
+    <div>
+      <div
+        className={cn('flex items-center gap-2 mb-3', collapsible && 'cursor-pointer')}
+        onClick={collapsible ? () => setOpen((o) => !o) : undefined}
+      >
+        <span className='text-sm font-medium text-ui-text'>{title}</span>
+        <div className='flex-1 h-px bg-[#eeeeee]' />
+        {collapsible && (
+          <ChevronDown size={14} className='text-ui-text-3' style={{ transform: open ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }} />
+        )}
+      </div>
+      {open && <div className='space-y-4'>{children}</div>}
+    </div>
+  );
+};
+
+const Field = ({ label, hint, children }) => (
+  <div>
+    <label className='block text-sm text-ui-text-2 mb-1.5'>
+      {typeof label === 'string' ? label : label}
+      {hint && <span className='text-xs text-ui-text-3 ml-1.5'>({hint})</span>}
+    </label>
+    {children}
+  </div>
+);
 
 export default ChannelPage;

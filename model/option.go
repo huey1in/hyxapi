@@ -63,8 +63,6 @@ func InitOptionMap() {
 	common.OptionMap["SMTPForceAuthLogin"] = strconv.FormatBool(common.SMTPForceAuthLogin)
 	common.OptionMap["Notice"] = ""
 	common.OptionMap["About"] = ""
-	common.OptionMap["HomePageContent"] = ""
-	common.OptionMap["Footer"] = common.Footer
 	common.OptionMap["SystemName"] = common.SystemName
 	common.OptionMap["Logo"] = common.Logo
 	common.OptionMap["ServerAddress"] = ""
@@ -145,8 +143,6 @@ func InitOptionMap() {
 	common.OptionMap["AudioRatio"] = ratio_setting.AudioRatio2JSONString()
 	common.OptionMap["AudioCompletionRatio"] = ratio_setting.AudioCompletionRatio2JSONString()
 	common.OptionMap["TopUpLink"] = common.TopUpLink
-	//common.OptionMap["ChatLink"] = common.ChatLink
-	//common.OptionMap["ChatLink2"] = common.ChatLink2
 	common.OptionMap["QuotaPerUnit"] = strconv.FormatFloat(common.QuotaPerUnit, 'f', -1, 64)
 	common.OptionMap["RetryTimes"] = strconv.Itoa(common.RetryTimes)
 	common.OptionMap["DataExportInterval"] = strconv.Itoa(common.DataExportInterval)
@@ -416,8 +412,6 @@ func updateOptionMap(key string, value string) (err error) {
 		common.LinuxDOClientSecret = value
 	case "LinuxDOMinimumTrustLevel":
 		common.LinuxDOMinimumTrustLevel, _ = strconv.Atoi(value)
-	case "Footer":
-		common.Footer = value
 	case "SystemName":
 		common.SystemName = value
 	case "Logo":
@@ -484,10 +478,6 @@ func updateOptionMap(key string, value string) (err error) {
 		err = ratio_setting.UpdateAudioCompletionRatioByJSONString(value)
 	case "TopUpLink":
 		common.TopUpLink = value
-	//case "ChatLink":
-	//	common.ChatLink = value
-	//case "ChatLink2":
-	//	common.ChatLink2 = value
 	case "ChannelDisableThreshold":
 		common.ChannelDisableThreshold, _ = strconv.ParseFloat(value, 64)
 	case "QuotaPerUnit":

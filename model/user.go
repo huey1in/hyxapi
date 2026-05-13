@@ -564,7 +564,7 @@ func (user *User) Delete() error {
 	if user.Id == 0 {
 		return errors.New("id 为空！")
 	}
-	if err := DB.Delete(user).Error; err != nil {
+	if err := DB.Unscoped().Delete(user).Error; err != nil {
 		return err
 	}
 

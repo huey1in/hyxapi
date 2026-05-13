@@ -76,7 +76,7 @@ const Table = ({
                 className={cn(
                   idx !== rows.length - 1 && 'border-b border-ui-divider',
                   striped && idx % 2 === 1 && 'bg-ui-border',
-                  hoverable && 'hover:bg-ui-bg-subtle transition-colors',
+                  hoverable === true && 'hover:bg-ui-bg-subtle transition-colors',
                   onRowClick && 'cursor-pointer',
                 )}
               >

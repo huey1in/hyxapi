@@ -1,19 +1,18 @@
 import React, { useContext, useEffect, useState } from 'react';
-import { Copy, RefreshCw, LogOut, ShieldCheck, Shield, Fingerprint, Trash2 } from 'lucide-react';
-import { API, showError, showSuccess, copy, timestamp2string, updateAPI } from '../../helpers';
+import { Copy, RefreshCw, LogOut, ShieldCheck, Fingerprint, Trash2 } from 'lucide-react';
+import { API, showError, showSuccess, copy, timestamp2string, renderQuota, updateAPI } from '../../helpers';
 import {
   isPasskeySupported, prepareCredentialCreationOptions, buildRegistrationResult,
 } from '../../helpers/passkey';
 import { UserContext } from '../../context/User';
 import {
-  PageShell, Card, Button, IconButton, Input, Modal, Tag, Loading,
+  Button, IconButton, Input, Modal, Tag, Loading,
 } from '../../components/ui';
 
 const Personal = () => {
   const [userState, userDispatch] = useContext(UserContext);
-  const [form, setForm] = useState({ display_name: '', email: '', password: '' });
+  const [form, setForm] = useState({ original_password: '', password: '' });
   const [saving, setSaving] = useState(false);
-  const [refreshing, setRefreshing] = useState(false);
   const [accessToken, setAccessToken] = useState('');
   const [twoFA, setTwoFA] = useState({ enabled: false, backup_codes_remaining: 0 });
   const [setupData, setSetupData] = useState(null);
@@ -24,19 +23,24 @@ const Personal = () => {
   const [passkeys, setPasskeys] = useState([]);
   const [passkeySupported, setPasskeySupported] = useState(false);
   const [passkeyBusy, setPasskeyBusy] = useState(false);
+  const [emailBindOpen, setEmailBindOpen] = useState(false);
+  const [bindEmail, setBindEmail] = useState('');
+  const [bindCode, setBindCode] = useState('');
+  const [emailBusy, setEmailBusy] = useState(false);
+  const [codeSent, setCodeSent] = useState(false);
+  const [countdown, setCountdown] = useState(0);
 
   const u = userState?.user || {};
   useEffect(() => {
-    setForm({ display_name: u.display_name || '', email: u.email || '', password: '' });
+    setForm({ original_password: '', password: '' });
     setAccessToken(u.access_token || '');
   }, [u.id]);
 
   const refresh = async () => {
-    setRefreshing(true);
     try {
       const { data } = await API.get('/api/user/self');
       if (data.success) userDispatch?.({ type: 'login', payload: data.data });
-    } catch (e) { showError(e); } finally { setRefreshing(false); }
+    } catch (e) { showError(e); }
   };
 
   const load2FA = async () => {
@@ -51,11 +55,33 @@ const Personal = () => {
       if (data.success) setPasskeys(data.data || []);
     } catch {}
   };
+  useEffect(() => { load2FA(); loadPasskeys(); isPasskeySupported().then(setPasskeySupported).catch(() => {}); }, []);
+
   useEffect(() => {
-    load2FA();
-    loadPasskeys();
-    isPasskeySupported().then(setPasskeySupported).catch(() => setPasskeySupported(false));
-  }, []);
+    if (countdown <= 0) return;
+    const t = setTimeout(() => setCountdown((c) => c - 1), 1000);
+    return () => clearTimeout(t);
+  }, [countdown]);
+
+  const sendEmailCode = async () => {
+    if (!bindEmail.trim()) return showError('请输入邮箱地址');
+    setEmailBusy(true);
+    try {
+      const { data } = await API.get(`/api/verification?email=${encodeURIComponent(bindEmail.trim())}`);
+      if (data.success) { showSuccess('验证码已发送'); setCodeSent(true); setCountdown(60); }
+      else showError(data.message);
+    } catch (e) { showError(e); } finally { setEmailBusy(false); }
+  };
+
+  const confirmBindEmail = async () => {
+    if (!bindCode.trim()) return showError('请输入验证码');
+    setEmailBusy(true);
+    try {
+      const { data } = await API.post('/api/oauth/email/bind', { email: bindEmail.trim(), code: bindCode.trim() });
+      if (data.success) { showSuccess('邮箱绑定成功'); setEmailBindOpen(false); setBindEmail(''); setBindCode(''); setCodeSent(false); refresh(); }
+      else showError(data.message);
+    } catch (e) { showError(e); } finally { setEmailBusy(false); }
+  };
 
   const addPasskey = async () => {
     setPasskeyBusy(true);
@@ -93,10 +119,8 @@ const Personal = () => {
     setTwoFABusy(true);
     try {
       const { data } = await API.post('/api/user/2fa/enable', { code: setupCode.trim() });
-      if (data.success) {
-        showSuccess('已启用 2FA');
-        setSetupData(null); setSetupCode(''); load2FA();
-      } else showError(data.message);
+      if (data.success) { showSuccess('已启用 2FA'); setSetupData(null); setSetupCode(''); load2FA(); }
+      else showError(data.message);
     } catch (e) { showError(e); } finally { setTwoFABusy(false); }
   };
 
@@ -115,22 +139,21 @@ const Personal = () => {
     if (!code) return;
     try {
       const { data } = await API.post('/api/user/2fa/backup_codes', { code });
-      if (data.success) {
-        const codes = (data.data?.backup_codes || []).join('\n');
-        await copy(codes);
-        showSuccess('备份码已重置并复制到剪贴板');
-        load2FA();
-      } else showError(data.message);
+      if (data.success) { await copy((data.data?.backup_codes || []).join('\n')); showSuccess('备份码已复制到剪贴板'); load2FA(); }
+      else showError(data.message);
     } catch (e) { showError(e); }
   };
 
   const save = async () => {
     setSaving(true);
     try {
-      const payload = { display_name: form.display_name, email: form.email };
-      if (form.password) payload.password = form.password;
+      const payload = {};
+      if (form.password) {
+        payload.password = form.password;
+        payload.original_password = form.original_password;
+      }
       const { data } = await API.put('/api/user/self', payload);
-      if (data.success) { showSuccess('已保存'); refresh(); setForm((p) => ({ ...p, password: '' })); }
+      if (data.success) { showSuccess('已保存'); refresh(); setForm((p) => ({ ...p, original_password: '', password: '' })); }
       else showError(data.message);
     } catch (e) { showError(e); } finally { setSaving(false); }
   };
@@ -138,7 +161,7 @@ const Personal = () => {
   const genToken = async () => {
     try {
       const { data } = await API.get('/api/user/token');
-      if (data.success) { setAccessToken(data.data); showSuccess('已生成访问令牌'); refresh(); }
+      if (data.success) { setAccessToken(data.data); showSuccess('已生成'); refresh(); }
       else showError(data.message);
     } catch (e) { showError(e); }
   };
@@ -153,143 +176,150 @@ const Personal = () => {
     } catch (e) { showError(e); }
   };
 
+  const f = (k) => (v) => setForm((p) => ({ ...p, [k]: v }));
   if (!u.id) return <Loading />;
 
+  const roleName = u.role >= 100 ? '超级管理员' : u.role >= 10 ? '管理员' : '用户';
+
   return (
-    <PageShell title='个人设置' actions={<IconButton icon={RefreshCw} title='刷新' onClick={refresh} />}>
-      <Card className='mb-4'>
-        <div className='flex items-center justify-between mb-3'>
-          <div className='flex items-center gap-2'>
-            <h3 className='text-sm font-semibold text-ui-text-1'>Passkey</h3>
-            <Tag color={passkeys.length > 0 ? 'green' : 'grey'}>{passkeys.length} 个</Tag>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 20, width: '100%', maxWidth: 960, marginInline: 'auto', padding: '24px 16px' }}>
+      {/* 用户概览卡片 */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '22px 24px', border: '1px solid #e9e9e9', borderRadius: 26 }}>
+        <div>
+          <div style={{ fontSize: 18, fontWeight: 600, color: '#000' }}>{u.username || '-'}</div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 6 }}>
+            <Tag color='grey'>{roleName}</Tag>
           </div>
-          {passkeySupported && (
-            <Button icon={Fingerprint} loading={passkeyBusy} onClick={addPasskey}>添加 Passkey</Button>
-          )}
         </div>
-        {!passkeySupported && (
-          <p className='text-xs text-ui-text-3'>当前浏览器不支持 Passkey / WebAuthn。</p>
-        )}
-        {passkeySupported && passkeys.length === 0 && (
-          <p className='text-xs text-ui-text-3'>使用设备生物识别（指纹/面容）免密登录。</p>
-        )}
-        {passkeys.length > 0 && (
-          <div className='space-y-2'>
-            {passkeys.map((p) => (
-              <div key={p.id} className='flex items-center justify-between gap-2 p-2 rounded-lg border border-ui-border text-sm'>
-                <div className='flex-1 min-w-0'>
-                  <div className='text-ui-text-1 truncate'>{p.name || p.id || 'Unnamed key'}</div>
-                  {p.created_at && <div className='text-xs text-ui-text-3 mt-0.5'>创建于 {timestamp2string(p.created_at)}</div>}
+        <div style={{ display: 'flex', gap: 6 }}>
+          <IconButton icon={RefreshCw} title='刷新' onClick={refresh} />
+          <Button variant='toggle' onClick={logout} style={{ gap: 4 }}>
+            <LogOut size={14} /> 退出
+          </Button>
+        </div>
+      </div>
+
+      {/* 账号信息 */}
+      <div style={{ padding: '20px 22px', border: '1px solid #e9e9e9', borderRadius: 26 }}>
+        <div style={{ fontSize: 15, fontWeight: 600, color: '#000', marginBottom: 16 }}>账号信息</div>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
+          <FieldGroup label='用户名'>
+            <Input value={u.username || ''} disabled width='full' />
+          </FieldGroup>
+          <FieldGroup label='邮箱'>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <Input value={u.email || '未绑定'} disabled width='full' />
+              <Button variant='toggle' onClick={() => { setEmailBindOpen(true); setBindEmail(u.email || ''); }} style={{ flexShrink: 0 }}>
+                {u.email ? '换绑' : '绑定'}
+              </Button>
+            </div>
+          </FieldGroup>
+          <FieldGroup label='原密码' hint='修改密码时必填'>
+            <Input type='password' value={form.original_password} onChange={f('original_password')} width='full' placeholder='••••••••' />
+          </FieldGroup>
+          <FieldGroup label='新密码' hint='留空则不修改'>
+            <Input type='password' value={form.password} onChange={f('password')} width='full' placeholder='••••••••' />
+          </FieldGroup>
+        </div>
+        <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 16 }}>
+          <Button loading={saving} onClick={save}>保存修改</Button>
+        </div>
+      </div>
+
+      {/* 安全设置 — Passkey + 2FA 合并 */}
+      <div style={{ padding: '20px 22px', border: '1px solid #e9e9e9', borderRadius: 26 }}>
+        <div style={{ fontSize: 15, fontWeight: 600, color: '#000', marginBottom: 16 }}>安全设置</div>
+
+        {/* Passkey */}
+        <div style={{ marginBottom: 20 }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <Fingerprint size={16} style={{ color: '#666' }} />
+              <span style={{ fontSize: 14, fontWeight: 500, color: '#000' }}>Passkey</span>
+              <Tag color={passkeys.length > 0 ? 'green' : 'grey'}>{passkeys.length}</Tag>
+            </div>
+            {passkeySupported && <Button loading={passkeyBusy} onClick={addPasskey}>添加</Button>}
+          </div>
+          {!passkeySupported && <p style={{ fontSize: 13, color: '#999', margin: 0 }}>当前浏览器不支持 Passkey</p>}
+          {passkeySupported && passkeys.length === 0 && <p style={{ fontSize: 13, color: '#999', margin: 0 }}>添加 Passkey 后可使用指纹/面容免密登录</p>}
+          {passkeys.length > 0 && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+              {passkeys.map((p) => (
+                <div key={p.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 12px', background: '#F2F0E9', borderRadius: 10 }}>
+                  <div>
+                    <span style={{ fontSize: 13, color: '#000' }}>{p.name || 'Passkey'}</span>
+                    {p.created_at && <span style={{ fontSize: 11, color: '#999', marginLeft: 8 }}>{timestamp2string(p.created_at)}</span>}
+                  </div>
+                  <IconButton icon={Trash2} variant='danger' onClick={() => removePasskey(p.id)} />
                 </div>
-                <IconButton icon={Trash2} variant='danger' onClick={() => removePasskey(p.id)} />
-              </div>
-            ))}
-          </div>
-        )}
-      </Card>
-
-      <Card className='mb-4'>
-        <div className='flex items-center justify-between mb-4'>
-          <div className='flex items-center gap-2'>
-            <h3 className='text-sm font-semibold text-ui-text-1'>两步验证 (2FA)</h3>
-            <Tag color={twoFA.enabled ? 'green' : 'grey'}>{twoFA.enabled ? '已启用' : '未启用'}</Tag>
-          </div>
-          {twoFA.enabled
-            ? <Button variant='toggle' onClick={() => setDisableOpen(true)}>禁用 2FA</Button>
-            : <Button icon={ShieldCheck} loading={twoFABusy} onClick={start2FASetup}>启用 2FA</Button>}
-        </div>
-        <p className='text-xs text-ui-text-3'>
-          使用 TOTP 应用（Google Authenticator / 1Password / Authy）保护账号登录。
-          {twoFA.enabled && (
-            <>
-              {' · '}备份码剩余 {twoFA.backup_codes_remaining}
-              <button onClick={regenBackup} className='ml-2 text-ui-accent underline'>重新生成</button>
-            </>
+              ))}
+            </div>
           )}
-        </p>
-      </Card>
-
-      <Card className='mb-4'>
-        <h3 className='text-sm font-semibold text-ui-text-1 mb-4'>账号信息</h3>
-        <div className='space-y-4'>
-          <div className='grid grid-cols-2 gap-4'>
-            <div>
-              <label className='block text-xs text-ui-text-2 mb-1.5'>用户名</label>
-              <Input value={u.username || ''} disabled />
-            </div>
-            <div>
-              <label className='block text-xs text-ui-text-2 mb-1.5'>显示名</label>
-              <Input value={form.display_name} onChange={(e) => setForm((p) => ({ ...p, display_name: e.target.value }))} />
-            </div>
-          </div>
-          <div>
-            <label className='block text-xs text-ui-text-2 mb-1.5'>邮箱</label>
-            <Input value={form.email} onChange={(e) => setForm((p) => ({ ...p, email: e.target.value }))} />
-          </div>
-          <div>
-            <label className='block text-xs text-ui-text-2 mb-1.5'>修改密码（留空不修改）</label>
-            <Input type='password' value={form.password}
-              onChange={(e) => setForm((p) => ({ ...p, password: e.target.value }))} />
-          </div>
-          <div className='flex justify-end'>
-            <Button loading={saving} onClick={save}>保存</Button>
-          </div>
         </div>
-      </Card>
 
-      <Card className='mb-4'>
-        <div className='flex items-center justify-between mb-4'>
-          <h3 className='text-sm font-semibold text-ui-text-1'>系统访问令牌</h3>
+        {/* 分隔线 */}
+        <div style={{ height: 1, background: '#eeeeee', marginBottom: 20 }} />
+
+        {/* 2FA */}
+        <div>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <ShieldCheck size={16} style={{ color: '#666' }} />
+              <span style={{ fontSize: 14, fontWeight: 500, color: '#000' }}>两步验证</span>
+              <Tag color={twoFA.enabled ? 'green' : 'grey'}>{twoFA.enabled ? '已启用' : '未启用'}</Tag>
+            </div>
+            {twoFA.enabled
+              ? <Button variant='toggle' onClick={() => setDisableOpen(true)}>禁用</Button>
+              : <Button loading={twoFABusy} onClick={start2FASetup}>启用</Button>}
+          </div>
+          <p style={{ fontSize: 13, color: '#999', margin: 0, lineHeight: 1.6 }}>
+            使用 TOTP 应用保护登录安全
+            {twoFA.enabled && (
+              <span style={{ marginLeft: 8 }}>
+                · 备份码剩余 <strong style={{ color: '#000' }}>{twoFA.backup_codes_remaining}</strong>
+                <button onClick={regenBackup} style={{ marginLeft: 6, cursor: 'pointer', color: '#000', textDecoration: 'underline', background: 'none', border: 'none', fontSize: 13 }}>重新生成</button>
+              </span>
+            )}
+          </p>
+        </div>
+      </div>
+
+      {/* 访问令牌 */}
+      <div style={{ padding: '20px 22px', border: '1px solid #e9e9e9', borderRadius: 26 }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+          <div style={{ fontSize: 15, fontWeight: 600, color: '#000' }}>系统访问令牌</div>
           <Button variant='toggle' onClick={genToken}>{accessToken ? '重新生成' : '生成令牌'}</Button>
         </div>
-        <p className='text-xs text-ui-text-3 mb-3'>该令牌用于调用管理 API，请妥善保管</p>
         {accessToken ? (
-          <div className='flex items-center gap-2 p-2 bg-ui-bg-subtle border border-ui-border rounded-lg'>
-            <code className='flex-1 text-xs font-mono text-ui-text-2 truncate select-all'>{accessToken}</code>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 14px', background: '#F2F0E9', borderRadius: 12 }}>
+            <code style={{ flex: 1, fontSize: 12, fontFamily: "'JetBrains Mono', monospace", color: '#000', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{accessToken}</code>
             <IconButton icon={Copy} onClick={async () => { await copy(accessToken); showSuccess('已复制'); }} />
           </div>
         ) : (
-          <p className='text-xs text-ui-text-3'>尚未生成</p>
+          <p style={{ fontSize: 13, color: '#999', margin: 0 }}>用于调用管理 API，生成后请妥善保管</p>
         )}
-      </Card>
+      </div>
 
-      <Card>
-        <h3 className='text-sm font-semibold text-ui-text-1 mb-3'>账户元数据</h3>
-        <div className='grid grid-cols-2 md:grid-cols-3 gap-3 text-sm'>
-          <div><span className='text-ui-text-3'>用户 ID：</span><span className='text-ui-text-1'>{u.id}</span></div>
-          <div><span className='text-ui-text-3'>角色：</span><span className='text-ui-text-1'>{u.role}</span></div>
-          <div><span className='text-ui-text-3'>创建时间：</span><span className='text-ui-text-1'>{timestamp2string(u.created_time)}</span></div>
-        </div>
-        <div className='flex justify-end mt-4'>
-          <Button variant='toggle' icon={LogOut} onClick={logout}>退出登录</Button>
-        </div>
-      </Card>
-
+      {/* 2FA 设置弹窗 */}
       {setupData && (
-        <Modal open title='设置 2FA' onClose={() => { setSetupData(null); setSetupCode(''); }} onConfirm={enable2FA} loading={twoFABusy} confirmText='确认启用'>
-          <div className='space-y-4'>
-            <div>
-              <p className='text-sm text-ui-text-2 mb-2'>请用 TOTP 应用扫描下方二维码，或手动输入密钥：</p>
-              {setupData.qr_code_url && (
-                <img
-                  alt='2FA QR'
-                  src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(setupData.qr_code_url)}`}
-                  className='mx-auto rounded-lg border border-ui-border'
-                />
-              )}
-              <div className='mt-3 flex items-center gap-2 p-2 bg-ui-bg-subtle border border-ui-border rounded-lg'>
-                <code className='flex-1 text-xs font-mono text-ui-text-1 break-all'>{setupData.secret}</code>
-                <IconButton icon={Copy} onClick={async () => { await copy(setupData.secret); showSuccess('已复制'); }} />
-              </div>
+        <Modal open title='设置两步验证' onClose={() => { setSetupData(null); setSetupCode(''); }} onConfirm={enable2FA} loading={twoFABusy} confirmText='确认启用'>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+            <p style={{ fontSize: 14, color: '#666', margin: 0 }}>使用 TOTP 应用扫描二维码或手动输入密钥</p>
+            {setupData.qr_code_url && (
+              <img alt='2FA QR' src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(setupData.qr_code_url)}`}
+                style={{ display: 'block', margin: '0 auto', borderRadius: 12, border: '1px solid #e9e9e9' }} />
+            )}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 14px', background: '#F2F0E9', borderRadius: 12 }}>
+              <code style={{ flex: 1, fontSize: 12, fontFamily: "'JetBrains Mono', monospace", color: '#000', wordBreak: 'break-all' }}>{setupData.secret}</code>
+              <IconButton icon={Copy} onClick={async () => { await copy(setupData.secret); showSuccess('已复制'); }} />
             </div>
-            <div>
-              <label className='block text-sm text-ui-text-2 mb-1.5'>输入应用中显示的 6 位验证码</label>
-              <Input value={setupCode} onChange={(e) => setSetupCode(e.target.value)} placeholder='000000' />
-            </div>
+            <FieldGroup label='输入 6 位验证码'>
+              <Input value={setupCode} onChange={setSetupCode} placeholder='000000' width='full' />
+            </FieldGroup>
             {Array.isArray(setupData.backup_codes) && setupData.backup_codes.length > 0 && (
               <div>
-                <p className='text-xs text-ui-text-3 mb-2'>请妥善保存以下备份码：</p>
-                <pre className='bg-ui-bg-subtle p-3 rounded-lg text-xs font-mono max-h-32 overflow-auto whitespace-pre-wrap'>
+                <p style={{ fontSize: 12, color: '#999', marginBottom: 6 }}>请保存备份码：</p>
+                <pre style={{ background: '#F2F0E9', padding: 12, borderRadius: 12, fontSize: 12, fontFamily: "'JetBrains Mono', monospace", maxHeight: 100, overflow: 'auto', whiteSpace: 'pre-wrap', margin: 0 }}>
                   {setupData.backup_codes.join('\n')}
                 </pre>
               </div>
@@ -299,18 +329,47 @@ const Personal = () => {
       )}
 
       {disableOpen && (
-        <Modal open title='禁用 2FA' onClose={() => { setDisableOpen(false); setDisableCode(''); }} onConfirm={disable2FA} loading={twoFABusy} confirmText='确认禁用'>
-          <div className='space-y-3'>
-            <p className='text-sm text-ui-text-2'>禁用后账号将不再受 2FA 保护，请确认操作。</p>
-            <div>
-              <label className='block text-sm text-ui-text-2 mb-1.5'>请输入当前 2FA 验证码</label>
-              <Input value={disableCode} onChange={(e) => setDisableCode(e.target.value)} placeholder='000000' />
-            </div>
+        <Modal open title='禁用两步验证' onClose={() => { setDisableOpen(false); setDisableCode(''); }} onConfirm={disable2FA} loading={twoFABusy} confirmText='确认禁用'>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+            <p style={{ fontSize: 14, color: '#666', margin: 0 }}>禁用后账号将不再受两步验证保护</p>
+            <FieldGroup label='输入当前验证码'>
+              <Input value={disableCode} onChange={setDisableCode} placeholder='000000' width='full' />
+            </FieldGroup>
           </div>
         </Modal>
       )}
-    </PageShell>
+
+      {emailBindOpen && (
+        <Modal open title={u.email ? '换绑邮箱' : '绑定邮箱'} onClose={() => { setEmailBindOpen(false); setBindEmail(''); setBindCode(''); setCodeSent(false); }} onConfirm={confirmBindEmail} loading={emailBusy} confirmText='确认绑定'>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+            <FieldGroup label='邮箱地址'>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <Input value={bindEmail} onChange={setBindEmail} placeholder='your@email.com' width='full' />
+                <Button variant='toggle' onClick={sendEmailCode} loading={emailBusy} disabled={countdown > 0} style={{ flexShrink: 0, whiteSpace: 'nowrap' }}>
+                  {countdown > 0 ? `${countdown}s` : '发送验证码'}
+                </Button>
+              </div>
+            </FieldGroup>
+            {codeSent && (
+              <FieldGroup label='验证码'>
+                <Input value={bindCode} onChange={setBindCode} placeholder='输入邮箱收到的验证码' width='full' />
+              </FieldGroup>
+            )}
+          </div>
+        </Modal>
+      )}
+    </div>
   );
 };
+
+const FieldGroup = ({ label, hint, span, children }) => (
+  <div style={span ? { gridColumn: '1 / -1' } : undefined}>
+    <label style={{ display: 'block', fontSize: 12, color: '#999', marginBottom: 5 }}>
+      {label}
+      {hint && <span style={{ marginLeft: 6, color: '#bbb' }}>({hint})</span>}
+    </label>
+    {children}
+  </div>
+);
 
 export default Personal;

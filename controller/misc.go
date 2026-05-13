@@ -63,7 +63,6 @@ func GetStatus(c *gin.Context) {
 		"telegram_bot_name":           common.TelegramBotName,
 		"system_name":                 common.SystemName,
 		"logo":                        common.Logo,
-		"footer_html":                 common.Footer,
 		"wechat_qrcode":               common.WeChatAccountQRCodeImageURL,
 		"wechat_login":                common.WeChatAuthEnabled,
 		"server_address":              system_setting.ServerAddress,
@@ -208,17 +207,6 @@ func GetMidjourney(c *gin.Context) {
 		"success": true,
 		"message": "",
 		"data":    common.OptionMap["Midjourney"],
-	})
-	return
-}
-
-func GetHomePageContent(c *gin.Context) {
-	common.OptionMapRWMutex.RLock()
-	defer common.OptionMapRWMutex.RUnlock()
-	c.JSON(http.StatusOK, gin.H{
-		"success": true,
-		"message": "",
-		"data":    common.OptionMap["HomePageContent"],
 	})
 	return
 }

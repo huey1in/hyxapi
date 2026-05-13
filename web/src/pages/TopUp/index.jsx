@@ -1,11 +1,11 @@
 import React, { useContext, useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { RefreshCw, Copy } from 'lucide-react';
-import { API, showError, showSuccess, showInfo, copy, renderQuota } from '../../helpers';
+import { Copy } from 'lucide-react';
+import { API, showError, showSuccess, showInfo, copy, renderQuota, timestamp2string } from '../../helpers';
 import { UserContext } from '../../context/User';
 import { StatusContext } from '../../context/Status';
 import {
-  PageShell, Card, Button, IconButton, Input, NumberInput, Modal, Loading, Tag,
+  Button, IconButton, Input, NumberInput, Modal, Loading, Tag,
 } from '../../components/ui';
 
 const TopUp = () => {
@@ -21,6 +21,8 @@ const TopUp = () => {
   const [transferOpen, setTransferOpen] = useState(false);
   const [transferAmount, setTransferAmount] = useState(0);
   const [transferring, setTransferring] = useState(false);
+  const [topups, setTopups] = useState([]);
+  const [showHistory, setShowHistory] = useState(false);
 
   const minTopUp = statusState?.status?.min_topup || 1;
   const topUpLink = statusState?.status?.top_up_link || '';
@@ -46,6 +48,13 @@ const TopUp = () => {
     try {
       const res = await API.get('/api/subscription/self');
       if (res.data?.success) setSubscriptions(res.data.data?.subscriptions || []);
+    } catch {}
+  };
+
+  const loadTopups = async () => {
+    try {
+      const res = await API.get('/api/user/topup/self?p=1&size=20');
+      if (res.data?.success) setTopups(res.data.data?.items || []);
     } catch {}
   };
 
@@ -91,106 +100,183 @@ const TopUp = () => {
   };
 
   const u = userState?.user || {};
+  const AMOUNTS = [10, 50, 100, 500];
 
   return (
-    <PageShell title='钱包' actions={<IconButton icon={RefreshCw} title='刷新' onClick={refreshUser} />}>
-      <Card className='mb-5'>
-        <div className='grid md:grid-cols-3 gap-6'>
-          <div className='md:col-span-2'>
-            <div className='text-ui-text-3 text-xs uppercase tracking-widest mb-3'>当前余额</div>
-            <div className='text-4xl md:text-5xl font-medium text-ui-text-1 tabular-nums'>
-              {renderQuota(u.quota || 0)}
-            </div>
-            <p className='mt-2 text-sm text-ui-text-3'>累计已使用 {renderQuota(u.used_quota || 0)}</p>
-          </div>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 28, width: '100%', maxWidth: 960, marginInline: 'auto', padding: '24px 16px' }}>
+      {/* 余额 */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingBlock: 26, paddingInline: 20, border: '1px solid #e9e9e9', borderRadius: 26 }}>
+        <div>
+          <div style={{ fontSize: 13, color: '#8f8f8f', marginBottom: 6 }}>当前余额</div>
+          <div style={{ fontSize: 28, fontWeight: 700, color: '#000' }}>{renderQuota(u.quota || 0)}</div>
+          <div style={{ fontSize: 12, color: '#999', marginTop: 4 }}>累计已使用 {renderQuota(u.used_quota || 0)}</div>
         </div>
-      </Card>
-
-      {subscriptions.length > 0 && (
-        <Card className='mb-5'>
-          <h3 className='text-sm font-semibold text-ui-text-1 mb-3'>我的订阅</h3>
-          <div className='space-y-3'>
-            {subscriptions.map((row) => {
-              const s = row.subscription || {};
-              const expired = (s.end_time || 0) > 0 && s.end_time < Date.now() / 1000;
-              const active = s.status === 'active' && !expired;
-              return (
-                <div key={s.id} className='flex items-center justify-between p-3 rounded-lg border border-ui-border'>
-                  <div>
-                    <div className='text-sm text-ui-text-1 font-medium'>套餐 #{s.plan_id}</div>
-                    <div className='text-xs text-ui-text-3 mt-1'>
-                      {s.start_time ? new Date(s.start_time * 1000).toLocaleDateString() : '-'} ~ {s.end_time ? new Date(s.end_time * 1000).toLocaleDateString() : '-'}
-                    </div>
-                  </div>
-                  <Tag color={active ? 'green' : expired ? 'red' : 'grey'}>
-                    {active ? '生效中' : expired ? '已过期' : '已取消'}
-                  </Tag>
-                </div>
-              );
-            })}
-          </div>
-        </Card>
-      )}
-
-      <div className={`grid grid-cols-1 ${topUpLink ? 'md:grid-cols-2' : ''} gap-4 mb-5`}>
-        <Card>
-          <h3 className='text-sm font-semibold text-ui-text-1 mb-3'>兑换码</h3>
-          <p className='text-xs text-ui-text-3 mb-3'>输入管理员发放的兑换码，立即获得对应额度或激活订阅</p>
-          <div className='flex gap-2'>
-            <Input
-              value={code}
-              onChange={(e) => setCode(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && redeem()}
-              placeholder='XXXX-XXXX-XXXX-XXXX'
-              className='flex-1 font-mono'
-            />
-            <Button onClick={redeem} loading={redeeming} disabled={!code.trim()}>兑换</Button>
-          </div>
-        </Card>
-
-        {topUpLink && (
-          <Card>
-            <h3 className='text-sm font-semibold text-ui-text-1 mb-3'>快捷充值</h3>
-            <p className='text-xs text-ui-text-3 mb-3'>跳转到外部充值页面完成支付</p>
-            <div className='flex flex-wrap gap-2 mb-3'>
-              {[10, 50, 100, 500].map((amt) => (
-                <Button key={amt} size='sm' variant='toggle' selected={topUpCount === amt}
-                  onClick={() => setTopUpCount(amt)}>${amt}</Button>
-              ))}
-              <NumberInput value={topUpCount} onChange={(v) => setTopUpCount(Number(v))} min={minTopUp} className='w-24' />
-            </div>
-            <Button className='w-full' onClick={() => window.open(topUpLink, '_blank')}>前往充值</Button>
-          </Card>
-        )}
+        <button
+          onClick={() => { setShowHistory(true); if (topups.length === 0) loadTopups(); }}
+          style={{ cursor: 'pointer', height: 32, paddingInline: 16, border: '1px solid #e5e5e5', borderRadius: 24, fontSize: 13, color: '#666', background: 'transparent' }}
+        >充值记录</button>
       </div>
 
-      <Card>
-        <div className='flex items-center justify-between mb-4'>
-          <h3 className='text-sm font-semibold text-ui-text-1'>邀请奖励</h3>
-          <Button variant='toggle' onClick={() => setTransferOpen(true)} disabled={(u.aff_quota || 0) <= 0}>划转到余额</Button>
+      {/* 订阅 */}
+      {subscriptions.length > 0 && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          <span style={{ fontSize: 18, fontWeight: 600, color: '#000' }}>我的订阅</span>
+          {subscriptions.map((row) => {
+            const s = row.subscription || {};
+            const expired = (s.end_time || 0) > 0 && s.end_time < Date.now() / 1000;
+            const active = s.status === 'active' && !expired;
+            return (
+              <div key={s.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 18px', border: '1px solid #e9e9e9', borderRadius: 26 }}>
+                <div>
+                  <div style={{ fontSize: 14, fontWeight: 500, color: '#000' }}>套餐 #{s.plan_id}</div>
+                  <div style={{ fontSize: 12, color: '#999', marginTop: 2 }}>
+                    {s.start_time ? new Date(s.start_time * 1000).toLocaleDateString() : '-'} ~ {s.end_time ? new Date(s.end_time * 1000).toLocaleDateString() : '-'}
+                  </div>
+                </div>
+                <Tag color={active ? 'green' : expired ? 'red' : 'grey'}>
+                  {active ? '生效中' : expired ? '已过期' : '已取消'}
+                </Tag>
+              </div>
+            );
+          })}
         </div>
-        <div className='grid grid-cols-3 gap-4 mb-4'>
-          <div>
-            <div className='text-[11px] uppercase tracking-wider text-ui-text-3 mb-1'>邀请人数</div>
-            <div className='text-2xl font-medium text-ui-text-1 tabular-nums'>{u.aff_count || 0}</div>
+      )}
+
+      {/* 兑换码 */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+        <span style={{ fontSize: 18, fontWeight: 600, color: '#000' }}>兑换码</span>
+        <div style={{ fontSize: 14, color: '#8f8f8f' }}>输入兑换码，立即获得对应额度或激活订阅</div>
+        <div style={{ display: 'flex', gap: 8, maxWidth: 420 }}>
+          <Input
+            value={code}
+            onChange={setCode}
+            onKeyDown={(e) => e.key === 'Enter' && redeem()}
+            placeholder='XXXX-XXXX-XXXX-XXXX'
+            width='full'
+            className='font-mono'
+          />
+          <Button onClick={redeem} loading={redeeming} disabled={!code.trim()}>兑换</Button>
+        </div>
+      </div>
+
+      {/* 快捷充值 */}
+      {topUpLink && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+          <span style={{ fontSize: 18, fontWeight: 600, color: '#000' }}>快捷充值</span>
+          {/* 金额选择 */}
+          <div style={{ display: 'flex', flexWrap: 'nowrap', gap: 8 }}>
+            {AMOUNTS.map((amt) => (
+              <button
+                key={amt}
+                onClick={() => setTopUpCount(amt)}
+                style={{
+                  cursor: 'pointer', flex: 1, height: 45, border: topUpCount === amt ? '2px solid #000' : '1px solid #e5e5e5',
+                  borderRadius: 10, fontSize: 16, fontWeight: topUpCount === amt ? 600 : 400,
+                  color: '#000', background: '#FFFDF7',
+                  boxShadow: topUpCount === amt ? '0 2px 8px rgba(0,0,0,0.08)' : 'none',
+                  transition: 'border-color 0.2s, box-shadow 0.2s',
+                }}
+              >${amt}</button>
+            ))}
           </div>
-          <div>
-            <div className='text-[11px] uppercase tracking-wider text-ui-text-3 mb-1'>可用奖励</div>
-            <div className='text-2xl font-medium text-ui-text-1 tabular-nums'>{renderQuota(u.aff_quota || 0)}</div>
+          {/* 支付摘要 */}
+          <div style={{ border: '1px solid #e5e5e5', borderRadius: 12, overflow: 'hidden' }}>
+            <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', padding: '16px 18px' }}>
+              <div>
+                <div style={{ fontSize: 13, color: '#8f8f8f', marginBottom: 6 }}>支付总计</div>
+                <div style={{ fontSize: 28, fontWeight: 400, color: '#000' }}>${topUpCount}</div>
+              </div>
+              <div style={{ padding: '2px 10px', border: '1px solid #e5e5e5', borderRadius: 10, fontSize: 12, fontWeight: 500, color: 'rgba(0,0,0,0.3)', background: '#F2F0E9' }}>
+                $1=1,000,000
+              </div>
+            </div>
           </div>
-          <div>
-            <div className='text-[11px] uppercase tracking-wider text-ui-text-3 mb-1'>累计奖励</div>
-            <div className='text-2xl font-medium text-ui-text-2 tabular-nums'>{renderQuota(u.aff_history_quota || 0)}</div>
+          {/* 结账按钮 */}
+          <button
+            onClick={() => window.open(topUpLink, '_blank')}
+            style={{
+              cursor: 'pointer', width: '100%', height: 48, border: 'none', borderRadius: 999,
+              fontSize: 16, fontWeight: 600, color: '#fff', background: '#000',
+            }}
+          >前往结账</button>
+        </div>
+      )}
+
+      {/* 邀请奖励 */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <span style={{ fontSize: 18, fontWeight: 600, color: '#000' }}>邀请奖励</span>
+          {(u.aff_quota || 0) > 0 && (
+            <button
+              onClick={() => setTransferOpen(true)}
+              style={{
+                cursor: 'pointer', height: 32, paddingInline: 16, border: '1px solid #000', borderRadius: 24,
+                fontSize: 14, color: '#000', background: '#FFFDF7', transition: 'background 0.2s, color 0.2s',
+              }}
+              onMouseEnter={(e) => { e.currentTarget.style.background = '#000'; e.currentTarget.style.color = '#fff'; }}
+              onMouseLeave={(e) => { e.currentTarget.style.background = '#FFFDF7'; e.currentTarget.style.color = '#000'; }}
+            >划转到余额</button>
+          )}
+        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12 }}>
+          <div style={{ padding: '16px 18px', border: '1px solid #e9e9e9', borderRadius: 16 }}>
+            <div style={{ fontSize: 12, color: '#999', marginBottom: 6 }}>邀请人数</div>
+            <div style={{ fontSize: 22, fontWeight: 600, color: '#000' }}>{u.aff_count || 0}</div>
+          </div>
+          <div style={{ padding: '16px 18px', border: '1px solid #e9e9e9', borderRadius: 16 }}>
+            <div style={{ fontSize: 12, color: '#999', marginBottom: 6 }}>可用奖励</div>
+            <div style={{ fontSize: 22, fontWeight: 600, color: '#000' }}>{renderQuota(u.aff_quota || 0)}</div>
+          </div>
+          <div style={{ padding: '16px 18px', border: '1px solid #e9e9e9', borderRadius: 16 }}>
+            <div style={{ fontSize: 12, color: '#999', marginBottom: 6 }}>累计奖励</div>
+            <div style={{ fontSize: 22, fontWeight: 600, color: '#000' }}>{renderQuota(u.aff_history_quota || 0)}</div>
           </div>
         </div>
         {affLink && (
-          <div className='flex items-center gap-2 p-2 bg-ui-bg-subtle border border-ui-border rounded-lg'>
-            <code className='flex-1 text-xs font-mono text-ui-text-2 truncate select-all'>{affLink}</code>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 14px', border: '1px solid #e9e9e9', borderRadius: 26 }}>
+            <span style={{ flex: 1, fontSize: 13, fontFamily: "'Gilroy', sans-serif", fontWeight: 500, color: '#000', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', letterSpacing: '0.02em' }}>{affLink}</span>
             <IconButton icon={Copy} onClick={async () => { await copy(affLink); showSuccess('已复制邀请链接'); }} />
           </div>
         )}
-      </Card>
+      </div>
 
+      {/* 充值记录弹窗 */}
+      {showHistory && (
+        <Modal open title='充值记录' onClose={() => setShowHistory(false)} width={560}>
+          <div style={{ overflow: 'auto', maxHeight: 400 }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 14 }}>
+              <thead>
+                <tr style={{ borderBottom: '1px solid #eeeeee' }}>
+                  <th style={{ padding: '0 12px', textAlign: 'left', height: 32, fontWeight: 400, color: '#8f8f8f' }}>时间</th>
+                  <th style={{ padding: '0 12px', textAlign: 'left', height: 32, fontWeight: 400, color: '#8f8f8f' }}>金额</th>
+                  <th style={{ padding: '0 12px', textAlign: 'left', height: 32, fontWeight: 400, color: '#8f8f8f' }}>积分</th>
+                  <th style={{ padding: '0 12px', textAlign: 'left', height: 32, fontWeight: 400, color: '#8f8f8f' }}>方式</th>
+                  <th style={{ padding: '0 12px', textAlign: 'left', height: 32, fontWeight: 400, color: '#8f8f8f' }}>状态</th>
+                </tr>
+              </thead>
+              <tbody>
+                {topups.length === 0 ? (
+                  <tr><td colSpan={5} style={{ padding: '24px 12px', textAlign: 'center', color: '#999' }}>暂无充值记录</td></tr>
+                ) : topups.map((t) => (
+                  <tr key={t.id} style={{ borderBottom: '1px solid #eeeeee' }}>
+                    <td style={{ padding: '0 12px', lineHeight: '32px', color: '#000', whiteSpace: 'nowrap' }}>{t.create_time ? timestamp2string(t.create_time) : '-'}</td>
+                    <td style={{ padding: '0 12px', lineHeight: '32px', color: '#000' }}>${t.money || 0}</td>
+                    <td style={{ padding: '0 12px', lineHeight: '32px', color: '#000' }}>{renderQuota(t.amount || 0)}</td>
+                    <td style={{ padding: '0 12px', lineHeight: '32px', color: '#000' }}>{t.payment_method || '-'}</td>
+                    <td style={{ padding: '0 12px', lineHeight: '32px' }}>
+                      <Tag color={t.status === 'success' ? 'green' : t.status === 'pending' ? 'amber' : 'grey'}>
+                        {t.status === 'success' ? '成功' : t.status === 'pending' ? '待支付' : t.status || '-'}
+                      </Tag>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </Modal>
+      )}
+
+      {/* 划转弹窗 */}
       {transferOpen && (
         <Modal
           open
@@ -202,14 +288,14 @@ const TopUp = () => {
         >
           <div className='space-y-3'>
             <div>
-              <label className='block text-sm text-ui-text-2 mb-1.5'>划转额度</label>
+              <label className='block text-sm text-[#666] mb-1.5'>划转额度</label>
               <NumberInput value={transferAmount} onChange={(v) => setTransferAmount(Number(v) || 0)} min={0} max={u.aff_quota || 0} />
-              <p className='mt-1 text-xs text-ui-text-3'>可划转：{renderQuota(u.aff_quota || 0)}</p>
+              <p className='mt-1 text-xs text-[#999]'>可划转：{renderQuota(u.aff_quota || 0)}</p>
             </div>
           </div>
         </Modal>
       )}
-    </PageShell>
+    </div>
   );
 };
 

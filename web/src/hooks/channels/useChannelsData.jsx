@@ -135,7 +135,6 @@ export const useChannelsData = () => {
     GROUP: 'group',
     TYPE: 'type',
     STATUS: 'status',
-    RESPONSE_TIME: 'response_time',
     BALANCE: 'balance',
     PRIORITY: 'priority',
     WEIGHT: 'weight',
@@ -256,7 +255,6 @@ export const useChannelsData = () => {
             name: '标签：' + tag,
             group: '',
             used_quota: 0,
-            response_time: 0,
             priority: -1,
             weight: -1,
           };
@@ -298,8 +296,6 @@ export const useChannelsData = () => {
           tagChannelDates.status = 1;
         }
         tagChannelDates.used_quota += channels[i].used_quota;
-        tagChannelDates.response_time += channels[i].response_time;
-        tagChannelDates.response_time = tagChannelDates.response_time / 2;
       }
     }
     setChannels(channelDates);
@@ -844,12 +840,6 @@ export const useChannelsData = () => {
       }));
 
       if (success) {
-        // 更新渠道响应时间
-        updateChannelProperty(record.id, (channel) => {
-          channel.response_time = time * 1000;
-          channel.test_time = Date.now() / 1000;
-        });
-
         if (!model || model === '') {
           showInfo(
             t('通道 ${name} 测试成功，耗时 ${time.toFixed(2)} 秒。')

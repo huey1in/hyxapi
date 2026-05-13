@@ -25,7 +25,6 @@ const FooterBar = () => {
       links: [
         { label: t('控制台'),   to: '/console' },
         { label: t('模型广场'), to: '/pricing' },
-        { label: t('对话'),     to: '/console/chat' },
         { label: t('API Keys'), to: '/console/token' },
       ],
     },

@@ -187,6 +187,16 @@ const LoginPanel = ({ status, userDispatch, onSuccess, onSwitchToRegister, onSwi
     <div className='space-y-2.5'>
       <Terms hasUserAgreement={hasUserAgreement} hasPrivacyPolicy={hasPrivacyPolicy} agreed={agreedToTerms} onChange={setAgreedToTerms} />
 
+      <Button variant='oauth' block onClick={() => setShowEmailLogin(true)}
+        icon={<MailSvg style={{ width: 20, height: 20 }} />}
+      >使用 邮箱或用户名 登录</Button>
+
+      <div className='flex items-center gap-3'>
+        <div className='flex-1 h-px bg-ui-border' />
+        <span className='text-xs text-ui-text-3'>或</span>
+        <div className='flex-1 h-px bg-ui-border' />
+      </div>
+
       {status.github_oauth && (
         <Button variant='oauth' block disabled={termsBlocked} loading={githubLoading}
           icon={<GithubIcon style={{ width: 22, height: 22 }} />}
@@ -215,16 +225,6 @@ const LoginPanel = ({ status, userDispatch, onSuccess, onSwitchToRegister, onSwi
           onClick={handlePasskey}
         >Passkey</Button>
       )}
-
-      <div className='flex items-center gap-3'>
-        <div className='flex-1 h-px bg-ui-border' />
-        <span className='text-xs text-ui-text-3'>或</span>
-        <div className='flex-1 h-px bg-ui-border' />
-      </div>
-
-      <Button variant='oauth' block onClick={() => setShowEmailLogin(true)}
-        icon={<MailSvg style={{ width: 20, height: 20 }} />}
-      >使用 邮箱或用户名 登录</Button>
     </div>
   );
 
@@ -255,7 +255,7 @@ const LoginPanel = ({ status, userDispatch, onSuccess, onSwitchToRegister, onSwi
       <Button size='lg' block onClick={submit} disabled={termsBlocked} loading={loginLoading}>继续</Button>
 
       {hasOAuth && (
-        <Button variant='secondary' block onClick={() => setShowEmailLogin(false)}>其他登录选项</Button>
+        <Button variant='toggle' block onClick={() => setShowEmailLogin(false)}>其他登录选项</Button>
       )}
     </div>
   );
@@ -494,7 +494,7 @@ const RegisterPanel = ({ status, userDispatch, onSuccess, onSwitchToLogin }) => 
       <Button size='lg' block onClick={submit} disabled={termsBlocked} loading={registerLoading}>注册</Button>
 
       {hasOAuth && (
-        <Button variant='secondary' block onClick={() => setShowEmailRegister(false)}>其他注册选项</Button>
+        <Button variant='toggle' block onClick={() => setShowEmailRegister(false)}>其他注册选项</Button>
       )}
     </div>
   );

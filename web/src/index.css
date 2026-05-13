@@ -1,4 +1,5 @@
-@import url('https://cdn.jsdelivr.net/npm/misans/lib/Normal/MiSans-Normal.min.css');
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&display=swap');
 
 @font-face {
   font-family: 'Kefaiii';
@@ -6,6 +7,7 @@
   font-weight: 400 700;
   font-style: normal;
   font-display: swap;
+  unicode-range: U+0000-007F, U+2000-206F, U+2070-209F, U+20A0-20CF, U+2100-214F;
 }
 @font-face {
   font-family: 'Gilroy';
@@ -13,6 +15,7 @@
   font-weight: 500;
   font-style: normal;
   font-display: swap;
+  unicode-range: U+0000-007F, U+2000-206F, U+2070-209F, U+20A0-20CF, U+2100-214F;
 }
 
 @tailwind base;
@@ -20,22 +23,22 @@
 @tailwind utilities;
 
 :root {
-  --page-bg:          #f8f8f6;
-  --ui-bg:            #ffffff;
-  --ui-bg-elevated:   #ffffff;
-  --ui-bg-subtle:     #d4d4d8;
-  --ui-border:        #e4e4e7;
-  --ui-divider:       #d4d4d8;
-  --ui-text:          #09090b;
-  --ui-text-2:        #3f3f46;
-  --ui-text-3:        #52525b;
-  --ui-accent:        #09090b;
+  --page-bg:          #FFFDF7;
+  --ui-bg:            #FFFDF7;
+  --ui-bg-elevated:   #FFFDF7;
+  --ui-bg-subtle:     #F2F0E9;
+  --ui-border:        #e3e3e3;
+  --ui-divider:       #eeeeee;
+  --ui-text:          #080808;
+  --ui-text-2:        #666666;
+  --ui-text-3:        #999999;
+  --ui-accent:        #222222;
   --ui-accent-fg:     #ffffff;
-  --ui-accent-hover:  #27272a;
-  --ui-danger:        #dc2626;
-  --ui-danger-bg:     #fee2e2;
-  --ui-brand:         #2563eb;
-  --ui-code-bg:       #efede5;
+  --ui-accent-hover:  #333333;
+  --ui-danger:        #ec5e41;
+  --ui-danger-bg:     #fff7f6;
+  --ui-brand:         #0072f5;
+  --ui-code-bg:       #F2F0E9;
 }
 
 html.dark {
@@ -61,7 +64,7 @@ html.dark {
 html, body, #root { height: 100%; }
 body {
   margin: 0;
-  font-family: 'Kefaiii', 'Gilroy', 'MiSans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-family: 'Kefaiii', 'Gilroy', 'Noto Sans SC', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   -webkit-font-smoothing: antialiased;
   background-color: var(--page-bg);
   color: var(--ui-text);
@@ -154,6 +157,11 @@ body {
 }
 .animate-modal-out {
   animation: ui-modal-out 0.16s ease-in forwards;
+}
+
+@keyframes breath {
+  0%, 100% { opacity: 0.25; transform: scale(0.85); }
+  50%      { opacity: 1;    transform: scale(1); }
 }
 
 /* range slider 统一样式 */

@@ -70,6 +70,7 @@ const Input = React.forwardRef(function Input(
     variant = 'admin',
     size = 36,
     width,
+    className,
     ...rest
   },
   ref,
@@ -107,7 +108,7 @@ const Input = React.forwardRef(function Input(
   return (
     <div
       style={{ ...w.style, height: size }}
-      className={cn('relative inline-flex items-center', w.className, wrapper, disabled && 'opacity-50 cursor-not-allowed')}
+      className={cn('relative inline-flex items-center', w.className, wrapper, className, disabled && 'opacity-50 cursor-not-allowed')}
     >
       {hasPrefix && (
         <span className='flex items-center text-ui-text-3 pointer-events-none' style={{ paddingLeft: padX }}>

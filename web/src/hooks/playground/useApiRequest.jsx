@@ -187,6 +187,7 @@ export const useApiRequest = (
       try {
         const response = await fetch(API_ENDPOINTS.CHAT_COMPLETIONS, {
           method: 'POST',
+          credentials: 'include',
           headers: {
             'Content-Type': 'application/json',
             'New-Api-User': getUserIdFromLocalStorage(),
@@ -320,6 +321,7 @@ export const useApiRequest = (
         },
         method: 'POST',
         payload: JSON.stringify(payload),
+        withCredentials: true,
       });
 
       sseSourceRef.current = source;
