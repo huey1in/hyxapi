@@ -30,18 +30,6 @@ func IsChannelEnabledForGroupModel(group string, modelName string, channelID int
 	return false
 }
 
-func IsChannelEnabledForAnyGroupModel(groups []string, modelName string, channelID int) bool {
-	if len(groups) == 0 {
-		return false
-	}
-	for _, g := range groups {
-		if IsChannelEnabledForGroupModel(g, modelName, channelID) {
-			return true
-		}
-	}
-	return false
-}
-
 func isChannelEnabledForGroupModelDB(group string, modelName string, channelID int) bool {
 	var count int64
 	err := DB.Model(&Ability{}).

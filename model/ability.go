@@ -52,12 +52,6 @@ func GetEnabledModels() []string {
 	return models
 }
 
-func GetAllEnableAbilities() []Ability {
-	var abilities []Ability
-	DB.Find(&abilities, "enabled = ?", true)
-	return abilities
-}
-
 func getPriority(group string, model string, retry int) (int, error) {
 
 	var priorities []int
