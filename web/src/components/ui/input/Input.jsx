@@ -5,7 +5,7 @@
  *
  * variant:  admin (默认 rounded-xl) | inline (rounded + bg-subtle)
  * size:     数字，控制高度(px) 与字号；默认 36 → 字号 14
- * width:    见 resolveWidth；默认 240px
+ * width:    见 resolveWidth；默认 100%（自适应容器）
  * prefix:   左侧 React 节点
  * suffix:   右侧 React 节点
  * clearable: value 非空时显示 × 清除按钮
@@ -44,14 +44,14 @@ export const inputStyle = ({ variant = 'admin', size = 36 } = {}) => {
 };
 
 /* 解析 width prop：
- *   undefined  -> 默认 240px
+ *   undefined  -> 默认 100%（自适应容器）
  *   'full'     -> 占满父容器
  *   number     -> px
  *   其它字符串 -> 原样作为 CSS width（如 '20rem'、'50%'）
  */
 export const resolveWidth = (width) => {
   if (width === 'full') return { className: 'w-full', style: undefined };
-  if (width == null)    return { className: '',       style: { width: 240 } };
+  if (width == null)    return { className: '',       style: { width: '100%' } };
   if (typeof width === 'number') return { className: '', style: { width: `${width}px` } };
   return { className: '', style: { width } };
 };
