@@ -1,11 +1,13 @@
 import React, { useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { Link, NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { LayoutDashboard, UserCog } from 'lucide-react';
+import { LayoutDashboard, UserCog, Menu } from 'lucide-react';
 import { ThemeToggle, Button, IconButton } from '../ui';
 import { UserContext } from '../../context/User';
 import { StatusContext } from '../../context/Status';
 import { useLoginModal } from '../../context/LoginModal';
+import { useMobileSidebar } from '../../context/MobileSidebar';
+import useIsMobile from '../../hooks/useIsMobile';
 import { API, showError, updateAPI } from '../../helpers';
 import NoticeModal from './NoticeModal';
 import {
@@ -24,7 +26,10 @@ const HeaderBar = () => {
   const [userState, userDispatch] = useContext(UserContext);
   const [statusState] = useContext(StatusContext);
   const { openLoginModal } = useLoginModal();
+  const [, setMobileOpen] = useMobileSidebar();
+  const isMobile = useIsMobile();
   const user = userState?.user;
+  const isConsoleRoute = location.pathname.startsWith('/console');
 
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [langMenuOpen, setLangMenuOpen] = useState(false);
@@ -120,12 +125,17 @@ const HeaderBar = () => {
 
   return (
     <header
-      className='flex items-center justify-between gap-4 px-6 h-[64px]'
+      className='flex items-center justify-between gap-2 md:gap-4 px-3 md:px-6 h-[56px] md:h-[64px]'
       style={{ backgroundColor: 'var(--page-bg)' }}
     >
-      <div className='flex items-center gap-8'>
+      <div className='flex items-center gap-4 md:gap-8'>
+        {isMobile && isConsoleRoute && (
+          <button onClick={() => setMobileOpen(true)} className='p-1 cursor-pointer md:hidden'>
+            <Menu size={22} className='text-ui-text' />
+          </button>
+        )}
         <Link to='/' className='flex items-center gap-2 text-ui-text-1 font-semibold'>
-          <span style={{ letterSpacing: '-0.02em', fontSize: 30 }}>Routify</span>
+          <span style={{ letterSpacing: '-0.02em', fontSize: isMobile ? 22 : 30 }}>Routify</span>
         </Link>
 
         <nav className='hidden md:inline-flex items-center gap-4'>
@@ -202,7 +212,7 @@ const HeaderBar = () => {
               onClick={() => setUserMenuOpen((p) => !p)}
               className='flex items-center gap-1.5 px-2.5 h-9 rounded-lg text-sm text-ui-text-1 hover:bg-ui-bg-subtle transition-colors'
             >
-              <span>{user.display_name || user.username}</span>
+              <span>{user.username}</span>
               <ChevronDownIcon size={14} className='text-ui-text-3' />
             </button>
             {userMenuOpen && (

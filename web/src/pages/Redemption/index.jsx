@@ -29,8 +29,8 @@ const RedemptionPage = () => {
             style={{
               cursor: 'pointer', height: 30, paddingInline: 14, borderRadius: 15,
               fontSize: 13, border: 'none',
-              color: tab === t.key ? '#080808' : '#666',
-              background: tab === t.key ? '#F2F0E9' : 'transparent',
+              color: tab === t.key ? 'var(--ui-text)' : 'var(--ui-text-2)',
+              background: tab === t.key ? 'var(--ui-bg-subtle)' : 'transparent',
               fontWeight: tab === t.key ? 500 : 400,
               transition: 'background 0.15s',
             }}
@@ -152,8 +152,8 @@ const QuotaCodesTab = () => {
 
   return (
     <>
-      <div style={{ padding: 16, border: '1px solid #e9e9e9', borderRadius: 16, marginBottom: 16 }}>
-        <div className='grid grid-cols-4 gap-3 items-end'>
+      <div style={{ padding: 16, border: '1px solid var(--ui-border)', borderRadius: 16, marginBottom: 16 }}>
+        <div className='grid grid-cols-2 md:grid-cols-4 gap-3 items-end'>
           <div>
             <label className='block text-xs text-[#999] mb-1'>名称</label>
             <Input value={genForm.name} onChange={(v) => setGenForm((p) => ({ ...p, name: v }))} width='full' placeholder='如"5月活动"' />
@@ -175,7 +175,7 @@ const QuotaCodesTab = () => {
               type='datetime-local'
               value={toLocalInput(genForm.expired_time)}
               onChange={(e) => setGenForm((p) => ({ ...p, expired_time: toUnix(e.target.value) }))}
-              className='flex-1 rounded-lg border border-[#e3e3e3] bg-transparent px-3 py-2 text-sm text-[#000]'
+              className='flex-1 rounded-lg border border-ui-border bg-transparent px-3 py-2 text-sm text-ui-text'
               style={{ maxWidth: 260 }}
             />
             {genForm.expired_time > 0 && (
@@ -202,7 +202,7 @@ const QuotaCodesTab = () => {
         <Modal open title='生成成功' onClose={() => setGenerated(null)} hideFooter width={520}>
           <div className='space-y-3'>
             <p className='text-sm text-[#666]'>请妥善保存以下兑换码：</p>
-            <pre className='p-3 rounded-lg text-xs font-mono max-h-64 overflow-auto whitespace-pre-wrap break-all' style={{ background: '#F2F0E9' }}>{generated.join('\n')}</pre>
+            <pre className='p-3 rounded-lg text-xs font-mono max-h-64 overflow-auto whitespace-pre-wrap break-all' style={{ background: 'var(--ui-bg-subtle)' }}>{generated.join('\n')}</pre>
             <div className='flex justify-end gap-2'>
               <Button variant='toggle' onClick={() => { copy(generated.join('\n')); showSuccess('已复制全部'); }}>复制全部</Button>
               <Button onClick={() => setGenerated(null)}>完成</Button>
@@ -300,8 +300,8 @@ const SubscriptionCodesTab = () => {
 
   return (
     <>
-      <div style={{ padding: 16, border: '1px solid #e9e9e9', borderRadius: 16, marginBottom: 16 }}>
-        <div className='grid grid-cols-4 gap-3 items-end'>
+      <div style={{ padding: 16, border: '1px solid var(--ui-border)', borderRadius: 16, marginBottom: 16 }}>
+        <div className='grid grid-cols-2 md:grid-cols-4 gap-3 items-end'>
           <div>
             <label className='block text-xs text-[#999] mb-1'>选择套餐</label>
             <Select value={selectedPlan} onChange={setSelectedPlan} options={planOptions} placeholder='选择套餐' width='full' />
@@ -323,7 +323,7 @@ const SubscriptionCodesTab = () => {
               type='datetime-local'
               value={toLocalInput(genForm.expired_time)}
               onChange={(e) => setGenForm((p) => ({ ...p, expired_time: toUnix(e.target.value) }))}
-              className='flex-1 rounded-lg border border-[#e3e3e3] bg-transparent px-3 py-2 text-sm text-[#000]'
+              className='flex-1 rounded-lg border border-ui-border bg-transparent px-3 py-2 text-sm text-ui-text'
               style={{ maxWidth: 260 }}
             />
             {genForm.expired_time > 0 && (

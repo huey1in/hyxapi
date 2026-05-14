@@ -6,6 +6,8 @@ import { UserContext } from '../../context/User';
 import { StatusContext } from '../../context/Status';
 import { IconButton, Loading } from '../../components/ui';
 import { UPTIME_STATUS_MAP } from '../../constants/dashboard.constants';
+import useIsMobile from '../../hooks/useIsMobile';
+import useIsDark from '../../hooks/useIsDark';
 
 const MONTHS = ['1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月'];
 
@@ -33,7 +35,7 @@ const BarChart = ({ data, height = 180 }) => {
               <div className='w-full flex justify-center' style={{ height: height - 24 }}>
                 <div
                   className='w-full max-w-[28px] rounded-t transition-all'
-                  style={{ height: `${pct}%`, background: '#222222' }}
+                  style={{ height: `${pct}%`, background: 'var(--ui-accent)' }}
                 />
               </div>
               <span className='text-[11px] text-[#999]'>{d.label}</span>
@@ -53,6 +55,8 @@ const Dashboard = () => {
   const [monthlyData, setMonthlyData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [chartLoading, setChartLoading] = useState(false);
+  const isMobile = useIsMobile();
+  const isDark = useIsDark();
 
   useEffect(() => {
     (async () => {
@@ -124,18 +128,18 @@ const Dashboard = () => {
   if (loading) return <div className='p-8'><Loading /></div>;
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 28, width: '100%', maxWidth: 960, marginInline: 'auto', padding: '24px 16px' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: isMobile ? 20 : 28, width: '100%', maxWidth: 960, marginInline: 'auto', padding: isMobile ? '16px' : '24px 16px' }}>
       {/* 页面标题 */}
-      <h1 style={{ fontSize: 18, fontWeight: 600, color: '#000', paddingBlockEnd: 8 }}>用量信息</h1>
+      <h1 style={{ fontSize: 18, fontWeight: 600, color: 'var(--ui-text)', paddingBlockEnd: 8 }}>用量信息</h1>
 
       {/* 统计卡片 */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 12 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(2, 1fr)', gap: 12 }}>
         {/* 积分余额 */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingBlock: 26, paddingInline: 20, border: '1px solid #e9e9e9', borderRadius: 26 }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingBlock: 26, paddingInline: 20, border: '1px solid var(--ui-border)', borderRadius: 26 }}>
           <div>
-            <div style={{ fontSize: 14, fontWeight: 400, color: '#8f8f8f', marginBottom: 8 }}>可用额度</div>
-            <div style={{ fontSize: 28, fontWeight: 700, color: '#000' }}>{renderQuota(u.quota || 0)}</div>
-            <div style={{ fontSize: 12, color: '#999', marginTop: 4 }}>累计已使用: {renderQuota(u.used_quota || 0)}</div>
+            <div style={{ fontSize: 14, fontWeight: 400, color: 'var(--ui-text-3)', marginBottom: 8 }}>可用额度</div>
+            <div style={{ fontSize: 28, fontWeight: 700, color: 'var(--ui-text)' }}>{renderQuota(u.quota || 0)}</div>
+            <div style={{ fontSize: 12, color: 'var(--ui-text-3)', marginTop: 4 }}>累计已使用: {renderQuota(u.used_quota || 0)}</div>
           </div>
           <button
             onClick={() => navigate('/console/topup')}
@@ -143,17 +147,19 @@ const Dashboard = () => {
               cursor: 'pointer',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               height: 32, paddingInline: 16, border: 'none', borderRadius: 24,
-              fontSize: 14, color: '#000',
-              backgroundImage: 'linear-gradient(136deg, #daf5fe, #ffeddf, #daf5fe, #ffeddf)',
+              fontSize: 14, fontWeight: 500, color: 'var(--ui-text)',
+              background: isDark
+                ? 'var(--ui-bg-subtle)'
+                : 'linear-gradient(136deg, #daf5fe, #ffeddf, #daf5fe, #ffeddf)',
               backgroundSize: '300% 300%',
             }}
           >+ 充值</button>
         </div>
         {/* 本月消费 */}
-        <div style={{ display: 'flex', alignItems: 'center', paddingBlock: 26, paddingInline: 20, border: '1px solid #e9e9e9', borderRadius: 26 }}>
+        <div style={{ display: 'flex', alignItems: 'center', paddingBlock: 26, paddingInline: 20, border: '1px solid var(--ui-border)', borderRadius: 26 }}>
           <div>
-            <div style={{ fontSize: 14, fontWeight: 400, color: '#8f8f8f', marginBottom: 8 }}>本月消费</div>
-            <div style={{ fontSize: 28, fontWeight: 700, color: '#000' }}>
+            <div style={{ fontSize: 14, fontWeight: 400, color: 'var(--ui-text-3)', marginBottom: 8 }}>本月消费</div>
+            <div style={{ fontSize: 28, fontWeight: 700, color: 'var(--ui-text)' }}>
               {renderQuota(monthlyData.length > 0 ? monthlyData[monthlyData.length - 1].value : 0)}
             </div>
           </div>
@@ -161,9 +167,9 @@ const Dashboard = () => {
       </div>
 
       {/* 每月用量 */}
-      <div style={{ paddingBlock: '16px 8px', paddingInline: 16, border: '1px solid #e9e9e9', borderRadius: 26 }}>
+      <div style={{ paddingBlock: '16px 8px', paddingInline: 16, border: '1px solid var(--ui-border)', borderRadius: 26 }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBlockEnd: 8 }}>
-          <span style={{ fontSize: 18, fontWeight: 600, color: '#000' }}>每月用量</span>
+          <span style={{ fontSize: 18, fontWeight: 600, color: 'var(--ui-text)' }}>每月用量</span>
           <IconButton icon={RefreshCw} onClick={loadChart} disabled={chartLoading} title='刷新' />
         </div>
         <div style={{ position: 'relative' }}>
@@ -219,8 +225,8 @@ const InfoPanels = ({ apiInfoEnabled, announcementsEnabled, faqEnabled, uptimeEn
   if (tabs.length === 0) return null;
 
   return (
-    <div style={{ border: '1px solid #e9e9e9', borderRadius: 26, overflow: 'hidden' }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '12px 16px', borderBottom: '1px solid #eeeeee' }}>
+    <div style={{ border: '1px solid var(--ui-border)', borderRadius: 26, overflow: 'hidden' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '12px 16px', borderBottom: '1px solid var(--ui-divider)', overflowX: 'auto' }}>
         {tabs.map(({ key, label, Icon }) => (
           <button
             key={key}
@@ -229,8 +235,8 @@ const InfoPanels = ({ apiInfoEnabled, announcementsEnabled, faqEnabled, uptimeEn
               cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 5,
               height: 30, paddingInline: 12, borderRadius: 15, border: 'none',
               fontSize: 13, fontWeight: active === key ? 500 : 400,
-              color: active === key ? '#000' : '#666',
-              background: active === key ? '#F2F0E9' : 'transparent',
+              color: active === key ? 'var(--ui-text)' : 'var(--ui-text-2)',
+              background: active === key ? 'var(--ui-bg-subtle)' : 'transparent',
               transition: 'background 0.15s, color 0.15s',
             }}
           >
@@ -250,7 +256,7 @@ const InfoPanels = ({ apiInfoEnabled, announcementsEnabled, faqEnabled, uptimeEn
 };
 
 const EmptyState = ({ text }) => (
-  <div style={{ padding: '48px 16px', textAlign: 'center', color: '#999', fontSize: 13 }}>{text}</div>
+  <div style={{ padding: '48px 16px', textAlign: 'center', color: 'var(--ui-text-3)', fontSize: 13 }}>{text}</div>
 );
 
 const ApiInfoSection = ({ data }) => {
@@ -260,12 +266,12 @@ const ApiInfoSection = ({ data }) => {
       {data.map((item, i) => (
         <div key={i} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 18px', borderBottom: i < data.length - 1 ? '1px solid #eeeeee' : 'none' }}>
           <div style={{ minWidth: 0, flex: 1 }}>
-            <div style={{ fontSize: 14, fontWeight: 500, color: '#000', marginBottom: 2 }}>{item.route || item.name || '-'}</div>
-            <div style={{ fontSize: 12, fontFamily: 'monospace', color: '#666', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.url}</div>
+            <div style={{ fontSize: 14, fontWeight: 500, color: 'var(--ui-text)', marginBottom: 2 }}>{item.route || item.name || '-'}</div>
+            <div style={{ fontSize: 12, fontFamily: 'monospace', color: 'var(--ui-text-2)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.url}</div>
           </div>
           <button
             onClick={async () => { if (await copy(item.url)) showSuccess('已复制'); }}
-            style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', width: 28, height: 28, border: 'none', borderRadius: 6, background: 'transparent', color: '#999', flexShrink: 0 }}
+            style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', width: 28, height: 28, border: 'none', borderRadius: 6, background: 'transparent', color: 'var(--ui-text-3)', flexShrink: 0 }}
           >
             <Copy size={14} />
           </button>
@@ -284,9 +290,9 @@ const AnnouncementsSection = ({ data }) => {
         <div key={i} style={{ padding: '12px 18px', borderBottom: i < data.length - 1 ? '1px solid #eeeeee' : 'none' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
             <span style={{ width: 6, height: 6, borderRadius: '50%', background: colorMap[item.type] || '#999', flexShrink: 0 }} />
-            <span style={{ fontSize: 12, color: '#999' }}>{item.relative ? `${item.relative} · ` : ''}{item.time}</span>
+            <span style={{ fontSize: 12, color: 'var(--ui-text-3)' }}>{item.relative ? `${item.relative} · ` : ''}{item.time}</span>
           </div>
-          <div style={{ fontSize: 14, color: '#000', lineHeight: 1.6, paddingLeft: 14 }}>{item.content}</div>
+          <div style={{ fontSize: 14, color: 'var(--ui-text)', lineHeight: 1.6, paddingLeft: 14 }}>{item.content}</div>
         </div>
       ))}
     </div>
@@ -311,14 +317,14 @@ const FaqItem = ({ item, last }) => {
         style={{
           cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
           width: '100%', padding: '12px 18px', border: 'none', background: 'transparent',
-          fontSize: 14, color: '#000', textAlign: 'left',
+          fontSize: 14, color: 'var(--ui-text)', textAlign: 'left',
         }}
       >
         <span style={{ flex: 1 }}>{item.question}</span>
-        <ChevronDown size={14} style={{ color: '#999', transform: open ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }} />
+        <ChevronDown size={14} style={{ color: 'var(--ui-text-3)', transform: open ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }} />
       </button>
       {open && (
-        <div style={{ padding: '0 18px 12px', fontSize: 13, color: '#666', lineHeight: 1.6 }}>{item.answer}</div>
+        <div style={{ padding: '0 18px 12px', fontSize: 13, color: 'var(--ui-text-2)', lineHeight: 1.6 }}>{item.answer}</div>
       )}
     </div>
   );
@@ -335,7 +341,7 @@ const UptimeSection = ({ data, loading, group, setGroup }) => {
   return (
     <div>
       {groups.length > 1 && (
-        <div style={{ display: 'flex', gap: 4, padding: '10px 16px', borderBottom: '1px solid #eeeeee', overflowX: 'auto' }}>
+        <div style={{ display: 'flex', gap: 4, padding: '10px 16px', borderBottom: '1px solid var(--ui-divider)', overflowX: 'auto' }}>
           {groups.map((g) => (
             <button
               key={g.key}
@@ -343,8 +349,8 @@ const UptimeSection = ({ data, loading, group, setGroup }) => {
               style={{
                 cursor: 'pointer', height: 26, paddingInline: 10, borderRadius: 13, border: 'none',
                 fontSize: 12, fontWeight: group === g.key ? 500 : 400,
-                color: group === g.key ? '#000' : '#666',
-                background: group === g.key ? '#F2F0E9' : 'transparent',
+                color: group === g.key ? 'var(--ui-text)' : 'var(--ui-text-2)',
+                background: group === g.key ? 'var(--ui-bg-subtle)' : 'transparent',
                 whiteSpace: 'nowrap', transition: 'background 0.15s',
               }}
             >{g.label}</button>
@@ -360,11 +366,11 @@ const UptimeSection = ({ data, loading, group, setGroup }) => {
             return (
               <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 18px', borderBottom: i < monitors.length - 1 ? '1px solid #eeeeee' : 'none' }}>
                 <span style={{ width: 7, height: 7, borderRadius: '50%', background: color, flexShrink: 0 }} />
-                <span style={{ flex: 1, fontSize: 14, color: '#000' }}>{m.name}</span>
-                <div style={{ width: 80, height: 4, borderRadius: 2, background: '#F2F0E9', overflow: 'hidden' }}>
+                <span style={{ flex: 1, fontSize: 14, color: 'var(--ui-text)' }}>{m.name}</span>
+                <div style={{ width: 80, height: 4, borderRadius: 2, background: 'var(--ui-bg-subtle)', overflow: 'hidden' }}>
                   <div style={{ height: '100%', borderRadius: 2, background: color, width: `${pct}%`, transition: 'width 0.3s' }} />
                 </div>
-                <span style={{ fontSize: 12, color: '#666', fontVariantNumeric: 'tabular-nums', width: 48, textAlign: 'right' }}>{pct}%</span>
+                <span style={{ fontSize: 12, color: 'var(--ui-text-2)', fontVariantNumeric: 'tabular-nums', width: 48, textAlign: 'right' }}>{pct}%</span>
               </div>
             );
           })}

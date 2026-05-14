@@ -60,11 +60,11 @@ const UserPage = () => {
         return (
           <div style={{ minWidth: 120 }}>
             <div className='flex justify-between text-xs mb-1'>
-              <span style={{ color: '#666' }}>已用 {renderQuota(used, 2)}</span>
-              <span style={{ color: '#999' }}>{renderQuota(total, 2)}</span>
+              <span style={{ color: 'var(--ui-text-2)' }}>已用 {renderQuota(used, 2)}</span>
+              <span style={{ color: 'var(--ui-text-3)' }}>{renderQuota(total, 2)}</span>
             </div>
-            <div style={{ height: 6, borderRadius: 3, background: '#F2F0E9', overflow: 'hidden' }}>
-              <div style={{ height: '100%', borderRadius: 3, width: `${pct}%`, background: pct > 80 ? '#e74c3c' : '#000', transition: 'width 0.3s' }} />
+            <div style={{ height: 6, borderRadius: 3, background: 'var(--ui-bg-subtle)', overflow: 'hidden' }}>
+              <div style={{ height: '100%', borderRadius: 3, width: `${pct}%`, background: pct > 80 ? '#e74c3c' : 'var(--ui-accent)', transition: 'width 0.3s' }} />
             </div>
           </div>
         );
@@ -104,13 +104,13 @@ const UserPage = () => {
       actions={<Button icon={Plus} onClick={() => setEditing({ username: '', password: '', display_name: '' })}>新建用户</Button>}
     >
       <Card className='mb-4'>
-        <div className='flex gap-2'>
+        <div className='flex flex-col md:flex-row gap-2'>
           <Input
             placeholder='搜索用户名/邮箱'
             value={keyword}
             onChange={setKeyword}
             onKeyDown={(e) => e.key === 'Enter' && load(1, keyword)}
-            width={240}
+            width='full'
           />
           <Button icon={Search} onClick={() => load(1, keyword)}>搜索</Button>
         </div>

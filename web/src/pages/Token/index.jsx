@@ -6,6 +6,7 @@ import {
   Button, IconButton, Input, NumberInput, Switch, Select, MultiSelect,
   SlideOver, ConfirmDialog, CodeBlock, Loading,
 } from '../../components/ui';
+import useIsMobile from '../../hooks/useIsMobile';
 
 const toLocalInput = (ts) => {
   if (!ts || ts === -1) return '';
@@ -21,6 +22,7 @@ const TokenPage = () => {
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState(null);
   const [confirm, setConfirm] = useState(null);
+  const isMobile = useIsMobile();
 
   const load = async () => {
     setLoading(true);
@@ -58,9 +60,9 @@ const TokenPage = () => {
   const origin = typeof window !== 'undefined' ? window.location.origin : 'https://api.example.com';
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 28, width: '100%', maxWidth: 960, marginInline: 'auto', padding: '24px 16px' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: isMobile ? 20 : 28, width: '100%', maxWidth: 960, marginInline: 'auto', padding: isMobile ? '16px' : '24px 16px' }}>
       {/* 快速入门 */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: 12 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, minmax(0, 1fr))', gap: 12 }}>
         <StepCard num='01' title='创建 API key' desc='创建 API key 并妥善保存' />
         <StepCard num='02' title='参看示例' desc='请在下方参看调用示例' />
         <StepCard num='03' title='发送请求' desc='接入 AI 服务' />
@@ -69,24 +71,24 @@ const TokenPage = () => {
       {/* API keys */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <span style={{ fontSize: 18, fontWeight: 600, color: '#000' }}>API keys</span>
+          <span style={{ fontSize: 18, fontWeight: 600, color: 'var(--ui-text)' }}>API keys</span>
           <button
             onClick={() => setEditing({ name: '', unlimited_quota: true, remain_quota: 500000, expired_time: -1, group: '' })}
             style={{
               cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 6,
-              height: 32, paddingInline: 16, border: '1px solid #000', borderRadius: 24,
-              fontSize: 14, color: '#000', background: '#FFFDF7',
+              height: 32, paddingInline: 16, border: '1px solid var(--ui-text)', borderRadius: 24,
+              fontSize: 14, color: 'var(--ui-text)', background: 'var(--page-bg)',
               transition: 'background 0.2s ease, color 0.2s ease',
             }}
-            onMouseEnter={(e) => { e.currentTarget.style.background = '#000'; e.currentTarget.style.color = '#fff'; }}
-            onMouseLeave={(e) => { e.currentTarget.style.background = '#FFFDF7'; e.currentTarget.style.color = '#000'; }}
+            onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--ui-accent)'; e.currentTarget.style.color = 'var(--ui-accent-fg)'; }}
+            onMouseLeave={(e) => { e.currentTarget.style.background = 'var(--page-bg)'; e.currentTarget.style.color = 'var(--ui-text)'; }}
           >
             <Plus size={14} /> 创建 API key
           </button>
         </div>
 
         {loading ? <Loading /> : rows.length === 0 ? (
-          <div style={{ padding: '32px 0', textAlign: 'center', color: '#999', fontSize: 14 }}>暂无 API key</div>
+          <div style={{ padding: '32px 0', textAlign: 'center', color: 'var(--ui-text-3)', fontSize: 14 }}>暂无 API key</div>
         ) : rows.map((row) => (
           <KeyCard key={row.id} row={row} onCopy={() => copyKey(row)} onDelete={() => setConfirm({ title: `删除令牌 ${row.name}?`, onOk: () => remove(row) })} onEdit={() => setEditing({ ...row })} />
         ))}
@@ -111,41 +113,46 @@ const TokenPage = () => {
 };
 
 const StepCard = ({ num, title, desc }) => (
-  <div style={{ padding: 16, border: '1px solid #e9e9e9', borderRadius: 16, background: '#FFFDF7' }}>
-    <div style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: 28, height: 28, marginBottom: 8, border: '1px solid #e3e8f0', borderRadius: '50%', fontWeight: 700, fontSize: 12, color: '#000' }}>{num}.</div>
-    <div style={{ fontSize: 16, fontWeight: 500, color: '#000', marginBottom: 4 }}>{title}</div>
-    <div style={{ fontSize: 14, color: '#8f8f8f' }}>{desc}</div>
+  <div style={{ padding: 16, border: '1px solid var(--ui-border)', borderRadius: 16, background: 'var(--page-bg)' }}>
+    <div style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: 28, height: 28, marginBottom: 8, border: '1px solid #e3e8f0', borderRadius: '50%', fontWeight: 700, fontSize: 12, color: 'var(--ui-text)' }}>{num}.</div>
+    <div style={{ fontSize: 16, fontWeight: 500, color: 'var(--ui-text)', marginBottom: 4 }}>{title}</div>
+    <div style={{ fontSize: 14, color: 'var(--ui-text-3)' }}>{desc}</div>
   </div>
 );
 
-const KeyCard = ({ row, onCopy, onDelete, onEdit }) => (
+const KeyCard = ({ row, onCopy, onDelete, onEdit }) => {
+  const isMobile = useIsMobile();
+  return (
   <div
     className='group'
     style={{
-      position: 'relative', display: 'grid', gridTemplateColumns: '220px 1fr auto',
-      gap: 18, alignItems: 'center', paddingBlock: 10, paddingInline: 18,
-      border: '1px solid #e9e9e9', borderRadius: 26, background: '#FFFDF7',
+      position: 'relative', display: 'grid',
+      gridTemplateColumns: isMobile ? '1fr' : '220px 1fr auto',
+      gap: isMobile ? 10 : 18, alignItems: isMobile ? 'stretch' : 'center',
+      paddingBlock: isMobile ? 14 : 10, paddingInline: isMobile ? 14 : 18,
+      border: '1px solid var(--ui-border)', borderRadius: 26, background: 'var(--page-bg)',
     }}
   >
     <div style={{ display: 'flex', flexDirection: 'column' }}>
-      <span style={{ fontSize: 14, fontWeight: 500, color: '#000', marginBottom: 2 }}>{row.name || '未命名'}</span>
-      <span style={{ fontFamily: 'monospace', fontSize: 12, color: '#000', wordBreak: 'break-all' }}>
+      <span style={{ fontSize: 14, fontWeight: 500, color: 'var(--ui-text)', marginBottom: 2 }}>{row.name || '未命名'}</span>
+      <span style={{ fontFamily: 'monospace', fontSize: 12, color: 'var(--ui-text)', wordBreak: 'break-all' }}>
         sk-{row.key?.slice(0, 5)}*******{row.key?.slice(-4)}
       </span>
     </div>
     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px 12px', alignItems: 'center' }}>
-      <span style={{ fontSize: 12, color: '#999' }}>创建时间</span>
-      <span style={{ fontSize: 14, color: '#000' }}>{row.created_time ? timestamp2string(row.created_time) : '-'}</span>
-      <span style={{ fontSize: 12, color: '#999' }}>最近使用时间</span>
-      <span style={{ fontSize: 14, color: '#000' }}>{row.accessed_time ? timestamp2string(row.accessed_time) : '从未使用'}</span>
+      <span style={{ fontSize: 12, color: 'var(--ui-text-3)' }}>创建时间</span>
+      <span style={{ fontSize: 14, color: 'var(--ui-text)' }}>{row.created_time ? timestamp2string(row.created_time) : '-'}</span>
+      <span style={{ fontSize: 12, color: 'var(--ui-text-3)' }}>最近使用时间</span>
+      <span style={{ fontSize: 14, color: 'var(--ui-text)' }}>{row.accessed_time ? timestamp2string(row.accessed_time) : '从未使用'}</span>
     </div>
-    <div className='flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity'>
+    <div className={`flex gap-1 ${isMobile ? '' : 'opacity-0 group-hover:opacity-100'} transition-opacity`}>
       <IconButton icon={Copy} title='复制' onClick={onCopy} />
       <IconButton icon={Pencil} title='编辑' onClick={onEdit} />
       <IconButton icon={Trash2} variant='danger' title='删除' onClick={onDelete} />
     </div>
   </div>
-);
+  );
+};
 
 const CodeSamples = ({ origin }) => {
   const [lang, setLang] = useState('curl');
@@ -208,7 +215,7 @@ response = requests.post(
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <span style={{ fontSize: 18, fontWeight: 600, color: '#000' }}>调用示例</span>
+        <span style={{ fontSize: 18, fontWeight: 600, color: 'var(--ui-text)' }}>调用示例</span>
         <div style={{ display: 'flex', gap: 4 }}>
           {LANGS.map((l) => (
             <button
@@ -217,8 +224,8 @@ response = requests.post(
               style={{
                 cursor: 'pointer', height: 28, paddingInline: 12, borderRadius: 14,
                 fontSize: 13, border: 'none',
-                color: lang === l.key ? '#080808' : '#666',
-                background: lang === l.key ? '#F2F0E9' : 'transparent',
+                color: lang === l.key ? 'var(--ui-text)' : 'var(--ui-text-2)',
+                background: lang === l.key ? 'var(--ui-bg-subtle)' : 'transparent',
                 transition: 'background 0.15s',
               }}
             >{l.label}</button>
@@ -297,7 +304,7 @@ const TokenEditModal = ({ open, token, onClose, onSaved }) => {
     <SlideOver
       open={open}
       onClose={onClose}
-      title={<span style={{ fontSize: 18, fontWeight: 600, color: '#000' }}>{isEdit ? '编辑令牌' : '创建令牌'}</span>}
+      title={<span style={{ fontSize: 18, fontWeight: 600, color: 'var(--ui-text)' }}>{isEdit ? '编辑令牌' : '创建令牌'}</span>}
       width={480}
       footer={
         <>
@@ -320,7 +327,7 @@ const TokenEditModal = ({ open, token, onClose, onSaved }) => {
         )}
 
         <div className='flex items-center justify-between'>
-          <span className='text-sm text-[#000]'>不限额度</span>
+          <span className='text-sm text-ui-text'>不限额度</span>
           <Switch checked={!!form.unlimited_quota} onChange={u('unlimited_quota')} />
         </div>
 
@@ -342,7 +349,7 @@ const TokenEditModal = ({ open, token, onClose, onSaved }) => {
               type='datetime-local'
               value={toLocalInput(form.expired_time)}
               onChange={(e) => u('expired_time')(toUnix(e.target.value) || -1)}
-              className='flex-1 rounded-lg border border-[#e3e3e3] bg-transparent px-3 py-2 text-sm text-[#000]'
+              className='flex-1 rounded-lg border border-ui-border bg-transparent px-3 py-2 text-sm text-ui-text'
             />
             <Button variant='toggle' selected={form.expired_time === -1}
               onClick={() => u('expired_time')(-1)}>永不</Button>
@@ -350,7 +357,7 @@ const TokenEditModal = ({ open, token, onClose, onSaved }) => {
         </div>
 
         <div className='flex items-center justify-between'>
-          <span className='text-sm text-[#000]'>模型限制</span>
+          <span className='text-sm text-ui-text'>模型限制</span>
           <Switch checked={!!form.model_limits_enabled} onChange={u('model_limits_enabled')} />
         </div>
 
@@ -374,7 +381,7 @@ const TokenEditModal = ({ open, token, onClose, onSaved }) => {
             onChange={(e) => u('allow_ips')(e.target.value)}
             placeholder='每行一个 IP 地址，留空则不限制'
             rows={3}
-            className='w-full rounded-lg border border-[#e3e3e3] bg-transparent px-3 py-2 text-sm text-[#000] resize-none outline-none focus:border-[#999] transition-colors'
+            className='w-full rounded-lg border border-ui-border bg-transparent px-3 py-2 text-sm text-ui-text resize-none outline-none focus:border-[#999] transition-colors'
           />
         </div>
       </div>

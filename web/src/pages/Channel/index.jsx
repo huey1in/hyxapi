@@ -500,7 +500,7 @@ const ChannelEditModal = ({ channel, onClose, onSaved }) => {
       <div className='px-6 pb-6 space-y-6'>
         {/* 基本信息 */}
         <Section title='基本信息'>
-          <div className='grid grid-cols-2 gap-4'>
+          <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
             <Field label='类型'>
               <Select value={form.type} onChange={(v) => u('type')(Number(v))} options={TYPE_OPTIONS} width='full' />
             </Field>
@@ -665,7 +665,7 @@ const ChannelEditModal = ({ channel, onClose, onSaved }) => {
           {/* 渠道行为 */}
           <div className='space-y-4 pb-3 border-b border-[#eeeeee]'>
             <span className='text-xs font-medium text-ui-text-2'>渠道行为</span>
-            <div className='grid grid-cols-2 gap-4'>
+            <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
               <Field label='渠道标签'>
                 <Input value={form.tag || ''} onChange={u('tag')} width='full' placeholder='可选' />
               </Field>
@@ -676,7 +676,7 @@ const ChannelEditModal = ({ channel, onClose, onSaved }) => {
             <Field label='备注' hint='仅管理员可见'>
               <Textarea value={form.remark || ''} onChange={u('remark')} rows={2} placeholder='请输入备注' width='full' />
             </Field>
-            <div className='grid grid-cols-3 gap-4'>
+            <div className='grid grid-cols-1 md:grid-cols-3 gap-4'>
               <Field label='优先级'>
                 <NumberInput value={form.priority ?? 0} onChange={(v) => u('priority')(Number(v))} width='full' />
               </Field>
@@ -811,10 +811,10 @@ const ModelTagList = ({ models, onChange }) => {
         <span key={`${m}-${i}`} style={{
           display: 'inline-flex', alignItems: 'center', gap: 4,
           height: 26, paddingInline: 10, borderRadius: 13,
-          fontSize: 12, color: '#000', background: '#F2F0E9',
+          fontSize: 12, color: 'var(--ui-text)', background: 'var(--ui-bg-subtle)',
         }}>
           {m}
-          <button onClick={() => remove(i)} style={{ cursor: 'pointer', border: 'none', background: 'none', color: '#999', fontSize: 14, lineHeight: 1, padding: 0 }}>×</button>
+          <button onClick={() => remove(i)} style={{ cursor: 'pointer', border: 'none', background: 'none', color: 'var(--ui-text-3)', fontSize: 14, lineHeight: 1, padding: 0 }}>×</button>
         </span>
       ))}
     </div>

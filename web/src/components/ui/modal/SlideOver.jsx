@@ -15,6 +15,7 @@ import { X } from 'lucide-react';
 import { cn } from '../tokens';
 import IconButton from '../button/IconButton';
 import useExitTransition from './useExitTransition';
+import useIsMobile from '../../../hooks/useIsMobile';
 
 const SlideOver = ({
   open,
@@ -27,6 +28,7 @@ const SlideOver = ({
   children,
 }) => {
   const { mounted, exiting } = useExitTransition(open, 220);
+  const isMobile = useIsMobile();
 
   useEffect(() => {
     if (!open) return;
@@ -43,6 +45,7 @@ const SlideOver = ({
   if (!mounted || typeof document === 'undefined') return null;
 
   const side = placement === 'left' ? 'left-0' : 'right-0';
+  const effectiveWidth = isMobile ? '100vw' : width;
 
   return createPortal(
     <div className='fixed inset-0 z-[200]'>
@@ -58,9 +61,9 @@ const SlideOver = ({
             ? (placement === 'left' ? 'animate-slide-out-left' : 'animate-slide-out-right')
             : (placement === 'left' ? 'animate-slide-in-left'  : 'animate-slide-in-right'),
         )}
-        style={{ width }}
+        style={{ width: effectiveWidth }}
       >
-        <div className='flex items-center justify-between gap-3 px-6 pt-5 pb-3 flex-shrink-0'>
+        <div className='flex items-center justify-between gap-3 px-4 md:px-6 pt-5 pb-3 flex-shrink-0'>
           <div className='flex items-center gap-2 min-w-0 flex-1'>{title}</div>
           <div className='flex items-center gap-2 flex-shrink-0'>
             {headerExtra}
@@ -69,7 +72,7 @@ const SlideOver = ({
         </div>
         <div className='flex-1 overflow-y-auto'>{children}</div>
         {footer && (
-          <div className='flex items-center justify-end gap-2 px-6 pt-3 pb-4 flex-shrink-0'>
+          <div className='flex items-center justify-end gap-2 px-4 md:px-6 pt-3 pb-4 flex-shrink-0'>
             {footer}
           </div>
         )}

@@ -8,6 +8,7 @@ import { UserContext } from '../../context/User';
 import {
   Button, IconButton, Input, Modal, Tag, Loading,
 } from '../../components/ui';
+import useIsMobile from '../../hooks/useIsMobile';
 
 const Personal = () => {
   const [userState, userDispatch] = useContext(UserContext);
@@ -29,6 +30,7 @@ const Personal = () => {
   const [emailBusy, setEmailBusy] = useState(false);
   const [codeSent, setCodeSent] = useState(false);
   const [countdown, setCountdown] = useState(0);
+  const isMobile = useIsMobile();
 
   const u = userState?.user || {};
   useEffect(() => {
@@ -182,11 +184,11 @@ const Personal = () => {
   const roleName = u.role >= 100 ? '超级管理员' : u.role >= 10 ? '管理员' : '用户';
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 20, width: '100%', maxWidth: 960, marginInline: 'auto', padding: '24px 16px' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 20, width: '100%', maxWidth: 960, marginInline: 'auto', padding: isMobile ? '16px' : '24px 16px' }}>
       {/* 用户概览卡片 */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '22px 24px', border: '1px solid #e9e9e9', borderRadius: 26 }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '22px 24px', border: '1px solid var(--ui-border)', borderRadius: 26 }}>
         <div>
-          <div style={{ fontSize: 18, fontWeight: 600, color: '#000' }}>{u.username || '-'}</div>
+          <div style={{ fontSize: 18, fontWeight: 600, color: 'var(--ui-text)' }}>{u.username || '-'}</div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 6 }}>
             <Tag color='grey'>{roleName}</Tag>
           </div>
@@ -200,9 +202,9 @@ const Personal = () => {
       </div>
 
       {/* 账号信息 */}
-      <div style={{ padding: '20px 22px', border: '1px solid #e9e9e9', borderRadius: 26 }}>
-        <div style={{ fontSize: 15, fontWeight: 600, color: '#000', marginBottom: 16 }}>账号信息</div>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
+      <div style={{ padding: '20px 22px', border: '1px solid var(--ui-border)', borderRadius: 26 }}>
+        <div style={{ fontSize: 15, fontWeight: 600, color: 'var(--ui-text)', marginBottom: 16 }}>账号信息</div>
+        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 14 }}>
           <FieldGroup label='用户名'>
             <Input value={u.username || ''} disabled width='full' />
           </FieldGroup>
@@ -227,28 +229,28 @@ const Personal = () => {
       </div>
 
       {/* 安全设置 — Passkey + 2FA 合并 */}
-      <div style={{ padding: '20px 22px', border: '1px solid #e9e9e9', borderRadius: 26 }}>
-        <div style={{ fontSize: 15, fontWeight: 600, color: '#000', marginBottom: 16 }}>安全设置</div>
+      <div style={{ padding: '20px 22px', border: '1px solid var(--ui-border)', borderRadius: 26 }}>
+        <div style={{ fontSize: 15, fontWeight: 600, color: 'var(--ui-text)', marginBottom: 16 }}>安全设置</div>
 
         {/* Passkey */}
         <div style={{ marginBottom: 20 }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <Fingerprint size={16} style={{ color: '#666' }} />
-              <span style={{ fontSize: 14, fontWeight: 500, color: '#000' }}>Passkey</span>
+              <Fingerprint size={16} style={{ color: 'var(--ui-text-2)' }} />
+              <span style={{ fontSize: 14, fontWeight: 500, color: 'var(--ui-text)' }}>Passkey</span>
               <Tag color={passkeys.length > 0 ? 'green' : 'grey'}>{passkeys.length}</Tag>
             </div>
             {passkeySupported && <Button loading={passkeyBusy} onClick={addPasskey}>添加</Button>}
           </div>
-          {!passkeySupported && <p style={{ fontSize: 13, color: '#999', margin: 0 }}>当前浏览器不支持 Passkey</p>}
-          {passkeySupported && passkeys.length === 0 && <p style={{ fontSize: 13, color: '#999', margin: 0 }}>添加 Passkey 后可使用指纹/面容免密登录</p>}
+          {!passkeySupported && <p style={{ fontSize: 13, color: 'var(--ui-text-3)', margin: 0 }}>当前浏览器不支持 Passkey</p>}
+          {passkeySupported && passkeys.length === 0 && <p style={{ fontSize: 13, color: 'var(--ui-text-3)', margin: 0 }}>添加 Passkey 后可使用指纹/面容免密登录</p>}
           {passkeys.length > 0 && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
               {passkeys.map((p) => (
-                <div key={p.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 12px', background: '#F2F0E9', borderRadius: 10 }}>
+                <div key={p.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 12px', background: 'var(--ui-bg-subtle)', borderRadius: 10 }}>
                   <div>
-                    <span style={{ fontSize: 13, color: '#000' }}>{p.name || 'Passkey'}</span>
-                    {p.created_at && <span style={{ fontSize: 11, color: '#999', marginLeft: 8 }}>{timestamp2string(p.created_at)}</span>}
+                    <span style={{ fontSize: 13, color: 'var(--ui-text)' }}>{p.name || 'Passkey'}</span>
+                    {p.created_at && <span style={{ fontSize: 11, color: 'var(--ui-text-3)', marginLeft: 8 }}>{timestamp2string(p.created_at)}</span>}
                   </div>
                   <IconButton icon={Trash2} variant='danger' onClick={() => removePasskey(p.id)} />
                 </div>
@@ -258,26 +260,26 @@ const Personal = () => {
         </div>
 
         {/* 分隔线 */}
-        <div style={{ height: 1, background: '#eeeeee', marginBottom: 20 }} />
+        <div style={{ height: 1, background: 'var(--ui-divider)', marginBottom: 20 }} />
 
         {/* 2FA */}
         <div>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <ShieldCheck size={16} style={{ color: '#666' }} />
-              <span style={{ fontSize: 14, fontWeight: 500, color: '#000' }}>两步验证</span>
+              <ShieldCheck size={16} style={{ color: 'var(--ui-text-2)' }} />
+              <span style={{ fontSize: 14, fontWeight: 500, color: 'var(--ui-text)' }}>两步验证</span>
               <Tag color={twoFA.enabled ? 'green' : 'grey'}>{twoFA.enabled ? '已启用' : '未启用'}</Tag>
             </div>
             {twoFA.enabled
               ? <Button variant='toggle' onClick={() => setDisableOpen(true)}>禁用</Button>
               : <Button loading={twoFABusy} onClick={start2FASetup}>启用</Button>}
           </div>
-          <p style={{ fontSize: 13, color: '#999', margin: 0, lineHeight: 1.6 }}>
+          <p style={{ fontSize: 13, color: 'var(--ui-text-3)', margin: 0, lineHeight: 1.6 }}>
             使用 TOTP 应用保护登录安全
             {twoFA.enabled && (
               <span style={{ marginLeft: 8 }}>
-                · 备份码剩余 <strong style={{ color: '#000' }}>{twoFA.backup_codes_remaining}</strong>
-                <button onClick={regenBackup} style={{ marginLeft: 6, cursor: 'pointer', color: '#000', textDecoration: 'underline', background: 'none', border: 'none', fontSize: 13 }}>重新生成</button>
+                · 备份码剩余 <strong style={{ color: 'var(--ui-text)' }}>{twoFA.backup_codes_remaining}</strong>
+                <button onClick={regenBackup} style={{ marginLeft: 6, cursor: 'pointer', color: 'var(--ui-text)', textDecoration: 'underline', background: 'none', border: 'none', fontSize: 13 }}>重新生成</button>
               </span>
             )}
           </p>
@@ -285,18 +287,18 @@ const Personal = () => {
       </div>
 
       {/* 访问令牌 */}
-      <div style={{ padding: '20px 22px', border: '1px solid #e9e9e9', borderRadius: 26 }}>
+      <div style={{ padding: '20px 22px', border: '1px solid var(--ui-border)', borderRadius: 26 }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-          <div style={{ fontSize: 15, fontWeight: 600, color: '#000' }}>系统访问令牌</div>
+          <div style={{ fontSize: 15, fontWeight: 600, color: 'var(--ui-text)' }}>系统访问令牌</div>
           <Button variant='toggle' onClick={genToken}>{accessToken ? '重新生成' : '生成令牌'}</Button>
         </div>
         {accessToken ? (
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 14px', background: '#F2F0E9', borderRadius: 12 }}>
-            <code style={{ flex: 1, fontSize: 12, fontFamily: "'JetBrains Mono', monospace", color: '#000', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{accessToken}</code>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 14px', background: 'var(--ui-bg-subtle)', borderRadius: 12 }}>
+            <code style={{ flex: 1, fontSize: 12, fontFamily: "'JetBrains Mono', monospace", color: 'var(--ui-text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{accessToken}</code>
             <IconButton icon={Copy} onClick={async () => { await copy(accessToken); showSuccess('已复制'); }} />
           </div>
         ) : (
-          <p style={{ fontSize: 13, color: '#999', margin: 0 }}>用于调用管理 API，生成后请妥善保管</p>
+          <p style={{ fontSize: 13, color: 'var(--ui-text-3)', margin: 0 }}>用于调用管理 API，生成后请妥善保管</p>
         )}
       </div>
 
@@ -304,13 +306,13 @@ const Personal = () => {
       {setupData && (
         <Modal open title='设置两步验证' onClose={() => { setSetupData(null); setSetupCode(''); }} onConfirm={enable2FA} loading={twoFABusy} confirmText='确认启用'>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-            <p style={{ fontSize: 14, color: '#666', margin: 0 }}>使用 TOTP 应用扫描二维码或手动输入密钥</p>
+            <p style={{ fontSize: 14, color: 'var(--ui-text-2)', margin: 0 }}>使用 TOTP 应用扫描二维码或手动输入密钥</p>
             {setupData.qr_code_url && (
               <img alt='2FA QR' src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(setupData.qr_code_url)}`}
-                style={{ display: 'block', margin: '0 auto', borderRadius: 12, border: '1px solid #e9e9e9' }} />
+                style={{ display: 'block', margin: '0 auto', borderRadius: 12, border: '1px solid var(--ui-border)' }} />
             )}
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 14px', background: '#F2F0E9', borderRadius: 12 }}>
-              <code style={{ flex: 1, fontSize: 12, fontFamily: "'JetBrains Mono', monospace", color: '#000', wordBreak: 'break-all' }}>{setupData.secret}</code>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 14px', background: 'var(--ui-bg-subtle)', borderRadius: 12 }}>
+              <code style={{ flex: 1, fontSize: 12, fontFamily: "'JetBrains Mono', monospace", color: 'var(--ui-text)', wordBreak: 'break-all' }}>{setupData.secret}</code>
               <IconButton icon={Copy} onClick={async () => { await copy(setupData.secret); showSuccess('已复制'); }} />
             </div>
             <FieldGroup label='输入 6 位验证码'>
@@ -318,8 +320,8 @@ const Personal = () => {
             </FieldGroup>
             {Array.isArray(setupData.backup_codes) && setupData.backup_codes.length > 0 && (
               <div>
-                <p style={{ fontSize: 12, color: '#999', marginBottom: 6 }}>请保存备份码：</p>
-                <pre style={{ background: '#F2F0E9', padding: 12, borderRadius: 12, fontSize: 12, fontFamily: "'JetBrains Mono', monospace", maxHeight: 100, overflow: 'auto', whiteSpace: 'pre-wrap', margin: 0 }}>
+                <p style={{ fontSize: 12, color: 'var(--ui-text-3)', marginBottom: 6 }}>请保存备份码：</p>
+                <pre style={{ background: 'var(--ui-bg-subtle)', padding: 12, borderRadius: 12, fontSize: 12, fontFamily: "'JetBrains Mono', monospace", maxHeight: 100, overflow: 'auto', whiteSpace: 'pre-wrap', margin: 0 }}>
                   {setupData.backup_codes.join('\n')}
                 </pre>
               </div>
@@ -331,7 +333,7 @@ const Personal = () => {
       {disableOpen && (
         <Modal open title='禁用两步验证' onClose={() => { setDisableOpen(false); setDisableCode(''); }} onConfirm={disable2FA} loading={twoFABusy} confirmText='确认禁用'>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-            <p style={{ fontSize: 14, color: '#666', margin: 0 }}>禁用后账号将不再受两步验证保护</p>
+            <p style={{ fontSize: 14, color: 'var(--ui-text-2)', margin: 0 }}>禁用后账号将不再受两步验证保护</p>
             <FieldGroup label='输入当前验证码'>
               <Input value={disableCode} onChange={setDisableCode} placeholder='000000' width='full' />
             </FieldGroup>
@@ -364,9 +366,9 @@ const Personal = () => {
 
 const FieldGroup = ({ label, hint, span, children }) => (
   <div style={span ? { gridColumn: '1 / -1' } : undefined}>
-    <label style={{ display: 'block', fontSize: 12, color: '#999', marginBottom: 5 }}>
+    <label style={{ display: 'block', fontSize: 12, color: 'var(--ui-text-3)', marginBottom: 5 }}>
       {label}
-      {hint && <span style={{ marginLeft: 6, color: '#bbb' }}>({hint})</span>}
+      {hint && <span style={{ marginLeft: 6, color: 'var(--ui-text-3)' }}>({hint})</span>}
     </label>
     {children}
   </div>

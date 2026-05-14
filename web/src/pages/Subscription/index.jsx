@@ -178,7 +178,7 @@ const PlanEditModal = ({ plan, groups, onClose, onSaved }) => {
             <label className='block text-sm text-ui-text-2 mb-1.5'>描述</label>
             <Input value={form.subtitle || ''} onChange={u('subtitle')} width='full' placeholder='套餐简介' />
           </div>
-          <div className='grid grid-cols-2 gap-4'>
+          <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
             <div>
               <label className='block text-sm text-ui-text-2 mb-1.5'>排序权重</label>
               <NumberInput value={form.sort_order ?? 0} onChange={(v) => u('sort_order')(Number(v))} width='full' />
@@ -197,7 +197,7 @@ const PlanEditModal = ({ plan, groups, onClose, onSaved }) => {
         {/* 时长配置 */}
         <div className='space-y-4'>
           <span className='text-sm font-medium text-ui-text'>订阅时长</span>
-          <div className='grid grid-cols-2 gap-4'>
+          <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
             <div>
               <label className='block text-sm text-ui-text-2 mb-1.5'>时长单位</label>
               <Select value={form.duration_unit || 'month'} onChange={u('duration_unit')} options={DURATION_UNIT_OPTIONS} width='full' />
@@ -225,7 +225,7 @@ const PlanEditModal = ({ plan, groups, onClose, onSaved }) => {
             <label className='block text-sm text-ui-text-2 mb-1.5'>总可用额度 <span className='text-xs text-ui-text-3'>(0 = 不限)</span></label>
             <NumberInput value={form.total_amount ?? 0} onChange={(v) => u('total_amount')(Number(v))} min={0} width='full' />
           </div>
-          <div className='grid grid-cols-2 gap-4'>
+          <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
             <div>
               <label className='block text-sm text-ui-text-2 mb-1.5'>额度重置周期</label>
               <Select value={form.quota_reset_period || 'never'} onChange={u('quota_reset_period')} options={QUOTA_RESET_OPTIONS} width='full' />
@@ -237,7 +237,7 @@ const PlanEditModal = ({ plan, groups, onClose, onSaved }) => {
               </div>
             )}
           </div>
-          <div className='grid grid-cols-2 gap-4'>
+          <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
             <div>
               <label className='block text-sm text-ui-text-2 mb-1.5'>RPM 限制 <span className='text-xs text-ui-text-3'>(0 = 不限)</span></label>
               <NumberInput value={form.rpm_limit ?? 0} onChange={(v) => u('rpm_limit')(Number(v))} min={0} width='full' />
@@ -331,7 +331,7 @@ const CodesModal = ({ plan, onClose }) => {
   return (
     <Modal open title={`${plan.title} - 激活码管理`} onClose={onClose} hideFooter width={680}>
       <div className='space-y-4 mb-4'>
-        <div className='grid grid-cols-2 gap-3'>
+        <div className='grid grid-cols-1 md:grid-cols-2 gap-3'>
           <div>
             <label className='block text-xs text-[#999] mb-1'>批次名称</label>
             <Input value={name} onChange={setName} width='full' placeholder='可选，如"5月活动"' />
@@ -348,7 +348,7 @@ const CodesModal = ({ plan, onClose }) => {
               type='datetime-local'
               value={toLocalInput(expiredTime)}
               onChange={(e) => setExpiredTime(toUnix(e.target.value))}
-              className='flex-1 rounded-lg border border-[#e3e3e3] bg-transparent px-3 py-2 text-sm text-[#000]'
+              className='flex-1 rounded-lg border border-ui-border bg-transparent px-3 py-2 text-sm text-ui-text'
             />
             {expiredTime > 0 && (
               <Button variant='toggle' onClick={() => setExpiredTime(0)}>清除</Button>
@@ -366,7 +366,7 @@ const CodesModal = ({ plan, onClose }) => {
           {codes.map((c) => (
             <div key={c.id} className='flex items-center justify-between gap-2 p-2 rounded-lg border border-[#e9e9e9]'>
               <div className='flex-1 min-w-0'>
-                <div className='font-mono text-xs text-[#000] truncate'>{c.key}</div>
+                <div className='font-mono text-xs text-ui-text truncate'>{c.key}</div>
                 {c.name && <div className='text-xs text-[#999] mt-0.5'>{c.name}</div>}
               </div>
               <Tag color={c.status === 2 || c.used_user_id ? 'grey' : 'green'}>

@@ -5,19 +5,20 @@ import { API, showError, showSuccess, showInfo, copy, renderQuota, timestamp2str
 import { UserContext } from '../../context/User';
 import { StatusContext } from '../../context/Status';
 import {
-  Button, IconButton, Input, NumberInput, Modal, Loading, Tag,
+  Button, IconButton, Input, NumberInput, Modal, Loading,
 } from '../../components/ui';
+import useIsMobile from '../../hooks/useIsMobile';
 
 const TopUp = () => {
   const [searchParams] = useSearchParams();
   const [userState, userDispatch] = useContext(UserContext);
   const [statusState] = useContext(StatusContext);
+  const isMobile = useIsMobile();
 
   const [code, setCode] = useState('');
   const [redeeming, setRedeeming] = useState(false);
   const [topUpCount, setTopUpCount] = useState(statusState?.status?.min_topup || 10);
   const [affLink, setAffLink] = useState('');
-  const [subscriptions, setSubscriptions] = useState([]);
   const [transferOpen, setTransferOpen] = useState(false);
   const [transferAmount, setTransferAmount] = useState(0);
   const [transferring, setTransferring] = useState(false);
@@ -44,22 +45,15 @@ const TopUp = () => {
     } catch {}
   };
 
-  const loadSubs = async () => {
-    try {
-      const res = await API.get('/api/subscription/self');
-      if (res.data?.success) setSubscriptions(res.data.data?.subscriptions || []);
-    } catch {}
-  };
-
   const loadTopups = async () => {
     try {
-      const res = await API.get('/api/user/topup/self?p=1&size=20');
+      const res = await API.get('/api/log/self/?p=1&size=20&type=1&token_name=&model_name=&group=&request_id=&start_timestamp=0&end_timestamp=0');
       if (res.data?.success) setTopups(res.data.data?.items || []);
     } catch {}
   };
 
   useEffect(() => {
-    refreshUser(); loadAff(); loadSubs();
+    refreshUser(); loadAff();
     const c = searchParams.get('code');
     if (c) setCode(c);
   }, []);
@@ -73,7 +67,7 @@ const TopUp = () => {
         const sub = await API.post('/api/subscription/redeem', { key }, { skipErrorHandler: true });
         if (sub.data?.success) {
           showSuccess('已激活订阅：' + (sub.data.data?.plan_title || ''));
-          setCode(''); refreshUser(); loadSubs();
+          setCode(''); refreshUser();
           return;
         }
         if (sub.data?.message && !/无效的兑换码|invalid/i.test(sub.data.message)) {
@@ -103,49 +97,24 @@ const TopUp = () => {
   const AMOUNTS = [10, 50, 100, 500];
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 28, width: '100%', maxWidth: 960, marginInline: 'auto', padding: '24px 16px' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: isMobile ? 20 : 28, width: '100%', maxWidth: 960, marginInline: 'auto', padding: isMobile ? '16px' : '24px 16px' }}>
       {/* 余额 */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingBlock: 26, paddingInline: 20, border: '1px solid #e9e9e9', borderRadius: 26 }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingBlock: 26, paddingInline: 20, border: '1px solid var(--ui-border)', borderRadius: 26 }}>
         <div>
-          <div style={{ fontSize: 13, color: '#8f8f8f', marginBottom: 6 }}>当前余额</div>
-          <div style={{ fontSize: 28, fontWeight: 700, color: '#000' }}>{renderQuota(u.quota || 0)}</div>
-          <div style={{ fontSize: 12, color: '#999', marginTop: 4 }}>累计已使用 {renderQuota(u.used_quota || 0)}</div>
+          <div style={{ fontSize: 13, color: 'var(--ui-text-3)', marginBottom: 6 }}>当前余额</div>
+          <div style={{ fontSize: 28, fontWeight: 700, color: 'var(--ui-text)' }}>{renderQuota(u.quota || 0)}</div>
+          <div style={{ fontSize: 12, color: 'var(--ui-text-3)', marginTop: 4 }}>累计已使用 {renderQuota(u.used_quota || 0)}</div>
         </div>
         <button
-          onClick={() => { setShowHistory(true); if (topups.length === 0) loadTopups(); }}
-          style={{ cursor: 'pointer', height: 32, paddingInline: 16, border: '1px solid #e5e5e5', borderRadius: 24, fontSize: 13, color: '#666', background: 'transparent' }}
+          onClick={() => { setShowHistory(true); loadTopups(); }}
+          style={{ cursor: 'pointer', height: 32, paddingInline: 16, border: '1px solid var(--ui-border)', borderRadius: 24, fontSize: 13, color: 'var(--ui-text-2)', background: 'transparent' }}
         >充值记录</button>
       </div>
 
-      {/* 订阅 */}
-      {subscriptions.length > 0 && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-          <span style={{ fontSize: 18, fontWeight: 600, color: '#000' }}>我的订阅</span>
-          {subscriptions.map((row) => {
-            const s = row.subscription || {};
-            const expired = (s.end_time || 0) > 0 && s.end_time < Date.now() / 1000;
-            const active = s.status === 'active' && !expired;
-            return (
-              <div key={s.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 18px', border: '1px solid #e9e9e9', borderRadius: 26 }}>
-                <div>
-                  <div style={{ fontSize: 14, fontWeight: 500, color: '#000' }}>套餐 #{s.plan_id}</div>
-                  <div style={{ fontSize: 12, color: '#999', marginTop: 2 }}>
-                    {s.start_time ? new Date(s.start_time * 1000).toLocaleDateString() : '-'} ~ {s.end_time ? new Date(s.end_time * 1000).toLocaleDateString() : '-'}
-                  </div>
-                </div>
-                <Tag color={active ? 'green' : expired ? 'red' : 'grey'}>
-                  {active ? '生效中' : expired ? '已过期' : '已取消'}
-                </Tag>
-              </div>
-            );
-          })}
-        </div>
-      )}
-
       {/* 兑换码 */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-        <span style={{ fontSize: 18, fontWeight: 600, color: '#000' }}>兑换码</span>
-        <div style={{ fontSize: 14, color: '#8f8f8f' }}>输入兑换码，立即获得对应额度或激活订阅</div>
+        <span style={{ fontSize: 18, fontWeight: 600, color: 'var(--ui-text)' }}>兑换码</span>
+        <div style={{ fontSize: 14, color: 'var(--ui-text-3)' }}>输入兑换码，立即获得对应额度或激活订阅</div>
         <div style={{ display: 'flex', gap: 8, maxWidth: 420 }}>
           <Input
             value={code}
@@ -162,7 +131,7 @@ const TopUp = () => {
       {/* 快捷充值 */}
       {topUpLink && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-          <span style={{ fontSize: 18, fontWeight: 600, color: '#000' }}>快捷充值</span>
+          <span style={{ fontSize: 18, fontWeight: 600, color: 'var(--ui-text)' }}>快捷充值</span>
           {/* 金额选择 */}
           <div style={{ display: 'flex', flexWrap: 'nowrap', gap: 8 }}>
             {AMOUNTS.map((amt) => (
@@ -172,7 +141,7 @@ const TopUp = () => {
                 style={{
                   cursor: 'pointer', flex: 1, height: 45, border: topUpCount === amt ? '2px solid #000' : '1px solid #e5e5e5',
                   borderRadius: 10, fontSize: 16, fontWeight: topUpCount === amt ? 600 : 400,
-                  color: '#000', background: '#FFFDF7',
+                  color: 'var(--ui-text)', background: 'var(--page-bg)',
                   boxShadow: topUpCount === amt ? '0 2px 8px rgba(0,0,0,0.08)' : 'none',
                   transition: 'border-color 0.2s, box-shadow 0.2s',
                 }}
@@ -180,13 +149,13 @@ const TopUp = () => {
             ))}
           </div>
           {/* 支付摘要 */}
-          <div style={{ border: '1px solid #e5e5e5', borderRadius: 12, overflow: 'hidden' }}>
+          <div style={{ border: '1px solid var(--ui-border)', borderRadius: 12, overflow: 'hidden' }}>
             <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', padding: '16px 18px' }}>
               <div>
-                <div style={{ fontSize: 13, color: '#8f8f8f', marginBottom: 6 }}>支付总计</div>
-                <div style={{ fontSize: 28, fontWeight: 400, color: '#000' }}>${topUpCount}</div>
+                <div style={{ fontSize: 13, color: 'var(--ui-text-3)', marginBottom: 6 }}>支付总计</div>
+                <div style={{ fontSize: 28, fontWeight: 400, color: 'var(--ui-text)' }}>${topUpCount}</div>
               </div>
-              <div style={{ padding: '2px 10px', border: '1px solid #e5e5e5', borderRadius: 10, fontSize: 12, fontWeight: 500, color: 'rgba(0,0,0,0.3)', background: '#F2F0E9' }}>
+              <div style={{ padding: '2px 10px', border: '1px solid var(--ui-border)', borderRadius: 10, fontSize: 12, fontWeight: 500, color: 'rgba(0,0,0,0.3)', background: 'var(--ui-bg-subtle)' }}>
                 $1=1,000,000
               </div>
             </div>
@@ -196,7 +165,7 @@ const TopUp = () => {
             onClick={() => window.open(topUpLink, '_blank')}
             style={{
               cursor: 'pointer', width: '100%', height: 48, border: 'none', borderRadius: 999,
-              fontSize: 16, fontWeight: 600, color: '#fff', background: '#000',
+              fontSize: 16, fontWeight: 600, color: 'var(--ui-accent-fg)', background: 'var(--ui-accent)',
             }}
           >前往结账</button>
         </div>
@@ -205,36 +174,36 @@ const TopUp = () => {
       {/* 邀请奖励 */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <span style={{ fontSize: 18, fontWeight: 600, color: '#000' }}>邀请奖励</span>
+          <span style={{ fontSize: 18, fontWeight: 600, color: 'var(--ui-text)' }}>邀请奖励</span>
           {(u.aff_quota || 0) > 0 && (
             <button
               onClick={() => setTransferOpen(true)}
               style={{
-                cursor: 'pointer', height: 32, paddingInline: 16, border: '1px solid #000', borderRadius: 24,
-                fontSize: 14, color: '#000', background: '#FFFDF7', transition: 'background 0.2s, color 0.2s',
+                cursor: 'pointer', height: 32, paddingInline: 16, border: '1px solid var(--ui-text)', borderRadius: 24,
+                fontSize: 14, color: 'var(--ui-text)', background: 'var(--page-bg)', transition: 'background 0.2s, color 0.2s',
               }}
-              onMouseEnter={(e) => { e.currentTarget.style.background = '#000'; e.currentTarget.style.color = '#fff'; }}
-              onMouseLeave={(e) => { e.currentTarget.style.background = '#FFFDF7'; e.currentTarget.style.color = '#000'; }}
+              onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--ui-accent)'; e.currentTarget.style.color = 'var(--ui-accent-fg)'; }}
+              onMouseLeave={(e) => { e.currentTarget.style.background = 'var(--page-bg)'; e.currentTarget.style.color = 'var(--ui-text)'; }}
             >划转到余额</button>
           )}
         </div>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12 }}>
-          <div style={{ padding: '16px 18px', border: '1px solid #e9e9e9', borderRadius: 16 }}>
-            <div style={{ fontSize: 12, color: '#999', marginBottom: 6 }}>邀请人数</div>
-            <div style={{ fontSize: 22, fontWeight: 600, color: '#000' }}>{u.aff_count || 0}</div>
+        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(3, 1fr)', gap: 12 }}>
+          <div style={{ padding: '16px 18px', border: '1px solid var(--ui-border)', borderRadius: 16 }}>
+            <div style={{ fontSize: 12, color: 'var(--ui-text-3)', marginBottom: 6 }}>邀请人数</div>
+            <div style={{ fontSize: 22, fontWeight: 600, color: 'var(--ui-text)' }}>{u.aff_count || 0}</div>
           </div>
-          <div style={{ padding: '16px 18px', border: '1px solid #e9e9e9', borderRadius: 16 }}>
-            <div style={{ fontSize: 12, color: '#999', marginBottom: 6 }}>可用奖励</div>
-            <div style={{ fontSize: 22, fontWeight: 600, color: '#000' }}>{renderQuota(u.aff_quota || 0)}</div>
+          <div style={{ padding: '16px 18px', border: '1px solid var(--ui-border)', borderRadius: 16 }}>
+            <div style={{ fontSize: 12, color: 'var(--ui-text-3)', marginBottom: 6 }}>可用奖励</div>
+            <div style={{ fontSize: 22, fontWeight: 600, color: 'var(--ui-text)' }}>{renderQuota(u.aff_quota || 0)}</div>
           </div>
-          <div style={{ padding: '16px 18px', border: '1px solid #e9e9e9', borderRadius: 16 }}>
-            <div style={{ fontSize: 12, color: '#999', marginBottom: 6 }}>累计奖励</div>
-            <div style={{ fontSize: 22, fontWeight: 600, color: '#000' }}>{renderQuota(u.aff_history_quota || 0)}</div>
+          <div style={{ padding: '16px 18px', border: '1px solid var(--ui-border)', borderRadius: 16 }}>
+            <div style={{ fontSize: 12, color: 'var(--ui-text-3)', marginBottom: 6 }}>累计奖励</div>
+            <div style={{ fontSize: 22, fontWeight: 600, color: 'var(--ui-text)' }}>{renderQuota(u.aff_history_quota || 0)}</div>
           </div>
         </div>
         {affLink && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 14px', border: '1px solid #e9e9e9', borderRadius: 26 }}>
-            <span style={{ flex: 1, fontSize: 13, fontFamily: "'Gilroy', sans-serif", fontWeight: 500, color: '#000', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', letterSpacing: '0.02em' }}>{affLink}</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 14px', border: '1px solid var(--ui-border)', borderRadius: 26 }}>
+            <span style={{ flex: 1, fontSize: 13, fontFamily: "'Gilroy', sans-serif", fontWeight: 500, color: 'var(--ui-text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', letterSpacing: '0.02em' }}>{affLink}</span>
             <IconButton icon={Copy} onClick={async () => { await copy(affLink); showSuccess('已复制邀请链接'); }} />
           </div>
         )}
@@ -246,28 +215,20 @@ const TopUp = () => {
           <div style={{ overflow: 'auto', maxHeight: 400 }}>
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 14 }}>
               <thead>
-                <tr style={{ borderBottom: '1px solid #eeeeee' }}>
-                  <th style={{ padding: '0 12px', textAlign: 'left', height: 32, fontWeight: 400, color: '#8f8f8f' }}>时间</th>
-                  <th style={{ padding: '0 12px', textAlign: 'left', height: 32, fontWeight: 400, color: '#8f8f8f' }}>金额</th>
-                  <th style={{ padding: '0 12px', textAlign: 'left', height: 32, fontWeight: 400, color: '#8f8f8f' }}>积分</th>
-                  <th style={{ padding: '0 12px', textAlign: 'left', height: 32, fontWeight: 400, color: '#8f8f8f' }}>方式</th>
-                  <th style={{ padding: '0 12px', textAlign: 'left', height: 32, fontWeight: 400, color: '#8f8f8f' }}>状态</th>
+                <tr style={{ borderBottom: '1px solid var(--ui-divider)' }}>
+                  <th style={{ padding: '0 12px', textAlign: 'left', height: 32, fontWeight: 400, color: 'var(--ui-text-3)' }}>时间</th>
+                  <th style={{ padding: '0 12px', textAlign: 'left', height: 32, fontWeight: 400, color: 'var(--ui-text-3)' }}>描述</th>
+                  <th style={{ padding: '0 12px', textAlign: 'right', height: 32, fontWeight: 400, color: 'var(--ui-text-3)' }}>额度</th>
                 </tr>
               </thead>
               <tbody>
                 {topups.length === 0 ? (
-                  <tr><td colSpan={5} style={{ padding: '24px 12px', textAlign: 'center', color: '#999' }}>暂无充值记录</td></tr>
+                  <tr><td colSpan={3} style={{ padding: '24px 12px', textAlign: 'center', color: 'var(--ui-text-3)' }}>暂无充值记录</td></tr>
                 ) : topups.map((t) => (
-                  <tr key={t.id} style={{ borderBottom: '1px solid #eeeeee' }}>
-                    <td style={{ padding: '0 12px', lineHeight: '32px', color: '#000', whiteSpace: 'nowrap' }}>{t.create_time ? timestamp2string(t.create_time) : '-'}</td>
-                    <td style={{ padding: '0 12px', lineHeight: '32px', color: '#000' }}>${t.money || 0}</td>
-                    <td style={{ padding: '0 12px', lineHeight: '32px', color: '#000' }}>{renderQuota(t.amount || 0)}</td>
-                    <td style={{ padding: '0 12px', lineHeight: '32px', color: '#000' }}>{t.payment_method || '-'}</td>
-                    <td style={{ padding: '0 12px', lineHeight: '32px' }}>
-                      <Tag color={t.status === 'success' ? 'green' : t.status === 'pending' ? 'amber' : 'grey'}>
-                        {t.status === 'success' ? '成功' : t.status === 'pending' ? '待支付' : t.status || '-'}
-                      </Tag>
-                    </td>
+                  <tr key={t.id} style={{ borderBottom: '1px solid var(--ui-divider)' }}>
+                    <td style={{ padding: '0 12px', lineHeight: '36px', color: 'var(--ui-text)', whiteSpace: 'nowrap' }}>{t.created_at ? timestamp2string(t.created_at) : '-'}</td>
+                    <td style={{ padding: '0 12px', lineHeight: '36px', color: 'var(--ui-text)' }}>{t.content || '-'}</td>
+                    <td style={{ padding: '0 12px', lineHeight: '36px', color: 'var(--ui-text)', textAlign: 'right' }}>{renderQuota(t.quota || 0)}</td>
                   </tr>
                 ))}
               </tbody>

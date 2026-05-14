@@ -338,8 +338,8 @@ const LogoUpload = ({ value, onChange }) => {
   };
   return (
     <div className='flex items-center gap-3'>
-      {value && <img src={value} alt='logo' style={{ height: 32, borderRadius: 6, border: '1px solid #e9e9e9' }} />}
-      <label style={{ cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 6, height: 32, paddingInline: 14, border: '1px solid #e9e9e9', borderRadius: 24, fontSize: 13, color: '#000', background: '#FFFDF7' }}>
+      {value && <img src={value} alt='logo' style={{ height: 32, borderRadius: 6, border: '1px solid var(--ui-border)' }} />}
+      <label style={{ cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 6, height: 32, paddingInline: 14, border: '1px solid var(--ui-border)', borderRadius: 24, fontSize: 13, color: 'var(--ui-text)', background: 'var(--page-bg)' }}>
         {uploading ? '上传中...' : '选择文件'}
         <input type='file' accept='image/png,image/jpeg,image/svg+xml,image/x-icon,image/webp' onChange={handleFile} style={{ display: 'none' }} />
       </label>
@@ -393,7 +393,7 @@ const RatioEditor = ({ value, onChange, suggestions = [], numericValue = true })
           <div className='text-xs text-[#999] mb-1.5'>未设置 ({unsetModels.length})</div>
           <div className='flex flex-wrap gap-1'>
             {unsetModels.map((m) => (
-              <button key={m} type='button' onClick={() => addModel(m)} style={{ height: 24, paddingInline: 8, borderRadius: 12, border: '1px solid #e9e9e9', background: '#fff', fontSize: 11, color: '#666', cursor: 'pointer' }} title='点击添加'>
+              <button key={m} type='button' onClick={() => addModel(m)} style={{ height: 24, paddingInline: 8, borderRadius: 12, border: '1px solid var(--ui-border)', background: 'var(--page-bg)', fontSize: 11, color: 'var(--ui-text-2)', cursor: 'pointer' }} title='点击添加'>
                 + {m}
               </button>
             ))}
@@ -408,7 +408,7 @@ const RatioEditor = ({ value, onChange, suggestions = [], numericValue = true })
           <div style={{ width: 100, flexShrink: 0 }}>
             <Input value={p.value} onChange={(v) => update(i, 'value', v)} placeholder={numericValue ? '倍率' : '描述'} width='100%' />
           </div>
-          <button type='button' onClick={() => remove(i)} style={{ flexShrink: 0, padding: 6, borderRadius: 6, border: 'none', background: 'transparent', cursor: 'pointer', color: '#999' }} title='删除'>
+          <button type='button' onClick={() => remove(i)} style={{ flexShrink: 0, padding: 6, borderRadius: 6, border: 'none', background: 'transparent', cursor: 'pointer', color: 'var(--ui-text-3)' }} title='删除'>
             <Trash2 size={15} />
           </button>
         </div>
@@ -449,10 +449,10 @@ const AffinityRulesEditor = ({ value, onChange }) => {
   return (
     <div className='space-y-3'>
       {rules.map((r, i) => (
-        <div key={i} style={{ padding: '12px 14px', border: '1px solid #e9e9e9', borderRadius: 12, overflow: 'hidden' }} className='space-y-2'>
+        <div key={i} style={{ padding: '12px 14px', border: '1px solid var(--ui-border)', borderRadius: 12, overflow: 'hidden' }} className='space-y-2'>
           <div className='flex items-center gap-2'>
             <Input value={r.name || ''} onChange={(v) => update(i, 'name', v)} placeholder='规则名称' width='100%' />
-            <button type='button' onClick={() => remove(i)} style={{ flexShrink: 0, padding: 6, borderRadius: 6, border: 'none', background: 'transparent', cursor: 'pointer', color: '#999' }}>
+            <button type='button' onClick={() => remove(i)} style={{ flexShrink: 0, padding: 6, borderRadius: 6, border: 'none', background: 'transparent', cursor: 'pointer', color: 'var(--ui-text-3)' }}>
               <Trash2 size={15} />
             </button>
           </div>
@@ -473,7 +473,7 @@ const AffinityRulesEditor = ({ value, onChange }) => {
               }} placeholder='gjson:path' width='100%' />
             </div>
           </div>
-          <div className='grid grid-cols-3 gap-2' style={{ minWidth: 0 }}>
+          <div className='grid grid-cols-2 md:grid-cols-3 gap-2' style={{ minWidth: 0 }}>
             <div style={{ minWidth: 0 }}>
               <div className='text-xs text-[#999] mb-1'>TTL（秒）</div>
               <NumberInput value={r.ttl_seconds || 0} onChange={(v) => update(i, 'ttl_seconds', v)} />
@@ -538,7 +538,7 @@ const ListEditor = ({ configKey, value, onChange }) => {
   return (
     <div className='space-y-2'>
       {items.map((item, i) => (
-        <div key={i} style={{ padding: '10px 12px', border: '1px solid #e9e9e9', borderRadius: 10, overflow: 'hidden' }} className='space-y-2'>
+        <div key={i} style={{ padding: '10px 12px', border: '1px solid var(--ui-border)', borderRadius: 10, overflow: 'hidden' }} className='space-y-2'>
           <div className='flex items-start gap-2' style={{ minWidth: 0 }}>
             {fields.map((f) => (
               <div key={f.key} style={{ flex: f.flex || 1, minWidth: 0 }}>
@@ -548,7 +548,7 @@ const ListEditor = ({ configKey, value, onChange }) => {
                   : <Input value={item[f.key] || ''} onChange={(v) => update(i, f.key, v)} width='100%' />}
               </div>
             ))}
-            <button type='button' onClick={() => remove(i)} style={{ flexShrink: 0, marginTop: 18, padding: 6, borderRadius: 6, border: 'none', background: 'transparent', cursor: 'pointer', color: '#999' }}>
+            <button type='button' onClick={() => remove(i)} style={{ flexShrink: 0, marginTop: 18, padding: 6, borderRadius: 6, border: 'none', background: 'transparent', cursor: 'pointer', color: 'var(--ui-text-3)' }}>
               <Trash2 size={15} />
             </button>
           </div>
@@ -652,7 +652,7 @@ const SettingPage = () => {
           <div className='space-y-4'>
             {keys.map((k) => (
               <div key={k} className='grid grid-cols-1 md:grid-cols-[260px_1fr] gap-3 md:gap-6 md:items-start'>
-                <label className='text-sm text-[#000] pt-2'>{LABELS[k] || k}</label>
+                <label className='text-sm text-ui-text pt-2'>{LABELS[k] || k}</label>
                 {k === 'Logo'
                   ? <LogoUpload value={val(k)} onChange={(v) => set(k, v)} />
                   : SELECT_OPTIONS[k]

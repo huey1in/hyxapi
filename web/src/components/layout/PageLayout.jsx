@@ -4,6 +4,7 @@ import HeaderBar from './HeaderBar';
 import SiderBar from './SiderBar';
 import FooterBar from './FooterBar';
 import LoginModal from './LoginModal';
+import { MobileSidebarProvider } from '../../context/MobileSidebar';
 import { UserContext } from '../../context/User';
 import { StatusContext } from '../../context/Status';
 import { API, getSystemName, showError, setStatusData, setUserData, updateAPI } from '../../helpers';
@@ -40,22 +41,24 @@ const PageLayout = () => {
   }, [location.pathname]);
 
   return (
-    <div
-      className='flex flex-col h-screen'
-      style={{ backgroundColor: 'var(--page-bg)' }}
-    >
-      <HeaderBar />
-      <div className='flex-1 flex min-h-0'>
-        {isConsoleRoute && <SiderBar />}
-        <main className='flex-1 min-w-0 overflow-y-auto flex flex-col'>
-          <div className='flex-1'>
-            <Outlet />
-          </div>
-          {!isConsoleRoute && <FooterBar />}
-        </main>
+    <MobileSidebarProvider>
+      <div
+        className='flex flex-col h-screen'
+        style={{ backgroundColor: 'var(--page-bg)' }}
+      >
+        <HeaderBar />
+        <div className='flex-1 flex min-h-0'>
+          {isConsoleRoute && <SiderBar />}
+          <main className='flex-1 min-w-0 overflow-y-auto overflow-x-hidden flex flex-col'>
+            <div className='flex-1'>
+              <Outlet />
+            </div>
+            {!isConsoleRoute && <FooterBar />}
+          </main>
+        </div>
+        <LoginModal />
       </div>
-      <LoginModal />
-    </div>
+    </MobileSidebarProvider>
   );
 };
 

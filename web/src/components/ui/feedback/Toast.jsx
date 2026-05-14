@@ -13,7 +13,6 @@
 import React, { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { CheckCircle2, AlertTriangle, Info, XCircle, X } from 'lucide-react';
-import { cn } from '../tokens';
 
 let externalEnqueue = null;
 let counter = 0;
@@ -28,11 +27,18 @@ export const showError   = (message, opts = {}) => showToast({ ...opts, message,
 export const showInfo    = (message, opts = {}) => showToast({ ...opts, message, type: 'info' });
 export const showWarning = (message, opts = {}) => showToast({ ...opts, message, type: 'warning' });
 
-const TYPE_ICON = {
-  success: CheckCircle2,
-  error:   XCircle,
-  warning: AlertTriangle,
-  info:    Info,
+const TYPE_CONFIG = {
+  success: { Icon: CheckCircle2, color: '#16a34a', bg: '#f0fdf4', border: '#bbf7d0' },
+  error:   { Icon: XCircle,      color: '#dc2626', bg: '#fef2f2', border: '#fecaca' },
+  warning: { Icon: AlertTriangle, color: '#d97706', bg: '#fffbeb', border: '#fde68a' },
+  info:    { Icon: Info,          color: '#2563eb', bg: '#eff6ff', border: '#bfdbfe' },
+};
+
+const TYPE_CONFIG_DARK = {
+  success: { color: '#4ade80', bg: '#14261a', border: '#1a3a24' },
+  error:   { color: '#f87171', bg: '#2a1414', border: '#3a1a1a' },
+  warning: { color: '#fbbf24', bg: '#2a2414', border: '#3a3018' },
+  info:    { color: '#60a5fa', bg: '#141e2a', border: '#1a2a3a' },
 };
 
 export const ToastContainer = () => {
@@ -50,28 +56,71 @@ export const ToastContainer = () => {
   if (typeof document === 'undefined') return null;
 
   return createPortal(
-    <div className='fixed top-4 right-4 z-[9999] flex flex-col gap-2 items-end pointer-events-none max-w-md'>
-      {items.map((item) => {
-        const Icon = TYPE_ICON[item.type] || Info;
-        return (
-          <div
-            key={item.id}
-            className='pointer-events-auto group flex items-center gap-2.5 px-3 py-2 rounded-xl bg-ui-accent text-ui-accent-fg shadow-lg w-fit min-w-[220px] max-w-full text-sm animate-toast-in'
-          >
-            <Icon size={14} className='flex-shrink-0 opacity-80' />
-            <span className='flex-1 leading-snug truncate'>{item.message}</span>
-            <button
-              onClick={() => setItems((s) => s.filter((i) => i.id !== item.id))}
-              className='inline-flex items-center justify-center w-5 h-5 rounded-md opacity-50 hover:opacity-100 hover:bg-white/15 transition flex-shrink-0'
-              aria-label='close'
-            >
-              <X size={12} />
-            </button>
-          </div>
-        );
-      })}
+    <div
+      style={{
+        position: 'fixed',
+        top: 20,
+        left: '50%',
+        transform: 'translateX(-50%)',
+        zIndex: 9999,
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 8,
+        alignItems: 'center',
+        pointerEvents: 'none',
+        maxWidth: 'calc(100vw - 32px)',
+      }}
+    >
+      {items.map((item) => (
+        <ToastItem key={item.id} item={item} onDismiss={() => setItems((s) => s.filter((i) => i.id !== item.id))} />
+      ))}
     </div>,
     document.body,
+  );
+};
+
+const ToastItem = ({ item, onDismiss }) => {
+  const isDark = typeof document !== 'undefined' && document.documentElement.classList.contains('dark');
+  const config = TYPE_CONFIG[item.type] || TYPE_CONFIG.info;
+  const darkConfig = TYPE_CONFIG_DARK[item.type] || TYPE_CONFIG_DARK.info;
+  const { Icon } = config;
+  const bg = isDark ? darkConfig.bg : config.bg;
+  const border = isDark ? darkConfig.border : config.border;
+  const color = isDark ? darkConfig.color : config.color;
+
+  return (
+    <div
+      className='animate-toast-in'
+      style={{
+        pointerEvents: 'auto',
+        display: 'flex',
+        alignItems: 'center',
+        gap: 10,
+        padding: '10px 14px',
+        borderRadius: 14,
+        background: bg,
+        border: `1px solid ${border}`,
+        boxShadow: '0 4px 24px rgba(0,0,0,0.08), 0 1px 4px rgba(0,0,0,0.04)',
+        minWidth: 200,
+        maxWidth: 400,
+      }}
+    >
+      <Icon size={16} style={{ color, flexShrink: 0 }} />
+      <span style={{ flex: 1, fontSize: 14, fontWeight: 500, color: isDark ? '#ebe8e0' : '#1a1a1a', lineHeight: 1.4 }}>
+        {item.message}
+      </span>
+      <button
+        onClick={onDismiss}
+        style={{
+          display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+          width: 20, height: 20, borderRadius: 6, border: 'none', background: 'transparent',
+          cursor: 'pointer', color: isDark ? '#807c70' : '#999', flexShrink: 0,
+        }}
+        aria-label='close'
+      >
+        <X size={12} />
+      </button>
+    </div>
   );
 };
 

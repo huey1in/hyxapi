@@ -3,6 +3,7 @@ import { Filter, RefreshCw, ChevronDown } from 'lucide-react';
 import { API, showError, renderNumber, renderQuota, timestamp2string } from '../../helpers';
 import { UserContext } from '../../context/User';
 import { Button, IconButton, Input, Select, Pagination, Loading } from '../../components/ui';
+import useIsMobile from '../../hooks/useIsMobile';
 
 const PAGE_SIZE = 20;
 
@@ -33,6 +34,7 @@ const LogPage = () => {
   const [loading, setLoading] = useState(true);
   const [showFilters, setShowFilters] = useState(false);
   const [expanded, setExpanded] = useState(null);
+  const isMobile = useIsMobile();
   const [filters, setFilters] = useState({
     token_name: '', model_name: '', group: '', request_id: '',
     channel: '', username: '', type: 0,
@@ -76,10 +78,10 @@ const LogPage = () => {
   const toggle = (id) => setExpanded((prev) => prev === id ? null : id);
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 28, width: '100%', maxWidth: 960, marginInline: 'auto', padding: '24px 16px' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: isMobile ? 20 : 28, width: '100%', maxWidth: 960, marginInline: 'auto', padding: isMobile ? '16px' : '24px 16px' }}>
       {/* 标题 */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <span style={{ fontSize: 18, fontWeight: 600, color: '#000' }}>积分明细</span>
+        <span style={{ fontSize: 18, fontWeight: 600, color: 'var(--ui-text)' }}>积分明细</span>
         <div style={{ display: 'flex', gap: 6 }}>
           <IconButton icon={Filter} title='筛选' selected={showFilters} onClick={() => setShowFilters((s) => !s)} />
           <IconButton icon={RefreshCw} title='刷新' onClick={() => load(page)} />
@@ -88,38 +90,38 @@ const LogPage = () => {
 
       {/* 筛选面板 */}
       {showFilters && (
-        <div style={{ padding: 16, border: '1px solid #e9e9e9', borderRadius: 16, display: 'flex', flexDirection: 'column', gap: 12 }}>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 10 }}>
+        <div style={{ padding: 16, border: '1px solid var(--ui-border)', borderRadius: 16, display: 'flex', flexDirection: 'column', gap: 12 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(4, 1fr)', gap: 10 }}>
             <div>
-              <div style={{ fontSize: 12, color: '#999', marginBottom: 4 }}>类型</div>
+              <div style={{ fontSize: 12, color: 'var(--ui-text-3)', marginBottom: 4 }}>类型</div>
               <Select value={filters.type} onChange={(v) => f('type')(Number(v))} options={TYPE_OPTIONS} />
             </div>
             <div>
-              <div style={{ fontSize: 12, color: '#999', marginBottom: 4 }}>令牌名</div>
+              <div style={{ fontSize: 12, color: 'var(--ui-text-3)', marginBottom: 4 }}>令牌名</div>
               <Input value={filters.token_name} onChange={f('token_name')} width='full' />
             </div>
             <div>
-              <div style={{ fontSize: 12, color: '#999', marginBottom: 4 }}>模型</div>
+              <div style={{ fontSize: 12, color: 'var(--ui-text-3)', marginBottom: 4 }}>模型</div>
               <Input value={filters.model_name} onChange={f('model_name')} width='full' />
             </div>
             <div>
-              <div style={{ fontSize: 12, color: '#999', marginBottom: 4 }}>分组</div>
+              <div style={{ fontSize: 12, color: 'var(--ui-text-3)', marginBottom: 4 }}>分组</div>
               <Input value={filters.group} onChange={f('group')} width='full' />
             </div>
             {isAdmin && (
               <>
                 <div>
-                  <div style={{ fontSize: 12, color: '#999', marginBottom: 4 }}>渠道</div>
+                  <div style={{ fontSize: 12, color: 'var(--ui-text-3)', marginBottom: 4 }}>渠道</div>
                   <Input value={filters.channel} onChange={f('channel')} width='full' />
                 </div>
                 <div>
-                  <div style={{ fontSize: 12, color: '#999', marginBottom: 4 }}>用户名</div>
+                  <div style={{ fontSize: 12, color: 'var(--ui-text-3)', marginBottom: 4 }}>用户名</div>
                   <Input value={filters.username} onChange={f('username')} width='full' />
                 </div>
               </>
             )}
             <div>
-              <div style={{ fontSize: 12, color: '#999', marginBottom: 4 }}>Request ID</div>
+              <div style={{ fontSize: 12, color: 'var(--ui-text-3)', marginBottom: 4 }}>Request ID</div>
               <Input value={filters.request_id} onChange={f('request_id')} width='full' />
             </div>
           </div>
@@ -134,7 +136,7 @@ const LogPage = () => {
       {loading ? <Loading /> : (
         <>
           {rows.length === 0 ? (
-            <div style={{ padding: '48px 0', textAlign: 'center', color: '#999', fontSize: 14 }}>暂无数据</div>
+            <div style={{ padding: '48px 0', textAlign: 'center', color: 'var(--ui-text-3)', fontSize: 14 }}>暂无数据</div>
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
               {rows.map((r) => (
@@ -165,7 +167,7 @@ const LogCard = ({ row: r, isAdmin, open, onToggle }) => {
   return (
     <div
       style={{
-        border: '1px solid #e9e9e9',
+        border: '1px solid var(--ui-border)',
         borderRadius: 16,
         overflow: 'hidden',
         transition: 'box-shadow 0.2s',
@@ -183,14 +185,14 @@ const LogCard = ({ row: r, isAdmin, open, onToggle }) => {
           cursor: 'pointer',
           transition: 'background 0.15s',
         }}
-        onMouseEnter={(e) => { e.currentTarget.style.background = '#F2F0E9'; }}
+        onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--ui-bg-subtle)'; }}
         onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; }}
       >
         {/* 左侧信息 */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8, minWidth: 0 }}>
           {/* 第一行：模型 + 类型 */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <span style={{ fontSize: 14, fontWeight: 500, color: '#000', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+            <span style={{ fontSize: 14, fontWeight: 500, color: 'var(--ui-text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
               {r.model_name || '系统操作'}
             </span>
             <span style={{
@@ -216,20 +218,20 @@ const LogCard = ({ row: r, isAdmin, open, onToggle }) => {
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', justifyContent: 'space-between', gap: 4 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             {r.quota > 0 && (
-              <span style={{ fontSize: 14, fontWeight: 600, color: '#000', fontVariantNumeric: 'tabular-nums' }}>
+              <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--ui-text)', fontVariantNumeric: 'tabular-nums' }}>
                 {renderQuota(r.quota)}
               </span>
             )}
             <ChevronDown
               size={14}
               style={{
-                color: '#999',
+                color: 'var(--ui-text-3)',
                 transform: open ? 'rotate(180deg)' : 'rotate(0deg)',
                 transition: 'transform 0.2s',
               }}
             />
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12, color: '#999' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12, color: 'var(--ui-text-3)' }}>
             <span>{timestamp2string(r.created_at)}</span>
             {r.use_time > 0 && <span>· {r.use_time}s</span>}
           </div>
@@ -238,7 +240,7 @@ const LogCard = ({ row: r, isAdmin, open, onToggle }) => {
 
       {/* 展开详情 */}
       {open && (
-        <div style={{ padding: '12px 18px 16px', borderTop: '1px solid #eeeeee', background: '#FFFDF7' }}>
+        <div style={{ padding: '12px 18px 16px', borderTop: '1px solid #eeeeee', background: 'var(--page-bg)' }}>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px 24px', fontSize: 13 }}>
             <DetailItem label='Token 名称' value={r.token_name || '-'} />
             <DetailItem label='分组' value={r.group || '-'} />
@@ -285,7 +287,7 @@ const TokenPill = ({ value, variant, label }) => {
       <span style={{
         display: 'inline-flex', alignItems: 'center', gap: 4,
         height: 24, paddingInline: 10, borderRadius: 12,
-        fontSize: 12, fontWeight: 600, color: '#fff', background: '#222',
+        fontSize: 12, fontWeight: 600, color: 'var(--ui-accent-fg)', background: 'var(--ui-accent)',
       }}>
         {formatted}
       </span>
@@ -297,8 +299,8 @@ const TokenPill = ({ value, variant, label }) => {
       display: 'inline-flex', alignItems: 'center', gap: 4,
       height: 24, paddingInline: 8, borderRadius: 12,
       fontSize: 11, color: isCache ? '#8b5cf6' : '#666',
-      border: `1px solid ${isCache ? '#e9d5ff' : '#e3e3e3'}`,
-      background: isCache ? '#faf5ff' : '#FFFDF7',
+      border: `1px solid ${isCache ? '#e9d5ff' : 'var(--ui-border)'}`,
+      background: isCache ? '#faf5ff' : 'var(--page-bg)',
     }}>
       <span style={{ fontSize: 10, color: isCache ? '#a78bfa' : '#999' }}>{label}</span>
       {formatted}
@@ -310,9 +312,9 @@ const TokenPill = ({ value, variant, label }) => {
 
 const DetailItem = ({ label, value, mono, multiline }) => (
   <div style={{ display: 'flex', gap: 8 }}>
-    <span style={{ color: '#999', width: 110, flexShrink: 0, fontSize: 12 }}>{label}</span>
+    <span style={{ color: 'var(--ui-text-3)', width: 110, flexShrink: 0, fontSize: 12 }}>{label}</span>
     <span style={{
-      color: '#000', fontSize: 13,
+      color: 'var(--ui-text)', fontSize: 13,
       fontFamily: mono ? "'JetBrains Mono', monospace" : 'inherit',
       whiteSpace: multiline ? 'pre-wrap' : 'normal',
       wordBreak: multiline ? 'break-all' : 'normal',
