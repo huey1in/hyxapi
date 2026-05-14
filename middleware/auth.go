@@ -185,10 +185,6 @@ func RootAuth() func(c *gin.Context) {
 	}
 }
 
-func WssAuth(c *gin.Context) {
-
-}
-
 // TokenOrUserAuth allows either session-based user auth or API token auth.
 // Used for endpoints that need to be accessible from both the dashboard and API clients.
 func TokenOrUserAuth() func(c *gin.Context) {

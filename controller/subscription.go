@@ -16,26 +16,7 @@ type SubscriptionPlanDTO struct {
 	Plan model.SubscriptionPlan `json:"plan"`
 }
 
-type BillingPreferenceRequest struct {
-	BillingPreference string `json:"billing_preference"`
-}
-
 // ---- User APIs ----
-
-func GetSubscriptionPlans(c *gin.Context) {
-	var plans []model.SubscriptionPlan
-	if err := model.DB.Where("enabled = ?", true).Order("sort_order desc, id desc").Limit(200).Find(&plans).Error; err != nil {
-		common.ApiError(c, err)
-		return
-	}
-	result := make([]SubscriptionPlanDTO, 0, len(plans))
-	for _, p := range plans {
-		result = append(result, SubscriptionPlanDTO{
-			Plan: p,
-		})
-	}
-	common.ApiSuccess(c, result)
-}
 
 func GetSubscriptionSelf(c *gin.Context) {
 	userId := c.GetInt("id")
@@ -59,30 +40,6 @@ func GetSubscriptionSelf(c *gin.Context) {
 		"subscriptions":      activeSubscriptions, // all active subscriptions
 		"all_subscriptions":  allSubscriptions,    // all subscriptions including expired
 	})
-}
-
-func UpdateSubscriptionPreference(c *gin.Context) {
-	userId := c.GetInt("id")
-	var req BillingPreferenceRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		common.ApiErrorMsg(c, "参数错误")
-		return
-	}
-	pref := common.NormalizeBillingPreference(req.BillingPreference)
-
-	user, err := model.GetUserById(userId, true)
-	if err != nil {
-		common.ApiError(c, err)
-		return
-	}
-	current := user.GetSetting()
-	current.BillingPreference = pref
-	user.SetSetting(current)
-	if err := user.Update(false); err != nil {
-		common.ApiError(c, err)
-		return
-	}
-	common.ApiSuccess(c, gin.H{"billing_preference": pref})
 }
 
 // ---- Admin APIs ----

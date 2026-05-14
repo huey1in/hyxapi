@@ -45,8 +45,6 @@ func SetApiRouter(router *gin.Engine) {
 		apiRouter.GET("/oauth/:provider", middleware.CriticalRateLimit(), controller.HandleOAuth)
 		apiRouter.GET("/ratio_config", middleware.CriticalRateLimit(), controller.GetRatioConfig)
 
-		apiRouter.POST("/waffo/webhook", controller.WaffoWebhook)
-
 		// Universal secure verification routes
 		apiRouter.POST("/verify", middleware.UserAuth(), middleware.CriticalRateLimit(), controller.UniversalVerify)
 
@@ -77,13 +75,8 @@ func SetApiRouter(router *gin.Engine) {
 				selfRoute.POST("/passkey/verify/finish", controller.PasskeyVerifyFinish)
 				selfRoute.DELETE("/passkey", controller.PasskeyDelete)
 				selfRoute.GET("/aff", controller.GetAffCode)
-				selfRoute.GET("/topup/info", controller.GetTopUpInfo)
-				selfRoute.GET("/topup/self", controller.GetUserTopUps)
 				selfRoute.POST("/topup", middleware.CriticalRateLimit(), controller.TopUp)
-				selfRoute.POST("/waffo/amount", controller.RequestWaffoAmount)
-				selfRoute.POST("/waffo/pay", middleware.CriticalRateLimit(), controller.RequestWaffoPay)
 				selfRoute.POST("/aff_transfer", controller.TransferAffQuota)
-				selfRoute.PUT("/setting", controller.UpdateUserSetting)
 
 				// 2FA routes
 				selfRoute.GET("/2fa/status", controller.Get2FAStatus)
@@ -91,14 +84,6 @@ func SetApiRouter(router *gin.Engine) {
 				selfRoute.POST("/2fa/enable", controller.Enable2FA)
 				selfRoute.POST("/2fa/disable", controller.Disable2FA)
 				selfRoute.POST("/2fa/backup_codes", controller.RegenerateBackupCodes)
-
-				// Check-in routes
-				selfRoute.GET("/checkin", controller.GetCheckinStatus)
-				selfRoute.POST("/checkin", middleware.TurnstileCheck(), controller.DoCheckin)
-
-				// Custom OAuth bindings
-				selfRoute.GET("/oauth/bindings", controller.GetUserOAuthBindings)
-				selfRoute.DELETE("/oauth/bindings/:provider_id", controller.UnbindCustomOAuth)
 			}
 
 			adminRoute := userRoute.Group("/")
@@ -128,9 +113,7 @@ func SetApiRouter(router *gin.Engine) {
 		subscriptionRoute := apiRouter.Group("/subscription")
 		subscriptionRoute.Use(middleware.UserAuth())
 		{
-			subscriptionRoute.GET("/plans", controller.GetSubscriptionPlans)
 			subscriptionRoute.GET("/self", controller.GetSubscriptionSelf)
-			subscriptionRoute.PUT("/self/preference", controller.UpdateSubscriptionPreference)
 			subscriptionRoute.POST("/redeem", middleware.CriticalRateLimit(), controller.UserRedeemSubscriptionCode)
 		}
 		subscriptionAdminRoute := apiRouter.Group("/subscription/admin")
@@ -160,10 +143,6 @@ func SetApiRouter(router *gin.Engine) {
 		{
 			optionRoute.GET("/", controller.GetOptions)
 			optionRoute.PUT("/", controller.UpdateOption)
-			optionRoute.GET("/channel_affinity_cache", controller.GetChannelAffinityCacheStats)
-			optionRoute.DELETE("/channel_affinity_cache", controller.ClearChannelAffinityCache)
-			optionRoute.POST("/rest_model_ratio", controller.ResetModelRatio)
-			optionRoute.POST("/migrate_console_setting", controller.MigrateConsoleSetting) // 用于迁移检测的旧键，下个版本会删除
 		}
 
 		uploadRoute := apiRouter.Group("/upload")
@@ -172,33 +151,6 @@ func SetApiRouter(router *gin.Engine) {
 			uploadRoute.POST("/logo", controller.UploadLogo)
 		}
 
-		// Custom OAuth provider management (root only)
-		customOAuthRoute := apiRouter.Group("/custom-oauth-provider")
-		customOAuthRoute.Use(middleware.RootAuth())
-		{
-			customOAuthRoute.POST("/discovery", controller.FetchCustomOAuthDiscovery)
-			customOAuthRoute.GET("/", controller.GetCustomOAuthProviders)
-			customOAuthRoute.GET("/:id", controller.GetCustomOAuthProvider)
-			customOAuthRoute.POST("/", controller.CreateCustomOAuthProvider)
-			customOAuthRoute.PUT("/:id", controller.UpdateCustomOAuthProvider)
-			customOAuthRoute.DELETE("/:id", controller.DeleteCustomOAuthProvider)
-		}
-		performanceRoute := apiRouter.Group("/performance")
-		performanceRoute.Use(middleware.RootAuth())
-		{
-			performanceRoute.GET("/stats", controller.GetPerformanceStats)
-			performanceRoute.DELETE("/disk_cache", controller.ClearDiskCache)
-			performanceRoute.POST("/reset_stats", controller.ResetPerformanceStats)
-			performanceRoute.POST("/gc", controller.ForceGC)
-			performanceRoute.GET("/logs", controller.GetLogFiles)
-			performanceRoute.DELETE("/logs", controller.CleanupLogFiles)
-		}
-		ratioSyncRoute := apiRouter.Group("/ratio_sync")
-		ratioSyncRoute.Use(middleware.RootAuth())
-		{
-			ratioSyncRoute.GET("/channels", controller.GetSyncableChannels)
-			ratioSyncRoute.POST("/fetch", controller.FetchUpstreamRatios)
-		}
 		channelRoute := apiRouter.Group("/channel")
 		channelRoute.Use(middleware.AdminAuth())
 		{
@@ -223,24 +175,9 @@ func SetApiRouter(router *gin.Engine) {
 			channelRoute.POST("/fix", controller.FixChannelsAbilities)
 			channelRoute.GET("/fetch_models/:id", controller.FetchUpstreamModels)
 			channelRoute.POST("/fetch_models", middleware.RootAuth(), controller.FetchModels)
-			channelRoute.POST("/codex/oauth/start", controller.StartCodexOAuth)
-			channelRoute.POST("/codex/oauth/complete", controller.CompleteCodexOAuth)
-			channelRoute.POST("/:id/codex/oauth/start", controller.StartCodexOAuthForChannel)
-			channelRoute.POST("/:id/codex/oauth/complete", controller.CompleteCodexOAuthForChannel)
-			channelRoute.POST("/:id/codex/refresh", controller.RefreshCodexChannelCredential)
-			channelRoute.GET("/:id/codex/usage", controller.GetCodexChannelUsage)
-			channelRoute.POST("/ollama/pull", controller.OllamaPullModel)
-			channelRoute.POST("/ollama/pull/stream", controller.OllamaPullModelStream)
-			channelRoute.DELETE("/ollama/delete", controller.OllamaDeleteModel)
-			channelRoute.GET("/ollama/version/:id", controller.OllamaVersion)
 			channelRoute.POST("/batch/tag", controller.BatchSetChannelTag)
 			channelRoute.GET("/tag/models", controller.GetTagModels)
 			channelRoute.POST("/copy/:id", controller.CopyChannel)
-			channelRoute.POST("/multi_key/manage", controller.ManageMultiKeys)
-			channelRoute.POST("/upstream_updates/apply", controller.ApplyChannelUpstreamModelUpdates)
-			channelRoute.POST("/upstream_updates/apply_all", controller.ApplyAllChannelUpstreamModelUpdates)
-			channelRoute.POST("/upstream_updates/detect", controller.DetectChannelUpstreamModelUpdates)
-			channelRoute.POST("/upstream_updates/detect_all", controller.DetectAllChannelUpstreamModelUpdates)
 		}
 		tokenRoute := apiRouter.Group("/token")
 		tokenRoute.Use(middleware.UserAuth())
@@ -282,7 +219,6 @@ func SetApiRouter(router *gin.Engine) {
 		logRoute.DELETE("/", middleware.AdminAuth(), controller.DeleteHistoryLogs)
 		logRoute.GET("/stat", middleware.AdminAuth(), controller.GetLogsStat)
 		logRoute.GET("/self/stat", middleware.UserAuth(), controller.GetLogsSelfStat)
-		logRoute.GET("/channel_affinity_usage_cache", middleware.AdminAuth(), controller.GetChannelAffinityUsageCacheStats)
 		logRoute.GET("/self", middleware.UserAuth(), controller.GetUserLogs)
 
 		dataRoute := apiRouter.Group("/data")
@@ -298,15 +234,6 @@ func SetApiRouter(router *gin.Engine) {
 		groupRoute.Use(middleware.AdminAuth())
 		{
 			groupRoute.GET("/", controller.GetGroups)
-		}
-
-		prefillGroupRoute := apiRouter.Group("/prefill_group")
-		prefillGroupRoute.Use(middleware.AdminAuth())
-		{
-			prefillGroupRoute.GET("/", controller.GetPrefillGroups)
-			prefillGroupRoute.POST("/", controller.CreatePrefillGroup)
-			prefillGroupRoute.PUT("/", controller.UpdatePrefillGroup)
-			prefillGroupRoute.DELETE("/:id", controller.DeletePrefillGroup)
 		}
 
 	}

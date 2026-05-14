@@ -12,7 +12,6 @@ import (
 	"github.com/QuantumNous/new-api/logger"
 	"github.com/QuantumNous/new-api/model"
 	"github.com/QuantumNous/new-api/service"
-	"github.com/QuantumNous/new-api/setting"
 	"github.com/QuantumNous/new-api/setting/operation_setting"
 	"github.com/QuantumNous/new-api/setting/system_setting"
 
@@ -21,98 +20,6 @@ import (
 	"github.com/samber/lo"
 	"github.com/shopspring/decimal"
 )
-
-func GetTopUpInfo(c *gin.Context) {
-	// 获取支付方式
-	payMethods := operation_setting.PayMethods
-
-	// 如果启用了 Stripe 支付，添加到支付方法列表
-	if isStripeTopUpEnabled() {
-		// 检查是否已经包含 Stripe
-		hasStripe := false
-		for _, method := range payMethods {
-			if method["type"] == "stripe" {
-				hasStripe = true
-				break
-			}
-		}
-
-		if !hasStripe {
-			stripeMethod := map[string]string{
-				"name":      "Stripe",
-				"type":      "stripe",
-				"color":     "rgba(var(--semi-purple-5), 1)",
-				"min_topup": strconv.Itoa(setting.StripeMinTopUp),
-			}
-			payMethods = append(payMethods, stripeMethod)
-		}
-	}
-
-	// 如果启用了 Waffo 支付，添加到支付方法列表
-	enableWaffo := isWaffoTopUpEnabled()
-	if enableWaffo {
-		hasWaffo := false
-		for _, method := range payMethods {
-			if method["type"] == model.PaymentMethodWaffo {
-				hasWaffo = true
-				break
-			}
-		}
-
-		if !hasWaffo {
-			waffoMethod := map[string]string{
-				"name":      "Waffo (Global Payment)",
-				"type":      model.PaymentMethodWaffo,
-				"color":     "rgba(var(--semi-blue-5), 1)",
-				"min_topup": strconv.Itoa(setting.WaffoMinTopUp),
-			}
-			payMethods = append(payMethods, waffoMethod)
-		}
-	}
-
-	enableWaffoPancake := isWaffoPancakeTopUpEnabled()
-	if enableWaffoPancake {
-		hasWaffoPancake := false
-		for _, method := range payMethods {
-			if method["type"] == model.PaymentMethodWaffoPancake {
-				hasWaffoPancake = true
-				break
-			}
-		}
-
-		if !hasWaffoPancake {
-			payMethods = append(payMethods, map[string]string{
-				"name":      "Waffo Pancake",
-				"type":      model.PaymentMethodWaffoPancake,
-				"color":     "rgba(var(--semi-orange-5), 1)",
-				"min_topup": strconv.Itoa(setting.WaffoPancakeMinTopUp),
-			})
-		}
-	}
-
-	data := gin.H{
-		"enable_online_topup":        isEpayTopUpEnabled(),
-		"enable_stripe_topup":        isStripeTopUpEnabled(),
-		"enable_creem_topup":         isCreemTopUpEnabled(),
-		"enable_waffo_topup":         enableWaffo,
-		"enable_waffo_pancake_topup": enableWaffoPancake,
-		"waffo_pay_methods": func() interface{} {
-			if enableWaffo {
-				return setting.GetWaffoPayMethods()
-			}
-			return nil
-		}(),
-		"creem_products":          setting.CreemProducts,
-		"pay_methods":             payMethods,
-		"min_topup":               operation_setting.MinTopUp,
-		"stripe_min_topup":        setting.StripeMinTopUp,
-		"waffo_min_topup":         setting.WaffoMinTopUp,
-		"waffo_pancake_min_topup": setting.WaffoPancakeMinTopUp,
-		"amount_options":          operation_setting.GetPaymentSetting().AmountOptions,
-		"discount":                operation_setting.GetPaymentSetting().AmountDiscount,
-	}
-	common.ApiSuccess(c, data)
-}
 
 type EpayRequest struct {
 	Amount        int64  `json:"amount"`
@@ -436,31 +343,6 @@ func RequestAmount(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"message": "success", "data": strconv.FormatFloat(payMoney, 'f', 2, 64)})
-}
-
-func GetUserTopUps(c *gin.Context) {
-	userId := c.GetInt("id")
-	pageInfo := common.GetPageQuery(c)
-	keyword := c.Query("keyword")
-
-	var (
-		topups []*model.TopUp
-		total  int64
-		err    error
-	)
-	if keyword != "" {
-		topups, total, err = model.SearchUserTopUps(userId, keyword, pageInfo)
-	} else {
-		topups, total, err = model.GetUserTopUps(userId, pageInfo)
-	}
-	if err != nil {
-		common.ApiError(c, err)
-		return
-	}
-
-	pageInfo.SetTotal(int(total))
-	pageInfo.SetItems(topups)
-	common.ApiSuccess(c, pageInfo)
 }
 
 // GetAllTopUps 管理员获取全平台充值记录

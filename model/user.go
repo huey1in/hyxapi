@@ -800,11 +800,6 @@ func GetUserUsedQuota(id int) (quota int, err error) {
 	return quota, err
 }
 
-func GetUserEmail(id int) (email string, err error) {
-	err = DB.Model(&User{}).Where("id = ?", id).Select("email").Find(&email).Error
-	return email, err
-}
-
 // GetUserGroup 兼容旧调用，用户分组概念已删除，始终返回 "default"。
 // 后续应在调用方移除此调用。
 func GetUserGroup(id int, fromDB bool) (group string, err error) {
@@ -898,22 +893,6 @@ func decreaseUserQuota(id int, quota int) (err error) {
 	}
 	return err
 }
-
-func DeltaUpdateUserQuota(id int, delta int) (err error) {
-	if delta == 0 {
-		return nil
-	}
-	if delta > 0 {
-		return IncreaseUserQuota(id, delta, false)
-	} else {
-		return DecreaseUserQuota(id, -delta, false)
-	}
-}
-
-//func GetRootUserEmail() (email string) {
-//	DB.Model(&User{}).Where("role = ?", common.RoleRootUser).Select("email").Find(&email)
-//	return email
-//}
 
 func GetRootUser() (user *User) {
 	DB.Where("role = ?", common.RoleRootUser).First(&user)

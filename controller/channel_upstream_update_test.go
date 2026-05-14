@@ -3,7 +3,6 @@ package controller
 import (
 	"testing"
 
-	"github.com/QuantumNous/new-api/dto"
 	"github.com/QuantumNous/new-api/model"
 	"github.com/stretchr/testify/require"
 )
@@ -67,18 +66,6 @@ func TestApplySelectedModelChanges(t *testing.T) {
 
 		require.Equal(t, []string{"gpt-4o", "gpt-4.1"}, result)
 	})
-}
-
-func TestCollectPendingApplyUpstreamModelChanges(t *testing.T) {
-	settings := dto.ChannelOtherSettings{
-		UpstreamModelUpdateLastDetectedModels: []string{" gpt-4o ", "gpt-4o", "gpt-4.1"},
-		UpstreamModelUpdateLastRemovedModels:  []string{" old-model ", "", "old-model"},
-	}
-
-	pendingAddModels, pendingRemoveModels := collectPendingApplyUpstreamModelChanges(settings)
-
-	require.Equal(t, []string{"gpt-4o", "gpt-4.1"}, pendingAddModels)
-	require.Equal(t, []string{"old-model"}, pendingRemoveModels)
 }
 
 func TestNormalizeChannelModelMapping(t *testing.T) {
