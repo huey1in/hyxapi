@@ -156,10 +156,6 @@ func GetContextKeyBool(c *gin.Context, key constant.ContextKey) bool {
 	return c.GetBool(string(key))
 }
 
-func GetContextKeyStringSlice(c *gin.Context, key constant.ContextKey) []string {
-	return c.GetStringSlice(string(key))
-}
-
 func GetContextKeyStringMap(c *gin.Context, key constant.ContextKey) map[string]any {
 	return c.GetStringMap(string(key))
 }

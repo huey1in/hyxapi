@@ -1,7 +1,6 @@
 package common
 
 import (
-	"encoding/base64"
 	"encoding/json"
 	"net/url"
 	"regexp"
@@ -51,19 +50,6 @@ func StrToMap(str string) (map[string]interface{}, error) {
 	return m, nil
 }
 
-func StrToJsonArray(str string) ([]interface{}, error) {
-	var js []interface{}
-	err := json.Unmarshal([]byte(str), &js)
-	if err != nil {
-		return nil, err
-	}
-	return js, nil
-}
-
-func IsJsonArray(str string) bool {
-	var js []interface{}
-	return json.Unmarshal([]byte(str), &js) == nil
-}
 
 func IsJsonObject(str string) bool {
 	var js map[string]interface{}
@@ -94,9 +80,6 @@ func StringToByteSlice(s string) []byte {
 	return *(*[]byte)(unsafe.Pointer(&tmp2))
 }
 
-func EncodeBase64(str string) string {
-	return base64.StdEncoding.EncodeToString([]byte(str))
-}
 
 func GetJsonString(data any) string {
 	if data == nil {

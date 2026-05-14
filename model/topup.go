@@ -25,7 +25,6 @@ type TopUp struct {
 
 const (
 	PaymentMethodStripe       = "stripe"
-	PaymentMethodWaffo        = "waffo"
 	PaymentMethodWaffoPancake = "waffo_pancake"
 )
 
