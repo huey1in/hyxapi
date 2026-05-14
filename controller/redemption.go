@@ -83,7 +83,7 @@ func AddRedemption(c *gin.Context) {
 	}
 	var keys []string
 	for i := 0; i < redemption.Count; i++ {
-		key := common.GetUUID()
+		key := common.GenerateRedeemCode()
 		cleanRedemption := model.Redemption{
 			UserId:      c.GetInt("id"),
 			Name:        redemption.Name,

@@ -142,6 +142,18 @@ func GetUUID() string {
 	return code
 }
 
+const redeemChars = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+
+func GenerateRedeemCode() string {
+	raw := make([]byte, 16)
+	maxI := big.NewInt(int64(len(redeemChars)))
+	for i := range raw {
+		n, _ := crand.Int(crand.Reader, maxI)
+		raw[i] = redeemChars[n.Int64()]
+	}
+	return string(raw[0:4]) + "-" + string(raw[4:8]) + "-" + string(raw[8:12]) + "-" + string(raw[12:16])
+}
+
 const keyChars = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
 
 func GenerateRandomCharsKey(length int) (string, error) {

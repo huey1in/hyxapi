@@ -480,7 +480,7 @@ const AffinityRulesEditor = ({ value, onChange }) => {
   return (
     <div className='space-y-3'>
       {rules.map((r, i) => (
-        <div key={i} style={{ padding: '12px 14px', border: '1px solid var(--ui-border)', borderRadius: 12, overflow: 'hidden' }} className='space-y-2'>
+        <div key={i} style={{ padding: '12px 14px', border: '1px solid var(--ui-border)', borderRadius: 12 }} className='space-y-2'>
           <div className='flex items-center gap-2'>
             <Input value={r.name || ''} onChange={(v) => update(i, 'name', v)} placeholder='规则名称' width='100%' />
             <button type='button' onClick={() => remove(i)} style={{ flexShrink: 0, padding: 6, borderRadius: 6, border: 'none', background: 'transparent', cursor: 'pointer', color: 'var(--ui-text-3)' }}>
@@ -561,7 +561,7 @@ const ListEditor = ({ configKey, value, onChange }) => {
   const remove = (idx) => sync(items.filter((_, i) => i !== idx));
   const add = () => {
     const empty = {};
-    fields.forEach((f) => { empty[f.key] = ''; });
+    fields.forEach((f) => { empty[f.key] = f.type === 'select' && f.options?.length ? f.options[0].value : ''; });
     if (configKey === 'console_setting.announcements') empty.publishDate = new Date().toISOString();
     sync([...items, empty]);
   };
@@ -569,7 +569,7 @@ const ListEditor = ({ configKey, value, onChange }) => {
   return (
     <div className='space-y-2'>
       {items.map((item, i) => (
-        <div key={i} style={{ padding: '10px 12px', border: '1px solid var(--ui-border)', borderRadius: 10, overflow: 'hidden' }} className='space-y-2'>
+        <div key={i} style={{ padding: '10px 12px', border: '1px solid var(--ui-border)', borderRadius: 10 }} className='space-y-2'>
           <div className='flex items-start gap-2' style={{ minWidth: 0 }}>
             {fields.map((f) => (
               <div key={f.key} style={{ flex: f.flex || 1, minWidth: 0 }}>

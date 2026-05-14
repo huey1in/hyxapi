@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Plus, Pencil, Trash2, Copy, KeyRound } from 'lucide-react';
 import { API, showError, showSuccess, copy } from '../../helpers';
+import { quotaToDisplayAmount, displayAmountToQuota } from '../../helpers/quota';
 import {
   PageShell, Button, IconButton, Input, NumberInput, MultiSelect, Select, Table,
   Tag, Modal, SlideOver, Switch, ConfirmDialog, Loading,
@@ -222,8 +223,8 @@ const PlanEditModal = ({ plan, groups, onClose, onSaved }) => {
         <div className='space-y-4'>
           <span className='text-sm font-medium text-ui-text'>额度与限流</span>
           <div>
-            <label className='block text-sm text-ui-text-2 mb-1.5'>总可用额度 <span className='text-xs text-ui-text-3'>(0 = 不限)</span></label>
-            <NumberInput value={form.total_amount ?? 0} onChange={(v) => u('total_amount')(Number(v))} min={0} width='full' />
+            <label className='block text-sm text-ui-text-2 mb-1.5'>总可用金额 <span className='text-xs text-ui-text-3'>(0 = 不限)</span></label>
+            <NumberInput value={quotaToDisplayAmount(form.total_amount ?? 0)} onChange={(v) => u('total_amount')(displayAmountToQuota(v))} min={0} step='any' width='full' />
           </div>
           <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
             <div>
@@ -288,6 +289,7 @@ const CodesModal = ({ plan, onClose }) => {
   const [name, setName] = useState('');
   const [expiredTime, setExpiredTime] = useState(0);
   const [generating, setGenerating] = useState(false);
+  const [generated, setGenerated] = useState(null);
 
   const toLocalInput = (ts) => {
     if (!ts) return '';
@@ -315,8 +317,8 @@ const CodesModal = ({ plan, onClose }) => {
         name: name.trim() || undefined,
         expired_time: expiredTime || 0,
       });
-      const { success, message } = res.data || {};
-      if (success) { showSuccess(`已生成 ${count} 个激活码`); load(); }
+      const { success, data, message } = res.data || {};
+      if (success) { showSuccess(`已生成 ${count} 个激活码`); setGenerated(data || []); load(); }
       else showError(message);
     } catch (e) { showError(e); } finally { setGenerating(false); }
   };
@@ -382,6 +384,21 @@ const CodesModal = ({ plan, onClose }) => {
             </div>
           ))}
         </div>
+      )}
+
+      {generated && (
+        <Modal open title='生成成功' onClose={() => setGenerated(null)} hideFooter width={520}>
+          <div className='space-y-3'>
+            <p className='text-sm text-[#666]'>请妥善保存以下激活码：</p>
+            <pre className='p-3 rounded-lg text-xs font-mono max-h-64 overflow-auto whitespace-pre-wrap break-all' style={{ background: 'var(--ui-bg-subtle)' }}>
+              {(Array.isArray(generated) ? generated.map((c) => typeof c === 'string' ? c : c.key).join('\n') : '')}
+            </pre>
+            <div className='flex justify-end gap-2'>
+              <Button variant='toggle' onClick={() => { copy((Array.isArray(generated) ? generated.map((c) => typeof c === 'string' ? c : c.key).join('\n') : '')); showSuccess('已复制全部'); }}>复制全部</Button>
+              <Button onClick={() => setGenerated(null)}>完成</Button>
+            </div>
+          </div>
+        </Modal>
       )}
     </Modal>
   );

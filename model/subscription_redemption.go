@@ -18,7 +18,7 @@ import (
 type SubscriptionRedemption struct {
 	Id           int            `json:"id"`
 	PlanId      int            `json:"plan_id" gorm:"index"`
-	Key          string         `json:"key" gorm:"type:char(32);uniqueIndex"`
+	Key          string         `json:"key" gorm:"type:varchar(32);uniqueIndex"`
 	Name         string         `json:"name" gorm:"index"`
 	Status       int            `json:"status" gorm:"default:1"` // 1=enabled, 2=used
 	CreatedTime  int64          `json:"created_time" gorm:"bigint"`
@@ -47,7 +47,7 @@ func GenerateSubscriptionCodes(planId int, name string, count int, expiredTime i
 	}
 	codes := make([]*SubscriptionRedemption, 0, count)
 	for i := 0; i < count; i++ {
-		key := strings.ReplaceAll(common.GetUUID(), "-", "")
+		key := common.GenerateRedeemCode()
 		c := &SubscriptionRedemption{
 			PlanId:      planId,
 			Key:         key,

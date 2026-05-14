@@ -298,11 +298,11 @@ const TokenPill = ({ value, variant, label }) => {
     <span style={{
       display: 'inline-flex', alignItems: 'center', gap: 4,
       height: 24, paddingInline: 8, borderRadius: 12,
-      fontSize: 11, color: isCache ? '#8b5cf6' : '#666',
-      border: `1px solid ${isCache ? '#e9d5ff' : 'var(--ui-border)'}`,
-      background: isCache ? '#faf5ff' : 'var(--page-bg)',
+      fontSize: 11, color: '#666',
+      border: '1px solid var(--ui-border)',
+      background: 'var(--page-bg)',
     }}>
-      <span style={{ fontSize: 10, color: isCache ? '#a78bfa' : '#999' }}>{label}</span>
+      <span style={{ fontSize: 10, color: '#999' }}>{label}</span>
       {formatted}
     </span>
   );

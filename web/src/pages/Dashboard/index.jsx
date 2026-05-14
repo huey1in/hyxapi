@@ -22,7 +22,7 @@ const BarChart = ({ data, height = 180 }) => {
 
   return (
     <div className='flex gap-2' style={{ height }}>
-      <div className='flex flex-col justify-between text-[12px] text-[#999] tabular-nums pr-1' style={{ width: 44 }}>
+      <div className='flex flex-col justify-between text-[12px] text-[#999] tabular-nums pr-1' style={{ width: 44, whiteSpace: 'nowrap' }}>
         {yLabels.map((v, i) => (
           <span key={i}>{v >= 1000 ? `${(v/1000).toFixed(v >= 10000 ? 0 : 1)}K` : v}</span>
         ))}
@@ -38,7 +38,7 @@ const BarChart = ({ data, height = 180 }) => {
                   style={{ height: `${pct}%`, background: 'var(--ui-accent)' }}
                 />
               </div>
-              <span className='text-[11px] text-[#999]'>{d.label}</span>
+              <span className='text-[11px] text-[#999]' style={{ whiteSpace: 'nowrap' }}>{d.label}</span>
             </div>
           );
         })}
@@ -227,20 +227,19 @@ const InfoPanels = ({ apiInfoEnabled, announcementsEnabled, faqEnabled, uptimeEn
   return (
     <div style={{ border: '1px solid var(--ui-border)', borderRadius: 26, overflow: 'hidden' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '12px 16px', borderBottom: '1px solid var(--ui-divider)', overflowX: 'auto' }}>
-        {tabs.map(({ key, label, Icon }) => (
+        {tabs.map(({ key, label }) => (
           <button
             key={key}
             onClick={() => setActive(key)}
             style={{
               cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 5,
               height: 30, paddingInline: 12, borderRadius: 15, border: 'none',
-              fontSize: 13, fontWeight: active === key ? 500 : 400,
+              fontSize: 13, fontWeight: active === key ? 500 : 400, whiteSpace: 'nowrap',
               color: active === key ? 'var(--ui-text)' : 'var(--ui-text-2)',
               background: active === key ? 'var(--ui-bg-subtle)' : 'transparent',
               transition: 'background 0.15s, color 0.15s',
             }}
           >
-            <Icon size={13} />
             {label}
           </button>
         ))}

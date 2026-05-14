@@ -246,6 +246,8 @@ const SubscriptionCodesTab = () => {
 
   useEffect(() => { if (selectedPlan) loadCodes(selectedPlan); }, [selectedPlan]);
 
+  const [generated, setGenerated] = useState(null);
+
   const generate = async () => {
     if (!selectedPlan) return showError('请先选择套餐');
     setGenerating(true);
@@ -255,8 +257,8 @@ const SubscriptionCodesTab = () => {
         name: genForm.name.trim() || undefined,
         expired_time: genForm.expired_time || 0,
       });
-      const { success, message } = res.data || {};
-      if (success) { showSuccess(`已生成 ${genForm.count} 个激活码`); loadCodes(selectedPlan); }
+      const { success, data, message } = res.data || {};
+      if (success) { showSuccess(`已生成 ${genForm.count} 个激活码`); setGenerated(data || []); loadCodes(selectedPlan); }
       else showError(message);
     } catch (e) { showError(e); } finally { setGenerating(false); }
   };
@@ -335,6 +337,19 @@ const SubscriptionCodesTab = () => {
 
       {loading ? <Loading /> : (
         <Table columns={columns} rows={codes} rowKey={(r) => r.id} />
+      )}
+
+      {generated && (
+        <Modal open title='生成成功' onClose={() => setGenerated(null)} hideFooter width={520}>
+          <div className='space-y-3'>
+            <p className='text-sm text-[#666]'>请妥善保存以下激活码：</p>
+            <pre className='p-3 rounded-lg text-xs font-mono max-h-64 overflow-auto whitespace-pre-wrap break-all' style={{ background: 'var(--ui-bg-subtle)' }}>{(Array.isArray(generated) ? generated.map((c) => typeof c === 'string' ? c : c.key).join('\n') : '')}</pre>
+            <div className='flex justify-end gap-2'>
+              <Button variant='toggle' onClick={() => { copy((Array.isArray(generated) ? generated.map((c) => typeof c === 'string' ? c : c.key).join('\n') : '')); showSuccess('已复制全部'); }}>复制全部</Button>
+              <Button onClick={() => setGenerated(null)}>完成</Button>
+            </div>
+          </div>
+        </Modal>
       )}
     </>
   );
