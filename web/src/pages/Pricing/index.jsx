@@ -1,11 +1,13 @@
 import React, { useEffect, useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Search, Copy, LayoutGrid, Rows3 } from 'lucide-react';
 import { API, showError, showSuccess, copy, getLobeHubIcon } from '../../helpers';
 import {
-  PageShell, Card, Button, IconButton, Input, Select, Table, Tag, Modal, Loading,
+  PageShell, Card, Button, IconButton, Input, Select, Table, Tag, Loading,
 } from '../../components/ui';
 
 const PricingPage = () => {
+  const navigate = useNavigate();
   const [models, setModels] = useState([]);
   const [vendors, setVendors] = useState({});
   const [groupRatio, setGroupRatio] = useState({});
@@ -15,8 +17,8 @@ const PricingPage = () => {
   const [vendorFilter, setVendorFilter] = useState('all');
   const [group, setGroup] = useState('all');
   const [view, setView] = useState(() => localStorage.getItem('pricing-view') || 'table');
-  const [detail, setDetail] = useState(null);
   const switchView = (v) => { setView(v); localStorage.setItem('pricing-view', v); };
+  const goDetail = (m) => navigate(`/pricing/${encodeURIComponent(m.model_name)}`);
 
   useEffect(() => {
     (async () => {
@@ -118,15 +120,19 @@ const PricingPage = () => {
         </div>
       </Card>
 
-      {loading ? <Loading /> : (
+      {loading ? (
+        <div style={{ minHeight: 'calc(100vh - 280px)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <Loading />
+        </div>
+      ) : (
         <>
           <p className='text-sm text-ui-text-3 mb-3'>共 {filtered.length} 个模型 · 点击查看详情</p>
           {view === 'table' ? (
-            <Table columns={columns} rows={filtered} size='sm' rowKey='model_name' onRowClick={(r) => setDetail(r)} />
+            <Table columns={columns} rows={filtered} size='sm' rowKey='model_name' onRowClick={goDetail} />
           ) : (
             <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3'>
               {filtered.map((m) => (
-                <Card key={m.model_name} interactive='hover' onClick={() => setDetail(m)}>
+                <Card key={m.model_name} interactive='hover' onClick={() => goDetail(m)}>
                   <div className='font-mono text-xs text-ui-text-1 break-all mb-2'>{m.model_name}</div>
                   <div className='text-xs text-ui-text-3 mb-3'>{vendors[m.vendor_id]?.name || '未知厂商'}</div>
                   <div className='text-sm text-ui-text-1 font-mono mb-3'>{compute(m)}</div>
@@ -140,52 +146,6 @@ const PricingPage = () => {
             </div>
           )}
         </>
-      )}
-
-      {detail && (
-        <Modal open title={detail.model_name} onClose={() => setDetail(null)} hideFooter width={560}>
-          <div className='space-y-4 text-sm'>
-            <div className='grid grid-cols-2 gap-3'>
-              <div>
-                <div className='text-xs text-ui-text-3 mb-1'>厂商</div>
-                <div className='text-ui-text-1'>{vendors[detail.vendor_id]?.name || '-'}</div>
-              </div>
-              <div>
-                <div className='text-xs text-ui-text-3 mb-1'>当前价格倍率</div>
-                <div className='text-ui-text-1'>× {groupMul}</div>
-              </div>
-              <div>
-                <div className='text-xs text-ui-text-3 mb-1'>计费类型</div>
-                <div className='text-ui-text-1'>{detail.quota_type === 1 ? '按次计费' : '按 Token 计费'}</div>
-              </div>
-              <div>
-                <div className='text-xs text-ui-text-3 mb-1'>价格</div>
-                <div className='text-ui-text-1 font-mono'>{compute(detail)}</div>
-              </div>
-            </div>
-            <div>
-              <div className='text-xs text-ui-text-3 mb-2'>支持端点</div>
-              <div className='flex flex-wrap gap-1'>
-                {(detail.supported_endpoint_types || []).map((e) => <Tag key={e} color='blue'>{e}</Tag>)}
-              </div>
-            </div>
-            <div>
-              <div className='text-xs text-ui-text-3 mb-2'>可用分组</div>
-              <div className='flex flex-wrap gap-1'>
-                {(detail.enable_groups || []).map((g) => <Tag key={g}>{g}</Tag>)}
-              </div>
-            </div>
-            {detail.description && (
-              <div>
-                <div className='text-xs text-ui-text-3 mb-1'>说明</div>
-                <p className='text-ui-text-1 leading-relaxed'>{detail.description}</p>
-              </div>
-            )}
-            <div className='flex justify-end'>
-              <Button onClick={() => setDetail(null)}>关闭</Button>
-            </div>
-          </div>
-        </Modal>
       )}
     </PageShell>
   );

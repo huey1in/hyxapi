@@ -14,6 +14,7 @@ const PageLayout = () => {
   const [, statusDispatch] = useContext(StatusContext);
   const location = useLocation();
   const isConsoleRoute = location.pathname.startsWith('/console');
+  const hideFooter = isConsoleRoute || location.pathname.startsWith('/pricing');
 
   useEffect(() => {
     const raw = localStorage.getItem('user');
@@ -53,7 +54,7 @@ const PageLayout = () => {
             <div className='flex-1'>
               <Outlet />
             </div>
-            {!isConsoleRoute && <FooterBar />}
+            {!hideFooter && <FooterBar />}
           </main>
         </div>
         <LoginModal />

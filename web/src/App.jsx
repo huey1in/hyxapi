@@ -14,6 +14,7 @@ import TopUp         from './pages/TopUp';
 import MySubscription from './pages/MySubscription';
 // import Chat         from './pages/Chat';
 import Pricing       from './pages/Pricing';
+import ModelDetail   from './pages/Pricing/ModelDetail';
 import Setting       from './pages/Setting';
 import Setup         from './pages/Setup';
 import Personal      from './pages/Personal';
@@ -27,6 +28,7 @@ const App = () => (
     <Route element={<PageLayout />}>
       <Route path='/'                   element={<Home />} />
       <Route path='/pricing'            element={<Pricing />} />
+      <Route path='/pricing/:modelName'  element={<ModelDetail />} />
       <Route path='/privacy'            element={<PrivacyPolicy />} />
       <Route path='/agreement'          element={<UserAgreement />} />
       <Route path='/setup'              element={<Setup />} />
