@@ -260,7 +260,7 @@ const LogCard = ({ row: r, isAdmin, open, onToggle }) => {
             {other?.request_convert && <DetailItem label='请求转换' value={other.request_convert} />}
             {other?.request_path && <DetailItem label='请求路径' value={other.request_path} mono />}
             {other?.usage_semantic && <DetailItem label='Usage 语义' value={other.usage_semantic} />}
-            {other?.stream_status && <DetailItem label='流式状态' value={other.stream_status} />}
+            {other?.stream_status && <DetailItem label='流式状态' value={`${other.stream_status.status || ''}${other.stream_status.end_reason ? ' (' + other.stream_status.end_reason + ')' : ''}`} />}
             {isAdmin && other?.channel_id != null && <DetailItem label='渠道 ID' value={other.channel_id} />}
             <DetailItem label='Request ID' value={r.request_id || '-'} mono />
             <DetailItem label='IP' value={r.ip || '-'} mono />

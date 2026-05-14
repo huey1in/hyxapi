@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { RefreshCw, Save, Plus, Trash2 } from 'lucide-react';
 import { API, showError, showSuccess, isRoot } from '../../helpers';
 import {
-  PageShell, Card, Button, IconButton, Input, NumberInput, Textarea, Switch, Tabs, Loading, EmptyState, Select, TagInput,
+  PageShell, Button, IconButton, Input, NumberInput, Textarea, Switch, Tabs, Loading, EmptyState, Select, TagInput,
 } from '../../components/ui';
 import { Lock } from 'lucide-react';
 
@@ -84,6 +84,37 @@ const TAB_KEYS = {
     'performance_setting.monitor_memory_threshold', 'performance_setting.monitor_disk_threshold',
   ],
 };
+
+const TAB_SECTIONS = {
+  platform: [
+    { title: '基本信息', keys: ['SystemName', 'ServerAddress', 'TopUpLink', 'general_setting.docs_link', 'Logo'] },
+    { title: '功能开关', keys: ['RetryTimes', 'general_setting.quota_display_type', 'DisplayTokenStatEnabled', 'DefaultCollapseSidebar', 'DemoSiteEnabled', 'SelfUseModeEnabled', 'token_setting.max_user_tokens'] },
+  ],
+  auth: [
+    { title: '注册与登录', keys: ['RegisterEnabled', 'PasswordRegisterEnabled', 'PasswordLoginEnabled'] },
+    { title: '邮箱验证', keys: ['EmailVerificationEnabled', 'EmailDomainRestrictionEnabled', 'EmailAliasRestrictionEnabled', 'EmailDomainWhitelist', 'SMTPServer', 'SMTPPort', 'SMTPAccount', 'SMTPFrom', 'SMTPToken', 'SMTPSSLEnabled', 'SMTPForceAuthLogin'] },
+    { title: 'OAuth 登录', keys: ['GitHubOAuthEnabled', 'GitHubClientId', 'GitHubClientSecret', 'LinuxDOOAuthEnabled', 'LinuxDOClientId', 'LinuxDOClientSecret', 'LinuxDOMinimumTrustLevel', 'discord.enabled', 'discord.client_id', 'discord.client_secret', 'oidc.enabled', 'oidc.client_id', 'oidc.client_secret', 'oidc.well_known', 'oidc.authorization_endpoint', 'oidc.token_endpoint', 'oidc.user_info_endpoint', 'WeChatAuthEnabled', 'WeChatServerAddress', 'WeChatServerToken', 'WeChatAccountQRCodeImageURL', 'TelegramOAuthEnabled', 'TelegramBotToken', 'TelegramBotName', 'TurnstileCheckEnabled', 'TurnstileSiteKey', 'TurnstileSecretKey'] },
+    { title: 'Passkey', keys: ['passkey.enabled', 'passkey.rp_display_name', 'passkey.rp_id', 'passkey.origins', 'passkey.allow_insecure_origin', 'passkey.user_verification', 'passkey.attachment_preference'] },
+  ],
+  limits: [
+    { title: '渠道管理', keys: ['ChannelDisableThreshold', 'AutomaticDisableChannelEnabled', 'AutomaticEnableChannelEnabled', 'AutomaticDisableKeywords', 'AutomaticDisableStatusCodes', 'AutomaticRetryStatusCodes'] },
+    { title: '额度', keys: ['QuotaForNewUser', 'QuotaForInviter', 'QuotaForInvitee', 'PreConsumedQuota', 'QuotaRemindThreshold', 'quota_setting.enable_free_model_pre_consume'] },
+    { title: '请求限速', keys: ['ModelRequestRateLimitEnabled', 'ModelRequestRateLimitCount', 'ModelRequestRateLimitDurationMinutes', 'ModelRequestRateLimitSuccessCount'] },
+    { title: '敏感词', keys: ['CheckSensitiveEnabled', 'CheckSensitiveOnPromptEnabled', 'StopOnSensitiveEnabled', 'SensitiveWords'] },
+  ],
+  model: [
+    { title: 'Claude', keys: ['claude.thinking_adapter_enabled', 'claude.thinking_adapter_budget_tokens_percentage', 'claude.model_headers_settings', 'claude.default_max_tokens'] },
+    { title: 'Gemini', keys: ['gemini.thinking_adapter_enabled', 'gemini.thinking_adapter_budget_tokens_percentage', 'gemini.safety_settings', 'gemini.version_settings', 'gemini.supported_imagine_models', 'gemini.function_call_thought_signature_enabled', 'gemini.remove_function_response_id_enabled'] },
+    { title: 'Grok', keys: ['grok.violation_deduction_enabled', 'grok.violation_deduction_amount'] },
+  ],
+  dashboard: [
+    { title: '数据看板', keys: ['DataExportEnabled', 'DataExportInterval', 'DataExportDefaultTime', 'LogConsumeEnabled'] },
+    { title: '渠道监控', keys: ['monitor_setting.auto_test_channel_enabled', 'monitor_setting.auto_test_channel_minutes'] },
+    { title: '前台展示', keys: ['console_setting.announcements_enabled', 'console_setting.announcements', 'console_setting.api_info_enabled', 'console_setting.api_info', 'console_setting.faq_enabled', 'console_setting.faq', 'console_setting.uptime_kuma_enabled', 'console_setting.uptime_kuma_groups'] },
+  ],
+};
+
+const WIDE_KEYS = new Set([...Array.from(new Set(['EmailDomainWhitelist', 'SensitiveWords', 'AutomaticDisableKeywords', 'AutomaticDisableStatusCodes', 'AutomaticRetryStatusCodes', 'fetch_setting.domain_list', 'fetch_setting.ip_list', 'fetch_setting.allowed_ports', 'global.thinking_model_blacklist', 'gemini.supported_imagine_models'])), 'ModelRatio', 'CompletionRatio', 'CacheRatio', 'CreateCacheRatio', 'ImageRatio', 'AudioRatio', 'AudioCompletionRatio', 'GroupRatio', 'ModelPrice', 'UserUsableGroups', 'claude.model_headers_settings', 'claude.default_max_tokens', 'gemini.safety_settings', 'gemini.version_settings', 'channel_affinity_setting.rules', 'console_setting.announcements', 'console_setting.api_info', 'console_setting.faq', 'console_setting.uptime_kuma_groups', 'global.chat_completions_to_responses_policy']);
 
 const MULTILINE_KEYS = new Set([]);
 const TAG_KEYS = new Set(['EmailDomainWhitelist', 'SensitiveWords', 'AutomaticDisableKeywords', 'AutomaticDisableStatusCodes', 'AutomaticRetryStatusCodes', 'fetch_setting.domain_list', 'fetch_setting.ip_list', 'fetch_setting.allowed_ports', 'global.thinking_model_blacklist', 'gemini.supported_imagine_models']);
@@ -626,65 +657,82 @@ const SettingPage = () => {
   };
 
   const keys = TAB_KEYS[active] || [];
+  const sections = TAB_SECTIONS[active];
+
+  const renderField = (k) => {
+    if (BOOL_KEYS.has(k)) {
+      return (
+        <div key={k} className='flex items-center justify-between' style={{ gridColumn: '1 / -1' }}>
+          <span style={{ fontSize: 14, color: 'var(--ui-text)' }}>{LABELS[k] || k}</span>
+          <Switch checked={toBool(val(k))} onChange={(v) => set(k, v ? 'true' : 'false')} />
+        </div>
+      );
+    }
+    const wide = WIDE_KEYS.has(k) || TAG_KEYS.has(k) || JSON_KEYS.has(k) || RAW_JSON_KEYS.has(k) || POLICY_KEYS.has(k) || LIST_EDITOR_KEYS.has(k);
+    return (
+      <div key={k} style={wide ? { gridColumn: '1 / -1' } : undefined}>
+        <label style={{ display: 'block', fontSize: 12, color: 'var(--ui-text-3)', marginBottom: 5 }}>{LABELS[k] || k}</label>
+        {k === 'Logo'
+          ? <LogoUpload value={val(k)} onChange={(v) => set(k, v)} />
+          : SELECT_OPTIONS[k]
+          ? <Select value={val(k) || SELECT_OPTIONS[k][0].value} options={SELECT_OPTIONS[k]} onChange={(v) => set(k, v)} />
+          : NUMBER_KEYS.has(k)
+            ? <NumberInput value={Number(val(k)) || 0} onChange={(v) => set(k, String(v ?? 0))} />
+            : JSON_KEYS.has(k)
+              ? <RatioEditor value={val(k)} onChange={(v) => set(k, v)} suggestions={k === 'GroupRatio' || k === 'UserUsableGroups' ? groupList : (k.startsWith('claude.') || k.startsWith('gemini.') ? [] : modelList)} numericValue={k !== 'UserUsableGroups' && k !== 'gemini.safety_settings' && k !== 'gemini.version_settings'} />
+              : RAW_JSON_KEYS.has(k)
+                ? (k === 'channel_affinity_setting.rules'
+                  ? <AffinityRulesEditor value={val(k)} onChange={(v) => set(k, v)} />
+                  : <RatioEditor value={val(k)} onChange={(v) => set(k, v)} suggestions={[]} numericValue={false} />)
+                : POLICY_KEYS.has(k)
+                  ? <PolicyEditor value={val(k)} onChange={(v) => set(k, v)} />
+                  : LIST_EDITOR_KEYS.has(k)
+                    ? <ListEditor configKey={k} value={val(k)} onChange={(v) => set(k, v)} />
+                    : TAG_KEYS.has(k)
+                      ? <TagInput
+                          value={JSON_ARRAY_TAG_KEYS.has(k) ? (() => { try { return JSON.parse(val(k) || '[]'); } catch { return []; } })() : (val(k) || '').split(NEWLINE_TAG_KEYS.has(k) ? '\n' : ',').filter(Boolean)}
+                          onChange={(arr) => set(k, JSON_ARRAY_TAG_KEYS.has(k) ? JSON.stringify(arr) : arr.join(NEWLINE_TAG_KEYS.has(k) ? '\n' : ','))}
+                        />
+                      : MULTILINE_KEYS.has(k)
+                        ? <Textarea value={val(k)} onChange={(v) => set(k, v)} rows={4} />
+                        : <Input value={val(k)} onChange={(v) => set(k, v)} />}
+      </div>
+    );
+  };
+
+  const renderSection = (title, sectionKeys) => (
+    <div key={title} style={{ padding: '20px 22px', border: '1px solid var(--ui-border)', borderRadius: 26 }}>
+      <div style={{ fontSize: 15, fontWeight: 600, color: 'var(--ui-text)', marginBottom: 16 }}>{title}</div>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 14 }}>
+        {sectionKeys.map(renderField)}
+      </div>
+    </div>
+  );
 
   return (
-    <PageShell
-      title='系统设置'
-      actions={
-        <>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 20, width: '100%', maxWidth: 960, marginInline: 'auto', padding: '24px 16px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <span style={{ fontSize: 18, fontWeight: 600, color: 'var(--ui-text)' }}>系统设置</span>
+        <div style={{ display: 'flex', gap: 6 }}>
           <IconButton icon={RefreshCw} title='刷新' onClick={load} />
           <Button icon={Save} loading={saving} onClick={save} disabled={Object.keys(dirty).length === 0}>
             保存{Object.keys(dirty).length > 0 ? ` (${Object.keys(dirty).length})` : ''}
           </Button>
-        </>
-      }
-    >
-      <div className='mb-4'>
-        <Tabs
-          items={TABS.map((t) => ({ value: t.key, label: t.label }))}
-          value={active}
-          onChange={setActive}
-        />
+        </div>
       </div>
 
+      <Tabs
+        items={TABS.map((t) => ({ value: t.key, label: t.label }))}
+        value={active}
+        onChange={setActive}
+      />
+
       {loading ? <Loading /> : (
-        <Card>
-          <div className='space-y-4'>
-            {keys.map((k) => (
-              <div key={k} className='grid grid-cols-1 md:grid-cols-[260px_1fr] gap-3 md:gap-6 md:items-start'>
-                <label className='text-sm text-ui-text pt-2'>{LABELS[k] || k}</label>
-                {k === 'Logo'
-                  ? <LogoUpload value={val(k)} onChange={(v) => set(k, v)} />
-                  : SELECT_OPTIONS[k]
-                  ? <Select value={val(k) || SELECT_OPTIONS[k][0].value} options={SELECT_OPTIONS[k]} onChange={(v) => set(k, v)} />
-                  : BOOL_KEYS.has(k)
-                  ? <div className='pt-1.5'><Switch checked={toBool(val(k))} onChange={(v) => set(k, v ? 'true' : 'false')} /></div>
-                  : NUMBER_KEYS.has(k)
-                    ? <NumberInput value={Number(val(k)) || 0} onChange={(v) => set(k, String(v ?? 0))} />
-                    : JSON_KEYS.has(k)
-                      ? <RatioEditor value={val(k)} onChange={(v) => set(k, v)} suggestions={k === 'GroupRatio' || k === 'UserUsableGroups' ? groupList : (k.startsWith('claude.') || k.startsWith('gemini.') ? [] : modelList)} numericValue={k !== 'UserUsableGroups' && k !== 'gemini.safety_settings' && k !== 'gemini.version_settings'} />
-                      : RAW_JSON_KEYS.has(k)
-                        ? (k === 'channel_affinity_setting.rules'
-                          ? <AffinityRulesEditor value={val(k)} onChange={(v) => set(k, v)} />
-                          : <RatioEditor value={val(k)} onChange={(v) => set(k, v)} suggestions={[]} numericValue={false} />)
-                        : POLICY_KEYS.has(k)
-                          ? <PolicyEditor value={val(k)} onChange={(v) => set(k, v)} />
-                          : LIST_EDITOR_KEYS.has(k)
-                            ? <ListEditor configKey={k} value={val(k)} onChange={(v) => set(k, v)} />
-                            : TAG_KEYS.has(k)
-                        ? <TagInput
-                            value={JSON_ARRAY_TAG_KEYS.has(k) ? (() => { try { return JSON.parse(val(k) || '[]'); } catch { return []; } })() : (val(k) || '').split(NEWLINE_TAG_KEYS.has(k) ? '\n' : ',').filter(Boolean)}
-                            onChange={(arr) => set(k, JSON_ARRAY_TAG_KEYS.has(k) ? JSON.stringify(arr) : arr.join(NEWLINE_TAG_KEYS.has(k) ? '\n' : ','))}
-                          />
-                        : MULTILINE_KEYS.has(k)
-                          ? <Textarea value={val(k)} onChange={(v) => set(k, v)} rows={4} />
-                          : <Input value={val(k)} onChange={(v) => set(k, v)} />}
-              </div>
-            ))}
-          </div>
-        </Card>
+        sections
+          ? sections.map((s) => renderSection(s.title, s.keys))
+          : renderSection(TABS.find((t) => t.key === active)?.label || active, keys)
       )}
-    </PageShell>
+    </div>
   );
 };
 

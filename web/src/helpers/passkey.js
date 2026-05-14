@@ -47,6 +47,8 @@ export function prepareCredentialCreationOptions(payload) {
   const options =
     payload?.publicKey ||
     payload?.PublicKey ||
+    payload?.options?.publicKey ||
+    payload?.options?.PublicKey ||
     payload?.response ||
     payload?.Response;
   if (!options) {
@@ -82,6 +84,8 @@ export function prepareCredentialRequestOptions(payload) {
   const options =
     payload?.publicKey ||
     payload?.PublicKey ||
+    payload?.options?.publicKey ||
+    payload?.options?.PublicKey ||
     payload?.response ||
     payload?.Response;
   if (!options) {

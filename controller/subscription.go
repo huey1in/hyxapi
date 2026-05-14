@@ -168,6 +168,19 @@ func AdminUpdateSubscriptionPlan(c *gin.Context) {
 		if err := tx.Model(&model.SubscriptionPlan{}).Where("id = ?", id).Updates(updateMap).Error; err != nil {
 			return err
 		}
+		// 同步更新所有活跃订阅的限制快照
+		subUpdates := map[string]interface{}{
+			"allowed_groups":   req.Plan.AllowedGroups,
+			"allowed_models":   req.Plan.AllowedModels,
+			"concurrent_limit": req.Plan.ConcurrentLimit,
+			"rpm_limit":        req.Plan.RPMLimit,
+			"updated_at":       common.GetTimestamp(),
+		}
+		if err := tx.Model(&model.UserSubscription{}).
+			Where("plan_id = ? AND status = ?", id, "active").
+			Updates(subUpdates).Error; err != nil {
+			return err
+		}
 		return nil
 	})
 	if err != nil {

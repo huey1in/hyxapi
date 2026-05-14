@@ -105,13 +105,14 @@ const UserPage = () => {
     >
       <Card className='mb-4'>
         <div className='flex flex-col md:flex-row gap-2'>
-          <Input
-            placeholder='搜索用户名/邮箱'
-            value={keyword}
-            onChange={setKeyword}
-            onKeyDown={(e) => e.key === 'Enter' && load(1, keyword)}
-            width='full'
-          />
+          <div className='flex-1 min-w-[200px] max-w-[320px]'>
+            <Input
+              placeholder='搜索用户名/邮箱'
+              value={keyword}
+              onChange={setKeyword}
+              onKeyDown={(e) => e.key === 'Enter' && load(1, keyword)}
+            />
+          </div>
           <Button icon={Search} onClick={() => load(1, keyword)}>搜索</Button>
         </div>
       </Card>

@@ -21,9 +21,13 @@ const SIZE = {
 const TONE_DOT = {
   default: 'bg-ui-text-3',
   success: 'bg-emerald-500',
+  green:   'bg-emerald-500',
   warning: 'bg-amber-500',
   danger:  'bg-ui-danger',
+  red:     'bg-ui-danger',
   info:    'bg-blue-500',
+  blue:    'bg-blue-500',
+  grey:    'bg-ui-text-3',
 };
 
 const Tag = ({

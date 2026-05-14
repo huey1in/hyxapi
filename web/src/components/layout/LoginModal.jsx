@@ -123,6 +123,9 @@ const LoginPanel = ({ status, userDispatch, onSuccess, onSwitchToRegister, onSwi
   const [linuxdoLoading, setLinuxdoLoading] = useState(false);
   const [passkeySupported, setPasskeySupported] = useState(false);
   const [passkeyLoading, setPasskeyLoading] = useState(false);
+  const [twoFARequired, setTwoFARequired] = useState(false);
+  const [twoFACode, setTwoFACode] = useState('');
+  const [twoFALoading, setTwoFALoading] = useState(false);
 
   useEffect(() => {
     isPasskeySupported().then(setPasskeySupported).catch(() => setPasskeySupported(false));
@@ -146,6 +149,10 @@ const LoginPanel = ({ status, userDispatch, onSuccess, onSwitchToRegister, onSwi
       const res = await API.post('/api/user/login', inputs);
       const { success, message, data } = res.data || {};
       if (success) {
+        if (data?.require_2fa) {
+          setTwoFARequired(true);
+          return;
+        }
         try { localStorage.setItem('user', JSON.stringify(data)); } catch {}
         try { setUserData?.(data); } catch {}
         updateAPI();
@@ -154,6 +161,25 @@ const LoginPanel = ({ status, userDispatch, onSuccess, onSwitchToRegister, onSwi
         onSuccess(data);
       } else showError(message);
     } catch (e) { showError(e); } finally { setLoginLoading(false); }
+  };
+
+  const submit2FA = async () => {
+    if (!twoFACode.trim()) return showError('请输入验证码');
+    setTwoFALoading(true);
+    try {
+      const res = await API.post('/api/user/login/2fa', { code: twoFACode.trim() });
+      const { success, message, data } = res.data || {};
+      if (success) {
+        try { localStorage.setItem('user', JSON.stringify(data)); } catch {}
+        try { setUserData?.(data); } catch {}
+        updateAPI();
+        userDispatch({ type: 'login', payload: data });
+        showSuccess('登录成功！');
+        onSuccess(data);
+      } else {
+        showError(message || '验证码错误');
+      }
+    } catch (e) { showError(e); } finally { setTwoFALoading(false); }
   };
 
   const handlePasskey = async () => {
@@ -267,9 +293,21 @@ const LoginPanel = ({ status, userDispatch, onSuccess, onSwitchToRegister, onSwi
         <p className='text-[13px] text-ui-text-3 mt-0.5'>{getSystemName()}</p>
       </div>
 
-      {showEmailLogin || !hasOAuth ? emailView : oauthView}
+      {twoFARequired ? (
+        <div className='space-y-3'>
+          <p className='text-sm text-ui-text-2'>请输入您的两步验证码（TOTP）或备用码</p>
+          <div>
+            <label className='block mb-1.5 text-sm font-medium text-ui-text-1'>验证码</label>
+            <Input variant='auth' size={44} width='full' placeholder='6 位验证码或备用码'
+              value={twoFACode} onChange={(v) => setTwoFACode(v)}
+              onKeyDown={(e) => e.key === 'Enter' && submit2FA()} autoFocus />
+          </div>
+          <Button size='lg' block onClick={submit2FA} loading={twoFALoading}>验证</Button>
+          <Button variant='toggle' block onClick={() => { setTwoFARequired(false); setTwoFACode(''); }}>返回</Button>
+        </div>
+      ) : showEmailLogin || !hasOAuth ? emailView : oauthView}
 
-      {!status.self_use_mode_enabled && (
+      {!twoFARequired && !status.self_use_mode_enabled && (
         <p className='mt-5 pt-4 border-t border-ui-border text-[13px] text-ui-text-3'>
           没有账户？{' '}
           <Button variant='link' size='sm' onClick={onSwitchToRegister}>注册</Button>

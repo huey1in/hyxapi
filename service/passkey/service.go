@@ -33,6 +33,9 @@ func BuildWebAuthn(r *http.Request) (*webauthn.WebAuthn, error) {
 	if displayName == "" {
 		displayName = common.SystemName
 	}
+	if displayName == "" {
+		displayName = "Routify"
+	}
 
 	origins, err := resolveOrigins(r, settings)
 	if err != nil {
