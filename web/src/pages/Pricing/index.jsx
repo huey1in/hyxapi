@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Search, Copy, LayoutGrid, Rows3 } from 'lucide-react';
-import { API, showError, showSuccess, copy } from '../../helpers';
+import { API, showError, showSuccess, copy, getLobeHubIcon } from '../../helpers';
 import {
   PageShell, Card, Button, IconButton, Input, Select, Table, Tag, Modal, Loading,
 } from '../../components/ui';
@@ -70,10 +70,15 @@ const PricingPage = () => {
     { key: 'model_name', title: '模型', render: (r) => (
         <div className='flex items-center gap-2'>
           <span className='font-mono text-xs'>{r.model_name}</span>
-          <IconButton icon={Copy} onClick={() => { copy(r.model_name); showSuccess('已复制'); }} />
+          <IconButton icon={Copy} onClick={(e) => { e.stopPropagation(); copy(r.model_name); showSuccess('已复制'); }} />
         </div>
       ) },
-    { key: 'vendor', title: '厂商', render: (r) => vendors[r.vendor_id]?.name || '-' },
+    { key: 'vendor', title: '厂商', render: (r) => (
+        <div className='flex items-center gap-1.5'>
+          {vendors[r.vendor_id]?.icon && getLobeHubIcon(vendors[r.vendor_id].icon, 16)}
+          <span>{vendors[r.vendor_id]?.name || '-'}</span>
+        </div>
+      ) },
     { key: 'endpoints', title: '端点', render: (r) =>
         <div className='flex flex-wrap gap-1'>
           {(r.supported_endpoint_types || []).slice(0, 3).map((e) => <Tag key={e} color='blue'>{e}</Tag>)}
@@ -97,12 +102,13 @@ const PricingPage = () => {
     >
       <Card className='mb-4'>
         <div className='flex flex-wrap items-center gap-3'>
-          <Input
-            placeholder='搜索模型名'
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className='flex-1 min-w-[200px]'
-          />
+          <div className='flex-1 min-w-[200px] max-w-[320px]'>
+            <Input
+              placeholder='搜索模型名'
+              value={search}
+              onChange={setSearch}
+            />
+          </div>
           <div className='w-48'>
             <Select value={vendorFilter} onChange={setVendorFilter} options={vendorOptions} />
           </div>

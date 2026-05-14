@@ -1,7 +1,6 @@
-import React, { useContext, useEffect, useState } from 'react';
+import React, { useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowRight } from 'lucide-react';
-import { API, showError } from '../../helpers';
 import { UserContext } from '../../context/User';
 import { useLoginModal } from '../../context/LoginModal';
 import { Button } from '../../components/ui';
@@ -18,31 +17,11 @@ const Home = () => {
   const navigate = useNavigate();
   const { userState } = useContext(UserContext);
   const { openLoginModal } = useLoginModal();
-  const [content, setContent] = useState('');
-
-  useEffect(() => {
-    (async () => {
-      try {
-        const res = await API.get('/api/home_page_content');
-        const { success, data } = res.data || {};
-        if (success && data) setContent(data);
-      } catch (e) {
-        // silent
-      }
-    })();
-  }, []);
 
   const handleStart = () => {
     if (userState?.user) navigate('/console');
     else openLoginModal?.();
   };
-
-  if (content && content.startsWith('https://')) {
-    return <iframe src={content} className='w-full h-screen border-none' title='home' />;
-  }
-  if (content) {
-    return <div className='w-full overflow-x-hidden' dangerouslySetInnerHTML={{ __html: content }} />;
-  }
 
   return (
     <div className='w-full overflow-x-hidden' style={{ backgroundColor: 'var(--page-bg)' }}>
