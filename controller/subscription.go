@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"fmt"
 	"strconv"
 	"strings"
 
@@ -385,7 +386,8 @@ func AdminListSubscriptionCodes(c *gin.Context) {
 		common.ApiErrorMsg(c, "无效的套餐ID")
 		return
 	}
-	codes, err := model.ListSubscriptionCodesByPlan(planId)
+	keyword := c.Query("keyword")
+	codes, err := model.ListSubscriptionCodesByPlan(planId, keyword)
 	if err != nil {
 		common.ApiError(c, err)
 		return
@@ -405,6 +407,21 @@ func AdminDeleteSubscriptionCode(c *gin.Context) {
 		return
 	}
 	common.ApiSuccess(c, nil)
+}
+
+// AdminDeleteInvalidSubscriptionCodes removes used/expired codes for a plan.
+func AdminDeleteInvalidSubscriptionCodes(c *gin.Context) {
+	planId, _ := strconv.Atoi(c.Query("plan_id"))
+	if planId <= 0 {
+		common.ApiErrorMsg(c, "无效的套餐ID")
+		return
+	}
+	affected, err := model.DeleteInvalidSubscriptionCodes(planId)
+	if err != nil {
+		common.ApiError(c, err)
+		return
+	}
+	common.ApiSuccess(c, fmt.Sprintf("已清理 %d 个失效激活码", affected))
 }
 
 type RedeemSubscriptionCodeRequest struct {

@@ -64,13 +64,20 @@ func GenerateSubscriptionCodes(planId int, name string, count int, expiredTime i
 	return codes, nil
 }
 
-// ListSubscriptionCodesByPlan returns all codes attached to a plan.
-func ListSubscriptionCodesByPlan(planId int) ([]*SubscriptionRedemption, error) {
+// ListSubscriptionCodesByPlan returns codes for a plan, optionally filtered by keyword.
+func ListSubscriptionCodesByPlan(planId int, keyword string) ([]*SubscriptionRedemption, error) {
 	if planId <= 0 {
 		return nil, errors.New("invalid plan id")
 	}
 	var out []*SubscriptionRedemption
-	if err := DB.Where("plan_id = ?", planId).Order("id desc").Find(&out).Error; err != nil {
+	query := DB.Where("plan_id = ?", planId)
+	if keyword != "" {
+		query = query.Where("name LIKE ? OR "+"`key`"+" LIKE ?", keyword+"%", keyword+"%")
+		if common.UsingPostgreSQL {
+			query = DB.Where("plan_id = ?", planId).Where(`name LIKE ? OR "key" LIKE ?`, keyword+"%", keyword+"%")
+		}
+	}
+	if err := query.Order("id desc").Find(&out).Error; err != nil {
 		return nil, err
 	}
 	return out, nil
@@ -224,4 +231,12 @@ func cancelUserSubscriptionTx(tx *gorm.DB, sub *UserSubscription) error {
 		"updated_at": common.GetTimestamp(),
 	}
 	return tx.Model(&UserSubscription{}).Where("id = ?", sub.Id).Updates(updates).Error
+}
+
+// DeleteInvalidSubscriptionCodes removes used or expired codes for a given plan.
+func DeleteInvalidSubscriptionCodes(planId int) (int64, error) {
+	now := common.GetTimestamp()
+	result := DB.Where("plan_id = ? AND (status = ? OR (expired_time != 0 AND expired_time < ?))",
+		planId, SubscriptionRedemptionStatusUsed, now).Delete(&SubscriptionRedemption{})
+	return result.RowsAffected, result.Error
 }

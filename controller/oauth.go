@@ -123,8 +123,13 @@ func HandleOAuth(c *gin.Context) {
 		return
 	}
 
-	// 9. Setup login
-	setupLogin(user, c)
+	// 9. Setup login and redirect to home
+	session.Set("id", user.Id)
+	session.Set("username", user.Username)
+	session.Set("role", user.Role)
+	session.Set("status", user.Status)
+	_ = session.Save()
+	c.Redirect(http.StatusFound, "/")
 }
 
 // handleOAuthBind handles binding OAuth account to existing user

@@ -52,6 +52,7 @@ const QuotaCodesTab = () => {
   const [genForm, setGenForm] = useState({ name: '', quota: 500000, count: 1, expired_time: 0 });
   const [generating, setGenerating] = useState(false);
   const [generated, setGenerated] = useState(null);
+  const [searchKeyword, setSearchKeyword] = useState('');
 
   const toLocalInput = (ts) => {
     if (!ts) return '';
@@ -65,7 +66,10 @@ const QuotaCodesTab = () => {
   const load = async (p = 1) => {
     setLoading(true);
     try {
-      const res = await API.get(`/api/redemption/?p=${p}&page_size=${PAGE_SIZE}`);
+      const url = searchKeyword.trim()
+        ? `/api/redemption/search?keyword=${encodeURIComponent(searchKeyword.trim())}&p=${p}&page_size=${PAGE_SIZE}`
+        : `/api/redemption/?p=${p}&page_size=${PAGE_SIZE}`;
+      const res = await API.get(url);
       const { success, data, message } = res.data || {};
       if (success) {
         setRows(data?.items || data || []);
@@ -75,6 +79,7 @@ const QuotaCodesTab = () => {
     } catch (e) { showError(e); } finally { setLoading(false); }
   };
   useEffect(() => { load(1); }, []);
+  useEffect(() => { if (!searchKeyword) load(1); }, [searchKeyword]);
 
   const setStatus = async (row, status) => {
     try {
@@ -185,7 +190,13 @@ const QuotaCodesTab = () => {
         </div>
       </div>
 
-      <div className='flex justify-end mb-3'>
+      <div className='flex justify-between items-center mb-3'>
+        <div className='flex gap-2 items-center'>
+          <Input value={searchKeyword} onChange={setSearchKeyword} placeholder='搜索名称或兑换码' width={200}
+            onKeyDown={(e) => { if (e.key === 'Enter') load(1); }} />
+          <Button variant='toggle' onClick={() => load(1)}>搜索</Button>
+          {searchKeyword && <Button variant='toggle' onClick={() => { setSearchKeyword(''); }}>清除</Button>}
+        </div>
         <Button variant='toggle' onClick={() => setConfirm({ title: '清理所有失效兑换码?', onOk: removeInvalid })}>清理失效</Button>
       </div>
 
@@ -224,6 +235,8 @@ const SubscriptionCodesTab = () => {
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
   const [genForm, setGenForm] = useState({ count: 1, name: '', expired_time: 0 });
+  const [searchKeyword, setSearchKeyword] = useState('');
+  const [confirm, setConfirm] = useState(null);
 
   useEffect(() => {
     API.get('/api/subscription/admin/plans').then((res) => {
@@ -235,16 +248,17 @@ const SubscriptionCodesTab = () => {
     }).catch(() => {}).finally(() => setLoading(false));
   }, []);
 
-  const loadCodes = async (planId) => {
+  const loadCodes = async (planId, keyword) => {
     if (!planId) return;
     setLoading(true);
     try {
-      const res = await API.get(`/api/subscription/admin/plans/${planId}/codes`);
+      const params = keyword ? `?keyword=${encodeURIComponent(keyword)}` : '';
+      const res = await API.get(`/api/subscription/admin/plans/${planId}/codes${params}`);
       if (res.data?.success) setCodes(res.data.data || []);
     } catch (e) { showError(e); } finally { setLoading(false); }
   };
 
-  useEffect(() => { if (selectedPlan) loadCodes(selectedPlan); }, [selectedPlan]);
+  useEffect(() => { if (selectedPlan) loadCodes(selectedPlan, searchKeyword); }, [selectedPlan]);
 
   const [generated, setGenerated] = useState(null);
 
@@ -258,7 +272,7 @@ const SubscriptionCodesTab = () => {
         expired_time: genForm.expired_time || 0,
       });
       const { success, data, message } = res.data || {};
-      if (success) { showSuccess(`已生成 ${genForm.count} 个激活码`); setGenerated(data || []); loadCodes(selectedPlan); }
+      if (success) { showSuccess(`已生成 ${genForm.count} 个激活码`); setGenerated(data || []); loadCodes(selectedPlan, searchKeyword); }
       else showError(message);
     } catch (e) { showError(e); } finally { setGenerating(false); }
   };
@@ -266,7 +280,15 @@ const SubscriptionCodesTab = () => {
   const remove = async (id) => {
     try {
       await API.delete(`/api/subscription/admin/codes/${id}`);
-      showSuccess('已删除'); loadCodes(selectedPlan);
+      showSuccess('已删除'); loadCodes(selectedPlan, searchKeyword);
+    } catch (e) { showError(e); }
+  };
+
+  const removeInvalid = async () => {
+    try {
+      const res = await API.delete(`/api/subscription/admin/codes/invalid?plan_id=${selectedPlan}`);
+      if (res.data?.success) { showSuccess('已清理失效激活码'); setConfirm(null); loadCodes(selectedPlan, searchKeyword); }
+      else showError(res.data?.message);
     } catch (e) { showError(e); }
   };
 
@@ -335,6 +357,16 @@ const SubscriptionCodesTab = () => {
         </div>
       </div>
 
+      <div className='flex justify-between items-center mb-3'>
+        <div className='flex gap-2 items-center'>
+          <Input value={searchKeyword} onChange={setSearchKeyword} placeholder='搜索批次名或激活码' width={200}
+            onKeyDown={(e) => { if (e.key === 'Enter') loadCodes(selectedPlan, searchKeyword); }} />
+          <Button variant='toggle' onClick={() => loadCodes(selectedPlan, searchKeyword)}>搜索</Button>
+          {searchKeyword && <Button variant='toggle' onClick={() => { setSearchKeyword(''); loadCodes(selectedPlan, ''); }}>清除</Button>}
+        </div>
+        <Button variant='toggle' onClick={() => setConfirm({ title: '清理当前套餐所有失效激活码?', onOk: removeInvalid })}>清理失效</Button>
+      </div>
+
       {loading ? <Loading /> : (
         <Table columns={columns} rows={codes} rowKey={(r) => r.id} />
       )}
@@ -351,6 +383,8 @@ const SubscriptionCodesTab = () => {
           </div>
         </Modal>
       )}
+
+      {confirm && <ConfirmDialog open title={confirm.title} onConfirm={confirm.onOk} onClose={() => setConfirm(null)} />}
     </>
   );
 };

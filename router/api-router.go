@@ -129,6 +129,7 @@ func SetApiRouter(router *gin.Engine) {
 			// Subscription redemption codes (admin)
 			subscriptionAdminRoute.GET("/plans/:id/codes", controller.AdminListSubscriptionCodes)
 			subscriptionAdminRoute.POST("/plans/:id/codes", controller.AdminGenerateSubscriptionCodes)
+			subscriptionAdminRoute.DELETE("/codes/invalid", controller.AdminDeleteInvalidSubscriptionCodes)
 			subscriptionAdminRoute.DELETE("/codes/:id", controller.AdminDeleteSubscriptionCode)
 
 			// User subscription management (admin)

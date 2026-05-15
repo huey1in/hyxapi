@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from 'react';
-import { Plus, Search, Pencil, Trash2, ShieldCheck, ShieldOff, ArrowUp, ArrowDown, CreditCard } from 'lucide-react';
+import { Plus, Search, Pencil, Trash2, ShieldCheck, ShieldOff, ArrowUp, ArrowDown, CreditCard, DollarSign } from 'lucide-react';
 import { API, showError, showSuccess, renderQuota, timestamp2string } from '../../helpers';
+import { quotaToDisplayAmount, displayAmountToQuota } from '../../helpers/quota';
 import {
-  PageShell, Card, Button, IconButton, Input, Table, Pagination,
+  PageShell, Card, Button, IconButton, Input, NumberInput, Table, Pagination,
   Tag, Modal, SlideOver, ConfirmDialog, Loading, Select,
 } from '../../components/ui';
 
@@ -22,6 +23,7 @@ const UserPage = () => {
   const [editing, setEditing] = useState(null);
   const [confirm, setConfirm] = useState(null);
   const [subUser, setSubUser] = useState(null);
+  const [quotaUser, setQuotaUser] = useState(null);
 
   const load = async (p = 1, kw = '') => {
     setLoading(true);
@@ -80,6 +82,7 @@ const UserPage = () => {
         r.status === 1 ? <Tag color='green'>正常</Tag> : <Tag color='grey'>已禁用</Tag> },
     { key: 'ops', title: '操作', align: 'right', render: (r) => (
         <div className='flex justify-end gap-1'>
+          <IconButton icon={DollarSign} title='额度调整' onClick={() => setQuotaUser(r)} />
           <IconButton icon={CreditCard} title='订阅管理' onClick={() => setSubUser(r)} />
           <IconButton icon={Pencil} title='编辑' onClick={() => setEditing({ ...r })} />
           {r.status === 1
@@ -148,6 +151,10 @@ const UserPage = () => {
       {subUser && (
         <UserSubscriptionsPanel user={subUser} onClose={() => setSubUser(null)} />
       )}
+
+      {quotaUser && (
+        <QuotaAdjustModal user={quotaUser} onClose={() => setQuotaUser(null)} onSaved={() => { setQuotaUser(null); load(page, keyword); }} />
+      )}
     </PageShell>
   );
 };
@@ -194,6 +201,56 @@ const UserEditModal = ({ user, onClose, onSaved }) => {
   );
 };
 
+const QuotaAdjustModal = ({ user, onClose, onSaved }) => {
+  const [mode, setMode] = useState('add');
+  const [amount, setAmount] = useState(0);
+  const [saving, setSaving] = useState(false);
+
+  const save = async () => {
+    if (amount <= 0 && mode !== 'override') return showError('金额必须大于0');
+    setSaving(true);
+    try {
+      const res = await API.post('/api/user/manage', {
+        id: user.id,
+        action: 'add_quota',
+        mode,
+        value: displayAmountToQuota(amount),
+      });
+      if (res.data?.success) { showSuccess('额度调整成功'); onSaved(); }
+      else showError(res.data?.message);
+    } catch (e) { showError(e); } finally { setSaving(false); }
+  };
+
+  const modeOptions = [
+    { value: 'add', label: '增加' },
+    { value: 'subtract', label: '减少' },
+    { value: 'override', label: '覆盖' },
+  ];
+
+  return (
+    <Modal open title={`额度调整 - ${user.username}`} onClose={onClose} hideFooter width={400}>
+      <div className='space-y-4 p-1'>
+        <div>
+          <label className='block text-sm text-ui-text-2 mb-1.5'>当前余额</label>
+          <span className='text-sm font-medium'>{renderQuota(user.quota || 0, 2)}</span>
+        </div>
+        <div>
+          <label className='block text-sm text-ui-text-2 mb-1.5'>操作类型</label>
+          <Select options={modeOptions} value={mode} onChange={setMode} width='full' />
+        </div>
+        <div>
+          <label className='block text-sm text-ui-text-2 mb-1.5'>金额</label>
+          <NumberInput value={amount} onChange={setAmount} min={0} step='any' width='full' />
+        </div>
+        <div className='flex justify-end gap-2 pt-2'>
+          <Button variant='toggle' onClick={onClose}>取消</Button>
+          <Button loading={saving} onClick={save}>确认</Button>
+        </div>
+      </div>
+    </Modal>
+  );
+};
+
 const SUB_STATUS_TAG = {
   active:    { color: 'green', text: '生效中' },
   expired:   { color: 'grey',  text: '已过期' },
@@ -220,7 +277,7 @@ const UserSubscriptionsPanel = ({ user, onClose }) => {
       try {
         await loadSubs();
         const pRes = await API.get('/api/subscription/admin/plans');
-        if (pRes.data?.success) setPlans((pRes.data.data || []).filter((p) => p.enabled));
+        if (pRes.data?.success) setPlans((pRes.data.data || []).map((p) => p.plan || p).filter((p) => p.enabled));
       } catch (e) { showError(e); }
       finally { setLoading(false); }
     })();
