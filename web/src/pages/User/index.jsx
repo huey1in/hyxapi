@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from 'react';
-import { Plus, Search, Pencil, Trash2, ShieldCheck, ShieldOff, ArrowUp, ArrowDown } from 'lucide-react';
-import { API, showError, showSuccess, renderQuota } from '../../helpers';
+import { Plus, Search, Pencil, Trash2, ShieldCheck, ShieldOff, ArrowUp, ArrowDown, CreditCard } from 'lucide-react';
+import { API, showError, showSuccess, renderQuota, timestamp2string } from '../../helpers';
 import {
   PageShell, Card, Button, IconButton, Input, Table, Pagination,
-  Tag, Modal, SlideOver, ConfirmDialog, Loading,
+  Tag, Modal, SlideOver, ConfirmDialog, Loading, Select,
 } from '../../components/ui';
 
 const PAGE_SIZE = 20;
@@ -21,6 +21,7 @@ const UserPage = () => {
   const [keyword, setKeyword] = useState('');
   const [editing, setEditing] = useState(null);
   const [confirm, setConfirm] = useState(null);
+  const [subUser, setSubUser] = useState(null);
 
   const load = async (p = 1, kw = '') => {
     setLoading(true);
@@ -79,6 +80,7 @@ const UserPage = () => {
         r.status === 1 ? <Tag color='green'>正常</Tag> : <Tag color='grey'>已禁用</Tag> },
     { key: 'ops', title: '操作', align: 'right', render: (r) => (
         <div className='flex justify-end gap-1'>
+          <IconButton icon={CreditCard} title='订阅管理' onClick={() => setSubUser(r)} />
           <IconButton icon={Pencil} title='编辑' onClick={() => setEditing({ ...r })} />
           {r.status === 1
             ? <IconButton icon={ShieldOff} title='禁用' onClick={() => act(r.id, 'disable')} />
@@ -142,6 +144,10 @@ const UserPage = () => {
           onClose={() => setConfirm(null)}
         />
       )}
+
+      {subUser && (
+        <UserSubscriptionsPanel user={subUser} onClose={() => setSubUser(null)} />
+      )}
     </PageShell>
   );
 };
@@ -183,6 +189,116 @@ const UserEditModal = ({ user, onClose, onSaved }) => {
           <label className='block text-sm text-ui-text-2 mb-1.5'>邮箱</label>
           <Input value={form.email || ''} onChange={u('email')} width='full' />
         </div>
+      </div>
+    </SlideOver>
+  );
+};
+
+const SUB_STATUS_TAG = {
+  active:    { color: 'green', text: '生效中' },
+  expired:   { color: 'grey',  text: '已过期' },
+  cancelled: { color: 'red',   text: '已取消' },
+};
+
+const UserSubscriptionsPanel = ({ user, onClose }) => {
+  const [subs, setSubs] = useState([]);
+  const [plans, setPlans] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [selectedPlan, setSelectedPlan] = useState('');
+  const [creating, setCreating] = useState(false);
+
+  const loadSubs = async () => {
+    try {
+      const res = await API.get(`/api/subscription/admin/users/${user.id}/subscriptions`);
+      if (res.data?.success) setSubs(res.data.data || []);
+    } catch (e) { showError(e); }
+  };
+
+  useEffect(() => {
+    (async () => {
+      setLoading(true);
+      try {
+        await loadSubs();
+        const pRes = await API.get('/api/subscription/admin/plans');
+        if (pRes.data?.success) setPlans((pRes.data.data || []).filter((p) => p.enabled));
+      } catch (e) { showError(e); }
+      finally { setLoading(false); }
+    })();
+  }, []);
+
+  const create = async () => {
+    if (!selectedPlan) return;
+    setCreating(true);
+    try {
+      const res = await API.post(`/api/subscription/admin/users/${user.id}/subscriptions`, { plan_id: Number(selectedPlan) });
+      if (res.data?.success) { showSuccess('分配成功'); setSelectedPlan(''); await loadSubs(); }
+      else showError(res.data?.message);
+    } catch (e) { showError(e); }
+    finally { setCreating(false); }
+  };
+
+  const cancel = async (subId) => {
+    try {
+      const res = await API.post(`/api/subscription/admin/user_subscriptions/${subId}/invalidate`);
+      if (res.data?.success) { showSuccess('已取消'); await loadSubs(); }
+      else showError(res.data?.message);
+    } catch (e) { showError(e); }
+  };
+
+  const planOptions = plans.map((p) => ({ value: String(p.id), label: p.title }));
+
+  return (
+    <SlideOver open title={<span className='text-lg font-semibold'>订阅管理 - {user.username}</span>} onClose={onClose} width={480}>
+      <div className='px-6 pb-6 space-y-5'>
+        {loading ? <Loading /> : (
+          <>
+            <div style={{ padding: '16px', border: '1px solid #e9e9e9', borderRadius: 16 }}>
+              <label className='block text-sm text-ui-text-2 mb-2'>分配套餐</label>
+              <div className='flex gap-2'>
+                <div className='flex-1'>
+                  <Select options={planOptions} value={selectedPlan} onChange={setSelectedPlan} placeholder='选择套餐' />
+                </div>
+                <Button loading={creating} onClick={create} disabled={!selectedPlan}>分配</Button>
+              </div>
+            </div>
+
+            <div>
+              <label className='block text-sm font-medium text-ui-text-1 mb-3'>订阅记录</label>
+              {subs.length === 0 ? (
+                <p className='text-sm text-ui-text-3 text-center py-6'>暂无订阅</p>
+              ) : (
+                <div className='space-y-3'>
+                  {subs.map((s) => {
+                    const st = SUB_STATUS_TAG[s.status] || SUB_STATUS_TAG.expired;
+                    const total = s.amount_total || 0;
+                    const used = s.amount_used || 0;
+                    const pct = total > 0 ? Math.min(100, (used / total) * 100) : 0;
+                    return (
+                      <div key={s.id} style={{ padding: '14px 16px', border: '1px solid #e9e9e9', borderRadius: 12 }}>
+                        <div className='flex items-center justify-between mb-2'>
+                          <span className='text-sm font-medium'>{s.plan_title || `套餐 #${s.plan_id}`}</span>
+                          <Tag color={st.color}>{st.text}</Tag>
+                        </div>
+                        <div className='text-xs text-ui-text-3 mb-2'>
+                          {timestamp2string(s.start_time)} ~ {timestamp2string(s.end_time)}
+                        </div>
+                        <div className='flex items-center gap-2 mb-2'>
+                          <div style={{ flex: 1, height: 6, borderRadius: 3, background: '#F2F0E9', overflow: 'hidden' }}>
+                            <div style={{ height: '100%', borderRadius: 3, width: `${pct}%`, background: pct > 80 ? '#e74c3c' : '#000', transition: 'width 0.3s' }} />
+                          </div>
+                          <span className='text-xs text-ui-text-3 whitespace-nowrap'>{renderQuota(used, 2)} / {renderQuota(total, 2)}</span>
+                        </div>
+                        {s.status === 'active' && (
+                          <Button size='sm' variant='toggle' onClick={() => cancel(s.id)}>取消订阅</Button>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          </>
+        )}
       </div>
     </SlideOver>
   );

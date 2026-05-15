@@ -140,7 +140,7 @@ const LogPage = () => {
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
               {rows.map((r) => (
-                <LogCard key={r.id} row={r} isAdmin={isAdmin} open={expanded === r.id} onToggle={() => toggle(r.id)} />
+                <LogCard key={r.id} row={r} isAdmin={isAdmin} isMobile={isMobile} open={expanded === r.id} onToggle={() => toggle(r.id)} />
               ))}
             </div>
           )}
@@ -155,7 +155,7 @@ const LogPage = () => {
 
 // ── 单条日志卡片 ──────────────────────────────────────
 
-const LogCard = ({ row: r, isAdmin, open, onToggle }) => {
+const LogCard = ({ row: r, isAdmin, isMobile, open, onToggle }) => {
   const totalTokens = (r.prompt_tokens || 0) + (r.completion_tokens || 0);
   const typeColor = TYPE_COLORS[r.type] || '#999';
 
@@ -241,7 +241,7 @@ const LogCard = ({ row: r, isAdmin, open, onToggle }) => {
       {/* 展开详情 */}
       {open && (
         <div style={{ padding: '12px 18px 16px', borderTop: '1px solid #eeeeee', background: 'var(--page-bg)' }}>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px 24px', fontSize: 13 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '8px 24px', fontSize: 13 }}>
             <DetailItem label='Token 名称' value={r.token_name || '-'} />
             <DetailItem label='分组' value={r.group || '-'} />
             <DetailItem label='Prompt Tokens' value={renderNumber(r.prompt_tokens || 0)} />
@@ -264,7 +264,7 @@ const LogCard = ({ row: r, isAdmin, open, onToggle }) => {
             {isAdmin && other?.channel_id != null && <DetailItem label='渠道 ID' value={other.channel_id} />}
             <DetailItem label='Request ID' value={r.request_id || '-'} mono />
             <DetailItem label='IP' value={r.ip || '-'} mono />
-            {isAdmin && <DetailItem label='用户 ID' value={r.user_id ?? '-'} />}
+            {isAdmin && <DetailItem label='用户' value={r.username || '-'} />}
             {r.content && (
               <div style={{ gridColumn: '1 / -1' }}>
                 <DetailItem label='Content' value={r.content} multiline />
@@ -311,13 +311,13 @@ const TokenPill = ({ value, variant, label }) => {
 // ── 详情行 ──────────────────────────────────────────────
 
 const DetailItem = ({ label, value, mono, multiline }) => (
-  <div style={{ display: 'flex', gap: 8 }}>
+  <div style={{ display: 'flex', gap: 8, minWidth: 0 }}>
     <span style={{ color: 'var(--ui-text-3)', width: 110, flexShrink: 0, fontSize: 12 }}>{label}</span>
     <span style={{
-      color: 'var(--ui-text)', fontSize: 13,
+      color: 'var(--ui-text)', fontSize: 13, minWidth: 0,
       fontFamily: mono ? "'JetBrains Mono', monospace" : 'inherit',
       whiteSpace: multiline ? 'pre-wrap' : 'normal',
-      wordBreak: multiline ? 'break-all' : 'normal',
+      wordBreak: 'break-all',
       overflow: 'hidden', textOverflow: 'ellipsis',
     }}>{value}</span>
   </div>

@@ -1,7 +1,7 @@
 import React, { useContext, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { RefreshCw, ChevronDown, Copy, Globe, Megaphone, HelpCircle, Activity } from 'lucide-react';
-import { API, renderNumber, renderQuota, showSuccess, copy, getRelativeTime } from '../../helpers';
+import { API, renderNumber, renderQuota, showSuccess, copy, getRelativeTime, isAdmin } from '../../helpers';
 import { UserContext } from '../../context/User';
 import { StatusContext } from '../../context/Status';
 import { IconButton, Loading } from '../../components/ui';
@@ -47,12 +47,22 @@ const BarChart = ({ data, height = 180 }) => {
   );
 };
 
+const StatMini = ({ label, value }) => (
+  <div style={{ paddingBlock: 16, paddingInline: 16, border: '1px solid var(--ui-border)', borderRadius: 16 }}>
+    <div style={{ fontSize: 12, color: 'var(--ui-text-3)', marginBottom: 4 }}>{label}</div>
+    <div style={{ fontSize: 20, fontWeight: 700, color: 'var(--ui-text)', fontVariantNumeric: 'tabular-nums' }}>{value}</div>
+  </div>
+);
+
 const Dashboard = () => {
   const navigate = useNavigate();
   const [userState] = useContext(UserContext);
   const [statusState] = useContext(StatusContext);
   const [stats, setStats] = useState(null);
+  const [liveStats, setLiveStats] = useState({ quota: 0, rpm: 0, tpm: 0 });
   const [monthlyData, setMonthlyData] = useState([]);
+  const [modelStats, setModelStats] = useState([]);
+  const [userRanking, setUserRanking] = useState([]);
   const [loading, setLoading] = useState(true);
   const [chartLoading, setChartLoading] = useState(false);
   const isMobile = useIsMobile();
@@ -67,14 +77,59 @@ const Dashboard = () => {
     })();
     loadChart();
     loadUptime();
+    loadLiveStats();
+    if (isAdmin()) loadAdminData();
   }, []);
+
+  const loadAdminData = async () => {
+    const end = Math.floor(Date.now() / 1000);
+    const start = end - 30 * 86400;
+    try {
+      const [modelRes, userRes] = await Promise.all([
+        API.get(`/api/data/?start_timestamp=${start}&end_timestamp=${end}`),
+        API.get(`/api/data/users?start_timestamp=${start}&end_timestamp=${end}`),
+      ]);
+      if (modelRes.data?.success) {
+        const byModel = new Map();
+        (modelRes.data.data || []).forEach((it) => {
+          const name = it.model_name || 'unknown';
+          const cur = byModel.get(name) || { name, count: 0, quota: 0, tokens: 0 };
+          cur.count += it.count || 0;
+          cur.quota += it.quota || 0;
+          cur.tokens += it.token_used || 0;
+          byModel.set(name, cur);
+        });
+        setModelStats([...byModel.values()].sort((a, b) => b.quota - a.quota).slice(0, 15));
+      }
+      if (userRes.data?.success) {
+        const byUser = new Map();
+        (userRes.data.data || []).forEach((it) => {
+          const name = it.username || 'unknown';
+          const cur = byUser.get(name) || { name, count: 0, quota: 0, tokens: 0 };
+          cur.count += it.count || 0;
+          cur.quota += it.quota || 0;
+          cur.tokens += it.token_used || 0;
+          byUser.set(name, cur);
+        });
+        setUserRanking([...byUser.values()].sort((a, b) => b.quota - a.quota).slice(0, 10));
+      }
+    } catch {}
+  };
+
+  const loadLiveStats = async () => {
+    try {
+      const url = isAdmin() ? '/api/log/stat' : '/api/log/self/stat';
+      const res = await API.get(url);
+      if (res.data?.success) setLiveStats(res.data.data || { quota: 0, rpm: 0, tpm: 0 });
+    } catch {}
+  };
 
   const loadChart = async () => {
     setChartLoading(true);
     try {
       const end = Math.floor(Date.now() / 1000);
       const start = end - 365 * 86400;
-      const res = await API.get(`/api/data/self/?start_timestamp=${start}&end_timestamp=${end}&default_time=month`);
+      const res = await API.get(`/api/data/${isAdmin() ? '' : 'self/'}?start_timestamp=${start}&end_timestamp=${end}&default_time=month`);
       const list = res.data?.success ? (res.data.data || []) : [];
       const byMonth = new Map();
       list.forEach((it) => {
@@ -130,7 +185,7 @@ const Dashboard = () => {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: isMobile ? 20 : 28, width: '100%', maxWidth: 960, marginInline: 'auto', padding: isMobile ? '16px' : '24px 16px' }}>
       {/* 页面标题 */}
-      <h1 style={{ fontSize: 18, fontWeight: 600, color: 'var(--ui-text)', paddingBlockEnd: 8 }}>用量信息</h1>
+      <h1 style={{ fontSize: 18, fontWeight: 600, color: 'var(--ui-text)', paddingBlockEnd: 8 }}>{isAdmin() ? '全局用量' : '用量信息'}</h1>
 
       {/* 统计卡片 */}
       <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(2, 1fr)', gap: 12 }}>
@@ -166,6 +221,14 @@ const Dashboard = () => {
         </div>
       </div>
 
+      {/* 实时统计 */}
+      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(4, 1fr)', gap: 12 }}>
+        <StatMini label='总请求数' value={renderNumber(u.request_count || 0)} />
+        <StatMini label='总消费' value={renderQuota(u.used_quota || 0)} />
+        <StatMini label='当前 RPM' value={renderNumber(liveStats.rpm || 0)} />
+        <StatMini label='当前 TPM' value={renderNumber(liveStats.tpm || 0)} />
+      </div>
+
       {/* 每月用量 */}
       <div style={{ paddingBlock: '16px 8px', paddingInline: 16, border: '1px solid var(--ui-border)', borderRadius: 26 }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBlockEnd: 8 }}>
@@ -183,6 +246,65 @@ const Dashboard = () => {
           )}
         </div>
       </div>
+
+      {/* 管理员数据面板 */}
+      {isAdmin() && modelStats.length > 0 && (
+        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 12 }}>
+          {/* 模型统计 */}
+          <div style={{ padding: '16px 20px', border: '1px solid var(--ui-border)', borderRadius: 26, overflow: 'hidden' }}>
+            <span style={{ fontSize: 16, fontWeight: 600, color: 'var(--ui-text)' }}>模型调用 Top 15（近30天）</span>
+            <div style={{ marginTop: 12, maxHeight: 360, overflowY: 'auto' }}>
+              {modelStats.map((m, i) => {
+                const maxQ = modelStats[0]?.quota || 1;
+                return (
+                  <div key={m.name} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+                    <span style={{ fontSize: 11, color: 'var(--ui-text-3)', width: 18, textAlign: 'right' }}>{i + 1}</span>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, marginBottom: 2 }}>
+                        <span style={{ color: 'var(--ui-text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{m.name}</span>
+                        <span style={{ color: 'var(--ui-text-3)', flexShrink: 0, marginLeft: 8 }}>{renderNumber(m.count)} 次</span>
+                      </div>
+                      <div style={{ height: 4, borderRadius: 2, background: 'var(--ui-bg-subtle)' }}>
+                        <div style={{ height: '100%', borderRadius: 2, width: `${(m.quota / maxQ) * 100}%`, background: 'var(--ui-accent)' }} />
+                      </div>
+                      <div style={{ fontSize: 11, color: 'var(--ui-text-3)', marginTop: 2 }}>
+                        消费 {renderQuota(m.quota)} · Token {renderNumber(m.tokens)}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* 用户消费排行 */}
+          <div style={{ padding: '16px 20px', border: '1px solid var(--ui-border)', borderRadius: 26, overflow: 'hidden' }}>
+            <span style={{ fontSize: 16, fontWeight: 600, color: 'var(--ui-text)' }}>用户消费 Top 10（近30天）</span>
+            <div style={{ marginTop: 12, maxHeight: 360, overflowY: 'auto' }}>
+              {userRanking.map((u, i) => {
+                const maxQ = userRanking[0]?.quota || 1;
+                return (
+                  <div key={u.name} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+                    <span style={{ fontSize: 11, color: 'var(--ui-text-3)', width: 18, textAlign: 'right' }}>{i + 1}</span>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, marginBottom: 2 }}>
+                        <span style={{ color: 'var(--ui-text)' }}>{u.name}</span>
+                        <span style={{ color: 'var(--ui-text-3)', flexShrink: 0, marginLeft: 8 }}>{renderQuota(u.quota)}</span>
+                      </div>
+                      <div style={{ height: 4, borderRadius: 2, background: 'var(--ui-bg-subtle)' }}>
+                        <div style={{ height: '100%', borderRadius: 2, width: `${(u.quota / maxQ) * 100}%`, background: 'var(--ui-accent)' }} />
+                      </div>
+                      <div style={{ fontSize: 11, color: 'var(--ui-text-3)', marginTop: 2 }}>
+                        {renderNumber(u.count)} 次 · Token {renderNumber(u.tokens)}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* 信息面板 */}
       <InfoPanels

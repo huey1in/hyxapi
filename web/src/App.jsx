@@ -22,6 +22,7 @@ import Forbidden     from './pages/Forbidden';
 import PrivacyPolicy from './pages/PrivacyPolicy';
 import UserAgreement from './pages/UserAgreement';
 import PasswordReset from './pages/PasswordReset';
+import Register     from './pages/Register';
 
 const App = () => (
   <Routes>
@@ -33,6 +34,7 @@ const App = () => (
       <Route path='/agreement'          element={<UserAgreement />} />
       <Route path='/setup'              element={<Setup />} />
       <Route path='/user/reset'         element={<PasswordReset />} />
+      <Route path='/register'           element={<Register />} />
       <Route path='/forbidden'          element={<Forbidden />} />
 
       <Route path='/console'                  element={<Dashboard />} />
