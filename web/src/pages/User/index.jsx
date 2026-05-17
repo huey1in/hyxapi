@@ -260,6 +260,7 @@ const SUB_STATUS_TAG = {
 const UserSubscriptionsPanel = ({ user, onClose }) => {
   const [subs, setSubs] = useState([]);
   const [plans, setPlans] = useState([]);
+  const [allPlans, setAllPlans] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedPlan, setSelectedPlan] = useState('');
   const [creating, setCreating] = useState(false);
@@ -267,7 +268,7 @@ const UserSubscriptionsPanel = ({ user, onClose }) => {
   const loadSubs = async () => {
     try {
       const res = await API.get(`/api/subscription/admin/users/${user.id}/subscriptions`);
-      if (res.data?.success) setSubs(res.data.data || []);
+      if (res.data?.success) setSubs((res.data.data || []).map((item) => item.subscription || item));
     } catch (e) { showError(e); }
   };
 
@@ -277,7 +278,11 @@ const UserSubscriptionsPanel = ({ user, onClose }) => {
       try {
         await loadSubs();
         const pRes = await API.get('/api/subscription/admin/plans');
-        if (pRes.data?.success) setPlans((pRes.data.data || []).map((p) => p.plan || p).filter((p) => p.enabled));
+        if (pRes.data?.success) {
+          const all = (pRes.data.data || []).map((p) => p.plan || p);
+          setAllPlans(all);
+          setPlans(all.filter((p) => p.enabled));
+        }
       } catch (e) { showError(e); }
       finally { setLoading(false); }
     })();
@@ -330,10 +335,11 @@ const UserSubscriptionsPanel = ({ user, onClose }) => {
                     const total = s.amount_total || 0;
                     const used = s.amount_used || 0;
                     const pct = total > 0 ? Math.min(100, (used / total) * 100) : 0;
+                    const planName = allPlans.find((p) => p.id === s.plan_id)?.title || `套餐 #${s.plan_id}`;
                     return (
                       <div key={s.id} style={{ padding: '14px 16px', border: '1px solid #e9e9e9', borderRadius: 12 }}>
                         <div className='flex items-center justify-between mb-2'>
-                          <span className='text-sm font-medium'>{s.plan_title || `套餐 #${s.plan_id}`}</span>
+                          <span className='text-sm font-medium'>{planName}</span>
                           <Tag color={st.color}>{st.text}</Tag>
                         </div>
                         <div className='text-xs text-ui-text-3 mb-2'>

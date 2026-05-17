@@ -337,7 +337,12 @@ func NewBillingSession(c *gin.Context, relayInfo *relaycommon.RelayInfo, preCons
 		}
 	}
 	if useSubscription {
-		return trySubscription()
+		session, apiErr := trySubscription()
+		if apiErr == nil {
+			return session, nil
+		}
+		// 订阅额度不足时回退到钱包扣费
+		return tryWallet()
 	}
 	return tryWallet()
 }

@@ -23,11 +23,17 @@ const (
 	apiHeartbeatPath = "/api/status-page/heartbeat/"
 )
 
+type Heartbeat struct {
+	Status int    `json:"status"`
+	Time   string `json:"time"`
+	Ping   int    `json:"ping"`
+}
+
 type Monitor struct {
-	Name   string  `json:"name"`
-	Uptime float64 `json:"uptime"`
-	Status int     `json:"status"`
-	Group  string  `json:"group,omitempty"`
+	Name       string      `json:"name"`
+	Uptime     float64     `json:"uptime"`
+	Status     int         `json:"status"`
+	Heartbeats []Heartbeat `json:"heartbeats"`
 }
 
 type UptimeGroupResult struct {
@@ -83,7 +89,9 @@ func fetchGroupData(ctx context.Context, client *http.Client, groupConfig map[st
 
 	var heartbeatData struct {
 		HeartbeatList map[string][]struct {
-			Status int `json:"status"`
+			Status int    `json:"status"`
+			Time   string `json:"time"`
+			Ping   int    `json:"ping"`
 		} `json:"heartbeatList"`
 		UptimeList map[string]float64 `json:"uptimeList"`
 	}
@@ -107,8 +115,8 @@ func fetchGroupData(ctx context.Context, client *http.Client, groupConfig map[st
 
 		for _, m := range pg.MonitorList {
 			monitor := Monitor{
-				Name:  m.Name,
-				Group: pg.Name,
+				Name:       m.Name,
+				Heartbeats: []Heartbeat{},
 			}
 
 			monitorID := strconv.Itoa(m.ID)
@@ -119,6 +127,13 @@ func fetchGroupData(ctx context.Context, client *http.Client, groupConfig map[st
 
 			if heartbeats, exists := heartbeatData.HeartbeatList[monitorID]; exists && len(heartbeats) > 0 {
 				monitor.Status = heartbeats[0].Status
+				for _, hb := range heartbeats {
+					monitor.Heartbeats = append(monitor.Heartbeats, Heartbeat{
+						Status: hb.Status,
+						Time:   hb.Time,
+						Ping:   hb.Ping,
+					})
+				}
 			}
 
 			result.Monitors = append(result.Monitors, monitor)

@@ -70,6 +70,7 @@ const Dashboard = () => {
 
   useEffect(() => {
     (async () => {
+      setLoading(true);
       try {
         const res = await API.get('/api/user/self');
         if (res.data?.success) setStats(res.data.data);
@@ -79,7 +80,7 @@ const Dashboard = () => {
     loadUptime();
     loadLiveStats();
     if (isAdmin()) loadAdminData();
-  }, []);
+  }, [userState?.user]);
 
   const loadAdminData = async () => {
     const end = Math.floor(Date.now() / 1000);
@@ -180,7 +181,7 @@ const Dashboard = () => {
 
   const u = stats || userState?.user || {};
 
-  if (loading) return <div className='p-8'><Loading /></div>;
+  if (loading) return <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '60vh' }}><Loading /></div>;
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: isMobile ? 20 : 28, width: '100%', maxWidth: 960, marginInline: 'auto', padding: isMobile ? '16px' : '24px 16px' }}>
@@ -370,7 +371,7 @@ const InfoPanels = ({ apiInfoEnabled, announcementsEnabled, faqEnabled, uptimeEn
         {active === 'api' && <ApiInfoSection data={apiInfoData} />}
         {active === 'news' && <AnnouncementsSection data={announcements} />}
         {active === 'faq' && <FaqSection data={faqData} />}
-        {active === 'uptime' && <UptimeSection data={uptimeData} loading={uptimeLoading} group={uptimeGroup} setGroup={setUptimeGroup} />}
+        {active === 'uptime' && <UptimeSection data={uptimeData} loading={uptimeLoading} />}
       </div>
     </div>
   );
@@ -451,52 +452,61 @@ const FaqItem = ({ item, last }) => {
   );
 };
 
-const UptimeSection = ({ data, loading, group, setGroup }) => {
+const UptimeSection = ({ data, loading }) => {
   if (loading) return <div style={{ padding: '32px 0', textAlign: 'center' }}><Loading size='sm' /></div>;
   if (!data?.length) return <EmptyState text='暂无监控服务' />;
 
-  const groups = data.map((g, i) => ({ key: String(i), label: g.categoryName }));
-  const current = data[Number(group) || 0];
-  const monitors = current?.monitorList || [];
+  const groups = data.map((g) => {
+    const monitors = g.monitors || g.monitorList || [];
+    const allUp = monitors.every((m) => m.status === 1);
+    const avgUptime = monitors.length > 0 ? monitors.reduce((s, m) => s + (m.uptime || 0), 0) / monitors.length : 0;
+    const beats = monitors.length > 0 ? (monitors[0].heartbeats || []).map((hb, i) => {
+      const worst = monitors.reduce((s, m) => {
+        const mhb = (m.heartbeats || [])[i];
+        if (!mhb || mhb.status === 0) return 0;
+        if (mhb.status === 2 && s !== 0) return 2;
+        return s;
+      }, hb.status);
+      return { ...hb, status: worst };
+    }) : [];
+    return { name: g.categoryName, status: allUp ? 1 : 0, uptime: avgUptime, heartbeats: beats };
+  });
+
+  if (!groups.length) return <EmptyState text='暂无监控' />;
 
   return (
-    <div>
-      {groups.length > 1 && (
-        <div style={{ display: 'flex', gap: 4, padding: '10px 16px', borderBottom: '1px solid var(--ui-divider)', overflowX: 'auto' }}>
-          {groups.map((g) => (
-            <button
-              key={g.key}
-              onClick={() => setGroup(g.key)}
-              style={{
-                cursor: 'pointer', height: 26, paddingInline: 10, borderRadius: 13, border: 'none',
-                fontSize: 12, fontWeight: group === g.key ? 500 : 400,
-                color: group === g.key ? 'var(--ui-text)' : 'var(--ui-text-2)',
-                background: group === g.key ? 'var(--ui-bg-subtle)' : 'transparent',
-                whiteSpace: 'nowrap', transition: 'background 0.15s',
-              }}
-            >{g.label}</button>
-          ))}
-        </div>
-      )}
-      {monitors.length === 0 ? <EmptyState text='暂无监控' /> : (
-        <div>
-          {monitors.map((m, i) => {
-            const statusInfo = UPTIME_STATUS_MAP[m.status] || {};
-            const color = statusInfo.color || '#999';
-            const pct = ((m.uptime || 0) * 100).toFixed(2);
-            return (
-              <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 18px', borderBottom: i < monitors.length - 1 ? '1px solid #eeeeee' : 'none' }}>
+    <div style={{ padding: '12px 0' }}>
+      {groups.map((m, i) => {
+        const statusInfo = UPTIME_STATUS_MAP[m.status] || {};
+        const color = statusInfo.color || '#999';
+        const pct = ((m.uptime || 0) * 100).toFixed(2);
+        const beats = m.heartbeats || [];
+        return (
+          <div key={i} style={{ padding: '12px 18px', borderBottom: i < groups.length - 1 ? '1px solid #eeeeee' : 'none' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                 <span style={{ width: 7, height: 7, borderRadius: '50%', background: color, flexShrink: 0 }} />
-                <span style={{ flex: 1, fontSize: 14, color: 'var(--ui-text)' }}>{m.name}</span>
-                <div style={{ width: 80, height: 4, borderRadius: 2, background: 'var(--ui-bg-subtle)', overflow: 'hidden' }}>
-                  <div style={{ height: '100%', borderRadius: 2, background: color, width: `${pct}%`, transition: 'width 0.3s' }} />
-                </div>
-                <span style={{ fontSize: 12, color: 'var(--ui-text-2)', fontVariantNumeric: 'tabular-nums', width: 48, textAlign: 'right' }}>{pct}%</span>
+                <span style={{ fontSize: 14, color: 'var(--ui-text)', fontWeight: 500 }}>{m.name}</span>
               </div>
-            );
-          })}
-        </div>
-      )}
+              <span style={{ fontSize: 12, color: 'var(--ui-text-2)', fontVariantNumeric: 'tabular-nums' }}>{pct}%</span>
+            </div>
+            {beats.length > 0 && (
+              <div style={{ display: 'flex', gap: 2, height: 32, alignItems: 'stretch' }}>
+                {beats.map((hb, j) => {
+                  const hbColor = (UPTIME_STATUS_MAP[hb.status] || {}).color || '#d1d5db';
+                  return (
+                    <div
+                      key={j}
+                      title={`${hb.time} - ${hb.ping}ms`}
+                      style={{ flex: 1, borderRadius: 3, background: hbColor, cursor: 'default' }}
+                    />
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        );
+      })}
     </div>
   );
 };
