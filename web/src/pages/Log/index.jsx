@@ -219,7 +219,7 @@ const LogCard = ({ row: r, isAdmin, isMobile, open, onToggle }) => {
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             {r.quota > 0 && (
               <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--ui-text)', fontVariantNumeric: 'tabular-nums' }}>
-                {renderQuota(r.quota)}
+                {renderQuota(r.quota, 6)}
               </span>
             )}
             <ChevronDown
