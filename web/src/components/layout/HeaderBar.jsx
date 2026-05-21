@@ -30,12 +30,17 @@ const HeaderBar = () => {
   const isMobile = useIsMobile();
   const user = userState?.user;
   const isConsoleRoute = location.pathname.startsWith('/console');
+  const hideLogoOnMobile = isConsoleRoute
+    || location.pathname.startsWith('/pricing')
+    || location.pathname.startsWith('/status');
 
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [langMenuOpen, setLangMenuOpen] = useState(false);
   const [noticeOpen, setNoticeOpen] = useState(false);
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const userMenuRef = useRef(null);
   const langMenuRef = useRef(null);
+  const mobileNavRef = useRef(null);
 
   const status = statusState?.status || {};
   const docsLink = status?.docs_link || '';
@@ -66,6 +71,7 @@ const HeaderBar = () => {
     const onDown = (e) => {
       if (!userMenuRef.current?.contains(e.target)) setUserMenuOpen(false);
       if (!langMenuRef.current?.contains(e.target)) setLangMenuOpen(false);
+      if (!mobileNavRef.current?.contains(e.target)) setMobileNavOpen(false);
     };
     document.addEventListener('mousedown', onDown);
     return () => document.removeEventListener('mousedown', onDown);
@@ -135,9 +141,11 @@ const HeaderBar = () => {
             <Menu size={22} className='text-ui-text' />
           </button>
         )}
-        <Link to='/' className='flex items-center gap-2 text-ui-text-1 font-semibold'>
-          <span style={{ letterSpacing: '-0.02em', fontSize: isMobile ? 22 : 30 }}>Routify</span>
-        </Link>
+        {!(isMobile && hideLogoOnMobile) && (
+          <Link to='/' className='flex items-center gap-2 text-ui-text-1 font-semibold'>
+            <span style={{ letterSpacing: '-0.02em', fontSize: isMobile ? 22 : 30 }}>Routify</span>
+          </Link>
+        )}
 
         <nav className='hidden md:inline-flex items-center gap-4'>
           {navLinks.map((link) => {
@@ -171,6 +179,62 @@ const HeaderBar = () => {
             );
           })}
         </nav>
+
+        {/* Mobile nav dropdown trigger */}
+        <div ref={mobileNavRef} className='relative md:hidden'>
+          <button
+            onClick={() => setMobileNavOpen((p) => !p)}
+            className='flex items-center gap-1 px-2 h-8 rounded-lg text-sm text-ui-text-1 hover:bg-ui-bg-subtle transition-colors'
+          >
+            <span>{navLinks.find((l) => l.key === activeKey)?.text || t('菜单')}</span>
+            <ChevronDownIcon size={14} className='text-ui-text-3' />
+          </button>
+          {mobileNavOpen && (
+            <div className='absolute left-0 top-full mt-1 w-44 rounded-xl border border-ui-border bg-[var(--page-bg)] shadow-lg overflow-hidden z-50'>
+              {navLinks.map((link) => {
+                const isActive = link.key === activeKey;
+                const itemClass = `w-full flex items-center px-3 py-2 text-sm transition-colors ${
+                  isActive ? 'bg-ui-bg-subtle text-ui-text-1 font-medium' : 'text-ui-text-2 hover:bg-ui-bg-subtle'
+                }`;
+                if (link.externalLink) {
+                  return (
+                    <a
+                      key={link.key}
+                      href={link.externalLink}
+                      target='_blank'
+                      rel='noopener noreferrer'
+                      onClick={() => setMobileNavOpen(false)}
+                      className={itemClass}
+                    >
+                      {link.text}
+                    </a>
+                  );
+                }
+                const needsLogin = (link.key === 'console' && !user) || (link.key === 'pricing' && pricingRequireAuth && !user);
+                if (needsLogin) {
+                  return (
+                    <button
+                      key={link.key}
+                      onClick={() => { setMobileNavOpen(false); openLoginModal?.(); }}
+                      className={itemClass}
+                    >
+                      {link.text}
+                    </button>
+                  );
+                }
+                return (
+                  <button
+                    key={link.key}
+                    onClick={() => { setMobileNavOpen(false); navigate(link.to); }}
+                    className={itemClass}
+                  >
+                    {link.text}
+                  </button>
+                );
+              })}
+            </div>
+          )}
+        </div>
       </div>
 
       <div className='flex items-center gap-2 md:gap-3'>
