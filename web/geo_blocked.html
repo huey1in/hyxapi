@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>服务不可用 - Service Unavailable</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: Kefaiii, Gilroy, Noto Sans SC, -apple-system, sans-serif;
+            background: #FFFDF7;
+            color: #000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 24px 16px;
+        }
+        .container {
+            width: 100%;
+            max-width: 740px;
+            margin: 0 auto;
+        }
+        .card {
+            background: #FFFDF7;
+            border: 1px solid #e9e9e9;
+            border-radius: 26px;
+            padding: 48px 40px;
+            text-align: center;
+        }
+        .icon {
+            width: 80px;
+            height: 80px;
+            margin: 0 auto 24px;
+            background: #F2F0E9;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 40px;
+        }
+        h1 {
+            font-size: 24px;
+            font-weight: 600;
+            color: #000;
+            margin-bottom: 12px;
+        }
+        .subtitle {
+            font-size: 16px;
+            color: #666;
+            margin-bottom: 40px;
+        }
+        .notice-box {
+            background: #F2F0E9;
+            border-radius: 16px;
+            padding: 24px;
+            text-align: left;
+            margin-bottom: 28px;
+        }
+        .notice-box h2 {
+            font-size: 16px;
+            font-weight: 600;
+            color: #000;
+            margin-bottom: 16px;
+        }
+        .notice-box p {
+            font-size: 14px;
+            line-height: 1.6;
+            color: #666;
+            margin-bottom: 12px;
+        }
+        .notice-box p strong {
+            color: #000;
+            font-weight: 600;
+        }
+        .notice-box ul {
+            list-style: none;
+            padding-left: 0;
+            margin-top: 12px;
+        }
+        .notice-box li {
+            font-size: 14px;
+            line-height: 1.8;
+            color: #666;
+            padding-left: 16px;
+            position: relative;
+        }
+        .notice-box li:before {
+            content: "•";
+            position: absolute;
+            left: 0;
+            color: #999;
+        }
+        .divider {
+            height: 1px;
+            background: #eeeeee;
+            margin: 28px 0;
+        }
+        .footer {
+            font-size: 13px;
+            color: #999;
+            line-height: 1.6;
+        }
+        .footer a {
+            color: #666;
+            text-decoration: none;
+            transition: color 0.2s;
+        }
+        .footer a:hover {
+            color: #000;
+        }
+        @media (max-width: 640px) {
+            .card {
+                padding: 32px 24px;
+            }
+            h1 {
+                font-size: 20px;
+            }
+            .subtitle {
+                font-size: 14px;
+            }
+            .notice-box {
+                padding: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="card">
+            <div class="icon">🚫</div>
+            <h1>服务不可用</h1>
+            <p class="subtitle">Service Unavailable</p>
+
+            <div class="notice-box">
+                <h2>重要通知：服务范围限制</h2>
+                <p><strong>RoutifyAPI 不在中国大陆提供服务。</strong></p>
+                <ul>
+                    <li>本服务仅面向中国大陆以外的地区和用户</li>
+                    <li>中国大陆用户不得注册或使用 RoutifyAPI 服务</li>
+                    <li>我们的服务器和数据中心不位于中国大陆</li>
+                    <li>所有业务运营和数据处理均在中国大陆以外进行</li>
+                </ul>
+            </div>
+
+            <div class="notice-box">
+                <h2>Important Notice: Service Coverage</h2>
+                <p><strong>RoutifyAPI does not provide services in Mainland China.</strong></p>
+                <ul>
+                    <li>This service is only available to regions and users outside Mainland China</li>
+                    <li>Users in Mainland China are not permitted to register or use RoutifyAPI services</li>
+                    <li>Our servers and data centers are not located in Mainland China</li>
+                    <li>All business operations and data processing are conducted outside Mainland China</li>
+                </ul>
+            </div>
+
+            <div class="divider"></div>
+
+            <div class="footer">
+                <p>如有疑问，请联系：<a href="mailto:2926957031@qq.com">2926957031@qq.com</a></p>
+                <p>For inquiries, please contact: <a href="mailto:2926957031@qq.com">2926957031@qq.com</a></p>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

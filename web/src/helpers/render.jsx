@@ -439,6 +439,11 @@ export function getLobeHubIcon(iconName, size = 14) {
     return <span className='inline-flex items-center justify-center w-5 h-5 rounded-full bg-gray-200 text-xs font-medium text-gray-600'>?</span>;
   }
 
+  // 如果是 HTTP/HTTPS URL，直接返回 img 标签
+  if (iconName.startsWith('http://') || iconName.startsWith('https://')) {
+    return <img src={iconName} alt="" style={{ width: size, height: size, display: 'inline-block' }} />;
+  }
+
   // 解析组件路径与点号链式属性
   const segments = String(iconName).split('.');
   const baseKey = segments[0];
