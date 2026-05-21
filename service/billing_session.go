@@ -335,6 +335,22 @@ func NewBillingSession(c *gin.Context, relayInfo *relaycommon.RelayInfo, preCons
 				}
 			}
 		}
+		// 检查订阅是否允许当前模型，不允许则回落到钱包
+		if useSubscription {
+			allowedModels := sub.ParseAllowedModels()
+			if len(allowedModels) > 0 {
+				modelAllowed := false
+				for _, m := range allowedModels {
+					if m == relayInfo.OriginModelName {
+						modelAllowed = true
+						break
+					}
+				}
+				if !modelAllowed {
+					useSubscription = false
+				}
+			}
+		}
 	}
 	if useSubscription {
 		session, apiErr := trySubscription()

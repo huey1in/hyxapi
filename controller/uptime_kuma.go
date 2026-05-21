@@ -64,6 +64,7 @@ func fetchGroupData(ctx context.Context, client *http.Client, groupConfig map[st
 	url, _ := groupConfig["url"].(string)
 	slug, _ := groupConfig["slug"].(string)
 	categoryName, _ := groupConfig["categoryName"].(string)
+	monitorFilter, _ := groupConfig["monitorName"].(string)
 
 	result := UptimeGroupResult{
 		CategoryName: categoryName,
@@ -114,6 +115,11 @@ func fetchGroupData(ctx context.Context, client *http.Client, groupConfig map[st
 		}
 
 		for _, m := range pg.MonitorList {
+			// 如果配置了 monitorName 过滤器，只处理匹配的监控项
+			if monitorFilter != "" && m.Name != monitorFilter {
+				continue
+			}
+
 			monitor := Monitor{
 				Name:       m.Name,
 				Heartbeats: []Heartbeat{},

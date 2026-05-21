@@ -46,6 +46,7 @@ const HeaderBar = () => {
       { key: 'home',    text: t('首页'),     to: '/' },
       { key: 'console', text: t('控制台'),   to: '/console' },
       { key: 'pricing', text: t('模型广场'), to: '/pricing' },
+      { key: 'status',  text: t('服务状态'), to: '/status' },
     ];
     if (docsLink) links.push({ key: 'docs', text: t('文档'), externalLink: docsLink });
     return links;

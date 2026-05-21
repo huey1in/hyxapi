@@ -84,7 +84,8 @@ func Distribute() func(c *gin.Context) {
 				defer subscriptionConcurrentRelease()
 			}
 
-			// 订阅级模型限制：取严交集
+			// 订阅级模型限制：不在订阅允许列表内的模型，跳过订阅扣费走钱包
+			// 这里不再硬拒，由 billing_session 处理回落
 			if subModelsAny, ok := common.GetContextKey(c, constant.ContextKeySubscriptionAllowedModels); ok {
 				if subModels, ok := subModelsAny.([]string); ok && len(subModels) > 0 {
 					matchName := ratio_setting.FormatMatchingModelName(modelRequest.Model)
@@ -96,8 +97,10 @@ func Distribute() func(c *gin.Context) {
 						}
 					}
 					if !allowed {
-						abortWithOpenAiMessage(c, http.StatusForbidden, i18n.T(c, i18n.MsgDistributorTokenModelForbidden, map[string]any{"Model": modelRequest.Model}))
-						return
+						// 清除订阅 context，让后续流程走钱包扣费，分组限制也跟着失效
+						common.SetContextKey(c, constant.ContextKeySubscriptionId, 0)
+						common.SetContextKey(c, constant.ContextKeySubscriptionAllowedModels, []string{})
+						common.SetContextKey(c, constant.ContextKeySubscriptionAllowedGroups, []string{})
 					}
 				}
 			}
@@ -129,22 +132,8 @@ func Distribute() func(c *gin.Context) {
 					return
 				}
 				usingGroup := common.GetContextKeyString(c, constant.ContextKeyUsingGroup)
-				// 订阅级分组限制：如果用户订阅指定了 AllowedGroups，则 token 当前 group 必须在允许列表内
-				if subGroupsAny, ok := common.GetContextKey(c, constant.ContextKeySubscriptionAllowedGroups); ok {
-					if subGroups, ok := subGroupsAny.([]string); ok && len(subGroups) > 0 {
-						allowed := false
-						for _, g := range subGroups {
-							if g == usingGroup {
-								allowed = true
-								break
-							}
-						}
-						if !allowed {
-							abortWithOpenAiMessage(c, http.StatusForbidden, i18n.T(c, i18n.MsgDistributorGroupAccessDenied))
-							return
-						}
-					}
-				}
+				// 订阅级分组限制：不在订阅 AllowedGroups 内的分组，由 billing_session 走钱包扣费
+				// 此处不再硬拒，避免阻断用户使用其他分组的能力
 				// check path is /pg/chat/completions
 				if strings.HasPrefix(c.Request.URL.Path, "/pg/chat/completions") {
 					playgroundRequest := &dto.PlayGroundRequest{}

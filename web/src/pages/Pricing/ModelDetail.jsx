@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { ArrowLeft, Copy, Zap, DollarSign, Layers, Server } from 'lucide-react';
 import { API, showError, showSuccess, copy, getLobeHubIcon } from '../../helpers';
 import { PageShell, Card, Button, IconButton, Tag, Loading } from '../../components/ui';
@@ -7,6 +7,8 @@ import { PageShell, Card, Button, IconButton, Tag, Loading } from '../../compone
 const ModelDetail = () => {
   const { modelName } = useParams();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const selectedGroup = searchParams.get('group');
   const [model, setModel] = useState(null);
   const [vendors, setVendors] = useState({});
   const [groupRatio, setGroupRatio] = useState({});
@@ -43,8 +45,10 @@ const ModelDetail = () => {
     return `$${p.toFixed(3)} / $${c.toFixed(3)} per 1M tokens`;
   };
 
-  const promptPrice = model.quota_type !== 1 ? (model.model_ratio || 0) * 2 : null;
-  const completionPrice = promptPrice ? promptPrice * (model.completion_ratio || 1) : null;
+  const enabledGroups = (model.enable_groups || [])
+    .filter((g) => groupRatio[g] != null)
+    .map((g) => ({ name: g, mul: groupRatio[g] }));
+  if (enabledGroups.length === 0) enabledGroups.push({ name: '默认', mul: 1 });
 
   return (
     <PageShell
@@ -70,8 +74,8 @@ const ModelDetail = () => {
               <div className='text-sm text-ui-text-1 font-medium'>{model.quota_type === 1 ? '按次计费' : '按 Token 计费'}</div>
             </div>
             <div style={{ padding: '14px 16px', background: '#f9f9f6', borderRadius: 12 }}>
-              <div className='flex items-center gap-1.5 text-xs text-ui-text-3 mb-2'><DollarSign size={12} />默认价格</div>
-              <div className='text-sm text-ui-text-1 font-mono font-medium'>{compute(model)}</div>
+              <div className='flex items-center gap-1.5 text-xs text-ui-text-3 mb-2'><DollarSign size={12} />{selectedGroup ? `${selectedGroup} 价格` : '默认价格'}</div>
+              <div className='text-sm text-ui-text-1 font-mono font-medium'>{compute(model, selectedGroup ? (groupRatio[selectedGroup] ?? 1) : 1)}</div>
             </div>
             {model.model_ratio != null && (
               <div style={{ padding: '14px 16px', background: '#f9f9f6', borderRadius: 12 }}>
@@ -96,58 +100,68 @@ const ModelDetail = () => {
                 <thead>
                   <tr className='border-b border-ui-border'>
                     <th className='text-left py-2 pr-4 text-xs text-ui-text-3 font-normal'>类型</th>
-                    <th className='text-right py-2 px-4 text-xs text-ui-text-3 font-normal'>每 1M tokens</th>
-                    <th className='text-right py-2 px-4 text-xs text-ui-text-3 font-normal'>每 1K tokens</th>
-                    <th className='text-right py-2 pl-4 text-xs text-ui-text-3 font-normal'>每 1 token</th>
+                    {enabledGroups.map((g) => (
+                      <th key={g.name} className='text-right py-2 px-3 text-xs font-normal' style={{ color: selectedGroup === g.name ? '#000' : '#999', fontWeight: selectedGroup === g.name ? 500 : 400 }}>
+                        {g.name} (×{g.mul})
+                      </th>
+                    ))}
                   </tr>
                 </thead>
                 <tbody className='font-mono'>
                   <tr className='border-b border-ui-border/50'>
                     <td className='py-2.5 pr-4 text-ui-text-1'>输入 (Prompt)</td>
-                    <td className='py-2.5 px-4 text-right text-ui-text-1'>${promptPrice?.toFixed(4)}</td>
-                    <td className='py-2.5 px-4 text-right text-ui-text-2'>${(promptPrice / 1000)?.toFixed(6)}</td>
-                    <td className='py-2.5 pl-4 text-right text-ui-text-3'>${(promptPrice / 1000000)?.toFixed(9)}</td>
+                    {enabledGroups.map((g) => {
+                      const p = (model.model_ratio || 0) * 2 * g.mul;
+                      return <td key={g.name} className='py-2.5 px-3 text-right text-ui-text-1'>${p.toFixed(4)}</td>;
+                    })}
                   </tr>
                   <tr className='border-b border-ui-border/50'>
                     <td className='py-2.5 pr-4 text-ui-text-1'>输出 (Completion)</td>
-                    <td className='py-2.5 px-4 text-right text-ui-text-1'>${completionPrice?.toFixed(4)}</td>
-                    <td className='py-2.5 px-4 text-right text-ui-text-2'>${(completionPrice / 1000)?.toFixed(6)}</td>
-                    <td className='py-2.5 pl-4 text-right text-ui-text-3'>${(completionPrice / 1000000)?.toFixed(9)}</td>
+                    {enabledGroups.map((g) => {
+                      const p = (model.model_ratio || 0) * 2 * g.mul;
+                      const c = p * (model.completion_ratio || 1);
+                      return <td key={g.name} className='py-2.5 px-3 text-right text-ui-text-1'>${c.toFixed(4)}</td>;
+                    })}
                   </tr>
                   {model.cache_ratio != null && (
                     <tr className='border-b border-ui-border/50'>
                       <td className='py-2.5 pr-4 text-ui-text-1'>缓存命中</td>
-                      <td className='py-2.5 px-4 text-right text-ui-text-1'>${(promptPrice * model.cache_ratio)?.toFixed(4)}</td>
-                      <td className='py-2.5 px-4 text-right text-ui-text-2'>${(promptPrice * model.cache_ratio / 1000)?.toFixed(6)}</td>
-                      <td className='py-2.5 pl-4 text-right text-ui-text-3'>×{model.cache_ratio}</td>
+                      {enabledGroups.map((g) => {
+                        const p = (model.model_ratio || 0) * 2 * g.mul * model.cache_ratio;
+                        return <td key={g.name} className='py-2.5 px-3 text-right text-ui-text-1'>${p.toFixed(4)}</td>;
+                      })}
                     </tr>
                   )}
                   {model.create_cache_ratio != null && (
                     <tr className='border-b border-ui-border/50'>
                       <td className='py-2.5 pr-4 text-ui-text-1'>缓存创建</td>
-                      <td className='py-2.5 px-4 text-right text-ui-text-1'>${(promptPrice * model.create_cache_ratio)?.toFixed(4)}</td>
-                      <td className='py-2.5 px-4 text-right text-ui-text-2'>${(promptPrice * model.create_cache_ratio / 1000)?.toFixed(6)}</td>
-                      <td className='py-2.5 pl-4 text-right text-ui-text-3'>×{model.create_cache_ratio}</td>
+                      {enabledGroups.map((g) => {
+                        const p = (model.model_ratio || 0) * 2 * g.mul * model.create_cache_ratio;
+                        return <td key={g.name} className='py-2.5 px-3 text-right text-ui-text-1'>${p.toFixed(4)}</td>;
+                      })}
                     </tr>
                   )}
                   {model.audio_ratio != null && (
                     <tr className='border-b border-ui-border/50'>
                       <td className='py-2.5 pr-4 text-ui-text-1'>音频输入</td>
-                      <td className='py-2.5 px-4 text-right text-ui-text-1'>${(promptPrice * model.audio_ratio)?.toFixed(4)}</td>
-                      <td className='py-2.5 px-4 text-right text-ui-text-2'>-</td>
-                      <td className='py-2.5 pl-4 text-right text-ui-text-3'>×{model.audio_ratio}</td>
+                      {enabledGroups.map((g) => {
+                        const p = (model.model_ratio || 0) * 2 * g.mul * model.audio_ratio;
+                        return <td key={g.name} className='py-2.5 px-3 text-right text-ui-text-1'>${p.toFixed(4)}</td>;
+                      })}
                     </tr>
                   )}
                   {model.image_ratio != null && (
                     <tr>
                       <td className='py-2.5 pr-4 text-ui-text-1'>图片输入</td>
-                      <td className='py-2.5 px-4 text-right text-ui-text-1'>${(promptPrice * model.image_ratio)?.toFixed(4)}</td>
-                      <td className='py-2.5 px-4 text-right text-ui-text-2'>-</td>
-                      <td className='py-2.5 pl-4 text-right text-ui-text-3'>×{model.image_ratio}</td>
+                      {enabledGroups.map((g) => {
+                        const p = (model.model_ratio || 0) * 2 * g.mul * model.image_ratio;
+                        return <td key={g.name} className='py-2.5 px-3 text-right text-ui-text-1'>${p.toFixed(4)}</td>;
+                      })}
                     </tr>
                   )}
                 </tbody>
               </table>
+              <div className='text-xs text-ui-text-3 mt-3'>单位：$ / 1M tokens</div>
             </div>
           </Card>
         )}
@@ -169,23 +183,6 @@ const ModelDetail = () => {
             {(model.enable_groups || []).length === 0 && <span className='text-xs text-ui-text-3'>暂无分组信息</span>}
           </div>
         </Card>
-
-        {Object.keys(groupRatio).length > 0 && (
-          <Card>
-            <div className='text-sm font-medium text-ui-text-1 mb-4'>分组价格对比</div>
-            <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3'>
-              {Object.entries(groupRatio).map(([g, mul]) => (
-                <div key={g} style={{ padding: '14px 16px', border: '1px solid #e9e9e9', borderRadius: 12 }}>
-                  <div className='flex items-center justify-between mb-2'>
-                    <span className='text-sm text-ui-text-1 font-medium'>{g}</span>
-                    <span className='text-xs text-ui-text-3 font-mono'>×{mul}</span>
-                  </div>
-                  <div className='text-sm text-ui-text-1 font-mono'>{compute(model, mul)}</div>
-                </div>
-              ))}
-            </div>
-          </Card>
-        )}
 
         {model.description && (
           <Card>

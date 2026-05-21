@@ -20,7 +20,7 @@ const TABS = [
 ];
 
 const TAB_KEYS = {
-  platform: ['SystemName', 'ServerAddress', 'TopUpLink', 'general_setting.docs_link', 'Logo', 'RetryTimes', 'general_setting.quota_display_type', 'DisplayTokenStatEnabled', 'DefaultCollapseSidebar', 'DemoSiteEnabled', 'SelfUseModeEnabled', 'token_setting.max_user_tokens'],
+  platform: ['SystemName', 'ServerAddress', 'TopUpLink', 'general_setting.docs_link', 'Logo', 'Notice', 'RetryTimes', 'general_setting.quota_display_type', 'DisplayTokenStatEnabled', 'DefaultCollapseSidebar', 'DemoSiteEnabled', 'SelfUseModeEnabled', 'token_setting.max_user_tokens'],
   global: [
     'global.pass_through_request_enabled',
     'global.thinking_model_blacklist',
@@ -87,7 +87,7 @@ const TAB_KEYS = {
 
 const TAB_SECTIONS = {
   platform: [
-    { title: '基本信息', keys: ['SystemName', 'ServerAddress', 'TopUpLink', 'general_setting.docs_link', 'Logo'] },
+    { title: '基本信息', keys: ['SystemName', 'ServerAddress', 'TopUpLink', 'general_setting.docs_link', 'Logo', 'Notice'] },
     { title: '功能开关', keys: ['RetryTimes', 'general_setting.quota_display_type', 'DisplayTokenStatEnabled', 'DefaultCollapseSidebar', 'DemoSiteEnabled', 'SelfUseModeEnabled', 'token_setting.max_user_tokens'] },
   ],
   auth: [
@@ -114,9 +114,9 @@ const TAB_SECTIONS = {
   ],
 };
 
-const WIDE_KEYS = new Set([...Array.from(new Set(['EmailDomainWhitelist', 'SensitiveWords', 'AutomaticDisableKeywords', 'AutomaticDisableStatusCodes', 'AutomaticRetryStatusCodes', 'fetch_setting.domain_list', 'fetch_setting.ip_list', 'fetch_setting.allowed_ports', 'global.thinking_model_blacklist', 'gemini.supported_imagine_models'])), 'ModelRatio', 'CompletionRatio', 'CacheRatio', 'CreateCacheRatio', 'ImageRatio', 'AudioRatio', 'AudioCompletionRatio', 'GroupRatio', 'ModelPrice', 'UserUsableGroups', 'claude.model_headers_settings', 'claude.default_max_tokens', 'gemini.safety_settings', 'gemini.version_settings', 'channel_affinity_setting.rules', 'console_setting.announcements', 'console_setting.api_info', 'console_setting.faq', 'console_setting.uptime_kuma_groups', 'global.chat_completions_to_responses_policy']);
+const WIDE_KEYS = new Set([...Array.from(new Set(['EmailDomainWhitelist', 'SensitiveWords', 'AutomaticDisableKeywords', 'AutomaticDisableStatusCodes', 'AutomaticRetryStatusCodes', 'fetch_setting.domain_list', 'fetch_setting.ip_list', 'fetch_setting.allowed_ports', 'global.thinking_model_blacklist', 'gemini.supported_imagine_models'])), 'Notice', 'ModelRatio', 'CompletionRatio', 'CacheRatio', 'CreateCacheRatio', 'ImageRatio', 'AudioRatio', 'AudioCompletionRatio', 'GroupRatio', 'ModelPrice', 'UserUsableGroups', 'claude.model_headers_settings', 'claude.default_max_tokens', 'gemini.safety_settings', 'gemini.version_settings', 'channel_affinity_setting.rules', 'console_setting.announcements', 'console_setting.api_info', 'console_setting.faq', 'console_setting.uptime_kuma_groups', 'global.chat_completions_to_responses_policy']);
 
-const MULTILINE_KEYS = new Set([]);
+const MULTILINE_KEYS = new Set(['Notice']);
 const TAG_KEYS = new Set(['EmailDomainWhitelist', 'SensitiveWords', 'AutomaticDisableKeywords', 'AutomaticDisableStatusCodes', 'AutomaticRetryStatusCodes', 'fetch_setting.domain_list', 'fetch_setting.ip_list', 'fetch_setting.allowed_ports', 'global.thinking_model_blacklist', 'gemini.supported_imagine_models']);
 const JSON_ARRAY_TAG_KEYS = new Set(['fetch_setting.domain_list', 'fetch_setting.ip_list', 'fetch_setting.allowed_ports', 'global.thinking_model_blacklist', 'gemini.supported_imagine_models']);
 const NEWLINE_TAG_KEYS = new Set(['SensitiveWords', 'AutomaticDisableKeywords']);
@@ -176,6 +176,7 @@ const LABELS = {
   TopUpLink: '充值链接',
   'general_setting.docs_link': '文档地址',
   Logo: 'Logo 地址',
+  Notice: '服务公告',
   RetryTimes: '失败重试次数',
   'general_setting.quota_display_type': '额度展示类型',
   DisplayTokenStatEnabled: '额度查询返回令牌额度而非用户额度',

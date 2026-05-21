@@ -18,7 +18,10 @@ const PricingPage = () => {
   const [group, setGroup] = useState('all');
   const [view, setView] = useState(() => localStorage.getItem('pricing-view') || 'table');
   const switchView = (v) => { setView(v); localStorage.setItem('pricing-view', v); };
-  const goDetail = (m) => navigate(`/pricing/${encodeURIComponent(m.model_name)}`);
+  const goDetail = (m) => {
+    const params = group !== 'all' ? `?group=${encodeURIComponent(group)}` : '';
+    navigate(`/pricing/${encodeURIComponent(m.model_name)}${params}`);
+  };
 
   useEffect(() => {
     (async () => {
@@ -65,7 +68,10 @@ const PricingPage = () => {
 
   const groupOptions = [
     { value: 'all', label: '默认分组' },
-    ...Object.entries(usableGroups).map(([k, v]) => ({ value: k, label: v?.desc || k })),
+    ...Object.entries(usableGroups).map(([k, v]) => ({
+      value: k,
+      label: `${v?.desc || k} (×${groupRatio[k] ?? 1})`,
+    })),
   ];
 
   const columns = [

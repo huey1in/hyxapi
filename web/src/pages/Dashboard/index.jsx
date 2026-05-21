@@ -1,11 +1,10 @@
 import React, { useContext, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { RefreshCw, ChevronDown, Copy, Globe, Megaphone, HelpCircle, Activity } from 'lucide-react';
+import { RefreshCw, ChevronDown, Copy, Globe, Megaphone, HelpCircle } from 'lucide-react';
 import { API, renderNumber, renderQuota, showSuccess, copy, getRelativeTime, isAdmin } from '../../helpers';
 import { UserContext } from '../../context/User';
 import { StatusContext } from '../../context/Status';
 import { IconButton, Loading } from '../../components/ui';
-import { UPTIME_STATUS_MAP } from '../../constants/dashboard.constants';
 import useIsMobile from '../../hooks/useIsMobile';
 import useIsDark from '../../hooks/useIsDark';
 
@@ -77,7 +76,6 @@ const Dashboard = () => {
       } catch {} finally { setLoading(false); }
     })();
     loadChart();
-    loadUptime();
     loadLiveStats();
     if (isAdmin()) loadAdminData();
   }, [userState?.user]);
@@ -134,10 +132,16 @@ const Dashboard = () => {
       const list = res.data?.success ? (res.data.data || []) : [];
       const byMonth = new Map();
       list.forEach((it) => {
-        const k = it.Day || it.day || it.Time || it.created_at || '';
+        const ts = it.created_at || it.CreatedAt;
+        const k = it.Day || it.day || it.Time;
         const q = it.Quota || it.quota || 0;
-        const month = new Date(k).getMonth();
-        if (!isNaN(month)) byMonth.set(month, (byMonth.get(month) || 0) + q);
+        let month;
+        if (ts) {
+          month = new Date(ts * 1000).getMonth();
+        } else if (k) {
+          month = new Date(k).getMonth();
+        }
+        if (month !== undefined && !isNaN(month)) byMonth.set(month, (byMonth.get(month) || 0) + q);
       });
       const now = new Date();
       const result = [];
@@ -148,17 +152,6 @@ const Dashboard = () => {
       setMonthlyData(result);
     } catch { setMonthlyData([]); }
     finally { setChartLoading(false); }
-  };
-
-  const [uptimeData, setUptimeData] = useState([]);
-  const [uptimeLoading, setUptimeLoading] = useState(false);
-
-  const loadUptime = async () => {
-    setUptimeLoading(true);
-    try {
-      const res = await API.get('/api/uptime/status');
-      if (res.data?.success) setUptimeData(res.data.data || []);
-    } catch {} finally { setUptimeLoading(false); }
   };
 
   const status = statusState?.status || {};
@@ -177,7 +170,6 @@ const Dashboard = () => {
   const apiInfoEnabled = status.api_info_enabled ?? true;
   const announcementsEnabled = status.announcements_enabled ?? true;
   const faqEnabled = status.faq_enabled ?? true;
-  const uptimeEnabled = status.uptime_kuma_enabled ?? true;
 
   const u = stats || userState?.user || {};
 
@@ -312,12 +304,9 @@ const Dashboard = () => {
         apiInfoEnabled={apiInfoEnabled}
         announcementsEnabled={announcementsEnabled}
         faqEnabled={faqEnabled}
-        uptimeEnabled={uptimeEnabled}
         apiInfoData={apiInfoData}
         announcements={announcements}
         faqData={faqData}
-        uptimeData={uptimeData}
-        uptimeLoading={uptimeLoading}
       />
     </div>
   );
@@ -329,18 +318,16 @@ const TABS = [
   { key: 'api', label: 'API 信息', Icon: Globe },
   { key: 'news', label: '系统公告', Icon: Megaphone },
   { key: 'faq', label: '常见问答', Icon: HelpCircle },
-  { key: 'uptime', label: '服务状态', Icon: Activity },
 ];
 
-const InfoPanels = ({ apiInfoEnabled, announcementsEnabled, faqEnabled, uptimeEnabled, apiInfoData, announcements, faqData, uptimeData, uptimeLoading }) => {
+const InfoPanels = ({ apiInfoEnabled, announcementsEnabled, faqEnabled, apiInfoData, announcements, faqData }) => {
   const tabs = useMemo(() => {
     const out = [];
     if (apiInfoEnabled) out.push(TABS[0]);
     if (announcementsEnabled) out.push(TABS[1]);
     if (faqEnabled) out.push(TABS[2]);
-    if (uptimeEnabled) out.push(TABS[3]);
     return out;
-  }, [apiInfoEnabled, announcementsEnabled, faqEnabled, uptimeEnabled]);
+  }, [apiInfoEnabled, announcementsEnabled, faqEnabled]);
 
   const [active, setActive] = useState(tabs[0]?.key || 'api');
   const [uptimeGroup, setUptimeGroup] = useState('0');
@@ -371,7 +358,6 @@ const InfoPanels = ({ apiInfoEnabled, announcementsEnabled, faqEnabled, uptimeEn
         {active === 'api' && <ApiInfoSection data={apiInfoData} />}
         {active === 'news' && <AnnouncementsSection data={announcements} />}
         {active === 'faq' && <FaqSection data={faqData} />}
-        {active === 'uptime' && <UptimeSection data={uptimeData} loading={uptimeLoading} />}
       </div>
     </div>
   );
@@ -448,65 +434,6 @@ const FaqItem = ({ item, last }) => {
       {open && (
         <div style={{ padding: '0 18px 12px', fontSize: 13, color: 'var(--ui-text-2)', lineHeight: 1.6 }}>{item.answer}</div>
       )}
-    </div>
-  );
-};
-
-const UptimeSection = ({ data, loading }) => {
-  if (loading) return <div style={{ padding: '32px 0', textAlign: 'center' }}><Loading size='sm' /></div>;
-  if (!data?.length) return <EmptyState text='暂无监控服务' />;
-
-  const groups = data.map((g) => {
-    const monitors = g.monitors || g.monitorList || [];
-    const allUp = monitors.every((m) => m.status === 1);
-    const avgUptime = monitors.length > 0 ? monitors.reduce((s, m) => s + (m.uptime || 0), 0) / monitors.length : 0;
-    const beats = monitors.length > 0 ? (monitors[0].heartbeats || []).map((hb, i) => {
-      const worst = monitors.reduce((s, m) => {
-        const mhb = (m.heartbeats || [])[i];
-        if (!mhb || mhb.status === 0) return 0;
-        if (mhb.status === 2 && s !== 0) return 2;
-        return s;
-      }, hb.status);
-      return { ...hb, status: worst };
-    }) : [];
-    return { name: g.categoryName, status: allUp ? 1 : 0, uptime: avgUptime, heartbeats: beats };
-  });
-
-  if (!groups.length) return <EmptyState text='暂无监控' />;
-
-  return (
-    <div style={{ padding: '12px 0' }}>
-      {groups.map((m, i) => {
-        const statusInfo = UPTIME_STATUS_MAP[m.status] || {};
-        const color = statusInfo.color || '#999';
-        const pct = ((m.uptime || 0) * 100).toFixed(2);
-        const beats = m.heartbeats || [];
-        return (
-          <div key={i} style={{ padding: '12px 18px', borderBottom: i < groups.length - 1 ? '1px solid #eeeeee' : 'none' }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <span style={{ width: 7, height: 7, borderRadius: '50%', background: color, flexShrink: 0 }} />
-                <span style={{ fontSize: 14, color: 'var(--ui-text)', fontWeight: 500 }}>{m.name}</span>
-              </div>
-              <span style={{ fontSize: 12, color: 'var(--ui-text-2)', fontVariantNumeric: 'tabular-nums' }}>{pct}%</span>
-            </div>
-            {beats.length > 0 && (
-              <div style={{ display: 'flex', gap: 2, height: 32, alignItems: 'stretch' }}>
-                {beats.map((hb, j) => {
-                  const hbColor = (UPTIME_STATUS_MAP[hb.status] || {}).color || '#d1d5db';
-                  return (
-                    <div
-                      key={j}
-                      title={`${hb.time} - ${hb.ping}ms`}
-                      style={{ flex: 1, borderRadius: 3, background: hbColor, cursor: 'default' }}
-                    />
-                  );
-                })}
-              </div>
-            )}
-          </div>
-        );
-      })}
     </div>
   );
 };
