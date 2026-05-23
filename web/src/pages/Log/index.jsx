@@ -197,9 +197,10 @@ const LogCard = ({ row: r, isAdmin, isMobile, open, onToggle }) => {
             </span>
             <span style={{
               display: 'inline-flex', alignItems: 'center',
-              height: 20, paddingInline: 8, borderRadius: 10,
+              height: 20, paddingInline: 8, borderRadius: 5,
               fontSize: 11, fontWeight: 500, color: typeColor,
-              background: `${typeColor}12`,
+              background: 'var(--page-bg)',
+              border: `1px solid ${typeColor}30`,
             }}>
               {TYPE_LABELS[r.type] || '系统'}
             </span>
@@ -286,7 +287,7 @@ const TokenPill = ({ value, variant, label }) => {
     return (
       <span style={{
         display: 'inline-flex', alignItems: 'center', gap: 4,
-        height: 24, paddingInline: 10, borderRadius: 12,
+        height: 24, paddingInline: 10, borderRadius: 6,
         fontSize: 12, fontWeight: 600, color: 'var(--ui-accent-fg)', background: 'var(--ui-accent)',
       }}>
         {formatted}
@@ -297,7 +298,7 @@ const TokenPill = ({ value, variant, label }) => {
   return (
     <span style={{
       display: 'inline-flex', alignItems: 'center', gap: 4,
-      height: 24, paddingInline: 8, borderRadius: 12,
+      height: 24, paddingInline: 8, borderRadius: 6,
       fontSize: 11, color: '#666',
       border: '1px solid var(--ui-border)',
       background: 'var(--page-bg)',

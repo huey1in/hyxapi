@@ -72,10 +72,8 @@ const TAB_KEYS = {
   ],
   dashboard: ['DataExportEnabled', 'DataExportInterval', 'DataExportDefaultTime', 'LogConsumeEnabled',
     'monitor_setting.auto_test_channel_enabled', 'monitor_setting.auto_test_channel_minutes',
+    'monitor_setting.model_health_enabled', 'monitor_setting.model_health_interval_minutes',
     'console_setting.announcements_enabled', 'console_setting.announcements',
-    'console_setting.api_info_enabled', 'console_setting.api_info',
-    'console_setting.faq_enabled', 'console_setting.faq',
-    'console_setting.uptime_kuma_enabled', 'console_setting.uptime_kuma_groups',
   ],
   performance: ['StreamCacheQueueLength', 'BatchUpdateEnabled', 'BatchUpdateInterval', 'MemoryCacheEnabled', 'CacheKeyPrefix',
     'performance_setting.disk_cache_enabled', 'performance_setting.disk_cache_threshold_mb',
@@ -110,11 +108,18 @@ const TAB_SECTIONS = {
   dashboard: [
     { title: '数据看板', keys: ['DataExportEnabled', 'DataExportInterval', 'DataExportDefaultTime', 'LogConsumeEnabled'] },
     { title: '渠道监控', keys: ['monitor_setting.auto_test_channel_enabled', 'monitor_setting.auto_test_channel_minutes'] },
-    { title: '前台展示', keys: ['console_setting.announcements_enabled', 'console_setting.announcements', 'console_setting.api_info_enabled', 'console_setting.api_info', 'console_setting.faq_enabled', 'console_setting.faq', 'console_setting.uptime_kuma_enabled', 'console_setting.uptime_kuma_groups'] },
+    { title: '模型健康检测', keys: ['monitor_setting.model_health_enabled', 'monitor_setting.model_health_interval_minutes'] },
+    { title: '前台展示', keys: ['console_setting.announcements_enabled', 'console_setting.announcements'] },
+  ],
+  pricing: [
+    { title: '模型倍率', component: 'CombinedRatioEditor', keys: ['ModelRatio', 'CompletionRatio', 'CacheRatio', 'CreateCacheRatio', 'ImageRatio', 'AudioRatio', 'AudioCompletionRatio'] },
+    { title: '模型定价', keys: ['ModelPrice'] },
+    { title: '分组', component: 'GroupRatioEditor', keys: ['GroupRatio', 'UserUsableGroups'] },
+    { title: '其他', keys: ['ExposeRatioEnabled'] },
   ],
 };
 
-const WIDE_KEYS = new Set([...Array.from(new Set(['EmailDomainWhitelist', 'SensitiveWords', 'AutomaticDisableKeywords', 'AutomaticDisableStatusCodes', 'AutomaticRetryStatusCodes', 'fetch_setting.domain_list', 'fetch_setting.ip_list', 'fetch_setting.allowed_ports', 'global.thinking_model_blacklist', 'gemini.supported_imagine_models'])), 'Notice', 'ModelRatio', 'CompletionRatio', 'CacheRatio', 'CreateCacheRatio', 'ImageRatio', 'AudioRatio', 'AudioCompletionRatio', 'GroupRatio', 'ModelPrice', 'UserUsableGroups', 'claude.model_headers_settings', 'claude.default_max_tokens', 'gemini.safety_settings', 'gemini.version_settings', 'channel_affinity_setting.rules', 'console_setting.announcements', 'console_setting.api_info', 'console_setting.faq', 'console_setting.uptime_kuma_groups', 'global.chat_completions_to_responses_policy']);
+const WIDE_KEYS = new Set([...Array.from(new Set(['EmailDomainWhitelist', 'SensitiveWords', 'AutomaticDisableKeywords', 'AutomaticDisableStatusCodes', 'AutomaticRetryStatusCodes', 'fetch_setting.domain_list', 'fetch_setting.ip_list', 'fetch_setting.allowed_ports', 'global.thinking_model_blacklist', 'gemini.supported_imagine_models'])), 'Notice', 'ModelRatio', 'CompletionRatio', 'CacheRatio', 'CreateCacheRatio', 'ImageRatio', 'AudioRatio', 'AudioCompletionRatio', 'GroupRatio', 'ModelPrice', 'UserUsableGroups', 'claude.model_headers_settings', 'claude.default_max_tokens', 'gemini.safety_settings', 'gemini.version_settings', 'channel_affinity_setting.rules', 'console_setting.announcements', 'global.chat_completions_to_responses_policy']);
 
 const MULTILINE_KEYS = new Set(['Notice']);
 const TAG_KEYS = new Set(['EmailDomainWhitelist', 'SensitiveWords', 'AutomaticDisableKeywords', 'AutomaticDisableStatusCodes', 'AutomaticRetryStatusCodes', 'fetch_setting.domain_list', 'fetch_setting.ip_list', 'fetch_setting.allowed_ports', 'global.thinking_model_blacklist', 'gemini.supported_imagine_models']);
@@ -123,7 +128,7 @@ const NEWLINE_TAG_KEYS = new Set(['SensitiveWords', 'AutomaticDisableKeywords'])
 const JSON_KEYS = new Set(['ModelRatio', 'CompletionRatio', 'CacheRatio', 'CreateCacheRatio', 'ImageRatio', 'AudioRatio', 'AudioCompletionRatio', 'GroupRatio', 'ModelPrice', 'UserUsableGroups', 'claude.default_max_tokens', 'gemini.safety_settings', 'gemini.version_settings']);
 const RAW_JSON_KEYS = new Set(['claude.model_headers_settings', 'channel_affinity_setting.rules']);
 const POLICY_KEYS = new Set(['global.chat_completions_to_responses_policy']);
-const LIST_EDITOR_KEYS = new Set(['console_setting.announcements', 'console_setting.api_info', 'console_setting.faq', 'console_setting.uptime_kuma_groups']);
+const LIST_EDITOR_KEYS = new Set(['console_setting.announcements']);
 const BOOL_KEYS = new Set([
   'EmailVerificationEnabled', 'EmailDomainRestrictionEnabled', 'EmailAliasRestrictionEnabled',
   'SMTPSSLEnabled', 'SMTPForceAuthLogin',
@@ -150,8 +155,8 @@ const BOOL_KEYS = new Set([
   'ModelRequestRateLimitEnabled', 'CheckSensitiveEnabled', 'CheckSensitiveOnPromptEnabled', 'StopOnSensitiveEnabled',
   'quota_setting.enable_free_model_pre_consume',
   'performance_setting.disk_cache_enabled', 'performance_setting.monitor_enabled',
-  'console_setting.announcements_enabled', 'console_setting.api_info_enabled',
-  'console_setting.faq_enabled', 'console_setting.uptime_kuma_enabled',
+  'console_setting.announcements_enabled',
+  'monitor_setting.model_health_enabled',
 ]);
 const NUMBER_KEYS = new Set([
   'ChannelDisableThreshold',
@@ -165,6 +170,7 @@ const NUMBER_KEYS = new Set([
   'grok.violation_deduction_amount',
   'channel_affinity_setting.max_entries', 'channel_affinity_setting.default_ttl_seconds',
   'monitor_setting.auto_test_channel_minutes',
+  'monitor_setting.model_health_interval_minutes',
   'ModelRequestRateLimitCount', 'ModelRequestRateLimitDurationMinutes', 'ModelRequestRateLimitSuccessCount',
   'performance_setting.disk_cache_threshold_mb', 'performance_setting.disk_cache_max_size_mb',
   'performance_setting.monitor_cpu_threshold', 'performance_setting.monitor_memory_threshold', 'performance_setting.monitor_disk_threshold',
@@ -315,12 +321,8 @@ const LABELS = {
   'monitor_setting.auto_test_channel_minutes': '自动测试间隔（分钟）',
   'console_setting.announcements_enabled': '启用系统公告',
   'console_setting.announcements': '系统公告',
-  'console_setting.api_info_enabled': '启用 API 信息',
-  'console_setting.api_info': 'API 信息',
-  'console_setting.faq_enabled': '启用常见问答',
-  'console_setting.faq': '常见问答',
-  'console_setting.uptime_kuma_enabled': '启用 Uptime Kuma 监控',
-  'console_setting.uptime_kuma_groups': 'Uptime Kuma 分组',
+  'monitor_setting.model_health_enabled': '启用模型健康检测',
+  'monitor_setting.model_health_interval_minutes': '检测间隔（分钟）',
   // 性能
   'performance_setting.disk_cache_enabled': '磁盘缓存',
   'performance_setting.disk_cache_threshold_mb': '磁盘缓存阈值（MB）',
@@ -453,6 +455,266 @@ const RatioEditor = ({ value, onChange, suggestions = [], numericValue = true })
   );
 };
 
+const RATIO_COLUMNS = [
+  { key: 'model',       jsonKey: 'ModelRatio',       label: '输入' },
+  { key: 'completion',   jsonKey: 'CompletionRatio',  label: '输出' },
+  { key: 'cache',        jsonKey: 'CacheRatio',       label: '缓存读' },
+  { key: 'cacheCreate',  jsonKey: 'CreateCacheRatio', label: '缓存写' },
+  { key: 'image',        jsonKey: 'ImageRatio',       label: '图片' },
+  { key: 'audio',        jsonKey: 'AudioRatio',       label: '音频入' },
+  { key: 'audioCompletion', jsonKey: 'AudioCompletionRatio', label: '音频出' },
+];
+
+const CombinedRatioEditor = ({ values, onChange, suggestions = [] }) => {
+  // values: { ModelRatio: '{...}', CompletionRatio: '{...}', ... }
+  // onChange: (jsonKey, newJsonStr) => void
+
+  const parseMap = (jsonKey) => {
+    try { return JSON.parse(values[jsonKey] || '{}'); } catch { return {}; }
+  };
+
+  // Build merged rows: { modelName: { model: 1.5, completion: 5, ... } }
+  const buildRows = () => {
+    const allModels = new Set();
+    const maps = {};
+    RATIO_COLUMNS.forEach((col) => {
+      maps[col.key] = parseMap(col.jsonKey);
+      Object.keys(maps[col.key]).forEach((m) => allModels.add(m));
+    });
+    const rows = [];
+    allModels.forEach((m) => {
+      const row = { name: m };
+      RATIO_COLUMNS.forEach((col) => {
+        if (maps[col.key][m] !== undefined) row[col.key] = String(maps[col.key][m]);
+      });
+      rows.push(row);
+    });
+    rows.sort((a, b) => a.name.localeCompare(b.name));
+    return rows;
+  };
+
+  const [rows, setRows] = useState(buildRows);
+
+  useEffect(() => {
+    setRows(buildRows());
+  }, [values.ModelRatio, values.CompletionRatio, values.CacheRatio, values.CreateCacheRatio, values.ImageRatio, values.AudioRatio, values.AudioCompletionRatio]);
+
+  // Determine which columns are visible (have at least one value)
+  const visibleCols = RATIO_COLUMNS.filter((col) =>
+    col.key === 'model' || col.key === 'completion' || rows.some((r) => r[col.key] !== undefined)
+  );
+
+  const syncToJson = (newRows) => {
+    setRows(newRows);
+    RATIO_COLUMNS.forEach((col) => {
+      const obj = {};
+      newRows.forEach((r) => {
+        if (r.name.trim() && r[col.key] !== undefined && r[col.key] !== '') {
+          const n = Number(r[col.key]);
+          obj[r.name.trim()] = isNaN(n) ? r[col.key] : n;
+        }
+      });
+      onChange(col.jsonKey, JSON.stringify(obj, null, 2));
+    });
+  };
+
+  const updateCell = (idx, colKey, v) => {
+    const next = [...rows];
+    next[idx] = { ...next[idx], [colKey]: v };
+    syncToJson(next);
+  };
+
+  const updateName = (idx, v) => {
+    const next = [...rows];
+    next[idx] = { ...next[idx], name: v };
+    syncToJson(next);
+  };
+
+  const toggleCell = (idx, colKey) => {
+    const next = [...rows];
+    if (next[idx][colKey] !== undefined) {
+      const { [colKey]: _, ...rest } = next[idx];
+      next[idx] = rest;
+    } else {
+      next[idx] = { ...next[idx], [colKey]: '1' };
+    }
+    syncToJson(next);
+  };
+
+  const addRow = () => syncToJson([...rows, { name: '', model: '1', completion: '1' }]);
+  const addModel = (m) => syncToJson([...rows, { name: m, model: '1', completion: '1' }]);
+  const removeRow = (idx) => syncToJson(rows.filter((_, i) => i !== idx));
+
+  const unsetModels = suggestions.filter((s) => !rows.some((r) => r.name === s));
+
+  return (
+    <div className='space-y-3'>
+      {unsetModels.length > 0 && (
+        <div style={{ padding: '8px 10px', background: '#FFF8E8', borderRadius: 10, border: '1px solid #f0e6d0' }}>
+          <div className='text-xs text-[#999] mb-1.5'>未设置 ({unsetModels.length})</div>
+          <div className='flex flex-wrap gap-1'>
+            {unsetModels.map((m) => (
+              <button key={m} type='button' onClick={() => addModel(m)} style={{ height: 24, paddingInline: 8, borderRadius: 12, border: '1px solid var(--ui-border)', background: 'var(--page-bg)', fontSize: 11, color: 'var(--ui-text-2)', cursor: 'pointer' }} title='点击添加'>
+                + {m}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Header */}
+      <div className='flex items-center gap-2' style={{ minWidth: 0, paddingRight: 32 }}>
+        <div style={{ flex: 1, minWidth: 0, fontSize: 12, color: '#999', paddingLeft: 2 }}>模型</div>
+        {visibleCols.map((col) => (
+          <div key={col.key} style={{ width: 70, flexShrink: 0, fontSize: 12, color: '#999', textAlign: 'center' }}>{col.label}</div>
+        ))}
+      </div>
+
+      {/* Rows */}
+      {rows.map((r, i) => (
+        <div key={i} className='flex items-center gap-2' style={{ minWidth: 0 }}>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <Input value={r.name} onChange={(v) => updateName(i, v)} placeholder='模型名' width='100%' />
+          </div>
+          {visibleCols.map((col) => (
+            <div key={col.key} style={{ width: 70, flexShrink: 0 }}>
+              {r[col.key] !== undefined ? (
+                <Input value={r[col.key]} onChange={(v) => updateCell(i, col.key, v)} placeholder='—' width='100%' />
+              ) : (
+                <button type='button' onClick={() => toggleCell(i, col.key)} style={{ width: '100%', height: 32, borderRadius: 8, border: '1px dashed var(--ui-border)', background: 'transparent', cursor: 'pointer', color: '#ccc', fontSize: 12 }} title='点击启用'>
+                  —
+                </button>
+              )}
+            </div>
+          ))}
+          <button type='button' onClick={() => removeRow(i)} style={{ flexShrink: 0, padding: 6, borderRadius: 6, border: 'none', background: 'transparent', cursor: 'pointer', color: 'var(--ui-text-3)' }} title='删除'>
+            <Trash2 size={15} />
+          </button>
+        </div>
+      ))}
+
+      <div className='flex items-center gap-2'>
+        <Button size='sm' variant='toggle' icon={Plus} onClick={addRow}>添加</Button>
+        <span className='text-xs text-[#999]'>{rows.length} 个模型</span>
+      </div>
+    </div>
+  );
+};
+
+const GroupRatioEditor = ({ values, onChange, suggestions = [] }) => {
+  // values: { GroupRatio: '{...}', UserUsableGroups: '{...}' }
+  // onChange: (jsonKey, newJsonStr) => void
+
+  const parseMap = (k) => { try { return JSON.parse(values[k] || '{}'); } catch { return {}; } };
+
+  const buildRows = () => {
+    const ratioMap = parseMap('GroupRatio');
+    const usableMap = parseMap('UserUsableGroups');
+    const allGroups = new Set([...Object.keys(ratioMap), ...Object.keys(usableMap)]);
+    const rows = [];
+    allGroups.forEach((g) => {
+      rows.push({
+        name: g,
+        ratio: ratioMap[g] !== undefined ? String(ratioMap[g]) : '1',
+        desc: usableMap[g] || '',
+        usable: usableMap[g] !== undefined,
+      });
+    });
+    rows.sort((a, b) => a.name.localeCompare(b.name));
+    return rows;
+  };
+
+  const [rows, setRows] = useState(buildRows);
+
+  useEffect(() => {
+    setRows(buildRows());
+  }, [values.GroupRatio, values.UserUsableGroups]);
+
+  const syncToJson = (newRows) => {
+    setRows(newRows);
+    const ratioObj = {};
+    const usableObj = {};
+    newRows.forEach((r) => {
+      if (!r.name.trim()) return;
+      const n = Number(r.ratio);
+      ratioObj[r.name.trim()] = isNaN(n) ? 1 : n;
+      if (r.usable) usableObj[r.name.trim()] = r.desc || r.name.trim();
+    });
+    onChange('GroupRatio', JSON.stringify(ratioObj, null, 2));
+    onChange('UserUsableGroups', JSON.stringify(usableObj, null, 2));
+  };
+
+  const updateField = (idx, field, v) => {
+    const next = [...rows];
+    next[idx] = { ...next[idx], [field]: v };
+    syncToJson(next);
+  };
+
+  const toggleUsable = (idx) => {
+    const next = [...rows];
+    next[idx] = { ...next[idx], usable: !next[idx].usable };
+    if (next[idx].usable && !next[idx].desc) next[idx].desc = next[idx].name;
+    syncToJson(next);
+  };
+
+  const addRow = () => syncToJson([...rows, { name: '', ratio: '1', desc: '', usable: false }]);
+  const addGroup = (g) => syncToJson([...rows, { name: g, ratio: '1', desc: g, usable: false }]);
+  const removeRow = (idx) => syncToJson(rows.filter((_, i) => i !== idx));
+
+  const unsetGroups = suggestions.filter((s) => !rows.some((r) => r.name === s));
+
+  return (
+    <div className='space-y-3'>
+      {unsetGroups.length > 0 && (
+        <div style={{ padding: '8px 10px', background: '#FFF8E8', borderRadius: 10, border: '1px solid #f0e6d0' }}>
+          <div className='text-xs text-[#999] mb-1.5'>未设置 ({unsetGroups.length})</div>
+          <div className='flex flex-wrap gap-1'>
+            {unsetGroups.map((g) => (
+              <button key={g} type='button' onClick={() => addGroup(g)} style={{ height: 24, paddingInline: 8, borderRadius: 12, border: '1px solid var(--ui-border)', background: 'var(--page-bg)', fontSize: 11, color: 'var(--ui-text-2)', cursor: 'pointer' }} title='点击添加'>
+                + {g}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Header */}
+      <div className='flex items-center gap-2' style={{ minWidth: 0, paddingRight: 32 }}>
+        <div style={{ flex: 1, minWidth: 0, fontSize: 12, color: '#999', paddingLeft: 2 }}>分组名</div>
+        <div style={{ width: 80, flexShrink: 0, fontSize: 12, color: '#999', textAlign: 'center' }}>倍率</div>
+        <div style={{ flex: 1, minWidth: 0, fontSize: 12, color: '#999', paddingLeft: 2 }}>描述</div>
+        <div style={{ width: 60, flexShrink: 0, fontSize: 12, color: '#999', textAlign: 'center' }}>用户可选</div>
+      </div>
+
+      {/* Rows */}
+      {rows.map((r, i) => (
+        <div key={i} className='flex items-center gap-2' style={{ minWidth: 0 }}>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <Input value={r.name} onChange={(v) => updateField(i, 'name', v)} placeholder='分组名' width='100%' />
+          </div>
+          <div style={{ width: 80, flexShrink: 0 }}>
+            <Input value={r.ratio} onChange={(v) => updateField(i, 'ratio', v)} placeholder='1' width='100%' />
+          </div>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <Input value={r.desc} onChange={(v) => updateField(i, 'desc', v)} placeholder='描述（可选）' width='100%' disabled={!r.usable} />
+          </div>
+          <div style={{ width: 60, flexShrink: 0, display: 'flex', justifyContent: 'center' }}>
+            <Switch checked={r.usable} onChange={() => toggleUsable(i)} />
+          </div>
+          <button type='button' onClick={() => removeRow(i)} style={{ flexShrink: 0, padding: 6, borderRadius: 6, border: 'none', background: 'transparent', cursor: 'pointer', color: 'var(--ui-text-3)' }} title='删除'>
+            <Trash2 size={15} />
+          </button>
+        </div>
+      ))}
+
+      <div className='flex items-center gap-2'>
+        <Button size='sm' variant='toggle' icon={Plus} onClick={addRow}>添加</Button>
+        <span className='text-xs text-[#999]'>{rows.length} 个分组</span>
+      </div>
+    </div>
+  );
+};
+
 const PolicyEditor = ({ value, onChange }) => {
   const [obj, setObj] = useState(() => { try { return JSON.parse(value || '{}'); } catch { return {}; } });
   useEffect(() => { try { const p = JSON.parse(value || '{}'); setObj(p); } catch {} }, [value]);
@@ -531,25 +793,6 @@ const LIST_EDITOR_FIELDS = {
     { key: 'content', label: '内容', flex: 3 },
     { key: 'type', label: '类型', type: 'select', options: [{ value: 'default', label: '默认' }, { value: 'ongoing', label: '进行中' }, { value: 'success', label: '成功' }, { value: 'warning', label: '警告' }, { value: 'error', label: '错误' }] },
     { key: 'extra', label: '说明' },
-  ],
-  'console_setting.api_info': [
-    { key: 'url', label: 'API 地址', flex: 2 },
-    { key: 'route', label: '线路描述' },
-    { key: 'description', label: '说明' },
-    { key: 'color', label: '颜色', type: 'select', options: [
-      { value: 'blue', label: '蓝' }, { value: 'green', label: '绿' }, { value: 'cyan', label: '青' },
-      { value: 'purple', label: '紫' }, { value: 'red', label: '红' }, { value: 'orange', label: '橙' },
-      { value: 'grey', label: '灰' },
-    ] },
-  ],
-  'console_setting.faq': [
-    { key: 'question', label: '问题', flex: 2 },
-    { key: 'answer', label: '回答', flex: 3 },
-  ],
-  'console_setting.uptime_kuma_groups': [
-    { key: 'categoryName', label: '分类名称' },
-    { key: 'url', label: 'Uptime Kuma 地址', flex: 2 },
-    { key: 'slug', label: 'Slug' },
   ],
 };
 
@@ -701,14 +944,46 @@ const SettingPage = () => {
     );
   };
 
-  const renderSection = (title, sectionKeys) => (
-    <div key={title} style={{ padding: '20px 22px', border: '1px solid var(--ui-border)', borderRadius: 26 }}>
-      <div style={{ fontSize: 15, fontWeight: 600, color: 'var(--ui-text)', marginBottom: 16 }}>{title}</div>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 14 }}>
-        {sectionKeys.map(renderField)}
+  const renderSection = (title, sectionKeys, sectionDef) => {
+    // Special handling for CombinedRatioEditor
+    if (sectionDef?.component === 'CombinedRatioEditor') {
+      const ratioValues = {};
+      sectionKeys.forEach((k) => { ratioValues[k] = val(k); });
+      return (
+        <div key={title} style={{ padding: '20px 22px', border: '1px solid var(--ui-border)', borderRadius: 26 }}>
+          <div style={{ fontSize: 15, fontWeight: 600, color: 'var(--ui-text)', marginBottom: 16 }}>{title}</div>
+          <CombinedRatioEditor
+            values={ratioValues}
+            onChange={(jsonKey, v) => set(jsonKey, v)}
+            suggestions={modelList}
+          />
+        </div>
+      );
+    }
+    // Special handling for GroupRatioEditor
+    if (sectionDef?.component === 'GroupRatioEditor') {
+      const groupValues = {};
+      sectionKeys.forEach((k) => { groupValues[k] = val(k); });
+      return (
+        <div key={title} style={{ padding: '20px 22px', border: '1px solid var(--ui-border)', borderRadius: 26 }}>
+          <div style={{ fontSize: 15, fontWeight: 600, color: 'var(--ui-text)', marginBottom: 16 }}>{title}</div>
+          <GroupRatioEditor
+            values={groupValues}
+            onChange={(jsonKey, v) => set(jsonKey, v)}
+            suggestions={groupList}
+          />
+        </div>
+      );
+    }
+    return (
+      <div key={title} style={{ padding: '20px 22px', border: '1px solid var(--ui-border)', borderRadius: 26 }}>
+        <div style={{ fontSize: 15, fontWeight: 600, color: 'var(--ui-text)', marginBottom: 16 }}>{title}</div>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 14 }}>
+          {sectionKeys.map(renderField)}
+        </div>
       </div>
-    </div>
-  );
+    );
+  };
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 20, width: '100%', maxWidth: 960, marginInline: 'auto', padding: '24px 16px' }}>
@@ -730,7 +1005,7 @@ const SettingPage = () => {
 
       {loading ? <Loading /> : (
         sections
-          ? sections.map((s) => renderSection(s.title, s.keys))
+          ? sections.map((s) => renderSection(s.title, s.keys, s))
           : renderSection(TABS.find((t) => t.key === active)?.label || active, keys)
       )}
     </div>

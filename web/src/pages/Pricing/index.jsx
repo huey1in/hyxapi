@@ -139,14 +139,25 @@ const PricingPage = () => {
             <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3'>
               {filtered.map((m) => (
                 <Card key={m.model_name} interactive='hover' onClick={() => goDetail(m)}>
-                  <div className='font-mono text-xs text-ui-text-1 break-all mb-2'>{m.model_name}</div>
-                  <div className='text-xs text-ui-text-3 mb-3'>{vendors[m.vendor_id]?.name || '未知厂商'}</div>
+                  <div className='flex items-center gap-2 mb-2'>
+                    {vendors[m.vendor_id]?.icon && getLobeHubIcon(vendors[m.vendor_id].icon, 20)}
+                    <span className='text-xs text-ui-text-3'>{vendors[m.vendor_id]?.name || '未知厂商'}</span>
+                  </div>
+                  <div className='font-mono text-xs text-ui-text-1 break-all mb-3'>{m.model_name}</div>
                   <div className='text-sm text-ui-text-1 font-mono mb-3'>{compute(m)}</div>
-                  <div className='flex flex-wrap gap-1'>
+                  <div className='flex flex-wrap gap-1 mb-2'>
                     {(m.supported_endpoint_types || []).slice(0, 4).map((e) => (
                       <Tag key={e} color='blue'>{e}</Tag>
                     ))}
                   </div>
+                  {(m.enable_groups || []).length > 0 && (
+                    <div className='flex flex-wrap gap-1'>
+                      {m.enable_groups.slice(0, 4).map((g) => (
+                        <Tag key={g}>{g}</Tag>
+                      ))}
+                      {m.enable_groups.length > 4 && <Tag>+{m.enable_groups.length - 4}</Tag>}
+                    </div>
+                  )}
                 </Card>
               ))}
             </div>

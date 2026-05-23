@@ -1,50 +1,11 @@
-import React, { useContext, useEffect, useMemo, useState } from 'react';
+import React, { useContext, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { RefreshCw, ChevronDown, Copy, Globe, Megaphone, HelpCircle } from 'lucide-react';
-import { API, renderNumber, renderQuota, showSuccess, copy, getRelativeTime, isAdmin } from '../../helpers';
+import { RefreshCw } from 'lucide-react';
+import { API, renderNumber, renderQuota, isAdmin, timestamp2string } from '../../helpers';
 import { UserContext } from '../../context/User';
-import { StatusContext } from '../../context/Status';
 import { IconButton, Loading } from '../../components/ui';
 import useIsMobile from '../../hooks/useIsMobile';
 import useIsDark from '../../hooks/useIsDark';
-
-const MONTHS = ['1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月'];
-
-const BarChart = ({ data, height = 180 }) => {
-  if (!data || data.length === 0) {
-    return <p className='text-sm text-[#999] py-8 text-center'>暂无数据</p>;
-  }
-  const max = Math.max(1, ...data.map((d) => d.value));
-  const ticks = 6;
-  const step = Math.ceil(max / ticks);
-  const yLabels = Array.from({ length: ticks + 1 }, (_, i) => step * (ticks - i));
-
-  return (
-    <div className='flex gap-2' style={{ height }}>
-      <div className='flex flex-col justify-between text-[12px] text-[#999] tabular-nums pr-1' style={{ width: 44, whiteSpace: 'nowrap' }}>
-        {yLabels.map((v, i) => (
-          <span key={i}>{v >= 1000 ? `${(v/1000).toFixed(v >= 10000 ? 0 : 1)}K` : v}</span>
-        ))}
-      </div>
-      <div className='flex-1 flex items-end gap-[3px]'>
-        {data.map((d, i) => {
-          const pct = max > 0 ? (d.value / max) * 100 : 0;
-          return (
-            <div key={i} className='flex-1 flex flex-col items-center gap-1'>
-              <div className='w-full flex justify-center' style={{ height: height - 24 }}>
-                <div
-                  className='w-full max-w-[28px] rounded-t transition-all'
-                  style={{ height: `${pct}%`, background: 'var(--ui-accent)' }}
-                />
-              </div>
-              <span className='text-[11px] text-[#999]' style={{ whiteSpace: 'nowrap' }}>{d.label}</span>
-            </div>
-          );
-        })}
-      </div>
-    </div>
-  );
-};
 
 const StatMini = ({ label, value }) => (
   <div style={{ paddingBlock: 16, paddingInline: 16, border: '1px solid var(--ui-border)', borderRadius: 16 }}>
@@ -56,14 +17,11 @@ const StatMini = ({ label, value }) => (
 const Dashboard = () => {
   const navigate = useNavigate();
   const [userState] = useContext(UserContext);
-  const [statusState] = useContext(StatusContext);
   const [stats, setStats] = useState(null);
   const [liveStats, setLiveStats] = useState({ quota: 0, rpm: 0, tpm: 0 });
-  const [monthlyData, setMonthlyData] = useState([]);
-  const [modelStats, setModelStats] = useState([]);
-  const [userRanking, setUserRanking] = useState([]);
+  const [recentLogs, setRecentLogs] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [chartLoading, setChartLoading] = useState(false);
+  const [logsLoading, setLogsLoading] = useState(false);
   const isMobile = useIsMobile();
   const isDark = useIsDark();
 
@@ -75,45 +33,9 @@ const Dashboard = () => {
         if (res.data?.success) setStats(res.data.data);
       } catch {} finally { setLoading(false); }
     })();
-    loadChart();
+    loadRecentLogs();
     loadLiveStats();
-    if (isAdmin()) loadAdminData();
   }, [userState?.user]);
-
-  const loadAdminData = async () => {
-    const end = Math.floor(Date.now() / 1000);
-    const start = end - 30 * 86400;
-    try {
-      const [modelRes, userRes] = await Promise.all([
-        API.get(`/api/data/?start_timestamp=${start}&end_timestamp=${end}`),
-        API.get(`/api/data/users?start_timestamp=${start}&end_timestamp=${end}`),
-      ]);
-      if (modelRes.data?.success) {
-        const byModel = new Map();
-        (modelRes.data.data || []).forEach((it) => {
-          const name = it.model_name || 'unknown';
-          const cur = byModel.get(name) || { name, count: 0, quota: 0, tokens: 0 };
-          cur.count += it.count || 0;
-          cur.quota += it.quota || 0;
-          cur.tokens += it.token_used || 0;
-          byModel.set(name, cur);
-        });
-        setModelStats([...byModel.values()].sort((a, b) => b.quota - a.quota).slice(0, 15));
-      }
-      if (userRes.data?.success) {
-        const byUser = new Map();
-        (userRes.data.data || []).forEach((it) => {
-          const name = it.username || 'unknown';
-          const cur = byUser.get(name) || { name, count: 0, quota: 0, tokens: 0 };
-          cur.count += it.count || 0;
-          cur.quota += it.quota || 0;
-          cur.tokens += it.token_used || 0;
-          byUser.set(name, cur);
-        });
-        setUserRanking([...byUser.values()].sort((a, b) => b.quota - a.quota).slice(0, 10));
-      }
-    } catch {}
-  };
 
   const loadLiveStats = async () => {
     try {
@@ -123,53 +45,15 @@ const Dashboard = () => {
     } catch {}
   };
 
-  const loadChart = async () => {
-    setChartLoading(true);
+  const loadRecentLogs = async () => {
+    setLogsLoading(true);
     try {
-      const end = Math.floor(Date.now() / 1000);
-      const start = end - 365 * 86400;
-      const res = await API.get(`/api/data/${isAdmin() ? '' : 'self/'}?start_timestamp=${start}&end_timestamp=${end}&default_time=month`);
-      const list = res.data?.success ? (res.data.data || []) : [];
-      const byMonth = new Map();
-      list.forEach((it) => {
-        const ts = it.created_at || it.CreatedAt;
-        const k = it.Day || it.day || it.Time;
-        const q = it.Quota || it.quota || 0;
-        let month;
-        if (ts) {
-          month = new Date(ts * 1000).getMonth();
-        } else if (k) {
-          month = new Date(k).getMonth();
-        }
-        if (month !== undefined && !isNaN(month)) byMonth.set(month, (byMonth.get(month) || 0) + q);
-      });
-      const now = new Date();
-      const result = [];
-      for (let i = 11; i >= 0; i--) {
-        const m = (now.getMonth() - i + 12) % 12;
-        result.push({ label: MONTHS[m], value: byMonth.get(m) || 0 });
-      }
-      setMonthlyData(result);
-    } catch { setMonthlyData([]); }
-    finally { setChartLoading(false); }
+      const url = isAdmin() ? '/api/log/?p=1&size=10&type=0' : '/api/log/self/?p=1&size=10&type=0';
+      const res = await API.get(url);
+      if (res.data?.success) setRecentLogs(res.data.data?.items || res.data.data || []);
+    } catch { setRecentLogs([]); }
+    finally { setLogsLoading(false); }
   };
-
-  const status = statusState?.status || {};
-  const announcements = useMemo(() => {
-    return (status.announcements || []).slice(0, 10).map((it) => {
-      const d = it?.publishDate ? new Date(it.publishDate) : null;
-      const time = d && !isNaN(d.getTime())
-        ? `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
-        : '';
-      return { ...it, time, relative: getRelativeTime(it.publishDate) };
-    });
-  }, [status.announcements]);
-  const apiInfoData = status.api_info || [];
-  const faqData = status.faq || [];
-
-  const apiInfoEnabled = status.api_info_enabled ?? true;
-  const announcementsEnabled = status.announcements_enabled ?? true;
-  const faqEnabled = status.faq_enabled ?? true;
 
   const u = stats || userState?.user || {};
 
@@ -203,236 +87,118 @@ const Dashboard = () => {
             }}
           >+ 充值</button>
         </div>
-        {/* 本月消费 */}
+        {/* 总请求 */}
         <div style={{ display: 'flex', alignItems: 'center', paddingBlock: 26, paddingInline: 20, border: '1px solid var(--ui-border)', borderRadius: 26 }}>
           <div>
-            <div style={{ fontSize: 14, fontWeight: 400, color: 'var(--ui-text-3)', marginBottom: 8 }}>本月消费</div>
-            <div style={{ fontSize: 28, fontWeight: 700, color: 'var(--ui-text)' }}>
-              {renderQuota(monthlyData.length > 0 ? monthlyData[monthlyData.length - 1].value : 0)}
-            </div>
+            <div style={{ fontSize: 14, fontWeight: 400, color: 'var(--ui-text-3)', marginBottom: 8 }}>总请求数</div>
+            <div style={{ fontSize: 28, fontWeight: 700, color: 'var(--ui-text)' }}>{renderNumber(u.request_count || 0)}</div>
+            <div style={{ fontSize: 12, color: 'var(--ui-text-3)', marginTop: 4 }}>累计消费: {renderQuota(u.used_quota || 0)}</div>
           </div>
         </div>
       </div>
 
       {/* 实时统计 */}
       <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(4, 1fr)', gap: 12 }}>
-        <StatMini label='总请求数' value={renderNumber(u.request_count || 0)} />
+        <StatMini label='总 Tokens' value={fmtTokens(liveStats.tokens || 0)} />
         <StatMini label='总消费' value={renderQuota(u.used_quota || 0)} />
         <StatMini label='当前 RPM' value={renderNumber(liveStats.rpm || 0)} />
         <StatMini label='当前 TPM' value={renderNumber(liveStats.tpm || 0)} />
       </div>
 
-      {/* 每月用量 */}
-      <div style={{ paddingBlock: '16px 8px', paddingInline: 16, border: '1px solid var(--ui-border)', borderRadius: 26 }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBlockEnd: 8 }}>
-          <span style={{ fontSize: 18, fontWeight: 600, color: 'var(--ui-text)' }}>每月用量</span>
-          <IconButton icon={RefreshCw} onClick={loadChart} disabled={chartLoading} title='刷新' />
+      {/* 最近活动 */}
+      <div style={{ border: '1px solid var(--ui-border)', borderRadius: 26, overflow: 'hidden' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 20px', borderBottom: '1px solid var(--ui-divider)' }}>
+          <span style={{ fontSize: 16, fontWeight: 600, color: 'var(--ui-text)' }}>最近活动</span>
+          <IconButton icon={RefreshCw} onClick={loadRecentLogs} disabled={logsLoading} title='刷新' />
         </div>
-        <div style={{ position: 'relative' }}>
-          <div style={{ opacity: chartLoading ? 0.4 : 1, transition: 'opacity 0.3s ease' }}>
-            <BarChart data={monthlyData} />
+        {logsLoading ? (
+          <div style={{ padding: '32px 0', display: 'flex', justifyContent: 'center' }}><Loading size='sm' /></div>
+        ) : recentLogs.length === 0 ? (
+          <div style={{ padding: '32px 0', textAlign: 'center', color: 'var(--ui-text-3)', fontSize: 13 }}>暂无记录</div>
+        ) : (
+          <div>
+            {recentLogs.map((r, i) => <LogRow key={r.id || i} r={r} last={i === recentLogs.length - 1} navigate={navigate} isMobile={isMobile} />)}
           </div>
-          {chartLoading && (
-            <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <Loading size='sm' />
-            </div>
+        )}
+      </div>
+
+    </div>
+  );
+};
+
+const parseOther = (other) => {
+  if (!other) return {};
+  try { return typeof other === 'string' ? JSON.parse(other) : other; } catch { return {}; }
+};
+
+const fmtTokens = (n) => {
+  if (n == null || n === 0) return '0';
+  if (n >= 1000000000) return (n / 1000000000).toFixed(2) + 'B';
+  if (n >= 1000000) return (n / 1000000).toFixed(1) + 'M';
+  if (n >= 1000) return (n / 1000).toFixed(1) + 'k';
+  return String(n);
+};
+
+const PILL = { display: 'inline-flex', alignItems: 'center', height: 20, paddingInline: 6, borderRadius: 5, fontSize: 11, fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap' };
+
+const LogRow = ({ r, last, navigate, isMobile }) => {
+  const o = parseOther(r.other);
+  const cacheTokens = o.cache_tokens || 0;
+  const cacheCreationTokens = o.cache_creation_tokens || 0;
+  const hasCache = cacheTokens > 0 || cacheCreationTokens > 0;
+
+  return (
+    <div
+      onClick={() => navigate('/console/log')}
+      style={{
+        padding: isMobile ? '10px 14px' : '10px 20px',
+        borderBottom: last ? 'none' : '1px solid var(--ui-divider)',
+        cursor: 'pointer', transition: 'background 0.15s',
+      }}
+      onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--ui-bg-subtle)'; }}
+      onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; }}
+    >
+      {/* 第一行：模型名 + 分组 + 扣费 + 时间 */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6, minWidth: 0, flex: 1 }}>
+          <span style={{ fontSize: 13, fontWeight: 500, color: 'var(--ui-text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontFamily: "'JetBrains Mono', monospace" }}>
+            {r.model_name || '—'}
+          </span>
+          {r.group && (
+            <span style={{ ...PILL, color: 'var(--ui-text-3)', border: '1px solid var(--ui-border)' }}>{r.group}</span>
           )}
         </div>
-      </div>
-
-      {/* 管理员数据面板 */}
-      {isAdmin() && modelStats.length > 0 && (
-        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 12 }}>
-          {/* 模型统计 */}
-          <div style={{ padding: '16px 20px', border: '1px solid var(--ui-border)', borderRadius: 26, overflow: 'hidden' }}>
-            <span style={{ fontSize: 16, fontWeight: 600, color: 'var(--ui-text)' }}>模型调用 Top 15（近30天）</span>
-            <div style={{ marginTop: 12, maxHeight: 360, overflowY: 'auto' }}>
-              {modelStats.map((m, i) => {
-                const maxQ = modelStats[0]?.quota || 1;
-                return (
-                  <div key={m.name} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
-                    <span style={{ fontSize: 11, color: 'var(--ui-text-3)', width: 18, textAlign: 'right' }}>{i + 1}</span>
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, marginBottom: 2 }}>
-                        <span style={{ color: 'var(--ui-text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{m.name}</span>
-                        <span style={{ color: 'var(--ui-text-3)', flexShrink: 0, marginLeft: 8 }}>{renderNumber(m.count)} 次</span>
-                      </div>
-                      <div style={{ height: 4, borderRadius: 2, background: 'var(--ui-bg-subtle)' }}>
-                        <div style={{ height: '100%', borderRadius: 2, width: `${(m.quota / maxQ) * 100}%`, background: 'var(--ui-accent)' }} />
-                      </div>
-                      <div style={{ fontSize: 11, color: 'var(--ui-text-3)', marginTop: 2 }}>
-                        消费 {renderQuota(m.quota)} · Token {renderNumber(m.tokens)}
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* 用户消费排行 */}
-          <div style={{ padding: '16px 20px', border: '1px solid var(--ui-border)', borderRadius: 26, overflow: 'hidden' }}>
-            <span style={{ fontSize: 16, fontWeight: 600, color: 'var(--ui-text)' }}>用户消费 Top 10（近30天）</span>
-            <div style={{ marginTop: 12, maxHeight: 360, overflowY: 'auto' }}>
-              {userRanking.map((u, i) => {
-                const maxQ = userRanking[0]?.quota || 1;
-                return (
-                  <div key={u.name} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
-                    <span style={{ fontSize: 11, color: 'var(--ui-text-3)', width: 18, textAlign: 'right' }}>{i + 1}</span>
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, marginBottom: 2 }}>
-                        <span style={{ color: 'var(--ui-text)' }}>{u.name}</span>
-                        <span style={{ color: 'var(--ui-text-3)', flexShrink: 0, marginLeft: 8 }}>{renderQuota(u.quota)}</span>
-                      </div>
-                      <div style={{ height: 4, borderRadius: 2, background: 'var(--ui-bg-subtle)' }}>
-                        <div style={{ height: '100%', borderRadius: 2, width: `${(u.quota / maxQ) * 100}%`, background: 'var(--ui-accent)' }} />
-                      </div>
-                      <div style={{ fontSize: 11, color: 'var(--ui-text-3)', marginTop: 2 }}>
-                        {renderNumber(u.count)} 次 · Token {renderNumber(u.tokens)}
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
+          {r.quota > 0 && (
+            <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--ui-text)', fontVariantNumeric: 'tabular-nums' }}>
+              {renderQuota(r.quota, 6)}
+            </span>
+          )}
+          <span style={{ fontSize: 11, color: 'var(--ui-text-3)', whiteSpace: 'nowrap' }}>
+            {timestamp2string(r.created_at)}
+          </span>
         </div>
-      )}
-
-      {/* 信息面板 */}
-      <InfoPanels
-        apiInfoEnabled={apiInfoEnabled}
-        announcementsEnabled={announcementsEnabled}
-        faqEnabled={faqEnabled}
-        apiInfoData={apiInfoData}
-        announcements={announcements}
-        faqData={faqData}
-      />
-    </div>
-  );
-};
-
-// ── Info Panels ─────────────────────────────────────────
-
-const TABS = [
-  { key: 'api', label: 'API 信息', Icon: Globe },
-  { key: 'news', label: '系统公告', Icon: Megaphone },
-  { key: 'faq', label: '常见问答', Icon: HelpCircle },
-];
-
-const InfoPanels = ({ apiInfoEnabled, announcementsEnabled, faqEnabled, apiInfoData, announcements, faqData }) => {
-  const tabs = useMemo(() => {
-    const out = [];
-    if (apiInfoEnabled) out.push(TABS[0]);
-    if (announcementsEnabled) out.push(TABS[1]);
-    if (faqEnabled) out.push(TABS[2]);
-    return out;
-  }, [apiInfoEnabled, announcementsEnabled, faqEnabled]);
-
-  const [active, setActive] = useState(tabs[0]?.key || 'api');
-  const [uptimeGroup, setUptimeGroup] = useState('0');
-
-  if (tabs.length === 0) return null;
-
-  return (
-    <div style={{ border: '1px solid var(--ui-border)', borderRadius: 26, overflow: 'hidden' }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '12px 16px', borderBottom: '1px solid var(--ui-divider)', overflowX: 'auto' }}>
-        {tabs.map(({ key, label }) => (
-          <button
-            key={key}
-            onClick={() => setActive(key)}
-            style={{
-              cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 5,
-              height: 30, paddingInline: 12, borderRadius: 15, border: 'none',
-              fontSize: 13, fontWeight: active === key ? 500 : 400, whiteSpace: 'nowrap',
-              color: active === key ? 'var(--ui-text)' : 'var(--ui-text-2)',
-              background: active === key ? 'var(--ui-bg-subtle)' : 'transparent',
-              transition: 'background 0.15s, color 0.15s',
-            }}
-          >
-            {label}
-          </button>
-        ))}
       </div>
-      <div style={{ maxHeight: 420, overflowY: 'auto' }}>
-        {active === 'api' && <ApiInfoSection data={apiInfoData} />}
-        {active === 'news' && <AnnouncementsSection data={announcements} />}
-        {active === 'faq' && <FaqSection data={faqData} />}
-      </div>
-    </div>
-  );
-};
-
-const EmptyState = ({ text }) => (
-  <div style={{ padding: '48px 16px', textAlign: 'center', color: 'var(--ui-text-3)', fontSize: 13 }}>{text}</div>
-);
-
-const ApiInfoSection = ({ data }) => {
-  if (!data?.length) return <EmptyState text='暂无 API 信息' />;
-  return (
-    <div>
-      {data.map((item, i) => (
-        <div key={i} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 18px', borderBottom: i < data.length - 1 ? '1px solid #eeeeee' : 'none' }}>
-          <div style={{ minWidth: 0, flex: 1 }}>
-            <div style={{ fontSize: 14, fontWeight: 500, color: 'var(--ui-text)', marginBottom: 2 }}>{item.route || item.name || '-'}</div>
-            <div style={{ fontSize: 12, fontFamily: 'monospace', color: 'var(--ui-text-2)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.url}</div>
-          </div>
-          <button
-            onClick={async () => { if (await copy(item.url)) showSuccess('已复制'); }}
-            style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', width: 28, height: 28, border: 'none', borderRadius: 6, background: 'transparent', color: 'var(--ui-text-3)', flexShrink: 0 }}
-          >
-            <Copy size={14} />
-          </button>
+      {/* 第二行：Token 用量 */}
+      {(r.prompt_tokens > 0 || r.completion_tokens > 0) && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginTop: 5, flexWrap: 'wrap' }}>
+          <span style={{ ...PILL, color: 'var(--ui-text-2)', background: 'var(--ui-bg-subtle)' }}>
+            入 {fmtTokens(r.prompt_tokens)}
+          </span>
+          <span style={{ ...PILL, color: 'var(--ui-text-2)', background: 'var(--ui-bg-subtle)' }}>
+            出 {fmtTokens(r.completion_tokens)}
+          </span>
+          {hasCache && cacheTokens > 0 && (
+            <span style={{ ...PILL, color: '#16a34a', background: '#f0fdf4', border: '1px solid #bbf7d0' }}>
+              缓存 {fmtTokens(cacheTokens)}
+            </span>
+          )}
+          {hasCache && cacheCreationTokens > 0 && (
+            <span style={{ ...PILL, color: '#ca8a04', background: '#fefce8', border: '1px solid #fef08a' }}>
+              写缓存 {fmtTokens(cacheCreationTokens)}
+            </span>
+          )}
         </div>
-      ))}
-    </div>
-  );
-};
-
-const AnnouncementsSection = ({ data }) => {
-  if (!data?.length) return <EmptyState text='暂无公告' />;
-  const colorMap = { success: '#22c55e', warning: '#f59e0b', error: '#ef4444' };
-  return (
-    <div>
-      {data.map((item, i) => (
-        <div key={i} style={{ padding: '12px 18px', borderBottom: i < data.length - 1 ? '1px solid #eeeeee' : 'none' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
-            <span style={{ width: 6, height: 6, borderRadius: '50%', background: colorMap[item.type] || '#999', flexShrink: 0 }} />
-            <span style={{ fontSize: 12, color: 'var(--ui-text-3)' }}>{item.relative ? `${item.relative} · ` : ''}{item.time}</span>
-          </div>
-          <div style={{ fontSize: 14, color: 'var(--ui-text)', lineHeight: 1.6, paddingLeft: 14 }}>{item.content}</div>
-        </div>
-      ))}
-    </div>
-  );
-};
-
-const FaqSection = ({ data }) => {
-  if (!data?.length) return <EmptyState text='暂无问答' />;
-  return (
-    <div>
-      {data.map((item, i) => <FaqItem key={i} item={item} last={i === data.length - 1} />)}
-    </div>
-  );
-};
-
-const FaqItem = ({ item, last }) => {
-  const [open, setOpen] = useState(false);
-  return (
-    <div style={{ borderBottom: last ? 'none' : '1px solid #eeeeee' }}>
-      <button
-        onClick={() => setOpen((o) => !o)}
-        style={{
-          cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-          width: '100%', padding: '12px 18px', border: 'none', background: 'transparent',
-          fontSize: 14, color: 'var(--ui-text)', textAlign: 'left',
-        }}
-      >
-        <span style={{ flex: 1 }}>{item.question}</span>
-        <ChevronDown size={14} style={{ color: 'var(--ui-text-3)', transform: open ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }} />
-      </button>
-      {open && (
-        <div style={{ padding: '0 18px 12px', fontSize: 13, color: 'var(--ui-text-2)', lineHeight: 1.6 }}>{item.answer}</div>
       )}
     </div>
   );

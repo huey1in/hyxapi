@@ -1,4 +1,4 @@
-import React, { useEffect, useContext } from 'react';
+import React, { useEffect, useContext, useRef } from 'react';
 import { Outlet, useLocation } from 'react-router-dom';
 import HeaderBar from './HeaderBar';
 import SiderBar from './SiderBar';
@@ -13,8 +13,16 @@ const PageLayout = () => {
   const [, userDispatch] = useContext(UserContext);
   const [, statusDispatch] = useContext(StatusContext);
   const location = useLocation();
+  const mainRef = useRef(null);
   const isConsoleRoute = location.pathname.startsWith('/console');
   const hideFooter = isConsoleRoute || location.pathname.startsWith('/pricing');
+
+  // 路由切换时滚动回顶部
+  useEffect(() => {
+    if (mainRef.current) {
+      mainRef.current.scrollTop = 0;
+    }
+  }, [location.pathname]);
 
   useEffect(() => {
     const raw = localStorage.getItem('user');
@@ -50,7 +58,7 @@ const PageLayout = () => {
         <HeaderBar />
         <div className='flex-1 flex min-h-0'>
           {isConsoleRoute && <SiderBar />}
-          <main className='flex-1 min-w-0 overflow-y-auto overflow-x-hidden flex flex-col'>
+          <main ref={mainRef} className='flex-1 min-w-0 overflow-y-auto overflow-x-hidden flex flex-col'>
             <div className='flex-1'>
               <Outlet />
             </div>

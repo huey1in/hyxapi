@@ -1,8 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
-import { ArrowLeft, Copy, Zap, DollarSign, Layers, Server } from 'lucide-react';
+import { ArrowLeft, Copy, Server } from 'lucide-react';
 import { API, showError, showSuccess, copy, getLobeHubIcon } from '../../helpers';
 import { PageShell, Card, Button, IconButton, Tag, Loading } from '../../components/ui';
+
+const STATUS_COLORS = { up: '#22c55e', down: '#ef4444', unknown: '#d1d5db' };
 
 const ModelDetail = () => {
   const { modelName } = useParams();
@@ -12,23 +14,31 @@ const ModelDetail = () => {
   const [model, setModel] = useState(null);
   const [vendors, setVendors] = useState({});
   const [groupRatio, setGroupRatio] = useState({});
+  const [health, setHealth] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     (async () => {
       try {
-        const { data } = await API.get('/api/pricing');
-        if (data.success) {
+        const [pricingRes, healthRes] = await Promise.all([
+          API.get('/api/pricing'),
+          API.get(`/api/model-health/status/${encodeURIComponent(decodeURIComponent(modelName))}`),
+        ]);
+        if (pricingRes.data?.success) {
           const vmap = {};
-          (data.vendors || []).forEach((v) => { vmap[v.id] = v; });
+          (pricingRes.data.vendors || []).forEach((v) => { vmap[v.id] = v; });
           setVendors(vmap);
-          setGroupRatio(data.group_ratio || {});
-          const found = (data.data || []).find((m) => m.model_name === decodeURIComponent(modelName));
+          setGroupRatio(pricingRes.data.group_ratio || {});
+          const found = (pricingRes.data.data || []).find((m) => m.model_name === decodeURIComponent(modelName));
           setModel(found || null);
-        } else showError(data.message);
+        } else showError(pricingRes.data?.message);
+        if (healthRes.data?.success) setHealth(healthRes.data.data || []);
       } catch (e) { showError(e); } finally { setLoading(false); }
     })();
   }, [modelName]);
+
+  const healthByGroup = {};
+  health.forEach((h) => { healthByGroup[h.group] = h; });
 
   if (loading) return <PageShell title='模型详情'><Loading /></PageShell>;
   if (!model) return (
@@ -38,17 +48,12 @@ const ModelDetail = () => {
   );
 
   const vendor = vendors[model.vendor_id];
-  const compute = (m, mul = 1) => {
-    if (m.quota_type === 1) return `$${((m.model_price || 0) * mul).toFixed(4)} / 次`;
-    const p = (m.model_ratio || 0) * 2 * mul;
-    const c = p * (m.completion_ratio || 1);
-    return `$${p.toFixed(3)} / $${c.toFixed(3)} per 1M tokens`;
-  };
-
   const enabledGroups = (model.enable_groups || [])
     .filter((g) => groupRatio[g] != null)
     .map((g) => ({ name: g, mul: groupRatio[g] }));
   if (enabledGroups.length === 0) enabledGroups.push({ name: '默认', mul: 1 });
+
+  const isPerCall = model.quota_type === 1;
 
   return (
     <PageShell
@@ -56,133 +61,132 @@ const ModelDetail = () => {
       actions={<Button variant='toggle' icon={ArrowLeft} onClick={() => navigate('/pricing')}>返回</Button>}
     >
       <div className='space-y-5' style={{ minHeight: 'calc(100vh - 240px)' }}>
+        {/* 模型信息头 */}
         <Card>
-          <div className='flex items-center gap-4 mb-6'>
+          <div className='flex items-center gap-4'>
             <div style={{ width: 48, height: 48, borderRadius: 14, border: '1px solid #e9e9e9', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
               {vendor?.icon ? getLobeHubIcon(vendor.icon, 28) : <Server size={22} className='text-ui-text-3' />}
             </div>
             <div className='flex-1 min-w-0'>
               <div className='font-mono text-lg font-semibold text-ui-text-1 break-all'>{model.model_name}</div>
-              <div className='text-sm text-ui-text-3 mt-0.5'>{vendor?.name || '未知厂商'}{vendor?.description ? ` · ${vendor.description}` : ''}</div>
+              <div className='text-sm text-ui-text-3 mt-0.5'>
+                {vendor?.name || '未知厂商'}
+                {' · '}
+                {isPerCall ? '按次计费' : '按 Token 计费'}
+                {(model.supported_endpoint_types || []).length > 0 && (
+                  <> · {(model.supported_endpoint_types || []).join(', ')}</>
+                )}
+              </div>
             </div>
             <IconButton icon={Copy} onClick={() => { copy(model.model_name); showSuccess('模型名已复制'); }} />
           </div>
-
-          <div className='grid grid-cols-2 sm:grid-cols-4 gap-4'>
-            <div style={{ padding: '14px 16px', background: '#f9f9f6', borderRadius: 12 }}>
-              <div className='flex items-center gap-1.5 text-xs text-ui-text-3 mb-2'><Zap size={12} />计费类型</div>
-              <div className='text-sm text-ui-text-1 font-medium'>{model.quota_type === 1 ? '按次计费' : '按 Token 计费'}</div>
-            </div>
-            <div style={{ padding: '14px 16px', background: '#f9f9f6', borderRadius: 12 }}>
-              <div className='flex items-center gap-1.5 text-xs text-ui-text-3 mb-2'><DollarSign size={12} />{selectedGroup ? `${selectedGroup} 价格` : '默认价格'}</div>
-              <div className='text-sm text-ui-text-1 font-mono font-medium'>{compute(model, selectedGroup ? (groupRatio[selectedGroup] ?? 1) : 1)}</div>
-            </div>
-            {model.model_ratio != null && (
-              <div style={{ padding: '14px 16px', background: '#f9f9f6', borderRadius: 12 }}>
-                <div className='flex items-center gap-1.5 text-xs text-ui-text-3 mb-2'><Layers size={12} />模型倍率</div>
-                <div className='text-sm text-ui-text-1 font-mono font-medium'>{model.model_ratio}</div>
-              </div>
-            )}
-            {model.completion_ratio != null && (
-              <div style={{ padding: '14px 16px', background: '#f9f9f6', borderRadius: 12 }}>
-                <div className='flex items-center gap-1.5 text-xs text-ui-text-3 mb-2'><Layers size={12} />补全倍率</div>
-                <div className='text-sm text-ui-text-1 font-mono font-medium'>{model.completion_ratio}</div>
-              </div>
-            )}
-          </div>
         </Card>
 
-        {model.quota_type !== 1 && (
+        {/* 价格 — 按次计费 */}
+        {isPerCall && (
           <Card>
-            <div className='text-sm font-medium text-ui-text-1 mb-4'>价格明细</div>
+            <div className='text-sm font-medium text-ui-text-1 mb-4'>价格</div>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10 }}>
+              {enabledGroups.map((g) => {
+                const price = (model.model_price || 0) * g.mul;
+                return (
+                  <div key={g.name} style={{ padding: '12px 16px', background: '#f9f9f6', borderRadius: 12, minWidth: 120 }}>
+                    <div style={{ fontSize: 12, color: '#999', marginBottom: 4 }}>{g.name} (×{g.mul})</div>
+                    <div style={{ fontSize: 16, fontWeight: 600, color: '#000', fontFamily: "'JetBrains Mono', monospace" }}>${price.toFixed(4)}<span style={{ fontSize: 12, fontWeight: 400, color: '#999' }}> / 次</span></div>
+                  </div>
+                );
+              })}
+            </div>
+          </Card>
+        )}
+
+        {/* 价格 — 按 Token 计费 */}
+        {!isPerCall && (
+          <Card>
+            <div className='text-sm font-medium text-ui-text-1 mb-4'>价格<span style={{ fontSize: 12, fontWeight: 400, color: '#999', marginLeft: 8 }}>$ / 1M tokens</span></div>
             <div className='overflow-x-auto'>
-              <table className='w-full text-sm'>
+              <table className='w-full text-sm' style={{ borderCollapse: 'collapse' }}>
                 <thead>
-                  <tr className='border-b border-ui-border'>
-                    <th className='text-left py-2 pr-4 text-xs text-ui-text-3 font-normal'>类型</th>
+                  <tr>
+                    <th style={{ textAlign: 'left', padding: '8px 12px 8px 0', fontSize: 12, color: '#999', fontWeight: 400, borderBottom: '1px solid #eeeeee' }}>类型</th>
                     {enabledGroups.map((g) => (
-                      <th key={g.name} className='text-right py-2 px-3 text-xs font-normal' style={{ color: selectedGroup === g.name ? '#000' : '#999', fontWeight: selectedGroup === g.name ? 500 : 400 }}>
+                      <th key={g.name} style={{ textAlign: 'right', padding: '8px 0 8px 12px', fontSize: 12, fontWeight: selectedGroup === g.name ? 500 : 400, color: selectedGroup === g.name ? '#000' : '#999', borderBottom: '1px solid #eeeeee' }}>
                         {g.name} (×{g.mul})
                       </th>
                     ))}
                   </tr>
                 </thead>
-                <tbody className='font-mono'>
-                  <tr className='border-b border-ui-border/50'>
-                    <td className='py-2.5 pr-4 text-ui-text-1'>输入 (Prompt)</td>
-                    {enabledGroups.map((g) => {
-                      const p = (model.model_ratio || 0) * 2 * g.mul;
-                      return <td key={g.name} className='py-2.5 px-3 text-right text-ui-text-1'>${p.toFixed(4)}</td>;
-                    })}
-                  </tr>
-                  <tr className='border-b border-ui-border/50'>
-                    <td className='py-2.5 pr-4 text-ui-text-1'>输出 (Completion)</td>
-                    {enabledGroups.map((g) => {
-                      const p = (model.model_ratio || 0) * 2 * g.mul;
-                      const c = p * (model.completion_ratio || 1);
-                      return <td key={g.name} className='py-2.5 px-3 text-right text-ui-text-1'>${c.toFixed(4)}</td>;
-                    })}
-                  </tr>
-                  {model.cache_ratio != null && (
-                    <tr className='border-b border-ui-border/50'>
-                      <td className='py-2.5 pr-4 text-ui-text-1'>缓存命中</td>
-                      {enabledGroups.map((g) => {
-                        const p = (model.model_ratio || 0) * 2 * g.mul * model.cache_ratio;
-                        return <td key={g.name} className='py-2.5 px-3 text-right text-ui-text-1'>${p.toFixed(4)}</td>;
-                      })}
-                    </tr>
-                  )}
-                  {model.create_cache_ratio != null && (
-                    <tr className='border-b border-ui-border/50'>
-                      <td className='py-2.5 pr-4 text-ui-text-1'>缓存创建</td>
-                      {enabledGroups.map((g) => {
-                        const p = (model.model_ratio || 0) * 2 * g.mul * model.create_cache_ratio;
-                        return <td key={g.name} className='py-2.5 px-3 text-right text-ui-text-1'>${p.toFixed(4)}</td>;
-                      })}
-                    </tr>
-                  )}
-                  {model.audio_ratio != null && (
-                    <tr className='border-b border-ui-border/50'>
-                      <td className='py-2.5 pr-4 text-ui-text-1'>音频输入</td>
-                      {enabledGroups.map((g) => {
-                        const p = (model.model_ratio || 0) * 2 * g.mul * model.audio_ratio;
-                        return <td key={g.name} className='py-2.5 px-3 text-right text-ui-text-1'>${p.toFixed(4)}</td>;
-                      })}
-                    </tr>
-                  )}
-                  {model.image_ratio != null && (
-                    <tr>
-                      <td className='py-2.5 pr-4 text-ui-text-1'>图片输入</td>
-                      {enabledGroups.map((g) => {
-                        const p = (model.model_ratio || 0) * 2 * g.mul * model.image_ratio;
-                        return <td key={g.name} className='py-2.5 px-3 text-right text-ui-text-1'>${p.toFixed(4)}</td>;
-                      })}
-                    </tr>
-                  )}
+                <tbody style={{ fontFamily: "'JetBrains Mono', monospace" }}>
+                  <PriceRow label='输入' groups={enabledGroups} compute={(mul) => (model.model_ratio || 0) * 2 * mul} />
+                  <PriceRow label='输出' groups={enabledGroups} compute={(mul) => (model.model_ratio || 0) * 2 * mul * (model.completion_ratio || 1)} />
+                  {model.cache_ratio != null && <PriceRow label='缓存命中' groups={enabledGroups} compute={(mul) => (model.model_ratio || 0) * 2 * mul * model.cache_ratio} />}
+                  {model.create_cache_ratio != null && <PriceRow label='缓存创建' groups={enabledGroups} compute={(mul) => (model.model_ratio || 0) * 2 * mul * model.create_cache_ratio} />}
+                  {model.audio_ratio != null && <PriceRow label='音频输入' groups={enabledGroups} compute={(mul) => (model.model_ratio || 0) * 2 * mul * model.audio_ratio} />}
+                  {model.image_ratio != null && <PriceRow label='图片输入' groups={enabledGroups} compute={(mul) => (model.model_ratio || 0) * 2 * mul * model.image_ratio} />}
                 </tbody>
               </table>
-              <div className='text-xs text-ui-text-3 mt-3'>单位：$ / 1M tokens</div>
             </div>
           </Card>
         )}
 
-        <Card>
-          <div className='text-sm font-medium text-ui-text-1 mb-3'>支持端点</div>
-          <div className='flex flex-wrap gap-1.5'>
-            {(model.supported_endpoint_types || []).map((e) => <Tag key={e} color='blue'>{e}</Tag>)}
-            {(model.supported_endpoint_types || []).length === 0 && <span className='text-xs text-ui-text-3'>暂无端点信息</span>}
-          </div>
-        </Card>
-
+        {/* 可用分组 + 状态 */}
         <Card>
           <div className='text-sm font-medium text-ui-text-1 mb-3'>可用分组</div>
           <div className='flex flex-wrap gap-1.5'>
-            {(model.enable_groups || []).map((g) => (
-              <Tag key={g}>{g}{groupRatio[g] && groupRatio[g] !== 1 ? ` (×${groupRatio[g]})` : ''}</Tag>
-            ))}
+            {(model.enable_groups || []).map((g) => {
+              const h = healthByGroup[g];
+              const status = h?.current?.status || 'unknown';
+              const color = STATUS_COLORS[status] || STATUS_COLORS.unknown;
+              const latency = h?.current?.latency;
+              return (
+                <div key={g} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, height: 28, paddingInline: 10, borderRadius: 6, border: '1px solid var(--ui-border)', fontSize: 13 }}>
+                  <span style={{ width: 6, height: 6, borderRadius: '50%', background: color, flexShrink: 0 }} />
+                  <span style={{ color: 'var(--ui-text)' }}>{g}</span>
+                  {latency != null && <span style={{ fontSize: 11, color: '#999', fontVariantNumeric: 'tabular-nums' }}>{latency}ms</span>}
+                </div>
+              );
+            })}
             {(model.enable_groups || []).length === 0 && <span className='text-xs text-ui-text-3'>暂无分组信息</span>}
           </div>
         </Card>
+
+        {/* 服务状态心跳 */}
+        {health.length > 0 && (
+          <Card>
+            <div className='text-sm font-medium text-ui-text-1 mb-4'>服务状态</div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+              {health.sort((a, b) => a.group.localeCompare(b.group)).map((h) => {
+                const status = h.current?.status || 'unknown';
+                const color = STATUS_COLORS[status] || STATUS_COLORS.unknown;
+                const beats = h.history || [];
+                return (
+                  <div key={h.group}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <span style={{ width: 6, height: 6, borderRadius: '50%', background: color, flexShrink: 0 }} />
+                        <span style={{ fontSize: 13, color: 'var(--ui-text)' }}>{h.group}</span>
+                      </div>
+                      <span style={{ fontSize: 11, color: '#999', fontVariantNumeric: 'tabular-nums' }}>
+                        {h.current?.latency != null ? `${h.current.latency}ms` : '—'}
+                      </span>
+                    </div>
+                    {beats.length > 0 && (
+                      <div style={{ display: 'flex', gap: 1, height: 24, alignItems: 'stretch' }}>
+                        {beats.slice(0, 30).reverse().map((hb, j) => (
+                          <div
+                            key={j}
+                            title={`${hb.status === 'up' ? '正常' : '异常'} · ${hb.latency}ms`}
+                            style={{ flex: 1, borderRadius: 2, background: STATUS_COLORS[hb.status] || STATUS_COLORS.unknown, cursor: 'default' }}
+                          />
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </Card>
+        )}
 
         {model.description && (
           <Card>
@@ -194,5 +198,19 @@ const ModelDetail = () => {
     </PageShell>
   );
 };
+
+const PriceRow = ({ label, groups, compute }) => (
+  <tr>
+    <td style={{ padding: '10px 12px 10px 0', color: '#000', borderBottom: '1px solid #f5f5f2' }}>{label}</td>
+    {groups.map((g) => {
+      const val = compute(g.mul);
+      return (
+        <td key={g.name} style={{ padding: '10px 0 10px 12px', textAlign: 'right', color: '#000', borderBottom: '1px solid #f5f5f2' }}>
+          ${val.toFixed(4)}
+        </td>
+      );
+    })}
+  </tr>
+);
 
 export default ModelDetail;

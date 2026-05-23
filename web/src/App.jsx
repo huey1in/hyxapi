@@ -23,7 +23,6 @@ import PrivacyPolicy from './pages/PrivacyPolicy';
 import UserAgreement from './pages/UserAgreement';
 import PasswordReset from './pages/PasswordReset';
 import Register     from './pages/Register';
-import Status       from './pages/Status';
 
 const App = () => (
   <Routes>
@@ -33,7 +32,6 @@ const App = () => (
       <Route path='/pricing/:modelName'  element={<ModelDetail />} />
       <Route path='/privacy'            element={<PrivacyPolicy />} />
       <Route path='/agreement'          element={<UserAgreement />} />
-      <Route path='/status'             element={<Status />} />
       <Route path='/setup'              element={<Setup />} />
       <Route path='/user/reset'         element={<PasswordReset />} />
       <Route path='/register'           element={<Register />} />

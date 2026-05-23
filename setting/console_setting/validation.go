@@ -65,77 +65,13 @@ func ValidateConsoleSettings(settingsStr string, settingType string) error {
 	}
 
 	switch settingType {
-	case "ApiInfo":
-		return validateApiInfo(settingsStr)
 	case "Announcements":
 		return validateAnnouncements(settingsStr)
-	case "FAQ":
-		return validateFAQ(settingsStr)
 	case "UptimeKumaGroups":
 		return validateUptimeKumaGroups(settingsStr)
 	default:
 		return fmt.Errorf("未知的设置类型：%s", settingType)
 	}
-}
-
-func validateApiInfo(apiInfoStr string) error {
-	apiInfoList, err := parseJSONArray(apiInfoStr, "API信息")
-	if err != nil {
-		return err
-	}
-
-	if len(apiInfoList) > 50 {
-		return fmt.Errorf("API信息数量不能超过50个")
-	}
-
-	for i, apiInfo := range apiInfoList {
-		urlStr, ok := apiInfo["url"].(string)
-		if !ok || urlStr == "" {
-			return fmt.Errorf("第%d个API信息缺少URL字段", i+1)
-		}
-		route, ok := apiInfo["route"].(string)
-		if !ok || route == "" {
-			return fmt.Errorf("第%d个API信息缺少线路描述字段", i+1)
-		}
-		description, ok := apiInfo["description"].(string)
-		if !ok || description == "" {
-			return fmt.Errorf("第%d个API信息缺少说明字段", i+1)
-		}
-		color, ok := apiInfo["color"].(string)
-		if !ok || color == "" {
-			return fmt.Errorf("第%d个API信息缺少颜色字段", i+1)
-		}
-
-		if err := validateURL(urlStr, i+1, "API信息"); err != nil {
-			return err
-		}
-
-		if len(urlStr) > 500 {
-			return fmt.Errorf("第%d个API信息的URL长度不能超过500字符", i+1)
-		}
-		if len(route) > 100 {
-			return fmt.Errorf("第%d个API信息的线路描述长度不能超过100字符", i+1)
-		}
-		if len(description) > 200 {
-			return fmt.Errorf("第%d个API信息的说明长度不能超过200字符", i+1)
-		}
-
-		if !validColors[color] {
-			return fmt.Errorf("第%d个API信息的颜色值不合法", i+1)
-		}
-
-		if err := checkDangerousContent(description, i+1, "API信息"); err != nil {
-			return err
-		}
-		if err := checkDangerousContent(route, i+1, "API信息"); err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
-func GetApiInfo() []map[string]interface{} {
-	return getJSONList(GetConsoleSetting().ApiInfo)
 }
 
 func validateAnnouncements(announcementsStr string) error {
@@ -184,33 +120,6 @@ func validateAnnouncements(announcementsStr string) error {
 	return nil
 }
 
-func validateFAQ(faqStr string) error {
-	list, err := parseJSONArray(faqStr, "FAQ信息")
-	if err != nil {
-		return err
-	}
-	if len(list) > 100 {
-		return fmt.Errorf("FAQ数量不能超过100个")
-	}
-	for i, faq := range list {
-		question, ok := faq["question"].(string)
-		if !ok || question == "" {
-			return fmt.Errorf("第%d个FAQ缺少问题字段", i+1)
-		}
-		answer, ok := faq["answer"].(string)
-		if !ok || answer == "" {
-			return fmt.Errorf("第%d个FAQ缺少答案字段", i+1)
-		}
-		if len(question) > 200 {
-			return fmt.Errorf("第%d个FAQ的问题长度不能超过200字符", i+1)
-		}
-		if len(answer) > 1000 {
-			return fmt.Errorf("第%d个FAQ的答案长度不能超过1000字符", i+1)
-		}
-	}
-	return nil
-}
-
 func getPublishTime(item map[string]interface{}) time.Time {
 	if v, ok := item["publishDate"]; ok {
 		if s, ok2 := v.(string); ok2 {
@@ -228,10 +137,6 @@ func GetAnnouncements() []map[string]interface{} {
 		return getPublishTime(list[i]).After(getPublishTime(list[j]))
 	})
 	return list
-}
-
-func GetFAQ() []map[string]interface{} {
-	return getJSONList(GetConsoleSetting().FAQ)
 }
 
 func validateUptimeKumaGroups(groupsStr string) error {
