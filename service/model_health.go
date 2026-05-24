@@ -1,16 +1,8 @@
 package service
 
 import (
-	"bytes"
-	"context"
-	"encoding/json"
 	"fmt"
-	"io"
-	"net/http"
-	"net/http/httptest"
-	"strings"
 	"sync"
-	"sync/atomic"
 	"time"
 
 	"github.com/QuantumNous/new-api/common"
@@ -18,14 +10,12 @@ import (
 	"github.com/QuantumNous/new-api/setting/operation_setting"
 
 	"github.com/bytedance/gopkg/util/gopool"
-	"github.com/gin-gonic/gin"
 )
 
 var (
-	modelHealthOnce    sync.Once
-	modelHealthRunning atomic.Bool
-	modelHealthTicker  *time.Ticker
-	modelHealthMu      sync.Mutex
+	modelHealthOnce   sync.Once
+	modelHealthTicker *time.Ticker
+	modelHealthMu     sync.Mutex
 )
 
 func StartModelHealthTask() {
@@ -43,195 +33,80 @@ func StartModelHealthTask() {
 			if interval < 1*time.Minute {
 				interval = 5 * time.Minute
 			}
-			common.SysLog(fmt.Sprintf("model health check task started: interval=%s", interval))
+			common.SysLog(fmt.Sprintf("model health task started (passive/log-based): interval=%s", interval))
 
 			modelHealthMu.Lock()
 			modelHealthTicker = time.NewTicker(interval)
 			modelHealthMu.Unlock()
 
-			// first run after 30s delay to let the system warm up
-			time.Sleep(30 * time.Second)
-			runModelHealthCheckOnce()
+			// first run after 10s delay
+			time.Sleep(10 * time.Second)
+			runModelHealthAggregation(interval)
 			model.CleanupOldHealthRecords()
 			for range modelHealthTicker.C {
 				setting := operation_setting.GetMonitorSetting()
 				if !setting.ModelHealthEnabled {
 					continue
 				}
-				runModelHealthCheckOnce()
+				runModelHealthAggregation(interval)
 				model.CleanupOldHealthRecords()
 			}
 		})
 	})
 }
 
-func runModelHealthCheckOnce() {
-	if !modelHealthRunning.CompareAndSwap(false, true) {
-		return
-	}
-	defer modelHealthRunning.Store(false)
-
-	pricing := model.GetPricing()
-	if len(pricing) == 0 {
+// runModelHealthAggregation queries the log table for each enabled model+group
+// within the last interval window and derives health status from real traffic.
+func runModelHealthAggregation(interval time.Duration) {
+	// Get all enabled model+group pairs
+	enabledAbilities := model.GetEnabledAbilities()
+	if len(enabledAbilities) == 0 {
 		return
 	}
 
-	// Build unique (model, group) pairs
-	type pair struct {
-		model string
-		group string
-	}
+	// De-duplicate to unique model+group pairs
+	type pair struct{ model, group string }
 	seen := make(map[pair]bool)
 	var pairs []pair
-	for _, p := range pricing {
-		for _, g := range p.EnableGroup {
-			if g == "all" {
-				continue
-			}
-			key := pair{p.ModelName, g}
-			if !seen[key] {
-				seen[key] = true
-				pairs = append(pairs, key)
-			}
+	for _, a := range enabledAbilities {
+		k := pair{a.Model, a.Group}
+		if !seen[k] {
+			seen[k] = true
+			pairs = append(pairs, k)
 		}
 	}
 
-	// Check concurrently with limited parallelism
-	sem := make(chan struct{}, 10)
-	var wg sync.WaitGroup
+	// Time window: look back by 1x interval (or at least 5 min)
+	window := interval
+	if window < 5*time.Minute {
+		window = 5 * time.Minute
+	}
+	since := time.Now().Add(-window).Unix()
+
+	// Query log stats for each pair
 	for _, pp := range pairs {
-		pp := pp
-		wg.Add(1)
-		sem <- struct{}{}
-		gopool.Go(func() {
-			defer wg.Done()
-			defer func() { <-sem }()
-			checkModelGroup(pp.model, pp.group)
-		})
-	}
-	wg.Wait()
-}
-
-func checkModelGroup(modelName, group string) {
-	start := time.Now()
-
-	// Find a channel for this model+group
-	channel, err := model.GetRandomSatisfiedChannel(group, modelName, 0)
-	if err != nil || channel == nil {
-		model.RecordModelHealth(modelName, group, model.ModelHealthRecord{
-			Status:    "down",
-			Latency:   0,
-			CheckedAt: time.Now().Unix(),
-			Error:     "no available channel",
-		})
-		return
-	}
-
-	// Make a simple test request via internal HTTP
-	err = doHealthCheck(channel, modelName)
-	latency := time.Since(start).Milliseconds()
-
-	rec := model.ModelHealthRecord{
-		CheckedAt: time.Now().Unix(),
-		Latency:   latency,
-	}
-	if err != nil {
-		rec.Status = "down"
-		rec.Error = truncateStr(err.Error(), 100)
-	} else {
-		rec.Status = "up"
-	}
-	model.RecordModelHealth(modelName, group, rec)
-}
-
-func doHealthCheck(channel *model.Channel, modelName string) error {
-	// Build a minimal request body
-	body := map[string]any{
-		"model":      modelName,
-		"max_tokens": 3,
-		"messages": []map[string]string{
-			{"role": "user", "content": "hi"},
-		},
-	}
-
-	// Determine request path based on model type
-	requestPath := "/v1/chat/completions"
-	if strings.Contains(modelName, "claude") {
-		requestPath = "/v1/messages"
-		body = map[string]any{
-			"model":      modelName,
-			"max_tokens": 3,
-			"messages": []map[string]string{
-				{"role": "user", "content": "hi"},
-			},
+		stat, err := model.GetModelGroupLogStat(pp.model, pp.group, since)
+		if err != nil {
+			continue
 		}
-	}
 
-	jsonBody, err := json.Marshal(body)
-	if err != nil {
-		return fmt.Errorf("marshal body: %w", err)
-	}
+		rec := model.ModelHealthRecord{
+			CheckedAt: time.Now().Unix(),
+		}
 
-	// Use the channel's base URL directly
-	baseURL := ""
-	if channel.BaseURL != nil {
-		baseURL = *channel.BaseURL
-	}
-	if baseURL == "" {
-		baseURL = "https://api.openai.com"
-	}
+		if stat.Total == 0 {
+			// No traffic in this window — keep previous status, don't record
+			continue
+		}
 
-	url := baseURL + requestPath
-
-	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
-	defer cancel()
-
-	req, err := http.NewRequestWithContext(ctx, "POST", url, bytes.NewReader(jsonBody))
-	if err != nil {
-		return fmt.Errorf("create request: %w", err)
+		if stat.Errors == stat.Total {
+			// All requests failed
+			rec.Status = "down"
+			rec.Latency = stat.AvgLatencyMs
+		} else {
+			rec.Status = "up"
+			rec.Latency = stat.AvgLatencyMs
+		}
+		model.RecordModelHealth(pp.model, pp.group, rec)
 	}
-	req.Header.Set("Content-Type", "application/json")
-
-	// Set auth headers based on channel type
-	keys := channel.GetKeys()
-	apiKey := ""
-	if len(keys) > 0 {
-		apiKey = keys[0]
-	}
-	if strings.Contains(requestPath, "messages") {
-		// Anthropic style
-		req.Header.Set("x-api-key", apiKey)
-		req.Header.Set("anthropic-version", "2023-06-01")
-	} else {
-		req.Header.Set("Authorization", "Bearer "+apiKey)
-	}
-
-	client := &http.Client{Timeout: 30 * time.Second}
-	resp, err := client.Do(req)
-	if err != nil {
-		return fmt.Errorf("request failed: %w", err)
-	}
-	defer resp.Body.Close()
-	io.Copy(io.Discard, resp.Body)
-
-	if resp.StatusCode >= 400 {
-		return fmt.Errorf("status %d", resp.StatusCode)
-	}
-	return nil
-}
-
-func truncateStr(s string, maxLen int) string {
-	if len(s) <= maxLen {
-		return s
-	}
-	return s[:maxLen] + "..."
-}
-
-// unused but keep for reference — internal gin-based test
-func doInternalHealthCheck(modelName string) error {
-	w := httptest.NewRecorder()
-	c, _ := gin.CreateTestContext(w)
-	_ = c
-	// could use the relay pipeline here if needed
-	return nil
 }

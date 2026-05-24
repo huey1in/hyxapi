@@ -532,3 +532,48 @@ func DeleteOldLog(ctx context.Context, targetTimestamp int64, limit int) (int64,
 
 	return total, nil
 }
+
+// ModelGroupLogStat holds aggregated log stats for a model+group in a time window.
+type ModelGroupLogStat struct {
+	Total        int64 // total requests (consume + error)
+	Errors       int64 // error requests
+	AvgLatencyMs int64 // average use_time in ms (from successful requests)
+}
+
+// GetModelGroupLogStat aggregates log entries for a model+group since a given timestamp.
+func GetModelGroupLogStat(modelName, group string, since int64) (*ModelGroupLogStat, error) {
+	var stat ModelGroupLogStat
+
+	// Count total requests (type 2 = consume, type 5 = error)
+	var totalRow struct{ Cnt int64 }
+	err := LOG_DB.Model(&Log{}).
+		Select("count(*) as cnt").
+		Where("model_name = ? AND \"group\" = ? AND created_at >= ? AND type IN (?, ?)", modelName, group, since, LogTypeConsume, LogTypeError).
+		Scan(&totalRow).Error
+	if err != nil {
+		return nil, err
+	}
+	stat.Total = totalRow.Cnt
+
+	if stat.Total == 0 {
+		return &stat, nil
+	}
+
+	// Count errors
+	var errRow struct{ Cnt int64 }
+	LOG_DB.Model(&Log{}).
+		Select("count(*) as cnt").
+		Where("model_name = ? AND \"group\" = ? AND created_at >= ? AND type = ?", modelName, group, since, LogTypeError).
+		Scan(&errRow)
+	stat.Errors = errRow.Cnt
+
+	// Average latency from successful requests (use_time is in seconds)
+	var latRow struct{ Avg float64 }
+	LOG_DB.Model(&Log{}).
+		Select("COALESCE(AVG(use_time), 0) as avg").
+		Where("model_name = ? AND \"group\" = ? AND created_at >= ? AND type = ? AND use_time > 0", modelName, group, since, LogTypeConsume).
+		Scan(&latRow)
+	stat.AvgLatencyMs = int64(latRow.Avg * 1000)
+
+	return &stat, nil
+}

@@ -58,7 +58,7 @@ const ModelDetail = () => {
   return (
     <PageShell
       title={model.model_name}
-      actions={<Button variant='toggle' icon={ArrowLeft} onClick={() => navigate('/pricing')}>返回</Button>}
+      actions={<Button variant='toggle' icon={ArrowLeft} onClick={() => navigate(-1)}>返回</Button>}
     >
       <div className='space-y-5' style={{ minHeight: 'calc(100vh - 240px)' }}>
         {/* 模型信息头 */}
@@ -159,6 +159,8 @@ const ModelDetail = () => {
                 const status = h.current?.status || 'unknown';
                 const color = STATUS_COLORS[status] || STATUS_COLORS.unknown;
                 const beats = h.history || [];
+                const upCount = beats.filter((b) => b.status === 'up').length;
+                const uptimePct = beats.length > 0 ? ((upCount / beats.length) * 100).toFixed(1) : '—';
                 return (
                   <div key={h.group}>
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
@@ -166,17 +168,18 @@ const ModelDetail = () => {
                         <span style={{ width: 6, height: 6, borderRadius: '50%', background: color, flexShrink: 0 }} />
                         <span style={{ fontSize: 13, color: 'var(--ui-text)' }}>{h.group}</span>
                       </div>
-                      <span style={{ fontSize: 11, color: '#999', fontVariantNumeric: 'tabular-nums' }}>
-                        {h.current?.latency != null ? `${h.current.latency}ms` : '—'}
-                      </span>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 11, color: '#999', fontVariantNumeric: 'tabular-nums' }}>
+                        <span>{uptimePct}%</span>
+                        <span>{h.current?.latency != null ? `${h.current.latency}ms` : '—'}</span>
+                      </div>
                     </div>
                     {beats.length > 0 && (
-                      <div style={{ display: 'flex', gap: 1, height: 24, alignItems: 'stretch' }}>
-                        {beats.slice(0, 30).reverse().map((hb, j) => (
+                      <div style={{ display: 'flex', gap: 1.5, height: 28, alignItems: 'stretch' }}>
+                        {beats.slice(0, 50).reverse().map((hb, j) => (
                           <div
                             key={j}
                             title={`${hb.status === 'up' ? '正常' : '异常'} · ${hb.latency}ms`}
-                            style={{ flex: 1, borderRadius: 2, background: STATUS_COLORS[hb.status] || STATUS_COLORS.unknown, cursor: 'default' }}
+                            style={{ flex: '0 0 auto', width: 4, borderRadius: 1.5, background: STATUS_COLORS[hb.status] || STATUS_COLORS.unknown, opacity: hb.status === 'up' ? 0.85 : 1, cursor: 'default' }}
                           />
                         ))}
                       </div>

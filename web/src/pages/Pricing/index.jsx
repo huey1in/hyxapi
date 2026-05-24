@@ -1,5 +1,5 @@
-import React, { useEffect, useMemo, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useEffect, useMemo, useState, useCallback } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Search, Copy, LayoutGrid, Rows3 } from 'lucide-react';
 import { API, showError, showSuccess, copy, getLobeHubIcon } from '../../helpers';
 import {
@@ -8,15 +8,31 @@ import {
 
 const PricingPage = () => {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [models, setModels] = useState([]);
   const [vendors, setVendors] = useState({});
   const [groupRatio, setGroupRatio] = useState({});
   const [usableGroups, setUsableGroups] = useState({});
   const [loading, setLoading] = useState(true);
-  const [search, setSearch] = useState('');
-  const [vendorFilter, setVendorFilter] = useState('all');
-  const [group, setGroup] = useState('all');
-  const [view, setView] = useState(() => localStorage.getItem('pricing-view') || 'table');
+
+  // Restore filter state from URL params
+  const search = searchParams.get('q') || '';
+  const vendorFilter = searchParams.get('vendor') || 'all';
+  const group = searchParams.get('group') || 'all';
+  const [view, setView] = useState(() => localStorage.getItem('pricing-view') || 'card');
+
+  const updateParam = useCallback((key, value, defaultVal = 'all') => {
+    setSearchParams((prev) => {
+      const next = new URLSearchParams(prev);
+      if (!value || value === defaultVal) next.delete(key);
+      else next.set(key, value);
+      return next;
+    }, { replace: true });
+  }, [setSearchParams]);
+
+  const setSearch = useCallback((v) => updateParam('q', v, ''), [updateParam]);
+  const setVendorFilter = useCallback((v) => updateParam('vendor', v), [updateParam]);
+  const setGroup = useCallback((v) => updateParam('group', v), [updateParam]);
   const switchView = (v) => { setView(v); localStorage.setItem('pricing-view', v); };
   const goDetail = (m) => {
     const params = group !== 'all' ? `?group=${encodeURIComponent(group)}` : '';
@@ -103,25 +119,27 @@ const PricingPage = () => {
       title='模型定价'
       actions={
         <div className='flex items-center gap-1'>
-          <IconButton icon={Rows3}    title='表格视图' selected={view === 'table'} onClick={() => switchView('table')} />
           <IconButton icon={LayoutGrid} title='卡片视图' selected={view === 'card'}  onClick={() => switchView('card')} />
+          <IconButton icon={Rows3}    title='表格视图' selected={view === 'table'} onClick={() => switchView('table')} />
         </div>
       }
     >
       <Card className='mb-4'>
-        <div className='flex flex-wrap items-center gap-3'>
-          <div className='flex-1 min-w-[200px] max-w-[320px]'>
+        <div className='flex flex-col sm:flex-row items-stretch sm:items-center gap-3'>
+          <div className='w-full sm:w-auto sm:min-w-[200px] sm:max-w-[280px]'>
             <Input
               placeholder='搜索模型名'
               value={search}
               onChange={setSearch}
             />
           </div>
-          <div className='w-48'>
-            <Select value={vendorFilter} onChange={setVendorFilter} options={vendorOptions} />
-          </div>
-          <div className='w-48'>
-            <Select value={group} onChange={setGroup} options={groupOptions} />
+          <div className='flex items-center gap-3'>
+            <div className='flex-1 sm:flex-none shrink-0'>
+              <Select value={vendorFilter} onChange={setVendorFilter} options={vendorOptions} />
+            </div>
+            <div className='flex-1 sm:flex-none shrink-0'>
+              <Select value={group} onChange={setGroup} options={groupOptions} />
+            </div>
           </div>
         </div>
       </Card>

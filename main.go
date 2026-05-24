@@ -124,8 +124,7 @@ func main() {
 	// Channel upstream model update check task
 	controller.StartChannelUpstreamModelUpdateTask()
 
-	// Load persisted model health data and start check task
-	model.LoadModelHealthFromDB()
+	// Start model health aggregation task (passive, log-based)
 	service.StartModelHealthTask()
 
 	if os.Getenv("BATCH_UPDATE_ENABLED") == "true" {

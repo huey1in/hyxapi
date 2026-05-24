@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Plus, Trash2, Copy, Pencil } from 'lucide-react';
-import { API, showError, showSuccess, copy, timestamp2string } from '../../helpers';
+import { API, showError, showSuccess, timestamp2string, renderQuota } from '../../helpers';
 import { quotaToDisplayAmount, displayAmountToQuota } from '../../helpers/quota';
 import {
   Button, IconButton, Input, NumberInput, Switch, Select, MultiSelect,
@@ -45,16 +45,29 @@ const TokenPage = () => {
   };
 
   const copyKey = async (row) => {
+    const textarea = document.createElement('textarea');
+    textarea.setAttribute('readonly', '');
+    Object.assign(textarea.style, { position: 'fixed', left: '-9999px', top: '-9999px', opacity: '0' });
+    document.body.appendChild(textarea);
     try {
       const res = await API.post(`/api/token/${row.id}/key`);
       const { success, data, message } = res.data || {};
       if (success && data?.key) {
-        copy(`sk-${data.key}`);
-        showSuccess('已复制');
+        const text = `sk-${data.key}`;
+        textarea.value = text;
+        textarea.select();
+        textarea.setSelectionRange(0, text.length);
+        let ok = false;
+        try { ok = document.execCommand('copy'); } catch {}
+        if (!ok) {
+          try { await navigator.clipboard.writeText(text); ok = true; } catch {}
+        }
+        ok ? showSuccess('已复制') : showError('复制失败，请手动复制');
       } else {
         showError(message || '获取密钥失败');
       }
     } catch (e) { showError(e); }
+    finally { document.body.removeChild(textarea); }
   };
 
   const origin = typeof window !== 'undefined' ? window.location.origin : 'https://api.example.com';
@@ -120,35 +133,51 @@ const StepCard = ({ num, title, desc }) => (
   </div>
 );
 
+const PILL = { display: 'inline-flex', alignItems: 'center', height: 20, paddingInline: 6, borderRadius: 5, fontSize: 11, whiteSpace: 'nowrap' };
+
 const KeyCard = ({ row, onCopy, onDelete, onEdit }) => {
   const isMobile = useIsMobile();
+  const usageText = row.unlimited_quota
+    ? `已用 ${renderQuota(row.used_quota || 0)}`
+    : `${renderQuota(row.used_quota || 0)} / ${renderQuota((row.used_quota || 0) + (row.remain_quota || 0))}`;
+
   return (
   <div
     className='group'
     style={{
-      position: 'relative', display: 'grid',
-      gridTemplateColumns: isMobile ? '1fr' : '220px 1fr auto',
-      gap: isMobile ? 10 : 18, alignItems: isMobile ? 'stretch' : 'center',
-      paddingBlock: isMobile ? 14 : 10, paddingInline: isMobile ? 14 : 18,
+      position: 'relative', display: 'flex', flexDirection: 'column', gap: 10,
+      paddingBlock: isMobile ? 14 : 12, paddingInline: isMobile ? 14 : 18,
       border: '1px solid var(--ui-border)', borderRadius: 26, background: 'var(--page-bg)',
     }}
   >
-    <div style={{ display: 'flex', flexDirection: 'column' }}>
-      <span style={{ fontSize: 14, fontWeight: 500, color: 'var(--ui-text)', marginBottom: 2 }}>{row.name || '未命名'}</span>
-      <span style={{ fontFamily: 'monospace', fontSize: 12, color: 'var(--ui-text)', wordBreak: 'break-all' }}>
-        sk-{row.key?.slice(0, 5)}*******{row.key?.slice(-4)}
+    {/* 第一行：名称 + 分组 + 操作 */}
+    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 6, minWidth: 0, flex: 1 }}>
+        <span style={{ fontSize: 14, fontWeight: 500, color: 'var(--ui-text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{row.name || '未命名'}</span>
+        {row.group && (
+          <span style={{ ...PILL, color: 'var(--ui-text-3)', border: '1px solid var(--ui-border)' }}>{row.group}</span>
+        )}
+      </div>
+      <div className={`flex gap-1 shrink-0 ${isMobile ? '' : 'opacity-0 group-hover:opacity-100'} transition-opacity`}>
+        <IconButton icon={Copy} title='复制' onClick={onCopy} />
+        <IconButton icon={Pencil} title='编辑' onClick={onEdit} />
+        <IconButton icon={Trash2} variant='danger' title='删除' onClick={onDelete} />
+      </div>
+    </div>
+    {/* 第二行：密钥 + 用量 + 时间 */}
+    <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+      <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 12, color: 'var(--ui-text-2)' }}>
+        sk-{row.key?.slice(0, 5)}···{row.key?.slice(-4)}
       </span>
-    </div>
-    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px 12px', alignItems: 'center' }}>
-      <span style={{ fontSize: 12, color: 'var(--ui-text-3)' }}>创建时间</span>
-      <span style={{ fontSize: 14, color: 'var(--ui-text)' }}>{row.created_time ? timestamp2string(row.created_time) : '-'}</span>
-      <span style={{ fontSize: 12, color: 'var(--ui-text-3)' }}>最近使用时间</span>
-      <span style={{ fontSize: 14, color: 'var(--ui-text)' }}>{row.accessed_time ? timestamp2string(row.accessed_time) : '从未使用'}</span>
-    </div>
-    <div className={`flex gap-1 ${isMobile ? '' : 'opacity-0 group-hover:opacity-100'} transition-opacity`}>
-      <IconButton icon={Copy} title='复制' onClick={onCopy} />
-      <IconButton icon={Pencil} title='编辑' onClick={onEdit} />
-      <IconButton icon={Trash2} variant='danger' title='删除' onClick={onDelete} />
+      <span style={{ ...PILL, color: 'var(--ui-text-2)', background: 'var(--ui-bg-subtle)', fontVariantNumeric: 'tabular-nums' }}>
+        {usageText}
+      </span>
+      {row.unlimited_quota && (
+        <span style={{ ...PILL, color: '#16a34a', background: '#f0fdf4', border: '1px solid #bbf7d0' }}>无限</span>
+      )}
+      <span style={{ fontSize: 11, color: 'var(--ui-text-3)', marginLeft: 'auto', whiteSpace: 'nowrap' }}>
+        {row.accessed_time ? timestamp2string(row.accessed_time) : '从未使用'}
+      </span>
     </div>
   </div>
   );

@@ -3,29 +3,11 @@ package model
 import (
 	"fmt"
 	"sync"
-	"time"
-
-	"github.com/QuantumNous/new-api/common"
 )
 
 const maxHealthRecords = 50
 
-// DB model — persisted to database
-type ModelHealthCheck struct {
-	ID        int64  `json:"id" gorm:"primaryKey;autoIncrement"`
-	Model     string `json:"model" gorm:"type:varchar(255);index:idx_mhc_model_group;index:idx_mhc_checked"`
-	GroupName string `json:"group_name" gorm:"type:varchar(100);index:idx_mhc_model_group"`
-	Status    string `json:"status" gorm:"type:varchar(10)"`  // "up" / "down"
-	Latency   int64  `json:"latency"`                         // ms
-	Error     string `json:"error,omitempty" gorm:"type:text"`
-	CheckedAt int64  `json:"checked_at" gorm:"index:idx_mhc_checked"`
-}
-
-func (ModelHealthCheck) TableName() string {
-	return "model_health_checks"
-}
-
-// API response types (unchanged)
+// API response types
 type ModelHealthRecord struct {
 	Status    string `json:"status"`
 	Latency   int64  `json:"latency"`
@@ -40,7 +22,7 @@ type ModelGroupHealth struct {
 	History []ModelHealthRecord `json:"history"`
 }
 
-// ring buffer per model+group (in-memory cache for fast reads)
+// ring buffer per model+group (in-memory)
 type healthRing struct {
 	buf  [maxHealthRecords]ModelHealthRecord
 	pos  int
@@ -83,64 +65,9 @@ func healthKey(group, model string) string {
 	return fmt.Sprintf("%s:%s", group, model)
 }
 
-// LoadModelHealthFromDB loads recent records from database into memory on startup.
-func LoadModelHealthFromDB() {
-	if DB == nil {
-		return
-	}
-
-	// Only load records from the last 24 hours, ordered oldest first
-	cutoff := time.Now().Add(-24 * time.Hour).Unix()
-	var rows []ModelHealthCheck
-	err := DB.Where("checked_at >= ?", cutoff).
-		Order("checked_at ASC").
-		Find(&rows).Error
-
-	if err != nil {
-		common.SysError(fmt.Sprintf("failed to load model health from DB: %v", err))
-		return
-	}
-
-	healthMu.Lock()
-	defer healthMu.Unlock()
-
-	for _, row := range rows {
-		key := healthKey(row.GroupName, row.Model)
-		ring, ok := healthStore[key]
-		if !ok {
-			ring = &healthRing{}
-			healthStore[key] = ring
-		}
-		ring.push(ModelHealthRecord{
-			Status:    row.Status,
-			Latency:   row.Latency,
-			CheckedAt: row.CheckedAt,
-			Error:     row.Error,
-		})
-	}
-
-	common.SysLog(fmt.Sprintf("loaded %d model health records from database", len(rows)))
-}
-
-// CleanupOldHealthRecords removes records older than 24 hours.
-func CleanupOldHealthRecords() {
-	if DB == nil {
-		return
-	}
-	cutoff := time.Now().Add(-24 * time.Hour).Unix()
-	result := DB.Where("checked_at < ?", cutoff).Delete(&ModelHealthCheck{})
-	if result.Error != nil {
-		common.SysError(fmt.Sprintf("failed to cleanup old health records: %v", result.Error))
-	} else if result.RowsAffected > 0 {
-		common.SysLog(fmt.Sprintf("cleaned up %d old health records", result.RowsAffected))
-	}
-}
-
-// RecordModelHealth stores a health check result in both memory and database.
+// RecordModelHealth stores a health record in memory ring buffer.
 func RecordModelHealth(model, group string, rec ModelHealthRecord) {
 	key := healthKey(group, model)
-
-	// Write to memory
 	healthMu.Lock()
 	ring, ok := healthStore[key]
 	if !ok {
@@ -149,23 +76,6 @@ func RecordModelHealth(model, group string, rec ModelHealthRecord) {
 	}
 	ring.push(rec)
 	healthMu.Unlock()
-
-	// Write to database (async, non-blocking)
-	if DB != nil {
-		go func() {
-			dbRec := ModelHealthCheck{
-				Model:     model,
-				GroupName: group,
-				Status:    rec.Status,
-				Latency:   rec.Latency,
-				Error:     rec.Error,
-				CheckedAt: rec.CheckedAt,
-			}
-			if err := DB.Create(&dbRec).Error; err != nil {
-				common.SysError(fmt.Sprintf("failed to persist health record: %v", err))
-			}
-		}()
-	}
 }
 
 // GetModelHealthByModel returns health for a specific model across all groups.
@@ -235,3 +145,6 @@ func GetModelGroupHealth(model, group string) *ModelGroupHealth {
 		History: ring.records(),
 	}
 }
+
+// CleanupOldHealthRecords is now a no-op (no DB table to clean).
+func CleanupOldHealthRecords() {}

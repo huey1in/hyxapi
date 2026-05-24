@@ -105,7 +105,7 @@ func TextHelper(c *gin.Context, info *relaycommon.RelayInfo) (newAPIError *types
 				println("requestBody: ", string(debugBytes))
 			}
 		}
-		requestBody = common.ReaderOnly(storage)
+		requestBody = helper.PatchPassThroughBody(info, storage)
 	} else {
 		convertedRequest, err := adaptor.ConvertOpenAIRequest(c, info, request)
 		if err != nil {
