@@ -248,3 +248,27 @@ input[type='number']::-webkit-inner-spin-button {
 input[type='number'] {
   -moz-appearance: textfield;
 }
+
+/* 首页 provider logo 墙：默认灰度，hover 显真彩 */
+.routify-logo {
+  filter: grayscale(1);
+  opacity: 0.55;
+  transition: filter 0.25s ease, opacity 0.25s ease;
+}
+.routify-logo:hover {
+  filter: grayscale(0);
+  opacity: 1;
+}
+
+/* 首页大标题打字机光标闪烁 */
+@keyframes routify-caret {
+  0%, 50% { opacity: 1; }
+  50.01%, 100% { opacity: 0; }
+}
+
+/* 首页后缀逐字入场：细微上移 + 淡入 */
+@keyframes routify-char-in {
+  from { opacity: 0; transform: translateY(0.12em); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+

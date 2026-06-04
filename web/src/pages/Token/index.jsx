@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Plus, Trash2, Copy, Pencil } from 'lucide-react';
-import { API, showError, showSuccess, timestamp2string, renderQuota } from '../../helpers';
+import { API, showError, showSuccess, timestamp2string, renderQuota, copy } from '../../helpers';
 import { quotaToDisplayAmount, displayAmountToQuota } from '../../helpers/quota';
 import {
   Button, IconButton, Input, NumberInput, Switch, Select, MultiSelect,
@@ -45,29 +45,16 @@ const TokenPage = () => {
   };
 
   const copyKey = async (row) => {
-    const textarea = document.createElement('textarea');
-    textarea.setAttribute('readonly', '');
-    Object.assign(textarea.style, { position: 'fixed', left: '-9999px', top: '-9999px', opacity: '0' });
-    document.body.appendChild(textarea);
+    let text;
     try {
       const res = await API.post(`/api/token/${row.id}/key`);
       const { success, data, message } = res.data || {};
-      if (success && data?.key) {
-        const text = `sk-${data.key}`;
-        textarea.value = text;
-        textarea.select();
-        textarea.setSelectionRange(0, text.length);
-        let ok = false;
-        try { ok = document.execCommand('copy'); } catch {}
-        if (!ok) {
-          try { await navigator.clipboard.writeText(text); ok = true; } catch {}
-        }
-        ok ? showSuccess('已复制') : showError('复制失败，请手动复制');
-      } else {
-        showError(message || '获取密钥失败');
-      }
-    } catch (e) { showError(e); }
-    finally { document.body.removeChild(textarea); }
+      if (!success || !data?.key) { showError(message || '获取密钥失败'); return; }
+      text = `sk-${data.key}`;
+    } catch (e) { showError(e); return; }
+
+    const ok = await copy(text);
+    ok ? showSuccess('已复制') : showError('复制失败，请手动复制');
   };
 
   const origin = typeof window !== 'undefined' ? window.location.origin : 'https://api.example.com';
@@ -184,84 +171,108 @@ const KeyCard = ({ row, onCopy, onDelete, onEdit }) => {
 };
 
 const CodeSamples = ({ origin }) => {
-  const [lang, setLang] = useState('curl');
-  const samples = useMemo(() => ({
-    curl: `curl -X POST "${origin}/v1/chat/completions" \\
-  -H "Authorization: Bearer YOUR_API_KEY" \\
-  -H "Content-Type: application/json" \\
-  -d '{
-    "model": "gpt-4o-mini",
-    "messages": [
-      {
-        "role": "user",
-        "content": "Hello World"
-      }
-    ],
-    "stream": true,
-    "temperature": 0.7,
-    "max_tokens": 1000
-  }'`,
-    python: `import requests
+  const [tool, setTool] = useState('claude');
+  const [shell, setShell] = useState('unix');
+  const KEY = 'YOUR_API_KEY';
 
-response = requests.post(
-    "${origin}/v1/chat/completions",
-    headers={
-        "Authorization": "Bearer YOUR_API_KEY",
-        "Content-Type": "application/json",
+  const shells = useMemo(() => ({
+    unix: {
+      label: 'macOS / Linux',
+      title: 'Terminal',
+      code: `export ANTHROPIC_BASE_URL="${origin}"
+export ANTHROPIC_AUTH_TOKEN="${KEY}"
+export CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC=1`,
     },
-    json={
-        "model": "gpt-4o-mini",
-        "messages": [
-            {"role": "user", "content": "Hello World"}
-        ],
-        "stream": True,
-        "temperature": 0.7,
-        "max_tokens": 1000,
+    cmd: {
+      label: 'Windows CMD',
+      title: 'Command Prompt',
+      code: `set ANTHROPIC_BASE_URL=${origin}
+set ANTHROPIC_AUTH_TOKEN=${KEY}
+set CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC=1`,
     },
-)`,
-    nodejs: `const response = await fetch('${origin}/v1/chat/completions', {
-  method: 'POST',
-  headers: {
-    'Authorization': 'Bearer YOUR_API_KEY',
-    'Content-Type': 'application/json',
-  },
-  body: JSON.stringify({
-    model: 'gpt-4o-mini',
-    messages: [{ role: 'user', content: 'Hello World' }],
-    stream: true,
-    temperature: 0.7,
-    max_tokens: 1000,
-  }),
-});`,
+    powershell: {
+      label: 'PowerShell',
+      title: 'PowerShell',
+      code: `$env:ANTHROPIC_BASE_URL="${origin}"
+$env:ANTHROPIC_AUTH_TOKEN="${KEY}"
+$env:CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC=1`,
+    },
   }), [origin]);
 
-  const LANGS = [
-    { key: 'curl', label: 'curl' },
-    { key: 'python', label: 'python' },
-    { key: 'nodejs', label: 'nodejs' },
+  const claudeSettings = `{
+  "env": {
+    "ANTHROPIC_BASE_URL": "${origin}",
+    "ANTHROPIC_AUTH_TOKEN": "${KEY}",
+    "CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC": "1",
+    "CLAUDE_CODE_ATTRIBUTION_HEADER": "0"
+  }
+}`;
+
+  const opencodeConfig = `{
+  "provider": {
+    "anthropic": {
+      "options": {
+        "baseURL": "${origin}/v1",
+        "apiKey": "${KEY}"
+      },
+      "npm": "@ai-sdk/anthropic"
+    }
+  },
+  "$schema": "https://opencode.ai/config.json"
+}`;
+
+  const TOOLS = [
+    { key: 'claude', label: 'Claude Code' },
+    { key: 'opencode', label: 'OpenCode' },
   ];
+
+  const tabBtn = (active) => ({
+    cursor: 'pointer', height: 28, paddingInline: 12, borderRadius: 14,
+    fontSize: 13, border: 'none',
+    color: active ? 'var(--ui-text)' : 'var(--ui-text-2)',
+    background: active ? 'var(--ui-bg-subtle)' : 'transparent',
+    transition: 'background 0.15s',
+  });
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8 }}>
         <span style={{ fontSize: 18, fontWeight: 600, color: 'var(--ui-text)' }}>调用示例</span>
         <div style={{ display: 'flex', gap: 4 }}>
-          {LANGS.map((l) => (
-            <button
-              key={l.key}
-              onClick={() => setLang(l.key)}
-              style={{
-                cursor: 'pointer', height: 28, paddingInline: 12, borderRadius: 14,
-                fontSize: 13, border: 'none',
-                color: lang === l.key ? 'var(--ui-text)' : 'var(--ui-text-2)',
-                background: lang === l.key ? 'var(--ui-bg-subtle)' : 'transparent',
-                transition: 'background 0.15s',
-              }}
-            >{l.label}</button>
+          {TOOLS.map((tl) => (
+            <button key={tl.key} onClick={() => setTool(tl.key)} style={tabBtn(tool === tl.key)}>{tl.label}</button>
           ))}
         </div>
       </div>
-      <CodeBlock code={samples[lang]} language={lang === 'curl' ? 'bash' : lang === 'nodejs' ? 'javascript' : 'python'} />
+
+      <p style={{ fontSize: 14, color: 'var(--ui-text-3)', margin: 0 }}>
+        使用 API 密钥配置，将下方环境变量添加到您的终端配置文件，或直接在终端中运行。
+      </p>
+
+      {tool === 'claude' ? (
+        <>
+          <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
+            {Object.entries(shells).map(([k, s]) => (
+              <button key={k} onClick={() => setShell(k)} style={tabBtn(shell === k)}>{s.label}</button>
+            ))}
+          </div>
+          <CodeBlock code={shells[shell].code} language='bash' title={shells[shell].title} />
+
+          <div style={{ fontSize: 14, fontWeight: 500, color: 'var(--ui-text)', marginTop: 4 }}>VSCode Claude Code</div>
+          <CodeBlock code={claudeSettings} language='json' title='~/.claude/settings.json' />
+        </>
+      ) : (
+        <>
+          <p style={{ fontSize: 13, color: 'var(--ui-text-3)', margin: 0 }}>
+            配置文件路径：~/.config/opencode/opencode.json（不存在需手动创建）。可使用默认 provider 或自定义，示例仅供参考。
+          </p>
+          <CodeBlock code={opencodeConfig} language='json' title='opencode.json' />
+        </>
+      )}
+
+      <p style={{ fontSize: 12, color: 'var(--ui-text-3)', margin: 0 }}>
+        这些环境变量将在当前终端会话中生效。如需永久配置，请添加到 ~/.bashrc、~/.zshrc 或相应的配置文件中。
+      </p>
     </div>
   );
 };

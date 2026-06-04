@@ -1,39 +1,32 @@
 /*
 Copyright (C) 2025 QuantumNous
 
-Login modal global state — supports login / register mode switching.
+Login entry — 控制台不再内嵌登录模态框；所有登录入口统一跳转 home-site 登录页。
 */
 
-import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import React, { createContext, useCallback, useContext, useEffect, useMemo } from 'react';
+import { redirectToHomeLogin } from '../../helpers/site';
 
 const LoginModalContext = createContext(null);
 
 export const LoginModalProvider = ({ children }) => {
-  const [open, setOpen] = useState(false);
-  const [mode, setMode] = useState('login');
-
   const openLoginModal = useCallback((m = 'login') => {
-    setMode(m);
-    setOpen(true);
+    redirectToHomeLogin(m);
   }, []);
 
-  const closeLoginModal = useCallback(() => setOpen(false), []);
+  const closeLoginModal = useCallback(() => {}, []);
+  const switchMode = useCallback(() => {}, []);
 
-  const switchMode = useCallback((m) => setMode(m), []);
-
-  // 监听 API 401/403 触发的全局事件，自动打开登录模态框
+  // API 401/403 触发的全局事件 → 跳转 home-site 登录页（替代原弹出登录模态框）
   useEffect(() => {
-    const handler = () => {
-      setMode('login');
-      setOpen(true);
-    };
+    const handler = () => redirectToHomeLogin('login');
     window.addEventListener('routify:auth-required', handler);
     return () => window.removeEventListener('routify:auth-required', handler);
   }, []);
 
   const value = useMemo(
-    () => ({ open, mode, openLoginModal, closeLoginModal, switchMode }),
-    [open, mode, openLoginModal, closeLoginModal, switchMode],
+    () => ({ open: false, mode: 'login', openLoginModal, closeLoginModal, switchMode }),
+    [openLoginModal, closeLoginModal, switchMode],
   );
 
   return (
@@ -58,3 +51,4 @@ export const useLoginModal = () => {
 };
 
 export default LoginModalContext;
+

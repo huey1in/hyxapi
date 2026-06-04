@@ -70,21 +70,10 @@ func InitOptionMap() {
 	common.OptionMap["CustomCallbackAddress"] = ""
 	common.OptionMap["EpayId"] = ""
 	common.OptionMap["EpayKey"] = ""
+	common.OptionMap["EpayEnabled"] = strconv.FormatBool(operation_setting.EpayEnabled)
 	common.OptionMap["Price"] = strconv.FormatFloat(operation_setting.Price, 'f', -1, 64)
 	common.OptionMap["USDExchangeRate"] = strconv.FormatFloat(operation_setting.USDExchangeRate, 'f', -1, 64)
 	common.OptionMap["MinTopUp"] = strconv.Itoa(operation_setting.MinTopUp)
-	common.OptionMap["WaffoPancakeEnabled"] = strconv.FormatBool(setting.WaffoPancakeEnabled)
-	common.OptionMap["WaffoPancakeSandbox"] = strconv.FormatBool(setting.WaffoPancakeSandbox)
-	common.OptionMap["WaffoPancakeMerchantID"] = setting.WaffoPancakeMerchantID
-	common.OptionMap["WaffoPancakePrivateKey"] = setting.WaffoPancakePrivateKey
-	common.OptionMap["WaffoPancakeWebhookPublicKey"] = setting.WaffoPancakeWebhookPublicKey
-	common.OptionMap["WaffoPancakeWebhookTestKey"] = setting.WaffoPancakeWebhookTestKey
-	common.OptionMap["WaffoPancakeStoreID"] = setting.WaffoPancakeStoreID
-	common.OptionMap["WaffoPancakeProductID"] = setting.WaffoPancakeProductID
-	common.OptionMap["WaffoPancakeReturnURL"] = setting.WaffoPancakeReturnURL
-	common.OptionMap["WaffoPancakeCurrency"] = setting.WaffoPancakeCurrency
-	common.OptionMap["WaffoPancakeUnitPrice"] = strconv.FormatFloat(setting.WaffoPancakeUnitPrice, 'f', -1, 64)
-	common.OptionMap["WaffoPancakeMinTopUp"] = strconv.Itoa(setting.WaffoPancakeMinTopUp)
 	common.OptionMap["TopupGroupRatio"] = common.TopupGroupRatio2JSONString()
 	common.OptionMap["PayMethods"] = operation_setting.PayMethods2JsonString()
 	common.OptionMap["GitHubClientId"] = ""
@@ -294,36 +283,14 @@ func updateOptionMap(key string, value string) (err error) {
 		operation_setting.EpayId = value
 	case "EpayKey":
 		operation_setting.EpayKey = value
+	case "EpayEnabled":
+		operation_setting.EpayEnabled = value == "true"
 	case "Price":
 		operation_setting.Price, _ = strconv.ParseFloat(value, 64)
 	case "USDExchangeRate":
 		operation_setting.USDExchangeRate, _ = strconv.ParseFloat(value, 64)
 	case "MinTopUp":
 		operation_setting.MinTopUp, _ = strconv.Atoi(value)
-	case "WaffoPancakeEnabled":
-		setting.WaffoPancakeEnabled = value == "true"
-	case "WaffoPancakeSandbox":
-		setting.WaffoPancakeSandbox = value == "true"
-	case "WaffoPancakeMerchantID":
-		setting.WaffoPancakeMerchantID = value
-	case "WaffoPancakePrivateKey":
-		setting.WaffoPancakePrivateKey = value
-	case "WaffoPancakeWebhookPublicKey":
-		setting.WaffoPancakeWebhookPublicKey = value
-	case "WaffoPancakeWebhookTestKey":
-		setting.WaffoPancakeWebhookTestKey = value
-	case "WaffoPancakeStoreID":
-		setting.WaffoPancakeStoreID = value
-	case "WaffoPancakeProductID":
-		setting.WaffoPancakeProductID = value
-	case "WaffoPancakeReturnURL":
-		setting.WaffoPancakeReturnURL = value
-	case "WaffoPancakeCurrency":
-		setting.WaffoPancakeCurrency = value
-	case "WaffoPancakeUnitPrice":
-		setting.WaffoPancakeUnitPrice, _ = strconv.ParseFloat(value, 64)
-	case "WaffoPancakeMinTopUp":
-		setting.WaffoPancakeMinTopUp, _ = strconv.Atoi(value)
 	case "TopupGroupRatio":
 		err = common.UpdateTopupGroupRatioByJSONString(value)
 	case "GitHubClientId":

@@ -119,6 +119,7 @@ export function updateAPI() {
     baseURL: import.meta.env.VITE_REACT_APP_SERVER_URL
       ? import.meta.env.VITE_REACT_APP_SERVER_URL
       : '',
+    withCredentials: true,
     headers: {
       'New-API-User': getUserIdFromLocalStorage(),
       'Cache-Control': 'no-store',
@@ -131,7 +132,7 @@ export function updateAPI() {
 // Path-prefixes whose 401/403 should NOT trigger a global redirect
 // to /login — these are part of the auth flow itself or always-public.
 const AUTH_BYPASS_RE =
-  /\/api\/(oauth|status|notice|verification|reset_password|user\/(login|register|logout|passkey\/login|password_reset))/;
+  /\/api\/(oauth|status|notice|verification|reset_password|user\/(login|register|logout|handoff\/exchange|passkey\/login|password_reset))/;
 
 const handleUnauthorized = (error) => {
   const url = error?.config?.url || '';

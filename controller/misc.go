@@ -68,6 +68,10 @@ func GetStatus(c *gin.Context) {
 		"turnstile_check":             common.TurnstileCheckEnabled,
 		"turnstile_site_key":          common.TurnstileSiteKey,
 		"top_up_link":                 common.TopUpLink,
+		"epay_enabled":                operation_setting.EpayEnabled,
+		"pay_methods":                 operation_setting.PayMethods,
+		"epay_price":                  operation_setting.Price,
+		"epay_min_topup":              operation_setting.MinTopUp,
 		"docs_link":                   operation_setting.GetGeneralSetting().DocsLink,
 		"quota_per_unit":              common.QuotaPerUnit,
 		// 兼容旧前端：保留 display_in_currency，同时提供新的 quota_display_type

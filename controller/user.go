@@ -107,6 +107,54 @@ func setupLogin(user *model.User, c *gin.Context) {
 			"display_name": user.DisplayName,
 			"role":         user.Role,
 			"status":       user.Status,
+			"handoff_code": common.IssueHandoff(user.Id),
+		},
+	})
+}
+
+// HandoffExchange 用一次性 code 在当前（控制台）域名上建立会话，实现跨域单点登录。
+func HandoffExchange(c *gin.Context) {
+	var req struct {
+		Code string `json:"code"`
+	}
+	if err := json.NewDecoder(c.Request.Body).Decode(&req); err != nil {
+		common.ApiErrorI18n(c, i18n.MsgInvalidParams)
+		return
+	}
+	userId, ok := common.ConsumeHandoff(req.Code)
+	if !ok {
+		c.JSON(http.StatusUnauthorized, gin.H{
+			"message": "invalid or expired handoff code",
+			"success": false,
+		})
+		return
+	}
+	user, err := model.GetUserById(userId, false)
+	if err != nil || user == nil {
+		c.JSON(http.StatusUnauthorized, gin.H{
+			"message": "user not found",
+			"success": false,
+		})
+		return
+	}
+	session := sessions.Default(c)
+	session.Set("id", user.Id)
+	session.Set("username", user.Username)
+	session.Set("role", user.Role)
+	session.Set("status", user.Status)
+	if err := session.Save(); err != nil {
+		common.ApiErrorI18n(c, i18n.MsgUserSessionSaveFailed)
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{
+		"message": "",
+		"success": true,
+		"data": map[string]any{
+			"id":           user.Id,
+			"username":     user.Username,
+			"display_name": user.DisplayName,
+			"role":         user.Role,
+			"status":       user.Status,
 		},
 	})
 }
@@ -435,7 +483,6 @@ func GetSelf(c *gin.Context) {
 		"inviter_id":        user.InviterId,
 		"linux_do_id":       user.LinuxDOId,
 		"setting":           user.Setting,
-		"stripe_customer":   user.StripeCustomer,
 		"sidebar_modules":   userSetting.SidebarModules, // 正确提取sidebar_modules字段
 		"permissions":       permissions,                // 新增权限字段
 	}

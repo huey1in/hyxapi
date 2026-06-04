@@ -5,7 +5,7 @@ import { API, showError, showSuccess, showInfo, copy, renderQuota, timestamp2str
 import { UserContext } from '../../context/User';
 import { StatusContext } from '../../context/Status';
 import {
-  Button, IconButton, Input, NumberInput, Modal, Loading,
+  IconButton, Input, NumberInput, Modal, Loading,
 } from '../../components/ui';
 import useIsMobile from '../../hooks/useIsMobile';
 
@@ -17,6 +17,7 @@ const TopUp = () => {
 
   const [code, setCode] = useState('');
   const [redeeming, setRedeeming] = useState(false);
+  const [redeemOpen, setRedeemOpen] = useState(false);
   const [topUpCount, setTopUpCount] = useState(statusState?.status?.min_topup || 10);
   const [affLink, setAffLink] = useState('');
   const [transferOpen, setTransferOpen] = useState(false);
@@ -24,9 +25,21 @@ const TopUp = () => {
   const [transferring, setTransferring] = useState(false);
   const [topups, setTopups] = useState([]);
   const [showHistory, setShowHistory] = useState(false);
+  const [checkingOut, setCheckingOut] = useState(false);
 
   const minTopUp = statusState?.status?.min_topup || 1;
-  const topUpLink = statusState?.status?.top_up_link || '';
+  const epayEnabled = !!statusState?.status?.epay_enabled;
+  const payMethods = Array.isArray(statusState?.status?.pay_methods) ? statusState.status.pay_methods : [];
+  const epayPrice = Number(statusState?.status?.epay_price) || 1;
+  const epayMin = statusState?.status?.epay_min_topup || 1;
+
+  // 构造支付方式列表：易支付各方式
+  const methods = epayEnabled
+    ? payMethods.filter((m) => m?.type).map((m) => ({ id: `epay:${m.type}`, name: m.name || m.type, type: m.type, min_topup: m.min_topup }))
+    : [];
+  const [selectedMethod, setSelectedMethod] = useState('');
+  const activeMethod = methods.find((m) => m.id === selectedMethod) || methods[0];
+  const isEpay = activeMethod?.id?.startsWith('epay:');
 
   const refreshUser = async () => {
     try {
@@ -67,7 +80,7 @@ const TopUp = () => {
         const sub = await API.post('/api/subscription/redeem', { key }, { skipErrorHandler: true });
         if (sub.data?.success) {
           showSuccess('已激活订阅：' + (sub.data.data?.plan_title || ''));
-          setCode(''); refreshUser();
+          setCode(''); setRedeemOpen(false); refreshUser();
           return;
         }
         if (sub.data?.message && !/无效的兑换码|invalid/i.test(sub.data.message)) {
@@ -78,7 +91,7 @@ const TopUp = () => {
       const { data } = await API.post('/api/user/topup', { key });
       if (data.success) {
         showSuccess('兑换成功！获得 ' + renderQuota(data.data));
-        setCode(''); refreshUser();
+        setCode(''); setRedeemOpen(false); refreshUser();
       } else showError(data.message);
     } catch (e) { showError(e); } finally { setRedeeming(false); }
   };
@@ -95,6 +108,23 @@ const TopUp = () => {
 
   const u = userState?.user || {};
   const AMOUNTS = [10, 50, 100, 500];
+  const epayMethodMin = Number(activeMethod?.min_topup) || epayMin;
+  const payTotal = topUpCount * epayPrice;
+  const payTotalText = `¥${payTotal.toLocaleString(undefined, { maximumFractionDigits: 2 })}`;
+
+  const checkout = async () => {
+    if (isEpay) {
+      if (topUpCount < epayMethodMin) return showError(`最低充值数量为 ${epayMethodMin}`);
+      setCheckingOut(true);
+      try {
+        const { data } = await API.post('/api/user/payment/epay/checkout', { amount: topUpCount, type: activeMethod.type });
+        if (data.success && data.data?.pay_url) {
+          window.location.href = data.data.pay_url;
+        } else showError(data.message || '创建支付订单失败');
+      } catch (e) { showError(e); } finally { setCheckingOut(false); }
+      return;
+    }
+  };
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: isMobile ? 20 : 28, width: '100%', maxWidth: 960, marginInline: 'auto', padding: isMobile ? '16px' : '24px 16px' }}>
@@ -111,27 +141,37 @@ const TopUp = () => {
         >充值记录</button>
       </div>
 
-      {/* 兑换码 */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-        <span style={{ fontSize: 18, fontWeight: 600, color: 'var(--ui-text)' }}>兑换码</span>
-        <div style={{ fontSize: 14, color: 'var(--ui-text-3)' }}>输入兑换码，立即获得对应额度或激活订阅</div>
-        <div style={{ display: 'flex', gap: 8, maxWidth: 420 }}>
-          <Input
-            value={code}
-            onChange={setCode}
-            onKeyDown={(e) => e.key === 'Enter' && redeem()}
-            placeholder='XXXX-XXXX-XXXX-XXXX'
-            width='full'
-            className='font-mono'
-          />
-          <Button onClick={redeem} loading={redeeming} disabled={!code.trim()}>兑换</Button>
-        </div>
-      </div>
-
-      {/* 快捷充值 */}
-      {topUpLink && (
+      {/* 立即充值 */}
+      {epayEnabled && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-          <span style={{ fontSize: 18, fontWeight: 600, color: 'var(--ui-text)' }}>快捷充值</span>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <span style={{ fontSize: 18, fontWeight: 600, color: 'var(--ui-text)' }}>立即充值</span>
+            <button
+              onClick={() => setRedeemOpen(true)}
+              style={{ cursor: 'pointer', height: 32, paddingInline: 16, border: '1px solid var(--ui-border)', borderRadius: 24, fontSize: 13, color: 'var(--ui-text-2)', background: 'transparent' }}
+            >兑换码</button>
+          </div>
+          {/* 支付方式选择 */}
+          {methods.length > 1 && (
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+              {methods.map((m) => {
+                const selected = activeMethod?.id === m.id;
+                return (
+                  <button
+                    key={m.id}
+                    onClick={() => setSelectedMethod(m.id)}
+                    style={{
+                      cursor: 'pointer', height: 38, paddingInline: 16, borderRadius: 999,
+                      border: selected ? '2px solid #000' : '1px solid #e5e5e5',
+                      fontSize: 14, fontWeight: selected ? 600 : 400,
+                      color: 'var(--ui-text)', background: 'var(--page-bg)',
+                      transition: 'border-color 0.2s',
+                    }}
+                  >{m.name}</button>
+                );
+              })}
+            </div>
+          )}
           {/* 金额选择 */}
           <div style={{ display: 'flex', flexWrap: 'nowrap', gap: 8 }}>
             {AMOUNTS.map((amt) => (
@@ -153,21 +193,23 @@ const TopUp = () => {
             <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', padding: '16px 18px' }}>
               <div>
                 <div style={{ fontSize: 13, color: 'var(--ui-text-3)', marginBottom: 6 }}>支付总计</div>
-                <div style={{ fontSize: 28, fontWeight: 400, color: 'var(--ui-text)' }}>${topUpCount}</div>
+                <div style={{ fontSize: 28, fontWeight: 400, color: 'var(--ui-text)' }}>{payTotalText}</div>
               </div>
               <div style={{ padding: '2px 10px', border: '1px solid var(--ui-border)', borderRadius: 10, fontSize: 12, fontWeight: 500, color: 'rgba(0,0,0,0.3)', background: 'var(--ui-bg-subtle)' }}>
-                $1=1,000,000
+                {`$1 = ¥${epayPrice}`}
               </div>
             </div>
           </div>
           {/* 结账按钮 */}
           <button
-            onClick={() => window.open(topUpLink, '_blank')}
+            onClick={checkout}
+            disabled={checkingOut}
             style={{
-              cursor: 'pointer', width: '100%', height: 48, border: 'none', borderRadius: 999,
+              cursor: checkingOut ? 'not-allowed' : 'pointer', width: '100%', height: 48, border: 'none', borderRadius: 999,
               fontSize: 16, fontWeight: 600, color: 'var(--ui-accent-fg)', background: 'var(--ui-accent)',
+              opacity: checkingOut ? 0.6 : 1,
             }}
-          >前往结账</button>
+          >{checkingOut ? '正在创建订单...' : '前往结账'}</button>
         </div>
       )}
 
@@ -208,6 +250,30 @@ const TopUp = () => {
           </div>
         )}
       </div>
+
+      {/* 兑换码弹窗 */}
+      {redeemOpen && (
+        <Modal
+          open
+          title='兑换码'
+          onClose={() => setRedeemOpen(false)}
+          onConfirm={redeem}
+          loading={redeeming}
+          confirmText='兑换'
+        >
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            <div style={{ fontSize: 14, color: 'var(--ui-text-3)' }}>输入兑换码，立即获得对应额度或激活订阅</div>
+            <Input
+              value={code}
+              onChange={setCode}
+              onKeyDown={(e) => e.key === 'Enter' && redeem()}
+              placeholder='XXXX-XXXX-XXXX-XXXX'
+              width='full'
+              className='font-mono'
+            />
+          </div>
+        </Modal>
+      )}
 
       {/* 充值记录弹窗 */}
       {showHistory && (

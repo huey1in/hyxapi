@@ -2,7 +2,6 @@ import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import PageLayout from './components/layout/PageLayout';
 
-import Home          from './pages/Home';
 import Dashboard     from './pages/Dashboard';
 import Channel       from './pages/Channel';
 import Token         from './pages/Token';
@@ -13,31 +12,29 @@ import Subscription  from './pages/Subscription';
 import TopUp         from './pages/TopUp';
 import MySubscription from './pages/MySubscription';
 // import Chat         from './pages/Chat';
-import Pricing       from './pages/Pricing';
-import ModelDetail   from './pages/Pricing/ModelDetail';
 import Setting       from './pages/Setting';
 import Setup         from './pages/Setup';
 import Personal      from './pages/Personal';
 import Forbidden     from './pages/Forbidden';
-import PrivacyPolicy from './pages/PrivacyPolicy';
-import UserAgreement from './pages/UserAgreement';
 import PasswordReset from './pages/PasswordReset';
 import Register     from './pages/Register';
+import Pricing      from './pages/Pricing';
+import PricingDetail from './pages/Pricing/Detail';
 
 const App = () => (
   <Routes>
     <Route element={<PageLayout />}>
-      <Route path='/'                   element={<Home />} />
-      <Route path='/pricing'            element={<Pricing />} />
-      <Route path='/pricing/:modelName'  element={<ModelDetail />} />
-      <Route path='/privacy'            element={<PrivacyPolicy />} />
-      <Route path='/agreement'          element={<UserAgreement />} />
+      <Route path='/'                   element={<Navigate to='/console' replace />} />
       <Route path='/setup'              element={<Setup />} />
       <Route path='/user/reset'         element={<PasswordReset />} />
       <Route path='/register'           element={<Register />} />
       <Route path='/forbidden'          element={<Forbidden />} />
+      <Route path='/pricing'            element={<Pricing />} />
+      <Route path='/pricing/model/*'    element={<PricingDetail />} />
 
       <Route path='/console'                  element={<Dashboard />} />
+      <Route path='/console/pricing'          element={<Pricing />} />
+      <Route path='/console/pricing/model/*'  element={<PricingDetail />} />
       <Route path='/console/channel'          element={<Channel />} />
       <Route path='/console/token'            element={<Token />} />
       <Route path='/console/log'              element={<Log />} />

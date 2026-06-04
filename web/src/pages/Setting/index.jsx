@@ -20,7 +20,7 @@ const TABS = [
 ];
 
 const TAB_KEYS = {
-  platform: ['SystemName', 'ServerAddress', 'TopUpLink', 'general_setting.docs_link', 'Logo', 'Notice', 'RetryTimes', 'general_setting.quota_display_type', 'DisplayTokenStatEnabled', 'DefaultCollapseSidebar', 'DemoSiteEnabled', 'SelfUseModeEnabled', 'token_setting.max_user_tokens'],
+  platform: ['SystemName', 'ServerAddress', 'TopUpLink', 'general_setting.docs_link', 'Logo', 'Notice', 'RetryTimes', 'general_setting.quota_display_type', 'DisplayTokenStatEnabled', 'DefaultCollapseSidebar', 'DemoSiteEnabled', 'SelfUseModeEnabled', 'token_setting.max_user_tokens', 'EpayEnabled', 'PayAddress', 'EpayId', 'EpayKey', 'CustomCallbackAddress', 'Price', 'MinTopUp', 'PayMethods'],
   global: [
     'global.pass_through_request_enabled',
     'global.thinking_model_blacklist',
@@ -87,6 +87,7 @@ const TAB_SECTIONS = {
   platform: [
     { title: '基本信息', keys: ['SystemName', 'ServerAddress', 'TopUpLink', 'general_setting.docs_link', 'Logo', 'Notice'] },
     { title: '功能开关', keys: ['RetryTimes', 'general_setting.quota_display_type', 'DisplayTokenStatEnabled', 'DefaultCollapseSidebar', 'DemoSiteEnabled', 'SelfUseModeEnabled', 'token_setting.max_user_tokens'] },
+    { title: '易支付 (Epay)', gateKey: 'EpayEnabled', keys: ['EpayEnabled', 'PayAddress', 'EpayId', 'EpayKey', 'CustomCallbackAddress', 'Price', 'MinTopUp', 'PayMethods'] },
   ],
   auth: [
     { title: '注册与登录', keys: ['RegisterEnabled', 'PasswordRegisterEnabled', 'PasswordLoginEnabled'] },
@@ -128,7 +129,7 @@ const NEWLINE_TAG_KEYS = new Set(['SensitiveWords', 'AutomaticDisableKeywords'])
 const JSON_KEYS = new Set(['ModelRatio', 'CompletionRatio', 'CacheRatio', 'CreateCacheRatio', 'ImageRatio', 'AudioRatio', 'AudioCompletionRatio', 'GroupRatio', 'ModelPrice', 'UserUsableGroups', 'claude.default_max_tokens', 'gemini.safety_settings', 'gemini.version_settings']);
 const RAW_JSON_KEYS = new Set(['claude.model_headers_settings', 'channel_affinity_setting.rules']);
 const POLICY_KEYS = new Set(['global.chat_completions_to_responses_policy']);
-const LIST_EDITOR_KEYS = new Set(['console_setting.announcements']);
+const LIST_EDITOR_KEYS = new Set(['console_setting.announcements', 'PayMethods']);
 const BOOL_KEYS = new Set([
   'EmailVerificationEnabled', 'EmailDomainRestrictionEnabled', 'EmailAliasRestrictionEnabled',
   'SMTPSSLEnabled', 'SMTPForceAuthLogin',
@@ -157,6 +158,7 @@ const BOOL_KEYS = new Set([
   'performance_setting.disk_cache_enabled', 'performance_setting.monitor_enabled',
   'console_setting.announcements_enabled',
   'monitor_setting.model_health_enabled',
+  'EpayEnabled',
 ]);
 const NUMBER_KEYS = new Set([
   'ChannelDisableThreshold',
@@ -174,12 +176,21 @@ const NUMBER_KEYS = new Set([
   'ModelRequestRateLimitCount', 'ModelRequestRateLimitDurationMinutes', 'ModelRequestRateLimitSuccessCount',
   'performance_setting.disk_cache_threshold_mb', 'performance_setting.disk_cache_max_size_mb',
   'performance_setting.monitor_cpu_threshold', 'performance_setting.monitor_memory_threshold', 'performance_setting.monitor_disk_threshold',
+  'Price', 'MinTopUp',
 ]);
 
 const LABELS = {
   SystemName: '系统名称',
   ServerAddress: '服务器地址',
   TopUpLink: '充值链接',
+  EpayEnabled: '启用易支付',
+  PayAddress: '易支付网关地址 (PayAddress)',
+  EpayId: '易支付商户 ID (PID)',
+  EpayKey: '易支付商户密钥 (KEY)',
+  CustomCallbackAddress: '自定义回调地址(留空用服务器地址)',
+  Price: '易支付单价(每单位充值的人民币金额)',
+  MinTopUp: '易支付最低充值数量',
+  PayMethods: '易支付支付方式',
   'general_setting.docs_link': '文档地址',
   Logo: 'Logo 地址',
   Notice: '服务公告',
@@ -794,6 +805,12 @@ const LIST_EDITOR_FIELDS = {
     { key: 'type', label: '类型', type: 'select', options: [{ value: 'default', label: '默认' }, { value: 'ongoing', label: '进行中' }, { value: 'success', label: '成功' }, { value: 'warning', label: '警告' }, { value: 'error', label: '错误' }] },
     { key: 'extra', label: '说明' },
   ],
+  PayMethods: [
+    { key: 'name', label: '名称', flex: 2 },
+    { key: 'type', label: '类型', flex: 2 },
+    { key: 'color', label: '颜色' },
+    { key: 'min_topup', label: '最低充值' },
+  ],
 };
 
 const ListEditor = ({ configKey, value, onChange }) => {
@@ -975,11 +992,16 @@ const SettingPage = () => {
         </div>
       );
     }
+    // Gated section: only show detailed config when the enable toggle is on
+    const gateKey = sectionDef?.gateKey;
+    const visibleKeys = gateKey && !toBool(val(gateKey))
+      ? sectionKeys.filter((k) => k === gateKey)
+      : sectionKeys;
     return (
       <div key={title} style={{ padding: '20px 22px', border: '1px solid var(--ui-border)', borderRadius: 26 }}>
         <div style={{ fontSize: 15, fontWeight: 600, color: 'var(--ui-text)', marginBottom: 16 }}>{title}</div>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 14 }}>
-          {sectionKeys.map(renderField)}
+          {visibleKeys.map(renderField)}
         </div>
       </div>
     );

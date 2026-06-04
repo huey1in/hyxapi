@@ -514,6 +514,27 @@ export function getLobeHubIcon(iconName, size = 14) {
   return <IconComponent {...props} />;
 }
 
+// 模型「产品品牌」图标规则：与供应商（公司）图标区分。
+// 例如供应商 Anthropic 显示公司星标，但 claude-* 模型本身应显示 Claude 花瓣图标。
+const MODEL_BRAND_ICON_RULES = [
+  [/claude/i, 'Claude.Color'],
+];
+
+/**
+ * 解析模型展示图标：优先按模型名匹配产品品牌图标，未命中则回退供应商图标。
+ * @param {string} modelName
+ * @param {string} vendorIcon
+ * @returns {string}
+ */
+export function getModelIcon(modelName, vendorIcon) {
+  if (modelName) {
+    for (const [re, icon] of MODEL_BRAND_ICON_RULES) {
+      if (re.test(modelName)) return icon;
+    }
+  }
+  return vendorIcon || 'Layers';
+}
+
 const oauthProviderIconMap = {
   github: SiGithub,
   gitlab: SiGitlab,

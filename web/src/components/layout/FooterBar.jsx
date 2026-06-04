@@ -1,16 +1,17 @@
 import React, { useContext, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { Github, Mail, Twitter } from 'lucide-react';
+import { Github, Mail } from 'lucide-react';
 import { getFooterHTML, getSystemName } from '../../helpers';
 import { StatusContext } from '../../context/Status';
 
 const FooterBar = () => {
   const { t } = useTranslation();
   const [customHtml, setCustomHtml] = useState(getFooterHTML());
+  const [isMobile, setIsMobile] = useState(false);
   const [statusState] = useContext(StatusContext);
   const status = statusState?.status || {};
-  const systemName = getSystemName();
+  const systemName = getSystemName() || 'Routify';
   const docsLink = status?.docs_link || 'https://docs.newapi.pro';
   const year = new Date().getFullYear();
 
@@ -19,64 +20,89 @@ const FooterBar = () => {
     if (html) setCustomHtml(html);
   }, []);
 
+  useEffect(() => {
+    const mq = window.matchMedia('(max-width: 768px)');
+    const update = () => setIsMobile(mq.matches);
+    update();
+    mq.addEventListener('change', update);
+    return () => mq.removeEventListener('change', update);
+  }, []);
+
   const SECTIONS = [
     {
       title: t('产品'),
       links: [
-        { label: t('控制台'),   to: '/console' },
-        { label: t('模型广场'), to: '/pricing' },
-        { label: t('API Keys'), to: '/console/token' },
+        { label: t('控制台'),    to: '/console' },
+        { label: t('API Keys'),  to: '/console/token' },
+        { label: t('文档'),      href: docsLink, external: true },
       ],
     },
     {
-      title: t('资源'),
+      title: t('联系'),
       links: [
-        { label: t('文档'),       href: docsLink, external: true },
-        { label: t('GitHub'),     href: 'https://github.com/QuantumNous/new-api', external: true },
-        { label: t('系统状态'),   to: '/console' },
-        { label: t('更新日志'),   href: 'https://github.com/QuantumNous/new-api/releases', external: true },
-      ],
-    },
-    {
-      title: t('法律'),
-      links: [
-        { label: t('用户协议'), to: '/agreement' },
-        { label: t('隐私政策'), to: '/privacy' },
+        { label: t('联系我们'), href: `mailto:${status.support_email || '2926957031@qq.com'}`, external: true },
+        { label: 'GitHub',      href: 'https://github.com/huey1in', external: true },
       ],
     },
   ];
 
-  const SOCIALS = [
-    { Icon: Github,  href: 'https://github.com/QuantumNous/new-api', label: 'GitHub' },
-    { Icon: Twitter, href: status.twitter_url || '#', label: 'Twitter' },
-    { Icon: Mail,    href: `mailto:${status.support_email || 'support@example.com'}`, label: 'Email' },
-  ];
+  const linkStyle = {
+    fontSize: 14,
+    color: 'rgba(255,255,255,0.6)',
+    textDecoration: 'none',
+    transition: 'color 0.15s',
+  };
+  const onHover = (e) => (e.currentTarget.style.color = '#fff');
+  const onLeave = (e) => (e.currentTarget.style.color = 'rgba(255,255,255,0.6)');
 
   return (
     <footer
-      className='w-full text-neutral-300 mt-auto'
-      style={{ backgroundColor: '#0a0a0a' }}
+      className='w-full mt-auto'
+      style={{ background: '#14130F', color: '#fff' }}
     >
-      <div className='max-w-[1200px] mx-auto px-6 md:px-10 py-14'>
-        <div className='grid grid-cols-2 md:grid-cols-5 gap-8 md:gap-10 mb-12'>
+      <div style={{ maxWidth: 1160, margin: '0 auto', padding: isMobile ? '48px 20px 32px' : '64px 32px 40px' }}>
+        <div
+          style={{
+            display: 'grid',
+            gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'minmax(220px, 1.6fr) repeat(2, 1fr)',
+            gap: isMobile ? '32px 16px' : 40,
+            marginBottom: isMobile ? 36 : 48,
+          }}
+        >
           {/* Brand column */}
-          <div className='col-span-2'>
-            <Link to='/' className='inline-block text-white font-semibold mb-3'
-              style={{ letterSpacing: '-0.02em', fontSize: 24 }}>
+          <div style={isMobile ? { gridColumn: '1 / -1' } : undefined}>
+            <Link
+              to='/'
+              style={{
+                display: 'inline-block', fontFamily: "'Kefaiii', 'Gilroy', sans-serif",
+                fontSize: 22, fontWeight: 600, letterSpacing: '-0.01em',
+                color: '#fff', textDecoration: 'none', marginBottom: 14,
+              }}
+            >
               {systemName}
             </Link>
-            <p className='text-sm text-neutral-400 leading-relaxed max-w-xs mb-5'>
-              {t('企业级 AI API 网关 · 智能路由 · 统一计费 · 协议兼容')}
+            <p style={{ margin: '0 0 20px', fontSize: 14, lineHeight: 1.6, color: 'rgba(255,255,255,0.6)', maxWidth: 280 }}>
+              {t('原生体验，远低于官方的价格。一个入口，稳定连通每一个模型。')}
             </p>
-            <div className='flex items-center gap-2'>
-              {SOCIALS.filter((s) => s.href && s.href !== '#').map(({ Icon, href, label }) => (
+            <div style={{ display: 'flex', gap: 8 }}>
+              {[
+                { Icon: Github, href: 'https://github.com/huey1in', label: 'GitHub' },
+                { Icon: Mail, href: `mailto:${status.support_email || '2926957031@qq.com'}`, label: 'Email' },
+              ].map(({ Icon, href, label }) => (
                 <a
                   key={label}
                   href={href}
                   target='_blank'
                   rel='noopener noreferrer'
                   aria-label={label}
-                  className='w-9 h-9 rounded-lg flex items-center justify-center text-neutral-400 hover:text-white hover:bg-white/5 transition-colors'
+                  style={{
+                    width: 36, height: 36, borderRadius: 10,
+                    border: '1px solid rgba(255,255,255,0.16)',
+                    display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                    color: 'rgba(255,255,255,0.6)', transition: 'color 0.15s, background 0.15s',
+                  }}
+                  onMouseEnter={(e) => { e.currentTarget.style.color = '#fff'; e.currentTarget.style.background = 'rgba(255,255,255,0.08)'; }}
+                  onMouseLeave={(e) => { e.currentTarget.style.color = 'rgba(255,255,255,0.6)'; e.currentTarget.style.background = 'transparent'; }}
                 >
                   <Icon size={16} />
                 </a>
@@ -87,23 +113,23 @@ const FooterBar = () => {
           {/* Link columns */}
           {SECTIONS.map((section) => (
             <div key={section.title}>
-              <h4 className='text-xs font-semibold text-neutral-200 uppercase tracking-wider mb-4'>
+              <h4
+                style={{
+                  margin: '0 0 16px', fontSize: 13, fontWeight: 600,
+                  letterSpacing: '0.06em', color: 'rgba(255,255,255,0.4)',
+                }}
+              >
                 {section.title}
               </h4>
-              <ul className='space-y-2.5'>
+              <ul style={{ listStyle: 'none', margin: 0, padding: 0, display: 'flex', flexDirection: 'column', gap: 11 }}>
                 {section.links.map((link) => (
                   <li key={link.label}>
                     {link.external ? (
-                      <a
-                        href={link.href}
-                        target='_blank'
-                        rel='noopener noreferrer'
-                        className='text-sm text-neutral-400 hover:text-white transition-colors'
-                      >
+                      <a href={link.href} target='_blank' rel='noopener noreferrer' style={linkStyle} onMouseEnter={onHover} onMouseLeave={onLeave}>
                         {link.label}
                       </a>
                     ) : (
-                      <Link to={link.to} className='text-sm text-neutral-400 hover:text-white transition-colors'>
+                      <Link to={link.to} style={linkStyle} onMouseEnter={onHover} onMouseLeave={onLeave}>
                         {link.label}
                       </Link>
                     )}
@@ -115,21 +141,30 @@ const FooterBar = () => {
         </div>
 
         {/* Bottom bar */}
-        <div className='pt-8 border-t border-white/10 flex flex-col md:flex-row items-center justify-between gap-3'>
+        <div
+          style={{
+            paddingTop: 28,
+            borderTop: '1px solid rgba(255,255,255,0.1)',
+            display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: 12,
+          }}
+        >
           {customHtml ? (
-            <div className='text-sm text-neutral-500' dangerouslySetInnerHTML={{ __html: customHtml }} />
+            <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.4)' }} dangerouslySetInnerHTML={{ __html: customHtml }} />
           ) : (
-            <p className='text-sm text-neutral-500'>
+            <p style={{ margin: 0, fontSize: 13, color: 'rgba(255,255,255,0.4)' }}>
               © {year} {systemName}. {t('版权所有')}
+              {status.icp_no ? <span style={{ marginLeft: 12 }}>{status.icp_no}</span> : null}
             </p>
           )}
-          <p className='text-sm text-neutral-500'>
+          <p style={{ margin: 0, fontSize: 13, color: 'rgba(255,255,255,0.4)' }}>
             {t('基于')}{' '}
             <a
               href='https://github.com/QuantumNous/new-api'
               target='_blank'
               rel='noopener noreferrer'
-              className='text-neutral-300 hover:text-white font-medium'
+              style={{ color: 'rgba(255,255,255,0.7)', fontWeight: 500, textDecoration: 'none' }}
+              onMouseEnter={onHover}
+              onMouseLeave={onLeave}
             >
               New API
             </a>

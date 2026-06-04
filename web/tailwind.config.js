@@ -1,6 +1,6 @@
 export default {
   darkMode: 'class',
-  content: ['./index.html', './src/**/*.{js,jsx}', './.storybook/**/*.{js,jsx}'],
+  content: ['./index.html', './src/**/*.{js,jsx,html}', './.storybook/**/*.{js,jsx}'],
   theme: {
     extend: {
       fontFamily: {

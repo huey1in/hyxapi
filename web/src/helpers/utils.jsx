@@ -76,28 +76,50 @@ export function getFooterHTML() {
 }
 
 export async function copy(text) {
-  let okay = true;
+  // 优先使用异步剪贴板 API（需安全上下文 https/localhost）
   try {
-    await navigator.clipboard.writeText(text);
-  } catch (e) {
-    try {
-      // 构建 textarea 执行复制命令，保留多行文本格式
-      const textarea = window.document.createElement('textarea');
-      textarea.value = text;
-      textarea.setAttribute('readonly', '');
-      textarea.style.position = 'fixed';
-      textarea.style.left = '-9999px';
-      textarea.style.top = '-9999px';
-      window.document.body.appendChild(textarea);
-      textarea.select();
-      window.document.execCommand('copy');
-      window.document.body.removeChild(textarea);
-    } catch (e) {
-      okay = false;
-      console.error(e);
+    if (navigator.clipboard && window.isSecureContext) {
+      await navigator.clipboard.writeText(text);
+      return true;
     }
+  } catch (e) {
+    // 落回 execCommand 兼容方案（移动端 http 局域网 / 手势失效场景）
   }
-  return okay;
+
+  // iOS Safari 兼容：元素需在视口内、可编辑、非 readonly，并用 Range 选区
+  try {
+    const textarea = window.document.createElement('textarea');
+    textarea.value = text;
+    textarea.contentEditable = 'true';
+    textarea.readOnly = false;
+    Object.assign(textarea.style, {
+      position: 'fixed',
+      top: '0',
+      left: '0',
+      width: '1px',
+      height: '1px',
+      padding: '0',
+      border: 'none',
+      outline: 'none',
+      boxShadow: 'none',
+      background: 'transparent',
+      fontSize: '16px', // 防止 iOS 聚焦时自动缩放
+    });
+    window.document.body.appendChild(textarea);
+    textarea.focus();
+    const range = window.document.createRange();
+    range.selectNodeContents(textarea);
+    const sel = window.getSelection();
+    sel.removeAllRanges();
+    sel.addRange(range);
+    textarea.setSelectionRange(0, text.length);
+    const ok = window.document.execCommand('copy');
+    window.document.body.removeChild(textarea);
+    return ok;
+  } catch (e) {
+    console.error(e);
+    return false;
+  }
 }
 
 // isMobile 函数已移除，请改用 useIsMobile Hook

@@ -2,13 +2,12 @@ import React, { useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { Link, NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { LayoutDashboard, UserCog, Menu } from 'lucide-react';
-import { ThemeToggle, Button, IconButton } from '../ui';
+import { ThemeToggle, IconButton } from '../ui';
 import { UserContext } from '../../context/User';
 import { StatusContext } from '../../context/Status';
-import { useLoginModal } from '../../context/LoginModal';
 import { useMobileSidebar } from '../../context/MobileSidebar';
 import useIsMobile from '../../hooks/useIsMobile';
-import { API, showError, updateAPI } from '../../helpers';
+import { API, showError, updateAPI, homeSiteUrl } from '../../helpers';
 import NoticeModal from './NoticeModal';
 import {
   BellIcon, GlobeIcon, ChevronDownIcon, WalletIcon, LogOutIcon,
@@ -25,14 +24,11 @@ const HeaderBar = () => {
   const location = useLocation();
   const [userState, userDispatch] = useContext(UserContext);
   const [statusState] = useContext(StatusContext);
-  const { openLoginModal } = useLoginModal();
   const [, setMobileOpen] = useMobileSidebar();
   const isMobile = useIsMobile();
   const user = userState?.user;
   const isConsoleRoute = location.pathname.startsWith('/console');
-  const hideLogoOnMobile = isConsoleRoute
-    || location.pathname.startsWith('/pricing')
-;
+  const hideLogoOnMobile = isConsoleRoute;
 
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [langMenuOpen, setLangMenuOpen] = useState(false);
@@ -44,22 +40,22 @@ const HeaderBar = () => {
 
   const status = statusState?.status || {};
   const docsLink = status?.docs_link || '';
-  const pricingRequireAuth = !!status?.pricing_require_auth;
 
   const navLinks = useMemo(() => {
-    const links = [
-      { key: 'home',    text: t('首页'),     to: '/' },
-      { key: 'console', text: t('控制台'),   to: '/console' },
-      { key: 'pricing', text: t('模型广场'), to: '/pricing' },
-    ];
-    if (docsLink) links.push({ key: 'docs', text: t('文档'), externalLink: docsLink });
+    const links = [];
+    if (isConsoleRoute) {
+      // 已在控制台内，导航项改为返回首页（独立部署的 home-site）
+      links.push({ key: 'home', text: t('首页'), externalLink: homeSiteUrl() });
+    } else {
+      links.push({ key: 'console', text: t('控制台'), to: '/console' });
+    }
+    if (docsLink) links.push({ key: 'docs', text: t('文档'), externalLink: docsLink, newTab: true });
     return links;
-  }, [t, docsLink]);
+  }, [t, docsLink, isConsoleRoute]);
 
   const activeKey = useMemo(() => {
     const link = navLinks.find((l) => {
       if (l.externalLink) return false;
-      if (l.to === '/') return location.pathname === '/';
       return location.pathname.startsWith(l.to);
     });
     return link?.key ?? null;
@@ -117,15 +113,11 @@ const HeaderBar = () => {
   };
 
   const linkClass = (isActive) =>
-    `group flex items-center gap-1 text-[15px] font-medium transition-colors py-2 px-1 whitespace-nowrap cursor-pointer ${
-      isActive ? 'text-ui-text-1' : 'text-ui-text-2 hover:text-ui-text-1'
+    `flex items-center gap-1 px-3 h-9 rounded-lg text-[15px] font-medium transition-colors whitespace-nowrap cursor-pointer ${
+      isActive ? 'bg-ui-bg-subtle text-ui-text-1' : 'text-ui-text-2 hover:bg-ui-bg-subtle hover:text-ui-text-1'
     }`;
 
-  const renderLabel = (text, isActive) => (
-    <span className={`underline-offset-[5px] decoration-current group-hover:underline ${isActive ? 'underline' : ''}`}>
-      {text}
-    </span>
-  );
+  const renderLabel = (text) => <span>{text}</span>;
 
   const currentLang = LANGUAGES.find((l) => i18n.language?.startsWith(l.value.split('-')[0]))?.value || 'zh-CN';
 
@@ -146,7 +138,7 @@ const HeaderBar = () => {
           </Link>
         )}
 
-        <nav className='hidden md:inline-flex items-center gap-4'>
+        <nav className='hidden md:inline-flex items-center gap-1'>
           {navLinks.map((link) => {
             const isActive = link.key === activeKey;
             if (link.externalLink) {
@@ -154,24 +146,16 @@ const HeaderBar = () => {
                 <a
                   key={link.key}
                   href={link.externalLink}
-                  target='_blank'
-                  rel='noopener noreferrer'
+                  target={link.newTab ? '_blank' : undefined}
+                  rel={link.newTab ? 'noopener noreferrer' : undefined}
                   className={linkClass(isActive)}
                 >
                   {renderLabel(link.text, isActive)}
                 </a>
               );
             }
-            const needsLogin = (link.key === 'console' && !user) || (link.key === 'pricing' && pricingRequireAuth && !user);
-            if (needsLogin) {
-              return (
-                <button key={link.key} onClick={() => openLoginModal?.()} className={linkClass(isActive)}>
-                  {renderLabel(link.text, isActive)}
-                </button>
-              );
-            }
             return (
-              <NavLink key={link.key} to={link.to} end={link.to === '/'}
+              <NavLink key={link.key} to={link.to}
                 className={({ isActive: a }) => linkClass(a)}>
                 {({ isActive: a }) => renderLabel(link.text, a)}
               </NavLink>
@@ -179,7 +163,8 @@ const HeaderBar = () => {
           })}
         </nav>
 
-        {/* Mobile nav dropdown trigger */}
+        {/* Mobile nav dropdown trigger（控制台已有侧边栏，无需此下拉） */}
+        {!isConsoleRoute && (
         <div ref={mobileNavRef} className='relative md:hidden'>
           <button
             onClick={() => setMobileNavOpen((p) => !p)}
@@ -200,25 +185,13 @@ const HeaderBar = () => {
                     <a
                       key={link.key}
                       href={link.externalLink}
-                      target='_blank'
-                      rel='noopener noreferrer'
+                      target={link.newTab ? '_blank' : undefined}
+                      rel={link.newTab ? 'noopener noreferrer' : undefined}
                       onClick={() => setMobileNavOpen(false)}
                       className={itemClass}
                     >
                       {link.text}
                     </a>
-                  );
-                }
-                const needsLogin = (link.key === 'console' && !user) || (link.key === 'pricing' && pricingRequireAuth && !user);
-                if (needsLogin) {
-                  return (
-                    <button
-                      key={link.key}
-                      onClick={() => { setMobileNavOpen(false); openLoginModal?.(); }}
-                      className={itemClass}
-                    >
-                      {link.text}
-                    </button>
                   );
                 }
                 return (
@@ -234,12 +207,13 @@ const HeaderBar = () => {
             </div>
           )}
         </div>
+        )}
       </div>
 
       <div className='flex items-center gap-2 md:gap-3'>
         {/* Notifications */}
         <div className='relative inline-flex'>
-          <IconButton size='lg' icon={BellIcon} title={t('系统公告')} onClick={handleNoticeClick} />
+          <IconButton size='lg' variant='outline' shape='square' icon={BellIcon} title={t('系统公告')} onClick={handleNoticeClick} />
           {unreadCount > 0 && (
             <span className='pointer-events-none absolute top-0.5 right-0.5 min-w-[16px] h-4 px-1 flex items-center justify-center text-[10px] font-bold bg-red-500 text-white rounded-full leading-none'>
               {unreadCount > 99 ? '99+' : unreadCount}
@@ -247,11 +221,11 @@ const HeaderBar = () => {
           )}
         </div>
 
-        <ThemeToggle size='lg' />
+        <ThemeToggle size='lg' variant='outline' shape='square' />
 
         {/* Language */}
         <div ref={langMenuRef} className='relative'>
-          <IconButton size='lg' icon={GlobeIcon} title={t('切换语言')} onClick={() => setLangMenuOpen((p) => !p)} />
+          <IconButton size='lg' variant='outline' shape='square' icon={GlobeIcon} title={t('切换语言')} onClick={() => setLangMenuOpen((p) => !p)} />
           {langMenuOpen && (
             <div className='absolute right-0 top-full mt-1 w-44 rounded-xl border border-ui-border bg-[var(--page-bg)] shadow-lg overflow-hidden z-50'>
               {LANGUAGES.map((l) => (
@@ -270,11 +244,11 @@ const HeaderBar = () => {
           )}
         </div>
 
-        {user ? (
+        {user && (
           <div ref={userMenuRef} className='relative ml-1'>
             <button
               onClick={() => setUserMenuOpen((p) => !p)}
-              className='flex items-center gap-1.5 px-2.5 h-9 rounded-lg text-sm text-ui-text-1 hover:bg-ui-bg-subtle transition-colors'
+              className='flex items-center gap-1.5 px-3 h-9 rounded-full border border-ui-border text-sm text-ui-text-1 hover:bg-ui-bg-subtle transition-colors'
             >
               <span>{user.username}</span>
               <ChevronDownIcon size={14} className='text-ui-text-3' />
@@ -289,8 +263,6 @@ const HeaderBar = () => {
               </div>
             )}
           </div>
-        ) : (
-          <Button onClick={() => openLoginModal?.()}>{t('登录')}</Button>
         )}
       </div>
 

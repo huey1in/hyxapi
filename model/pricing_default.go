@@ -40,7 +40,7 @@ var defaultVendorRules = map[string]string{
 // 供应商默认图标映射
 var defaultVendorIcons = map[string]string{
 	"OpenAI":     "OpenAI",
-	"Anthropic":  "Claude.Color",
+	"Anthropic":  "Anthropic",
 	"Google":     "Gemini.Color",
 	"Moonshot":   "Moonshot",
 	"智谱":         "Zhipu.Color",

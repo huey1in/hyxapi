@@ -5,13 +5,15 @@ import (
 	"sync"
 )
 
-const maxHealthRecords = 50
+const maxHealthRecords = 80
 
 // API response types
 type ModelHealthRecord struct {
 	Status    string `json:"status"`
 	Latency   int64  `json:"latency"`
 	CheckedAt int64  `json:"checked_at"`
+	Total     int64  `json:"total"`
+	Errors    int64  `json:"errors"`
 	Error     string `json:"error,omitempty"`
 }
 

@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
 import {
   BarChart3, Key, FileText, Wallet, User,
   Radio, CreditCard, Ticket, Users, Settings,
-  ChevronLeft, X, Layers,
+  ChevronLeft, X, Layers, Store,
 } from 'lucide-react';
 import { isAdmin, isRoot } from '../../helpers';
 import { UserContext } from '../../context/User';
@@ -18,6 +18,7 @@ const COLLAPSED = 57;
 
 const NAV_ITEMS = [
   { to: '/console',            label: '概览',     icon: BarChart3, end: true },
+  { to: '/console/pricing',    label: '模型广场', icon: Store },
   { to: '/console/token',      label: 'API',      icon: Key },
   { to: '/console/topup',      label: '充值',     icon: Wallet },
   { to: '/console/my-subscription', label: '订阅',   icon: CreditCard },

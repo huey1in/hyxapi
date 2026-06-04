@@ -18,9 +18,11 @@ const EmptyState = ({ icon: Icon = Inbox, title, description, action, padding = 
     padding === 'md' && 'py-10',
     padding === 'sm' && 'py-6',
   )}>
-    <div className='w-12 h-12 rounded-full bg-ui-bg-subtle flex items-center justify-center mb-3'>
-      <Icon size={20} />
-    </div>
+    {Icon && (
+      <div className='w-12 h-12 rounded-full bg-ui-bg-subtle flex items-center justify-center mb-3'>
+        <Icon size={20} />
+      </div>
+    )}
     {title && <div className='text-sm text-ui-text-2 font-medium mb-1'>{title}</div>}
     {description && <div className='text-xs text-ui-text-3 max-w-sm leading-relaxed'>{description}</div>}
     {action && <div className='mt-4'>{action}</div>}

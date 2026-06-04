@@ -1,189 +1,305 @@
-import React, { useEffect, useMemo, useState, useCallback } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
-import { Search, Copy, LayoutGrid, Rows3 } from 'lucide-react';
-import { API, showError, showSuccess, copy, getLobeHubIcon } from '../../helpers';
+import React, { useMemo, useState } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
+import { Search, RefreshCw, LayoutGrid, List } from 'lucide-react';
 import {
-  PageShell, Card, Button, IconButton, Input, Select, Table, Tag, Loading,
+  PageShell, Card, Input, Select, Table, Pagination, Tag,
+  EmptyState, Loading, IconButton, Divider,
 } from '../../components/ui';
+import { useModelPricingData } from '../../hooks/model-pricing/useModelPricingData';
+import { usePageTitle } from '../../hooks/common/usePageTitle';
+import { calculateModelPrice, getModelPriceItems, getLobeHubIcon, getModelIcon } from '../../helpers';
+import { QuotaTag, VendorTag } from './tags';
 
-const PricingPage = () => {
+const Pricing = () => {
+  const { t } = useTranslation();
+  usePageTitle(t('模型广场'));
+
+  const {
+    loading, filteredModels, models,
+    searchValue, handleChange,
+    selectedGroup, setSelectedGroup, setFilterGroup,
+    filterQuotaType, setFilterQuotaType,
+    filterVendor, setFilterVendor,
+    groupRatio, usableGroup,
+    currency, setCurrency, siteDisplayType, tokenUnit, displayPrice,
+    currentPage, setCurrentPage, pageSize,
+    refresh,
+  } = useModelPricingData();
+
   const navigate = useNavigate();
-  const [searchParams, setSearchParams] = useSearchParams();
-  const [models, setModels] = useState([]);
-  const [vendors, setVendors] = useState({});
-  const [groupRatio, setGroupRatio] = useState({});
-  const [usableGroups, setUsableGroups] = useState({});
-  const [loading, setLoading] = useState(true);
+  const location = useLocation();
+  const basePath = location.pathname.startsWith('/console') ? '/console/pricing' : '/pricing';
+  const isTokens = siteDisplayType === 'TOKENS';
+  const [viewMode, setViewMode] = useState('card');
 
-  // Restore filter state from URL params
-  const search = searchParams.get('q') || '';
-  const vendorFilter = searchParams.get('vendor') || 'all';
-  const group = searchParams.get('group') || 'all';
-  const [view, setView] = useState(() => localStorage.getItem('pricing-view') || 'card');
+  const goDetail = (row) =>
+    navigate(basePath + '/model/' + encodeURIComponent(row.model_name), { state: { model: row } });
 
-  const updateParam = useCallback((key, value, defaultVal = 'all') => {
-    setSearchParams((prev) => {
-      const next = new URLSearchParams(prev);
-      if (!value || value === defaultVal) next.delete(key);
-      else next.set(key, value);
-      return next;
-    }, { replace: true });
-  }, [setSearchParams]);
-
-  const setSearch = useCallback((v) => updateParam('q', v, ''), [updateParam]);
-  const setVendorFilter = useCallback((v) => updateParam('vendor', v), [updateParam]);
-  const setGroup = useCallback((v) => updateParam('group', v), [updateParam]);
-  const switchView = (v) => { setView(v); localStorage.setItem('pricing-view', v); };
-  const goDetail = (m) => {
-    const params = group !== 'all' ? `?group=${encodeURIComponent(group)}` : '';
-    navigate(`/pricing/${encodeURIComponent(m.model_name)}${params}`);
-  };
-
-  useEffect(() => {
-    (async () => {
-      try {
-        const { data } = await API.get('/api/pricing');
-        if (data.success) {
-          setModels(data.data || []);
-          const vmap = {};
-          (data.vendors || []).forEach((v) => { vmap[v.id] = v; });
-          setVendors(vmap);
-          setGroupRatio(data.group_ratio || {});
-          setUsableGroups(data.usable_group || {});
-        } else showError(data.message);
-      } catch (e) { showError(e); } finally { setLoading(false); }
-    })();
-  }, []);
-
-  const groupMul = group === 'all' ? 1 : (groupRatio[group] ?? 1);
-
-  const filtered = useMemo(() => {
-    const q = search.trim().toLowerCase();
-    return (models || []).filter((m) => {
-      if (q && !m.model_name?.toLowerCase().includes(q)) return false;
-      if (vendorFilter !== 'all' && m.vendor_id !== Number(vendorFilter)) return false;
-      if (group !== 'all' && Array.isArray(m.enable_groups) && !m.enable_groups.includes(group)) return false;
-      return true;
+  const priceOf = (record) =>
+    calculateModelPrice({
+      record, selectedGroup, groupRatio, tokenUnit, displayPrice,
+      currency, quotaDisplayType: siteDisplayType,
     });
-  }, [models, search, vendorFilter, group]);
 
-  const compute = (m) => {
-    if (m.quota_type === 1) {
-      const dollar = (m.model_price || 0) * groupMul;
-      return `$${dollar.toFixed(4)} / 次`;
+  // 选项
+  const groupOptions = useMemo(() => {
+    const opts = [{ value: 'all', label: t('最优倍率') }];
+    Object.entries(usableGroup || {}).forEach(([key, desc]) => {
+      if (!key) return;
+      const ratio = groupRatio?.[key];
+      const label = ratio !== undefined ? `${desc || key} (×${ratio})` : (desc || key);
+      opts.push({ value: key, label });
+    });
+    return opts;
+  }, [usableGroup, groupRatio, t]);
+
+  const vendorOptions = useMemo(() => {
+    const seen = new Set();
+    const opts = [{ value: 'all', label: t('全部供应商') }];
+    models.forEach((m) => {
+      if (m.vendor_name && !seen.has(m.vendor_name)) {
+        seen.add(m.vendor_name);
+        opts.push({ value: m.vendor_name, label: m.vendor_name });
+      }
+    });
+    if (models.some((m) => !m.vendor_name)) {
+      opts.push({ value: 'unknown', label: t('未知供应商') });
     }
-    const promptPerM = (m.model_ratio || 0) * 2 * groupMul;
-    const completionPerM = promptPerM * (m.completion_ratio || 1);
-    return `$${promptPerM.toFixed(3)} / $${completionPerM.toFixed(3)} per 1M`;
+    return opts;
+  }, [models, t]);
+
+  const quotaOptions = [
+    { value: 'all', label: t('全部计费方式') },
+    { value: '0', label: t('按量计费') },
+    { value: '1', label: t('按次计费') },
+  ];
+
+  const currencyOptions = [
+    { value: 'USD', label: 'USD ($)' },
+    { value: 'CNY', label: 'CNY (¥)' },
+    { value: 'CUSTOM', label: t('自定义货币') },
+  ];
+
+  const total = filteredModels.length;
+  const pagedRows = useMemo(
+    () => filteredModels.slice((currentPage - 1) * pageSize, currentPage * pageSize),
+    [filteredModels, currentPage, pageSize],
+  );
+
+  const renderPriceCell = (row) => {
+    const pd = priceOf(row);
+    if (!pd.isPerToken) {
+      return <span className='tabular-nums text-ui-text'>{pd.price}</span>;
+    }
+    const items = getModelPriceItems(pd, t, siteDisplayType).slice(0, 2);
+    if (items.length === 0) return <span className='text-ui-text-3'>-</span>;
+    return (
+      <div className='flex flex-col gap-0.5'>
+        {items.map((it) => (
+          <span key={it.key} className='text-xs text-ui-text-2 tabular-nums whitespace-nowrap'>
+            <span className='text-ui-text-3'>{it.label}: </span>
+            <span className='text-ui-text font-medium'>{it.value}</span>
+          </span>
+        ))}
+      </div>
+    );
   };
 
-  const vendorOptions = [
-    { value: 'all', label: '全部厂商' },
-    ...Object.values(vendors).map((v) => ({ value: String(v.id), label: v.name })),
-  ];
+  const renderModelCard = (row) => {
+    const pd = priceOf(row);
+    const priceItems = pd.isPerToken ? getModelPriceItems(pd, t, siteDisplayType) : [];
+    const gs = row.enable_groups || [];
+    return (
+      <Card key={row.model_name} interactive='lift' onClick={() => goDetail(row)}>
+        <div className='flex flex-col gap-3'>
+          <div className='flex items-start justify-between gap-2'>
+            <div className='flex items-center gap-2 min-w-0'>
+              <span className='flex-shrink-0'>{getLobeHubIcon(getModelIcon(row.model_name, row.vendor_icon), 22)}</span>
+              <div className='min-w-0'>
+                <div className='font-medium text-ui-text truncate'>{row.model_name}</div>
+                {row.vendor_name && <div className='text-xs text-ui-text-3 truncate'>{row.vendor_name}</div>}
+              </div>
+            </div>
+            <QuotaTag type={row.quota_type} t={t} />
+          </div>
 
-  const groupOptions = [
-    { value: 'all', label: '默认分组' },
-    ...Object.entries(usableGroups).map(([k, v]) => ({
-      value: k,
-      label: `${v?.desc || k} (×${groupRatio[k] ?? 1})`,
-    })),
-  ];
+          <Divider />
+
+          {!pd.isPerToken ? (
+            <div className='flex items-baseline justify-between'>
+              <span className='text-xs text-ui-text-3'>{isTokens ? t('倍率') : t('价格')}</span>
+              <span className='tabular-nums text-ui-text font-medium'>{pd.price}</span>
+            </div>
+          ) : priceItems.length === 0 ? (
+            <span className='text-sm text-ui-text-3'>-</span>
+          ) : (
+            <div className='flex flex-col gap-1'>
+              {priceItems.slice(0, 2).map((it) => (
+                <div key={it.key} className='flex items-center justify-between text-xs'>
+                  <span className='text-ui-text-3'>{it.label}</span>
+                  <span className='tabular-nums text-ui-text font-medium'>
+                    {it.value}<span className='text-ui-text-3 font-normal'>{it.suffix}</span>
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {gs.length > 0 && (
+            <div className='flex flex-wrap gap-1'>
+              {gs.slice(0, 3).map((g) => <Tag key={g}>{g}</Tag>)}
+              {gs.length > 3 && <span className='text-[11px] text-ui-text-3 self-center'>+{gs.length - 3}</span>}
+            </div>
+          )}
+        </div>
+      </Card>
+    );
+  };
 
   const columns = [
-    { key: 'model_name', title: '模型', render: (r) => (
-        <div className='flex items-center gap-2'>
-          <span className='font-mono text-xs'>{r.model_name}</span>
-          <IconButton icon={Copy} onClick={(e) => { e.stopPropagation(); copy(r.model_name); showSuccess('已复制'); }} />
-        </div>
-      ) },
-    { key: 'vendor', title: '厂商', render: (r) => (
-        <div className='flex items-center gap-1.5'>
-          {vendors[r.vendor_id]?.icon && getLobeHubIcon(vendors[r.vendor_id].icon, 16)}
-          <span>{vendors[r.vendor_id]?.name || '-'}</span>
-        </div>
-      ) },
-    { key: 'endpoints', title: '端点', render: (r) =>
-        <div className='flex flex-wrap gap-1'>
-          {(r.supported_endpoint_types || []).slice(0, 3).map((e) => <Tag key={e} color='blue'>{e}</Tag>)}
-        </div> },
-    { key: 'price', title: `价格 (×${groupMul})`, render: (r) => <span className='font-mono text-xs'>{compute(r)}</span> },
-    { key: 'groups', title: '可用分组', render: (r) =>
-        <div className='flex flex-wrap gap-1'>
-          {(r.enable_groups || []).slice(0, 3).map((g) => <Tag key={g}>{g}</Tag>)}
-        </div> },
+    {
+      key: 'model_name',
+      title: t('模型名称'),
+      render: (row) => <span className='font-medium text-ui-text'>{row.model_name}</span>,
+    },
+    {
+      key: 'vendor',
+      title: t('供应商'),
+      render: (row) => <VendorTag name={row.vendor_name} icon={row.vendor_icon} />,
+    },
+    {
+      key: 'quota_type',
+      title: t('计费方式'),
+      render: (row) => <QuotaTag type={row.quota_type} t={t} />,
+    },
+    {
+      key: 'price',
+      title: isTokens ? t('倍率') : t('价格'),
+      render: renderPriceCell,
+    },
+    {
+      key: 'groups',
+      title: t('可用分组'),
+      render: (row) => {
+        const gs = row.enable_groups || [];
+        if (gs.length === 0) return <span className='text-ui-text-3'>-</span>;
+        return (
+          <div className='flex flex-wrap gap-1'>
+            {gs.slice(0, 3).map((g) => <Tag key={g}>{g}</Tag>)}
+            {gs.length > 3 && <span className='text-[11px] text-ui-text-3'>+{gs.length - 3}</span>}
+          </div>
+        );
+      },
+    },
   ];
 
   return (
     <PageShell
-      title='模型定价'
+      title={<span style={{ fontSize: 18, fontWeight: 600, color: 'var(--ui-text)' }}>{t('模型广场')}</span>}
       actions={
-        <div className='flex items-center gap-1'>
-          <IconButton icon={LayoutGrid} title='卡片视图' selected={view === 'card'}  onClick={() => switchView('card')} />
-          <IconButton icon={Rows3}    title='表格视图' selected={view === 'table'} onClick={() => switchView('table')} />
-        </div>
+        <>
+          <div className='inline-flex items-center gap-0.5 rounded-xl border border-ui-border p-0.5'>
+            <IconButton icon={LayoutGrid} size='sm' shape='square' selected={viewMode === 'card'} title={t('卡片视图')} onClick={() => setViewMode('card')} />
+            <IconButton icon={List} size='sm' shape='square' selected={viewMode === 'table'} title={t('列表视图')} onClick={() => setViewMode('table')} />
+          </div>
+          <IconButton icon={RefreshCw} variant='outline' shape='square' title={t('刷新')} onClick={refresh} />
+        </>
       }
     >
-      <Card className='mb-4'>
-        <div className='flex flex-col sm:flex-row items-stretch sm:items-center gap-3'>
-          <div className='w-full sm:w-auto sm:min-w-[200px] sm:max-w-[280px]'>
+      {/* 筛选栏（用普通容器而非 Card，避免 overflow-hidden 裁剪下拉菜单） */}
+      <div className='border border-ui-border bg-[var(--page-bg)] rounded-2xl p-4'>
+        <div className='flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:gap-2'>
+          {/* 搜索框：移动端单独占一行 */}
+          <div className='w-full sm:w-[280px]'>
             <Input
-              placeholder='搜索模型名'
-              value={search}
-              onChange={setSearch}
+              value={searchValue}
+              onChange={handleChange}
+              placeholder={t('搜索模型 / 供应商 / 标签')}
+              prefix={<Search size={15} />}
+              clearable
+              width='full'
             />
           </div>
-          <div className='flex items-center gap-3'>
-            <div className='flex-1 sm:flex-none shrink-0'>
-              <Select value={vendorFilter} onChange={setVendorFilter} options={vendorOptions} />
+          {/* 下拉菜单：移动端两列，sm 及以上回到行内单行 */}
+          <div className='grid grid-cols-2 gap-2 sm:contents'>
+            <div className='sm:w-[200px]'>
+              <Select
+                options={groupOptions}
+                value={selectedGroup}
+                onChange={(v) => { setSelectedGroup(v); setFilterGroup(v); }}
+                width='full'
+              />
             </div>
-            <div className='flex-1 sm:flex-none shrink-0'>
-              <Select value={group} onChange={setGroup} options={groupOptions} />
+            <div className='sm:w-[160px]'>
+              <Select
+                options={quotaOptions}
+                value={String(filterQuotaType)}
+                onChange={(v) => setFilterQuotaType(v === 'all' ? 'all' : parseInt(v, 10))}
+                width='full'
+              />
             </div>
+            <div className='sm:w-[170px]'>
+              <Select
+                options={vendorOptions}
+                value={filterVendor}
+                onChange={setFilterVendor}
+                width='full'
+              />
+            </div>
+            {!isTokens && (
+              <div className='sm:w-[150px]'>
+                <Select
+                  options={currencyOptions}
+                  value={currency}
+                  onChange={setCurrency}
+                  width='full'
+                />
+              </div>
+            )}
           </div>
+          <span className='text-sm text-ui-text-3 tabular-nums sm:ml-auto'>
+            {t('共 {{count}} 个模型', { count: total })}
+          </span>
         </div>
-      </Card>
+      </div>
 
-      {loading ? (
-        <div style={{ minHeight: 'calc(100vh - 280px)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <Loading />
-        </div>
-      ) : (
-        <>
-          <p className='text-sm text-ui-text-3 mb-3'>共 {filtered.length} 个模型 · 点击查看详情</p>
-          {view === 'table' ? (
-            <Table columns={columns} rows={filtered} size='sm' rowKey='model_name' onRowClick={goDetail} />
-          ) : (
-            <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3'>
-              {filtered.map((m) => (
-                <Card key={m.model_name} interactive='hover' onClick={() => goDetail(m)}>
-                  <div className='flex items-center gap-2 mb-2'>
-                    {vendors[m.vendor_id]?.icon && getLobeHubIcon(vendors[m.vendor_id].icon, 20)}
-                    <span className='text-xs text-ui-text-3'>{vendors[m.vendor_id]?.name || '未知厂商'}</span>
-                  </div>
-                  <div className='font-mono text-xs text-ui-text-1 break-all mb-3'>{m.model_name}</div>
-                  <div className='text-sm text-ui-text-1 font-mono mb-3'>{compute(m)}</div>
-                  <div className='flex flex-wrap gap-1 mb-2'>
-                    {(m.supported_endpoint_types || []).slice(0, 4).map((e) => (
-                      <Tag key={e} color='blue'>{e}</Tag>
-                    ))}
-                  </div>
-                  {(m.enable_groups || []).length > 0 && (
-                    <div className='flex flex-wrap gap-1'>
-                      {m.enable_groups.slice(0, 4).map((g) => (
-                        <Tag key={g}>{g}</Tag>
-                      ))}
-                      {m.enable_groups.length > 4 && <Tag>+{m.enable_groups.length - 4}</Tag>}
-                    </div>
-                  )}
-                </Card>
-              ))}
-            </div>
-          )}
-        </>
-      )}
+      <div className='mt-4' style={{ minHeight: 'calc(100vh - 320px)' }}>
+        {loading ? (
+          <Card><div className='py-10'><Loading /></div></Card>
+        ) : total === 0 ? (
+          <Card>
+            <EmptyState
+              icon={null}
+              title={t('暂无模型')}
+              description={t('当前筛选条件下没有可展示的模型')}
+            />
+          </Card>
+        ) : (
+          <div>
+            {viewMode === 'card' ? (
+              <div className='grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 mb-4'>
+                {pagedRows.map((row) => renderModelCard(row))}
+              </div>
+            ) : (
+              <Table
+                columns={columns}
+                rows={pagedRows}
+                rowKey={(row) => row.model_name}
+                onRowClick={(row) => goDetail(row)}
+              />
+            )}
+            <Pagination
+              page={currentPage}
+              pageSize={pageSize}
+              total={total}
+              onChange={setCurrentPage}
+            />
+          </div>
+        )}
+      </div>
     </PageShell>
   );
 };
 
-export default PricingPage;
+export default Pricing;

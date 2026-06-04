@@ -14,6 +14,7 @@
 import React, { useState, useMemo } from 'react';
 import { Copy, Check } from 'lucide-react';
 import { cn } from '../tokens';
+import { copy as copyText } from '../../../helpers';
 import Prism from 'prismjs';
 import 'prismjs/components/prism-jsx';
 import 'prismjs/components/prism-typescript';
@@ -80,11 +81,11 @@ const CodeBlock = ({
   if (inline) return <Inline>{content}</Inline>;
 
   const copy = async () => {
-    try {
-      await navigator.clipboard.writeText(content);
+    const ok = await copyText(content);
+    if (ok) {
       setCopied(true);
       setTimeout(() => setCopied(false), 1500);
-    } catch {}
+    }
   };
 
   const lines = content.split('\n');

@@ -542,13 +542,18 @@ type ModelGroupLogStat struct {
 
 // GetModelGroupLogStat aggregates log entries for a model+group since a given timestamp.
 func GetModelGroupLogStat(modelName, group string, since int64) (*ModelGroupLogStat, error) {
+	return GetModelGroupLogStatRange(modelName, group, since, time.Now().Unix()+1)
+}
+
+// GetModelGroupLogStatRange aggregates log entries for a model+group in [since, until).
+func GetModelGroupLogStatRange(modelName, group string, since, until int64) (*ModelGroupLogStat, error) {
 	var stat ModelGroupLogStat
 
 	// Count total requests (type 2 = consume, type 5 = error)
 	var totalRow struct{ Cnt int64 }
 	err := LOG_DB.Model(&Log{}).
 		Select("count(*) as cnt").
-		Where("model_name = ? AND \"group\" = ? AND created_at >= ? AND type IN (?, ?)", modelName, group, since, LogTypeConsume, LogTypeError).
+		Where("model_name = ? AND \"group\" = ? AND created_at >= ? AND created_at < ? AND type IN (?, ?)", modelName, group, since, until, LogTypeConsume, LogTypeError).
 		Scan(&totalRow).Error
 	if err != nil {
 		return nil, err
@@ -563,7 +568,7 @@ func GetModelGroupLogStat(modelName, group string, since int64) (*ModelGroupLogS
 	var errRow struct{ Cnt int64 }
 	LOG_DB.Model(&Log{}).
 		Select("count(*) as cnt").
-		Where("model_name = ? AND \"group\" = ? AND created_at >= ? AND type = ?", modelName, group, since, LogTypeError).
+		Where("model_name = ? AND \"group\" = ? AND created_at >= ? AND created_at < ? AND type = ?", modelName, group, since, until, LogTypeError).
 		Scan(&errRow)
 	stat.Errors = errRow.Cnt
 
@@ -571,7 +576,7 @@ func GetModelGroupLogStat(modelName, group string, since int64) (*ModelGroupLogS
 	var latRow struct{ Avg float64 }
 	LOG_DB.Model(&Log{}).
 		Select("COALESCE(AVG(use_time), 0) as avg").
-		Where("model_name = ? AND \"group\" = ? AND created_at >= ? AND type = ? AND use_time > 0", modelName, group, since, LogTypeConsume).
+		Where("model_name = ? AND \"group\" = ? AND created_at >= ? AND created_at < ? AND type = ? AND use_time > 0", modelName, group, since, until, LogTypeConsume).
 		Scan(&latRow)
 	stat.AvgLatencyMs = int64(latRow.Avg * 1000)
 

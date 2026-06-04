@@ -18,8 +18,8 @@ type MonitorSetting struct {
 var monitorSetting = MonitorSetting{
 	AutoTestChannelEnabled:     false,
 	AutoTestChannelMinutes:     10,
-	ModelHealthEnabled:         false,
-	ModelHealthIntervalMinutes: 5,
+	ModelHealthEnabled:         true,
+	ModelHealthIntervalMinutes: 0.25,
 }
 
 func init() {

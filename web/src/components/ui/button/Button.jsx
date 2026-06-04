@@ -7,6 +7,7 @@
  *   primary | secondary | oauth | link | toggle (+selected) | chip (+selected)
  *
  * size:     sm | md (默认) | lg
+ * pill:     true 时强制全圆角（rounded-full）
  * icon / iconRight: lucide 组件 或 React 节点
  * loading:  true 时替代 icon 显示 spinner，按钮禁用
  * disabled: 禁用
@@ -56,6 +57,7 @@ const Button = React.forwardRef(function Button(
     children,
     variant = 'primary',
     size = 'md',
+    pill = false,
     icon: Icon,
     iconRight: IconRight,
     loading = false,
@@ -93,7 +95,7 @@ const Button = React.forwardRef(function Button(
       aria-busy={loading || undefined}
       className={cn(
         'relative inline-flex items-center whitespace-nowrap transition-colors active:scale-[0.98]',
-        RADIUS_BY_SIZE[size],
+        pill ? 'rounded-full' : RADIUS_BY_SIZE[size],
         JUSTIFY_CLS[justify] || JUSTIFY_CLS.center,
         block && 'w-full',
         flex1 && 'flex-1',

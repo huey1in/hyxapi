@@ -3,7 +3,6 @@ import { Outlet, useLocation } from 'react-router-dom';
 import HeaderBar from './HeaderBar';
 import SiderBar from './SiderBar';
 import FooterBar from './FooterBar';
-import LoginModal from './LoginModal';
 import { MobileSidebarProvider } from '../../context/MobileSidebar';
 import { UserContext } from '../../context/User';
 import { StatusContext } from '../../context/Status';
@@ -15,7 +14,7 @@ const PageLayout = () => {
   const location = useLocation();
   const mainRef = useRef(null);
   const isConsoleRoute = location.pathname.startsWith('/console');
-  const hideFooter = isConsoleRoute || location.pathname.startsWith('/pricing');
+  const hideFooter = isConsoleRoute;
 
   // 路由切换时滚动回顶部
   useEffect(() => {
@@ -58,14 +57,16 @@ const PageLayout = () => {
         <HeaderBar />
         <div className='flex-1 flex min-h-0'>
           {isConsoleRoute && <SiderBar />}
-          <main ref={mainRef} className='flex-1 min-w-0 overflow-y-auto overflow-x-hidden flex flex-col'>
+          <main
+            ref={mainRef}
+            className='flex-1 min-w-0 overflow-y-auto overflow-x-hidden flex flex-col'
+          >
             <div className='flex-1'>
               <Outlet />
             </div>
             {!hideFooter && <FooterBar />}
           </main>
         </div>
-        <LoginModal />
       </div>
     </MobileSidebarProvider>
   );
