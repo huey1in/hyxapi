@@ -1,7 +1,6 @@
 package middleware
 
 import (
-	"net/http"
 	"strings"
 
 	"github.com/gin-gonic/gin"
@@ -214,26 +213,20 @@ func isChineseRequest(c *gin.Context) bool {
 
 func GeoBlock() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		path := c.Request.URL.Path
-
-		// 只对网页路由进行地理封锁，不限制 API 调用
-		// API 路由通常以 /v1 或 /api 开头
-		if strings.HasPrefix(path, "/v1/") ||
-		   strings.HasPrefix(path, "/api/") ||
-		   strings.HasPrefix(path, "/mj/") ||
-		   strings.HasPrefix(path, "/suno/") {
-			// API 路由，不进行地理封锁
-			c.Next()
-			return
-		}
-
-		// 检查是否为中国请求
-		if isChineseRequest(c) {
-			c.Data(http.StatusForbidden, "text/html; charset=utf-8", []byte(geoBlockedHTML))
-			c.Abort()
-			return
-		}
-
+		// 地理封锁已禁用，所有 IP 均可访问
+		// path := c.Request.URL.Path
+		// if strings.HasPrefix(path, "/v1/") ||
+		//    strings.HasPrefix(path, "/api/") ||
+		//    strings.HasPrefix(path, "/mj/") ||
+		//    strings.HasPrefix(path, "/suno/") {
+		// 	c.Next()
+		// 	return
+		// }
+		// if isChineseRequest(c) {
+		// 	c.Data(http.StatusForbidden, "text/html; charset=utf-8", []byte(geoBlockedHTML))
+		// 	c.Abort()
+		// 	return
+		// }
 		c.Next()
 	}
 }

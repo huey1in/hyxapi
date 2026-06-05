@@ -18,7 +18,8 @@ const TopUp = () => {
   const [code, setCode] = useState('');
   const [redeeming, setRedeeming] = useState(false);
   const [redeemOpen, setRedeemOpen] = useState(false);
-  const [topUpCount, setTopUpCount] = useState(statusState?.status?.min_topup || 10);
+  const [topUpCount, setTopUpCount] = useState(1);
+  const [customInput, setCustomInput] = useState('');
   const [affLink, setAffLink] = useState('');
   const [transferOpen, setTransferOpen] = useState(false);
   const [transferAmount, setTransferAmount] = useState(0);
@@ -107,7 +108,7 @@ const TopUp = () => {
   };
 
   const u = userState?.user || {};
-  const AMOUNTS = [10, 50, 100, 500];
+  const AMOUNTS = [1, 20, 100];
   const epayMethodMin = Number(activeMethod?.min_topup) || epayMin;
   const payTotal = topUpCount * epayPrice;
   const payTotalText = `¥${payTotal.toLocaleString(undefined, { maximumFractionDigits: 2 })}`;
@@ -177,7 +178,7 @@ const TopUp = () => {
             {AMOUNTS.map((amt) => (
               <button
                 key={amt}
-                onClick={() => setTopUpCount(amt)}
+                onClick={() => { setTopUpCount(amt); setCustomInput(''); }}
                 style={{
                   cursor: 'pointer', flex: 1, height: 45, border: topUpCount === amt ? '2px solid #000' : '1px solid #e5e5e5',
                   borderRadius: 10, fontSize: 16, fontWeight: topUpCount === amt ? 600 : 400,
@@ -187,6 +188,29 @@ const TopUp = () => {
                 }}
               >${amt}</button>
             ))}
+            <input
+              type="number"
+              min={1}
+              placeholder="自定义"
+              value={customInput}
+              onChange={(e) => {
+                const raw = e.target.value;
+                setCustomInput(raw);
+                const v = Number(raw);
+                if (raw !== '' && v > 0) setTopUpCount(v);
+              }}
+              onFocus={() => {
+                if (AMOUNTS.includes(topUpCount)) setCustomInput('');
+              }}
+              style={{
+                flex: 1, height: 45, border: !AMOUNTS.includes(topUpCount) ? '2px solid #000' : '1px solid #e5e5e5',
+                borderRadius: 10, fontSize: 16, fontWeight: 400, textAlign: 'center',
+                color: 'var(--ui-text)', background: 'var(--page-bg)',
+                outline: 'none', boxSizing: 'border-box',
+                boxShadow: !AMOUNTS.includes(topUpCount) ? '0 2px 8px rgba(0,0,0,0.08)' : 'none',
+                transition: 'border-color 0.2s, box-shadow 0.2s',
+              }}
+            />
           </div>
           {/* 支付摘要 */}
           <div style={{ border: '1px solid var(--ui-border)', borderRadius: 12, overflow: 'hidden' }}>
