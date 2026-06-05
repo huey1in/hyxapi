@@ -161,6 +161,9 @@ func main() {
 	//server.Use(gzip.Gzip(gzip.DefaultCompression))
 	server.Use(middleware.RequestId())
 	server.Use(middleware.PoweredBy())
+	// 带凭证的浏览器跨源中间件，必须先于全局 CORS()（在 SetRouter→SetRelayRouter 中注册），
+	// 否则 OPTIONS 预检会被 AllowAllOrigins 的 CORS() 以 "*" 抢先返回，导致带凭证登录预检失败。
+	server.Use(middleware.CORSWithCredentials())
 	server.Use(middleware.I18n())
 
 	// 地理封锁中间件（可通过环境变量启用）
