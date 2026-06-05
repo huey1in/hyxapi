@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { RefreshCw } from 'lucide-react';
 import { API, renderNumber, renderQuota, isAdmin, timestamp2string } from '../../helpers';
 import { UserContext } from '../../context/User';
-import { IconButton, Loading } from '../../components/ui';
+import { IconButton, Loading, Table } from '../../components/ui';
 import useIsMobile from '../../hooks/useIsMobile';
 import useIsDark from '../../hooks/useIsDark';
 
@@ -18,7 +18,8 @@ const Dashboard = () => {
   const navigate = useNavigate();
   const [userState] = useContext(UserContext);
   const [stats, setStats] = useState(null);
-  const [liveStats, setLiveStats] = useState({ quota: 0, rpm: 0, tpm: 0 });
+  const [cumStats, setCumStats] = useState({ quota: 0, tokens: 0, requests: 0 });
+  const [dayStats, setDayStats] = useState({ quota: 0, tokens: 0, requests: 0 });
   const [recentLogs, setRecentLogs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [logsLoading, setLogsLoading] = useState(false);
@@ -34,14 +35,19 @@ const Dashboard = () => {
       } catch {} finally { setLoading(false); }
     })();
     loadRecentLogs();
-    loadLiveStats();
+    loadStats();
   }, [userState?.user]);
 
-  const loadLiveStats = async () => {
+  const loadStats = async () => {
     try {
-      const url = isAdmin() ? '/api/log/stat' : '/api/log/self/stat';
-      const res = await API.get(url);
-      if (res.data?.success) setLiveStats(res.data.data || { quota: 0, rpm: 0, tpm: 0 });
+      const base = isAdmin() ? '/api/log/stat' : '/api/log/self/stat';
+      const todayStart = Math.floor(new Date().setHours(0, 0, 0, 0) / 1000);
+      const [cum, today] = await Promise.all([
+        API.get(base),
+        API.get(`${base}?start_timestamp=${todayStart}`),
+      ]);
+      if (cum.data?.success) setCumStats(cum.data.data || { quota: 0, tokens: 0, requests: 0 });
+      if (today.data?.success) setDayStats(today.data.data || { quota: 0, tokens: 0, requests: 0 });
     } catch {}
   };
 
@@ -92,32 +98,36 @@ const Dashboard = () => {
           <div>
             <div style={{ fontSize: 14, fontWeight: 400, color: 'var(--ui-text-3)', marginBottom: 8 }}>总请求数</div>
             <div style={{ fontSize: 28, fontWeight: 700, color: 'var(--ui-text)' }}>{renderNumber(u.request_count || 0)}</div>
-            <div style={{ fontSize: 12, color: 'var(--ui-text-3)', marginTop: 4 }}>累计消费: {renderQuota(u.used_quota || 0)}</div>
+            <div style={{ fontSize: 12, color: 'var(--ui-text-3)', marginTop: 4 }}>累计 Token: {fmtTokens(cumStats.tokens || 0)}</div>
           </div>
         </div>
       </div>
 
-      {/* 实时统计 */}
-      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(4, 1fr)', gap: 12 }}>
-        <StatMini label='总 Tokens' value={fmtTokens(liveStats.tokens || 0)} />
-        <StatMini label='总消费' value={renderQuota(u.used_quota || 0)} />
-        <StatMini label='当前 RPM' value={renderNumber(liveStats.rpm || 0)} />
-        <StatMini label='当前 TPM' value={renderNumber(liveStats.tpm || 0)} />
+      {/* 今日统计 */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: isMobile ? 8 : 12 }}>
+        <StatMini label='今日 Token' value={fmtTokens(dayStats.tokens || 0)} />
+        <StatMini label='今日消费' value={renderQuota(dayStats.quota || 0)} />
+        <StatMini label='今日请求数' value={renderNumber(dayStats.requests || 0)} />
       </div>
 
       {/* 最近活动 */}
-      <div style={{ border: '1px solid var(--ui-border)', borderRadius: 26, overflow: 'hidden' }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 20px', borderBottom: '1px solid var(--ui-divider)' }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <span style={{ fontSize: 16, fontWeight: 600, color: 'var(--ui-text)' }}>最近活动</span>
           <IconButton icon={RefreshCw} onClick={loadRecentLogs} disabled={logsLoading} title='刷新' />
         </div>
         {logsLoading ? (
           <div style={{ padding: '32px 0', display: 'flex', justifyContent: 'center' }}><Loading size='sm' /></div>
-        ) : recentLogs.length === 0 ? (
-          <div style={{ padding: '32px 0', textAlign: 'center', color: 'var(--ui-text-3)', fontSize: 13 }}>暂无记录</div>
         ) : (
-          <div>
-            {recentLogs.map((r, i) => <LogRow key={r.id || i} r={r} last={i === recentLogs.length - 1} navigate={navigate} isMobile={isMobile} />)}
+          <div style={{ fontFamily: "'JetBrains Mono', 'Noto Sans SC', monospace" }}>
+            <Table
+              size='sm'
+              rowKey='id'
+              emptyText='暂无记录'
+              onRowClick={() => navigate('/console/log')}
+              columns={recentColumns(isMobile)}
+              rows={recentLogs}
+            />
           </div>
         )}
       </div>
@@ -139,69 +149,29 @@ const fmtTokens = (n) => {
   return String(n);
 };
 
-const PILL = { display: 'inline-flex', alignItems: 'center', height: 20, paddingInline: 6, borderRadius: 5, fontSize: 11, fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap' };
+const NumCell = ({ value }) => (
+  value > 0
+    ? <span style={{ fontVariantNumeric: 'tabular-nums' }}>{fmtTokens(value)}</span>
+    : <span style={{ color: 'var(--ui-text-3)' }}>—</span>
+);
 
-const LogRow = ({ r, last, navigate, isMobile }) => {
-  const o = parseOther(r.other);
-  const cacheTokens = o.cache_tokens || 0;
-  const cacheCreationTokens = o.cache_creation_tokens || 0;
-  const hasCache = cacheTokens > 0 || cacheCreationTokens > 0;
-
-  return (
-    <div
-      onClick={() => navigate('/console/log')}
-      style={{
-        padding: isMobile ? '10px 14px' : '10px 20px',
-        borderBottom: last ? 'none' : '1px solid var(--ui-divider)',
-        cursor: 'pointer', transition: 'background 0.15s',
-      }}
-      onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--ui-bg-subtle)'; }}
-      onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; }}
-    >
-      {/* 第一行：模型名 + 分组 + 扣费 + 时间 */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 6, minWidth: 0, flex: 1 }}>
-          <span style={{ fontSize: 13, fontWeight: 500, color: 'var(--ui-text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontFamily: "'JetBrains Mono', monospace" }}>
-            {r.model_name || '—'}
-          </span>
-          {r.group && (
-            <span style={{ ...PILL, color: 'var(--ui-text-3)', border: '1px solid var(--ui-border)' }}>{r.group}</span>
-          )}
-        </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
-          {r.quota > 0 && (
-            <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--ui-text)', fontVariantNumeric: 'tabular-nums' }}>
-              {renderQuota(r.quota, 6)}
-            </span>
-          )}
-          <span style={{ fontSize: 11, color: 'var(--ui-text-3)', whiteSpace: 'nowrap' }}>
-            {timestamp2string(r.created_at)}
-          </span>
-        </div>
-      </div>
-      {/* 第二行：Token 用量 */}
-      {(r.prompt_tokens > 0 || r.completion_tokens > 0) && (
-        <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginTop: 5, flexWrap: 'wrap' }}>
-          <span style={{ ...PILL, color: 'var(--ui-text-2)', background: 'var(--ui-bg-subtle)' }}>
-            入 {fmtTokens(r.prompt_tokens)}
-          </span>
-          <span style={{ ...PILL, color: 'var(--ui-text-2)', background: 'var(--ui-bg-subtle)' }}>
-            出 {fmtTokens(r.completion_tokens)}
-          </span>
-          {hasCache && cacheTokens > 0 && (
-            <span style={{ ...PILL, color: '#16a34a', background: '#f0fdf4', border: '1px solid #bbf7d0' }}>
-              缓存 {fmtTokens(cacheTokens)}
-            </span>
-          )}
-          {hasCache && cacheCreationTokens > 0 && (
-            <span style={{ ...PILL, color: '#ca8a04', background: '#fefce8', border: '1px solid #fef08a' }}>
-              写缓存 {fmtTokens(cacheCreationTokens)}
-            </span>
-          )}
-        </div>
-      )}
-    </div>
-  );
+const recentColumns = (isMobile) => {
+  if (isMobile) {
+    return [
+      { key: 'time', title: '时间', render: (r) => <span style={{ whiteSpace: 'nowrap', fontSize: 11, color: 'var(--ui-text-2)' }}>{timestamp2string(r.created_at)}</span> },
+      { key: 'model', title: '模型', render: (r) => <span style={{ whiteSpace: 'nowrap' }}>{r.model_name || '—'}</span> },
+      { key: 'quota', title: '积分', align: 'right', render: (r) => r.quota > 0 ? <span style={{ fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}>{renderQuota(r.quota, 6)}</span> : <span style={{ color: 'var(--ui-text-3)' }}>—</span> },
+    ];
+  }
+  return [
+    { key: 'time', title: '时间', render: (r) => <span style={{ whiteSpace: 'nowrap', color: 'var(--ui-text-2)' }}>{timestamp2string(r.created_at)}</span> },
+    { key: 'model', title: '模型', render: (r) => <span style={{ whiteSpace: 'nowrap', maxWidth: 200, display: 'inline-block', overflow: 'hidden', textOverflow: 'ellipsis', verticalAlign: 'bottom' }} title={r.model_name}>{r.model_name || '—'}</span> },
+    { key: 'group', title: '分组', render: (r) => <span style={{ whiteSpace: 'nowrap', color: 'var(--ui-text-2)' }}>{r.group || '—'}</span> },
+    { key: 'input', title: '输入', align: 'right', render: (r) => <NumCell value={r.prompt_tokens || 0} /> },
+    { key: 'output', title: '输出', align: 'right', render: (r) => <NumCell value={r.completion_tokens || 0} /> },
+    { key: 'cache', title: '缓存', align: 'right', render: (r) => { const o = parseOther(r.other); return <NumCell value={(o.cache_tokens || 0) + (o.cache_creation_tokens || 0)} />; } },
+    { key: 'quota', title: '积分', align: 'right', render: (r) => r.quota > 0 ? <span style={{ fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}>{renderQuota(r.quota, 6)}</span> : <span style={{ color: 'var(--ui-text-3)' }}>—</span> },
+  ];
 };
 
 export default Dashboard;

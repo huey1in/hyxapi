@@ -22,7 +22,7 @@ const MySubscription = () => {
 
   useEffect(() => { load(); }, []);
 
-  if (loading) return <div className='p-8'><Loading /></div>;
+  if (loading) return <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '60vh' }}><Loading /></div>;
 
   const allSubs = data?.all_subscriptions || [];
   const activeSub = allSubs.find((r) => {

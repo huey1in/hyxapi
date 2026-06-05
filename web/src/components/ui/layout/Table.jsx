@@ -4,19 +4,22 @@
  * columns: [{ key, title, width?, align?: 'left'|'center'|'right', render?(row, idx) }]
  * rows:    Array<object>
  * rowKey:  string | (row) => key   行唯一键（默认 row.id || index）
- * size:    sm | md (默认)
+ * size:    sm | md (默认) | lg
  * striped: 隔行变色
  * hoverable: 行 hover 高亮（默认 true）
  * emptyText: 空数据文案
  * onRowClick: (row, idx) => void
+ * expandedKey: 当前展开行的 rowKey（与 renderExpanded 搭配，在该行下方插入详情）
+ * renderExpanded: (row, idx) => node   展开行内容
  */
 
 import React from 'react';
 import { cn } from '../tokens';
 
 const SIZE_PAD = {
-  sm: 'px-3 py-2 text-xs',
-  md: 'px-4 py-2.5 text-sm',
+  sm: 'px-3 py-2.5 text-xs',
+  md: 'px-4 py-3 text-sm',
+  lg: 'px-4 py-4 text-sm',
 };
 
 const ALIGN = {
@@ -34,6 +37,8 @@ const Table = ({
   hoverable = true,
   emptyText = '暂无数据',
   onRowClick,
+  expandedKey,
+  renderExpanded,
 }) => {
   const keyOf = (row, i) => {
     if (typeof rowKey === 'function') return rowKey(row);
@@ -69,27 +74,41 @@ const Table = ({
               </td>
             </tr>
           ) : (
-            rows.map((row, idx) => (
-              <tr
-                key={keyOf(row, idx)}
-                onClick={onRowClick ? () => onRowClick(row, idx) : undefined}
-                className={cn(
-                  idx !== rows.length - 1 && 'border-b border-ui-divider',
-                  striped && idx % 2 === 1 && 'bg-ui-border',
-                  hoverable === true && 'hover:bg-ui-bg-subtle transition-colors',
-                  onRowClick && 'cursor-pointer',
-                )}
-              >
-                {columns.map((c) => (
-                  <td
-                    key={c.key}
-                    className={cn('text-ui-text', SIZE_PAD[size], ALIGN[c.align] || ALIGN.left)}
+            rows.map((row, idx) => {
+              const rk = keyOf(row, idx);
+              const isExpanded = expandedKey != null && rk === expandedKey;
+              const isLast = idx === rows.length - 1;
+              return (
+                <React.Fragment key={rk}>
+                  <tr
+                    onClick={onRowClick ? () => onRowClick(row, idx) : undefined}
+                    className={cn(
+                      (!isLast && !isExpanded) && 'border-b border-ui-divider',
+                      striped && idx % 2 === 1 && 'bg-ui-border',
+                      isExpanded && 'bg-ui-bg-subtle',
+                      hoverable === true && 'hover:bg-ui-bg-subtle transition-colors',
+                      onRowClick && 'cursor-pointer',
+                    )}
                   >
-                    {c.render ? c.render(row, idx) : row[c.key]}
-                  </td>
-                ))}
-              </tr>
-            ))
+                    {columns.map((c) => (
+                      <td
+                        key={c.key}
+                        className={cn('text-ui-text', SIZE_PAD[size], ALIGN[c.align] || ALIGN.left)}
+                      >
+                        {c.render ? c.render(row, idx) : row[c.key]}
+                      </td>
+                    ))}
+                  </tr>
+                  {isExpanded && renderExpanded && (
+                    <tr className={cn(!isLast && 'border-b border-ui-divider')}>
+                      <td colSpan={columns.length} className='p-0'>
+                        {renderExpanded(row, idx)}
+                      </td>
+                    </tr>
+                  )}
+                </React.Fragment>
+              );
+            })
           )}
         </tbody>
       </table>

@@ -3,6 +3,7 @@ import { Megaphone } from 'lucide-react';
 import { marked } from 'marked';
 import { getRelativeTime } from '../../helpers';
 import { StatusContext } from '../../context/Status';
+import { Loading } from '../../components/ui';
 import useIsMobile from '../../hooks/useIsMobile';
 
 const TYPE_COLOR = {
@@ -35,6 +36,8 @@ const NoticesPage = () => {
     } catch {}
     return list;
   }, [announcements]);
+
+  if (!statusState?.status) return <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '60vh' }}><Loading /></div>;
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: isMobile ? 20 : 28, width: '100%', maxWidth: 960, marginInline: 'auto', padding: isMobile ? '16px' : '24px 16px' }}>
