@@ -18,9 +18,25 @@ export function homeSiteUrl() {
   return 'https://demo.claudeai.one';
 }
 
+// 读取邀请码：优先取当前 URL 上的 aff（如 /register?aff=xxx），否则回退 localStorage。
+function readAffCode() {
+  try {
+    const fromQuery = new URLSearchParams(window.location.search).get('aff');
+    if (fromQuery) return fromQuery;
+    return localStorage.getItem('aff') || '';
+  } catch {
+    return '';
+  }
+}
+
 export function homeLoginUrl(mode = 'login') {
-  const base = `${homeSiteUrl()}/login`;
-  return mode && mode !== 'login' ? `${base}?mode=${mode}` : base;
+  const params = new URLSearchParams();
+  if (mode && mode !== 'login') params.set('mode', mode);
+  // 跨域跳转：localStorage 无法跨 origin 传递，邀请码必须随 URL 带到 home-site。
+  const aff = readAffCode();
+  if (aff) params.set('aff', aff);
+  const query = params.toString();
+  return query ? `${homeSiteUrl()}/login?${query}` : `${homeSiteUrl()}/login`;
 }
 
 export function redirectToHomeLogin(mode = 'login') {
