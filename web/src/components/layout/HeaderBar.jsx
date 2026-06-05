@@ -8,9 +8,8 @@ import { StatusContext } from '../../context/Status';
 import { useMobileSidebar } from '../../context/MobileSidebar';
 import useIsMobile from '../../hooks/useIsMobile';
 import { API, showError, updateAPI, homeSiteUrl } from '../../helpers';
-import NoticeModal from './NoticeModal';
 import {
-  BellIcon, GlobeIcon, ChevronDownIcon, WalletIcon, LogOutIcon,
+  GlobeIcon, ChevronDownIcon, WalletIcon, LogOutIcon,
 } from './headerIcons';
 
 const LANGUAGES = [
@@ -32,7 +31,6 @@ const HeaderBar = () => {
 
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [langMenuOpen, setLangMenuOpen] = useState(false);
-  const [noticeOpen, setNoticeOpen] = useState(false);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const userMenuRef = useRef(null);
   const langMenuRef = useRef(null);
@@ -71,31 +69,6 @@ const HeaderBar = () => {
     document.addEventListener('mousedown', onDown);
     return () => document.removeEventListener('mousedown', onDown);
   }, []);
-
-  // unread badge (compare announcement keys against localStorage)
-  const announcements = status?.announcements || [];
-  const unreadCount = useMemo(() => {
-    try {
-      const seen = JSON.parse(localStorage.getItem('seen_notices') || '[]');
-      const seenSet = new Set(seen);
-      return announcements.filter((it) => {
-        const k = `${it?.publishDate || ''}-${(it?.content || '').slice(0, 30)}`;
-        return !seenSet.has(k);
-      }).length;
-    } catch { return 0; }
-  }, [announcements, noticeOpen]);
-
-  const markAllRead = () => {
-    try {
-      const keys = announcements.map((it) => `${it?.publishDate || ''}-${(it?.content || '').slice(0, 30)}`);
-      localStorage.setItem('seen_notices', JSON.stringify(keys));
-    } catch {}
-  };
-
-  const handleNoticeClick = () => {
-    setNoticeOpen(true);
-    markAllRead();
-  };
 
   const switchLanguage = (lang) => {
     i18n.changeLanguage(lang);
@@ -211,17 +184,7 @@ const HeaderBar = () => {
       </div>
 
       <div className='flex items-center gap-2 md:gap-3'>
-        {/* Notifications */}
-        <div className='relative inline-flex'>
-          <IconButton size='lg' variant='outline' shape='square' icon={BellIcon} title={t('系统公告')} onClick={handleNoticeClick} />
-          {unreadCount > 0 && (
-            <span className='pointer-events-none absolute top-0.5 right-0.5 min-w-[16px] h-4 px-1 flex items-center justify-center text-[10px] font-bold bg-red-500 text-white rounded-full leading-none'>
-              {unreadCount > 99 ? '99+' : unreadCount}
-            </span>
-          )}
-        </div>
-
-        <ThemeToggle size='lg' variant='outline' shape='square' />
+        {/* Theme */}
 
         {/* Language */}
         <div ref={langMenuRef} className='relative'>
@@ -265,12 +228,6 @@ const HeaderBar = () => {
           </div>
         )}
       </div>
-
-      <NoticeModal
-        open={noticeOpen}
-        onClose={() => setNoticeOpen(false)}
-        defaultTab={unreadCount > 0 ? 'system' : 'inApp'}
-      />
     </header>
   );
 };

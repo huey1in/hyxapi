@@ -17,7 +17,7 @@ import { cn } from '../tokens';
 
 const PageShell = ({ title, actions, maxWidth = '1400px', children }) => (
   <div
-    className='px-4 pt-8 pb-6 md:px-6 md:pt-10 md:pb-8'
+    className='px-4 pt-8 pb-6 md:px-6 md:pt-6 md:pb-8'
     style={{ backgroundColor: 'var(--page-bg)' }}
   >
     <div className='mx-auto' style={{ maxWidth }}>

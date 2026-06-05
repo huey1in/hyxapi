@@ -394,30 +394,6 @@ func GenerateAccessToken(c *gin.Context) {
 	return
 }
 
-type TransferAffQuotaRequest struct {
-	Quota int `json:"quota" binding:"required"`
-}
-
-func TransferAffQuota(c *gin.Context) {
-	id := c.GetInt("id")
-	user, err := model.GetUserById(id, true)
-	if err != nil {
-		common.ApiError(c, err)
-		return
-	}
-	tran := TransferAffQuotaRequest{}
-	if err := c.ShouldBindJSON(&tran); err != nil {
-		common.ApiError(c, err)
-		return
-	}
-	err = user.TransferAffQuotaToQuota(tran.Quota)
-	if err != nil {
-		common.ApiErrorI18n(c, i18n.MsgUserTransferFailed, map[string]any{"Error": err.Error()})
-		return
-	}
-	common.ApiSuccessI18n(c, i18n.MsgUserTransferSuccess, nil)
-}
-
 func GetAffCode(c *gin.Context) {
 	id := c.GetInt("id")
 	user, err := model.GetUserById(id, true)
@@ -478,7 +454,6 @@ func GetSelf(c *gin.Context) {
 		"request_count":     user.RequestCount,
 		"aff_code":          user.AffCode,
 		"aff_count":         user.AffCount,
-		"aff_quota":         user.AffQuota,
 		"aff_history_quota": user.AffHistoryQuota,
 		"inviter_id":        user.InviterId,
 		"linux_do_id":       user.LinuxDOId,

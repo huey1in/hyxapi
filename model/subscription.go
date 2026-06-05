@@ -498,13 +498,14 @@ func GetActiveUserSubscription(userId int) (*UserSubscription, error) {
 	return &sub, nil
 }
 
-// GetAllUserSubscriptions returns all subscriptions (active and expired) for a user.
+// GetAllUserSubscriptions returns subscriptions for a user, inactive ones limited to last 7 days.
 func GetAllUserSubscriptions(userId int) ([]SubscriptionSummary, error) {
 	if userId <= 0 {
 		return nil, errors.New("invalid userId")
 	}
+	sevenDaysAgo := time.Now().Unix() - 7*24*3600
 	var subs []UserSubscription
-	err := DB.Where("user_id = ?", userId).
+	err := DB.Where("user_id = ? AND (status = 'active' OR start_time >= ?)", userId, sevenDaysAgo).
 		Order("end_time desc, id desc").
 		Find(&subs).Error
 	if err != nil {

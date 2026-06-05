@@ -17,6 +17,7 @@ var EpayEnabled = false
 var Price = 7.3
 var MinTopUp = 1
 var USDExchangeRate = 7.3
+var TopUpPresetAmounts = "1,20,100" // 充值页预设金额选项，逗号分隔
 
 var PayMethods = []map[string]string{
 	{

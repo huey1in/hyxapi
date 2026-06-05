@@ -15,6 +15,7 @@ import MySubscription from './pages/MySubscription';
 import Setting       from './pages/Setting';
 import Setup         from './pages/Setup';
 import Personal      from './pages/Personal';
+import Notices       from './pages/Notices';
 import Forbidden     from './pages/Forbidden';
 import PasswordReset from './pages/PasswordReset';
 import Register     from './pages/Register';
@@ -46,6 +47,7 @@ const App = () => (
       {/* <Route path='/console/chat'             element={<Chat />} /> */}
       <Route path='/console/setting'          element={<Setting />} />
       <Route path='/console/personal'         element={<Personal />} />
+      <Route path='/console/notices'          element={<Notices />} />
 
       <Route path='*' element={<Navigate to='/' replace />} />
     </Route>

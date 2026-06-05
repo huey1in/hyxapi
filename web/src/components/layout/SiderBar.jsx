@@ -1,16 +1,17 @@
 import React, { useContext, useState } from 'react';
-import { NavLink } from 'react-router-dom';
+import { NavLink, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import {
   BarChart3, Key, FileText, Wallet, User,
   Radio, CreditCard, Ticket, Users, Settings,
-  ChevronLeft, X, Layers, Store,
+  ChevronLeft, X, Layers, Store, Bell, LogOut,
 } from 'lucide-react';
-import { isAdmin, isRoot } from '../../helpers';
+import { isAdmin, isRoot, API, showError, updateAPI, renderQuota } from '../../helpers';
 import { UserContext } from '../../context/User';
 import { useMobileSidebar } from '../../context/MobileSidebar';
 import useIsMobile from '../../hooks/useIsMobile';
 import { cn } from '../ui/tokens';
+import { ThemeToggle } from '../ui';
 
 const LS_KEY = 'sidebar-collapsed';
 const EXPANDED = 256;
@@ -23,6 +24,7 @@ const NAV_ITEMS = [
   { to: '/console/topup',      label: '充值',     icon: Wallet },
   { to: '/console/my-subscription', label: '订阅',   icon: CreditCard },
   { to: '/console/log',        label: '日志',     icon: FileText },
+  { to: '/console/notices',    label: '通知',     icon: Bell },
   { to: '/console/personal',   label: '设置',     icon: User },
   { divider: true, admin: true },
   { to: '/console/channel',      label: '渠道管理',   icon: Radio,      admin: true },
@@ -35,14 +37,24 @@ const NAV_ITEMS = [
 
 const SiderBar = () => {
   const { t } = useTranslation();
-  const [userState] = useContext(UserContext);
+  const navigate = useNavigate();
+  const [userState, userDispatch] = useContext(UserContext);
   const admin = isAdmin();
   const root = isRoot();
   const isMobile = useIsMobile();
   const [mobileOpen, setMobileOpen] = useMobileSidebar();
+  const user = userState?.user;
   const [collapsed, setCollapsed] = useState(() => {
     try { return localStorage.getItem(LS_KEY) === '1'; } catch { return false; }
   });
+
+  const logout = async () => {
+    try { await API.get('/api/user/logout'); } catch (e) { showError(e); }
+    localStorage.removeItem('user');
+    updateAPI();
+    userDispatch?.({ type: 'logout' });
+    navigate('/');
+  };
 
   const toggle = () => {
     setCollapsed((c) => {
@@ -73,19 +85,59 @@ const SiderBar = () => {
             onClick={() => isMobile && setMobileOpen(false)}
             className={({ isActive }) =>
               cn(
-                'flex items-center gap-2 h-9 px-[10px] rounded-lg text-sm transition-all duration-100 whitespace-nowrap',
+                'flex items-center gap-2.5 px-[12px] rounded-lg transition-all duration-100 whitespace-nowrap',
+                isMobile ? 'h-12 text-[15px]' : 'h-9 text-sm',
                 isActive
                   ? 'bg-ui-bg-subtle font-medium text-ui-text'
                   : 'text-ui-text hover:bg-ui-bg-subtle',
               )
             }
           >
-            <Icon size={22} className='flex-shrink-0' />
+            <Icon size={isMobile ? 20 : 22} className='flex-shrink-0' />
             <span>{t(item.label)}</span>
           </NavLink>
         );
       })}
     </nav>
+  );
+
+  const renderUserFooter = (isCollapsed) => (
+    <div className='mt-auto border-t border-ui-divider p-[10px]'>
+      {isCollapsed ? (
+        <div className='flex flex-col items-center gap-1'>
+          <ThemeToggle size='md' variant='ghost' shape='square' />
+          <button
+            onClick={logout}
+            title={t('退出登录')}
+            className='flex items-center justify-center w-9 h-9 rounded-lg text-ui-text hover:bg-ui-bg-subtle transition-colors'
+          >
+            <LogOut size={18} className='flex-shrink-0' />
+          </button>
+        </div>
+      ) : (
+        <div className='flex flex-col gap-2'>
+          {user && (
+            <div className='px-1.5 py-1'>
+              <div className='text-sm font-medium text-ui-text truncate' title={user.username}>{user.username}</div>
+              <div className='flex items-baseline gap-1 mt-1'>
+                <span className='text-xs text-ui-text-3'>{t('余额')}</span>
+                <span className='text-sm font-semibold text-ui-text tabular-nums'>{renderQuota(user.quota || 0)}</span>
+              </div>
+            </div>
+          )}
+          <div className='flex items-center gap-1.5'>
+            <button
+              onClick={logout}
+              className='flex-1 flex items-center justify-center gap-2 h-9 rounded-lg text-sm text-ui-text border border-ui-border hover:bg-ui-bg-subtle transition-colors'
+            >
+              <LogOut size={16} className='flex-shrink-0' />
+              <span>{t('退出登录')}</span>
+            </button>
+            <ThemeToggle size='md' variant='outline' shape='square' />
+          </div>
+        </div>
+      )}
+    </div>
   );
 
   if (isMobile) {
@@ -97,13 +149,14 @@ const SiderBar = () => {
           className='relative flex flex-col h-full bg-[var(--page-bg)] shadow-2xl animate-slide-in-left'
           style={{ width: EXPANDED }}
         >
-          <div className='flex items-center justify-between h-[52px] px-4'>
-            <span className='text-[18px] font-semibold text-ui-text tracking-tight'>Console</span>
-            <button onClick={() => setMobileOpen(false)} className='p-1 cursor-pointer'>
-              <X size={20} className='text-ui-text-2' />
+          <div className='flex items-center justify-between h-[60px] px-4 border-b border-ui-divider shrink-0'>
+            <span className='text-[18px] font-semibold text-ui-text tracking-tight'>控制台</span>
+            <button onClick={() => setMobileOpen(false)} className='p-1.5 cursor-pointer'>
+              <X size={22} className='text-ui-text-2' />
             </button>
           </div>
           {navContent}
+          {renderUserFooter(false)}
         </aside>
       </div>
     );
@@ -119,8 +172,8 @@ const SiderBar = () => {
       }}
     >
       <div className={cn('flex items-center h-[52px] px-4', collapsed && 'justify-center')}>
-        {!collapsed && <span className='text-[18px] font-semibold text-ui-text tracking-tight'>Console</span>}
-        {collapsed && <span className='text-[18px] font-semibold text-ui-text'>C</span>}
+        {!collapsed && <span className='text-[18px] font-semibold text-ui-text tracking-tight'>控制台</span>}
+        {collapsed && <span className='text-[18px] font-semibold text-ui-text'>控</span>}
       </div>
 
       <nav className='flex-1 flex flex-col gap-1 py-2 px-[10px] overflow-y-auto overflow-x-hidden'>
@@ -149,6 +202,8 @@ const SiderBar = () => {
           );
         })}
       </nav>
+
+      {renderUserFooter(collapsed)}
 
       <button
         onClick={toggle}

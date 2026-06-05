@@ -25,7 +25,6 @@ func SetApiRouter(router *gin.Engine) {
 		apiRouter.GET("/model-health/status/:model", controller.GetModelHealthStatus)
 		apiRouter.GET("/models", middleware.UserAuth(), controller.DashboardListModels)
 		apiRouter.GET("/status/test", middleware.AdminAuth(), controller.TestStatus)
-		apiRouter.GET("/notice", controller.GetNotice)
 		apiRouter.GET("/user-agreement", controller.GetUserAgreement)
 		apiRouter.GET("/privacy-policy", controller.GetPrivacyPolicy)
 		apiRouter.GET("/about", controller.GetAbout)
@@ -80,7 +79,6 @@ func SetApiRouter(router *gin.Engine) {
 				selfRoute.GET("/aff", controller.GetAffCode)
 				selfRoute.POST("/topup", middleware.CriticalRateLimit(), controller.TopUp)
 				selfRoute.POST("/payment/epay/checkout", middleware.CriticalRateLimit(), controller.RequestEpayCheckout)
-				selfRoute.POST("/aff_transfer", controller.TransferAffQuota)
 
 				// 2FA routes
 				selfRoute.GET("/2fa/status", controller.Get2FAStatus)

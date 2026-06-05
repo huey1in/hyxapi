@@ -1,16 +1,23 @@
 import React, { useContext, useEffect, useState, useCallback } from 'react';
-import { Copy, ShieldCheck, Fingerprint, Trash2, KeyRound, Mail, Lock } from 'lucide-react';
-import { API, showError, showSuccess, copy, timestamp2string, renderQuota, updateAPI } from '../../helpers';
+import { Copy, Fingerprint, Trash2, KeyRound } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
+import { API, showError, showSuccess, copy, timestamp2string, updateAPI } from '../../helpers';
 import {
   isPasskeySupported, prepareCredentialCreationOptions, buildRegistrationResult,
 } from '../../helpers/passkey';
 import { UserContext } from '../../context/User';
 import {
-  Button, IconButton, Input, Modal, Tag, Loading,
+  Button, IconButton, Input, Modal, Tag, Loading, Select,
 } from '../../components/ui';
 import useIsMobile from '../../hooks/useIsMobile';
 
+const LANGUAGES = [
+  { value: 'zh-CN', label: '简体中文' },
+  { value: 'en',    label: 'English' },
+];
+
 const Personal = () => {
+  const { i18n } = useTranslation();
   const [userState, userDispatch] = useContext(UserContext);
   const [form, setForm] = useState({ original_password: '', password: '' });
   const [saving, setSaving] = useState(false);
@@ -25,6 +32,7 @@ const Personal = () => {
   const [passkeySupported, setPasskeySupported] = useState(false);
   const [passkeyBusy, setPasskeyBusy] = useState(false);
   const [emailBindOpen, setEmailBindOpen] = useState(false);
+  const [changePasswordOpen, setChangePasswordOpen] = useState(false);
   const [bindEmail, setBindEmail] = useState('');
   const [bindCode, setBindCode] = useState('');
   const [emailBusy, setEmailBusy] = useState(false);
@@ -183,15 +191,13 @@ const Personal = () => {
   };
 
   const save = async () => {
+    if (!form.password) return showError('请输入新密码');
+    if (!form.original_password) return showError('请输入原密码');
     setSaving(true);
     try {
-      const payload = {};
-      if (form.password) {
-        payload.password = form.password;
-        payload.original_password = form.original_password;
-      }
+      const payload = { password: form.password, original_password: form.original_password };
       const { data } = await API.put('/api/user/self', payload);
-      if (data.success) { showSuccess('已保存'); refresh(); setForm((p) => ({ ...p, original_password: '', password: '' })); }
+      if (data.success) { showSuccess('密码已修改'); refresh(); setForm({ original_password: '', password: '' }); setChangePasswordOpen(false); }
       else showError(data.message);
     } catch (e) { showError(e); } finally { setSaving(false); }
   };
@@ -217,118 +223,93 @@ const Personal = () => {
   const f = (k) => (v) => setForm((p) => ({ ...p, [k]: v }));
   if (!u.id) return <Loading />;
 
-  const roleName = u.role >= 100 ? '超级管理员' : u.role >= 10 ? '管理员' : '用户';
-
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 24, width: '100%', maxWidth: 960, marginInline: 'auto', padding: isMobile ? '16px' : '28px 16px' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 24, width: '100%', maxWidth: 720, marginInline: 'auto', padding: isMobile ? '16px' : '24px 16px' }}>
 
-      {/* 用户概览 */}
-      <div style={{ paddingLeft: 22 }}>
-        <div style={{ fontSize: 20, fontWeight: 600, color: 'var(--ui-text)', lineHeight: 1.3 }}>{u.username}</div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 4 }}>
-          <Tag color='grey'>{roleName}</Tag>
-          {u.email && <span style={{ fontSize: 12, color: 'var(--ui-text-3)' }}>{u.email}</span>}
-        </div>
-      </div>
+      {/* 账号 */}
+      <SettingGroup title='账号'>
+        <SettingRow title='邮箱' description={u.email || '未绑定邮箱'}>
+          <Button variant='toggle' onClick={() => { setEmailBindOpen(true); setBindEmail(u.email || ''); }}>
+            {u.email ? '换绑' : '绑定'}
+          </Button>
+        </SettingRow>
+        <SettingRow title='密码' description='修改登录密码' last>
+          <Button variant='toggle' onClick={() => { setForm({ original_password: '', password: '' }); setChangePasswordOpen(true); }}>修改</Button>
+        </SettingRow>
+      </SettingGroup>
 
-      {/* 额度统计 */}
-      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr 1fr', gap: 12 }}>
-        <StatCard label='剩余额度' value={renderQuota(u.quota || 0)} />
-        <StatCard label='已用额度' value={renderQuota(u.used_quota || 0)} />
-        <StatCard label='请求次数' value={String(u.request_count || 0)} />
-      </div>
-
-      {/* 账号安全 */}
-      <SectionCard icon={Lock} title='账号安全'>
-        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 14 }}>
-          <FieldGroup label='邮箱'>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <Input value={u.email || '未绑定'} disabled width='full' />
-              <Button variant='toggle' onClick={() => { setEmailBindOpen(true); setBindEmail(u.email || ''); }} style={{ flexShrink: 0 }}>
-                {u.email ? '换绑' : '绑定'}
-              </Button>
-            </div>
-          </FieldGroup>
-          <FieldGroup label='原密码' hint='修改密码时必填'>
-            <Input type='password' value={form.original_password} onChange={f('original_password')} width='full' placeholder='••••••••' />
-          </FieldGroup>
-          <FieldGroup label='新密码' hint='留空则不修改'>
-            <Input type='password' value={form.password} onChange={f('password')} width='full' placeholder='••••••••' />
-          </FieldGroup>
-        </div>
-        <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 16 }}>
-          <Button loading={saving} onClick={save}>保存修改</Button>
-        </div>
-      </SectionCard>
-
-      {/* 安全验证 */}
-      <SectionCard icon={ShieldCheck} title='安全验证'>
-        {/* Passkey */}
-        <div style={{ padding: '14px 16px', background: 'var(--ui-bg-subtle)', borderRadius: 14, marginBottom: 14 }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: passkeys.length > 0 || !passkeySupported ? 10 : 0 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <Fingerprint size={15} style={{ color: '#666' }} />
-              <span style={{ fontSize: 14, fontWeight: 500, color: 'var(--ui-text)' }}>Passkey</span>
-              <Tag color={passkeys.length > 0 ? 'green' : 'grey'}>{passkeys.length > 0 ? `${passkeys.length} 个` : '未启用'}</Tag>
-            </div>
-            {passkeySupported && <Button loading={passkeyBusy} onClick={addPasskey}>添加</Button>}
-          </div>
-          {!passkeySupported && <p style={{ fontSize: 12, color: 'var(--ui-text-3)', margin: 0 }}>当前浏览器不支持 Passkey</p>}
-          {passkeySupported && passkeys.length === 0 && <p style={{ fontSize: 12, color: 'var(--ui-text-3)', margin: 0 }}>添加 Passkey 后可使用指纹/面容免密登录</p>}
-          {passkeys.length > 0 && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-              {passkeys.map((p) => (
-                <div key={p.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 12px', background: 'var(--page-bg)', borderRadius: 10, border: '1px solid var(--ui-border)' }}>
-                  <div>
-                    <span style={{ fontSize: 13, color: 'var(--ui-text)' }}>{p.name || 'Passkey'}</span>
-                    {p.created_at && <span style={{ fontSize: 11, color: 'var(--ui-text-3)', marginLeft: 8 }}>{timestamp2string(p.created_at)}</span>}
-                  </div>
-                  <IconButton icon={Trash2} variant='danger' onClick={() => removePasskey(p.id)} />
+      {/* 安全 */}
+      <SettingGroup title='安全'>
+        <SettingRow
+          title={<span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}><Fingerprint size={15} style={{ color: '#666' }} />Passkey<Tag color={passkeys.length > 0 ? 'green' : 'grey'}>{passkeys.length > 0 ? `${passkeys.length} 个` : '未启用'}</Tag></span>}
+          description={passkeySupported ? '指纹 / 面容免密登录' : '当前浏览器不支持 Passkey'}
+          last={passkeys.length === 0}
+        >
+          {passkeySupported && <Button loading={passkeyBusy} onClick={addPasskey}>添加</Button>}
+        </SettingRow>
+        {passkeys.length > 0 && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 6, padding: '12px 16px', borderBottom: '1px solid #eee' }}>
+            {passkeys.map((p) => (
+              <div key={p.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 12px', background: 'var(--ui-bg-subtle)', borderRadius: 10 }}>
+                <div>
+                  <span style={{ fontSize: 13, color: 'var(--ui-text)' }}>{p.name || 'Passkey'}</span>
+                  {p.created_at && <span style={{ fontSize: 11, color: 'var(--ui-text-3)', marginLeft: 8 }}>{timestamp2string(p.created_at)}</span>}
                 </div>
-              ))}
-            </div>
-          )}
-        </div>
-
-        {/* 2FA */}
-        <div style={{ padding: '14px 16px', background: 'var(--ui-bg-subtle)', borderRadius: 14 }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <KeyRound size={15} style={{ color: '#666' }} />
-              <span style={{ fontSize: 14, fontWeight: 500, color: 'var(--ui-text)' }}>两步验证</span>
-              <Tag color={twoFA.enabled ? 'green' : 'grey'}>{twoFA.enabled ? '已启用' : '未启用'}</Tag>
-            </div>
-            {twoFA.enabled
-              ? <Button variant='toggle' onClick={() => setDisableOpen(true)}>禁用</Button>
-              : <Button loading={twoFABusy} onClick={start2FASetup}>启用</Button>}
+                <IconButton icon={Trash2} variant='danger' onClick={() => removePasskey(p.id)} />
+              </div>
+            ))}
           </div>
-          <p style={{ fontSize: 12, color: 'var(--ui-text-3)', margin: 0, lineHeight: 1.6 }}>
-            使用 TOTP 应用保护登录安全
-            {twoFA.enabled && (
-              <span style={{ marginLeft: 8 }}>
-                · 备份码剩余 <strong style={{ color: 'var(--ui-text)' }}>{twoFA.backup_codes_remaining}</strong>
-                <button onClick={regenBackup} style={{ marginLeft: 6, cursor: 'pointer', color: 'var(--ui-text)', textDecoration: 'underline', background: 'none', border: 'none', fontSize: 12 }}>重新生成</button>
-              </span>
-            )}
-          </p>
-        </div>
-      </SectionCard>
+        )}
+        <SettingRow
+          title={<span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}><KeyRound size={15} style={{ color: '#666' }} />两步验证<Tag color={twoFA.enabled ? 'green' : 'grey'}>{twoFA.enabled ? '已启用' : '未启用'}</Tag></span>}
+          description={
+            twoFA.enabled
+              ? <span>TOTP 应用保护 · 备份码剩余 <strong style={{ color: 'var(--ui-text)' }}>{twoFA.backup_codes_remaining}</strong> <button onClick={regenBackup} style={{ marginLeft: 4, cursor: 'pointer', color: 'var(--ui-text)', textDecoration: 'underline', background: 'none', border: 'none', fontSize: 12, padding: 0 }}>重新生成</button></span>
+              : '使用 TOTP 应用保护登录安全'
+          }
+          last
+        >
+          {twoFA.enabled
+            ? <Button variant='toggle' onClick={() => setDisableOpen(true)}>禁用</Button>
+            : <Button loading={twoFABusy} onClick={start2FASetup}>启用</Button>}
+        </SettingRow>
+      </SettingGroup>
 
-      {/* 访问令牌 */}
-      <SectionCard icon={KeyRound} title='系统访问令牌'>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-          <p style={{ fontSize: 13, color: 'var(--ui-text-3)', margin: 0 }}>用于调用管理 API，生成后请妥善保管</p>
+      {/* 偏好 */}
+      <SettingGroup title='偏好'>
+        <SettingRow title='语言' description='界面显示语言'>
+          <Select
+            options={LANGUAGES}
+            value={LANGUAGES.find((l) => i18n.language?.startsWith(l.value.split('-')[0]))?.value || 'zh-CN'}
+            onChange={(val) => { i18n.changeLanguage(val); try { localStorage.setItem('i18nextLng', val); } catch {} }}
+            width={160}
+          />
+        </SettingRow>
+        <SettingRow title='系统访问令牌' description='调用管理 API 的令牌，请妥善保管' last={!accessToken}>
           <Button variant='toggle' onClick={genToken}>{accessToken ? '重新生成' : '生成令牌'}</Button>
-        </div>
+        </SettingRow>
         {accessToken && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 14px', background: 'var(--ui-bg-subtle)', borderRadius: 12 }}>
-            <code style={{ flex: 1, fontSize: 12, fontFamily: "'JetBrains Mono', monospace", color: 'var(--ui-text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{accessToken}</code>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '12px 16px' }}>
+            <code style={{ flex: 1, fontSize: 12, fontFamily: "'JetBrains Mono', monospace", color: 'var(--ui-text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', background: 'var(--ui-bg-subtle)', padding: '8px 12px', borderRadius: 10 }}>{accessToken}</code>
             <IconButton icon={Copy} onClick={async () => { await copy(accessToken); showSuccess('已复制'); }} />
           </div>
         )}
-      </SectionCard>
+      </SettingGroup>
 
       {/* 弹窗 */}
+      {changePasswordOpen && (
+        <Modal open title='修改密码' onClose={() => { setChangePasswordOpen(false); setForm({ original_password: '', password: '' }); }} onConfirm={save} loading={saving} confirmText='保存'>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+            <FieldGroup label='原密码'>
+              <Input type='password' value={form.original_password} onChange={f('original_password')} width='full' placeholder='••••••••' />
+            </FieldGroup>
+            <FieldGroup label='新密码'>
+              <Input type='password' value={form.password} onChange={f('password')} width='full' placeholder='••••••••' />
+            </FieldGroup>
+          </div>
+        </Modal>
+      )}
+
       {setupData && (
         <Modal open title='设置两步验证' onClose={() => { setSetupData(null); setSetupCode(''); }} onConfirm={enable2FA} loading={twoFABusy} confirmText='确认启用'>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
@@ -402,20 +383,30 @@ const Personal = () => {
   );
 };
 
-const StatCard = ({ label, value }) => (
-  <div style={{ padding: '20px 18px', border: '1px solid #e9e9e9', borderRadius: 16, background: 'var(--page-bg)' }}>
-    <div style={{ fontSize: 12, color: '#999', marginBottom: 6 }}>{label}</div>
-    <div style={{ fontSize: 22, fontWeight: 700, color: 'var(--ui-text)', fontVariantNumeric: 'tabular-nums' }}>{value}</div>
+const SettingGroup = ({ title, children }) => (
+  <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+    <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--ui-text-3)', letterSpacing: '0.03em', paddingLeft: 2 }}>{title}</span>
+    <div style={{ border: '1px solid #e9e9e9', borderRadius: 16, overflow: 'hidden' }}>
+      {children}
+    </div>
   </div>
 );
 
-const SectionCard = ({ icon: Icon, title, children }) => (
-  <div style={{ padding: '20px 22px', border: '1px solid #e9e9e9', borderRadius: 26 }}>
-    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16 }}>
-      {Icon && <Icon size={16} style={{ color: '#666' }} />}
-      <span style={{ fontSize: 15, fontWeight: 600, color: 'var(--ui-text)' }}>{title}</span>
+const SettingRow = ({ title, description, children, last }) => (
+  <div style={{
+    display: 'flex',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 12,
+    padding: '14px 16px',
+    borderBottom: last ? 'none' : '1px solid #eee',
+  }}>
+    <div style={{ minWidth: 0, flex: 1 }}>
+      <div style={{ fontSize: 14, fontWeight: 500, color: 'var(--ui-text)' }}>{title}</div>
+      {description && <div style={{ fontSize: 12, color: 'var(--ui-text-3)', marginTop: 3, lineHeight: 1.5 }}>{description}</div>}
     </div>
-    {children}
+    <div style={{ flexShrink: 0 }}>{children}</div>
   </div>
 );
 

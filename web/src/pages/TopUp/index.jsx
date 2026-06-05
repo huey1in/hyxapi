@@ -1,11 +1,11 @@
-import React, { useContext, useEffect, useState } from 'react';
+import React, { useContext, useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Copy } from 'lucide-react';
 import { API, showError, showSuccess, showInfo, copy, renderQuota, timestamp2string } from '../../helpers';
 import { UserContext } from '../../context/User';
 import { StatusContext } from '../../context/Status';
 import {
-  IconButton, Input, NumberInput, Modal, Loading,
+  IconButton, Input, Modal, Loading,
 } from '../../components/ui';
 import useIsMobile from '../../hooks/useIsMobile';
 
@@ -21,9 +21,6 @@ const TopUp = () => {
   const [topUpCount, setTopUpCount] = useState(1);
   const [customInput, setCustomInput] = useState('');
   const [affLink, setAffLink] = useState('');
-  const [transferOpen, setTransferOpen] = useState(false);
-  const [transferAmount, setTransferAmount] = useState(0);
-  const [transferring, setTransferring] = useState(false);
   const [topups, setTopups] = useState([]);
   const [showHistory, setShowHistory] = useState(false);
   const [checkingOut, setCheckingOut] = useState(false);
@@ -97,18 +94,15 @@ const TopUp = () => {
     } catch (e) { showError(e); } finally { setRedeeming(false); }
   };
 
-  const transferAff = async () => {
-    if (!transferAmount || transferAmount <= 0) return showError('请输入有效金额');
-    setTransferring(true);
-    try {
-      const { data } = await API.post('/api/user/aff_transfer', { quota: transferAmount });
-      if (data.success) { showSuccess('划转成功'); setTransferOpen(false); setTransferAmount(0); refreshUser(); }
-      else showError(data.message);
-    } catch (e) { showError(e); } finally { setTransferring(false); }
-  };
-
   const u = userState?.user || {};
-  const AMOUNTS = [1, 20, 100];
+  const AMOUNTS = useMemo(() => {
+    const raw = statusState?.status?.topup_preset_amounts;
+    const parsed = (typeof raw === 'string' ? raw : '')
+      .split(',')
+      .map((s) => Number(s.trim()))
+      .filter((n) => Number.isFinite(n) && n > 0);
+    return parsed.length ? parsed : [1, 20, 100];
+  }, [statusState?.status?.topup_preset_amounts]);
   const epayMethodMin = Number(activeMethod?.min_topup) || epayMin;
   const payTotal = topUpCount * epayPrice;
   const payTotalText = `¥${payTotal.toLocaleString(undefined, { maximumFractionDigits: 2 })}`;
@@ -174,13 +168,13 @@ const TopUp = () => {
             </div>
           )}
           {/* 金额选择 */}
-          <div style={{ display: 'flex', flexWrap: 'nowrap', gap: 8 }}>
+          <div style={{ display: 'flex', gap: 8 }}>
             {AMOUNTS.map((amt) => (
               <button
                 key={amt}
                 onClick={() => { setTopUpCount(amt); setCustomInput(''); }}
                 style={{
-                  cursor: 'pointer', flex: 1, height: 45, border: topUpCount === amt ? '2px solid #000' : '1px solid #e5e5e5',
+                  cursor: 'pointer', flex: '1 1 0', minWidth: 0, height: 45, border: topUpCount === amt ? '2px solid #000' : '1px solid #e5e5e5',
                   borderRadius: 10, fontSize: 16, fontWeight: topUpCount === amt ? 600 : 400,
                   color: 'var(--ui-text)', background: 'var(--page-bg)',
                   boxShadow: topUpCount === amt ? '0 2px 8px rgba(0,0,0,0.08)' : 'none',
@@ -203,7 +197,7 @@ const TopUp = () => {
                 if (AMOUNTS.includes(topUpCount)) setCustomInput('');
               }}
               style={{
-                flex: 1, height: 45, border: !AMOUNTS.includes(topUpCount) ? '2px solid #000' : '1px solid #e5e5e5',
+                flex: '1 1 0', minWidth: 0, width: 0, height: 45, border: !AMOUNTS.includes(topUpCount) ? '2px solid #000' : '1px solid #e5e5e5',
                 borderRadius: 10, fontSize: 16, fontWeight: 400, textAlign: 'center',
                 color: 'var(--ui-text)', background: 'var(--page-bg)',
                 outline: 'none', boxSizing: 'border-box',
@@ -241,26 +235,11 @@ const TopUp = () => {
       <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <span style={{ fontSize: 18, fontWeight: 600, color: 'var(--ui-text)' }}>邀请奖励</span>
-          {(u.aff_quota || 0) > 0 && (
-            <button
-              onClick={() => setTransferOpen(true)}
-              style={{
-                cursor: 'pointer', height: 32, paddingInline: 16, border: '1px solid var(--ui-text)', borderRadius: 24,
-                fontSize: 14, color: 'var(--ui-text)', background: 'var(--page-bg)', transition: 'background 0.2s, color 0.2s',
-              }}
-              onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--ui-accent)'; e.currentTarget.style.color = 'var(--ui-accent-fg)'; }}
-              onMouseLeave={(e) => { e.currentTarget.style.background = 'var(--page-bg)'; e.currentTarget.style.color = 'var(--ui-text)'; }}
-            >划转到余额</button>
-          )}
         </div>
-        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(3, 1fr)', gap: 12 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 12 }}>
           <div style={{ padding: '16px 18px', border: '1px solid var(--ui-border)', borderRadius: 16 }}>
             <div style={{ fontSize: 12, color: 'var(--ui-text-3)', marginBottom: 6 }}>邀请人数</div>
             <div style={{ fontSize: 22, fontWeight: 600, color: 'var(--ui-text)' }}>{u.aff_count || 0}</div>
-          </div>
-          <div style={{ padding: '16px 18px', border: '1px solid var(--ui-border)', borderRadius: 16 }}>
-            <div style={{ fontSize: 12, color: 'var(--ui-text-3)', marginBottom: 6 }}>可用奖励</div>
-            <div style={{ fontSize: 22, fontWeight: 600, color: 'var(--ui-text)' }}>{renderQuota(u.aff_quota || 0)}</div>
           </div>
           <div style={{ padding: '16px 18px', border: '1px solid var(--ui-border)', borderRadius: 16 }}>
             <div style={{ fontSize: 12, color: 'var(--ui-text-3)', marginBottom: 6 }}>累计奖励</div>
@@ -323,26 +302,6 @@ const TopUp = () => {
                 ))}
               </tbody>
             </table>
-          </div>
-        </Modal>
-      )}
-
-      {/* 划转弹窗 */}
-      {transferOpen && (
-        <Modal
-          open
-          title='划转邀请额度到余额'
-          onClose={() => setTransferOpen(false)}
-          onConfirm={transferAff}
-          loading={transferring}
-          confirmText='确认划转'
-        >
-          <div className='space-y-3'>
-            <div>
-              <label className='block text-sm text-[#666] mb-1.5'>划转额度</label>
-              <NumberInput value={transferAmount} onChange={(v) => setTransferAmount(Number(v) || 0)} min={0} max={u.aff_quota || 0} />
-              <p className='mt-1 text-xs text-[#999]'>可划转：{renderQuota(u.aff_quota || 0)}</p>
-            </div>
           </div>
         </Modal>
       )}

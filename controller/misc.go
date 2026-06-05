@@ -72,6 +72,7 @@ func GetStatus(c *gin.Context) {
 		"pay_methods":                 operation_setting.PayMethods,
 		"epay_price":                  operation_setting.Price,
 		"epay_min_topup":              operation_setting.MinTopUp,
+		"topup_preset_amounts":        operation_setting.TopUpPresetAmounts,
 		"docs_link":                   operation_setting.GetGeneralSetting().DocsLink,
 		"quota_per_unit":              common.QuotaPerUnit,
 		// 兼容旧前端：保留 display_in_currency，同时提供新的 quota_display_type
@@ -148,17 +149,6 @@ func GetStatus(c *gin.Context) {
 		"success": true,
 		"message": "",
 		"data":    data,
-	})
-	return
-}
-
-func GetNotice(c *gin.Context) {
-	common.OptionMapRWMutex.RLock()
-	defer common.OptionMapRWMutex.RUnlock()
-	c.JSON(http.StatusOK, gin.H{
-		"success": true,
-		"message": "",
-		"data":    common.OptionMap["Notice"],
 	})
 	return
 }
