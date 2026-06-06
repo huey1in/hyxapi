@@ -1,4 +1,4 @@
-import React, { useContext, useEffect, useMemo, useState } from 'react';
+import React, { useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { Filter, RefreshCw } from 'lucide-react';
 import { API, showError, renderNumber, renderQuota, timestamp2string } from '../../helpers';
 import { UserContext } from '../../context/User';
@@ -42,9 +42,17 @@ const Num = ({ value }) => (
 );
 
 const Quota = ({ row }) => {
-  // 充值 / 退款：绿色正数；消费等：普通；无积分：—
+  // 充值 / 退款：绿色正数；从 content 解析充值金额
   if (row.type === 1 || row.type === 6) {
-    return <span style={{ color: '#22c55e', fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}>+{renderQuota(row.quota || 0, 6)}</span>;
+    let amount = row.quota;
+    if (!amount && row.content) {
+      const m = row.content.match(/[＄$]\s*([\d.]+)/);
+      if (m) amount = parseFloat(m[1]) * 500000;
+    }
+    if (amount > 0) {
+      return <span style={{ color: '#22c55e', fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}>+{renderQuota(amount, 6)}</span>;
+    }
+    return <span style={{ color: 'var(--ui-text-3)' }}>—</span>;
   }
   if (row.quota > 0) {
     return <span style={{ fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}>{renderQuota(row.quota, 6)}</span>;
@@ -66,11 +74,15 @@ const LogPage = () => {
     token_name: '', model_name: '', group: '', request_id: '',
     channel: '', username: '', type: 0,
   });
+  const pageRef = useRef(page);
+  const filtersRef = useRef(filters);
+  useEffect(() => { pageRef.current = page; }, [page]);
+  useEffect(() => { filtersRef.current = filters; }, [filters]);
 
   const f = (k) => (v) => setFilters((p) => ({ ...p, [k]: v?.target ? v.target.value : v }));
 
-  const load = async (p = 1, fl = filters) => {
-    setLoading(true);
+  const load = async (p = 1, fl = filters, silent = false) => {
+    if (!silent) setLoading(true);
     setExpanded(null);
     try {
       const params = new URLSearchParams({
@@ -92,10 +104,12 @@ const LogPage = () => {
         setRows(data.data.items || []);
         setTotal(data.data.total || 0);
         setPage(data.data.page || p);
-      } else showError(data.message);
-    } catch (e) { showError(e); } finally { setLoading(false); }
+      } else if (!silent) showError(data.message);
+    } catch (e) { if (!silent) showError(e); } finally { if (!silent) setLoading(false); }
   };
-  useEffect(() => { load(1); }, []);
+  useEffect(() => {
+    load(1);
+  }, []);
 
   const reset = () => {
     const empty = { token_name: '', model_name: '', group: '', request_id: '', channel: '', username: '', type: 0 };

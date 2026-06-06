@@ -38,8 +38,12 @@ const Dashboard = () => {
     loadRecentLogs();
     loadStats();
     loadRpm();
-    const rpmTimer = setInterval(loadRpm, 15000);
-    return () => clearInterval(rpmTimer);
+    const timer = setInterval(() => {
+      loadStats();
+      loadRecentLogs(true);
+      loadRpm();
+    }, 5000);
+    return () => clearInterval(timer);
   }, [userState?.user]);
 
   const loadStats = async () => {
@@ -64,14 +68,14 @@ const Dashboard = () => {
     } catch {}
   };
 
-  const loadRecentLogs = async () => {
-    setLogsLoading(true);
+  const loadRecentLogs = async (silent = false) => {
+    if (!silent) setLogsLoading(true);
     try {
       const url = isAdmin() ? '/api/log/?p=1&size=10&type=0' : '/api/log/self/?p=1&size=10&type=0';
       const res = await API.get(url);
       if (res.data?.success) setRecentLogs(res.data.data?.items || res.data.data || []);
-    } catch { setRecentLogs([]); }
-    finally { setLogsLoading(false); }
+    } catch { if (!silent) setRecentLogs([]); }
+    finally { if (!silent) setLogsLoading(false); }
   };
 
   const u = stats || userState?.user || {};
