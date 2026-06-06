@@ -20,6 +20,7 @@ const Dashboard = () => {
   const [stats, setStats] = useState(null);
   const [cumStats, setCumStats] = useState({ quota: 0, tokens: 0, requests: 0 });
   const [dayStats, setDayStats] = useState({ quota: 0, tokens: 0, requests: 0 });
+  const [rpm, setRpm] = useState(0);
   const [recentLogs, setRecentLogs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [logsLoading, setLogsLoading] = useState(false);
@@ -36,6 +37,9 @@ const Dashboard = () => {
     })();
     loadRecentLogs();
     loadStats();
+    loadRpm();
+    const rpmTimer = setInterval(loadRpm, 15000);
+    return () => clearInterval(rpmTimer);
   }, [userState?.user]);
 
   const loadStats = async () => {
@@ -48,6 +52,15 @@ const Dashboard = () => {
       ]);
       if (cum.data?.success) setCumStats(cum.data.data || { quota: 0, tokens: 0, requests: 0 });
       if (today.data?.success) setDayStats(today.data.data || { quota: 0, tokens: 0, requests: 0 });
+    } catch {}
+  };
+
+  const loadRpm = async () => {
+    try {
+      const base = isAdmin() ? '/api/log/stat' : '/api/log/self/stat';
+      const since = Math.floor(Date.now() / 1000) - 60;
+      const res = await API.get(`${base}?start_timestamp=${since}`);
+      if (res.data?.success) setRpm(res.data.data?.requests || 0);
     } catch {}
   };
 
@@ -104,10 +117,11 @@ const Dashboard = () => {
       </div>
 
       {/* 今日统计 */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: isMobile ? 8 : 12 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(4, 1fr)', gap: isMobile ? 8 : 12 }}>
         <StatMini label='今日 Token' value={fmtTokens(dayStats.tokens || 0)} />
         <StatMini label='今日消费' value={renderQuota(dayStats.quota || 0)} />
         <StatMini label='今日请求数' value={renderNumber(dayStats.requests || 0)} />
+        <StatMini label='当前 RPM' value={renderNumber(rpm)} />
       </div>
 
       {/* 最近活动 */}
@@ -138,7 +152,7 @@ const Dashboard = () => {
 
 const parseOther = (other) => {
   if (!other) return {};
-  try { return typeof other === 'string' ? JSON.parse(other) : other; } catch { return {}; }
+  try { const p = typeof other === 'string' ? JSON.parse(other) : other; return p || {}; } catch { return {}; }
 };
 
 const fmtTokens = (n) => {

@@ -213,7 +213,7 @@ const TopUp = () => {
                 <div style={{ fontSize: 13, color: 'var(--ui-text-3)', marginBottom: 6 }}>支付总计</div>
                 <div style={{ fontSize: 28, fontWeight: 400, color: 'var(--ui-text)' }}>{payTotalText}</div>
               </div>
-              <div style={{ padding: '2px 10px', border: '1px solid var(--ui-border)', borderRadius: 10, fontSize: 12, fontWeight: 500, color: 'rgba(0,0,0,0.3)', background: 'var(--ui-bg-subtle)' }}>
+              <div style={{ padding: '2px 10px', border: '1px solid var(--ui-border)', borderRadius: 10, fontSize: 12, fontWeight: 500, color: 'rgba(0,0,0,0.3)', background: 'var(--page-bg)' }}>
                 {`$1 = ¥${epayPrice}`}
               </div>
             </div>

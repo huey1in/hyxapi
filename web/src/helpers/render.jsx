@@ -1081,12 +1081,14 @@ export function renderNumberWithPoint(num) {
 export function getQuotaPerUnit() {
   let quotaPerUnit = localStorage.getItem('quota_per_unit');
   quotaPerUnit = parseFloat(quotaPerUnit);
+  if (!quotaPerUnit || isNaN(quotaPerUnit)) quotaPerUnit = 500000;
   return quotaPerUnit;
 }
 
 export function renderUnitWithQuota(quota) {
   let quotaPerUnit = localStorage.getItem('quota_per_unit');
   quotaPerUnit = parseFloat(quotaPerUnit);
+  if (!quotaPerUnit || isNaN(quotaPerUnit)) quotaPerUnit = 500000;
   quota = parseFloat(quota);
   return quotaPerUnit * quota;
 }
@@ -1094,6 +1096,7 @@ export function renderUnitWithQuota(quota) {
 export function getQuotaWithUnit(quota, digits = 6) {
   let quotaPerUnit = localStorage.getItem('quota_per_unit');
   quotaPerUnit = parseFloat(quotaPerUnit);
+  if (!quotaPerUnit || isNaN(quotaPerUnit)) quotaPerUnit = 500000;
   return (quota / quotaPerUnit).toFixed(digits);
 }
 
@@ -1172,6 +1175,7 @@ export function renderQuota(quota, digits = 2) {
   let quotaPerUnit = localStorage.getItem('quota_per_unit');
   const quotaDisplayType = localStorage.getItem('quota_display_type') || 'USD';
   quotaPerUnit = parseFloat(quotaPerUnit);
+  if (!quotaPerUnit || isNaN(quotaPerUnit)) quotaPerUnit = 500000;
   if (quotaDisplayType === 'TOKENS') {
     return renderNumber(quota);
   }

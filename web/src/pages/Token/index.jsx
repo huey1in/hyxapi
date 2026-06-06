@@ -19,6 +19,7 @@ const toUnix = (v) => (v ? Math.floor(new Date(v).getTime() / 1000) : 0);
 
 const TokenPage = () => {
   const [rows, setRows] = useState([]);
+  const [keys, setKeys] = useState({});
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState(null);
   const [confirm, setConfirm] = useState(null);
@@ -29,7 +30,18 @@ const TokenPage = () => {
     try {
       const res = await API.get('/api/token/?p=1&size=200');
       const { success, data, message } = res.data || {};
-      if (success) setRows(Array.isArray(data) ? data : data?.items || []);
+      if (success) {
+        const list = Array.isArray(data) ? data : data?.items || [];
+        setRows(list);
+        const keyMap = {};
+        await Promise.all(list.map(async (t) => {
+          try {
+            const r = await API.post(`/api/token/${t.id}/key`);
+            if (r.data?.success && r.data.data?.key) keyMap[t.id] = `sk-${r.data.data.key}`;
+          } catch {}
+        }));
+        setKeys(keyMap);
+      }
       else showError(message);
     } catch (e) { showError(e); } finally { setLoading(false); }
   };
@@ -45,14 +57,8 @@ const TokenPage = () => {
   };
 
   const copyKey = async (row) => {
-    let text;
-    try {
-      const res = await API.post(`/api/token/${row.id}/key`);
-      const { success, data, message } = res.data || {};
-      if (!success || !data?.key) { showError(message || '获取密钥失败'); return; }
-      text = `sk-${data.key}`;
-    } catch (e) { showError(e); return; }
-
+    const text = keys[row.id];
+    if (!text) { showError('密钥加载中，请稍后再试'); return; }
     const ok = await copy(text);
     ok ? showSuccess('已复制') : showError('复制失败，请手动复制');
   };

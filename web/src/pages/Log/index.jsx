@@ -123,20 +123,20 @@ const LogPage = () => {
       return [
         { key: 'time', title: '时间', render: (r) => <span style={{ whiteSpace: 'nowrap', fontSize: 12, color: 'var(--ui-text-2)' }}>{timestamp2string(r.created_at)}</span> },
         { key: 'type', title: '类型', render: (r) => <TypeBadge type={r.type} /> },
-        { key: 'model', title: '模型', render: (r) => <span style={{ whiteSpace: 'nowrap' }}>{r.model_name || '—'}</span> },
+        { key: 'model', title: '模型', render: (r) => <span style={{ whiteSpace: 'nowrap', maxWidth: 140, display: 'inline-block', overflow: 'hidden', textOverflow: 'ellipsis', verticalAlign: 'bottom' }} title={r.model_name}>{r.model_name || '—'}</span> },
         { key: 'quota', title: '积分', align: 'right', render: (r) => <Quota row={r} /> },
       ];
     }
     const cols = [
       { key: 'time', title: '时间', render: (r) => <span style={{ whiteSpace: 'nowrap', color: 'var(--ui-text-2)' }}>{timestamp2string(r.created_at)}</span> },
       { key: 'type', title: '类型', render: (r) => <TypeBadge type={r.type} /> },
-      { key: 'model', title: '模型', render: (r) => <span style={{ whiteSpace: 'nowrap', maxWidth: 180, display: 'inline-block', overflow: 'hidden', textOverflow: 'ellipsis', verticalAlign: 'bottom' }} title={r.model_name}>{r.model_name || '—'}</span> },
+      { key: 'model', title: '模型', render: (r) => <span style={{ whiteSpace: 'nowrap', maxWidth: 150, display: 'inline-block', overflow: 'hidden', textOverflow: 'ellipsis', verticalAlign: 'bottom' }} title={r.model_name}>{r.model_name || '—'}</span> },
     ];
     if (isAdmin) {
-      cols.push({ key: 'username', title: '用户', render: (r) => <span style={{ whiteSpace: 'nowrap' }}>{r.username || '—'}</span> });
+      cols.push({ key: 'username', title: '用户', render: (r) => <span style={{ whiteSpace: 'nowrap', maxWidth: 100, display: 'inline-block', overflow: 'hidden', textOverflow: 'ellipsis', verticalAlign: 'bottom' }} title={r.username}>{r.username || '—'}</span> });
     }
     cols.push(
-      { key: 'token', title: '令牌', render: (r) => <span style={{ whiteSpace: 'nowrap', maxWidth: 140, display: 'inline-block', overflow: 'hidden', textOverflow: 'ellipsis', verticalAlign: 'bottom', color: 'var(--ui-text-2)' }} title={r.token_name}>{r.token_name || '—'}</span> },
+      { key: 'token', title: '令牌', render: (r) => <span style={{ whiteSpace: 'nowrap', maxWidth: 100, display: 'inline-block', overflow: 'hidden', textOverflow: 'ellipsis', verticalAlign: 'bottom', color: 'var(--ui-text-2)' }} title={r.token_name}>{r.token_name || '—'}</span> },
       { key: 'group', title: '分组', render: (r) => <span style={{ whiteSpace: 'nowrap', color: 'var(--ui-text-2)' }}>{r.group || '—'}</span> },
       { key: 'input', title: '输入', align: 'right', render: (r) => <Num value={r.prompt_tokens || 0} /> },
       { key: 'output', title: '输出', align: 'right', render: (r) => <Num value={r.completion_tokens || 0} /> },
@@ -148,10 +148,10 @@ const LogPage = () => {
   }, [isMobile, isAdmin]);
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: isMobile ? 20 : 28, width: '100%', maxWidth: 1160, marginInline: 'auto', padding: isMobile ? '16px' : '24px 16px' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: isMobile ? 20 : 28, width: '100%', maxWidth: 1160, marginInline: 'auto', padding: isMobile ? '16px' : '24px 16px', minWidth: 0, overflow: isMobile ? 'visible' : 'hidden' }}>
       {/* 标题 */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <span style={{ fontSize: 18, fontWeight: 600, color: 'var(--ui-text)' }}>积分明细</span>
+        <span style={{ fontSize: 18, fontWeight: 600, color: 'var(--ui-text)' }}>消费明细</span>
         <div style={{ display: 'flex', gap: 6 }}>
           <IconButton icon={Filter} title='筛选' selected={showFilters} onClick={() => setShowFilters((s) => !s)} />
           <IconButton icon={RefreshCw} title='刷新' onClick={() => load(page)} />
@@ -205,7 +205,7 @@ const LogPage = () => {
       {/* 表格 */}
       {loading ? <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '60vh' }}><Loading /></div> : (
         <>
-          <div style={{ fontFamily: "'JetBrains Mono', 'Noto Sans SC', monospace" }}>
+          <div style={{ fontFamily: "'JetBrains Mono', 'Noto Sans SC', monospace", maxWidth: '100%', overflow: isMobile ? 'auto' : 'hidden' }}>
             <Table
               columns={columns}
               rows={enriched}
