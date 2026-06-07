@@ -32,7 +32,10 @@ const NoticesPage = () => {
     });
     // 标记全部已读
     try {
-      localStorage.setItem('seen_notices', JSON.stringify(list.map((it) => it.key)));
+      const allKeys = list.map((it) => it.key);
+      localStorage.setItem('seen_notices', JSON.stringify(allKeys));
+      const prev = JSON.parse(localStorage.getItem('notice_read_keys') || '[]');
+      localStorage.setItem('notice_read_keys', JSON.stringify([...new Set([...prev, ...allKeys])]));
     } catch {}
     return list;
   }, [announcements]);
@@ -68,7 +71,9 @@ const NoticesPage = () => {
                 </div>
                 <div style={{ flex: 1, paddingBottom: isLast ? 0 : 24 }}>
                   <div style={{ fontSize: 12, color: '#999', marginBottom: 6 }}>
-                    {it.relative && <span style={{ marginRight: 6 }}>{it.relative}</span>}
+                    {it.relative && it.relative !== it.time && !it.time.startsWith(it.relative) && (
+                      <span style={{ marginRight: 6 }}>{it.relative}</span>
+                    )}
                     <span>{it.time}</span>
                   </div>
                   <div

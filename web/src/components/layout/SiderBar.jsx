@@ -1,4 +1,4 @@
-import React, { useContext, useState } from 'react';
+import React, { useContext, useMemo, useState } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import {
@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 import { isAdmin, isRoot, API, showError, updateAPI, renderQuota } from '../../helpers';
 import { UserContext } from '../../context/User';
+import { StatusContext } from '../../context/Status';
 import { useMobileSidebar } from '../../context/MobileSidebar';
 import useIsMobile from '../../hooks/useIsMobile';
 import { cn } from '../ui/tokens';
@@ -39,6 +40,7 @@ const SiderBar = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const [userState, userDispatch] = useContext(UserContext);
+  const [statusState] = useContext(StatusContext);
   const admin = isAdmin();
   const root = isRoot();
   const isMobile = useIsMobile();
@@ -47,6 +49,16 @@ const SiderBar = () => {
   const [collapsed, setCollapsed] = useState(() => {
     try { return localStorage.getItem(LS_KEY) === '1'; } catch { return false; }
   });
+
+  const unreadNotices = useMemo(() => {
+    const announcements = statusState?.status?.announcements || [];
+    if (!announcements.length) return 0;
+    let readKeys = [];
+    try { readKeys = JSON.parse(localStorage.getItem('notice_read_keys')) || []; } catch { readKeys = []; }
+    const readSet = new Set(readKeys);
+    const getKey = (a) => `${a?.publishDate || ''}-${(a?.content || '').slice(0, 30)}`;
+    return announcements.filter((a) => !readSet.has(getKey(a))).length;
+  }, [statusState?.status?.announcements]);
 
   const logout = async () => {
     try { await API.get('/api/user/logout'); } catch (e) { showError(e); }
@@ -93,7 +105,12 @@ const SiderBar = () => {
               )
             }
           >
-            <Icon size={isMobile ? 20 : 22} className='flex-shrink-0' />
+            <span className='relative flex-shrink-0'>
+              <Icon size={isMobile ? 20 : 22} />
+              {item.icon === Bell && unreadNotices > 0 && (
+                <span className='absolute -top-1 -right-1 w-2 h-2 rounded-full bg-red-500' />
+              )}
+            </span>
             <span>{t(item.label)}</span>
           </NavLink>
         );
@@ -196,7 +213,12 @@ const SiderBar = () => {
                 )
               }
             >
-              <Icon size={22} className='flex-shrink-0' />
+              <span className='relative flex-shrink-0'>
+                <Icon size={22} />
+                {item.icon === Bell && unreadNotices > 0 && (
+                  <span className='absolute -top-1 -right-1 w-2 h-2 rounded-full bg-red-500' />
+                )}
+              </span>
               {!collapsed && <span>{t(item.label)}</span>}
             </NavLink>
           );

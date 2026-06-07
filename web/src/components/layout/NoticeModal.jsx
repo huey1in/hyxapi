@@ -107,7 +107,7 @@ const NoticeModal = ({ open, onClose, defaultTab = 'inApp', unreadKeys = [] }) =
               </div>
               <div className={`flex-1 ${isLast ? '' : 'pb-5'}`}>
                 <div className='text-xs text-ui-text-3 mb-1'>
-                  {it.relative ? `${it.relative} ` : ''}{it.time}
+                  {it.relative && it.relative !== it.time && !it.time.startsWith(it.relative) ? `${it.relative} ` : ''}{it.time}
                 </div>
                 <div
                   className={`text-sm text-ui-text-1 ${it.isUnread ? 'font-medium' : ''}`}
