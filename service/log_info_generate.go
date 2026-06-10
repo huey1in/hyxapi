@@ -77,6 +77,12 @@ func GenerateTextOtherInfo(ctx *gin.Context, relayInfo *relaycommon.RelayInfo, m
 	appendBillingInfo(relayInfo, other)
 	appendParamOverrideInfo(relayInfo, other)
 	appendStreamStatus(relayInfo, other)
+	if relayInfo.LogRequestBody != "" {
+		other["request_body"] = relayInfo.LogRequestBody
+	}
+	if relayInfo.LogResponseBody != "" {
+		other["response_body"] = relayInfo.LogResponseBody
+	}
 	return other
 }
 

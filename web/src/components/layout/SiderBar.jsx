@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
 import {
   BarChart3, Key, FileText, Wallet, User,
   Radio, CreditCard, Ticket, Users, Settings,
-  ChevronLeft, X, Layers, Store, Bell, LogOut,
+  ChevronLeft, X, Layers, Store, Bell, LogOut, TrendingUp, Activity, Shield,
 } from 'lucide-react';
 import { isAdmin, isRoot, API, showError, updateAPI, renderQuota } from '../../helpers';
 import { UserContext } from '../../context/User';
@@ -28,6 +28,9 @@ const NAV_ITEMS = [
   { to: '/console/notices',    label: '通知',     icon: Bell },
   { to: '/console/personal',   label: '设置',     icon: User },
   { divider: true, admin: true },
+  { to: '/console/operations',   label: '线索运营',   icon: TrendingUp, admin: true },
+  { to: '/console/audit',         label: '审计日志',   icon: Shield,     admin: true },
+  { to: '/console/system-status', label: '系统状态',   icon: Activity,   admin: true },
   { to: '/console/channel',      label: '渠道管理',   icon: Radio,      admin: true },
   { to: '/console/subscription', label: '订阅管理',   icon: Layers,     admin: true },
   { to: '/console/redemption',   label: '兑换码管理', icon: Ticket,     admin: true },

@@ -230,6 +230,7 @@ func FixChannelsAbilities(c *gin.Context) {
 		common.ApiError(c, err)
 		return
 	}
+	model.RecordAuditLog(c, model.AuditUpdate, "channel", 0, fmt.Sprintf("修复渠道能力，成功 %d，失败 %d", success, fails))
 	c.JSON(http.StatusOK, gin.H{
 		"success": true,
 		"message": "",
@@ -619,6 +620,7 @@ func AddChannel(c *gin.Context) {
 		return
 	}
 	service.ResetProxyClientCache()
+	model.RecordAuditLog(c, model.AuditCreate, "channel", 0, fmt.Sprintf("创建渠道，共 %d 个", len(keys)))
 	c.JSON(http.StatusOK, gin.H{
 		"success": true,
 		"message": "",
@@ -635,6 +637,7 @@ func DeleteChannel(c *gin.Context) {
 		return
 	}
 	model.InitChannelCache()
+	model.RecordAuditLog(c, model.AuditDelete, "channel", id, fmt.Sprintf("删除渠道 #%d", id))
 	c.JSON(http.StatusOK, gin.H{
 		"success": true,
 		"message": "",
@@ -649,6 +652,7 @@ func DeleteDisabledChannel(c *gin.Context) {
 		return
 	}
 	model.InitChannelCache()
+	model.RecordAuditLog(c, model.AuditDelete, "channel", 0, fmt.Sprintf("删除所有已禁用渠道，共 %d 个", rows))
 	c.JSON(http.StatusOK, gin.H{
 		"success": true,
 		"message": "",
@@ -685,6 +689,7 @@ func DisableTagChannels(c *gin.Context) {
 		return
 	}
 	model.InitChannelCache()
+	model.RecordAuditLog(c, model.AuditDisable, "channel", 0, fmt.Sprintf("禁用标签 [%s] 下的渠道", channelTag.Tag))
 	c.JSON(http.StatusOK, gin.H{
 		"success": true,
 		"message": "",
@@ -708,6 +713,7 @@ func EnableTagChannels(c *gin.Context) {
 		return
 	}
 	model.InitChannelCache()
+	model.RecordAuditLog(c, model.AuditEnable, "channel", 0, fmt.Sprintf("启用标签 [%s] 下的渠道", channelTag.Tag))
 	c.JSON(http.StatusOK, gin.H{
 		"success": true,
 		"message": "",
@@ -760,6 +766,7 @@ func EditTagChannels(c *gin.Context) {
 		return
 	}
 	model.InitChannelCache()
+	model.RecordAuditLog(c, model.AuditUpdate, "channel", 0, fmt.Sprintf("批量编辑标签 [%s] 下的渠道", channelTag.Tag))
 	c.JSON(http.StatusOK, gin.H{
 		"success": true,
 		"message": "",
@@ -788,6 +795,7 @@ func DeleteChannelBatch(c *gin.Context) {
 		return
 	}
 	model.InitChannelCache()
+	model.RecordAuditLog(c, model.AuditDelete, "channel", 0, fmt.Sprintf("批量删除渠道，共 %d 个", len(channelBatch.Ids)))
 	c.JSON(http.StatusOK, gin.H{
 		"success": true,
 		"message": "",
@@ -923,6 +931,7 @@ func UpdateChannel(c *gin.Context) {
 	}
 	model.InitChannelCache()
 	service.ResetProxyClientCache()
+	model.RecordAuditLog(c, model.AuditUpdate, "channel", channel.Id, fmt.Sprintf("更新渠道 #%d [%s]", channel.Id, channel.Name))
 	channel.Key = ""
 	clearChannelInfo(&channel.Channel)
 	c.JSON(http.StatusOK, gin.H{
@@ -1051,6 +1060,7 @@ func BatchSetChannelTag(c *gin.Context) {
 		return
 	}
 	model.InitChannelCache()
+	model.RecordAuditLog(c, model.AuditUpdate, "channel", 0, fmt.Sprintf("批量设置标签 [%s]，共 %d 个渠道", channelBatch.Tag, len(channelBatch.Ids)))
 	c.JSON(http.StatusOK, gin.H{
 		"success": true,
 		"message": "",
@@ -1148,7 +1158,7 @@ func CopyChannel(c *gin.Context) {
 		return
 	}
 	model.InitChannelCache()
-	// success
+	model.RecordAuditLog(c, model.AuditCreate, "channel", clone.Id, fmt.Sprintf("复制渠道 #%d → #%d", id, clone.Id))
 	c.JSON(http.StatusOK, gin.H{"success": true, "message": "", "data": gin.H{"id": clone.Id}})
 }
 

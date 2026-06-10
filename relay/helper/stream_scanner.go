@@ -14,6 +14,7 @@ import (
 	"github.com/QuantumNous/new-api/constant"
 	"github.com/QuantumNous/new-api/logger"
 	relaycommon "github.com/QuantumNous/new-api/relay/common"
+	"github.com/QuantumNous/new-api/setting/log_setting"
 	"github.com/QuantumNous/new-api/setting/operation_setting"
 
 	"github.com/bytedance/gopkg/util/gopool"
@@ -184,6 +185,11 @@ func StreamScannerHandler(c *gin.Context, resp *http.Response, info *relaycommon
 
 	dataChan := make(chan string, 10)
 
+	logCfg := log_setting.GetSetting()
+	logStreamBody := logCfg.LogResponseBody
+	maxLogBytes := logCfg.MaxBodyLogBytes
+	var bodyBuf strings.Builder
+
 	wg.Add(1)
 	gopool.Go(func() {
 		defer func() {
@@ -256,6 +262,11 @@ func StreamScannerHandler(c *gin.Context, resp *http.Response, info *relaycommon
 				info.SetFirstResponseTime()
 				info.ReceivedResponseCount++
 
+				if logStreamBody && bodyBuf.Len() < maxLogBytes {
+					bodyBuf.WriteString(data)
+					bodyBuf.WriteByte('\n')
+				}
+
 				select {
 				case dataChan <- data:
 				case <-ctx.Done():
@@ -295,5 +306,13 @@ func StreamScannerHandler(c *gin.Context, resp *http.Response, info *relaycommon
 		logger.LogInfo(c, fmt.Sprintf("stream ended: %s", info.StreamStatus.Summary()))
 	} else {
 		logger.LogError(c, fmt.Sprintf("stream ended: %s, received=%d", info.StreamStatus.Summary(), info.ReceivedResponseCount))
+	}
+
+	if logStreamBody && bodyBuf.Len() > 0 {
+		s := bodyBuf.String()
+		if len(s) > maxLogBytes {
+			s = s[:maxLogBytes]
+		}
+		info.LogResponseBody = s
 	}
 }

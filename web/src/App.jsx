@@ -13,6 +13,9 @@ import TopUp         from './pages/TopUp';
 import MySubscription from './pages/MySubscription';
 // import Chat         from './pages/Chat';
 import Setting       from './pages/Setting';
+import Operations    from './pages/Operations';
+import AuditLog      from './pages/AuditLog';
+import SystemStatus  from './pages/SystemStatus';
 import Setup         from './pages/Setup';
 import Personal      from './pages/Personal';
 import Notices       from './pages/Notices';
@@ -40,6 +43,9 @@ const App = () => (
       <Route path='/console/token'            element={<Token />} />
       <Route path='/console/log'              element={<Log />} />
       <Route path='/console/user'             element={<User />} />
+      <Route path='/console/operations'       element={<Operations />} />
+      <Route path='/console/audit'            element={<AuditLog />} />
+      <Route path='/console/system-status'    element={<SystemStatus />} />
       <Route path='/console/redemption'       element={<Redemption />} />
       <Route path='/console/subscription'     element={<Subscription />} />
       <Route path='/console/topup'            element={<TopUp />} />

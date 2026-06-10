@@ -6,11 +6,12 @@ import (
 )
 
 type RetryParam struct {
-	Ctx          *gin.Context // kept for API compatibility with callers
-	TokenGroup   string
-	ModelName    string
-	Retry        *int
-	resetNextTry bool
+	Ctx             *gin.Context // kept for API compatibility with callers
+	TokenGroup      string
+	ModelName       string
+	Retry           *int
+	resetNextTry    bool
+	ExcludeChannels []int
 }
 
 func (p *RetryParam) GetRetry() int {
@@ -40,7 +41,7 @@ func (p *RetryParam) ResetRetryNextTry() {
 }
 
 func CacheGetRandomSatisfiedChannel(param *RetryParam) (*model.Channel, string, error) {
-	channel, err := model.GetRandomSatisfiedChannel(param.TokenGroup, param.ModelName, param.GetRetry())
+	channel, err := model.GetRandomSatisfiedChannel(param.TokenGroup, param.ModelName, param.GetRetry(), param.ExcludeChannels)
 	if err != nil {
 		return nil, param.TokenGroup, err
 	}

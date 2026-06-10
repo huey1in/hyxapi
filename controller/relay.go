@@ -20,6 +20,8 @@ import (
 	"github.com/QuantumNous/new-api/relay/helper"
 	"github.com/QuantumNous/new-api/service"
 	"github.com/QuantumNous/new-api/setting"
+	"github.com/QuantumNous/new-api/setting/cache_setting"
+	"github.com/QuantumNous/new-api/setting/log_setting"
 	"github.com/QuantumNous/new-api/setting/operation_setting"
 	"github.com/QuantumNous/new-api/types"
 
@@ -121,6 +123,52 @@ func Relay(c *gin.Context, relayFormat types.RelayFormat) {
 		return
 	}
 
+	if logCfg := log_setting.GetSetting(); logCfg.LogRequestBody {
+		if storage, err := common.GetBodyStorage(c); err == nil && storage != nil {
+			if raw, err := storage.Bytes(); err == nil && len(raw) > 0 {
+				if len(raw) > logCfg.MaxBodyLogBytes {
+					raw = raw[:logCfg.MaxBodyLogBytes]
+				}
+				relayInfo.LogRequestBody = string(raw)
+			}
+		}
+	}
+
+	// ── Semantic cache check (before billing) ──
+	isStream := request.IsStream(c)
+	cacheable := service.IsCacheableRequest(relayInfo.RelayMode, request, isStream)
+	var cacheKey string
+	if cacheable {
+		cacheKey = service.BuildCacheKey(relayInfo.RelayMode, relayInfo.OriginModelName, request)
+		if cacheKey != "" {
+			if cached, ok := service.SemanticCacheGet(cacheKey); ok {
+				logger.LogInfo(c, fmt.Sprintf("semantic cache hit for model %s", relayInfo.OriginModelName))
+				// Compute reduced quota for cache hit
+				cfg := cache_setting.GetSetting()
+				if cached.Usage != nil && !priceDataFreeModel(c, relayInfo, request) {
+					reducedUsage := scaledUsage(cached.Usage, cfg.HitCostRatio)
+					meta := request.GetTokenCountMeta()
+					tokens, _ := service.EstimateRequestToken(c, meta, relayInfo)
+					relayInfo.SetEstimatePromptTokens(tokens)
+					priceData, priceErr := helper.ModelPriceHelper(c, relayInfo, tokens, meta)
+					if priceErr == nil && !priceData.FreeModel {
+						billingErr := service.PreConsumeBilling(c, int(float64(priceData.QuotaToPreConsume)*cfg.HitCostRatio), relayInfo)
+						if billingErr != nil {
+							newAPIError = billingErr
+							return
+						}
+						service.WriteCachedResponse(c, cached)
+						service.PostTextConsumeQuota(c, relayInfo, reducedUsage, []string{"semantic cache hit"})
+						return
+					}
+				}
+				// Free model or no usage — just return cached response
+				service.WriteCachedResponse(c, cached)
+				return
+			}
+		}
+	}
+
 	needSensitiveCheck := setting.ShouldCheckPromptSensitive()
 	needCountToken := constant.CountToken
 	// Avoid building huge CombineText (strings.Join) when token counting and sensitive check are both disabled.
@@ -185,6 +233,13 @@ func Relay(c *gin.Context, relayFormat types.RelayFormat) {
 	relayInfo.RetryIndex = 0
 	relayInfo.LastError = nil
 
+	// Install response recorder for cacheable requests on miss
+	var cachingWriter *service.CachingResponseWriter
+	if cacheable && cacheKey != "" {
+		cachingWriter = service.NewCachingResponseWriter(c.Writer)
+		c.Writer = cachingWriter
+	}
+
 	for ; retryParam.GetRetry() <= common.RetryTimes; retryParam.IncreaseRetry() {
 		relayInfo.RetryIndex = retryParam.GetRetry()
 		channel, channelErr := getChannel(c, relayInfo, retryParam)
@@ -195,6 +250,7 @@ func Relay(c *gin.Context, relayFormat types.RelayFormat) {
 		}
 
 		addUsedChannel(c, channel.Id)
+		retryParam.ExcludeChannels = append(retryParam.ExcludeChannels, channel.Id)
 		bodyStorage, bodyErr := common.GetBodyStorage(c)
 		if bodyErr != nil {
 			// Ensure consistent 413 for oversized bodies even when error occurs later (e.g., retry path)
@@ -219,10 +275,26 @@ func Relay(c *gin.Context, relayFormat types.RelayFormat) {
 		}
 
 		if newAPIError == nil {
+			startTime := common.GetContextKeyTime(c, constant.ContextKeyRequestStartTime)
+			if !startTime.IsZero() {
+				service.RecordChannelSuccess(channel.Id, time.Since(startTime).Milliseconds())
+			}
+			// Store response in semantic cache on miss
+			if cachingWriter != nil {
+				body, ct, code := cachingWriter.GetRecordedResponse()
+				if len(body) > 0 && code >= 200 && code < 300 {
+					service.SemanticCacheSet(cacheKey, &service.SemanticCacheEntry{
+						ResponseBody: append([]byte(nil), body...),
+						ContentType:  ct,
+						StatusCode:   code,
+					})
+				}
+			}
 			relayInfo.LastError = nil
 			return
 		}
 
+		service.RecordChannelError(channel.Id)
 		newAPIError = service.NormalizeViolationFeeError(newAPIError)
 		relayInfo.LastError = newAPIError
 
@@ -405,6 +477,27 @@ func RelayNotImplemented(c *gin.Context) {
 	})
 }
 
+func priceDataFreeModel(c *gin.Context, relayInfo *relaycommon.RelayInfo, request dto.Request) bool {
+	meta := fastTokenCountMetaForPricing(request)
+	tokens, _ := service.EstimateRequestToken(c, meta, relayInfo)
+	pd, err := helper.ModelPriceHelper(c, relayInfo, tokens, meta)
+	if err != nil {
+		return false
+	}
+	return pd.FreeModel
+}
+
+func scaledUsage(usage *dto.Usage, ratio float64) *dto.Usage {
+	if usage == nil {
+		return &dto.Usage{}
+	}
+	return &dto.Usage{
+		PromptTokens:     int(float64(usage.PromptTokens) * ratio),
+		CompletionTokens: int(float64(usage.CompletionTokens) * ratio),
+		TotalTokens:      int(float64(usage.TotalTokens) * ratio),
+	}
+}
+
 func RelayNotFound(c *gin.Context) {
 	err := types.OpenAIError{
 		Message: fmt.Sprintf("Invalid URL (%s %s)", c.Request.Method, c.Request.URL.Path),
@@ -485,6 +578,7 @@ func RelayTask(c *gin.Context) {
 		}
 
 		addUsedChannel(c, channel.Id)
+		retryParam.ExcludeChannels = append(retryParam.ExcludeChannels, channel.Id)
 		bodyStorage, bodyErr := common.GetBodyStorage(c)
 		if bodyErr != nil {
 			if common.IsRequestBodyTooLargeError(bodyErr) || errors.Is(bodyErr, common.ErrRequestBodyTooLarge) {
@@ -498,9 +592,14 @@ func RelayTask(c *gin.Context) {
 
 		result, taskErr = relay.RelayTaskSubmit(c, relayInfo)
 		if taskErr == nil {
+			startTime := common.GetContextKeyTime(c, constant.ContextKeyRequestStartTime)
+			if !startTime.IsZero() {
+				service.RecordChannelSuccess(channel.Id, time.Since(startTime).Milliseconds())
+			}
 			break
 		}
 
+		service.RecordChannelError(channel.Id)
 		if !taskErr.LocalError {
 			processChannelError(c,
 				*types.NewChannelError(channel.Id, channel.Type, channel.Name, channel.ChannelInfo.IsMultiKey,

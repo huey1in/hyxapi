@@ -144,25 +144,31 @@ const LogPage = () => {
     const cols = [
       { key: 'time', title: '时间', render: (r) => <span style={{ whiteSpace: 'nowrap', color: 'var(--ui-text-2)' }}>{timestamp2string(r.created_at)}</span> },
       { key: 'type', title: '类型', render: (r) => <TypeBadge type={r.type} /> },
-      { key: 'model', title: '模型', render: (r) => <span style={{ whiteSpace: 'nowrap', maxWidth: 150, display: 'inline-block', overflow: 'hidden', textOverflow: 'ellipsis', verticalAlign: 'bottom' }} title={r.model_name}>{r.model_name || '—'}</span> },
+      { key: 'model', title: '模型', render: (r) => <span style={{ whiteSpace: 'nowrap', maxWidth: 120, display: 'inline-block', overflow: 'hidden', textOverflow: 'ellipsis', verticalAlign: 'bottom' }} title={r.model_name}>{r.model_name || '—'}</span> },
     ];
     if (isAdmin) {
-      cols.push({ key: 'username', title: '用户', render: (r) => <span style={{ whiteSpace: 'nowrap', maxWidth: 100, display: 'inline-block', overflow: 'hidden', textOverflow: 'ellipsis', verticalAlign: 'bottom' }} title={r.username}>{r.username || '—'}</span> });
+      cols.push({ key: 'username', title: '用户', render: (r) => <span style={{ whiteSpace: 'nowrap', maxWidth: 80, display: 'inline-block', overflow: 'hidden', textOverflow: 'ellipsis', verticalAlign: 'bottom' }} title={r.username}>{r.username || '—'}</span> });
     }
     cols.push(
-      { key: 'token', title: '令牌', render: (r) => <span style={{ whiteSpace: 'nowrap', maxWidth: 100, display: 'inline-block', overflow: 'hidden', textOverflow: 'ellipsis', verticalAlign: 'bottom', color: 'var(--ui-text-2)' }} title={r.token_name}>{r.token_name || '—'}</span> },
-      { key: 'group', title: '分组', render: (r) => <span style={{ whiteSpace: 'nowrap', color: 'var(--ui-text-2)' }}>{r.group || '—'}</span> },
+      { key: 'token', title: '令牌', render: (r) => <span style={{ whiteSpace: 'nowrap', maxWidth: 80, display: 'inline-block', overflow: 'hidden', textOverflow: 'ellipsis', verticalAlign: 'bottom', color: 'var(--ui-text-2)' }} title={r.token_name}>{r.token_name || '—'}</span> },
+      { key: 'group', title: '分组', render: (r) => <span style={{ whiteSpace: 'nowrap', maxWidth: 60, display: 'inline-block', overflow: 'hidden', textOverflow: 'ellipsis', verticalAlign: 'bottom', color: 'var(--ui-text-2)' }} title={r.group}>{r.group || '—'}</span> },
       { key: 'input', title: '输入', align: 'right', render: (r) => <Num value={r.prompt_tokens || 0} /> },
       { key: 'output', title: '输出', align: 'right', render: (r) => <Num value={r.completion_tokens || 0} /> },
       { key: 'cache', title: '缓存', align: 'right', render: (r) => <Num value={r._cache} /> },
-      { key: 'time_used', title: '耗时', align: 'right', render: (r) => r.use_time > 0 ? <span style={{ whiteSpace: 'nowrap', color: 'var(--ui-text-2)' }}>{r.use_time}s</span> : <span style={{ color: 'var(--ui-text-3)' }}>—</span> },
+      { key: 'frt', title: '首字', align: 'right', render: (r) => {
+        const frt = r._other?.frt;
+        if (!frt || frt <= 0) return <span style={{ color: 'var(--ui-text-3)' }}>—</span>;
+        const ms = Math.round(frt);
+        const color = ms > 3000 ? '#e53e3e' : ms > 1000 ? '#d69e2e' : 'var(--ui-text-2)';
+        return <span style={{ whiteSpace: 'nowrap', color, fontVariantNumeric: 'tabular-nums' }}>{ms}ms</span>;
+      } },
       { key: 'quota', title: '积分', align: 'right', render: (r) => <Quota row={r} /> },
     );
     return cols;
   }, [isMobile, isAdmin]);
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: isMobile ? 20 : 28, width: '100%', maxWidth: 1160, marginInline: 'auto', padding: isMobile ? '16px' : '24px 16px', minWidth: 0, overflow: isMobile ? 'visible' : 'hidden' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: isMobile ? 20 : 28, width: '100%', maxWidth: 1160, marginInline: 'auto', padding: isMobile ? '16px' : '24px 16px', minWidth: 0, overflow: 'hidden' }}>
       {/* 标题 */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <span style={{ fontSize: 18, fontWeight: 600, color: 'var(--ui-text)' }}>消费明细</span>
@@ -269,6 +275,7 @@ const LogDetail = ({ row: r, isAdmin, isMobile, onClose }) => {
         {other?.group_ratio != null && <DetailItem label='分组倍率' value={other.group_ratio} />}
         {other?.model_price != null && <DetailItem label='模型价格' value={other.model_price === 0 ? '默认' : other.model_price} />}
         {other?.user_group_ratio != null && <DetailItem label='用户分组倍率' value={other.user_group_ratio === 0 ? '默认' : other.user_group_ratio} />}
+        {r.use_time > 0 && <DetailItem label='耗时' value={`${r.use_time}s`} />}
         {other?.frt != null && other.frt > 0 && <DetailItem label='首字耗时' value={`${other.frt}ms`} />}
         {other?.wallet && <DetailItem label='计费来源' value={other.wallet} />}
         {other?.request_convert && <DetailItem label='请求转换' value={other.request_convert} />}
@@ -284,7 +291,44 @@ const LogDetail = ({ row: r, isAdmin, isMobile, onClose }) => {
             <DetailItem label='Content' value={r.content} multiline />
           </div>
         )}
+        {other?.request_body && (
+          <div style={{ gridColumn: '1 / -1' }}>
+            <BodyBlock label='请求内容' value={other.request_body} />
+          </div>
+        )}
+        {other?.response_body && (
+          <div style={{ gridColumn: '1 / -1' }}>
+            <BodyBlock label='响应内容' value={other.response_body} />
+          </div>
+        )}
       </div>
+    </div>
+  );
+};
+
+// ── 请求/响应内容折叠区块 ──────────────────────────────
+
+const BodyBlock = ({ label, value }) => {
+  const [open, setOpen] = useState(false);
+  let display = value;
+  try { display = JSON.stringify(JSON.parse(value), null, 2); } catch {}
+  return (
+    <div style={{ marginTop: 4 }}>
+      <button onClick={() => setOpen((o) => !o)} style={{
+        cursor: 'pointer', background: 'none', border: 'none', padding: 0,
+        fontSize: 12, color: 'var(--ui-text-3)', display: 'flex', alignItems: 'center', gap: 4,
+      }}>
+        <span style={{ transform: open ? 'rotate(90deg)' : 'rotate(0)', transition: 'transform 0.15s', display: 'inline-block' }}>▶</span>
+        {label}
+      </button>
+      {open && (
+        <pre style={{
+          marginTop: 6, padding: 12, background: '#F2F0E9', borderRadius: 10,
+          fontSize: 12, fontFamily: "'JetBrains Mono', monospace", lineHeight: 1.5,
+          whiteSpace: 'pre-wrap', wordBreak: 'break-all', maxHeight: 320, overflow: 'auto',
+          color: 'var(--ui-text)',
+        }}>{display}</pre>
+      )}
     </div>
   );
 };

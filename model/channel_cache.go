@@ -18,6 +18,11 @@ var group2model2channels map[string]map[string][]int // enabled channel
 var channelsIDM map[int]*Channel                     // all channels include disabled
 var channelSyncLock sync.RWMutex
 
+// ChannelPerfScoreFunc is injected by the service package to provide
+// real-time channel performance scores (0.0~1.0) for dynamic weight adjustment.
+// Returns 1.0 when no data is available. Nil means scoring is disabled.
+var ChannelPerfScoreFunc func(channelId int) float64
+
 func InitChannelCache() {
 	if !common.MemoryCacheEnabled {
 		return
@@ -93,7 +98,7 @@ func SyncChannelCache(frequency int) {
 	}
 }
 
-func GetRandomSatisfiedChannel(group string, model string, retry int) (*Channel, error) {
+func GetRandomSatisfiedChannel(group string, model string, retry int, excludeChannels []int) (*Channel, error) {
 	// if memory cache is disabled, get channel directly from database
 	if !common.MemoryCacheEnabled {
 		return GetChannel(group, model, retry)
@@ -122,6 +127,11 @@ func GetRandomSatisfiedChannel(group string, model string, retry int) (*Channel,
 		return nil, fmt.Errorf("数据库一致性错误，渠道# %d 不存在，请联系管理员修复", channels[0])
 	}
 
+	excludeSet := make(map[int]bool, len(excludeChannels))
+	for _, id := range excludeChannels {
+		excludeSet[id] = true
+	}
+
 	uniquePriorities := make(map[int]bool)
 	for _, channelId := range channels {
 		if channel, ok := channelsIDM[channelId]; ok {
@@ -141,52 +151,85 @@ func GetRandomSatisfiedChannel(group string, model string, retry int) (*Channel,
 	}
 	targetPriority := int64(sortedUniquePriorities[retry])
 
-	// get the priority for the given retry number
-	var sumWeight = 0
-	var targetChannels []*Channel
+	// Collect candidate channels and compute effective weights
+	type weightedChannel struct {
+		channel         *Channel
+		effectiveWeight int
+	}
+	var candidates []weightedChannel
+	var totalWeight int
+
 	for _, channelId := range channels {
 		if channel, ok := channelsIDM[channelId]; ok {
-			if channel.GetPriority() == targetPriority {
-				sumWeight += channel.GetWeight()
-				targetChannels = append(targetChannels, channel)
+			if channel.GetPriority() != targetPriority {
+				continue
 			}
+			w := channel.GetWeight()
+
+			// Apply performance score if available
+			if ChannelPerfScoreFunc != nil {
+				score := ChannelPerfScoreFunc(channelId)
+				if score <= 0 {
+					// Skip channels with zero score (soft-disable)
+					// but only if there are other candidates
+					continue
+				}
+				w = int(float64(w) * score)
+				if w < 1 {
+					w = 1
+				}
+			}
+
+			// Skip excluded channels (retry dedup), but only tentatively
+			if excludeSet[channelId] {
+				continue
+			}
+
+			candidates = append(candidates, weightedChannel{channel: channel, effectiveWeight: w})
+			totalWeight += w
 		} else {
 			return nil, fmt.Errorf("数据库一致性错误，渠道# %d 不存在，请联系管理员修复", channelId)
 		}
 	}
 
-	if len(targetChannels) == 0 {
+	// If all candidates were excluded or scored zero, fall back to all channels in this priority
+	// (ignoring exclude list and perf scores) to avoid returning no channel
+	if len(candidates) == 0 {
+		for _, channelId := range channels {
+			if channel, ok := channelsIDM[channelId]; ok {
+				if channel.GetPriority() == targetPriority {
+					w := channel.GetWeight()
+					candidates = append(candidates, weightedChannel{channel: channel, effectiveWeight: w})
+					totalWeight += w
+				}
+			}
+		}
+	}
+
+	if len(candidates) == 0 {
 		return nil, fmt.Errorf("no channel found, group: %s, model: %s, priority: %d", group, model, targetPriority)
 	}
 
-	// smoothing factor and adjustment
+	// Smoothing: when all weights are 0 or very low
 	smoothingFactor := 1
 	smoothingAdjustment := 0
 
-	if sumWeight == 0 {
-		// when all channels have weight 0, set sumWeight to the number of channels and set smoothing adjustment to 100
-		// each channel's effective weight = 100
-		sumWeight = len(targetChannels) * 100
+	if totalWeight == 0 {
+		totalWeight = len(candidates) * 100
 		smoothingAdjustment = 100
-	} else if sumWeight/len(targetChannels) < 10 {
-		// when the average weight is less than 10, set smoothing factor to 100
+	} else if totalWeight/len(candidates) < 10 {
 		smoothingFactor = 100
 	}
 
-	// Calculate the total weight of all channels up to endIdx
-	totalWeight := sumWeight * smoothingFactor
+	finalTotalWeight := totalWeight * smoothingFactor
+	randomWeight := rand.Intn(finalTotalWeight)
 
-	// Generate a random value in the range [0, totalWeight)
-	randomWeight := rand.Intn(totalWeight)
-
-	// Find a channel based on its weight
-	for _, channel := range targetChannels {
-		randomWeight -= channel.GetWeight()*smoothingFactor + smoothingAdjustment
+	for _, wc := range candidates {
+		randomWeight -= wc.effectiveWeight*smoothingFactor + smoothingAdjustment
 		if randomWeight < 0 {
-			return channel, nil
+			return wc.channel, nil
 		}
 	}
-	// return null if no channel is not found
 	return nil, errors.New("channel not found")
 }
 

@@ -224,6 +224,55 @@ func ManualCompleteTopUp(tradeNo string, callerIp string) error {
 
 // CompleteEpayTopUp 易支付异步回调成功后完成订单并给用户充值。
 // 与 ManualCompleteTopUp 同样的行级锁/幂等处理，记录为在线充值日志。
+type RevenueSummary struct {
+	TotalMoney  float64 `json:"total_money"`
+	TotalAmount int64   `json:"total_amount"`
+	TotalOrders int64   `json:"total_orders"`
+}
+
+func GetTopUpRevenueSummary(startTimestamp, endTimestamp int64) (RevenueSummary, error) {
+	var summary RevenueSummary
+	tx := DB.Model(&TopUp{}).
+		Select("COALESCE(SUM(money), 0) as total_money, COALESCE(SUM(amount), 0) as total_amount, COUNT(*) as total_orders").
+		Where("status = ?", common.TopUpStatusSuccess)
+	if startTimestamp != 0 {
+		tx = tx.Where("complete_time >= ?", startTimestamp)
+	}
+	if endTimestamp != 0 {
+		tx = tx.Where("complete_time <= ?", endTimestamp)
+	}
+	err := tx.Scan(&summary).Error
+	return summary, err
+}
+
+type DailyRevenue struct {
+	Date       string  `json:"date"`
+	TotalMoney float64 `json:"total_money"`
+	Orders     int64   `json:"orders"`
+	Amount     int64   `json:"amount"`
+}
+
+func GetTopUpRevenueByDay(startTimestamp, endTimestamp int64) ([]DailyRevenue, error) {
+	var dateExpr string
+	switch {
+	case common.UsingPostgreSQL:
+		dateExpr = "TO_CHAR(TO_TIMESTAMP(complete_time), 'YYYY-MM-DD')"
+	case common.UsingMySQL:
+		dateExpr = "DATE(FROM_UNIXTIME(complete_time))"
+	default:
+		dateExpr = "DATE(complete_time, 'unixepoch')"
+	}
+
+	var results []DailyRevenue
+	err := DB.Model(&TopUp{}).
+		Select(fmt.Sprintf("%s as date, COALESCE(SUM(money), 0) as total_money, COUNT(*) as orders, COALESCE(SUM(amount), 0) as amount", dateExpr)).
+		Where("status = ? AND complete_time >= ? AND complete_time <= ?", common.TopUpStatusSuccess, startTimestamp, endTimestamp).
+		Group("date").
+		Order("date ASC").
+		Find(&results).Error
+	return results, err
+}
+
 func CompleteEpayTopUp(tradeNo string, callerIp string) error {
 	if tradeNo == "" {
 		return errors.New("未提供订单号")

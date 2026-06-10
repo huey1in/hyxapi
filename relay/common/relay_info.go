@@ -164,6 +164,9 @@ type RelayInfo struct {
 
 	StreamStatus *StreamStatus
 
+	LogRequestBody  string
+	LogResponseBody string
+
 	ThinkingContentInfo
 	TokenCountMeta
 	*ClaudeConvertInfo

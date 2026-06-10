@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"fmt"
 	"net/http"
 	"strconv"
 	"unicode/utf8"
@@ -104,6 +105,7 @@ func AddRedemption(c *gin.Context) {
 		}
 		keys = append(keys, key)
 	}
+	model.RecordAuditLog(c, model.AuditCreate, "redemption", 0, fmt.Sprintf("创建兑换码，共 %d 个", len(keys)))
 	c.JSON(http.StatusOK, gin.H{
 		"success": true,
 		"message": "",
@@ -119,6 +121,7 @@ func DeleteRedemption(c *gin.Context) {
 		common.ApiError(c, err)
 		return
 	}
+	model.RecordAuditLog(c, model.AuditDelete, "redemption", id, fmt.Sprintf("删除兑换码 #%d", id))
 	c.JSON(http.StatusOK, gin.H{
 		"success": true,
 		"message": "",
@@ -157,6 +160,7 @@ func UpdateRedemption(c *gin.Context) {
 		common.ApiError(c, err)
 		return
 	}
+	model.RecordAuditLog(c, model.AuditUpdate, "redemption", cleanRedemption.Id, fmt.Sprintf("更新兑换码 #%d [%s]", cleanRedemption.Id, cleanRedemption.Name))
 	c.JSON(http.StatusOK, gin.H{
 		"success": true,
 		"message": "",
@@ -171,6 +175,7 @@ func DeleteInvalidRedemption(c *gin.Context) {
 		common.ApiError(c, err)
 		return
 	}
+	model.RecordAuditLog(c, model.AuditDelete, "redemption", 0, fmt.Sprintf("删除无效兑换码，共 %d 个", rows))
 	c.JSON(http.StatusOK, gin.H{
 		"success": true,
 		"message": "",

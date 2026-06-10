@@ -2,6 +2,7 @@ package controller
 
 import (
 	"errors"
+	"fmt"
 	"net/http"
 	"strconv"
 
@@ -550,6 +551,7 @@ func AdminDisable2FA(c *gin.Context) {
 	}
 	model.RecordLogWithAdminInfo(userId, model.LogTypeManage,
 		"管理员强制禁用了用户的两步验证", adminInfo)
+	model.RecordAuditLog(c, model.AuditDisable, "user", userId, fmt.Sprintf("禁用用户 #%d [%s] 的 2FA", userId, targetUser.Username))
 
 	c.JSON(http.StatusOK, gin.H{
 		"success": true,

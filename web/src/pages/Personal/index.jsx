@@ -2,12 +2,13 @@ import React, { useContext, useEffect, useState, useCallback } from 'react';
 import { Copy, Fingerprint, Trash2, KeyRound } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { API, showError, showSuccess, copy, timestamp2string, updateAPI } from '../../helpers';
+import { quotaToDisplayAmount, displayAmountToQuota } from '../../helpers/quota';
 import {
   isPasskeySupported, prepareCredentialCreationOptions, buildRegistrationResult,
 } from '../../helpers/passkey';
 import { UserContext } from '../../context/User';
 import {
-  Button, IconButton, Input, Modal, Tag, Loading, Select,
+  Button, IconButton, Input, Switch, Modal, Tag, Loading, Select,
 } from '../../components/ui';
 import useIsMobile from '../../hooks/useIsMobile';
 
@@ -42,12 +43,20 @@ const Personal = () => {
   const [secureVerifyCode, setSecureVerifyCode] = useState('');
   const [secureVerifyBusy, setSecureVerifyBusy] = useState(false);
   const [pendingAction, setPendingAction] = useState(null);
+  const [notifyEnabled, setNotifyEnabled] = useState(false);
+  const [notifyThreshold, setNotifyThreshold] = useState(1);
+  const [notifySaving, setNotifySaving] = useState(false);
   const isMobile = useIsMobile();
 
   const u = userState?.user || {};
   useEffect(() => {
     setForm({ original_password: '', password: '' });
     setAccessToken(u.access_token || '');
+    try {
+      const s = u.setting ? (typeof u.setting === 'string' ? JSON.parse(u.setting) : u.setting) : {};
+      setNotifyEnabled(!!s.notify_type);
+      setNotifyThreshold(s.quota_warning_threshold ? quotaToDisplayAmount(s.quota_warning_threshold) : 1);
+    } catch {}
   }, [u.id]);
 
   const refresh = async () => {
@@ -69,7 +78,7 @@ const Personal = () => {
       if (data.success) setPasskeys(data.data || []);
     } catch {}
   };
-  useEffect(() => { load2FA(); loadPasskeys(); isPasskeySupported().then(setPasskeySupported).catch(() => {}); }, []);
+  useEffect(() => { load2FA(); loadPasskeys(); refresh(); isPasskeySupported().then(setPasskeySupported).catch(() => {}); }, []);
 
   useEffect(() => {
     if (countdown <= 0) return;
@@ -210,6 +219,21 @@ const Personal = () => {
     } catch (e) { showError(e); }
   };
 
+  const saveNotify = async () => {
+    setNotifySaving(true);
+    try {
+      const { data } = await API.put('/api/user/self', {
+        notify_settings: {
+          notify_type: notifyEnabled ? 'email' : '',
+          quota_warning_threshold: displayAmountToQuota(notifyThreshold || 1),
+          notification_email: '',
+        },
+      });
+      if (data.success) { showSuccess('通知设置已保存'); refresh(); }
+      else showError(data.message);
+    } catch (e) { showError(e); } finally { setNotifySaving(false); }
+  };
+
   const logout = async () => {
     try {
       await API.get('/api/user/logout');
@@ -273,6 +297,50 @@ const Personal = () => {
             ? <Button variant='toggle' onClick={() => setDisableOpen(true)}>禁用</Button>
             : <Button loading={twoFABusy} onClick={start2FASetup}>启用</Button>}
         </SettingRow>
+      </SettingGroup>
+
+      {/* 通知 */}
+      <SettingGroup title='通知'>
+        <SettingRow
+          title='额度预警'
+          description={u.email ? '余额低于阈值时发送邮件提醒至账号邮箱' : '需要先绑定邮箱才能开启'}
+          last={!notifyEnabled}
+        >
+          <Switch checked={notifyEnabled} onChange={(v) => {
+            if (v && !u.email) { showError('请先绑定邮箱'); return; }
+            setNotifyEnabled(v);
+            if (!v) {
+              API.put('/api/user/self', { notify_settings: { notify_type: '', quota_warning_threshold: 0, notification_email: '' } })
+                .then(({ data }) => { if (data.success) { showSuccess('已关闭额度预警'); refresh(); } else showError(data.message); })
+                .catch(showError);
+            }
+          }} />
+        </SettingRow>
+        {notifyEnabled && (
+          <>
+            <SettingRow title='预警阈值' description='余额低于此金额时触发通知' last>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <div style={{ position: 'relative', width: 120 }}>
+                  <span style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', fontSize: 14, color: 'var(--ui-text-3)', pointerEvents: 'none' }}>$</span>
+                  <input
+                    type='number'
+                    min={0.1}
+                    step='any'
+                    value={notifyThreshold}
+                    onChange={(e) => setNotifyThreshold(e.target.value === '' ? '' : Number(e.target.value))}
+                    style={{
+                      width: '100%', height: 36, paddingLeft: 26, paddingRight: 12,
+                      border: '1px solid #e3e3e3', borderRadius: 12, fontSize: 14,
+                      color: 'var(--ui-text)', background: 'transparent', outline: 'none',
+                      boxSizing: 'border-box',
+                    }}
+                  />
+                </div>
+                <Button onClick={saveNotify} loading={notifySaving}>保存</Button>
+              </div>
+            </SettingRow>
+          </>
+        )}
       </SettingGroup>
 
       {/* 偏好 */}

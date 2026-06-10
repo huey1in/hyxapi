@@ -14,6 +14,7 @@ import (
 	relaycommon "github.com/QuantumNous/new-api/relay/common"
 	"github.com/QuantumNous/new-api/relay/helper"
 	"github.com/QuantumNous/new-api/service"
+	"github.com/QuantumNous/new-api/setting/log_setting"
 
 	"github.com/QuantumNous/new-api/types"
 
@@ -199,6 +200,13 @@ func OpenaiHandler(c *gin.Context, info *relaycommon.RelayInfo, resp *http.Respo
 	responseBody, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return nil, types.NewOpenAIError(err, types.ErrorCodeReadResponseBodyFailed, http.StatusInternalServerError)
+	}
+	if logCfg := log_setting.GetSetting(); logCfg.LogResponseBody {
+		body := responseBody
+		if len(body) > logCfg.MaxBodyLogBytes {
+			body = body[:logCfg.MaxBodyLogBytes]
+		}
+		info.LogResponseBody = string(body)
 	}
 	if common.DebugEnabled {
 		println("upstream response body:", string(responseBody))

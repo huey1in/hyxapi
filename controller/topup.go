@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"fmt"
 	"sync"
 
 	"github.com/QuantumNous/new-api/common"
@@ -96,5 +97,6 @@ func AdminCompleteTopUp(c *gin.Context) {
 		common.ApiError(c, err)
 		return
 	}
+	model.RecordAuditLog(c, model.AuditUpdate, "topup", 0, fmt.Sprintf("手动完成充值订单 [%s]", req.TradeNo))
 	common.ApiSuccess(c, nil)
 }

@@ -631,6 +631,7 @@ func UpdateUser(c *gin.Context) {
 		common.ApiError(c, err)
 		return
 	}
+	model.RecordAuditLog(c, model.AuditUpdate, "user", updatedUser.Id, fmt.Sprintf("更新用户 #%d", updatedUser.Id))
 	c.JSON(http.StatusOK, gin.H{
 		"success": true,
 		"message": "",
@@ -708,6 +709,35 @@ func UpdateSelf(c *gin.Context) {
 			return
 		}
 
+		common.ApiSuccessI18n(c, i18n.MsgUpdateSuccess, nil)
+		return
+	}
+
+	// 检查是否是通知设置更新请求
+	if notifySettings, nsExists := requestData["notify_settings"]; nsExists {
+		userId := c.GetInt("id")
+		user, err := model.GetUserById(userId, false)
+		if err != nil {
+			common.ApiError(c, err)
+			return
+		}
+		currentSetting := user.GetSetting()
+		if nsMap, ok := notifySettings.(map[string]interface{}); ok {
+			if nt, ok := nsMap["notify_type"].(string); ok {
+				currentSetting.NotifyType = nt
+			}
+			if qt, ok := nsMap["quota_warning_threshold"].(float64); ok {
+				currentSetting.QuotaWarningThreshold = qt
+			}
+			if ne, ok := nsMap["notification_email"].(string); ok {
+				currentSetting.NotificationEmail = ne
+			}
+		}
+		user.SetSetting(currentSetting)
+		if err := user.Update(false); err != nil {
+			common.ApiErrorI18n(c, i18n.MsgUpdateFailed)
+			return
+		}
 		common.ApiSuccessI18n(c, i18n.MsgUpdateSuccess, nil)
 		return
 	}
@@ -826,12 +856,14 @@ func DeleteUser(c *gin.Context) {
 	}
 	err = model.HardDeleteUserById(id)
 	if err != nil {
-		c.JSON(http.StatusOK, gin.H{
-			"success": true,
-			"message": "",
-		})
+		common.ApiError(c, err)
 		return
 	}
+	model.RecordAuditLog(c, model.AuditDelete, "user", id, fmt.Sprintf("删除用户 #%d [%s]", id, originUser.Username))
+	c.JSON(http.StatusOK, gin.H{
+		"success": true,
+		"message": "",
+	})
 }
 
 func DeleteSelf(c *gin.Context) {
@@ -887,6 +919,7 @@ func CreateUser(c *gin.Context) {
 		return
 	}
 
+	model.RecordAuditLog(c, model.AuditCreate, "user", cleanUser.Id, fmt.Sprintf("创建用户 [%s]", cleanUser.Username))
 	c.JSON(http.StatusOK, gin.H{
 		"success": true,
 		"message": "",
@@ -1039,6 +1072,7 @@ func ManageUser(c *gin.Context) {
 		Role:   user.Role,
 		Status: user.Status,
 	}
+	model.RecordAuditLog(c, model.AuditUpdate, "user", req.Id, fmt.Sprintf("管理用户 #%d，操作: %s", req.Id, req.Action))
 	c.JSON(http.StatusOK, gin.H{
 		"success": true,
 		"message": "",

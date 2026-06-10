@@ -104,6 +104,7 @@ func AdminCreateSubscriptionPlan(c *gin.Context) {
 		return
 	}
 	model.InvalidateSubscriptionPlanCache(req.Plan.Id)
+	model.RecordAuditLog(c, model.AuditCreate, "subscription", req.Plan.Id, fmt.Sprintf("创建订阅套餐 [%s]", req.Plan.Title))
 	common.ApiSuccess(c, req.Plan)
 }
 
@@ -189,6 +190,7 @@ func AdminUpdateSubscriptionPlan(c *gin.Context) {
 		return
 	}
 	model.InvalidateSubscriptionPlanCache(id)
+	model.RecordAuditLog(c, model.AuditUpdate, "subscription", id, fmt.Sprintf("更新订阅套餐 #%d [%s]", id, req.Plan.Title))
 	common.ApiSuccess(c, nil)
 }
 
@@ -212,6 +214,7 @@ func AdminUpdateSubscriptionPlanStatus(c *gin.Context) {
 		return
 	}
 	model.InvalidateSubscriptionPlanCache(id)
+	model.RecordAuditLog(c, model.AuditUpdate, "subscription", id, fmt.Sprintf("更新套餐状态 #%d, enabled=%v", id, *req.Enabled))
 	common.ApiSuccess(c, nil)
 }
 
@@ -240,6 +243,7 @@ func AdminDeleteSubscriptionPlan(c *gin.Context) {
 		return
 	}
 	model.InvalidateSubscriptionPlanCache(id)
+	model.RecordAuditLog(c, model.AuditDelete, "subscription", id, fmt.Sprintf("删除订阅套餐 #%d", id))
 	common.ApiSuccess(c, nil)
 }
 
@@ -259,6 +263,7 @@ func AdminBindSubscription(c *gin.Context) {
 		common.ApiError(c, err)
 		return
 	}
+	model.RecordAuditLog(c, model.AuditCreate, "subscription", req.PlanId, fmt.Sprintf("为用户 #%d 绑定套餐 #%d", req.UserId, req.PlanId))
 	if msg != "" {
 		common.ApiSuccess(c, gin.H{"message": msg})
 		return
@@ -303,6 +308,7 @@ func AdminCreateUserSubscription(c *gin.Context) {
 		common.ApiError(c, err)
 		return
 	}
+	model.RecordAuditLog(c, model.AuditCreate, "user_subscription", userId, fmt.Sprintf("为用户 #%d 创建订阅，套餐 #%d", userId, req.PlanId))
 	if msg != "" {
 		common.ApiSuccess(c, gin.H{"message": msg})
 		return
@@ -322,6 +328,7 @@ func AdminInvalidateUserSubscription(c *gin.Context) {
 		common.ApiError(c, err)
 		return
 	}
+	model.RecordAuditLog(c, model.AuditDisable, "user_subscription", subId, fmt.Sprintf("作废用户订阅 #%d", subId))
 	if msg != "" {
 		common.ApiSuccess(c, gin.H{"message": msg})
 		return
@@ -341,6 +348,7 @@ func AdminDeleteUserSubscription(c *gin.Context) {
 		common.ApiError(c, err)
 		return
 	}
+	model.RecordAuditLog(c, model.AuditDelete, "user_subscription", subId, fmt.Sprintf("删除用户订阅 #%d", subId))
 	if msg != "" {
 		common.ApiSuccess(c, gin.H{"message": msg})
 		return

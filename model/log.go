@@ -544,3 +544,239 @@ func GetModelGroupLogStatRange(modelName, group string, since, until int64) (*Mo
 
 	return &stat, nil
 }
+
+type UserConsumption struct {
+	UserId   int    `json:"user_id"`
+	Username string `json:"username"`
+	Quota    int64  `json:"quota"`
+	Requests int64  `json:"requests"`
+	Tokens   int64  `json:"tokens"`
+}
+
+func GetTopConsumingUsers(startTimestamp, endTimestamp int64, limit int) ([]UserConsumption, error) {
+	var results []UserConsumption
+	tx := LOG_DB.Table("logs").
+		Select("user_id, username, COALESCE(SUM(quota), 0) as quota, COUNT(*) as requests, COALESCE(SUM(prompt_tokens) + SUM(completion_tokens), 0) as tokens").
+		Where("type = ?", LogTypeConsume)
+	if startTimestamp != 0 {
+		tx = tx.Where("created_at >= ?", startTimestamp)
+	}
+	if endTimestamp != 0 {
+		tx = tx.Where("created_at <= ?", endTimestamp)
+	}
+	err := tx.Group("user_id, username").Order("quota DESC").Limit(limit).Find(&results).Error
+	return results, err
+}
+
+type ModelConsumption struct {
+	ModelName string `json:"model_name"`
+	Quota     int64  `json:"quota"`
+	Requests  int64  `json:"requests"`
+	Tokens    int64  `json:"tokens"`
+}
+
+func GetModelConsumption(startTimestamp, endTimestamp int64, limit int) ([]ModelConsumption, error) {
+	var results []ModelConsumption
+	tx := LOG_DB.Table("logs").
+		Select("model_name, COALESCE(SUM(quota), 0) as quota, COUNT(*) as requests, COALESCE(SUM(prompt_tokens) + SUM(completion_tokens), 0) as tokens").
+		Where("type = ?", LogTypeConsume)
+	if startTimestamp != 0 {
+		tx = tx.Where("created_at >= ?", startTimestamp)
+	}
+	if endTimestamp != 0 {
+		tx = tx.Where("created_at <= ?", endTimestamp)
+	}
+	err := tx.Group("model_name").Order("quota DESC").Limit(limit).Find(&results).Error
+	return results, err
+}
+
+type DailyConsumption struct {
+	Date     string `json:"date"`
+	Quota    int64  `json:"quota"`
+	Requests int64  `json:"requests"`
+	Tokens   int64  `json:"tokens"`
+}
+
+func GetConsumptionByDay(startTimestamp, endTimestamp int64) ([]DailyConsumption, error) {
+	var dateExpr string
+	switch common.LogSqlType {
+	case common.DatabaseTypePostgreSQL:
+		dateExpr = "TO_CHAR(TO_TIMESTAMP(created_at), 'YYYY-MM-DD')"
+	case common.DatabaseTypeMySQL:
+		dateExpr = "DATE(FROM_UNIXTIME(created_at))"
+	default:
+		dateExpr = "DATE(created_at, 'unixepoch')"
+	}
+
+	var results []DailyConsumption
+	err := LOG_DB.Table("logs").
+		Select(fmt.Sprintf("%s as date, COALESCE(SUM(quota), 0) as quota, COUNT(*) as requests, COALESCE(SUM(prompt_tokens) + SUM(completion_tokens), 0) as tokens", dateExpr)).
+		Where("type = ? AND created_at >= ? AND created_at <= ?", LogTypeConsume, startTimestamp, endTimestamp).
+		Group("date").
+		Order("date ASC").
+		Find(&results).Error
+	return results, err
+}
+
+type ChannelConsumption struct {
+	ChannelId   int    `json:"channel_id"`
+	ChannelName string `json:"channel_name"`
+	Quota       int64  `json:"quota"`
+	Requests    int64  `json:"requests"`
+	Tokens      int64  `json:"tokens"`
+}
+
+func GetChannelConsumption(startTimestamp, endTimestamp int64, limit int) ([]ChannelConsumption, error) {
+	var results []ChannelConsumption
+	tx := LOG_DB.Table("logs").
+		Select("channel_id, COALESCE(SUM(quota), 0) as quota, COUNT(*) as requests, COALESCE(SUM(prompt_tokens) + SUM(completion_tokens), 0) as tokens").
+		Where("type = ?", LogTypeConsume)
+	if startTimestamp != 0 {
+		tx = tx.Where("created_at >= ?", startTimestamp)
+	}
+	if endTimestamp != 0 {
+		tx = tx.Where("created_at <= ?", endTimestamp)
+	}
+	err := tx.Group("channel_id").Order("quota DESC").Limit(limit).Find(&results).Error
+	if err != nil {
+		return nil, err
+	}
+	for i := range results {
+		var name string
+		DB.Table("channels").Select("name").Where("id = ?", results[i].ChannelId).Scan(&name)
+		results[i].ChannelName = name
+	}
+	return results, nil
+}
+
+type GroupConsumption struct {
+	Group    string `json:"group"`
+	Quota    int64  `json:"quota"`
+	Requests int64  `json:"requests"`
+	Tokens   int64  `json:"tokens"`
+}
+
+func GetGroupConsumption(startTimestamp, endTimestamp int64, limit int) ([]GroupConsumption, error) {
+	var results []GroupConsumption
+	tx := LOG_DB.Table("logs").
+		Select(logGroupCol + " as \"group\", COALESCE(SUM(quota), 0) as quota, COUNT(*) as requests, COALESCE(SUM(prompt_tokens) + SUM(completion_tokens), 0) as tokens").
+		Where("type = ?", LogTypeConsume)
+	if startTimestamp != 0 {
+		tx = tx.Where("created_at >= ?", startTimestamp)
+	}
+	if endTimestamp != 0 {
+		tx = tx.Where("created_at <= ?", endTimestamp)
+	}
+	err := tx.Group(logGroupCol).Order("quota DESC").Limit(limit).Find(&results).Error
+	return results, err
+}
+
+type ErrorStats struct {
+	TotalErrors int64 `json:"total_errors"`
+	TotalQuota  int64 `json:"total_quota"`
+}
+
+func GetErrorStats(startTimestamp, endTimestamp int64) (ErrorStats, error) {
+	var stats ErrorStats
+	tx := LOG_DB.Table("logs").
+		Select("COUNT(*) as total_errors, COALESCE(SUM(quota), 0) as total_quota").
+		Where("type = ?", LogTypeError)
+	if startTimestamp != 0 {
+		tx = tx.Where("created_at >= ?", startTimestamp)
+	}
+	if endTimestamp != 0 {
+		tx = tx.Where("created_at <= ?", endTimestamp)
+	}
+	err := tx.Scan(&stats).Error
+	return stats, err
+}
+
+type ErrorModelStat struct {
+	ModelName string `json:"model_name"`
+	Errors    int64  `json:"errors"`
+}
+
+func GetTopErrorModels(startTimestamp, endTimestamp int64, limit int) ([]ErrorModelStat, error) {
+	var results []ErrorModelStat
+	tx := LOG_DB.Table("logs").
+		Select("model_name, COUNT(*) as errors").
+		Where("type = ? AND model_name != ''", LogTypeError)
+	if startTimestamp != 0 {
+		tx = tx.Where("created_at >= ?", startTimestamp)
+	}
+	if endTimestamp != 0 {
+		tx = tx.Where("created_at <= ?", endTimestamp)
+	}
+	err := tx.Group("model_name").Order("errors DESC").Limit(limit).Find(&results).Error
+	return results, err
+}
+
+type ChannelModelCost struct {
+	ChannelId   int    `json:"channel_id" gorm:"column:channel_id"`
+	ChannelName string `json:"channel_name" gorm:"-"`
+	ModelName   string `json:"model_name" gorm:"column:model_name"`
+	Quota       int64  `json:"quota" gorm:"column:quota"`
+	Requests    int64  `json:"requests" gorm:"column:requests"`
+	Tokens      int64  `json:"tokens" gorm:"column:tokens"`
+	AvgQuota    int64  `json:"avg_quota" gorm:"-"`
+	AvgTokens   int64  `json:"avg_tokens" gorm:"-"`
+}
+
+func GetChannelModelCost(startTimestamp, endTimestamp int64, modelName string, limit int) ([]ChannelModelCost, error) {
+	var results []ChannelModelCost
+	tx := LOG_DB.Table("logs").
+		Select("channel_id, model_name, SUM(quota) as quota, COUNT(*) as requests, SUM(prompt_tokens + completion_tokens) as tokens").
+		Where("type = ? AND channel_id != 0 AND model_name != ''", LogTypeConsume)
+	if modelName != "" {
+		tx = tx.Where("model_name = ?", modelName)
+	}
+	if startTimestamp != 0 {
+		tx = tx.Where("created_at >= ?", startTimestamp)
+	}
+	if endTimestamp != 0 {
+		tx = tx.Where("created_at <= ?", endTimestamp)
+	}
+	err := tx.Group("channel_id, model_name").Order("quota DESC").Limit(limit).Find(&results).Error
+	if err != nil {
+		return nil, err
+	}
+
+	var channelIds []int
+	for _, r := range results {
+		channelIds = append(channelIds, r.ChannelId)
+	}
+	if len(channelIds) > 0 {
+		var channels []struct {
+			Id   int    `gorm:"column:id"`
+			Name string `gorm:"column:name"`
+		}
+		DB.Table("channels").Select("id, name").Where("id IN ?", channelIds).Find(&channels)
+		nameMap := make(map[int]string, len(channels))
+		for _, ch := range channels {
+			nameMap[ch.Id] = ch.Name
+		}
+		for i := range results {
+			results[i].ChannelName = nameMap[results[i].ChannelId]
+			if results[i].Requests > 0 {
+				results[i].AvgQuota = results[i].Quota / results[i].Requests
+				results[i].AvgTokens = results[i].Tokens / results[i].Requests
+			}
+		}
+	}
+	return results, nil
+}
+
+func GetDistinctConsumeModels(startTimestamp, endTimestamp int64) ([]string, error) {
+	var models []string
+	tx := LOG_DB.Table("logs").
+		Distinct("model_name").
+		Where("type = ? AND model_name != ''", LogTypeConsume)
+	if startTimestamp != 0 {
+		tx = tx.Where("created_at >= ?", startTimestamp)
+	}
+	if endTimestamp != 0 {
+		tx = tx.Where("created_at <= ?", endTimestamp)
+	}
+	err := tx.Order("model_name").Pluck("model_name", &models).Error
+	return models, err
+}

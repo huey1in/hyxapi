@@ -368,6 +368,7 @@ func AdminResetPasskey(c *gin.Context) {
 		return
 	}
 
+	model.RecordAuditLog(c, model.AuditDelete, "user", user.Id, fmt.Sprintf("重置用户 #%d [%s] 的 Passkey", user.Id, user.Username))
 	c.JSON(http.StatusOK, gin.H{
 		"success": true,
 		"message": "Passkey 已重置",
