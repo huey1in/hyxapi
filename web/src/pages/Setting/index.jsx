@@ -16,6 +16,7 @@ const TABS = [
   { key: 'model',       label: '模型适配' },
   { key: 'affinity',    label: '渠道亲和' },
   { key: 'dashboard',   label: '仪表盘' },
+  { key: 'cache',       label: '缓存' },
   { key: 'performance', label: '性能' },
 ];
 
@@ -31,6 +32,7 @@ const TAB_KEYS = {
     'RegisterEnabled', 'PasswordRegisterEnabled', 'PasswordLoginEnabled',
     'EmailVerificationEnabled', 'EmailDomainRestrictionEnabled', 'EmailAliasRestrictionEnabled', 'EmailDomainWhitelist',
     'SMTPServer', 'SMTPPort', 'SMTPAccount', 'SMTPFrom', 'SMTPToken', 'SMTPSSLEnabled', 'SMTPForceAuthLogin',
+    'EmailTemplateVerification', 'EmailTemplatePasswordReset',
     'GitHubOAuthEnabled', 'GitHubClientId', 'GitHubClientSecret',
     'LinuxDOOAuthEnabled', 'LinuxDOClientId', 'LinuxDOClientSecret', 'LinuxDOMinimumTrustLevel',
     'WeChatAuthEnabled', 'WeChatServerAddress', 'WeChatServerToken', 'WeChatAccountQRCodeImageURL',
@@ -74,6 +76,12 @@ const TAB_KEYS = {
     'monitor_setting.auto_test_channel_enabled', 'monitor_setting.auto_test_channel_minutes',
     'monitor_setting.model_health_enabled', 'monitor_setting.model_health_interval_minutes',
     'console_setting.announcements_enabled', 'console_setting.announcements',
+    'log_setting.log_request_body', 'log_setting.log_response_body', 'log_setting.max_body_log_bytes',
+  ],
+  cache: [
+    'semantic_cache_setting.enabled', 'semantic_cache_setting.ttl_seconds',
+    'semantic_cache_setting.max_entries', 'semantic_cache_setting.cache_embeddings',
+    'semantic_cache_setting.cache_completions', 'semantic_cache_setting.hit_cost_ratio',
   ],
   performance: ['StreamCacheQueueLength', 'BatchUpdateEnabled', 'BatchUpdateInterval', 'MemoryCacheEnabled', 'CacheKeyPrefix',
     'performance_setting.disk_cache_enabled', 'performance_setting.disk_cache_threshold_mb',
@@ -91,7 +99,7 @@ const TAB_SECTIONS = {
   ],
   auth: [
     { title: '注册与登录', keys: ['RegisterEnabled', 'PasswordRegisterEnabled', 'PasswordLoginEnabled'] },
-    { title: '邮箱验证', keys: ['EmailVerificationEnabled', 'EmailDomainRestrictionEnabled', 'EmailAliasRestrictionEnabled', 'EmailDomainWhitelist', 'SMTPServer', 'SMTPPort', 'SMTPAccount', 'SMTPFrom', 'SMTPToken', 'SMTPSSLEnabled', 'SMTPForceAuthLogin'] },
+    { title: '邮箱验证', keys: ['EmailVerificationEnabled', 'EmailDomainRestrictionEnabled', 'EmailAliasRestrictionEnabled', 'EmailDomainWhitelist', 'SMTPServer', 'SMTPPort', 'SMTPAccount', 'SMTPFrom', 'SMTPToken', 'SMTPSSLEnabled', 'SMTPForceAuthLogin', 'EmailTemplateVerification', 'EmailTemplatePasswordReset'] },
     { title: 'OAuth 登录', keys: ['GitHubOAuthEnabled', 'GitHubClientId', 'GitHubClientSecret', 'LinuxDOOAuthEnabled', 'LinuxDOClientId', 'LinuxDOClientSecret', 'LinuxDOMinimumTrustLevel', 'discord.enabled', 'discord.client_id', 'discord.client_secret', 'oidc.enabled', 'oidc.client_id', 'oidc.client_secret', 'oidc.well_known', 'oidc.authorization_endpoint', 'oidc.token_endpoint', 'oidc.user_info_endpoint', 'WeChatAuthEnabled', 'WeChatServerAddress', 'WeChatServerToken', 'WeChatAccountQRCodeImageURL', 'TelegramOAuthEnabled', 'TelegramBotToken', 'TelegramBotName', 'TurnstileCheckEnabled', 'TurnstileSiteKey', 'TurnstileSecretKey'] },
     { title: 'Passkey', keys: ['passkey.enabled', 'passkey.rp_display_name', 'passkey.rp_id', 'passkey.origins', 'passkey.allow_insecure_origin', 'passkey.user_verification', 'passkey.attachment_preference'] },
   ],
@@ -111,6 +119,10 @@ const TAB_SECTIONS = {
     { title: '渠道监控', keys: ['monitor_setting.auto_test_channel_enabled', 'monitor_setting.auto_test_channel_minutes'] },
     { title: '模型健康检测', keys: ['monitor_setting.model_health_enabled', 'monitor_setting.model_health_interval_minutes'] },
     { title: '前台展示', keys: ['console_setting.announcements_enabled', 'console_setting.announcements'] },
+    { title: '日志内容记录', gateKey: 'log_setting.log_request_body', keys: ['log_setting.log_request_body', 'log_setting.log_response_body', 'log_setting.max_body_log_bytes'] },
+  ],
+  cache: [
+    { title: '语义缓存', keys: ['semantic_cache_setting.enabled', 'semantic_cache_setting.ttl_seconds', 'semantic_cache_setting.max_entries', 'semantic_cache_setting.cache_embeddings', 'semantic_cache_setting.cache_completions', 'semantic_cache_setting.hit_cost_ratio'] },
   ],
   pricing: [
     { title: '模型倍率', component: 'CombinedRatioEditor', keys: ['ModelRatio', 'CompletionRatio', 'CacheRatio', 'CreateCacheRatio', 'ImageRatio', 'AudioRatio', 'AudioCompletionRatio'] },
@@ -120,9 +132,9 @@ const TAB_SECTIONS = {
   ],
 };
 
-const WIDE_KEYS = new Set([...Array.from(new Set(['EmailDomainWhitelist', 'SensitiveWords', 'AutomaticDisableKeywords', 'AutomaticDisableStatusCodes', 'AutomaticRetryStatusCodes', 'fetch_setting.domain_list', 'fetch_setting.ip_list', 'fetch_setting.allowed_ports', 'global.thinking_model_blacklist', 'gemini.supported_imagine_models'])), 'ModelRatio', 'CompletionRatio', 'CacheRatio', 'CreateCacheRatio', 'ImageRatio', 'AudioRatio', 'AudioCompletionRatio', 'GroupRatio', 'ModelPrice', 'UserUsableGroups', 'claude.model_headers_settings', 'claude.default_max_tokens', 'gemini.safety_settings', 'gemini.version_settings', 'channel_affinity_setting.rules', 'console_setting.announcements', 'global.chat_completions_to_responses_policy']);
+const WIDE_KEYS = new Set([...Array.from(new Set(['EmailDomainWhitelist', 'SensitiveWords', 'AutomaticDisableKeywords', 'AutomaticDisableStatusCodes', 'AutomaticRetryStatusCodes', 'fetch_setting.domain_list', 'fetch_setting.ip_list', 'fetch_setting.allowed_ports', 'global.thinking_model_blacklist', 'gemini.supported_imagine_models'])), 'ModelRatio', 'CompletionRatio', 'CacheRatio', 'CreateCacheRatio', 'ImageRatio', 'AudioRatio', 'AudioCompletionRatio', 'GroupRatio', 'ModelPrice', 'UserUsableGroups', 'claude.model_headers_settings', 'claude.default_max_tokens', 'gemini.safety_settings', 'gemini.version_settings', 'channel_affinity_setting.rules', 'console_setting.announcements', 'global.chat_completions_to_responses_policy', 'EmailTemplateVerification', 'EmailTemplatePasswordReset']);
 
-const MULTILINE_KEYS = new Set([]);
+const MULTILINE_KEYS = new Set(['EmailTemplateVerification', 'EmailTemplatePasswordReset']);
 const TAG_KEYS = new Set(['EmailDomainWhitelist', 'SensitiveWords', 'AutomaticDisableKeywords', 'AutomaticDisableStatusCodes', 'AutomaticRetryStatusCodes', 'fetch_setting.domain_list', 'fetch_setting.ip_list', 'fetch_setting.allowed_ports', 'global.thinking_model_blacklist', 'gemini.supported_imagine_models']);
 const JSON_ARRAY_TAG_KEYS = new Set(['fetch_setting.domain_list', 'fetch_setting.ip_list', 'fetch_setting.allowed_ports', 'global.thinking_model_blacklist', 'gemini.supported_imagine_models']);
 const NEWLINE_TAG_KEYS = new Set(['SensitiveWords', 'AutomaticDisableKeywords']);
@@ -159,6 +171,8 @@ const BOOL_KEYS = new Set([
   'console_setting.announcements_enabled',
   'monitor_setting.model_health_enabled',
   'EpayEnabled',
+  'semantic_cache_setting.enabled', 'semantic_cache_setting.cache_embeddings', 'semantic_cache_setting.cache_completions',
+  'log_setting.log_request_body', 'log_setting.log_response_body',
 ]);
 const NUMBER_KEYS = new Set([
   'ChannelDisableThreshold',
@@ -177,6 +191,7 @@ const NUMBER_KEYS = new Set([
   'performance_setting.disk_cache_threshold_mb', 'performance_setting.disk_cache_max_size_mb',
   'performance_setting.monitor_cpu_threshold', 'performance_setting.monitor_memory_threshold', 'performance_setting.monitor_disk_threshold',
   'Price', 'MinTopUp',
+  'log_setting.max_body_log_bytes',
 ]);
 
 const LABELS = {
@@ -212,6 +227,8 @@ const LABELS = {
   SMTPToken: 'SMTP 密码/Token',
   SMTPSSLEnabled: 'SMTP SSL',
   SMTPForceAuthLogin: '强制 AUTH LOGIN',
+  EmailTemplateVerification: '验证码邮件模板',
+  EmailTemplatePasswordReset: '密码重置邮件模板',
   GitHubOAuthEnabled: 'GitHub 登录',
   GitHubClientId: 'GitHub Client ID',
   GitHubClientSecret: 'GitHub Client Secret',
@@ -334,6 +351,13 @@ const LABELS = {
   'console_setting.announcements': '系统公告',
   'monitor_setting.model_health_enabled': '启用模型健康检测',
   'monitor_setting.model_health_interval_minutes': '检测间隔（分钟）',
+  // 语义缓存
+  'semantic_cache_setting.enabled': '启用语义缓存',
+  'semantic_cache_setting.ttl_seconds': '缓存有效期（秒）',
+  'semantic_cache_setting.max_entries': '最大缓存条目数',
+  'semantic_cache_setting.cache_embeddings': '缓存 Embedding 请求',
+  'semantic_cache_setting.cache_completions': '缓存 Chat Completions（temp=0）',
+  'semantic_cache_setting.hit_cost_ratio': '缓存命中计费比例（0~1）',
   // 性能
   'performance_setting.disk_cache_enabled': '磁盘缓存',
   'performance_setting.disk_cache_threshold_mb': '磁盘缓存阈值（MB）',
@@ -343,6 +367,10 @@ const LABELS = {
   'performance_setting.monitor_cpu_threshold': 'CPU 告警阈值（%）',
   'performance_setting.monitor_memory_threshold': '内存告警阈值（%）',
   'performance_setting.monitor_disk_threshold': '磁盘告警阈值（%）',
+  // 日志内容记录
+  'log_setting.log_request_body': '记录请求内容',
+  'log_setting.log_response_body': '记录响应内容',
+  'log_setting.max_body_log_bytes': '内容截断字节数',
 };
 
 const SELECT_OPTIONS = {
@@ -863,6 +891,18 @@ const SettingPage = () => {
   const [saving, setSaving] = useState(false);
   const [modelList, setModelList] = useState([]);
   const [groupList, setGroupList] = useState([]);
+  const [testEmail, setTestEmail] = useState('');
+  const [sendingTest, setSendingTest] = useState(false);
+
+  const sendTestEmail = async () => {
+    if (!testEmail) { showError('请输入收件邮箱'); return; }
+    setSendingTest(true);
+    try {
+      const { data } = await API.post('/api/option/test_email', { email: testEmail });
+      if (data.success) showSuccess(data.message || '测试邮件已发送');
+      else showError(data.message);
+    } catch (e) { showError(e); } finally { setSendingTest(false); }
+  };
 
   const loadModels = async () => {
     try {
@@ -955,7 +995,10 @@ const SettingPage = () => {
                           onChange={(arr) => set(k, JSON_ARRAY_TAG_KEYS.has(k) ? JSON.stringify(arr) : arr.join(NEWLINE_TAG_KEYS.has(k) ? '\n' : ','))}
                         />
                       : MULTILINE_KEYS.has(k)
-                        ? <Textarea value={val(k)} onChange={(v) => set(k, v)} rows={4} />
+                        ? <><Textarea value={val(k)} onChange={(v) => set(k, v)} rows={6} placeholder={k === 'EmailTemplateVerification' ? '留空使用默认模板' : k === 'EmailTemplatePasswordReset' ? '留空使用默认模板' : ''} />
+                            {k === 'EmailTemplateVerification' && <div style={{ marginTop: 4, fontSize: 11, color: '#999', lineHeight: 1.5 }}>可用变量：{'{{siteName}}'} 站点名称、{'{{code}}'} 验证码、{'{{expireMinutes}}'} 有效期（分钟）</div>}
+                            {k === 'EmailTemplatePasswordReset' && <div style={{ marginTop: 4, fontSize: 11, color: '#999', lineHeight: 1.5 }}>可用变量：{'{{siteName}}'} 站点名称、{'{{resetLink}}'} 重置链接、{'{{expireMinutes}}'} 有效期（分钟）</div>}
+                          </>
                         : <Input value={val(k)} onChange={(v) => set(k, v)} />}
       </div>
     );
@@ -1003,6 +1046,15 @@ const SettingPage = () => {
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 14 }}>
           {visibleKeys.map(renderField)}
         </div>
+        {title === '邮箱验证' && (
+          <div style={{ marginTop: 16, paddingTop: 16, borderTop: '1px solid var(--ui-border)' }}>
+            <label style={{ display: 'block', fontSize: 12, color: 'var(--ui-text-3)', marginBottom: 6 }}>发送测试邮件</label>
+            <div className='flex items-center gap-2'>
+              <Input value={testEmail} onChange={setTestEmail} placeholder='输入测试收件邮箱' width={280} />
+              <Button size='sm' loading={sendingTest} onClick={sendTestEmail}>发送测试邮件</Button>
+            </div>
+          </div>
+        )}
       </div>
     );
   };

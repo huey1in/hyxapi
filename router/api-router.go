@@ -146,6 +146,7 @@ func SetApiRouter(router *gin.Engine) {
 		{
 			optionRoute.GET("/", controller.GetOptions)
 			optionRoute.PUT("/", controller.UpdateOption)
+			optionRoute.POST("/test_email", controller.SendTestEmail)
 		}
 
 		uploadRoute := apiRouter.Group("/upload")
@@ -228,6 +229,20 @@ func SetApiRouter(router *gin.Engine) {
 		dataRoute.GET("/", middleware.AdminAuth(), controller.GetAllQuotaDates)
 		dataRoute.GET("/users", middleware.AdminAuth(), controller.GetQuotaDatesByUser)
 		dataRoute.GET("/self", middleware.UserAuth(), controller.GetUserQuotaDates)
+
+		operationsRoute := apiRouter.Group("/operations")
+		operationsRoute.Use(middleware.AdminAuth())
+		{
+			operationsRoute.GET("/summary", controller.GetRevenueSummary)
+			operationsRoute.GET("/revenue_trend", controller.GetRevenueTrend)
+			operationsRoute.GET("/consumption_trend", controller.GetConsumptionTrend)
+			operationsRoute.GET("/ranking", controller.GetConsumptionRanking)
+			operationsRoute.GET("/enhanced", controller.GetEnhancedOperations)
+			operationsRoute.GET("/channel_cost", controller.GetChannelCostComparison)
+		}
+
+		apiRouter.GET("/audit", middleware.AdminAuth(), controller.GetAuditLogs)
+		apiRouter.GET("/system-status", middleware.AdminAuth(), controller.GetSystemStatus)
 
 		logRoute.Use(middleware.CORS(), middleware.CriticalRateLimit())
 		{

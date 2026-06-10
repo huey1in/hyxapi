@@ -285,9 +285,43 @@ func UpdateOption(c *gin.Context) {
 		common.ApiError(c, err)
 		return
 	}
+	model.RecordAuditLog(c, model.AuditUpdate, "setting", 0, fmt.Sprintf("更新系统设置 [%s]", option.Key))
 	c.JSON(http.StatusOK, gin.H{
 		"success": true,
 		"message": "",
 	})
 	return
+}
+
+func SendTestEmail(c *gin.Context) {
+	var req struct {
+		Email string `json:"email"`
+	}
+	if err := common.DecodeJson(c.Request.Body, &req); err != nil || req.Email == "" {
+		c.JSON(http.StatusOK, gin.H{
+			"success": false,
+			"message": "请输入有效的邮箱地址",
+		})
+		return
+	}
+	if common.SMTPServer == "" || common.SMTPAccount == "" {
+		c.JSON(http.StatusOK, gin.H{
+			"success": false,
+			"message": "请先配置 SMTP 服务器和账号",
+		})
+		return
+	}
+	subject, content := common.RenderTestEmail()
+	err := common.SendEmail(subject, req.Email, content)
+	if err != nil {
+		c.JSON(http.StatusOK, gin.H{
+			"success": false,
+			"message": fmt.Sprintf("发送失败：%s", err.Error()),
+		})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{
+		"success": true,
+		"message": "测试邮件已发送",
+	})
 }
