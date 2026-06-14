@@ -1,169 +1,179 @@
 package middleware
 
 import (
+	"fmt"
+	"net/http"
 	"strings"
+	"time"
 
 	"github.com/gin-gonic/gin"
 )
 
-const geoBlockedHTML = `<!DOCTYPE html>
-<html lang="zh-CN">
+// geoBlockedPageTemplate 动态封锁页模板。
+// 占位符: %[1]s 语言, %[2]s 标题, %[3]s 主文案, %[4]s 副文案(另一语言),
+// %[5]s IP标签, %[6]s IP, %[7]s 地区标签, %[8]s 地区, %[9]s 支持标签,
+// %[10]s 参考标签, %[11]s RayID, %[12]s 时间标签, %[13]s 时间
+const geoBlockedPageTemplate = `<!DOCTYPE html>
+<html lang="%[1]s">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>服务不可用 - Service Unavailable</title>
+    <meta name="robots" content="noindex">
+    <title>Routify — Service Not Available</title>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html, body { height: 100%%; }
         body {
-            font-family: Kefaiii, Gilroy, Noto Sans SC, -apple-system, sans-serif;
-            background: #FFFDF7;
-            color: #000;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans SC", Helvetica, Arial, sans-serif;
+            background: #fffdf7;
+            color: #1a1a1a;
             display: flex;
-            align-items: center;
-            justify-content: center;
+            flex-direction: column;
             min-height: 100vh;
-            padding: 24px 16px;
+            -webkit-font-smoothing: antialiased;
         }
-        .container {
-            width: 100%;
-            max-width: 740px;
-            margin: 0 auto;
+        main { flex: 1; display: flex; align-items: center; justify-content: center; padding: 48px 24px; }
+        .content { width: 100%%; max-width: 520px; }
+        .brand {
+            font-size: 13px; font-weight: 600; letter-spacing: 0.06em;
+            text-transform: uppercase; color: #1a1a1a; margin-bottom: 56px;
         }
-        .card {
-            background: #FFFDF7;
-            border: 1px solid #e9e9e9;
-            border-radius: 26px;
-            padding: 48px 40px;
-            text-align: center;
-        }
-        h1 {
-            font-size: 24px;
-            font-weight: 600;
-            color: #000;
-            margin-bottom: 12px;
-        }
-        .subtitle {
-            font-size: 16px;
-            color: #666;
-            margin-bottom: 40px;
-        }
-        .notice-box {
-            background: #F2F0E9;
-            border-radius: 16px;
-            padding: 24px;
-            text-align: left;
-            margin-bottom: 28px;
-        }
-        .notice-box h2 {
-            font-size: 16px;
-            font-weight: 600;
-            color: #000;
-            margin-bottom: 16px;
-        }
-        .notice-box p {
-            font-size: 14px;
-            line-height: 1.6;
-            color: #666;
-            margin-bottom: 12px;
-        }
-        .notice-box p strong {
-            color: #000;
-            font-weight: 600;
-        }
-        .notice-box ul {
-            list-style: none;
-            padding-left: 0;
-            margin-top: 12px;
-        }
-        .notice-box li {
-            font-size: 14px;
-            line-height: 1.8;
-            color: #666;
-            padding-left: 16px;
-            position: relative;
-        }
-        .notice-box li:before {
-            content: "•";
-            position: absolute;
-            left: 0;
-            color: #999;
-        }
-        .divider {
-            height: 1px;
-            background: #eeeeee;
-            margin: 28px 0;
-        }
-        .footer {
-            font-size: 13px;
-            color: #999;
-            line-height: 1.6;
-        }
-        .footer a {
-            color: #666;
-            text-decoration: none;
-            transition: color 0.2s;
-        }
-        .footer a:hover {
-            color: #000;
-        }
-        @media (max-width: 640px) {
-            .card {
-                padding: 32px 24px;
-            }
-            h1 {
-                font-size: 20px;
-            }
-            .subtitle {
-                font-size: 14px;
-            }
-            .notice-box {
-                padding: 20px;
-            }
+        .code { font-size: 13px; font-weight: 500; color: #ababab; letter-spacing: 0.04em; margin-bottom: 16px; }
+        h1 { font-size: 28px; font-weight: 500; letter-spacing: -0.01em; line-height: 1.3; color: #1a1a1a; margin-bottom: 20px; }
+        .lead { font-size: 15px; line-height: 1.7; color: #525252; margin-bottom: 12px; }
+        .lead-alt { font-size: 14px; line-height: 1.7; color: #8a8a8a; margin-bottom: 48px; }
+        .meta { border-top: 1px solid #e8e6df; padding-top: 24px; }
+        .meta-row { display: flex; justify-content: space-between; align-items: baseline; padding: 6px 0; font-size: 13px; gap: 24px; }
+        .meta-label { color: #ababab; white-space: nowrap; }
+        .meta-value { color: #525252; text-align: right; word-break: break-all; font-variant-numeric: tabular-nums; }
+        .meta-value.mono { font-family: "SF Mono", SFMono-Regular, ui-monospace, Menlo, monospace; font-size: 12.5px; }
+        .meta-value a { color: #525252; text-decoration: none; border-bottom: 1px solid #d8d5cc; padding-bottom: 1px; }
+        .meta-value a:hover { color: #1a1a1a; border-bottom-color: #1a1a1a; }
+        footer { padding: 32px 24px; text-align: center; font-size: 12px; color: #c0beb6; }
+        @media (max-width: 480px) {
+            .brand { margin-bottom: 40px; }
+            h1 { font-size: 23px; }
+            .lead-alt { margin-bottom: 36px; }
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <div class="card">
-            <h1>服务不可用</h1>
-            <p class="subtitle">Service Unavailable</p>
-
-            <div class="notice-box">
-                <h2>重要通知：服务范围限制</h2>
-                <p><strong>RoutifyAPI 不在中国大陆提供服务。</strong></p>
-                <ul>
-                    <li>本服务仅面向中国大陆以外的地区和用户</li>
-                    <li>中国大陆用户不得注册或使用 RoutifyAPI 服务</li>
-                    <li>我们的服务器和数据中心不位于中国大陆</li>
-                    <li>所有业务运营和数据处理均在中国大陆以外进行</li>
-                </ul>
-            </div>
-
-            <div class="notice-box">
-                <h2>Important Notice: Service Coverage</h2>
-                <p><strong>RoutifyAPI does not provide services in Mainland China.</strong></p>
-                <ul>
-                    <li>This service is only available to regions and users outside Mainland China</li>
-                    <li>Users in Mainland China are not permitted to register or use RoutifyAPI services</li>
-                    <li>Our servers and data centers are not located in Mainland China</li>
-                    <li>All business operations and data processing are conducted outside Mainland China</li>
-                </ul>
-            </div>
-
-            <div class="divider"></div>
-
-            <div class="footer">
-                <p>如有疑问，请联系：<a href="mailto:1in@routify.space">1in@routify.space</a></p>
-                <p>For inquiries, please contact: <a href="mailto:1in@routify.space">1in@routify.space</a></p>
+    <main>
+        <div class="content">
+            <div class="brand">Routify</div>
+            <div class="code">403 &middot; REGION_NOT_SUPPORTED</div>
+            <h1>%[2]s</h1>
+            <p class="lead">%[3]s</p>
+            <p class="lead-alt">%[4]s</p>
+            <div class="meta">
+                <div class="meta-row">
+                    <span class="meta-label">%[5]s</span>
+                    <span class="meta-value mono">%[6]s</span>
+                </div>
+                <div class="meta-row">
+                    <span class="meta-label">%[7]s</span>
+                    <span class="meta-value">%[8]s</span>
+                </div>
+                <div class="meta-row">
+                    <span class="meta-label">%[9]s</span>
+                    <span class="meta-value"><a href="mailto:1in@routify.space">1in@routify.space</a></span>
+                </div>
+                <div class="meta-row">
+                    <span class="meta-label">%[10]s</span>
+                    <span class="meta-value mono">%[11]s</span>
+                </div>
+                <div class="meta-row">
+                    <span class="meta-label">%[12]s</span>
+                    <span class="meta-value mono">%[13]s</span>
+                </div>
             </div>
         </div>
-    </div>
+    </main>
+    <footer>&copy; Routify. All rights reserved.</footer>
 </body>
 </html>`
+
+// countryNames 常见国家/地区代码的双语名称
+var countryNames = map[string][2]string{ // code -> [zh, en]
+	"CN": {"中国大陆", "Mainland China"},
+	"HK": {"中国香港", "Hong Kong"},
+	"MO": {"中国澳门", "Macao"},
+	"TW": {"中国台湾", "Taiwan"},
+	"US": {"美国", "United States"},
+	"JP": {"日本", "Japan"},
+	"KR": {"韩国", "South Korea"},
+	"SG": {"新加坡", "Singapore"},
+	"GB": {"英国", "United Kingdom"},
+	"DE": {"德国", "Germany"},
+	"FR": {"法国", "France"},
+	"RU": {"俄罗斯", "Russia"},
+	"IN": {"印度", "India"},
+	"AU": {"澳大利亚", "Australia"},
+	"CA": {"加拿大", "Canada"},
+}
+
+func regionDisplay(code string, zhFirst bool) string {
+	if code == "" {
+		code = "Unknown"
+	}
+	if names, ok := countryNames[strings.ToUpper(code)]; ok {
+		if zhFirst {
+			return fmt.Sprintf("%s (%s)", names[0], strings.ToUpper(code))
+		}
+		return fmt.Sprintf("%s (%s)", names[1], strings.ToUpper(code))
+	}
+	return strings.ToUpper(code)
+}
+
+// renderGeoBlockedPage 渲染封锁页：按浏览器 Accept-Language 选择语言（中文优先显示中文）。
+// 页面展示检测到的 IP、地区、Cloudflare Ray ID 与时间，便于用户联系支持时提供凭据。
+func renderGeoBlockedPage(c *gin.Context) []byte {
+	ip := getClientIP(c)
+	country := strings.ToUpper(c.GetHeader("CF-IPCountry"))
+	rayID := c.GetHeader("CF-Ray")
+	if rayID == "" {
+		rayID = "-"
+	}
+	now := time.Now().UTC().Format("2006-01-02 15:04:05 UTC")
+
+	zhFirst := strings.Contains(strings.ToLower(c.GetHeader("Accept-Language")), "zh")
+
+	var lang, title, lead, leadAlt, ipLabel, regionLabel, supportLabel, refLabel, timeLabel string
+	zhLead := "Routify 的服务覆盖范围不包含您所在的地区。我们的全部业务运营、服务器与数据处理均位于中国大陆以外，且不向中国大陆地区的用户提供注册或使用服务。"
+	enLead := "Routify is not available in your region. All of our operations, infrastructure, and data processing are located outside Mainland China, and we do not offer registration or services to users in Mainland China."
+
+	if zhFirst {
+		lang = "zh-CN"
+		title = "当前地区暂不提供服务"
+		lead = zhLead
+		leadAlt = enLead
+		ipLabel = "检测到的 IP / Detected IP"
+		regionLabel = "所属地区 / Region"
+		supportLabel = "联系支持 / Support"
+		refLabel = "请求编号 / Ray ID"
+		timeLabel = "检测时间 / Time"
+	} else {
+		lang = "en"
+		title = "Service is not available in your region"
+		lead = enLead
+		leadAlt = zhLead
+		ipLabel = "Detected IP / 检测到的 IP"
+		regionLabel = "Region / 所属地区"
+		supportLabel = "Support / 联系支持"
+		refLabel = "Ray ID / 请求编号"
+		timeLabel = "Time / 检测时间"
+	}
+
+	page := fmt.Sprintf(geoBlockedPageTemplate,
+		lang, title, lead, leadAlt,
+		ipLabel, ip,
+		regionLabel, regionDisplay(country, zhFirst),
+		supportLabel,
+		refLabel, rayID,
+		timeLabel, now,
+	)
+	return []byte(page)
+}
 
 func getClientIP(c *gin.Context) string {
 	// 优先从 X-Forwarded-For 获取
@@ -193,42 +203,26 @@ func getClientIP(c *gin.Context) string {
 }
 
 func isChineseRequest(c *gin.Context) bool {
-	// 检查 Cloudflare 国家代码
-	cfCountry := c.GetHeader("CF-IPCountry")
-	if cfCountry == "CN" {
-		return true
-	}
-
-	// 检查 Accept-Language 头
-	acceptLang := c.GetHeader("Accept-Language")
-	if strings.Contains(strings.ToLower(acceptLang), "zh-cn") {
-		// 仅语言不足以判断，需要结合其他因素
-	}
-
-	// 可以添加更多检测逻辑，如 IP 段检测
-	// 但最可靠的是使用 Cloudflare 的 CF-IPCountry 头
-
-	return false
+	// 检查 Cloudflare 国家代码（最可靠）
+	return c.GetHeader("CF-IPCountry") == "CN"
 }
 
 func GeoBlock() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		// 地理封锁已禁用，所有 IP 均可访问
-		// path := c.Request.URL.Path
-		// if strings.HasPrefix(path, "/v1/") ||
-		//    strings.HasPrefix(path, "/api/") ||
-		//    strings.HasPrefix(path, "/mj/") ||
-		//    strings.HasPrefix(path, "/suno/") {
-		// 	c.Next()
-		// 	return
-		// }
-		// if isChineseRequest(c) {
-		// 	c.Data(http.StatusForbidden, "text/html; charset=utf-8", []byte(geoBlockedHTML))
-		// 	c.Abort()
-		// 	return
-		// }
+		// API 路径不拦截，仅限制网页访问
+		path := c.Request.URL.Path
+		if strings.HasPrefix(path, "/v1/") ||
+			strings.HasPrefix(path, "/api/") ||
+			strings.HasPrefix(path, "/mj/") ||
+			strings.HasPrefix(path, "/suno/") {
+			c.Next()
+			return
+		}
+		if isChineseRequest(c) {
+			c.Data(http.StatusForbidden, "text/html; charset=utf-8", renderGeoBlockedPage(c))
+			c.Abort()
+			return
+		}
 		c.Next()
 	}
 }
-
-

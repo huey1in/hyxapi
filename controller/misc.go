@@ -68,7 +68,6 @@ func GetStatus(c *gin.Context) {
 		"server_address":              system_setting.ServerAddress,
 		"turnstile_check":             common.TurnstileCheckEnabled,
 		"turnstile_site_key":          common.TurnstileSiteKey,
-		"top_up_link":                 common.TopUpLink,
 		"epay_enabled":                operation_setting.EpayEnabled,
 		"pay_methods":                 operation_setting.PayMethods,
 		"epay_price":                  operation_setting.Price,
@@ -85,7 +84,6 @@ func GetStatus(c *gin.Context) {
 		"enable_data_export":            common.DataExportEnabled,
 		"data_export_default_time":      common.DataExportDefaultTime,
 		"default_collapse_sidebar":      common.DefaultCollapseSidebar,
-		"demo_site_enabled":             operation_setting.DemoSiteEnabled,
 		"self_use_mode_enabled":         operation_setting.SelfUseModeEnabled,
 
 		"usd_exchange_rate": operation_setting.USDExchangeRate,

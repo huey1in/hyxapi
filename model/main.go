@@ -191,6 +191,14 @@ func InitDB() (err error) {
 func InitLogDB() (err error) {
 	if os.Getenv("LOG_SQL_DSN") == "" {
 		LOG_DB = DB
+		// Inherit main DB type when LOG_SQL_DSN is not set
+		if common.UsingPostgreSQL {
+			common.LogSqlType = common.DatabaseTypePostgreSQL
+		} else if common.UsingMySQL {
+			common.LogSqlType = common.DatabaseTypeMySQL
+		} else {
+			common.LogSqlType = common.DatabaseTypeSQLite
+		}
 		return
 	}
 	db, err := chooseDB("LOG_SQL_DSN", true)

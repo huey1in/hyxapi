@@ -123,13 +123,14 @@ func HandleOAuth(c *gin.Context) {
 		return
 	}
 
-	// 9. Setup login and redirect to home
+	// 9. Setup login and redirect to home with one-time handoff code;
+	// the frontend (main.jsx) exchanges it for user info before first render.
 	session.Set("id", user.Id)
 	session.Set("username", user.Username)
 	session.Set("role", user.Role)
 	session.Set("status", user.Status)
 	_ = session.Save()
-	c.Redirect(http.StatusFound, "/")
+	c.Redirect(http.StatusFound, "/#code="+common.IssueHandoff(user.Id))
 }
 
 // handleOAuthBind handles binding OAuth account to existing user

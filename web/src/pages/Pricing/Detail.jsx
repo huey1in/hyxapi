@@ -239,7 +239,7 @@ const PricingDetail = () => {
                 <div className='flex flex-col gap-4'>
                   <div className='flex items-center justify-between gap-2'>
                     <SectionLabel>{t('服务状态')}</SectionLabel>
-                    <span className='text-xs text-ui-text-3'>{t('近 15 分钟')}</span>
+                    <span className='text-xs text-ui-text-3'>{t('近期调用')}</span>
                   </div>
                   {!statusLoaded ? (
                     <div className='py-2'><Loading /></div>

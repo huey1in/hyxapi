@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"fmt"
 	"net/http"
 	"strconv"
 	"time"
@@ -113,8 +114,28 @@ func GetEnhancedOperations(c *gin.Context) {
 	todayConsumption, _ := model.SumUsedQuota(model.LogTypeConsume, todayStart, 0, "", "", "", 0, "")
 	allTimeConsumption, _ := model.SumUsedQuota(model.LogTypeConsume, 0, 0, "", "", "", 0, "")
 
+	// 上游成本（quota$ 口径）：区间、全部、今日
+	rangeCost, _ := model.GetChannelCostSummary(startTimestamp, endTimestamp)
+	allTimeCost, _ := model.GetChannelCostSummary(0, 0)
+	todayCost, _ := model.GetChannelCostSummary(todayStart, 0)
+
 	revenueTrend, _ := model.GetTopUpRevenueByDay(startTimestamp, endTimestamp)
-	consumptionTrend, _ := model.GetConsumptionByDay(startTimestamp, endTimestamp)
+	consumptionTrend, consumptionErr := model.GetConsumptionByDay(startTimestamp, endTimestamp)
+	if consumptionErr != nil {
+		common.SysError(fmt.Sprintf("GetConsumptionByDay failed: start=%d, end=%d, err=%v", startTimestamp, endTimestamp, consumptionErr))
+	}
+	// 按日期成本，并入消费趋势
+	costByDay, _ := model.GetChannelCostByDay(startTimestamp, endTimestamp)
+	consumptionTrendWithCost := make([]gin.H, 0, len(consumptionTrend))
+	for _, d := range consumptionTrend {
+		consumptionTrendWithCost = append(consumptionTrendWithCost, gin.H{
+			"date":     d.Date,
+			"quota":    d.Quota,
+			"requests": d.Requests,
+			"tokens":   d.Tokens,
+			"cost":     costByDay[d.Date],
+		})
+	}
 
 	userRanking, _ := model.GetTopConsumingUsers(startTimestamp, endTimestamp, 20)
 	modelRanking, _ := model.GetModelConsumption(startTimestamp, endTimestamp, 20)
@@ -165,13 +186,16 @@ func GetEnhancedOperations(c *gin.Context) {
 					"today":    todayRevenue,
 				},
 				"consumption": gin.H{
-					"today":    todayConsumption,
-					"all_time": allTimeConsumption,
+					"today":         todayConsumption,
+					"all_time":      allTimeConsumption,
+					"today_cost":    todayCost,
+					"all_time_cost": allTimeCost,
+					"range_cost":    rangeCost,
 				},
 			},
 			"trend": gin.H{
 				"revenue":     revenueTrend,
-				"consumption": consumptionTrend,
+				"consumption": consumptionTrendWithCost,
 			},
 			"rankings": gin.H{
 				"users":    userRanking,

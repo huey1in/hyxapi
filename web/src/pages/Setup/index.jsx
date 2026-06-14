@@ -56,7 +56,6 @@ const Setup = () => {
         password: form.password,
         confirmPassword: form.confirmPassword,
         SelfUseModeEnabled: form.usageMode === 'self',
-        DemoSiteEnabled: form.usageMode === 'demo',
       });
       const { success, message } = res.data || {};
       if (success) {
@@ -124,7 +123,6 @@ const Setup = () => {
               options={[
                 { value: 'external', label: '对外服务 — 开放注册，多用户共享' },
                 { value: 'self',     label: '自用模式 — 仅自己使用，禁用注册' },
-                { value: 'demo',     label: '演示站点 — 限制部分管理操作' },
               ]}
             />
           </div>

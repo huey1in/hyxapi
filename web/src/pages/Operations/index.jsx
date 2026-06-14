@@ -67,6 +67,8 @@ const Operations = () => {
   const [costModels, setCostModels] = useState([]);
   const [selectedModel, setSelectedModel] = useState('');
   const [costLoading, setCostLoading] = useState(false);
+  const [trendPage, setTrendPage] = useState(1);
+  const trendPageSize = 10;
 
   const { start, end } = useMemo(() => {
     const r = RANGES[rangeIdx];
@@ -115,6 +117,8 @@ const Operations = () => {
   const allRev = rev.all_time || {};
   const todayCon = con.today || {};
   const allCon = con.all_time || {};
+  const allCost = con.all_time_cost || 0;
+  const allProfit = (allCon.quota || 0) - allCost;
 
   /* ── merge trend ── */
   const mergedTrend = (() => {
@@ -125,11 +129,16 @@ const Operations = () => {
       map[c.date].quota = c.quota || 0;
       map[c.date].requests = c.requests || 0;
       map[c.date].tokens = c.tokens || 0;
+      map[c.date].cost = c.cost || 0;
     });
-    return Object.values(map).sort((a, b) => a.date.localeCompare(b.date));
+    return Object.values(map).sort((a, b) => b.date.localeCompare(a.date)); // 降序：新到旧
   })();
   const trendMaxMoney = Math.max(...mergedTrend.map((r) => r.money || 0), 1);
   const trendMaxQuota = Math.max(...mergedTrend.map((r) => r.quota || 0), 1);
+
+  // 分页
+  const totalTrendPages = Math.ceil(mergedTrend.length / trendPageSize);
+  const paginatedTrend = mergedTrend.slice((trendPage - 1) * trendPageSize, trendPage * trendPageSize);
 
   /* ── rankings ── */
   const userRanking = rankings?.users || [];
@@ -156,6 +165,10 @@ const Operations = () => {
         <MiniBar value={r.quota || 0} max={trendMaxQuota} color='#999' />
       </div>
     ) },
+    { key: 'profit', title: '利润', align: 'right', render: (r) => {
+      const profit = (r.quota || 0) - (r.cost || 0);
+      return <span style={{ fontVariantNumeric: 'tabular-nums', fontWeight: 600, fontSize: 12, color: profit >= 0 ? '#16a34a' : '#dc2626' }}>{renderQuota(profit)}</span>;
+    } },
   ] : [
     { key: 'date', title: '日期', render: (r) => <span style={{ whiteSpace: 'nowrap', color: 'var(--ui-text-2)' }}>{r.date}</span> },
     { key: 'money', title: '充值金额', align: 'right', render: (r) => (
@@ -171,6 +184,13 @@ const Operations = () => {
         <MiniBar value={r.quota || 0} max={trendMaxQuota} color='#999' />
       </div>
     ) },
+    { key: 'cost', title: '成本', align: 'right', render: (r) => (
+      <span style={{ fontVariantNumeric: 'tabular-nums', color: 'var(--ui-text-2)' }}>{renderQuota(r.cost || 0)}</span>
+    ) },
+    { key: 'profit', title: '利润', align: 'right', render: (r) => {
+      const profit = (r.quota || 0) - (r.cost || 0);
+      return <span style={{ fontVariantNumeric: 'tabular-nums', fontWeight: 600, color: profit >= 0 ? '#16a34a' : '#dc2626' }}>{renderQuota(profit)}</span>;
+    } },
     { key: 'requests', title: '请求', align: 'right', render: (r) => <span style={{ fontVariantNumeric: 'tabular-nums', color: 'var(--ui-text-2)' }}>{renderNumber(r.requests || 0)}</span> },
     { key: 'tokens', title: 'Token', align: 'right', render: (r) => <span style={{ fontVariantNumeric: 'tabular-nums', color: 'var(--ui-text-2)' }}>{fmtTokens(r.tokens || 0)}</span> },
   ];
@@ -338,16 +358,53 @@ const Operations = () => {
         </div>
         <div style={grid(4)}>
           <StatMini label='累计收入' value={fmtMoney(allRev.total_money)} sub={`${renderNumber(allRev.total_orders || 0)} 笔订单`} />
-          <StatMini label='累计消费' value={renderQuota(allCon.quota || 0)} />
-          <StatMini label='注册用户' value={renderNumber(platform?.total_users || 0)} />
-          <StatMini label='启用渠道' value={renderNumber(platform?.enabled_channels || 0)} />
+          <StatMini label='累计消费' value={renderQuota(allCon.quota || 0)} sub={`${renderNumber(platform?.total_users || 0)} 注册用户`} />
+          <StatMini label='累计成本' value={renderQuota(allCost)} />
+          <StatMini label='累计利润' value={renderQuota(allProfit)} sub={allCon.quota > 0 ? `利润率 ${((allProfit / allCon.quota) * 100).toFixed(1)}%` : undefined} />
         </div>
       </div>
 
       {/* S2: 收支趋势 */}
       {mergedTrend.length > 0 && (
         <Section title='收支趋势' right={`${mergedTrend.length} 天`}>
-          <Table columns={trendColumns} rows={mergedTrend} rowKey='date' size='sm' />
+          <Table columns={trendColumns} rows={paginatedTrend} rowKey='date' size='sm' />
+          {totalTrendPages > 1 && (
+            <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 12, marginTop: 12, fontSize: 13 }}>
+              <button
+                onClick={() => setTrendPage(p => Math.max(1, p - 1))}
+                disabled={trendPage === 1}
+                style={{
+                  padding: '6px 12px',
+                  border: '1px solid var(--ui-border)',
+                  borderRadius: 6,
+                  background: trendPage === 1 ? 'var(--ui-bg-2)' : 'var(--ui-bg)',
+                  color: trendPage === 1 ? 'var(--ui-text-3)' : 'var(--ui-text)',
+                  cursor: trendPage === 1 ? 'not-allowed' : 'pointer',
+                  fontSize: 13
+                }}
+              >
+                上一页
+              </button>
+              <span style={{ color: 'var(--ui-text-2)' }}>
+                {trendPage} / {totalTrendPages}
+              </span>
+              <button
+                onClick={() => setTrendPage(p => Math.min(totalTrendPages, p + 1))}
+                disabled={trendPage === totalTrendPages}
+                style={{
+                  padding: '6px 12px',
+                  border: '1px solid var(--ui-border)',
+                  borderRadius: 6,
+                  background: trendPage === totalTrendPages ? 'var(--ui-bg-2)' : 'var(--ui-bg)',
+                  color: trendPage === totalTrendPages ? 'var(--ui-text-3)' : 'var(--ui-text)',
+                  cursor: trendPage === totalTrendPages ? 'not-allowed' : 'pointer',
+                  fontSize: 13
+                }}
+              >
+                下一页
+              </button>
+            </div>
+          )}
         </Section>
       )}
 

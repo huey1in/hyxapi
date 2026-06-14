@@ -21,7 +21,7 @@ const TABS = [
 ];
 
 const TAB_KEYS = {
-  platform: ['SystemName', 'ServerAddress', 'TopUpLink', 'general_setting.docs_link', 'Logo', 'RetryTimes', 'general_setting.quota_display_type', 'DisplayTokenStatEnabled', 'DefaultCollapseSidebar', 'DemoSiteEnabled', 'SelfUseModeEnabled', 'token_setting.max_user_tokens', 'EpayEnabled', 'PayAddress', 'EpayId', 'EpayKey', 'CustomCallbackAddress', 'Price', 'MinTopUp', 'TopUpPresetAmounts', 'PayMethods'],
+  platform: ['SystemName', 'ServerAddress', 'general_setting.docs_link', 'Logo', 'RetryTimes', 'general_setting.quota_display_type', 'DisplayTokenStatEnabled', 'DefaultCollapseSidebar', 'SelfUseModeEnabled', 'token_setting.max_user_tokens', 'EpayEnabled', 'PayAddress', 'EpayId', 'EpayKey', 'CustomCallbackAddress', 'Price', 'MinTopUp', 'TopUpPresetAmounts', 'PayMethods'],
   global: [
     'global.pass_through_request_enabled',
     'global.thinking_model_blacklist',
@@ -93,8 +93,8 @@ const TAB_KEYS = {
 
 const TAB_SECTIONS = {
   platform: [
-    { title: '基本信息', keys: ['SystemName', 'ServerAddress', 'TopUpLink', 'general_setting.docs_link', 'Logo'] },
-    { title: '功能开关', keys: ['RetryTimes', 'general_setting.quota_display_type', 'DisplayTokenStatEnabled', 'DefaultCollapseSidebar', 'DemoSiteEnabled', 'SelfUseModeEnabled', 'token_setting.max_user_tokens'] },
+    { title: '基本信息', keys: ['SystemName', 'ServerAddress', 'general_setting.docs_link', 'Logo'] },
+    { title: '功能开关', keys: ['RetryTimes', 'general_setting.quota_display_type', 'DisplayTokenStatEnabled', 'DefaultCollapseSidebar', 'SelfUseModeEnabled', 'token_setting.max_user_tokens'] },
     { title: '易支付 (Epay)', gateKey: 'EpayEnabled', keys: ['EpayEnabled', 'PayAddress', 'EpayId', 'EpayKey', 'CustomCallbackAddress', 'Price', 'MinTopUp', 'TopUpPresetAmounts', 'PayMethods'] },
   ],
   auth: [
@@ -152,7 +152,7 @@ const BOOL_KEYS = new Set([
   'DataExportEnabled', 'LogConsumeEnabled',
   'BatchUpdateEnabled', 'MemoryCacheEnabled',
   'ExposeRatioEnabled',
-  'DisplayTokenStatEnabled', 'DefaultCollapseSidebar', 'DemoSiteEnabled', 'SelfUseModeEnabled',
+  'DisplayTokenStatEnabled', 'DefaultCollapseSidebar', 'SelfUseModeEnabled',
   'passkey.enabled', 'passkey.allow_insecure_origin',
   'fetch_setting.enable_ssrf_protection', 'fetch_setting.allow_private_ip',
   'fetch_setting.apply_ip_filter_for_domain', 'fetch_setting.domain_filter_mode',
@@ -197,7 +197,6 @@ const NUMBER_KEYS = new Set([
 const LABELS = {
   SystemName: '系统名称',
   ServerAddress: '服务器地址',
-  TopUpLink: '充值链接',
   EpayEnabled: '启用易支付',
   PayAddress: '易支付网关地址 (PayAddress)',
   EpayId: '易支付商户 ID (PID)',
@@ -213,7 +212,6 @@ const LABELS = {
   'general_setting.quota_display_type': '额度展示类型',
   DisplayTokenStatEnabled: '额度查询返回令牌额度而非用户额度',
   DefaultCollapseSidebar: '默认折叠侧边栏',
-  DemoSiteEnabled: '演示站点模式',
   SelfUseModeEnabled: '自用模式',
   'token_setting.max_user_tokens': '用户最大令牌数量',
   EmailVerificationEnabled: '邮箱验证',

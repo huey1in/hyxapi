@@ -11,6 +11,7 @@
  * onRowClick: (row, idx) => void
  * expandedKey: 当前展开行的 rowKey（与 renderExpanded 搭配，在该行下方插入详情）
  * renderExpanded: (row, idx) => node   展开行内容
+ * tableLayout: 'auto'(默认) | 'fixed'  fixed 时配合列 width 严格约束列宽，防止内容撑宽
  */
 
 import React from 'react';
@@ -39,6 +40,7 @@ const Table = ({
   onRowClick,
   expandedKey,
   renderExpanded,
+  tableLayout = 'auto',
 }) => {
   const keyOf = (row, i) => {
     if (typeof rowKey === 'function') return rowKey(row);
@@ -48,7 +50,7 @@ const Table = ({
 
   return (
     <div className='w-full overflow-x-auto rounded-2xl border border-ui-border bg-[var(--page-bg)] ui-scrollbar'>
-      <table className='w-full border-collapse'>
+      <table className='w-full border-collapse' style={tableLayout === 'fixed' ? { tableLayout: 'fixed' } : undefined}>
         <thead>
           <tr className='border-b border-ui-border'>
             {columns.map((c) => (

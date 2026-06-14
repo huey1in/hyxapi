@@ -50,12 +50,12 @@ const Quota = ({ row }) => {
       if (m) amount = parseFloat(m[1]) * 500000;
     }
     if (amount > 0) {
-      return <span style={{ color: '#22c55e', fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}>+{renderQuota(amount, 6)}</span>;
+      return <span style={{ color: '#22c55e', fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}>+{renderQuota(amount, 4)}</span>;
     }
     return <span style={{ color: 'var(--ui-text-3)' }}>—</span>;
   }
   if (row.quota > 0) {
-    return <span style={{ fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}>{renderQuota(row.quota, 6)}</span>;
+    return <span style={{ fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}>{renderQuota(row.quota, 4)}</span>;
   }
   return <span style={{ color: 'var(--ui-text-3)' }}>—</span>;
 };
@@ -142,27 +142,35 @@ const LogPage = () => {
       ];
     }
     const cols = [
-      { key: 'time', title: '时间', render: (r) => <span style={{ whiteSpace: 'nowrap', color: 'var(--ui-text-2)' }}>{timestamp2string(r.created_at)}</span> },
-      { key: 'type', title: '类型', render: (r) => <TypeBadge type={r.type} /> },
-      { key: 'model', title: '模型', render: (r) => <span style={{ whiteSpace: 'nowrap', maxWidth: 120, display: 'inline-block', overflow: 'hidden', textOverflow: 'ellipsis', verticalAlign: 'bottom' }} title={r.model_name}>{r.model_name || '—'}</span> },
+      { key: 'time', title: '时间', width: 150, render: (r) => <span style={{ whiteSpace: 'nowrap', color: 'var(--ui-text-2)' }}>{timestamp2string(r.created_at)}</span> },
+      { key: 'type', title: '类型', width: 70, render: (r) => <TypeBadge type={r.type} /> },
+      { key: 'model', title: '模型', width: 130, render: (r) => <span style={{ whiteSpace: 'nowrap', maxWidth: 118, display: 'inline-block', overflow: 'hidden', textOverflow: 'ellipsis', verticalAlign: 'bottom' }} title={r.model_name}>{r.model_name || '—'}</span> },
     ];
     if (isAdmin) {
-      cols.push({ key: 'username', title: '用户', render: (r) => <span style={{ whiteSpace: 'nowrap', maxWidth: 80, display: 'inline-block', overflow: 'hidden', textOverflow: 'ellipsis', verticalAlign: 'bottom' }} title={r.username}>{r.username || '—'}</span> });
+      cols.push({ key: 'username', title: '用户', width: 90, render: (r) => <span style={{ whiteSpace: 'nowrap', maxWidth: 78, display: 'inline-block', overflow: 'hidden', textOverflow: 'ellipsis', verticalAlign: 'bottom' }} title={r.username}>{r.username || '—'}</span> });
     }
     cols.push(
-      { key: 'token', title: '令牌', render: (r) => <span style={{ whiteSpace: 'nowrap', maxWidth: 80, display: 'inline-block', overflow: 'hidden', textOverflow: 'ellipsis', verticalAlign: 'bottom', color: 'var(--ui-text-2)' }} title={r.token_name}>{r.token_name || '—'}</span> },
-      { key: 'group', title: '分组', render: (r) => <span style={{ whiteSpace: 'nowrap', maxWidth: 60, display: 'inline-block', overflow: 'hidden', textOverflow: 'ellipsis', verticalAlign: 'bottom', color: 'var(--ui-text-2)' }} title={r.group}>{r.group || '—'}</span> },
-      { key: 'input', title: '输入', align: 'right', render: (r) => <Num value={r.prompt_tokens || 0} /> },
-      { key: 'output', title: '输出', align: 'right', render: (r) => <Num value={r.completion_tokens || 0} /> },
-      { key: 'cache', title: '缓存', align: 'right', render: (r) => <Num value={r._cache} /> },
-      { key: 'frt', title: '首字', align: 'right', render: (r) => {
+      { key: 'token', title: '令牌', width: 90, render: (r) => <span style={{ whiteSpace: 'nowrap', maxWidth: 78, display: 'inline-block', overflow: 'hidden', textOverflow: 'ellipsis', verticalAlign: 'bottom', color: 'var(--ui-text-2)' }} title={r.token_name}>{r.token_name || '—'}</span> },
+      { key: 'group', title: '分组', width: 80, render: (r) => <span style={{ whiteSpace: 'nowrap', maxWidth: 68, display: 'inline-block', overflow: 'hidden', textOverflow: 'ellipsis', verticalAlign: 'bottom', color: 'var(--ui-text-2)' }} title={r.group}>{r.group || '—'}</span> },
+      { key: 'input', title: '输入', align: 'right', width: 64, render: (r) => <Num value={r.prompt_tokens || 0} /> },
+      { key: 'output', title: '输出', align: 'right', width: 64, render: (r) => <Num value={r.completion_tokens || 0} /> },
+      { key: 'cache', title: '缓存', align: 'right', width: 64, render: (r) => <Num value={r._cache} /> },
+      { key: 'frt', title: '首字', align: 'right', width: 72, render: (r) => {
         const frt = r._other?.frt;
-        if (!frt || frt <= 0) return <span style={{ color: 'var(--ui-text-3)' }}>—</span>;
-        const ms = Math.round(frt);
+        // 流式：用真实首字时间；非流式（同步）：无首字概念，用总响应时长代替
+        let ms;
+        if (frt && frt > 0) {
+          ms = Math.round(frt);
+        } else if (r.use_time > 0) {
+          ms = Math.round(r.use_time * 1000);
+        } else {
+          return <span style={{ color: 'var(--ui-text-3)' }}>—</span>;
+        }
         const color = ms > 3000 ? '#e53e3e' : ms > 1000 ? '#d69e2e' : 'var(--ui-text-2)';
-        return <span style={{ whiteSpace: 'nowrap', color, fontVariantNumeric: 'tabular-nums' }}>{ms}ms</span>;
+        const text = ms >= 1000 ? `${(ms / 1000).toFixed(2)}s` : `${ms}ms`;
+        return <span style={{ whiteSpace: 'nowrap', color, fontVariantNumeric: 'tabular-nums' }}>{text}</span>;
       } },
-      { key: 'quota', title: '积分', align: 'right', render: (r) => <Quota row={r} /> },
+      { key: 'quota', title: '积分', align: 'right', width: 80, render: (r) => <Quota row={r} /> },
     );
     return cols;
   }, [isMobile, isAdmin]);
@@ -231,6 +239,7 @@ const LogPage = () => {
               rows={enriched}
               size='md'
               rowKey='id'
+              tableLayout={isMobile ? 'auto' : 'fixed'}
               emptyText='暂无数据'
               onRowClick={(r) => setExpanded((prev) => prev === r.id ? null : r.id)}
               expandedKey={expanded}

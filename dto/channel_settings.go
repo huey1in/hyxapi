@@ -41,6 +41,8 @@ type ChannelOtherSettings struct {
 	UpstreamModelUpdateLastDetectedModels []string      `json:"upstream_model_update_last_detected_models,omitempty"` // 上次检测到的可加入模型
 	UpstreamModelUpdateLastRemovedModels  []string      `json:"upstream_model_update_last_removed_models,omitempty"`  // 上次检测到的可删除模型
 	UpstreamModelUpdateIgnoredModels      []string      `json:"upstream_model_update_ignored_models,omitempty"`       // 手动忽略的模型
+	UpstreamGroupRatio                    float64       `json:"upstream_group_ratio,omitempty"`                       // 上游分组倍率 R，我方按上游报价的倍率，0=自有渠道无上游成本
+	UpstreamExchangeRate                  float64       `json:"upstream_exchange_rate,omitempty"`                     // 该渠道汇率 Y（1 人民币=Y 美元额度，1元=1刀填1，1元=10刀填10），0=不计成本
 }
 
 func (s *ChannelOtherSettings) IsOpenRouterEnterprise() bool {
