@@ -476,6 +476,7 @@ func (user *User) Edit(updatePassword bool) error {
 		"username":     newUser.Username,
 		"display_name": newUser.DisplayName,
 		"remark":       newUser.Remark,
+		"email":        newUser.Email,
 	}
 	if updatePassword {
 		updates["password"] = newUser.Password

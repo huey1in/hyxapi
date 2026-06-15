@@ -238,7 +238,6 @@ func SetApiRouter(router *gin.Engine) {
 			operationsRoute.GET("/consumption_trend", controller.GetConsumptionTrend)
 			operationsRoute.GET("/ranking", controller.GetConsumptionRanking)
 			operationsRoute.GET("/enhanced", controller.GetEnhancedOperations)
-			operationsRoute.GET("/channel_cost", controller.GetChannelCostComparison)
 		}
 
 		apiRouter.GET("/audit", middleware.AdminAuth(), controller.GetAuditLogs)

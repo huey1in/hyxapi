@@ -259,9 +259,8 @@ const PricingDetail = () => {
                               </div>
                               {!lowHeat && (
                                 <span className='text-xs text-ui-text-3 tabular-nums'>
-                                  {t('调用')} {sum.calls}
-                                  {sum.successRate !== null && <> · {t('成功率')} {Math.round(sum.successRate * 100)}%</>}
-                                  {sum.avgLatency !== null && <> · {t('延迟')} {sum.avgLatency}ms</>}
+                                  {sum.successRate !== null && <>{t('成功率')} {Math.round(sum.successRate * 100)}%</>}
+                                  {sum.avgLatency !== null && <>{sum.successRate !== null ? ' · ' : ''}{t('延迟')} {(sum.avgLatency / 1000).toFixed(2)}s</>}
                                 </span>
                               )}
                             </div>

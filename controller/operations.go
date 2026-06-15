@@ -8,7 +8,6 @@ import (
 
 	"github.com/QuantumNous/new-api/common"
 	"github.com/QuantumNous/new-api/model"
-	"github.com/QuantumNous/new-api/service"
 
 	"github.com/gin-gonic/gin"
 )
@@ -114,27 +113,10 @@ func GetEnhancedOperations(c *gin.Context) {
 	todayConsumption, _ := model.SumUsedQuota(model.LogTypeConsume, todayStart, 0, "", "", "", 0, "")
 	allTimeConsumption, _ := model.SumUsedQuota(model.LogTypeConsume, 0, 0, "", "", "", 0, "")
 
-	// 上游成本（quota$ 口径）：区间、全部、今日
-	rangeCost, _ := model.GetChannelCostSummary(startTimestamp, endTimestamp)
-	allTimeCost, _ := model.GetChannelCostSummary(0, 0)
-	todayCost, _ := model.GetChannelCostSummary(todayStart, 0)
-
 	revenueTrend, _ := model.GetTopUpRevenueByDay(startTimestamp, endTimestamp)
 	consumptionTrend, consumptionErr := model.GetConsumptionByDay(startTimestamp, endTimestamp)
 	if consumptionErr != nil {
 		common.SysError(fmt.Sprintf("GetConsumptionByDay failed: start=%d, end=%d, err=%v", startTimestamp, endTimestamp, consumptionErr))
-	}
-	// 按日期成本，并入消费趋势
-	costByDay, _ := model.GetChannelCostByDay(startTimestamp, endTimestamp)
-	consumptionTrendWithCost := make([]gin.H, 0, len(consumptionTrend))
-	for _, d := range consumptionTrend {
-		consumptionTrendWithCost = append(consumptionTrendWithCost, gin.H{
-			"date":     d.Date,
-			"quota":    d.Quota,
-			"requests": d.Requests,
-			"tokens":   d.Tokens,
-			"cost":     costByDay[d.Date],
-		})
 	}
 
 	userRanking, _ := model.GetTopConsumingUsers(startTimestamp, endTimestamp, 20)
@@ -145,31 +127,6 @@ func GetEnhancedOperations(c *gin.Context) {
 	errorStats, _ := model.GetErrorStats(startTimestamp, endTimestamp)
 	todayErrors, _ := model.GetErrorStats(todayStart, 0)
 	topErrorModels, _ := model.GetTopErrorModels(startTimestamp, endTimestamp, 10)
-
-	type channelEfficiency struct {
-		ChannelId   int     `json:"channel_id"`
-		ChannelName string  `json:"channel_name"`
-		Score       float64 `json:"score"`
-		Success     int64   `json:"success"`
-		Errors      int64   `json:"errors"`
-		AvgLatency  int64   `json:"avg_latency"`
-		Quota       int64   `json:"quota"`
-		Requests    int64   `json:"requests"`
-	}
-	var channelEffList []channelEfficiency
-	for _, cr := range channelRanking {
-		detail := service.GetChannelPerfDetail(cr.ChannelId)
-		channelEffList = append(channelEffList, channelEfficiency{
-			ChannelId:   cr.ChannelId,
-			ChannelName: cr.ChannelName,
-			Score:       detail.Score,
-			Success:     detail.Success,
-			Errors:      detail.Errors,
-			AvgLatency:  detail.AvgLatency,
-			Quota:       cr.Quota,
-			Requests:    cr.Requests,
-		})
-	}
 
 	var totalUsers int64
 	model.DB.Model(&model.User{}).Count(&totalUsers)
@@ -186,16 +143,13 @@ func GetEnhancedOperations(c *gin.Context) {
 					"today":    todayRevenue,
 				},
 				"consumption": gin.H{
-					"today":         todayConsumption,
-					"all_time":      allTimeConsumption,
-					"today_cost":    todayCost,
-					"all_time_cost": allTimeCost,
-					"range_cost":    rangeCost,
+					"today":    todayConsumption,
+					"all_time": allTimeConsumption,
 				},
 			},
 			"trend": gin.H{
 				"revenue":     revenueTrend,
-				"consumption": consumptionTrendWithCost,
+				"consumption": consumptionTrend,
 			},
 			"rankings": gin.H{
 				"users":    userRanking,
@@ -208,37 +162,11 @@ func GetEnhancedOperations(c *gin.Context) {
 				"today":      todayErrors,
 				"top_models": topErrorModels,
 			},
-			"channel_efficiency": channelEffList,
+			"channel_efficiency": []any{},
 			"platform": gin.H{
 				"total_users":      totalUsers,
 				"enabled_channels": enabledChannels,
 			},
-		},
-	})
-}
-
-func GetChannelCostComparison(c *gin.Context) {
-	startTimestamp, _ := strconv.ParseInt(c.Query("start_timestamp"), 10, 64)
-	endTimestamp, _ := strconv.ParseInt(c.Query("end_timestamp"), 10, 64)
-	modelName := c.Query("model")
-	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "100"))
-	if limit <= 0 || limit > 500 {
-		limit = 100
-	}
-
-	costs, err := model.GetChannelModelCost(startTimestamp, endTimestamp, modelName, limit)
-	if err != nil {
-		c.JSON(http.StatusOK, gin.H{"success": false, "message": err.Error()})
-		return
-	}
-
-	models, _ := model.GetDistinctConsumeModels(startTimestamp, endTimestamp)
-
-	c.JSON(http.StatusOK, gin.H{
-		"success": true,
-		"data": gin.H{
-			"costs":  costs,
-			"models": models,
 		},
 	})
 }

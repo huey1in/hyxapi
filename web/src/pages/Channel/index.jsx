@@ -642,20 +642,6 @@ const ChannelEditModal = ({ channel, onClose, onSaved }) => {
             </Field>
           </div>
 
-          {/* 上游成本 */}
-          <div className='space-y-4 pb-3 border-b border-[#eeeeee]'>
-            <span className='text-xs font-medium text-ui-text-2'>上游成本</span>
-            <p className='text-xs text-ui-text-3'>对接其他中转站的渠道可配置上游成本，用于运营页利润核算。两项任一为 0 则不计成本。</p>
-            <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
-              <Field label='上游分组倍率' hint='我方按上游报价的倍率，0=自有渠道无成本'>
-                <NumberInput value={form.other_settings?.upstream_group_ratio ?? 0} onChange={(v) => uOther('upstream_group_ratio')(Number(v))} width='full' step={0.01} />
-              </Field>
-              <Field label='上游汇率' hint='1 人民币=多少美元额度（1元=1刀填1，1元=10刀填10），0=不计成本'>
-                <NumberInput value={form.other_settings?.upstream_exchange_rate ?? 0} onChange={(v) => uOther('upstream_exchange_rate')(Number(v))} width='full' step={0.01} />
-              </Field>
-            </div>
-          </div>
-
           {/* 请求配置 */}
           <div className='space-y-4 pb-3 border-b border-[#eeeeee]'>
             <span className='text-xs font-medium text-ui-text-2'>请求配置</span>

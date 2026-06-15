@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Plus, Search, Pencil, Trash2, ShieldCheck, ShieldOff, ArrowUp, ArrowDown, CreditCard, DollarSign } from 'lucide-react';
+import { Plus, Search, Pencil, Trash2, ShieldCheck, ShieldOff, ArrowUp, ArrowDown, CreditCard, DollarSign, Dices, Copy } from 'lucide-react';
 import { API, showError, showSuccess, renderQuota, timestamp2string } from '../../helpers';
 import { quotaToDisplayAmount, displayAmountToQuota } from '../../helpers/quota';
 import {
@@ -22,6 +22,7 @@ const UserPage = () => {
   const [keyword, setKeyword] = useState('');
   const [editing, setEditing] = useState(null);
   const [confirm, setConfirm] = useState(null);
+  const [deleting, setDeleting] = useState(null);
   const [subUser, setSubUser] = useState(null);
   const [quotaUser, setQuotaUser] = useState(null);
 
@@ -94,10 +95,7 @@ const UserPage = () => {
             icon={Trash2}
             variant='danger'
             title='删除'
-            onClick={() => setConfirm({
-              title: `删除用户 ${r.username}?`,
-              onOk: () => { act(r.id, 'delete'); setConfirm(null); },
-            })}
+            onClick={() => setDeleting(r)}
           />
         </div>
       ) },
@@ -148,6 +146,14 @@ const UserPage = () => {
         />
       )}
 
+      {deleting && (
+        <DeleteUserModal
+          user={deleting}
+          onClose={() => setDeleting(null)}
+          onConfirmed={() => { act(deleting.id, 'delete'); setDeleting(null); }}
+        />
+      )}
+
       {subUser && (
         <UserSubscriptionsPanel user={subUser} onClose={() => setSubUser(null)} />
       )}
@@ -159,11 +165,73 @@ const UserPage = () => {
   );
 };
 
+// 生成随机密码（默认 16 位，含大小写字母+数字，满足后端 min=8/max=20 校验）
+const genPassword = (len = 16) => {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789';
+  const arr = new Uint32Array(len);
+  (window.crypto || window.msCrypto).getRandomValues(arr);
+  let out = '';
+  for (let i = 0; i < len; i++) out += chars[arr[i] % chars.length];
+  return out;
+};
+
+// 删除用户确认：需手动输入用户名以确认，提供一键复制
+const DeleteUserModal = ({ user, onClose, onConfirmed }) => {
+  const [input, setInput] = useState('');
+  const matched = input.trim() === user.username;
+  const copyName = async () => {
+    try {
+      await navigator.clipboard.writeText(user.username);
+      showSuccess('已复制用户名');
+    } catch { showError('复制失败，请手动输入'); }
+  };
+  return (
+    <Modal
+      open
+      title='删除用户'
+      width={460}
+      onClose={onClose}
+      footer={
+        <>
+          <Button variant='toggle' onClick={onClose}>取消</Button>
+          <Button disabled={!matched} onClick={onConfirmed} style={matched ? { background: '#dc2626', color: '#fff' } : undefined}>确认删除</Button>
+        </>
+      }
+    >
+      <div className='space-y-3'>
+        <p className='text-sm text-ui-text-2 leading-relaxed'>
+          此操作将永久删除用户 <span className='font-semibold text-ui-text'>#{user.id}</span>，且不可恢复。
+          请输入该用户的用户名以确认：
+        </p>
+        <div className='flex items-center gap-2 rounded-lg bg-ui-bg-subtle px-3 py-2'>
+          <code className='flex-1 text-sm font-medium text-ui-text break-all'>{user.username}</code>
+          <IconButton icon={Copy} title='复制用户名' onClick={copyName} />
+        </div>
+        <Input
+          value={input}
+          onChange={setInput}
+          width='full'
+          placeholder='输入用户名确认'
+          onKeyDown={(e) => { if (e.key === 'Enter' && matched) onConfirmed(); }}
+        />
+      </div>
+    </Modal>
+  );
+};
+
 const UserEditModal = ({ user, onClose, onSaved }) => {
   const isNew = !user.id;
   const [form, setForm] = useState(user);
   const [saving, setSaving] = useState(false);
   const u = (k) => (v) => setForm((p) => ({ ...p, [k]: v?.target ? v.target.value : v }));
+  const fillRandomPassword = () => {
+    const pwd = genPassword();
+    setForm((p) => ({ ...p, password: pwd }));
+    try {
+      navigator.clipboard?.writeText(pwd);
+      showSuccess('已生成随机密码并复制到剪贴板');
+    } catch { showSuccess('已生成随机密码'); }
+  };
   const save = async () => {
     setSaving(true);
     try {
@@ -182,12 +250,13 @@ const UserEditModal = ({ user, onClose, onSaved }) => {
           <label className='block text-sm text-ui-text-2 mb-1.5'>用户名</label>
           <Input value={form.username || ''} onChange={u('username')} disabled={!isNew} width='full' />
         </div>
-        {isNew && (
-          <div>
-            <label className='block text-sm text-ui-text-2 mb-1.5'>密码</label>
-            <Input type='password' value={form.password || ''} onChange={u('password')} width='full' />
+        <div>
+          <label className='block text-sm text-ui-text-2 mb-1.5'>密码{!isNew && <span className='text-ui-text-3'>（留空则不修改）</span>}</label>
+          <div className='flex items-center gap-2'>
+            <Input type='text' value={form.password || ''} onChange={u('password')} width='full' placeholder={isNew ? '请输入密码' : '留空不修改'} />
+            <IconButton icon={Dices} title='生成随机密码' onClick={fillRandomPassword} />
           </div>
-        )}
+        </div>
         <div>
           <label className='block text-sm text-ui-text-2 mb-1.5'>显示名</label>
           <Input value={form.display_name || ''} onChange={u('display_name')} width='full' />

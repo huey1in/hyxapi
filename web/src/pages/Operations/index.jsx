@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useMemo, useCallback } from 'react';
 import { RefreshCw } from 'lucide-react';
 import { API, renderQuota, renderNumber } from '../../helpers';
-import { Table, Loading, IconButton, Select } from '../../components/ui';
+import { Table, Loading, IconButton } from '../../components/ui';
 import useIsMobile from '../../hooks/useIsMobile';
 
 /* ─── helpers ─── */
@@ -20,9 +20,9 @@ const fmtTokens = (n) => {
 };
 
 const RANGES = [
+  { label: '今天', days: 1 },
   { label: '7天', days: 7 },
   { label: '30天', days: 30 },
-  { label: '90天', days: 90 },
   { label: '全部', days: 0 },
 ];
 
@@ -63,10 +63,6 @@ const Operations = () => {
   const [rangeIdx, setRangeIdx] = useState(1);
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState(null);
-  const [costData, setCostData] = useState([]);
-  const [costModels, setCostModels] = useState([]);
-  const [selectedModel, setSelectedModel] = useState('');
-  const [costLoading, setCostLoading] = useState(false);
   const [trendPage, setTrendPage] = useState(1);
   const trendPageSize = 10;
 
@@ -88,37 +84,20 @@ const Operations = () => {
   }, [start, end]);
 
   useEffect(() => { loadData(); }, [loadData]);
-
-  const loadCostData = useCallback(async () => {
-    setCostLoading(true);
-    try {
-      const params = `start_timestamp=${start}&end_timestamp=${end}${selectedModel ? `&model=${encodeURIComponent(selectedModel)}` : ''}`;
-      const res = await API.get(`/api/operations/channel_cost?${params}`);
-      if (res.data?.success) {
-        const d = res.data.data;
-        setCostData((d.costs || []).sort((a, b) => (b.avg_quota || 0) - (a.avg_quota || 0)));
-        setCostModels(d.models || []);
-      }
-    } catch {}
-    finally { setCostLoading(false); }
-  }, [start, end, selectedModel]);
-
-  useEffect(() => { loadCostData(); }, [loadCostData]);
+  useEffect(() => { setTrendPage(1); }, [rangeIdx]);
 
   if (loading && !data) {
     return <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '60vh' }}><Loading /></div>;
   }
   if (!data) return null;
 
-  const { summary, trend, rankings, errors, channel_efficiency: chEff, platform } = data;
+  const { summary, trend, rankings, errors, platform } = data;
   const rev = summary?.revenue || {};
   const con = summary?.consumption || {};
   const todayRev = rev.today || {};
   const allRev = rev.all_time || {};
   const todayCon = con.today || {};
   const allCon = con.all_time || {};
-  const allCost = con.all_time_cost || 0;
-  const allProfit = (allCon.quota || 0) - allCost;
 
   /* ── merge trend ── */
   const mergedTrend = (() => {
@@ -129,7 +108,6 @@ const Operations = () => {
       map[c.date].quota = c.quota || 0;
       map[c.date].requests = c.requests || 0;
       map[c.date].tokens = c.tokens || 0;
-      map[c.date].cost = c.cost || 0;
     });
     return Object.values(map).sort((a, b) => b.date.localeCompare(a.date)); // 降序：新到旧
   })();
@@ -165,10 +143,6 @@ const Operations = () => {
         <MiniBar value={r.quota || 0} max={trendMaxQuota} color='#999' />
       </div>
     ) },
-    { key: 'profit', title: '利润', align: 'right', render: (r) => {
-      const profit = (r.quota || 0) - (r.cost || 0);
-      return <span style={{ fontVariantNumeric: 'tabular-nums', fontWeight: 600, fontSize: 12, color: profit >= 0 ? '#16a34a' : '#dc2626' }}>{renderQuota(profit)}</span>;
-    } },
   ] : [
     { key: 'date', title: '日期', render: (r) => <span style={{ whiteSpace: 'nowrap', color: 'var(--ui-text-2)' }}>{r.date}</span> },
     { key: 'money', title: '充值金额', align: 'right', render: (r) => (
@@ -184,13 +158,6 @@ const Operations = () => {
         <MiniBar value={r.quota || 0} max={trendMaxQuota} color='#999' />
       </div>
     ) },
-    { key: 'cost', title: '成本', align: 'right', render: (r) => (
-      <span style={{ fontVariantNumeric: 'tabular-nums', color: 'var(--ui-text-2)' }}>{renderQuota(r.cost || 0)}</span>
-    ) },
-    { key: 'profit', title: '利润', align: 'right', render: (r) => {
-      const profit = (r.quota || 0) - (r.cost || 0);
-      return <span style={{ fontVariantNumeric: 'tabular-nums', fontWeight: 600, color: profit >= 0 ? '#16a34a' : '#dc2626' }}>{renderQuota(profit)}</span>;
-    } },
     { key: 'requests', title: '请求', align: 'right', render: (r) => <span style={{ fontVariantNumeric: 'tabular-nums', color: 'var(--ui-text-2)' }}>{renderNumber(r.requests || 0)}</span> },
     { key: 'tokens', title: 'Token', align: 'right', render: (r) => <span style={{ fontVariantNumeric: 'tabular-nums', color: 'var(--ui-text-2)' }}>{fmtTokens(r.tokens || 0)}</span> },
   ];
@@ -264,48 +231,6 @@ const Operations = () => {
     ] : []),
   ];
 
-  /* ── channel efficiency ── */
-  const chEffCols = [
-    { key: 'name', title: '渠道', render: (r) => <span style={{ fontWeight: 500, maxWidth: isMobile ? 100 : 160, display: 'inline-block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', verticalAlign: 'bottom' }} title={r.channel_name}>{r.channel_name || `#${r.channel_id}`}</span> },
-    { key: 'score', title: '健康', align: 'right', width: 90, render: (r) => {
-      const s = r.score ?? 1;
-      const c = s >= 0.8 ? '#38a169' : s >= 0.5 ? '#d69e2e' : '#e53e3e';
-      return (
-        <div style={{ minWidth: 60 }}>
-          <span style={{ fontVariantNumeric: 'tabular-nums', fontWeight: 600, color: c }}>{s.toFixed(2)}</span>
-          <MiniBar value={s * 100} color={c} />
-        </div>
-      );
-    } },
-    ...(!isMobile ? [
-      { key: 'success', title: '成功', align: 'right', render: (r) => <span style={{ fontVariantNumeric: 'tabular-nums', color: 'var(--ui-text-2)' }}>{r.success ?? 0}</span> },
-      { key: 'errors', title: '错误', align: 'right', render: (r) => {
-        const e = r.errors ?? 0;
-        return <span style={{ fontVariantNumeric: 'tabular-nums', color: e > 0 ? '#e53e3e' : 'var(--ui-text-3)' }}>{e}</span>;
-      } },
-      { key: 'latency', title: '延迟', align: 'right', render: (r) => <span style={{ fontVariantNumeric: 'tabular-nums', color: 'var(--ui-text-2)' }}>{r.avg_latency ? `${r.avg_latency}ms` : '-'}</span> },
-    ] : []),
-    { key: 'quota', title: '消费', align: 'right', render: (r) => <span style={{ fontVariantNumeric: 'tabular-nums', fontWeight: 600 }}>{renderQuota(r.quota || 0)}</span> },
-  ];
-
-  /* ── channel cost comparison ── */
-  const costMaxAvg = costData.length > 0 ? Math.max(...costData.map((r) => r.avg_quota || 0), 1) : 1;
-  const costColumns = [
-    { key: 'name', title: '渠道', render: (r) => <span style={{ fontWeight: 500, maxWidth: isMobile ? 100 : 160, display: 'inline-block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', verticalAlign: 'bottom' }} title={r.channel_name}>{r.channel_name || `#${r.channel_id}`}</span> },
-    ...(!selectedModel ? [{ key: 'model_name', title: '模型', render: (r) => (
-      <span style={{ maxWidth: isMobile ? 100 : 180, display: 'inline-block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', verticalAlign: 'bottom', color: 'var(--ui-text-2)' }} title={r.model_name}>{r.model_name}</span>
-    ) }] : []),
-    { key: 'quota', title: '总消费', align: 'right', render: (r) => <span style={{ fontVariantNumeric: 'tabular-nums', fontWeight: 600 }}>{renderQuota(r.quota || 0)}</span> },
-    { key: 'requests', title: '请求数', align: 'right', render: (r) => <span style={{ fontVariantNumeric: 'tabular-nums', color: 'var(--ui-text-2)' }}>{renderNumber(r.requests || 0)}</span> },
-    { key: 'avg_quota', title: '均次消费', align: 'right', render: (r) => (
-      <div style={{ minWidth: 70 }}>
-        <span style={{ fontVariantNumeric: 'tabular-nums', fontWeight: 600, color: costData.length > 0 && r === costData[0] ? '#e53e3e' : costData.length > 1 && r === costData[costData.length - 1] ? '#38a169' : 'var(--ui-text)' }}>{renderQuota(r.avg_quota || 0)}</span>
-        <MiniBar value={r.avg_quota || 0} max={costMaxAvg} color='#999' />
-      </div>
-    ) },
-    ...(!isMobile ? [{ key: 'avg_tokens', title: '均次Token', align: 'right', render: (r) => <span style={{ fontVariantNumeric: 'tabular-nums', color: 'var(--ui-text-2)' }}>{fmtTokens(r.avg_tokens || 0)}</span> }] : []),
-  ];
-
   /* ── error models ── */
   const topErrors = errors?.top_models || [];
   const maxErrors = topErrors.length > 0 ? topErrors[0].errors : 1;
@@ -358,9 +283,9 @@ const Operations = () => {
         </div>
         <div style={grid(4)}>
           <StatMini label='累计收入' value={fmtMoney(allRev.total_money)} sub={`${renderNumber(allRev.total_orders || 0)} 笔订单`} />
-          <StatMini label='累计消费' value={renderQuota(allCon.quota || 0)} sub={`${renderNumber(platform?.total_users || 0)} 注册用户`} />
-          <StatMini label='累计成本' value={renderQuota(allCost)} />
-          <StatMini label='累计利润' value={renderQuota(allProfit)} sub={allCon.quota > 0 ? `利润率 ${((allProfit / allCon.quota) * 100).toFixed(1)}%` : undefined} />
+          <StatMini label='累计消费' value={renderQuota(allCon.quota || 0)} />
+          <StatMini label='注册用户' value={renderNumber(platform?.total_users || 0)} />
+          <StatMini label='启用渠道' value={renderNumber(platform?.enabled_channels || 0)} />
         </div>
       </div>
 
@@ -441,34 +366,6 @@ const Operations = () => {
           <Table columns={modelColumns} rows={modelRanking} rowKey='model_name' size='sm' />
         </Section>
       )}
-
-      {/* S6: 渠道效率 */}
-      {(chEff || []).length > 0 && (
-        <Section title='渠道效率'>
-          <Table columns={chEffCols} rows={chEff} rowKey='channel_id' size='sm' />
-        </Section>
-      )}
-
-      {/* S7: 渠道成本对比 */}
-      <Section
-        title='渠道成本对比'
-        right={
-          <Select
-            value={selectedModel}
-            onChange={setSelectedModel}
-            options={[{ value: '', label: '全部模型' }, ...costModels.map((m) => ({ value: m, label: m }))]}
-            width={isMobile ? 140 : 200}
-          />
-        }
-      >
-        {costLoading ? (
-          <div style={{ display: 'flex', justifyContent: 'center', padding: 24 }}><Loading /></div>
-        ) : costData.length > 0 ? (
-          <Table columns={costColumns} rows={costData} rowKey={(r) => `${r.channel_id}-${r.model_name}`} size='sm' />
-        ) : (
-          <div style={{ textAlign: 'center', padding: 24, color: 'var(--ui-text-3)', fontSize: 13 }}>暂无成本数据</div>
-        )}
-      </Section>
 
       {/* S8: 错误概况 */}
       <Section title='错误概况'>

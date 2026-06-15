@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { RefreshCw } from 'lucide-react';
 import { API, renderQuota, renderNumber } from '../../helpers';
-import { Table, Loading, IconButton, Tag } from '../../components/ui';
+import { Loading, IconButton } from '../../components/ui';
 import useIsMobile from '../../hooks/useIsMobile';
 
 /* ─── helpers ─── */
@@ -105,14 +105,6 @@ const KV = ({ label, value }) => (
   </div>
 );
 
-const Dot = ({ color }) => (
-  <span style={{ display: 'inline-block', width: 8, height: 8, borderRadius: 4, background: color, marginRight: 6 }} />
-);
-
-const statusTone = (s) => ({ up: 'success', degraded: 'warning', down: 'danger' }[s] || 'grey');
-const statusLabel = (s) => ({ up: '正常', degraded: '降级', down: '异常', idle: '空闲' }[s] || s);
-const statusOrder = (s) => ({ down: 0, degraded: 1, up: 2, idle: 3 }[s] ?? 4);
-
 /* ─── page ─── */
 
 const REFRESH_INTERVAL = 5;
@@ -145,61 +137,7 @@ const SystemStatus = () => {
   if (!data) return null;
 
   const { system, resources, runtime: rt, database, log_database, redis,
-    request_stats: rs, semantic_cache: sc, disk_cache: dc, channel_affinity: ca,
-    channels, models } = data;
-  const hs = models?.health_summary || {};
-
-  /* channel table */
-  const channelColumns = [
-    { key: 'id', title: 'ID', width: 50, render: (r) => <span style={{ color: 'var(--ui-text-3)', fontVariantNumeric: 'tabular-nums' }}>{r.id}</span> },
-    { key: 'name', title: '渠道', render: (r) => (
-      <span style={{ fontWeight: 500, maxWidth: isMobile ? 100 : 180, display: 'inline-block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', verticalAlign: 'bottom' }} title={r.name}>{r.name}</span>
-    ) },
-    { key: 'score', title: '健康', align: 'right', width: 100, render: (r) => {
-      const s = r.score ?? 1;
-      const c = s >= 0.8 ? '#38a169' : s >= 0.5 ? '#d69e2e' : '#e53e3e';
-      return (
-        <div style={{ minWidth: 70 }}>
-          <span style={{ fontVariantNumeric: 'tabular-nums', fontWeight: 600, color: c }}>{s.toFixed(2)}</span>
-          <MiniBar value={s * 100} color={c} />
-        </div>
-      );
-    } },
-    ...(!isMobile ? [
-      { key: 'success', title: '成功', align: 'right', render: (r) => <span style={{ fontVariantNumeric: 'tabular-nums', color: 'var(--ui-text-2)' }}>{r.success ?? 0}</span> },
-      { key: 'errors', title: '错误', align: 'right', render: (r) => {
-        const e = r.errors ?? 0;
-        return <span style={{ fontVariantNumeric: 'tabular-nums', color: e > 0 ? '#e53e3e' : 'var(--ui-text-3)' }}>{e}</span>;
-      } },
-      { key: 'avg_latency', title: '延迟', align: 'right', render: (r) => <span style={{ fontVariantNumeric: 'tabular-nums', color: 'var(--ui-text-2)' }}>{r.avg_latency ? `${r.avg_latency}ms` : '-'}</span> },
-      { key: 'used_quota', title: '消费', align: 'right', render: (r) => <span style={{ fontVariantNumeric: 'tabular-nums' }}>{renderQuota(r.used_quota || 0)}</span> },
-      { key: 'balance', title: '余额', align: 'right', render: (r) => <span style={{ fontVariantNumeric: 'tabular-nums', color: 'var(--ui-text-2)' }}>{r.balance != null ? `$${r.balance.toFixed(2)}` : '-'}</span> },
-    ] : []),
-  ];
-  const channelRows = (channels?.perf_scores || []).slice().sort((a, b) => (a.score ?? 1) - (b.score ?? 1));
-
-  /* model table */
-  const modelColumns = [
-    { key: 'model', title: '模型', render: (r) => (
-      <span style={{ fontWeight: 500, maxWidth: isMobile ? 120 : 220, display: 'inline-block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', verticalAlign: 'bottom' }} title={r.model}>{r.model}</span>
-    ) },
-    { key: 'status', title: '状态', width: 70, render: (r) => <Tag tone={statusTone(r.status)} dot>{statusLabel(r.status)}</Tag> },
-    ...(!isMobile ? [
-      { key: 'groups', title: '分组', align: 'right', width: 50, render: (r) => <span style={{ fontVariantNumeric: 'tabular-nums', color: 'var(--ui-text-2)' }}>{r.groups}</span> },
-      { key: 'latency', title: '延迟', align: 'right', render: (r) => <span style={{ fontVariantNumeric: 'tabular-nums', color: 'var(--ui-text-2)' }}>{r.latency ? `${r.latency}ms` : '-'}</span> },
-      { key: 'total', title: '请求', align: 'right', render: (r) => <span style={{ fontVariantNumeric: 'tabular-nums', color: 'var(--ui-text-2)' }}>{r.total ?? 0}</span> },
-      { key: 'errors', title: '错误', align: 'right', render: (r) => {
-        const e = r.errors ?? 0;
-        return <span style={{ fontVariantNumeric: 'tabular-nums', color: e > 0 ? '#e53e3e' : 'var(--ui-text-3)' }}>{e}</span>;
-      } },
-      { key: 'error_rate', title: '错误率', align: 'right', render: (r) => {
-        const rate = r.error_rate ?? 0;
-        const c = rate >= 50 ? '#e53e3e' : rate >= 10 ? '#d69e2e' : 'var(--ui-text-2)';
-        return <span style={{ fontVariantNumeric: 'tabular-nums', color: c }}>{rate.toFixed(1)}%</span>;
-      } },
-    ] : []),
-  ];
-  const modelRows = (models?.details || []).slice().sort((a, b) => statusOrder(a.status) - statusOrder(b.status));
+    request_stats: rs, semantic_cache: sc, disk_cache: dc, channel_affinity: ca } = data;
 
   const grid = (cols) => ({ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : `repeat(${cols}, 1fr)`, gap: isMobile ? 8 : 12 });
 
@@ -326,34 +264,6 @@ const SystemStatus = () => {
             )}
           </div>
         </div>
-      </Section>
-
-      {/* S7: Channel Health */}
-      <Section title='渠道健康' right={`共 ${channels?.total || 0} 个 · 启用 ${channels?.enabled || 0} · 停用 ${channels?.disabled || 0}`}>
-        {channelRows.length > 0 && <Table columns={channelColumns} rows={channelRows} rowKey='id' size='sm' />}
-      </Section>
-
-      {/* S8: Model Health */}
-      <Section title='模型健康'>
-        <div style={{ ...grid(4), marginBottom: 12 }}>
-          <div style={{ paddingBlock: 14, paddingInline: 16, border: '1px solid var(--ui-border)', borderRadius: 16 }}>
-            <div style={{ fontSize: 12, color: 'var(--ui-text-3)', marginBottom: 4 }}><Dot color='#38a169' />正常</div>
-            <div style={{ fontSize: 20, fontWeight: 700, color: 'var(--ui-text)', fontVariantNumeric: 'tabular-nums' }}>{hs.up || 0}</div>
-          </div>
-          <div style={{ paddingBlock: 14, paddingInline: 16, border: '1px solid var(--ui-border)', borderRadius: 16 }}>
-            <div style={{ fontSize: 12, color: 'var(--ui-text-3)', marginBottom: 4 }}><Dot color='#d69e2e' />降级</div>
-            <div style={{ fontSize: 20, fontWeight: 700, color: 'var(--ui-text)', fontVariantNumeric: 'tabular-nums' }}>{hs.degraded || 0}</div>
-          </div>
-          <div style={{ paddingBlock: 14, paddingInline: 16, border: '1px solid var(--ui-border)', borderRadius: 16 }}>
-            <div style={{ fontSize: 12, color: 'var(--ui-text-3)', marginBottom: 4 }}><Dot color='#e53e3e' />异常</div>
-            <div style={{ fontSize: 20, fontWeight: 700, color: 'var(--ui-text)', fontVariantNumeric: 'tabular-nums' }}>{hs.down || 0}</div>
-          </div>
-          <div style={{ paddingBlock: 14, paddingInline: 16, border: '1px solid var(--ui-border)', borderRadius: 16 }}>
-            <div style={{ fontSize: 12, color: 'var(--ui-text-3)', marginBottom: 4 }}><Dot color='#a0aec0' />空闲</div>
-            <div style={{ fontSize: 20, fontWeight: 700, color: 'var(--ui-text)', fontVariantNumeric: 'tabular-nums' }}>{hs.idle || 0}</div>
-          </div>
-        </div>
-        {modelRows.length > 0 && <Table columns={modelColumns} rows={modelRows} rowKey='model' size='sm' />}
       </Section>
 
       {/* Footer */}
