@@ -8,9 +8,12 @@
  *
  * 类型：
  *   info (默认) | success | warning | error
+ *
+ * 设计：暖色极简。右上角堆叠，中性卡片底（CSS 变量驱动深色模式），
+ *       语义色仅用于左侧图标与一条细色条，不做整片彩色填充。
  */
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { CheckCircle2, AlertTriangle, Info, XCircle, X } from 'lucide-react';
 
@@ -27,31 +30,31 @@ export const showError   = (message, opts = {}) => showToast({ ...opts, message,
 export const showInfo    = (message, opts = {}) => showToast({ ...opts, message, type: 'info' });
 export const showWarning = (message, opts = {}) => showToast({ ...opts, message, type: 'warning' });
 
+// 语义色仅用于图标和细色条；不同主题下都清晰可辨。
 const TYPE_CONFIG = {
-  success: { Icon: CheckCircle2, color: '#16a34a', bg: '#f0fdf4', border: '#bbf7d0' },
-  error:   { Icon: XCircle,      color: '#dc2626', bg: '#fef2f2', border: '#fecaca' },
-  warning: { Icon: AlertTriangle, color: '#d97706', bg: '#fffbeb', border: '#fde68a' },
-  info:    { Icon: Info,          color: '#2563eb', bg: '#eff6ff', border: '#bfdbfe' },
-};
-
-const TYPE_CONFIG_DARK = {
-  success: { color: '#4ade80', bg: '#14261a', border: '#1a3a24' },
-  error:   { color: '#f87171', bg: '#2a1414', border: '#3a1a1a' },
-  warning: { color: '#fbbf24', bg: '#2a2414', border: '#3a3018' },
-  info:    { color: '#60a5fa', bg: '#141e2a', border: '#1a2a3a' },
+  success: { Icon: CheckCircle2,  color: '#16a34a' },
+  error:   { Icon: XCircle,       color: '#dc2626' },
+  warning: { Icon: AlertTriangle, color: '#d97706' },
+  info:    { Icon: Info,          color: '#6b7280' },
 };
 
 export const ToastContainer = () => {
   const [items, setItems] = useState([]);
 
+  const dismiss = useCallback((id) => {
+    // 先标记退出，播放离场动画后再移除
+    setItems((s) => s.map((i) => (i.id === id ? { ...i, leaving: true } : i)));
+    setTimeout(() => setItems((s) => s.filter((i) => i.id !== id)), 160);
+  }, []);
+
   useEffect(() => {
     externalEnqueue = ({ message, type, duration }) => {
       const id = ++counter;
-      setItems((s) => [...s, { id, message, type }]);
-      setTimeout(() => setItems((s) => s.filter((i) => i.id !== id)), duration);
+      setItems((s) => [...s, { id, message, type, leaving: false }]);
+      setTimeout(() => dismiss(id), duration);
     };
     return () => { externalEnqueue = null; };
-  }, []);
+  }, [dismiss]);
 
   if (typeof document === 'undefined') return null;
 
@@ -59,20 +62,19 @@ export const ToastContainer = () => {
     <div
       style={{
         position: 'fixed',
-        top: 20,
-        left: '50%',
-        transform: 'translateX(-50%)',
+        top: 16,
+        right: 16,
         zIndex: 9999,
         display: 'flex',
         flexDirection: 'column',
-        gap: 8,
-        alignItems: 'center',
+        gap: 10,
+        alignItems: 'flex-end',
         pointerEvents: 'none',
         maxWidth: 'calc(100vw - 32px)',
       }}
     >
       {items.map((item) => (
-        <ToastItem key={item.id} item={item} onDismiss={() => setItems((s) => s.filter((i) => i.id !== item.id))} />
+        <ToastItem key={item.id} item={item} onDismiss={() => dismiss(item.id)} />
       ))}
     </div>,
     document.body,
@@ -80,45 +82,52 @@ export const ToastContainer = () => {
 };
 
 const ToastItem = ({ item, onDismiss }) => {
-  const isDark = typeof document !== 'undefined' && document.documentElement.classList.contains('dark');
   const config = TYPE_CONFIG[item.type] || TYPE_CONFIG.info;
-  const darkConfig = TYPE_CONFIG_DARK[item.type] || TYPE_CONFIG_DARK.info;
-  const { Icon } = config;
-  const bg = isDark ? darkConfig.bg : config.bg;
-  const border = isDark ? darkConfig.border : config.border;
-  const color = isDark ? darkConfig.color : config.color;
+  const { Icon, color } = config;
 
   return (
     <div
-      className='animate-toast-in'
+      className={item.leaving ? 'animate-toast-out' : 'animate-toast-in'}
       style={{
         pointerEvents: 'auto',
         display: 'flex',
         alignItems: 'center',
         gap: 10,
-        padding: '10px 14px',
+        padding: '11px 12px 11px 14px',
         borderRadius: 14,
-        background: bg,
-        border: `1px solid ${border}`,
-        boxShadow: '0 4px 24px rgba(0,0,0,0.08), 0 1px 4px rgba(0,0,0,0.04)',
-        minWidth: 200,
-        maxWidth: 400,
+        background: 'var(--ui-bg-elevated)',
+        border: '1px solid var(--ui-border)',
+        boxShadow: '0 8px 28px rgba(0,0,0,0.10), 0 2px 6px rgba(0,0,0,0.05)',
+        minWidth: 240,
+        maxWidth: 380,
       }}
     >
-      <Icon size={16} style={{ color, flexShrink: 0 }} />
-      <span style={{ flex: 1, fontSize: 14, fontWeight: 500, color: isDark ? '#ebe8e0' : '#1a1a1a', lineHeight: 1.4 }}>
+      <Icon size={17} style={{ color, flexShrink: 0 }} />
+      <span
+        style={{
+          flex: 1,
+          fontSize: 13.5,
+          fontWeight: 500,
+          color: 'var(--ui-text)',
+          lineHeight: 1.45,
+          wordBreak: 'break-word',
+        }}
+      >
         {item.message}
       </span>
       <button
         onClick={onDismiss}
+        className='transition-colors'
         style={{
           display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-          width: 20, height: 20, borderRadius: 6, border: 'none', background: 'transparent',
-          cursor: 'pointer', color: isDark ? '#807c70' : '#999', flexShrink: 0,
+          width: 22, height: 22, borderRadius: 7, border: 'none', background: 'transparent',
+          cursor: 'pointer', color: 'var(--ui-text-3)', flexShrink: 0,
         }}
+        onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--ui-bg-subtle)'; e.currentTarget.style.color = 'var(--ui-text-2)'; }}
+        onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'var(--ui-text-3)'; }}
         aria-label='close'
       >
-        <X size={12} />
+        <X size={13} />
       </button>
     </div>
   );

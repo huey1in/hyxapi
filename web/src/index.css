@@ -85,11 +85,18 @@ body {
 }
 
 @keyframes ui-toast-in {
-  from { opacity: 0; transform: translateY(-8px) scale(0.96); }
-  to   { opacity: 1; transform: translateY(0) scale(1); }
+  from { opacity: 0; transform: translateX(16px) scale(0.98); }
+  to   { opacity: 1; transform: translateX(0) scale(1); }
 }
 .animate-toast-in {
-  animation: ui-toast-in 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+  animation: ui-toast-in 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+}
+@keyframes ui-toast-out {
+  from { opacity: 1; transform: translateX(0) scale(1); }
+  to   { opacity: 0; transform: translateX(16px) scale(0.98); }
+}
+.animate-toast-out {
+  animation: ui-toast-out 0.16s ease-in forwards;
 }
 
 @keyframes ui-progress-indet {

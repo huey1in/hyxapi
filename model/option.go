@@ -96,6 +96,10 @@ func InitOptionMap() {
 	common.OptionMap["ModelRequestRateLimitDurationMinutes"] = strconv.Itoa(setting.ModelRequestRateLimitDurationMinutes)
 	common.OptionMap["ModelRequestRateLimitSuccessCount"] = strconv.Itoa(setting.ModelRequestRateLimitSuccessCount)
 	common.OptionMap["ModelRequestRateLimitGroup"] = setting.ModelRequestRateLimitGroup2JSONString()
+	common.OptionMap["MultiKeyCooldownEnabled"] = strconv.FormatBool(setting.MultiKeyCooldownEnabled)
+	common.OptionMap["MultiKeyCooldownThreshold"] = strconv.Itoa(setting.MultiKeyCooldownThreshold)
+	common.OptionMap["MultiKeyCooldownWindowMinutes"] = strconv.Itoa(setting.MultiKeyCooldownWindowMinutes)
+	common.OptionMap["MultiKeyCooldownDurationMinutes"] = strconv.Itoa(setting.MultiKeyCooldownDurationMinutes)
 	common.OptionMap["ModelRatio"] = ratio_setting.ModelRatio2JSONString()
 	common.OptionMap["ModelPrice"] = ratio_setting.ModelPrice2JSONString()
 	common.OptionMap["CacheRatio"] = ratio_setting.CacheRatio2JSONString()
@@ -247,6 +251,8 @@ func updateOptionMap(key string, value string) (err error) {
 			setting.CheckSensitiveOnPromptEnabled = boolValue
 		case "ModelRequestRateLimitEnabled":
 			setting.ModelRequestRateLimitEnabled = boolValue
+		case "MultiKeyCooldownEnabled":
+			setting.MultiKeyCooldownEnabled = boolValue
 		case "StopOnSensitiveEnabled":
 			setting.StopOnSensitiveEnabled = boolValue
 		case "SMTPSSLEnabled":
@@ -337,6 +343,12 @@ func updateOptionMap(key string, value string) (err error) {
 		setting.ModelRequestRateLimitDurationMinutes, _ = strconv.Atoi(value)
 	case "ModelRequestRateLimitSuccessCount":
 		setting.ModelRequestRateLimitSuccessCount, _ = strconv.Atoi(value)
+	case "MultiKeyCooldownThreshold":
+		setting.MultiKeyCooldownThreshold, _ = strconv.Atoi(value)
+	case "MultiKeyCooldownWindowMinutes":
+		setting.MultiKeyCooldownWindowMinutes, _ = strconv.Atoi(value)
+	case "MultiKeyCooldownDurationMinutes":
+		setting.MultiKeyCooldownDurationMinutes, _ = strconv.Atoi(value)
 	case "ModelRequestRateLimitGroup":
 		err = setting.UpdateModelRequestRateLimitGroupByJSONString(value)
 	case "RetryTimes":

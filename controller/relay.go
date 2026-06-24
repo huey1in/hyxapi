@@ -279,6 +279,9 @@ func Relay(c *gin.Context, relayFormat types.RelayFormat) {
 			if !startTime.IsZero() {
 				service.RecordChannelSuccess(channel.Id, time.Since(startTime).Milliseconds())
 			}
+			if common.GetContextKeyBool(c, constant.ContextKeyChannelIsMultiKey) {
+				model.RecordKeySuccess(channel.Id, common.GetContextKeyInt(c, constant.ContextKeyChannelMultiKeyIndex))
+			}
 			// Store response in semantic cache on miss
 			if cachingWriter != nil {
 				body, ct, code := cachingWriter.GetRecordedResponse()
@@ -295,6 +298,9 @@ func Relay(c *gin.Context, relayFormat types.RelayFormat) {
 		}
 
 		service.RecordChannelError(channel.Id)
+		if common.GetContextKeyBool(c, constant.ContextKeyChannelIsMultiKey) {
+			model.RecordKeyFailure(channel.Id, common.GetContextKeyInt(c, constant.ContextKeyChannelMultiKeyIndex))
+		}
 		newAPIError = service.NormalizeViolationFeeError(newAPIError)
 		relayInfo.LastError = newAPIError
 

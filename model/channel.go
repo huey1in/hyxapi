@@ -131,18 +131,38 @@ func (channel *Channel) GetNextEnabledKey() (string, int, *types.NewAPIError) {
 		return common.ChannelStatusEnabled
 	}
 
-	// Collect indexes of enabled keys
-	enabledIdx := make([]int, 0, len(keys))
+	// Collect status-enabled key indexes.
+	statusEnabledIdx := make([]int, 0, len(keys))
 	for i := range keys {
 		if getStatus(i) == common.ChannelStatusEnabled {
+			statusEnabledIdx = append(statusEnabledIdx, i)
+		}
+	}
+	if len(statusEnabledIdx) == 0 {
+		// If no specific status list or none enabled, return an explicit error so caller can
+		// properly handle a channel with no available keys (e.g. mark channel disabled).
+		return "", 0, types.NewError(errors.New("no enabled keys"), types.ErrorCodeChannelNoAvailableKey)
+	}
+
+	// Prefer keys not in cooldown. 兜底：若状态可用的 key 全部在冷却中，则放开冷却限制，
+	// 宁可试冷却中的 key 也不让请求硬失败。
+	enabledIdx := make([]int, 0, len(statusEnabledIdx))
+	for _, i := range statusEnabledIdx {
+		if !IsKeyInCooldown(channel.Id, i) {
 			enabledIdx = append(enabledIdx, i)
 		}
 	}
-	// If no specific status list or none enabled, return an explicit error so caller can
-	// properly handle a channel with no available keys (e.g. mark channel disabled).
-	// Returning the first key here caused requests to keep using an already-disabled key.
+	bypassCooldown := false
 	if len(enabledIdx) == 0 {
-		return "", 0, types.NewError(errors.New("no enabled keys"), types.ErrorCodeChannelNoAvailableKey)
+		bypassCooldown = true
+		enabledIdx = statusEnabledIdx
+	}
+	// selectable 判断某个 key 是否可被轮询选中（状态可用且未冷却，或处于兜底放开模式）。
+	selectable := func(idx int) bool {
+		if getStatus(idx) != common.ChannelStatusEnabled {
+			return false
+		}
+		return bypassCooldown || !IsKeyInCooldown(channel.Id, idx)
 	}
 
 	switch channel.ChannelInfo.MultiKeyMode {
@@ -175,7 +195,7 @@ func (channel *Channel) GetNextEnabledKey() (string, int, *types.NewAPIError) {
 		}
 		for i := 0; i < len(keys); i++ {
 			idx := (start + i) % len(keys)
-			if getStatus(idx) == common.ChannelStatusEnabled {
+			if selectable(idx) {
 				// update polling index for next call (point to the next position)
 				channel.ChannelInfo.MultiKeyPollingIndex = (idx + 1) % len(keys)
 				return keys[idx], idx, nil

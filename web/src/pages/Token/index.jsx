@@ -33,13 +33,17 @@ const TokenPage = () => {
       if (success) {
         const list = Array.isArray(data) ? data : data?.items || [];
         setRows(list);
+        // 一次性批量取 key，避免逐个请求触发限流（CriticalRateLimit 20次/20分钟）
         const keyMap = {};
-        await Promise.all(list.map(async (t) => {
+        const ids = list.map((t) => t.id);
+        for (let i = 0; i < ids.length; i += 100) {
+          const chunk = ids.slice(i, i + 100);
           try {
-            const r = await API.post(`/api/token/${t.id}/key`);
-            if (r.data?.success && r.data.data?.key) keyMap[t.id] = `sk-${r.data.data.key}`;
+            const r = await API.post('/api/token/batch/keys', { ids: chunk });
+            const km = r.data?.data?.keys || {};
+            Object.entries(km).forEach(([id, k]) => { if (k) keyMap[id] = `sk-${k}`; });
           } catch {}
-        }));
+        }
         setKeys(keyMap);
       }
       else showError(message);

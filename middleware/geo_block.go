@@ -76,7 +76,7 @@ const geoBlockedPageTemplate = `<!DOCTYPE html>
                 </div>
                 <div class="meta-row">
                     <span class="meta-label">%[9]s</span>
-                    <span class="meta-value"><a href="mailto:1in@routify.space">1in@routify.space</a></span>
+                    <span class="meta-value"><a href="mailto:1in@yxh.me">1in@yxh.me</a></span>
                 </div>
                 <div class="meta-row">
                     <span class="meta-label">%[10]s</span>
