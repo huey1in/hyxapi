@@ -52,13 +52,6 @@ export function getSystemName() {
 }
 
 export function getLogo() {
-  const status = localStorage.getItem('status');
-  if (status) {
-    try {
-      const s = JSON.parse(status);
-      if (s.logo) return s.logo;
-    } catch {}
-  }
   return '/logo.png';
 }
 

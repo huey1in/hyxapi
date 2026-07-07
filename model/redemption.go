@@ -16,7 +16,6 @@ type Redemption struct {
 	UserId       int            `json:"user_id"`
 	Key          string         `json:"key" gorm:"type:varchar(32);uniqueIndex"`
 	Status       int            `json:"status" gorm:"default:1"`
-	Name         string         `json:"name" gorm:"index"`
 	Quota        int            `json:"quota" gorm:"default:100"`
 	CreatedTime  int64          `json:"created_time" gorm:"bigint"`
 	RedeemedTime int64          `json:"redeemed_time" gorm:"bigint"`
@@ -71,14 +70,12 @@ func SearchRedemptions(keyword string, startIdx int, num int) (redemptions []*Re
 		}
 	}()
 
-	// Build query based on keyword type
 	query := tx.Model(&Redemption{})
 
-	// Only try to convert to ID if the string represents a valid integer
 	if id, err := strconv.Atoi(keyword); err == nil {
-		query = query.Where("id = ? OR name LIKE ?", id, keyword+"%")
+		query = query.Where("id = ? OR "+quotedKeyColumn()+" LIKE ?", id, keyword+"%")
 	} else {
-		query = query.Where("name LIKE ?", keyword+"%")
+		query = query.Where(quotedKeyColumn()+" LIKE ?", keyword+"%")
 	}
 
 	// Get total count
@@ -169,7 +166,7 @@ func (redemption *Redemption) SelectUpdate() error {
 // Update Make sure your token's fields is completed, because this will update non-zero values
 func (redemption *Redemption) Update() error {
 	var err error
-	err = DB.Model(redemption).Select("name", "status", "quota", "redeemed_time", "expired_time").Updates(redemption).Error
+	err = DB.Model(redemption).Select("status", "quota", "redeemed_time", "expired_time").Updates(redemption).Error
 	return err
 }
 
@@ -195,4 +192,11 @@ func DeleteInvalidRedemptions() (int64, error) {
 	now := common.GetTimestamp()
 	result := DB.Where("status IN ? OR (status = ? AND expired_time != 0 AND expired_time < ?)", []int{common.RedemptionCodeStatusUsed, common.RedemptionCodeStatusDisabled}, common.RedemptionCodeStatusEnabled, now).Delete(&Redemption{})
 	return result.RowsAffected, result.Error
+}
+
+func quotedKeyColumn() string {
+	if common.UsingPostgreSQL {
+		return `"key"`
+	}
+	return "`key`"
 }

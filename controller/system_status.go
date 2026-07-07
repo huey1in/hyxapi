@@ -10,7 +10,6 @@ import (
 	"github.com/QuantumNous/new-api/middleware"
 	"github.com/QuantumNous/new-api/model"
 	"github.com/QuantumNous/new-api/service"
-	"github.com/QuantumNous/new-api/setting/cache_setting"
 	"github.com/gin-gonic/gin"
 )
 
@@ -18,10 +17,8 @@ func GetSystemStatus(c *gin.Context) {
 	sysStatus := common.GetSystemStatus()
 	diskInfo := common.GetDiskSpaceInfo()
 	stats := middleware.GetStats()
-	scStats := service.GetSemanticCacheStats()
 	dcStats := common.GetDiskCacheStats()
 	allHealth := model.GetAllModelHealth()
-	scCfg := cache_setting.GetSetting()
 
 	// Go runtime memory stats
 	var mem runtime.MemStats
@@ -86,8 +83,12 @@ func GetSystemStatus(c *gin.Context) {
 	// Request stats — today + all time
 	now := time.Now()
 	todayStart := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location()).Unix()
+	windowStart := now.Add(-5 * time.Minute).Unix()
 	todayStat, _ := model.SumUsedQuota(0, todayStart, 0, "", "", "", 0, "")
 	totalStat, _ := model.SumUsedQuota(0, 0, 0, "", "", "", 0, "")
+	requestHealth, _ := model.GetRequestHealthStat(windowStart, now.Unix())
+	riskChannels, _ := model.GetTopRiskChannels(todayStart, now.Unix(), 10)
+	riskModels, _ := model.GetTopRiskModels(todayStart, now.Unix(), 10)
 
 	// Channel affinity cache
 	affinityStats := service.GetChannelAffinityCacheStats()
@@ -178,6 +179,35 @@ func GetSystemStatus(c *gin.Context) {
 		})
 	}
 
+	dbPressure := poolPressure(dbStats)
+	logDbPressure := poolPressure(logDbStats)
+	healthStatus := "ok"
+	var healthWarnings []string
+	if sysStatus.CPUUsage >= 90 || sysStatus.MemoryUsage >= 90 || sysStatus.DiskUsage >= 90 {
+		healthStatus = "critical"
+		healthWarnings = append(healthWarnings, "资源使用率过高")
+	} else if sysStatus.CPUUsage >= 75 || sysStatus.MemoryUsage >= 75 || sysStatus.DiskUsage >= 75 {
+		healthStatus = "warning"
+		healthWarnings = append(healthWarnings, "资源使用率偏高")
+	}
+	if requestHealth.TotalRequests > 0 && requestHealth.SuccessRate < 95 {
+		if requestHealth.SuccessRate < 90 {
+			healthStatus = "critical"
+		} else if healthStatus == "ok" {
+			healthStatus = "warning"
+		}
+		healthWarnings = append(healthWarnings, "近5分钟请求成功率偏低")
+	}
+	if dbPressure >= 80 || logDbPressure >= 80 {
+		if healthStatus == "ok" {
+			healthStatus = "warning"
+		}
+		healthWarnings = append(healthWarnings, "数据库连接池压力偏高")
+	}
+	if !common.RedisEnabled {
+		healthWarnings = append(healthWarnings, "Redis 未启用")
+	}
+
 	c.JSON(http.StatusOK, gin.H{
 		"success": true,
 		"data": gin.H{
@@ -187,6 +217,13 @@ func GetSystemStatus(c *gin.Context) {
 				"go_version":         runtime.Version(),
 				"goroutines":         runtime.NumGoroutine(),
 				"active_connections": stats.ActiveConnections,
+			},
+			"health": gin.H{
+				"status":          healthStatus,
+				"warnings":        healthWarnings,
+				"window_seconds":  300,
+				"db_pressure":     dbPressure,
+				"log_db_pressure": logDbPressure,
 			},
 			"resources": gin.H{
 				"cpu_usage":    sysStatus.CPUUsage,
@@ -218,10 +255,10 @@ func GetSystemStatus(c *gin.Context) {
 				"total_tokens":   totalStat.Tokens,
 				"total_quota":    totalStat.Quota,
 			},
-			"semantic_cache": gin.H{
-				"enabled":    scCfg.Enabled,
-				"entries":    scStats["entries"],
-				"total_hits": scStats["total_hits"],
+			"request_health": requestHealth,
+			"risk": gin.H{
+				"channels": riskChannels,
+				"models":   riskModels,
 			},
 			"disk_cache": gin.H{
 				"active_disk_files":    dcStats.ActiveDiskFiles,
@@ -251,6 +288,21 @@ func GetSystemStatus(c *gin.Context) {
 			},
 		},
 	})
+}
+
+func poolPressure(stats gin.H) float64 {
+	if stats == nil {
+		return 0
+	}
+	maxOpen, ok := stats["max_open"].(int)
+	if !ok || maxOpen <= 0 {
+		return 0
+	}
+	inUse, ok := stats["in_use"].(int)
+	if !ok {
+		return 0
+	}
+	return float64(inUse) / float64(maxOpen) * 100
 }
 
 func statusPriority(s string) int {

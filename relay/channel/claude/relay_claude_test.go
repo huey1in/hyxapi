@@ -2,6 +2,7 @@ package claude
 
 import (
 	"encoding/base64"
+	"encoding/json"
 	"strings"
 	"testing"
 
@@ -273,6 +274,71 @@ func TestBuildOpenAIStyleUsageFromClaudeUsageDefaultsAggregateCacheCreationTo5m(
 
 	require.Equal(t, 50, openAIUsage.ClaudeCacheCreation5mTokens)
 	require.Equal(t, 0, openAIUsage.ClaudeCacheCreation1hTokens)
+}
+
+func TestRequestOpenAI2ClaudeMessage_PreservesTextBlockCacheControl(t *testing.T) {
+	request := dto.GeneralOpenAIRequest{
+		Model: "claude-3-5-sonnet",
+		Messages: []dto.Message{
+			{
+				Role: "user",
+				Content: []any{
+					map[string]any{
+						"type": "text",
+						"text": "stable prefix",
+						"cache_control": map[string]any{
+							"type": "ephemeral",
+							"ttl":  "1h",
+						},
+					},
+					map[string]any{
+						"type": "text",
+						"text": "dynamic suffix",
+					},
+				},
+			},
+		},
+	}
+
+	claudeRequest, err := RequestOpenAI2ClaudeMessage(nil, request)
+	require.NoError(t, err)
+	require.Len(t, claudeRequest.Messages, 1)
+
+	content, ok := claudeRequest.Messages[0].Content.([]dto.ClaudeMediaMessage)
+	require.True(t, ok)
+	require.Len(t, content, 2)
+	require.JSONEq(t, `{"type":"ephemeral","ttl":"1h"}`, string(content[0].CacheControl))
+	require.Nil(t, content[1].CacheControl)
+}
+
+func TestRequestOpenAI2ClaudeMessage_PreservesSystemBlockCacheControl(t *testing.T) {
+	request := dto.GeneralOpenAIRequest{
+		Model: "claude-3-5-sonnet",
+		Messages: []dto.Message{
+			{
+				Role: "system",
+				Content: []any{
+					map[string]any{
+						"type":          "text",
+						"text":          "stable system",
+						"cache_control": json.RawMessage(`{"type":"ephemeral"}`),
+					},
+				},
+			},
+			{
+				Role:    "user",
+				Content: "hello",
+			},
+		},
+	}
+
+	claudeRequest, err := RequestOpenAI2ClaudeMessage(nil, request)
+	require.NoError(t, err)
+
+	system, ok := claudeRequest.System.([]dto.ClaudeMediaMessage)
+	require.True(t, ok)
+	require.Len(t, system, 1)
+	require.JSONEq(t, `{"type":"ephemeral"}`, string(system[0].CacheControl))
 }
 
 func TestRequestOpenAI2ClaudeMessage_IgnoresUnsupportedFileContent(t *testing.T) {

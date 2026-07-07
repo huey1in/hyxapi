@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Plus, Pencil, Trash2, Power, PowerOff, Activity, RefreshCw, CheckSquare, Square, Tag as TagIcon, ChevronDown } from 'lucide-react';
+import { Plus, Pencil, Trash2, Power, PowerOff, Activity, RefreshCw, CheckSquare, Square, Tag as TagIcon, ChevronDown, Play, RotateCcw, PlusCircle } from 'lucide-react';
 import { API, showError, showSuccess, renderQuota, timestamp2string, getChannelModels } from '../../helpers';
 import {
   PageShell, Card, Button, IconButton, Input, NumberInput, Select, MultiSelect, Textarea, Table, Pagination,
@@ -241,54 +241,241 @@ const ChannelPage = () => {
 
 const ChannelTestModal = ({ channel, onClose }) => {
   const initial = (channel.models || '').split(',').map((s) => s.trim()).filter(Boolean).slice(0, 8);
-  const [models, setModels] = useState(initial.join('\n'));
-  const [results, setResults] = useState({});
+  const [selectedModels, setSelectedModels] = useState(initial);
+  const [customModel, setCustomModel] = useState('');
+  const [results, setResults] = useState([]);
   const [running, setRunning] = useState(false);
+  const [stream, setStream] = useState(false);
+
+  const modelOptions = Array.from(new Set([...(channel.models || '').split(',').map((s) => s.trim()).filter(Boolean), ...selectedModels]));
+  const channelTypeLabel = TYPE_OPTIONS.find((o) => o.value === channel.type)?.label || channel.type || '-';
+
+  const toggleModel = (model) => {
+    if (running) return;
+    setSelectedModels((prev) => (
+      prev.includes(model) ? prev.filter((m) => m !== model) : [...prev, model]
+    ));
+  };
+
+  const addCustomModel = () => {
+    const values = customModel.split(/[\n,]/).map((s) => s.trim()).filter(Boolean);
+    if (values.length === 0) return;
+    setSelectedModels((prev) => Array.from(new Set([...prev, ...values])));
+    setCustomModel('');
+  };
 
   const run = async () => {
-    const list = models.split(/[\n,]/).map((s) => s.trim()).filter(Boolean);
-    if (list.length === 0) return showError('请输入至少一个模型');
-    setResults({}); setRunning(true);
+    const list = selectedModels;
+    if (list.length === 0) return showError('请选择至少一个模型');
+    setResults(list.map((model) => ({ model, status: 'pending' })));
+    setRunning(true);
     for (const m of list) {
-      setResults((p) => ({ ...p, [m]: { status: 'running' } }));
+      setResults((p) => p.map((r) => (r.model === m ? { ...r, status: 'running', message: '' } : r)));
       try {
-        const res = await API.get(`/api/channel/test/${channel.id}?model=${encodeURIComponent(m)}`);
-        const { success, message, time } = res.data || {};
-        setResults((p) => ({ ...p, [m]: success
-          ? { status: 'ok', time }
-          : { status: 'fail', message: message || '失败' } }));
+        const params = new URLSearchParams({ model: m });
+        if (stream) params.set('stream', 'true');
+        const res = await API.get(`/api/channel/test/${channel.id}?${params.toString()}`);
+        const { success, message, time, error_code: errorCode } = res.data || {};
+        setResults((p) => p.map((r) => (r.model === m
+          ? {
+              ...r,
+              status: success ? 'ok' : 'fail',
+              time,
+              errorCode,
+              message: success ? (message || '测试通过') : (message || '失败'),
+            }
+          : r)));
       } catch (e) {
-        setResults((p) => ({ ...p, [m]: { status: 'fail', message: e.message || '请求失败' } }));
+        setResults((p) => p.map((r) => (r.model === m
+          ? { ...r, status: 'fail', message: e.message || '请求失败' }
+          : r)));
       }
     }
     setRunning(false);
   };
 
+  const resultColumns = [
+    { key: 'model', title: '模型', render: (r) => <span className='font-mono text-xs break-all'>{r.model}</span> },
+    { key: 'status', title: '状态', width: 96, render: (r) => {
+        if (r.status === 'pending') return <Tag color='grey'>等待</Tag>;
+        if (r.status === 'running') return <Tag color='blue'>测试中</Tag>;
+        if (r.status === 'ok') return <Tag color='green'>通过</Tag>;
+        return <Tag color='red'>失败</Tag>;
+      } },
+    { key: 'time', title: '耗时', width: 88, render: (r) => r.status === 'ok' ? `${Number(r.time || 0).toFixed(2)}s` : '-' },
+    { key: 'message', title: '返回信息', render: (r) => (
+        <span className={cn('text-xs break-words', r.status === 'fail' ? 'text-ui-danger' : 'text-ui-text-2')}>
+          {r.errorCode ? `[${r.errorCode}] ` : ''}{r.message || '-'}
+        </span>
+      ) },
+  ];
+
   return (
-    <Modal open title={`测试渠道 #${channel.id} - ${channel.name}`} onClose={onClose} hideFooter width={640}>
-      <div className='space-y-4'>
-        <div>
-          <label className='block text-sm text-ui-text-2 mb-1.5'>测试模型（每行一个，或逗号分隔）</label>
-          <Textarea value={models} onChange={setModels} rows={3} placeholder='gpt-4o\nclaude-3-5-sonnet\ndeepseek-chat' />
+    <Modal
+      open
+      title={(
+        <div className='flex w-[760px] max-w-full items-center justify-between gap-4'>
+          <span>测试渠道</span>
+          <label className='flex items-center gap-2 text-xs font-normal text-ui-text-2'>
+            流式
+            <Switch size='sm' checked={stream} onChange={setStream} />
+          </label>
         </div>
-        <div className='flex justify-end gap-2'>
-          <Button variant='toggle' onClick={onClose}>关闭</Button>
-          <Button loading={running} onClick={run}>{running ? '测试中…' : '开始测试'}</Button>
+      )}
+      onClose={onClose}
+      hideFooter
+      width={860}
+    >
+      <div className='space-y-5'>
+        <div className='flex flex-wrap items-center gap-x-5 gap-y-2 text-sm'>
+          <div className='min-w-0'>
+            <span className='text-ui-text-3'>渠道：</span>
+            <span className='font-medium text-ui-text'>{channel.name || '-'}</span>
+          </div>
+          <div>
+            <span className='text-ui-text-3'>类型：</span>
+            <span className='text-ui-text'>{channelTypeLabel}</span>
+          </div>
+          <div>
+            <span className='text-ui-text-3'>分组：</span>
+            <span className='text-ui-text'>{channel.group || 'default'}</span>
+          </div>
         </div>
-        {Object.keys(results).length > 0 && (
-          <div className='space-y-1.5 max-h-64 overflow-auto'>
-            {Object.entries(results).map(([m, r]) => (
-              <div key={m} className='flex items-center justify-between gap-2 p-2 rounded-lg border border-ui-border text-sm'>
-                <span className='font-mono text-xs text-ui-text-1 truncate flex-1'>{m}</span>
-                {r.status === 'running' && <Tag color='grey'>测试中…</Tag>}
-                {r.status === 'ok' && <Tag color='green'>{r.time?.toFixed?.(2) ?? '-'}s</Tag>}
-                {r.status === 'fail' && <Tag color='red' title={r.message}>失败: {String(r.message || '').slice(0, 40)}</Tag>}
-              </div>
-            ))}
+
+        <div className='grid gap-4 lg:grid-cols-[1fr_148px]'>
+          <div>
+            <div className='mb-2 flex items-center justify-between gap-3'>
+              <label className='block text-sm text-ui-text-2'>测试模型</label>
+              {initial.length > 0 && (
+                <button
+                  type='button'
+                  className='text-ui-accent hover:underline'
+                  onClick={() => setSelectedModels(initial)}
+                  disabled={running}
+                >
+                  恢复默认
+                </button>
+              )}
+            </div>
+            <div className='grid gap-2 sm:grid-cols-2 xl:grid-cols-3'>
+              {modelOptions.map((model) => {
+                const selected = selectedModels.includes(model);
+                return (
+                  <button
+                    key={model}
+                    type='button'
+                    onClick={() => toggleModel(model)}
+                    disabled={running}
+                    className={cn(
+                      'flex min-w-0 items-center gap-2 rounded-lg border px-3 py-2 text-left transition-colors',
+                      selected
+                        ? 'border-ui-accent bg-ui-accent/10 text-ui-text'
+                        : 'border-ui-border bg-[var(--page-bg)] text-ui-text-2 hover:bg-ui-bg-subtle',
+                      running && 'cursor-not-allowed opacity-70',
+                    )}
+                  >
+                    <ModelCdnIcon model={model} channelType={channel.type} />
+                    <span className='min-w-0 flex-1 truncate font-mono text-xs'>{model}</span>
+                    {selected && <CheckSquare size={15} className='flex-shrink-0 text-ui-accent' />}
+                  </button>
+                );
+              })}
+            </div>
+            <div className='mt-3 flex gap-2'>
+              <Input
+                value={customModel}
+                onChange={setCustomModel}
+                onKeyDown={(e) => e.key === 'Enter' && addCustomModel()}
+                placeholder='手动输入模型 ID，多个用逗号分隔'
+                disabled={running}
+              />
+              <IconButton icon={PlusCircle} title='添加模型' onClick={addCustomModel} disabled={running} />
+            </div>
+          </div>
+          <div className='flex items-start gap-2 lg:justify-end lg:pt-7'>
+            <div className='flex gap-2'>
+              <Button variant='toggle' icon={RotateCcw} onClick={() => setResults([])} disabled={running}>清空</Button>
+              <Button icon={Play} loading={running} onClick={run}>{running ? '测试中' : '开始'}</Button>
+            </div>
+          </div>
+        </div>
+
+        {results.length > 0 && (
+          <div className='max-h-80 overflow-auto ui-scrollbar'>
+            <Table
+              columns={resultColumns}
+              rows={results}
+              rowKey='model'
+              size='sm'
+              tableLayout='fixed'
+              emptyText='暂无测试结果'
+            />
           </div>
         )}
       </div>
     </Modal>
+  );
+};
+
+const MODEL_ICON_CDN = 'https://registry.npmmirror.com/@lobehub/icons-static-png/latest/files/light';
+
+const CHANNEL_TYPE_ICON_SLUG = {
+  1: 'openai',
+  3: 'azureai-color',
+  14: 'claude-color',
+  24: 'gemini-color',
+  41: 'vertexai-color',
+  33: 'aws-color',
+  17: 'qwen-color',
+  16: 'zhipu-color',
+  25: 'moonshot-color',
+  36: 'deepseek-color',
+  43: 'mistral-color',
+  48: 'xai',
+  20: 'openrouter',
+  40: 'siliconcloud-color',
+  4: 'ollama',
+  34: 'cohere-color',
+  42: 'cloudflare-color',
+  45: 'volcengine-color',
+  35: 'minimax-color',
+  49: 'coze',
+};
+
+const getModelIconSlug = (model, channelType) => {
+  const name = String(model || '').toLowerCase();
+  if (/claude/.test(name)) return 'claude-color';
+  if (/deepseek/.test(name)) return 'deepseek-color';
+  if (/gemini|palm/.test(name)) return 'gemini-color';
+  if (/gpt|o1|o3|o4|dall|whisper|text-embedding/.test(name)) return 'openai';
+  if (/qwen|qwq|tongyi/.test(name)) return 'qwen-color';
+  if (/glm|chatglm/.test(name)) return 'zhipu-color';
+  if (/moonshot|kimi/.test(name)) return 'moonshot-color';
+  if (/mistral|mixtral|codestral/.test(name)) return 'mistral-color';
+  if (/grok|xai/.test(name)) return 'xai';
+  if (/llama/.test(name)) return 'meta-color';
+  if (/command|cohere/.test(name)) return 'cohere-color';
+  return CHANNEL_TYPE_ICON_SLUG[channelType] || 'openai';
+};
+
+const ModelCdnIcon = ({ model, channelType }) => {
+  const [failed, setFailed] = useState(false);
+  const slug = getModelIconSlug(model, channelType);
+  if (failed) {
+    return (
+      <span className='flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-md bg-ui-bg-subtle text-[10px] font-semibold text-ui-text-3'>
+        {String(model || '?').slice(0, 1).toUpperCase()}
+      </span>
+    );
+  }
+  return (
+    <img
+      src={`${MODEL_ICON_CDN}/${slug}.png`}
+      alt=''
+      className='h-6 w-6 flex-shrink-0 rounded-md object-contain'
+      loading='lazy'
+      onError={() => setFailed(true)}
+    />
   );
 };
 

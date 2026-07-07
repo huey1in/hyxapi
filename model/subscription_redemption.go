@@ -17,9 +17,8 @@ import (
 // a user, activate a subscription plan for that user.
 type SubscriptionRedemption struct {
 	Id           int            `json:"id"`
-	PlanId      int            `json:"plan_id" gorm:"index"`
+	PlanId       int            `json:"plan_id" gorm:"index"`
 	Key          string         `json:"key" gorm:"type:varchar(32);uniqueIndex"`
-	Name         string         `json:"name" gorm:"index"`
 	Status       int            `json:"status" gorm:"default:1"` // 1=enabled, 2=used
 	CreatedTime  int64          `json:"created_time" gorm:"bigint"`
 	RedeemedTime int64          `json:"redeemed_time" gorm:"bigint"`
@@ -34,7 +33,7 @@ const (
 )
 
 // GenerateSubscriptionCodes creates `count` new codes for the given plan.
-func GenerateSubscriptionCodes(planId int, name string, count int, expiredTime int64) ([]*SubscriptionRedemption, error) {
+func GenerateSubscriptionCodes(planId int, count int, expiredTime int64) ([]*SubscriptionRedemption, error) {
 	if planId <= 0 {
 		return nil, errors.New("invalid plan id")
 	}
@@ -51,7 +50,6 @@ func GenerateSubscriptionCodes(planId int, name string, count int, expiredTime i
 		c := &SubscriptionRedemption{
 			PlanId:      planId,
 			Key:         key,
-			Name:        name,
 			Status:      SubscriptionRedemptionStatusEnabled,
 			CreatedTime: common.GetTimestamp(),
 			ExpiredTime: expiredTime,
@@ -72,9 +70,9 @@ func ListSubscriptionCodesByPlan(planId int, keyword string) ([]*SubscriptionRed
 	var out []*SubscriptionRedemption
 	query := DB.Where("plan_id = ?", planId)
 	if keyword != "" {
-		query = query.Where("name LIKE ? OR "+"`key`"+" LIKE ?", keyword+"%", keyword+"%")
+		query = query.Where("`key`"+" LIKE ?", keyword+"%")
 		if common.UsingPostgreSQL {
-			query = DB.Where("plan_id = ?", planId).Where(`name LIKE ? OR "key" LIKE ?`, keyword+"%", keyword+"%")
+			query = DB.Where("plan_id = ?", planId).Where(`"key" LIKE ?`, keyword+"%")
 		}
 	}
 	if err := query.Order("id desc").Find(&out).Error; err != nil {

@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
-	"unicode/utf8"
 
 	"github.com/QuantumNous/new-api/common"
 	"github.com/QuantumNous/new-api/i18n"
@@ -66,10 +65,6 @@ func AddRedemption(c *gin.Context) {
 		common.ApiError(c, err)
 		return
 	}
-	if utf8.RuneCountInString(redemption.Name) == 0 || utf8.RuneCountInString(redemption.Name) > 20 {
-		common.ApiErrorI18n(c, i18n.MsgRedemptionNameLength)
-		return
-	}
 	if redemption.Count <= 0 {
 		common.ApiErrorI18n(c, i18n.MsgRedemptionCountPositive)
 		return
@@ -87,7 +82,6 @@ func AddRedemption(c *gin.Context) {
 		key := common.GenerateRedeemCode()
 		cleanRedemption := model.Redemption{
 			UserId:      c.GetInt("id"),
-			Name:        redemption.Name,
 			Key:         key,
 			CreatedTime: common.GetTimestamp(),
 			Quota:       redemption.Quota,
@@ -148,7 +142,6 @@ func UpdateRedemption(c *gin.Context) {
 			return
 		}
 		// If you add more fields, please also update redemption.Update()
-		cleanRedemption.Name = redemption.Name
 		cleanRedemption.Quota = redemption.Quota
 		cleanRedemption.ExpiredTime = redemption.ExpiredTime
 	}
@@ -160,7 +153,7 @@ func UpdateRedemption(c *gin.Context) {
 		common.ApiError(c, err)
 		return
 	}
-	model.RecordAuditLog(c, model.AuditUpdate, "redemption", cleanRedemption.Id, fmt.Sprintf("更新兑换码 #%d [%s]", cleanRedemption.Id, cleanRedemption.Name))
+	model.RecordAuditLog(c, model.AuditUpdate, "redemption", cleanRedemption.Id, fmt.Sprintf("更新兑换码 #%d", cleanRedemption.Id))
 	c.JSON(http.StatusOK, gin.H{
 		"success": true,
 		"message": "",

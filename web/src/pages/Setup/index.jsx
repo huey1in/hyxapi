@@ -1,12 +1,11 @@
 import React, { useEffect, useState } from 'react';
-import { CheckCircle2, Database, UserCog, Settings, Loader2 } from 'lucide-react';
+import { CheckCircle2, Database, UserCog, Loader2 } from 'lucide-react';
 import { API, showError, showSuccess } from '../../helpers';
-import { Button, Card, Input, RadioGroup, Loading, Notice, Steps } from '../../components/ui';
+import { Button, Card, Input, Loading, Notice, Steps } from '../../components/ui';
 
 const STEPS = [
   { title: '数据库', icon: Database },
   { title: '管理员', icon: UserCog },
-  { title: '使用模式', icon: Settings },
   { title: '完成', icon: CheckCircle2 },
 ];
 
@@ -18,7 +17,6 @@ const Setup = () => {
     username: '',
     password: '',
     confirmPassword: '',
-    usageMode: 'external',
   });
 
   useEffect(() => {
@@ -55,7 +53,6 @@ const Setup = () => {
         username: form.username,
         password: form.password,
         confirmPassword: form.confirmPassword,
-        SelfUseModeEnabled: form.usageMode === 'self',
       });
       const { success, message } = res.data || {};
       if (success) {
@@ -115,26 +112,11 @@ const Setup = () => {
         )}
 
         {step === 2 && (
-          <div>
-            <p className='text-sm text-ui-text-2 mb-3'>选择系统的运行模式</p>
-            <RadioGroup
-              value={form.usageMode}
-              onChange={update('usageMode')}
-              options={[
-                { value: 'external', label: '对外服务 — 开放注册，多用户共享' },
-                { value: 'self',     label: '自用模式 — 仅自己使用，禁用注册' },
-              ]}
-            />
-          </div>
-        )}
-
-        {step === 3 && (
           <div className='space-y-3'>
             <Notice variant='info'>请确认以下信息后完成初始化：</Notice>
             <ul className='text-sm text-ui-text-1 space-y-1.5 pl-4'>
               <li>• 数据库：{status.database_type || '已就绪'}</li>
               <li>• 管理员：{status.root_init ? '使用现有账号' : form.username}</li>
-              <li>• 模式：{({ external: '对外服务', self: '自用', demo: '演示' })[form.usageMode]}</li>
             </ul>
           </div>
         )}

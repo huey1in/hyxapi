@@ -65,7 +65,6 @@ var DB *gorm.DB
 
 var LOG_DB *gorm.DB
 
-
 func CheckSetup() {
 	setup := GetSetup()
 	if setup == nil {
@@ -242,6 +241,8 @@ func migrateDB() error {
 	}
 	// Drop legacy user group columns (用户分组概念已删除)
 	dropLegacyUserGroupColumns()
+	// Drop legacy redemption display-name columns; codes do not need names/batch names.
+	dropLegacyRedemptionNameColumns()
 
 	err := DB.AutoMigrate(
 		&Channel{},
@@ -269,6 +270,7 @@ func migrateDB() error {
 	if err != nil {
 		return err
 	}
+	dropLegacyBrandingOptions()
 	if common.UsingSQLite {
 		if err := ensureSubscriptionPlanTableSQLite(); err != nil {
 			return err
@@ -282,6 +284,33 @@ func migrateDB() error {
 		}
 	}
 	return nil
+}
+
+func dropLegacyBrandingOptions() {
+	if err := DB.Where("key IN ?", []string{"SystemName", "Logo", "general_setting.docs_link", "DefaultCollapseSidebar", "SelfUseModeEnabled"}).Delete(&Option{}).Error; err != nil {
+		common.SysError(fmt.Sprintf("failed to delete legacy branding options: %v", err))
+	}
+}
+
+func dropLegacyRedemptionNameColumns() {
+	for _, tableName := range []string{"redemptions", "subscription_redemptions"} {
+		if DB.Migrator().HasColumn(tableName, "name") {
+			sql := fmt.Sprintf("ALTER TABLE %s DROP COLUMN %s", quoteMigrationIdentifier(tableName), quoteMigrationIdentifier("name"))
+			if common.UsingPostgreSQL {
+				sql = fmt.Sprintf("ALTER TABLE %s DROP COLUMN IF EXISTS %s", quoteMigrationIdentifier(tableName), quoteMigrationIdentifier("name"))
+			}
+			if err := DB.Exec(sql).Error; err != nil {
+				common.SysError(fmt.Sprintf("failed to drop legacy %s.name column: %v", tableName, err))
+			}
+		}
+	}
+}
+
+func quoteMigrationIdentifier(identifier string) string {
+	if common.UsingPostgreSQL {
+		return `"` + identifier + `"`
+	}
+	return "`" + identifier + "`"
 }
 
 func migrateLOGDB() error {
@@ -638,9 +667,9 @@ func PingDB() error {
 // 这些列由 PR 5 移除；本函数幂等，首次执行时 DROP，列已不存在则跳过。
 func dropLegacyUserGroupColumns() {
 	type colSpec struct {
-		table   string
-		column  string
-		model   interface{} // SQLite Migrator.DropColumn 需要 struct 类型用于重建表
+		table  string
+		column string
+		model  interface{} // SQLite Migrator.DropColumn 需要 struct 类型用于重建表
 	}
 	specs := []colSpec{
 		{"users", "group", &User{}},

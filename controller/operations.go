@@ -1,12 +1,10 @@
 package controller
 
 import (
-	"fmt"
 	"net/http"
 	"strconv"
 	"time"
 
-	"github.com/QuantumNous/new-api/common"
 	"github.com/QuantumNous/new-api/model"
 
 	"github.com/gin-gonic/gin"
@@ -103,69 +101,46 @@ func GetEnhancedOperations(c *gin.Context) {
 	startTimestamp, _ := strconv.ParseInt(c.Query("start_timestamp"), 10, 64)
 	endTimestamp, _ := strconv.ParseInt(c.Query("end_timestamp"), 10, 64)
 
-	now := time.Now()
-	todayStart := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location()).Unix()
-
-	allTimeRevenue, _ := model.GetTopUpRevenueSummary(0, 0)
 	rangeRevenue, _ := model.GetTopUpRevenueSummary(startTimestamp, endTimestamp)
-	todayRevenue, _ := model.GetTopUpRevenueSummary(todayStart, 0)
-
-	todayConsumption, _ := model.SumUsedQuota(model.LogTypeConsume, todayStart, 0, "", "", "", 0, "")
-	allTimeConsumption, _ := model.SumUsedQuota(model.LogTypeConsume, 0, 0, "", "", "", 0, "")
-
-	revenueTrend, _ := model.GetTopUpRevenueByDay(startTimestamp, endTimestamp)
-	consumptionTrend, consumptionErr := model.GetConsumptionByDay(startTimestamp, endTimestamp)
-	if consumptionErr != nil {
-		common.SysError(fmt.Sprintf("GetConsumptionByDay failed: start=%d, end=%d, err=%v", startTimestamp, endTimestamp, consumptionErr))
+	rangeConsumption, _ := model.SumUsedQuota(model.LogTypeConsume, startTimestamp, endTimestamp, "", "", "", 0, "")
+	activeStat, _ := model.GetActiveOperationsStat(startTimestamp, endTimestamp)
+	newUsers, _ := model.CountNewUsers(startTimestamp, endTimestamp)
+	channelCharges, _ := model.GetChannelConsumption(startTimestamp, endTimestamp, 50)
+	groupCharges, _ := model.GetGroupConsumption(startTimestamp, endTimestamp, 50)
+	averageRPM := 0.0
+	if startTimestamp != 0 && endTimestamp > startTimestamp {
+		minutes := float64(endTimestamp-startTimestamp) / 60
+		if minutes < 1 {
+			minutes = 1
+		}
+		averageRPM = float64(rangeConsumption.Requests) / minutes
 	}
-
-	userRanking, _ := model.GetTopConsumingUsers(startTimestamp, endTimestamp, 20)
-	modelRanking, _ := model.GetModelConsumption(startTimestamp, endTimestamp, 20)
-	channelRanking, _ := model.GetChannelConsumption(startTimestamp, endTimestamp, 15)
-	groupRanking, _ := model.GetGroupConsumption(startTimestamp, endTimestamp, 15)
-
-	errorStats, _ := model.GetErrorStats(startTimestamp, endTimestamp)
-	todayErrors, _ := model.GetErrorStats(todayStart, 0)
-	topErrorModels, _ := model.GetTopErrorModels(startTimestamp, endTimestamp, 10)
-
-	var totalUsers int64
-	model.DB.Model(&model.User{}).Count(&totalUsers)
-	var enabledChannels int64
-	model.DB.Model(&model.Channel{}).Where("status = ?", common.ChannelStatusEnabled).Count(&enabledChannels)
 
 	c.JSON(http.StatusOK, gin.H{
 		"success": true,
 		"data": gin.H{
+			"period": gin.H{
+				"start_timestamp": startTimestamp,
+				"end_timestamp":   endTimestamp,
+			},
 			"summary": gin.H{
 				"revenue": gin.H{
-					"all_time": allTimeRevenue,
-					"range":    rangeRevenue,
-					"today":    todayRevenue,
+					"range": rangeRevenue,
 				},
 				"consumption": gin.H{
-					"today":    todayConsumption,
-					"all_time": allTimeConsumption,
+					"range":       rangeConsumption,
+					"average_rpm": averageRPM,
+				},
+				"active": gin.H{
+					"users":     activeStat.Users,
+					"models":    activeStat.Models,
+					"channels":  activeStat.Channels,
+					"new_users": newUsers,
 				},
 			},
-			"trend": gin.H{
-				"revenue":     revenueTrend,
-				"consumption": consumptionTrend,
-			},
-			"rankings": gin.H{
-				"users":    userRanking,
-				"models":   modelRanking,
-				"channels": channelRanking,
-				"groups":   groupRanking,
-			},
-			"errors": gin.H{
-				"range":      errorStats,
-				"today":      todayErrors,
-				"top_models": topErrorModels,
-			},
-			"channel_efficiency": []any{},
-			"platform": gin.H{
-				"total_users":      totalUsers,
-				"enabled_channels": enabledChannels,
+			"charges": gin.H{
+				"groups":   groupCharges,
+				"channels": channelCharges,
 			},
 		},
 	})

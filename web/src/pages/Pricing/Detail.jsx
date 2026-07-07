@@ -20,17 +20,22 @@ const STATE_META = {
 
 const summarizeHistory = (entry) => {
   const hist = entry?.history || [];
-  let calls = 0, errs = 0, latSum = 0, latN = 0;
+  let calls = 0, errs = 0, latSum = 0, latN = 0, promptTokens = 0, cacheTokens = 0;
   hist.forEach((r) => {
     calls += r.total || 0;
     errs += r.errors || 0;
     if ((r.total || 0) > 0 && r.latency > 0) { latSum += r.latency; latN++; }
+    promptTokens += r.prompt_tokens || 0;
+    cacheTokens += r.cache_tokens || 0;
   });
   return {
     calls,
     errs,
     successRate: calls > 0 ? 1 - errs / calls : null,
     avgLatency: latN > 0 ? Math.round(latSum / latN) : null,
+    promptTokens,
+    cacheTokens,
+    cacheRate: promptTokens > 0 ? cacheTokens / promptTokens : null,
   };
 };
 
@@ -261,16 +266,11 @@ const PricingDetail = () => {
                                 <span className='text-xs text-ui-text-3 tabular-nums'>
                                   {sum.successRate !== null && <>{t('成功率')} {Math.round(sum.successRate * 100)}%</>}
                                   {sum.avgLatency !== null && <>{sum.successRate !== null ? ' · ' : ''}{t('延迟')} {(sum.avgLatency / 1000).toFixed(2)}s</>}
+                                  {sum.cacheRate !== null && <>{(sum.successRate !== null || sum.avgLatency !== null) ? ' · ' : ''}{t('缓存率')} {(sum.cacheRate * 100).toFixed(1)}%</>}
                                 </span>
                               )}
                             </div>
-                            {lowHeat ? (
-                              <div className='rounded-xl bg-ui-bg-subtle px-4 py-3 text-sm text-ui-text-3'>
-                                {t('该模型在该分组热度不高，暂无足够调用数据')}
-                              </div>
-                            ) : (
-                              <StatusBar history={entry.history} />
-                            )}
+                            <StatusBar history={entry?.history || []} />
                           </div>
                         );
                       })}

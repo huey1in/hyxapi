@@ -6,7 +6,6 @@ import (
 	"github.com/QuantumNous/new-api/common"
 	"github.com/QuantumNous/new-api/constant"
 	"github.com/QuantumNous/new-api/model"
-	"github.com/QuantumNous/new-api/setting/operation_setting"
 	"github.com/gin-gonic/gin"
 )
 
@@ -17,10 +16,9 @@ type Setup struct {
 }
 
 type SetupRequest struct {
-	Username           string `json:"username"`
-	Password           string `json:"password"`
-	ConfirmPassword    string `json:"confirmPassword"`
-	SelfUseModeEnabled bool   `json:"SelfUseModeEnabled"`
+	Username        string `json:"username"`
+	Password        string `json:"password"`
+	ConfirmPassword string `json:"confirmPassword"`
 }
 
 func GetSetup(c *gin.Context) {
@@ -117,6 +115,7 @@ func PostSetup(c *gin.Context) {
 			DisplayName: "Root User",
 			AccessToken: nil,
 			Quota:       100000000,
+			CreatedAt:   common.GetTimestamp(),
 		}
 		err = model.DB.Create(&rootUser).Error
 		if err != nil {
@@ -126,19 +125,6 @@ func PostSetup(c *gin.Context) {
 			})
 			return
 		}
-	}
-
-	// Set operation modes
-	operation_setting.SelfUseModeEnabled = req.SelfUseModeEnabled
-
-	// Save operation modes to database for persistence
-	err = model.UpdateOption("SelfUseModeEnabled", boolToString(req.SelfUseModeEnabled))
-	if err != nil {
-		c.JSON(200, gin.H{
-			"success": false,
-			"message": "保存自用模式设置失败: " + err.Error(),
-		})
-		return
 	}
 
 	// Update setup status

@@ -359,9 +359,8 @@ func AdminDeleteUserSubscription(c *gin.Context) {
 // ---- Subscription redemption codes ----
 
 type GenerateSubscriptionCodesRequest struct {
-	Count       int    `json:"count"`
-	Name        string `json:"name"`
-	ExpiredTime int64  `json:"expired_time"`
+	Count       int   `json:"count"`
+	ExpiredTime int64 `json:"expired_time"`
 }
 
 // AdminGenerateSubscriptionCodes generates N redemption codes for a plan.
@@ -379,7 +378,7 @@ func AdminGenerateSubscriptionCodes(c *gin.Context) {
 	if req.Count <= 0 {
 		req.Count = 1
 	}
-	codes, err := model.GenerateSubscriptionCodes(planId, req.Name, req.Count, req.ExpiredTime)
+	codes, err := model.GenerateSubscriptionCodes(planId, req.Count, req.ExpiredTime)
 	if err != nil {
 		common.ApiError(c, err)
 		return

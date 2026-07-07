@@ -149,12 +149,6 @@ func SetApiRouter(router *gin.Engine) {
 			optionRoute.POST("/test_email", controller.SendTestEmail)
 		}
 
-		uploadRoute := apiRouter.Group("/upload")
-		uploadRoute.Use(middleware.RootAuth())
-		{
-			uploadRoute.POST("/logo", controller.UploadLogo)
-		}
-
 		channelRoute := apiRouter.Group("/channel")
 		channelRoute.Use(middleware.AdminAuth())
 		{

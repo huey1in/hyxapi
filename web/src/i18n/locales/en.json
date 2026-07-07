@@ -2833,7 +2833,6 @@
     "自定义货币符号将显示在所有额度数值前，例如 €1.50": "Custom currency symbol will appear before all quota amounts, e.g. €1.50",
     "自定义错误响应": "Custom Error Response",
     "自定义镜像": "Custom Image",
-    "自用模式": "Self-use mode",
     "自适应列表": "Adaptive list",
     "至": "until",
     "节省": "Save",
@@ -3676,7 +3675,6 @@
     "默认区域": "Default region",
     "默认区域，如: us-central1": "Default region, e.g.: us-central1",
     "默认情况下，所有用户创建令牌时看到的可选分组列表是一样的（即「用户可选」列勾选的分组）。": "By default, all users see the same selectable group list when creating tokens (i.e., groups with \"User Selectable\" checked).",
-    "默认折叠侧边栏": "Default collapse sidebar",
     "默认测试模型": "Default Test Model",
     "默认用户消息": "Default User Message",
     "默认补全倍率": "Default completion ratio",
@@ -3899,6 +3897,7 @@
     "新密码": "New password",
     "确认新密码": "Confirm new password",
     "修改密码": "Change password",
-    "Tokens": "Tokens"
+    "Tokens": "Tokens",
+    "缓存率": "Cache rate"
   }
 }

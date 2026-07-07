@@ -43,6 +43,7 @@ type User struct {
 	AffCount         int            `json:"aff_count" gorm:"type:int;default:0;column:aff_count"`
 	AffHistoryQuota  int            `json:"aff_history_quota" gorm:"type:int;default:0;column:aff_history"` // 邀请历史额度
 	InviterId        int            `json:"inviter_id" gorm:"type:int;column:inviter_id;index"`
+	CreatedAt        int64          `json:"created_at" gorm:"bigint;index"`
 	DeletedAt        gorm.DeletedAt `gorm:"index"`
 	LinuxDOId        string         `json:"linux_do_id" gorm:"column:linux_do_id;index"`
 	Setting          string         `json:"setting" gorm:"type:text;column:setting"`
@@ -335,6 +336,9 @@ func (user *User) Insert(inviterId int) error {
 		}
 	}
 	user.Quota = common.QuotaForNewUser
+	if user.CreatedAt == 0 {
+		user.CreatedAt = common.GetTimestamp()
+	}
 	//user.SetAccessToken(common.GetUUID())
 	user.AffCode = common.GetRandomString(4)
 
@@ -397,6 +401,9 @@ func (user *User) InsertWithTx(tx *gorm.DB, inviterId int) error {
 		}
 	}
 	user.Quota = common.QuotaForNewUser
+	if user.CreatedAt == 0 {
+		user.CreatedAt = common.GetTimestamp()
+	}
 	user.AffCode = common.GetRandomString(4)
 
 	// 初始化用户设置
@@ -442,6 +449,19 @@ func (user *User) FinalizeOAuthUserCreation(inviterId int) {
 		}
 		_ = inviteUser(inviterId)
 	}
+}
+
+func CountNewUsers(startTimestamp, endTimestamp int64) (int64, error) {
+	tx := DB.Model(&User{})
+	if startTimestamp != 0 {
+		tx = tx.Where("created_at >= ?", startTimestamp)
+	}
+	if endTimestamp != 0 {
+		tx = tx.Where("created_at <= ?", endTimestamp)
+	}
+	var count int64
+	err := tx.Count(&count).Error
+	return count, err
 }
 
 func (user *User) Update(updatePassword bool) error {

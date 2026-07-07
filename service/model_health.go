@@ -118,11 +118,13 @@ func backfillModelHealth(interval time.Duration, buckets int) {
 				continue
 			}
 			model.RecordModelHealth(pp.model, pp.group, model.ModelHealthRecord{
-				CheckedAt: e,
-				Total:     stat.Total,
-				Errors:    stat.Errors,
-				Latency:   stat.AvgLatencyMs,
-				Status:    deriveHealthStatus(stat),
+				CheckedAt:    e,
+				Total:        stat.Total,
+				Errors:       stat.Errors,
+				Latency:      stat.AvgLatencyMs,
+				PromptTokens: stat.PromptTokens,
+				CacheTokens:  stat.CacheTokens,
+				Status:       deriveHealthStatus(stat),
 			})
 		}
 	}
@@ -150,11 +152,13 @@ func runModelHealthAggregation(interval time.Duration) {
 			continue
 		}
 		model.RecordModelHealth(pp.model, pp.group, model.ModelHealthRecord{
-			CheckedAt: time.Now().Unix(),
-			Total:     stat.Total,
-			Errors:    stat.Errors,
-			Latency:   stat.AvgLatencyMs,
-			Status:    deriveHealthStatus(stat),
+			CheckedAt:    time.Now().Unix(),
+			Total:        stat.Total,
+			Errors:       stat.Errors,
+			Latency:      stat.AvgLatencyMs,
+			PromptTokens: stat.PromptTokens,
+			CacheTokens:  stat.CacheTokens,
+			Status:       deriveHealthStatus(stat),
 		})
 	}
 }

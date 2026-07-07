@@ -129,6 +129,16 @@ func jsonExtract(field, key string) string {
 	return "JSON_UNQUOTE(JSON_EXTRACT(" + field + ", '$." + key + "'))"
 }
 
+func jsonIntExtract(field, key string) string {
+	if common.UsingPostgreSQL {
+		return "COALESCE(NULLIF((NULLIF(" + field + ", '')::jsonb->>'" + key + "'), '')::bigint, 0)"
+	}
+	if common.UsingSQLite {
+		return "CAST(COALESCE(NULLIF(json_extract(NULLIF(" + field + ", ''), '$." + key + "'), ''), '0') AS INTEGER)"
+	}
+	return "CAST(COALESCE(NULLIF(JSON_UNQUOTE(JSON_EXTRACT(NULLIF(" + field + ", ''), '$." + key + "')), ''), '0') AS SIGNED)"
+}
+
 func GetAuditLogsByAction(action string, startTimestamp, endTimestamp int64, startIdx, num int) (logs []*Log, total int64, err error) {
 	tx := LOG_DB.Where("type = ?", LogTypeManage)
 

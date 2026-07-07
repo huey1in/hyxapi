@@ -12,7 +12,7 @@ const FooterBar = () => {
   const [statusState] = useContext(StatusContext);
   const status = statusState?.status || {};
   const systemName = getSystemName() || 'Routify';
-  const docsLink = status?.docs_link || 'https://docs.newapi.pro';
+  const docsLink = status?.docs_link || '';
   const year = new Date().getFullYear();
 
   useEffect(() => {
@@ -34,7 +34,7 @@ const FooterBar = () => {
       links: [
         { label: t('控制台'),    to: '/console' },
         { label: t('API Keys'),  to: '/console/token' },
-        { label: t('文档'),      href: docsLink, external: true },
+        ...(docsLink ? [{ label: t('文档'), href: docsLink, external: true }] : []),
       ],
     },
     {

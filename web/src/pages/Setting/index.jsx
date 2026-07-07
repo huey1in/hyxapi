@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { RefreshCw, Save, Plus, Trash2 } from 'lucide-react';
 import { API, showError, showSuccess, isRoot } from '../../helpers';
 import {
@@ -16,12 +16,11 @@ const TABS = [
   { key: 'model',       label: '模型适配' },
   { key: 'affinity',    label: '渠道亲和' },
   { key: 'dashboard',   label: '仪表盘' },
-  { key: 'cache',       label: '缓存' },
   { key: 'performance', label: '性能' },
 ];
 
 const TAB_KEYS = {
-  platform: ['SystemName', 'ServerAddress', 'general_setting.docs_link', 'Logo', 'RetryTimes', 'general_setting.quota_display_type', 'DisplayTokenStatEnabled', 'DefaultCollapseSidebar', 'SelfUseModeEnabled', 'token_setting.max_user_tokens', 'EpayEnabled', 'PayAddress', 'EpayId', 'EpayKey', 'CustomCallbackAddress', 'Price', 'MinTopUp', 'TopUpPresetAmounts', 'PayMethods'],
+  platform: ['ServerAddress', 'RetryTimes', 'general_setting.quota_display_type', 'DisplayTokenStatEnabled', 'token_setting.max_user_tokens', 'EpayEnabled', 'PayAddress', 'EpayId', 'EpayKey', 'CustomCallbackAddress', 'Price', 'MinTopUp', 'TopUpPresetAmounts', 'PayMethods'],
   global: [
     'global.pass_through_request_enabled',
     'global.thinking_model_blacklist',
@@ -79,11 +78,6 @@ const TAB_KEYS = {
     'console_setting.announcements_enabled', 'console_setting.announcements',
     'log_setting.log_request_body', 'log_setting.log_response_body', 'log_setting.max_body_log_bytes',
   ],
-  cache: [
-    'semantic_cache_setting.enabled', 'semantic_cache_setting.ttl_seconds',
-    'semantic_cache_setting.max_entries', 'semantic_cache_setting.cache_embeddings',
-    'semantic_cache_setting.cache_completions', 'semantic_cache_setting.hit_cost_ratio',
-  ],
   performance: ['StreamCacheQueueLength', 'BatchUpdateEnabled', 'BatchUpdateInterval', 'MemoryCacheEnabled', 'CacheKeyPrefix',
     'performance_setting.disk_cache_enabled', 'performance_setting.disk_cache_threshold_mb',
     'performance_setting.disk_cache_max_size_mb', 'performance_setting.disk_cache_path',
@@ -94,8 +88,8 @@ const TAB_KEYS = {
 
 const TAB_SECTIONS = {
   platform: [
-    { title: '基本信息', keys: ['SystemName', 'ServerAddress', 'general_setting.docs_link', 'Logo'] },
-    { title: '功能开关', keys: ['RetryTimes', 'general_setting.quota_display_type', 'DisplayTokenStatEnabled', 'DefaultCollapseSidebar', 'SelfUseModeEnabled', 'token_setting.max_user_tokens'] },
+    { title: '基本信息', keys: ['ServerAddress'] },
+    { title: '功能开关', keys: ['RetryTimes', 'general_setting.quota_display_type', 'DisplayTokenStatEnabled', 'token_setting.max_user_tokens'] },
     { title: '易支付 (Epay)', gateKey: 'EpayEnabled', keys: ['EpayEnabled', 'PayAddress', 'EpayId', 'EpayKey', 'CustomCallbackAddress', 'Price', 'MinTopUp', 'TopUpPresetAmounts', 'PayMethods'] },
   ],
   auth: [
@@ -122,9 +116,6 @@ const TAB_SECTIONS = {
     { title: '模型健康检测', keys: ['monitor_setting.model_health_enabled', 'monitor_setting.model_health_interval_minutes'] },
     { title: '前台展示', keys: ['console_setting.announcements_enabled', 'console_setting.announcements'] },
     { title: '日志内容记录', gateKey: 'log_setting.log_request_body', keys: ['log_setting.log_request_body', 'log_setting.log_response_body', 'log_setting.max_body_log_bytes'] },
-  ],
-  cache: [
-    { title: '语义缓存', keys: ['semantic_cache_setting.enabled', 'semantic_cache_setting.ttl_seconds', 'semantic_cache_setting.max_entries', 'semantic_cache_setting.cache_embeddings', 'semantic_cache_setting.cache_completions', 'semantic_cache_setting.hit_cost_ratio'] },
   ],
   pricing: [
     { title: '模型倍率', component: 'CombinedRatioEditor', keys: ['ModelRatio', 'CompletionRatio', 'CacheRatio', 'CreateCacheRatio', 'ImageRatio', 'AudioRatio', 'AudioCompletionRatio'] },
@@ -154,7 +145,7 @@ const BOOL_KEYS = new Set([
   'DataExportEnabled', 'LogConsumeEnabled',
   'BatchUpdateEnabled', 'MemoryCacheEnabled',
   'ExposeRatioEnabled',
-  'DisplayTokenStatEnabled', 'DefaultCollapseSidebar', 'SelfUseModeEnabled',
+  'DisplayTokenStatEnabled',
   'passkey.enabled', 'passkey.allow_insecure_origin',
   'fetch_setting.enable_ssrf_protection', 'fetch_setting.allow_private_ip',
   'fetch_setting.apply_ip_filter_for_domain', 'fetch_setting.domain_filter_mode',
@@ -173,7 +164,6 @@ const BOOL_KEYS = new Set([
   'console_setting.announcements_enabled',
   'monitor_setting.model_health_enabled',
   'EpayEnabled',
-  'semantic_cache_setting.enabled', 'semantic_cache_setting.cache_embeddings', 'semantic_cache_setting.cache_completions',
   'log_setting.log_request_body', 'log_setting.log_response_body',
 ]);
 const NUMBER_KEYS = new Set([
@@ -198,7 +188,6 @@ const NUMBER_KEYS = new Set([
 ]);
 
 const LABELS = {
-  SystemName: '系统名称',
   ServerAddress: '服务器地址',
   EpayEnabled: '启用易支付',
   PayAddress: '易支付网关地址 (PayAddress)',
@@ -209,13 +198,9 @@ const LABELS = {
   MinTopUp: '易支付最低充值数量',
   TopUpPresetAmounts: '充值预设金额选项（逗号分隔，如 1,20,100）',
   PayMethods: '易支付支付方式',
-  'general_setting.docs_link': '文档地址',
-  Logo: 'Logo 地址',
   RetryTimes: '失败重试次数',
   'general_setting.quota_display_type': '额度展示类型',
   DisplayTokenStatEnabled: '额度查询返回令牌额度而非用户额度',
-  DefaultCollapseSidebar: '默认折叠侧边栏',
-  SelfUseModeEnabled: '自用模式',
   'token_setting.max_user_tokens': '用户最大令牌数量',
   EmailVerificationEnabled: '邮箱验证',
   EmailDomainRestrictionEnabled: '邮箱域名白名单',
@@ -356,13 +341,6 @@ const LABELS = {
   'console_setting.announcements': '系统公告',
   'monitor_setting.model_health_enabled': '启用模型健康检测',
   'monitor_setting.model_health_interval_minutes': '检测间隔（分钟）',
-  // 语义缓存
-  'semantic_cache_setting.enabled': '启用语义缓存',
-  'semantic_cache_setting.ttl_seconds': '缓存有效期（秒）',
-  'semantic_cache_setting.max_entries': '最大缓存条目数',
-  'semantic_cache_setting.cache_embeddings': '缓存 Embedding 请求',
-  'semantic_cache_setting.cache_completions': '缓存 Chat Completions（temp=0）',
-  'semantic_cache_setting.hit_cost_ratio': '缓存命中计费比例（0~1）',
   // 性能
   'performance_setting.disk_cache_enabled': '磁盘缓存',
   'performance_setting.disk_cache_threshold_mb': '磁盘缓存阈值（MB）',
@@ -398,34 +376,19 @@ const SELECT_OPTIONS = {
 
 const toBool = (v) => v === true || v === 'true' || v === '1';
 
-const LogoUpload = ({ value, onChange }) => {
-  const [uploading, setUploading] = useState(false);
-  const handleFile = async (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    if (file.size > 2 * 1024 * 1024) { showError('文件大小不能超过 2MB'); return; }
-    const form = new FormData();
-    form.append('file', file);
-    setUploading(true);
-    try {
-      const res = await API.post('/api/upload/logo', form, { headers: { 'Content-Type': 'multipart/form-data' } });
-      const { success, data, message } = res.data || {};
-      if (success) { onChange(data); showSuccess('上传成功'); }
-      else showError(message);
-    } catch (e) { showError(e); } finally { setUploading(false); }
-  };
-  return (
-    <div className='flex items-center gap-3'>
-      {value && <img src={value} alt='logo' style={{ height: 32, borderRadius: 6, border: '1px solid var(--ui-border)' }} />}
-      <label style={{ cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 6, height: 32, paddingInline: 14, border: '1px solid var(--ui-border)', borderRadius: 24, fontSize: 13, color: 'var(--ui-text)', background: 'var(--page-bg)' }}>
-        {uploading ? '上传中...' : '选择文件'}
-        <input type='file' accept='image/png,image/jpeg,image/svg+xml,image/x-icon,image/webp' onChange={handleFile} style={{ display: 'none' }} />
-      </label>
-    </div>
-  );
+const parseJsonMap = (value) => {
+  try {
+    const parsed = JSON.parse(value || '{}');
+    return parsed && typeof parsed === 'object' && !Array.isArray(parsed) ? parsed : {};
+  } catch {
+    return {};
+  }
 };
 
-const RatioEditor = ({ value, onChange, suggestions = [], numericValue = true }) => {
+const mapKeys = (value) => new Set(Object.keys(parseJsonMap(value)));
+
+const RatioEditor = ({ value, onChange, suggestions = [], configuredModels = new Set(), numericValue = true }) => {
+  const lastEmittedRef = useRef(null);
   const [pairs, setPairs] = useState(() => {
     try {
       const obj = JSON.parse(value || '{}');
@@ -434,6 +397,7 @@ const RatioEditor = ({ value, onChange, suggestions = [], numericValue = true })
   });
 
   useEffect(() => {
+    if ((value || '{}') === lastEmittedRef.current) return;
     try {
       const obj = JSON.parse(value || '{}');
       const incoming = Object.entries(obj).map(([k, v]) => ({ key: k, value: String(v) }));
@@ -450,7 +414,9 @@ const RatioEditor = ({ value, onChange, suggestions = [], numericValue = true })
     newPairs.forEach(({ key, value: v }) => {
       if (key.trim()) obj[key.trim()] = numericValue ? (isNaN(Number(v)) ? v : Number(v)) : v;
     });
-    onChange(JSON.stringify(obj, null, 2));
+    const nextValue = JSON.stringify(obj, null, 2);
+    lastEmittedRef.current = nextValue;
+    onChange(nextValue);
   };
 
   const update = (idx, field, v) => {
@@ -462,7 +428,7 @@ const RatioEditor = ({ value, onChange, suggestions = [], numericValue = true })
   const remove = (idx) => sync(pairs.filter((_, i) => i !== idx));
   const addModel = (name) => sync([...pairs, { key: name, value: numericValue ? '1' : name }]);
 
-  const unsetModels = suggestions.filter((s) => !pairs.some((p) => p.key === s));
+  const unsetModels = suggestions.filter((s) => !configuredModels.has(s) && !pairs.some((p) => p.key === s));
 
   return (
     <div className='space-y-2'>
@@ -509,13 +475,15 @@ const RATIO_COLUMNS = [
   { key: 'audioCompletion', jsonKey: 'AudioCompletionRatio', label: '音频出' },
 ];
 
-const CombinedRatioEditor = ({ values, onChange, suggestions = [] }) => {
+const CombinedRatioEditor = ({ values, onChange, suggestions = [], configuredModels = new Set() }) => {
   // values: { ModelRatio: '{...}', CompletionRatio: '{...}', ... }
   // onChange: (jsonKey, newJsonStr) => void
 
-  const parseMap = (jsonKey) => {
-    try { return JSON.parse(values[jsonKey] || '{}'); } catch { return {}; }
-  };
+  const lastEmittedRef = useRef(null);
+
+  const parseMap = (jsonKey) => parseJsonMap(values[jsonKey]);
+
+  const snapshotValues = (source) => JSON.stringify(RATIO_COLUMNS.map((col) => [col.jsonKey, source[col.jsonKey] || '{}']));
 
   // Build merged rows: { modelName: { model: 1.5, completion: 5, ... } }
   const buildRows = () => {
@@ -540,6 +508,7 @@ const CombinedRatioEditor = ({ values, onChange, suggestions = [] }) => {
   const [rows, setRows] = useState(buildRows);
 
   useEffect(() => {
+    if (snapshotValues(values) === lastEmittedRef.current) return;
     setRows(buildRows());
   }, [values.ModelRatio, values.CompletionRatio, values.CacheRatio, values.CreateCacheRatio, values.ImageRatio, values.AudioRatio, values.AudioCompletionRatio]);
 
@@ -550,6 +519,7 @@ const CombinedRatioEditor = ({ values, onChange, suggestions = [] }) => {
 
   const syncToJson = (newRows) => {
     setRows(newRows);
+    const nextValues = {};
     RATIO_COLUMNS.forEach((col) => {
       const obj = {};
       newRows.forEach((r) => {
@@ -558,7 +528,11 @@ const CombinedRatioEditor = ({ values, onChange, suggestions = [] }) => {
           obj[r.name.trim()] = isNaN(n) ? r[col.key] : n;
         }
       });
-      onChange(col.jsonKey, JSON.stringify(obj, null, 2));
+      nextValues[col.jsonKey] = JSON.stringify(obj, null, 2);
+    });
+    lastEmittedRef.current = snapshotValues(nextValues);
+    RATIO_COLUMNS.forEach((col) => {
+      onChange(col.jsonKey, nextValues[col.jsonKey]);
     });
   };
 
@@ -589,7 +563,7 @@ const CombinedRatioEditor = ({ values, onChange, suggestions = [] }) => {
   const addModel = (m) => syncToJson([...rows, { name: m, model: '1', completion: '1' }]);
   const removeRow = (idx) => syncToJson(rows.filter((_, i) => i !== idx));
 
-  const unsetModels = suggestions.filter((s) => !rows.some((r) => r.name === s));
+  const unsetModels = suggestions.filter((s) => !configuredModels.has(s) && !rows.some((r) => r.name === s));
 
   return (
     <div className='space-y-3'>
@@ -978,14 +952,18 @@ const SettingPage = () => {
     return (
       <div key={k} style={wide ? { gridColumn: '1 / -1' } : undefined}>
         <label style={{ display: 'block', fontSize: 12, color: 'var(--ui-text-3)', marginBottom: 5 }}>{LABELS[k] || k}</label>
-        {k === 'Logo'
-          ? <LogoUpload value={val(k)} onChange={(v) => set(k, v)} />
-          : SELECT_OPTIONS[k]
+        {SELECT_OPTIONS[k]
           ? <Select value={val(k) || SELECT_OPTIONS[k][0].value} options={SELECT_OPTIONS[k]} onChange={(v) => set(k, v)} />
           : NUMBER_KEYS.has(k)
             ? <NumberInput value={Number(val(k)) || 0} onChange={(v) => set(k, String(v ?? 0))} />
             : JSON_KEYS.has(k)
-              ? <RatioEditor value={val(k)} onChange={(v) => set(k, v)} suggestions={k === 'GroupRatio' || k === 'UserUsableGroups' ? groupList : (k.startsWith('claude.') || k.startsWith('gemini.') ? [] : modelList)} numericValue={k !== 'UserUsableGroups' && k !== 'gemini.safety_settings' && k !== 'gemini.version_settings'} />
+              ? <RatioEditor
+                  value={val(k)}
+                  onChange={(v) => set(k, v)}
+                  suggestions={k === 'GroupRatio' || k === 'UserUsableGroups' ? groupList : (k.startsWith('claude.') || k.startsWith('gemini.') ? [] : modelList)}
+                  configuredModels={k === 'ModelPrice' ? mapKeys(val('ModelRatio')) : new Set()}
+                  numericValue={k !== 'UserUsableGroups' && k !== 'gemini.safety_settings' && k !== 'gemini.version_settings'}
+                />
               : RAW_JSON_KEYS.has(k)
                 ? (k === 'channel_affinity_setting.rules'
                   ? <AffinityRulesEditor value={val(k)} onChange={(v) => set(k, v)} />
@@ -1021,6 +999,7 @@ const SettingPage = () => {
             values={ratioValues}
             onChange={(jsonKey, v) => set(jsonKey, v)}
             suggestions={modelList}
+            configuredModels={mapKeys(val('ModelPrice'))}
           />
         </div>
       );

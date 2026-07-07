@@ -432,6 +432,21 @@ type Stat struct {
 	Requests int   `json:"requests"`
 }
 
+type ActiveOperationsStat struct {
+	Users    int64 `json:"users"`
+	Models   int64 `json:"models"`
+	Channels int64 `json:"channels"`
+}
+
+type RequestHealthStat struct {
+	TotalRequests     int64   `json:"total_requests"`
+	SuccessRequests   int64   `json:"success_requests"`
+	ErrorRequests     int64   `json:"error_requests"`
+	SuccessRate       float64 `json:"success_rate"`
+	RPM               float64 `json:"rpm"`
+	AvgLatencySeconds float64 `json:"avg_latency_seconds"`
+}
+
 func SumUsedQuota(logType int, startTimestamp int64, endTimestamp int64, modelName string, username string, tokenName string, channel int, group string) (stat Stat, err error) {
 	// 统计指定筛选条件与时间范围内的消费额度、token 总量、请求数
 	tx := LOG_DB.Table("logs").Select("sum(quota) quota, sum(prompt_tokens) + sum(completion_tokens) tokens, count(*) requests")
@@ -472,6 +487,52 @@ func SumUsedQuota(logType int, startTimestamp int64, endTimestamp int64, modelNa
 	return stat, nil
 }
 
+func GetActiveOperationsStat(startTimestamp, endTimestamp int64) (stat ActiveOperationsStat, err error) {
+	tx := LOG_DB.Table("logs").Where("type = ?", LogTypeConsume)
+	if startTimestamp != 0 {
+		tx = tx.Where("created_at >= ?", startTimestamp)
+	}
+	if endTimestamp != 0 {
+		tx = tx.Where("created_at <= ?", endTimestamp)
+	}
+	err = tx.Select(`
+		COUNT(DISTINCT NULLIF(user_id, 0)) as users,
+		COUNT(DISTINCT NULLIF(model_name, '')) as models,
+		COUNT(DISTINCT NULLIF(channel_id, 0)) as channels
+	`).Scan(&stat).Error
+	return stat, err
+}
+
+func GetRequestHealthStat(startTimestamp, endTimestamp int64) (stat RequestHealthStat, err error) {
+	tx := LOG_DB.Table("logs").Where("type IN ?", []int{LogTypeConsume, LogTypeError})
+	if startTimestamp != 0 {
+		tx = tx.Where("created_at >= ?", startTimestamp)
+	}
+	if endTimestamp != 0 {
+		tx = tx.Where("created_at <= ?", endTimestamp)
+	}
+	err = tx.Select(`
+		COUNT(*) as total_requests,
+		COALESCE(SUM(CASE WHEN type = ? THEN 1 ELSE 0 END), 0) as success_requests,
+		COALESCE(SUM(CASE WHEN type = ? THEN 1 ELSE 0 END), 0) as error_requests,
+		COALESCE(AVG(CASE WHEN type = ? AND use_time > 0 THEN use_time ELSE NULL END), 0) as avg_latency_seconds
+	`, LogTypeConsume, LogTypeError, LogTypeConsume).Scan(&stat).Error
+	if err != nil {
+		return stat, err
+	}
+	if stat.TotalRequests > 0 {
+		stat.SuccessRate = float64(stat.SuccessRequests) / float64(stat.TotalRequests) * 100
+	}
+	if startTimestamp != 0 && endTimestamp > startTimestamp {
+		minutes := float64(endTimestamp-startTimestamp) / 60
+		if minutes < 1 {
+			minutes = 1
+		}
+		stat.RPM = float64(stat.TotalRequests) / minutes
+	}
+	return stat, nil
+}
+
 func DeleteOldLog(ctx context.Context, targetTimestamp int64, limit int) (int64, error) {
 	var total int64 = 0
 
@@ -500,6 +561,8 @@ type ModelGroupLogStat struct {
 	Total        int64 // total requests (consume + error)
 	Errors       int64 // error requests
 	AvgLatencyMs int64 // average use_time in ms (from successful requests)
+	PromptTokens int64 // successful prompt tokens
+	CacheTokens  int64 // successful cache read tokens
 }
 
 // GetModelGroupLogStat aggregates log entries for a model+group since a given timestamp.
@@ -541,6 +604,17 @@ func GetModelGroupLogStatRange(modelName, group string, since, until int64) (*Mo
 		Where("model_name = ? AND \"group\" = ? AND created_at >= ? AND created_at < ? AND type = ? AND use_time > 0", modelName, group, since, until, LogTypeConsume).
 		Scan(&latRow)
 	stat.AvgLatencyMs = int64(latRow.Avg * 1000)
+
+	var cacheRow struct {
+		PromptTokens int64
+		CacheTokens  int64
+	}
+	LOG_DB.Model(&Log{}).
+		Select(fmt.Sprintf("COALESCE(SUM(prompt_tokens), 0) as prompt_tokens, COALESCE(SUM(%s), 0) as cache_tokens", jsonIntExtract("other", "cache_tokens"))).
+		Where("model_name = ? AND \"group\" = ? AND created_at >= ? AND created_at < ? AND type = ?", modelName, group, since, until, LogTypeConsume).
+		Scan(&cacheRow)
+	stat.PromptTokens = cacheRow.PromptTokens
+	stat.CacheTokens = cacheRow.CacheTokens
 
 	return &stat, nil
 }
@@ -659,7 +733,7 @@ type GroupConsumption struct {
 func GetGroupConsumption(startTimestamp, endTimestamp int64, limit int) ([]GroupConsumption, error) {
 	var results []GroupConsumption
 	tx := LOG_DB.Table("logs").
-		Select(logGroupCol + " as \"group\", COALESCE(SUM(quota), 0) as quota, COUNT(*) as requests, COALESCE(SUM(prompt_tokens) + SUM(completion_tokens), 0) as tokens").
+		Select(logGroupCol+" as \"group\", COALESCE(SUM(quota), 0) as quota, COUNT(*) as requests, COALESCE(SUM(prompt_tokens) + SUM(completion_tokens), 0) as tokens").
 		Where("type = ?", LogTypeConsume)
 	if startTimestamp != 0 {
 		tx = tx.Where("created_at >= ?", startTimestamp)
@@ -709,4 +783,90 @@ func GetTopErrorModels(startTimestamp, endTimestamp int64, limit int) ([]ErrorMo
 	}
 	err := tx.Group("model_name").Order("errors DESC").Limit(limit).Find(&results).Error
 	return results, err
+}
+
+type ChannelRiskStat struct {
+	ChannelId         int     `json:"channel_id"`
+	ChannelName       string  `json:"channel_name"`
+	TotalRequests     int64   `json:"total_requests"`
+	SuccessRequests   int64   `json:"success_requests"`
+	ErrorRequests     int64   `json:"error_requests"`
+	ErrorRate         float64 `json:"error_rate"`
+	AvgLatencySeconds float64 `json:"avg_latency_seconds"`
+}
+
+func GetTopRiskChannels(startTimestamp, endTimestamp int64, limit int) ([]ChannelRiskStat, error) {
+	var results []ChannelRiskStat
+	tx := LOG_DB.Table("logs").
+		Select(`
+			channel_id,
+			COUNT(*) as total_requests,
+			COALESCE(SUM(CASE WHEN type = ? THEN 1 ELSE 0 END), 0) as success_requests,
+			COALESCE(SUM(CASE WHEN type = ? THEN 1 ELSE 0 END), 0) as error_requests,
+			COALESCE(AVG(CASE WHEN type = ? AND use_time > 0 THEN use_time ELSE NULL END), 0) as avg_latency_seconds
+		`, LogTypeConsume, LogTypeError, LogTypeConsume).
+		Where("type IN ? AND channel_id != 0", []int{LogTypeConsume, LogTypeError})
+	if startTimestamp != 0 {
+		tx = tx.Where("created_at >= ?", startTimestamp)
+	}
+	if endTimestamp != 0 {
+		tx = tx.Where("created_at <= ?", endTimestamp)
+	}
+	if limit <= 0 {
+		limit = 10
+	}
+	err := tx.Group("channel_id").Order("error_requests DESC, avg_latency_seconds DESC").Limit(limit).Find(&results).Error
+	if err != nil {
+		return nil, err
+	}
+	for i := range results {
+		if results[i].TotalRequests > 0 {
+			results[i].ErrorRate = float64(results[i].ErrorRequests) / float64(results[i].TotalRequests) * 100
+		}
+		var name string
+		DB.Table("channels").Select("name").Where("id = ?", results[i].ChannelId).Scan(&name)
+		results[i].ChannelName = name
+	}
+	return results, nil
+}
+
+type ModelRiskStat struct {
+	ModelName         string  `json:"model_name"`
+	TotalRequests     int64   `json:"total_requests"`
+	SuccessRequests   int64   `json:"success_requests"`
+	ErrorRequests     int64   `json:"error_requests"`
+	ErrorRate         float64 `json:"error_rate"`
+	AvgLatencySeconds float64 `json:"avg_latency_seconds"`
+}
+
+func GetTopRiskModels(startTimestamp, endTimestamp int64, limit int) ([]ModelRiskStat, error) {
+	var results []ModelRiskStat
+	tx := LOG_DB.Table("logs").
+		Select(`
+			model_name,
+			COUNT(*) as total_requests,
+			COALESCE(SUM(CASE WHEN type = ? THEN 1 ELSE 0 END), 0) as success_requests,
+			COALESCE(SUM(CASE WHEN type = ? THEN 1 ELSE 0 END), 0) as error_requests,
+			COALESCE(AVG(CASE WHEN type = ? AND use_time > 0 THEN use_time ELSE NULL END), 0) as avg_latency_seconds
+		`, LogTypeConsume, LogTypeError, LogTypeConsume).
+		Where("type IN ? AND model_name != ''", []int{LogTypeConsume, LogTypeError})
+	if startTimestamp != 0 {
+		tx = tx.Where("created_at >= ?", startTimestamp)
+	}
+	if endTimestamp != 0 {
+		tx = tx.Where("created_at <= ?", endTimestamp)
+	}
+	if limit <= 0 {
+		limit = 10
+	}
+	err := tx.Group("model_name").Order("error_requests DESC, avg_latency_seconds DESC").Limit(limit).Find(&results).Error
+	if err != nil {
+		return nil, err
+	}
+	for i := range results {
+		if results[i].TotalRequests > 0 {
+			results[i].ErrorRate = float64(results[i].ErrorRequests) / float64(results[i].TotalRequests) * 100
+		}
+	}
+	return results, nil
 }

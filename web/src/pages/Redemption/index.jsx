@@ -49,7 +49,7 @@ const QuotaCodesTab = () => {
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(true);
   const [confirm, setConfirm] = useState(null);
-  const [genForm, setGenForm] = useState({ name: '', quota: 500000, count: 1, expired_time: 0 });
+  const [genForm, setGenForm] = useState({ quota: 500000, count: 1, expired_time: 0 });
   const [generating, setGenerating] = useState(false);
   const [generated, setGenerated] = useState(null);
   const [searchKeyword, setSearchKeyword] = useState('');
@@ -109,11 +109,9 @@ const QuotaCodesTab = () => {
   };
 
   const generate = async () => {
-    if (!genForm.name?.trim()) return showError('请输入名称');
     setGenerating(true);
     try {
       const res = await API.post('/api/redemption/', {
-        name: genForm.name.trim(),
         quota: Number(genForm.quota) || 0,
         count: Number(genForm.count) || 1,
         expired_time: Number(genForm.expired_time) || 0,
@@ -129,7 +127,6 @@ const QuotaCodesTab = () => {
 
   const columns = [
     { key: 'id', title: 'ID', width: 70 },
-    { key: 'name', title: '名称' },
     { key: 'key', title: '兑换码', render: (r) => (
         <div className='flex items-center gap-2 font-mono text-xs'>
           <span>{r.key?.slice(0, 12)}…</span>
@@ -150,7 +147,7 @@ const QuotaCodesTab = () => {
             ? <IconButton icon={PowerOff} title='禁用' onClick={() => setStatus(r, 2)} />
             : r.status === 2 ? <IconButton icon={Power} title='启用' onClick={() => setStatus(r, 1)} /> : null}
           <IconButton icon={Trash2} variant='danger' title='删除'
-            onClick={() => setConfirm({ title: `删除兑换码 ${r.name}?`, onOk: () => remove(r) })} />
+            onClick={() => setConfirm({ title: `删除兑换码 #${r.id}?`, onOk: () => remove(r) })} />
         </div>
       ) },
   ];
@@ -158,16 +155,12 @@ const QuotaCodesTab = () => {
   return (
     <>
       <div style={{ padding: 16, border: '1px solid var(--ui-border)', borderRadius: 16, marginBottom: 16 }}>
-        <div className='grid grid-cols-2 md:grid-cols-4 gap-3 items-end'>
-          <div>
-            <label className='block text-xs text-[#999] mb-1'>名称</label>
-            <Input value={genForm.name} onChange={(v) => setGenForm((p) => ({ ...p, name: v }))} width='full' placeholder='如"5月活动"' />
-          </div>
-          <div>
+        <div className='flex flex-wrap items-end gap-3'>
+          <div className='w-[140px] max-w-full'>
             <label className='block text-xs text-[#999] mb-1'>金额</label>
             <NumberInput value={quotaToDisplayAmount(genForm.quota)} onChange={(v) => setGenForm((p) => ({ ...p, quota: displayAmountToQuota(v) }))} min={0} step='any' width='full' />
           </div>
-          <div>
+          <div className='w-[110px] max-w-full'>
             <label className='block text-xs text-[#999] mb-1'>数量</label>
             <NumberInput value={genForm.count} onChange={(v) => setGenForm((p) => ({ ...p, count: Math.max(1, Number(v) || 1) }))} min={1} max={100} width='full' />
           </div>
@@ -192,7 +185,7 @@ const QuotaCodesTab = () => {
 
       <div className='flex justify-between items-center mb-3'>
         <div className='flex gap-2 items-center'>
-          <Input value={searchKeyword} onChange={setSearchKeyword} placeholder='搜索名称或兑换码' width={200}
+          <Input value={searchKeyword} onChange={setSearchKeyword} placeholder='搜索ID或兑换码' width={200}
             onKeyDown={(e) => { if (e.key === 'Enter') load(1); }} />
           <Button variant='toggle' onClick={() => load(1)}>搜索</Button>
           {searchKeyword && <Button variant='toggle' onClick={() => { setSearchKeyword(''); }}>清除</Button>}
@@ -234,7 +227,7 @@ const SubscriptionCodesTab = () => {
   const [codes, setCodes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
-  const [genForm, setGenForm] = useState({ count: 1, name: '', expired_time: 0 });
+  const [genForm, setGenForm] = useState({ count: 1, expired_time: 0 });
   const [searchKeyword, setSearchKeyword] = useState('');
   const [confirm, setConfirm] = useState(null);
 
@@ -268,7 +261,6 @@ const SubscriptionCodesTab = () => {
     try {
       const res = await API.post(`/api/subscription/admin/plans/${selectedPlan}/codes`, {
         count: genForm.count,
-        name: genForm.name.trim() || undefined,
         expired_time: genForm.expired_time || 0,
       });
       const { success, data, message } = res.data || {};
@@ -310,7 +302,6 @@ const SubscriptionCodesTab = () => {
           <IconButton icon={Copy} title='复制' onClick={() => { copy(r.key); showSuccess('已复制'); }} />
         </div>
       ) },
-    { key: 'name', title: '批次', render: (r) => r.name || '-' },
     { key: 'status', title: '状态', render: (r) =>
         r.status === 2 || r.used_user_id
           ? <Tag color='grey'>已用 #{r.used_user_id}</Tag>
@@ -325,16 +316,12 @@ const SubscriptionCodesTab = () => {
   return (
     <>
       <div style={{ padding: 16, border: '1px solid var(--ui-border)', borderRadius: 16, marginBottom: 16 }}>
-        <div className='grid grid-cols-2 md:grid-cols-4 gap-3 items-end'>
-          <div>
+        <div className='flex flex-wrap items-end gap-3'>
+          <div className='w-[240px] max-w-full'>
             <label className='block text-xs text-[#999] mb-1'>选择套餐</label>
             <Select value={selectedPlan} onChange={setSelectedPlan} options={planOptions} placeholder='选择套餐' width='full' />
           </div>
-          <div>
-            <label className='block text-xs text-[#999] mb-1'>批次名称</label>
-            <Input value={genForm.name} onChange={(v) => setGenForm((p) => ({ ...p, name: v }))} width='full' placeholder='可选' />
-          </div>
-          <div>
+          <div className='w-[110px] max-w-full'>
             <label className='block text-xs text-[#999] mb-1'>数量</label>
             <NumberInput value={genForm.count} onChange={(v) => setGenForm((p) => ({ ...p, count: Math.max(1, Number(v) || 1) }))} min={1} max={200} width='full' />
           </div>
@@ -359,7 +346,7 @@ const SubscriptionCodesTab = () => {
 
       <div className='flex justify-between items-center mb-3'>
         <div className='flex gap-2 items-center'>
-          <Input value={searchKeyword} onChange={setSearchKeyword} placeholder='搜索批次名或激活码' width={200}
+          <Input value={searchKeyword} onChange={setSearchKeyword} placeholder='搜索激活码' width={200}
             onKeyDown={(e) => { if (e.key === 'Enter') loadCodes(selectedPlan, searchKeyword); }} />
           <Button variant='toggle' onClick={() => loadCodes(selectedPlan, searchKeyword)}>搜索</Button>
           {searchKeyword && <Button variant='toggle' onClick={() => { setSearchKeyword(''); loadCodes(selectedPlan, ''); }}>清除</Button>}

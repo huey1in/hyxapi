@@ -61,8 +61,6 @@ func GetStatus(c *gin.Context) {
 		"linuxdo_minimum_trust_level": common.LinuxDOMinimumTrustLevel,
 		"telegram_oauth":              common.TelegramOAuthEnabled,
 		"telegram_bot_name":           common.TelegramBotName,
-		"system_name":                 common.SystemName,
-		"logo":                        common.Logo,
 		"wechat_qrcode":               common.WeChatAccountQRCodeImageURL,
 		"wechat_login":                common.WeChatAuthEnabled,
 		"server_address":              system_setting.ServerAddress,
@@ -73,7 +71,6 @@ func GetStatus(c *gin.Context) {
 		"epay_price":                  operation_setting.Price,
 		"epay_min_topup":              operation_setting.MinTopUp,
 		"topup_preset_amounts":        operation_setting.TopUpPresetAmounts,
-		"docs_link":                   operation_setting.GetGeneralSetting().DocsLink,
 		"quota_per_unit":              common.QuotaPerUnit,
 		// 兼容旧前端：保留 display_in_currency，同时提供新的 quota_display_type
 		"display_in_currency":           operation_setting.IsCurrencyDisplay(),
@@ -83,11 +80,8 @@ func GetStatus(c *gin.Context) {
 		"enable_batch_update":           common.BatchUpdateEnabled,
 		"enable_data_export":            common.DataExportEnabled,
 		"data_export_default_time":      common.DataExportDefaultTime,
-		"default_collapse_sidebar":      common.DefaultCollapseSidebar,
-		"self_use_mode_enabled":         operation_setting.SelfUseModeEnabled,
-
-		"usd_exchange_rate": operation_setting.USDExchangeRate,
-		"price":             operation_setting.Price,
+		"usd_exchange_rate":             operation_setting.USDExchangeRate,
+		"price":                         operation_setting.Price,
 
 		// 面板启用开关
 		"uptime_kuma_enabled":   cs.UptimeKumaEnabled,

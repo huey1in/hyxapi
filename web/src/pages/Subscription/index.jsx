@@ -286,7 +286,6 @@ const CodesModal = ({ plan, onClose }) => {
   const [codes, setCodes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [count, setCount] = useState(1);
-  const [name, setName] = useState('');
   const [expiredTime, setExpiredTime] = useState(0);
   const [generating, setGenerating] = useState(false);
   const [generated, setGenerated] = useState(null);
@@ -314,7 +313,6 @@ const CodesModal = ({ plan, onClose }) => {
     try {
       const res = await API.post(`/api/subscription/admin/plans/${plan.id}/codes`, {
         count,
-        name: name.trim() || undefined,
         expired_time: expiredTime || 0,
       });
       const { success, data, message } = res.data || {};
@@ -334,10 +332,6 @@ const CodesModal = ({ plan, onClose }) => {
     <Modal open title={`${plan.title} - 激活码管理`} onClose={onClose} hideFooter width={680}>
       <div className='space-y-4 mb-4'>
         <div className='grid grid-cols-1 md:grid-cols-2 gap-3'>
-          <div>
-            <label className='block text-xs text-[#999] mb-1'>批次名称</label>
-            <Input value={name} onChange={setName} width='full' placeholder='可选，如"5月活动"' />
-          </div>
           <div>
             <label className='block text-xs text-[#999] mb-1'>生成数量</label>
             <NumberInput value={count} onChange={(v) => setCount(Math.max(1, Number(v) || 1))} min={1} max={200} width='full' />
@@ -369,7 +363,6 @@ const CodesModal = ({ plan, onClose }) => {
             <div key={c.id} className='flex items-center justify-between gap-2 p-2 rounded-lg border border-[#e9e9e9]'>
               <div className='flex-1 min-w-0'>
                 <div className='font-mono text-xs text-ui-text truncate'>{c.key}</div>
-                {c.name && <div className='text-xs text-[#999] mt-0.5'>{c.name}</div>}
               </div>
               <Tag color={c.status === 2 || c.used_user_id ? 'grey' : 'green'}>
                 {c.status === 2 || c.used_user_id ? `已用 #${c.used_user_id}` : '未使用'}
