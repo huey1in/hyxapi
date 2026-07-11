@@ -37,7 +37,7 @@ func epayMethodMinTopUp(payType string) (int, bool) {
 	return 0, false
 }
 
-// RequestEpayCheckout 创建易支付订单并返回跳转支付链接。
+// RequestEpayCheckout 创建易支付订单并返回站内支付入口链接。
 func RequestEpayCheckout(c *gin.Context) {
 	if !operation_setting.EpayEnabled {
 		common.ApiErrorMsg(c, "易支付未启用")
@@ -63,7 +63,6 @@ func RequestEpayCheckout(c *gin.Context) {
 	userId := c.GetInt("id")
 
 	money := decimal.NewFromInt(int64(req.Amount)).Mul(decimal.NewFromFloat(operation_setting.Price))
-	moneyStr := money.StringFixed(2)
 	outTradeNo := common.GetUUID()
 
 	topUp := &model.TopUp{
@@ -82,12 +81,69 @@ func RequestEpayCheckout(c *gin.Context) {
 
 	notifyURL := strings.TrimRight(service.GetCallbackAddress(), "/") + "/api/payment/epay/notify"
 	returnURL := strings.TrimRight(system_setting.ServerAddress, "/") + "/console/topup"
-	payURL := service.BuildEpayPayURL(operation_setting.PayAddress, req.Type, outTradeNo, notifyURL, returnURL, "额度充值", moneyStr)
+	epayURL := service.BuildEpayPayURL(operation_setting.PayAddress, req.Type, outTradeNo, notifyURL, returnURL, "额度充值", money.StringFixed(2))
+	payURL := service.BuildEpayRedirectURL(system_setting.ServerAddress, req.Type, outTradeNo)
 
-	common.ApiSuccess(c, gin.H{
+	payload := gin.H{
 		"pay_url":  payURL,
 		"trade_no": outTradeNo,
-	})
+	}
+	if qr, err := service.FetchEpayConsoleQRCode(operation_setting.PayAddress, epayURL, outTradeNo); err == nil && qr != nil {
+		payload["qr_url"] = qr.QRURL
+		payload["qr_value"] = qr.QRValue
+		payload["h5_url"] = qr.H5URL
+		payload["expires_in"] = qr.RemainingSeconds
+		payload["epay_status"] = qr.Code
+		payload["epay_message"] = qr.Message
+	} else if err != nil {
+		common.SysError("epay qr fetch failed: " + err.Error())
+	}
+
+	common.ApiSuccess(c, payload)
+}
+
+// EpayRedirect 校验站内支付入口后跳转到易支付收银台。
+func EpayRedirect(c *gin.Context) {
+	if !operation_setting.EpayEnabled {
+		c.String(http.StatusBadRequest, "payment disabled")
+		return
+	}
+
+	payType := strings.TrimSpace(c.Query("type"))
+	tradeNo := strings.TrimSpace(c.Query("out_trade_no"))
+	sign := strings.TrimSpace(c.Query("sign"))
+	if payType == "" || tradeNo == "" || sign == "" {
+		c.String(http.StatusBadRequest, "invalid payment link")
+		return
+	}
+	if _, ok := epayMethodMinTopUp(payType); !ok {
+		c.String(http.StatusBadRequest, "unsupported payment type")
+		return
+	}
+	if !service.EpayVerify(map[string]string{
+		"type":         payType,
+		"out_trade_no": tradeNo,
+		"sign":         sign,
+	}, strings.TrimSpace(operation_setting.EpayKey)) {
+		c.String(http.StatusBadRequest, "invalid signature")
+		return
+	}
+
+	topUp := model.GetTopUpByTradeNo(tradeNo)
+	if topUp == nil || topUp.PaymentMethod != model.PaymentMethodEpay {
+		c.String(http.StatusNotFound, "payment order not found")
+		return
+	}
+	if topUp.Status != common.TopUpStatusPending {
+		c.Redirect(http.StatusFound, strings.TrimRight(system_setting.ServerAddress, "/")+"/console/topup")
+		return
+	}
+
+	moneyStr := decimal.NewFromFloat(topUp.Money).StringFixed(2)
+	notifyURL := strings.TrimRight(service.GetCallbackAddress(), "/") + "/api/payment/epay/notify"
+	returnURL := strings.TrimRight(system_setting.ServerAddress, "/") + "/console/topup"
+	payURL := service.BuildEpayPayURL(operation_setting.PayAddress, payType, tradeNo, notifyURL, returnURL, "额度充值", moneyStr)
+	c.Redirect(http.StatusFound, payURL)
 }
 
 // EpayNotify 接收易支付异步通知（公开路由），校验签名后完成订单充值。

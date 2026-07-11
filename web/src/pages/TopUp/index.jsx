@@ -1,13 +1,28 @@
 import React, { useContext, useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { Copy } from 'lucide-react';
+import { Copy, RefreshCw } from 'lucide-react';
+import { QRCode } from 'antd';
 import { API, showError, showSuccess, showInfo, copy, renderQuota, timestamp2string } from '../../helpers';
 import { UserContext } from '../../context/User';
 import { StatusContext } from '../../context/Status';
 import {
-  IconButton, Input, Modal, Loading,
+  Button, IconButton, Input, Modal, Loading,
 } from '../../components/ui';
 import useIsMobile from '../../hooks/useIsMobile';
+
+const PAYMENT_ICON_CDN = {
+  alipay: 'https://cdn.simpleicons.org/alipay/1677FF',
+  wxpay: 'https://cdn.simpleicons.org/wechat/07C160',
+  wechat: 'https://cdn.simpleicons.org/wechat/07C160',
+  qqpay: 'https://cdn.simpleicons.org/tencentqq/12B7F5',
+};
+
+const formatCountdown = (seconds) => {
+  const total = Math.max(0, Math.floor(seconds || 0));
+  const minutes = Math.floor(total / 60);
+  const remainSeconds = total % 60;
+  return `${String(minutes).padStart(2, '0')}:${String(remainSeconds).padStart(2, '0')}`;
+};
 
 const TopUp = () => {
   const [searchParams] = useSearchParams();
@@ -24,6 +39,8 @@ const TopUp = () => {
   const [topups, setTopups] = useState([]);
   const [showHistory, setShowHistory] = useState(false);
   const [checkingOut, setCheckingOut] = useState(false);
+  const [paymentOrder, setPaymentOrder] = useState(null);
+  const [paymentNow, setPaymentNow] = useState(Date.now());
 
   const minTopUp = statusState?.status?.min_topup || 1;
   const epayEnabled = !!statusState?.status?.epay_enabled;
@@ -37,13 +54,17 @@ const TopUp = () => {
     : [];
   const [selectedMethod, setSelectedMethod] = useState('');
   const activeMethod = methods.find((m) => m.id === selectedMethod) || methods[0];
-  const isEpay = activeMethod?.id?.startsWith('epay:');
+  const [methodPickerOpen, setMethodPickerOpen] = useState(false);
 
   const refreshUser = async () => {
     try {
       const { data } = await API.get('/api/user/self');
-      if (data.success) userDispatch?.({ type: 'login', payload: data.data });
+      if (data.success) {
+        userDispatch?.({ type: 'login', payload: data.data });
+        return data.data;
+      }
     } catch (e) { showError(e); }
+    return null;
   };
 
   const loadAff = async () => {
@@ -68,6 +89,22 @@ const TopUp = () => {
     const c = searchParams.get('code');
     if (c) setCode(c);
   }, []);
+
+  useEffect(() => {
+    if (!paymentOrder) return undefined;
+    const timer = setInterval(() => {
+      refreshUser();
+      loadTopups();
+    }, 5000);
+    return () => clearInterval(timer);
+  }, [paymentOrder]);
+
+  useEffect(() => {
+    if (!paymentOrder?.expiresAt) return undefined;
+    setPaymentNow(Date.now());
+    const timer = setInterval(() => setPaymentNow(Date.now()), 1000);
+    return () => clearInterval(timer);
+  }, [paymentOrder?.expiresAt]);
 
   const redeem = async () => {
     const key = code.trim();
@@ -107,17 +144,44 @@ const TopUp = () => {
   const payTotal = topUpCount * epayPrice;
   const payTotalText = `¥${payTotal.toLocaleString(undefined, { maximumFractionDigits: 2 })}`;
 
-  const checkout = async () => {
-    if (isEpay) {
-      if (topUpCount < epayMethodMin) return showError(`最低充值数量为 ${epayMethodMin}`);
+  const checkout = async (method) => {
+    const payMethod = method || activeMethod;
+    if (!payMethod) return showError('请选择支付方式');
+    const methodMin = Number(payMethod.min_topup) || epayMin;
+    if (payMethod.id?.startsWith('epay:')) {
+      if (topUpCount < methodMin) return showError(`最低充值数量为 ${methodMin}`);
       setCheckingOut(true);
       try {
-        const { data } = await API.post('/api/user/payment/epay/checkout', { amount: topUpCount, type: activeMethod.type });
+        const { data } = await API.post('/api/user/payment/epay/checkout', { amount: topUpCount, type: payMethod.type });
         if (data.success && data.data?.pay_url) {
-          window.location.href = data.data.pay_url;
+          const expiresIn = Number(data.data.expires_in) || 180;
+          setMethodPickerOpen(false);
+          setPaymentOrder({
+            payUrl: data.data.pay_url,
+            qrValue: data.data.qr_value,
+            qrUrl: data.data.qr_url,
+            h5Url: data.data.h5_url,
+            tradeNo: data.data.trade_no,
+            methodName: payMethod.name,
+            methodType: payMethod.type,
+            amount: topUpCount,
+            totalText: payTotalText,
+            expiresAt: Date.now() + expiresIn * 1000,
+          });
+          loadTopups();
         } else showError(data.message || '创建支付订单失败');
       } catch (e) { showError(e); } finally { setCheckingOut(false); }
       return;
+    }
+  };
+
+  // 点击结账：多渠道时弹出选择弹窗，单渠道直接下单
+  const handleCheckoutClick = () => {
+    if (topUpCount < epayMethodMin) return showError(`最低充值数量为 ${epayMethodMin}`);
+    if (methods.length > 1) {
+      setMethodPickerOpen(true);
+    } else {
+      checkout(methods[0]);
     }
   };
 
@@ -146,27 +210,6 @@ const TopUp = () => {
               style={{ cursor: 'pointer', height: 32, paddingInline: 16, border: '1px solid var(--ui-border)', borderRadius: 24, fontSize: 13, color: 'var(--ui-text-2)', background: 'transparent' }}
             >兑换码</button>
           </div>
-          {/* 支付方式选择 */}
-          {methods.length > 1 && (
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-              {methods.map((m) => {
-                const selected = activeMethod?.id === m.id;
-                return (
-                  <button
-                    key={m.id}
-                    onClick={() => setSelectedMethod(m.id)}
-                    style={{
-                      cursor: 'pointer', height: 38, paddingInline: 16, borderRadius: 999,
-                      border: selected ? '2px solid #000' : '1px solid #e5e5e5',
-                      fontSize: 14, fontWeight: selected ? 600 : 400,
-                      color: 'var(--ui-text)', background: 'var(--page-bg)',
-                      transition: 'border-color 0.2s',
-                    }}
-                  >{m.name}</button>
-                );
-              })}
-            </div>
-          )}
           {/* 金额选择 */}
           <div style={{ display: 'flex', gap: 8 }}>
             {AMOUNTS.map((amt) => (
@@ -220,14 +263,14 @@ const TopUp = () => {
           </div>
           {/* 结账按钮 */}
           <button
-            onClick={checkout}
+            onClick={handleCheckoutClick}
             disabled={checkingOut}
             style={{
               cursor: checkingOut ? 'not-allowed' : 'pointer', width: '100%', height: 48, border: 'none', borderRadius: 999,
               fontSize: 16, fontWeight: 600, color: 'var(--ui-accent-fg)', background: 'var(--ui-accent)',
               opacity: checkingOut ? 0.6 : 1,
             }}
-          >{checkingOut ? '正在创建订单...' : '前往结账'}</button>
+          >{checkingOut ? '正在创建订单...' : '生成支付二维码'}</button>
         </div>
       )}
 
@@ -274,6 +317,96 @@ const TopUp = () => {
               width='full'
               className='font-mono'
             />
+          </div>
+        </Modal>
+      )}
+
+      {/* 支付渠道选择弹窗 */}
+      {methodPickerOpen && (
+        <Modal
+          open
+          title='选择支付方式'
+          onClose={() => setMethodPickerOpen(false)}
+          hideFooter
+          width={400}
+        >
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 2px' }}>
+              <span style={{ fontSize: 13, color: 'var(--ui-text-3)' }}>支付总计</span>
+              <span style={{ fontSize: 20, fontWeight: 600, color: 'var(--ui-text)' }}>{payTotalText}</span>
+            </div>
+            {methods.map((m) => (
+              <button
+                key={m.id}
+                onClick={() => checkout(m)}
+                disabled={checkingOut}
+                style={{
+                  cursor: checkingOut ? 'not-allowed' : 'pointer',
+                  display: 'flex', alignItems: 'center', gap: 12,
+                  height: 56, paddingInline: 18, width: '100%',
+                  border: '1px solid var(--ui-border)', borderRadius: 14,
+                  fontSize: 15, fontWeight: 500, color: 'var(--ui-text)',
+                  background: 'var(--page-bg)', textAlign: 'left',
+                  opacity: checkingOut ? 0.6 : 1, transition: 'border-color 0.2s',
+                }}
+                onMouseEnter={(e) => { if (!checkingOut) e.currentTarget.style.borderColor = '#000'; }}
+                onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'var(--ui-border)'; }}
+              >
+                <img
+                  alt={m.name}
+                  src={PAYMENT_ICON_CDN[m.type] || PAYMENT_ICON_CDN.alipay}
+                  style={{ width: 26, height: 26, display: 'block' }}
+                />
+                <span style={{ flex: 1 }}>{m.name}</span>
+                {checkingOut && <Loading size='xs' />}
+              </button>
+            ))}
+          </div>
+        </Modal>
+      )}
+
+      {/* 支付二维码弹窗 */}
+      {paymentOrder && (
+        <Modal
+          open
+          title='扫码支付'
+          onClose={() => setPaymentOrder(null)}
+          hideFooter
+          width={430}
+        >
+          <div className='flex flex-col items-center gap-4'>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10 }}>
+              <img
+                alt={paymentOrder.methodName || '支付渠道'}
+                src={PAYMENT_ICON_CDN[paymentOrder.methodType] || PAYMENT_ICON_CDN.alipay}
+                style={{ width: 30, height: 30, display: 'block' }}
+              />
+              <div style={{ fontSize: 28, fontWeight: 600, color: 'var(--ui-text)' }}>{paymentOrder.totalText}</div>
+            </div>
+            <QRCode value={paymentOrder.qrValue || paymentOrder.payUrl} size={240} bordered={false} bgColor='transparent' />
+            <div style={{ width: '100%', fontSize: 12, color: 'var(--ui-text-3)', textAlign: 'center', wordBreak: 'break-all' }}>
+              订单号：{paymentOrder.tradeNo || '-'}
+            </div>
+            {paymentOrder.expiresAt && (
+              <div style={{ fontSize: 13, fontWeight: 600, color: paymentOrder.expiresAt <= paymentNow ? '#dc2626' : 'var(--ui-text)' }}>
+                {paymentOrder.expiresAt <= paymentNow
+                  ? '二维码已过期'
+                  : `剩余支付时间 ${formatCountdown((paymentOrder.expiresAt - paymentNow) / 1000)}`}
+              </div>
+            )}
+            <Button
+              icon={RefreshCw}
+              onClick={async () => {
+                await refreshUser();
+                await loadTopups();
+                showSuccess('已刷新支付状态');
+              }}
+            >
+              我已完成支付
+            </Button>
+            <div style={{ fontSize: 12, color: 'var(--ui-text-3)', textAlign: 'center', lineHeight: 1.6 }}>
+              使用手机扫码完成支付，支付成功后余额会自动刷新。
+            </div>
           </div>
         </Modal>
       )}

@@ -13,3 +13,5 @@ new-api
 new-api.exe
 main.exe
 main
+data/
+test_redis

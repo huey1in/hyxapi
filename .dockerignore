@@ -8,3 +8,6 @@ docs
 .eslintcache
 .gocache
 /web/node_modules
+logs
+test_redis
+/data
