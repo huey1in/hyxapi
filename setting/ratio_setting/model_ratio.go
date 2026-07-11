@@ -212,6 +212,10 @@ func getHardcodedCompletionModelRatio(name string) (float64, bool) {
 		}
 		// gpt-5 匹配
 		if strings.HasPrefix(name, "gpt-5") {
+			if strings.HasPrefix(name, "gpt-5.6") {
+				// gpt-5.6 sol/terra/luna 输出/输入价格比均为 6
+				return 6, true
+			}
 			if strings.HasPrefix(name, "gpt-5.5") {
 				return 6, true
 			}
