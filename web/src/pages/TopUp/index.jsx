@@ -44,6 +44,7 @@ const TopUp = () => {
 
   const minTopUp = statusState?.status?.min_topup || 1;
   const epayEnabled = !!statusState?.status?.epay_enabled;
+  const alipayEnabled = !!statusState?.status?.alipay_enabled;
   const payMethods = Array.isArray(statusState?.status?.pay_methods) ? statusState.status.pay_methods : [];
   const epayPrice = Number(statusState?.status?.epay_price) || 1;
   const epayMin = statusState?.status?.epay_min_topup || 1;
@@ -52,6 +53,7 @@ const TopUp = () => {
   const methods = epayEnabled
     ? payMethods.filter((m) => m?.type).map((m) => ({ id: `epay:${m.type}`, name: m.name || m.type, type: m.type, min_topup: m.min_topup }))
     : [];
+  if (alipayEnabled) methods.push({ id: 'alipay-official', name: '支付宝电脑网站支付', type: 'alipay', min_topup: epayMin });
   const [selectedMethod, setSelectedMethod] = useState('');
   const activeMethod = methods.find((m) => m.id === selectedMethod) || methods[0];
   const [methodPickerOpen, setMethodPickerOpen] = useState(false);
@@ -148,6 +150,16 @@ const TopUp = () => {
     const payMethod = method || activeMethod;
     if (!payMethod) return showError('请选择支付方式');
     const methodMin = Number(payMethod.min_topup) || epayMin;
+    if (payMethod.id === 'alipay-official') {
+      if (topUpCount < methodMin) return showError(`最低充值数量为 ${methodMin}`);
+      setCheckingOut(true);
+      try {
+        const { data } = await API.post('/api/user/payment/alipay/checkout', { amount: topUpCount });
+        if (data.success && data.data?.pay_url) window.location.assign(data.data.pay_url);
+        else showError(data.message || '创建支付订单失败');
+      } catch (e) { showError(e); } finally { setCheckingOut(false); }
+      return;
+    }
     if (payMethod.id?.startsWith('epay:')) {
       if (topUpCount < methodMin) return showError(`最低充值数量为 ${methodMin}`);
       setCheckingOut(true);
@@ -201,7 +213,7 @@ const TopUp = () => {
       </div>
 
       {/* 立即充值 */}
-      {epayEnabled && (
+      {(epayEnabled || alipayEnabled) && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <span style={{ fontSize: 18, fontWeight: 600, color: 'var(--ui-text)' }}>立即充值</span>
@@ -270,7 +282,7 @@ const TopUp = () => {
               fontSize: 16, fontWeight: 600, color: 'var(--ui-accent-fg)', background: 'var(--ui-accent)',
               opacity: checkingOut ? 0.6 : 1,
             }}
-          >{checkingOut ? '正在创建订单...' : '生成支付二维码'}</button>
+          >{checkingOut ? '正在创建订单...' : activeMethod?.id === 'alipay-official' ? '前往支付宝付款' : '生成支付二维码'}</button>
         </div>
       )}
 

@@ -24,7 +24,8 @@ type TopUp struct {
 }
 
 const (
-	PaymentMethodEpay = "epay"
+	PaymentMethodEpay   = "epay"
+	PaymentMethodAlipay = "alipay"
 )
 
 var (
@@ -273,7 +274,7 @@ func GetTopUpRevenueByDay(startTimestamp, endTimestamp int64) ([]DailyRevenue, e
 	return results, err
 }
 
-func CompleteEpayTopUp(tradeNo string, callerIp string) error {
+func CompleteOnlineTopUp(tradeNo string, expectedPaymentMethod string, callerIp string) error {
 	if tradeNo == "" {
 		return errors.New("未提供订单号")
 	}
@@ -292,7 +293,7 @@ func CompleteEpayTopUp(tradeNo string, callerIp string) error {
 		if err := tx.Set("gorm:query_option", "FOR UPDATE").Where(refCol+" = ?", tradeNo).First(topUp).Error; err != nil {
 			return errors.New("充值订单不存在")
 		}
-		if topUp.PaymentMethod != PaymentMethodEpay {
+		if topUp.PaymentMethod != expectedPaymentMethod {
 			return ErrPaymentMethodMismatch
 		}
 
@@ -330,7 +331,10 @@ func CompleteEpayTopUp(tradeNo string, callerIp string) error {
 		return err
 	}
 
-	RecordTopupLog(userId, fmt.Sprintf("在线充值成功，充值额度: %v，支付金额：%f", logger.FormatQuota(quotaToAdd), payMoney), callerIp, PaymentMethodEpay, PaymentMethodEpay)
+	RecordTopupLog(userId, fmt.Sprintf("在线充值成功，充值额度: %v，支付金额：%f", logger.FormatQuota(quotaToAdd), payMoney), callerIp, expectedPaymentMethod, expectedPaymentMethod)
 	return nil
 }
 
+func CompleteEpayTopUp(tradeNo string, callerIp string) error {
+	return CompleteOnlineTopUp(tradeNo, PaymentMethodEpay, callerIp)
+}

@@ -35,6 +35,8 @@ func SetApiRouter(router *gin.Engine) {
 		apiRouter.POST("/user/reset", middleware.CriticalRateLimit(), controller.ResetPassword)
 		apiRouter.GET("/payment/epay/notify", controller.EpayNotify)
 		apiRouter.GET("/payment/epay/redirect", controller.EpayRedirect)
+		apiRouter.POST("/payment/alipay/notify", controller.AlipayNotify)
+		apiRouter.GET("/payment/alipay/return", controller.AlipayReturn)
 		// OAuth routes - specific routes must come before :provider wildcard
 		apiRouter.GET("/oauth/state", middleware.CriticalRateLimit(), controller.GenerateOAuthCode)
 		apiRouter.POST("/oauth/email/bind", middleware.CriticalRateLimit(), controller.EmailBind)
@@ -80,6 +82,7 @@ func SetApiRouter(router *gin.Engine) {
 				selfRoute.GET("/aff", controller.GetAffCode)
 				selfRoute.POST("/topup", middleware.CriticalRateLimit(), controller.TopUp)
 				selfRoute.POST("/payment/epay/checkout", middleware.CriticalRateLimit(), controller.RequestEpayCheckout)
+				selfRoute.POST("/payment/alipay/checkout", middleware.CriticalRateLimit(), controller.RequestAlipayCheckout)
 
 				// 2FA routes
 				selfRoute.GET("/2fa/status", controller.Get2FAStatus)

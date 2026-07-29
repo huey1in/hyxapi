@@ -21,6 +21,8 @@
     "auth.reset.backToLogin": "Back to sign in",
     "auth.github.redirecting": "Redirecting...",
     "auth.github.continue": "Continue with GitHub",
+    "auth.oauth.continueWith": "Continue with {{provider}}",
+    "auth.errors.oauthUnavailable": "Third-party sign-in is currently unavailable",
     "auth.or": "or",
     "auth.processing": "Processing...",
     "auth.fields.username": "Username",

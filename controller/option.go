@@ -189,6 +189,11 @@ func UpdateOption(c *gin.Context) {
 			})
 			return
 		}
+	case "AlipayEnabled":
+		if option.Value == "true" && (strings.TrimSpace(operation_setting.AlipayAppId) == "" || strings.TrimSpace(operation_setting.AlipayPrivateKey) == "" || strings.TrimSpace(operation_setting.AlipayPublicKey) == "" || strings.TrimSpace(operation_setting.AlipayGateway) == "") {
+			c.JSON(http.StatusOK, gin.H{"success": false, "message": "启用支付宝前请先填写 App ID、应用私钥、支付宝公钥和网关地址"})
+			return
+		}
 	case "GroupRatio":
 		err = ratio_setting.CheckGroupRatio(option.Value.(string))
 		if err != nil {

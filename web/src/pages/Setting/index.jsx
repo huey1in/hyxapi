@@ -20,7 +20,7 @@ const TABS = [
 ];
 
 const TAB_KEYS = {
-  platform: ['ServerAddress', 'RetryTimes', 'general_setting.quota_display_type', 'DisplayTokenStatEnabled', 'token_setting.max_user_tokens', 'EpayEnabled', 'PayAddress', 'EpayId', 'EpayKey', 'CustomCallbackAddress', 'Price', 'MinTopUp', 'TopUpPresetAmounts', 'PayMethods'],
+  platform: ['ServerAddress', 'RetryTimes', 'general_setting.quota_display_type', 'DisplayTokenStatEnabled', 'token_setting.max_user_tokens', 'EpayEnabled', 'PayAddress', 'EpayId', 'EpayKey', 'CustomCallbackAddress', 'Price', 'MinTopUp', 'TopUpPresetAmounts', 'PayMethods', 'AlipayEnabled', 'AlipayAppId', 'AlipayPrivateKey', 'AlipayPublicKey', 'AlipayGateway'],
   global: [
     'global.pass_through_request_enabled',
     'global.thinking_model_blacklist',
@@ -91,6 +91,7 @@ const TAB_SECTIONS = {
     { title: '基本信息', keys: ['ServerAddress'] },
     { title: '功能开关', keys: ['RetryTimes', 'general_setting.quota_display_type', 'DisplayTokenStatEnabled', 'token_setting.max_user_tokens'] },
     { title: '易支付 (Epay)', gateKey: 'EpayEnabled', keys: ['EpayEnabled', 'PayAddress', 'EpayId', 'EpayKey', 'CustomCallbackAddress', 'Price', 'MinTopUp', 'TopUpPresetAmounts', 'PayMethods'] },
+    { title: '支付宝电脑网站支付', gateKey: 'AlipayEnabled', keys: ['AlipayEnabled', 'AlipayAppId', 'AlipayPrivateKey', 'AlipayPublicKey', 'AlipayGateway'] },
   ],
   auth: [
     { title: '注册与登录', keys: ['RegisterEnabled', 'PasswordRegisterEnabled', 'PasswordLoginEnabled'] },
@@ -125,9 +126,9 @@ const TAB_SECTIONS = {
   ],
 };
 
-const WIDE_KEYS = new Set([...Array.from(new Set(['EmailDomainWhitelist', 'SensitiveWords', 'AutomaticDisableKeywords', 'AutomaticDisableStatusCodes', 'AutomaticRetryStatusCodes', 'fetch_setting.domain_list', 'fetch_setting.ip_list', 'fetch_setting.allowed_ports', 'global.thinking_model_blacklist', 'gemini.supported_imagine_models'])), 'ModelRatio', 'CompletionRatio', 'CacheRatio', 'CreateCacheRatio', 'ImageRatio', 'AudioRatio', 'AudioCompletionRatio', 'GroupRatio', 'ModelPrice', 'UserUsableGroups', 'claude.model_headers_settings', 'claude.default_max_tokens', 'gemini.safety_settings', 'gemini.version_settings', 'channel_affinity_setting.rules', 'console_setting.announcements', 'global.chat_completions_to_responses_policy', 'EmailTemplateVerification', 'EmailTemplatePasswordReset']);
+const WIDE_KEYS = new Set([...Array.from(new Set(['EmailDomainWhitelist', 'SensitiveWords', 'AutomaticDisableKeywords', 'AutomaticDisableStatusCodes', 'AutomaticRetryStatusCodes', 'fetch_setting.domain_list', 'fetch_setting.ip_list', 'fetch_setting.allowed_ports', 'global.thinking_model_blacklist', 'gemini.supported_imagine_models'])), 'ModelRatio', 'CompletionRatio', 'CacheRatio', 'CreateCacheRatio', 'ImageRatio', 'AudioRatio', 'AudioCompletionRatio', 'GroupRatio', 'ModelPrice', 'UserUsableGroups', 'claude.model_headers_settings', 'claude.default_max_tokens', 'gemini.safety_settings', 'gemini.version_settings', 'channel_affinity_setting.rules', 'console_setting.announcements', 'global.chat_completions_to_responses_policy', 'EmailTemplateVerification', 'EmailTemplatePasswordReset', 'AlipayPrivateKey', 'AlipayPublicKey']);
 
-const MULTILINE_KEYS = new Set(['EmailTemplateVerification', 'EmailTemplatePasswordReset']);
+const MULTILINE_KEYS = new Set(['EmailTemplateVerification', 'EmailTemplatePasswordReset', 'AlipayPrivateKey', 'AlipayPublicKey']);
 const TAG_KEYS = new Set(['EmailDomainWhitelist', 'SensitiveWords', 'AutomaticDisableKeywords', 'AutomaticDisableStatusCodes', 'AutomaticRetryStatusCodes', 'fetch_setting.domain_list', 'fetch_setting.ip_list', 'fetch_setting.allowed_ports', 'global.thinking_model_blacklist', 'gemini.supported_imagine_models']);
 const JSON_ARRAY_TAG_KEYS = new Set(['fetch_setting.domain_list', 'fetch_setting.ip_list', 'fetch_setting.allowed_ports', 'global.thinking_model_blacklist', 'gemini.supported_imagine_models']);
 const NEWLINE_TAG_KEYS = new Set(['SensitiveWords', 'AutomaticDisableKeywords']);
@@ -164,6 +165,7 @@ const BOOL_KEYS = new Set([
   'console_setting.announcements_enabled',
   'monitor_setting.model_health_enabled',
   'EpayEnabled',
+  'AlipayEnabled',
   'log_setting.log_request_body', 'log_setting.log_response_body',
 ]);
 const NUMBER_KEYS = new Set([
@@ -190,6 +192,11 @@ const NUMBER_KEYS = new Set([
 const LABELS = {
   ServerAddress: '服务器地址',
   EpayEnabled: '启用易支付',
+  AlipayEnabled: '启用支付宝电脑网站支付',
+  AlipayAppId: '支付宝应用 App ID',
+  AlipayPrivateKey: '应用私钥（RSA2）',
+  AlipayPublicKey: '支付宝公钥（RSA2）',
+  AlipayGateway: '支付宝网关地址',
   PayAddress: '易支付网关地址 (PayAddress)',
   EpayId: '易支付商户 ID (PID)',
   EpayKey: '易支付商户密钥 (KEY)',

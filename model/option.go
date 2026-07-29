@@ -69,6 +69,11 @@ func InitOptionMap() {
 	common.OptionMap["EpayId"] = ""
 	common.OptionMap["EpayKey"] = ""
 	common.OptionMap["EpayEnabled"] = strconv.FormatBool(operation_setting.EpayEnabled)
+	common.OptionMap["AlipayEnabled"] = strconv.FormatBool(operation_setting.AlipayEnabled)
+	common.OptionMap["AlipayAppId"] = ""
+	common.OptionMap["AlipayPrivateKey"] = ""
+	common.OptionMap["AlipayPublicKey"] = ""
+	common.OptionMap["AlipayGateway"] = operation_setting.AlipayGateway
 	common.OptionMap["Price"] = strconv.FormatFloat(operation_setting.Price, 'f', -1, 64)
 	common.OptionMap["USDExchangeRate"] = strconv.FormatFloat(operation_setting.USDExchangeRate, 'f', -1, 64)
 	common.OptionMap["MinTopUp"] = strconv.Itoa(operation_setting.MinTopUp)
@@ -298,6 +303,16 @@ func updateOptionMap(key string, value string) (err error) {
 		operation_setting.EpayKey = value
 	case "EpayEnabled":
 		operation_setting.EpayEnabled = value == "true"
+	case "AlipayEnabled":
+		operation_setting.AlipayEnabled = value == "true"
+	case "AlipayAppId":
+		operation_setting.AlipayAppId = value
+	case "AlipayPrivateKey":
+		operation_setting.AlipayPrivateKey = value
+	case "AlipayPublicKey":
+		operation_setting.AlipayPublicKey = value
+	case "AlipayGateway":
+		operation_setting.AlipayGateway = value
 	case "Price":
 		operation_setting.Price, _ = strconv.ParseFloat(value, 64)
 	case "USDExchangeRate":

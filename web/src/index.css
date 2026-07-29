@@ -419,6 +419,15 @@ body[theme-mode='dark'] .cursor-home .footer-language-menu button:hover,body[the
 .cursor-auth-feedback.is-error { background:#f7e6e4; color:#b43b35; }
 .cursor-auth-feedback.is-success { background:#e8f1e9; color:#39704a; }
 .cursor-auth-oauth,.cursor-auth-submit { display:flex; align-items:center; justify-content:center; gap:10px; width:100%; height:42px; border:1px solid #deddd7; border-radius:3px; background:#eeede8; color:#24231f; font-size:15px; font-weight:500; transition:background .16s ease,border-color .16s ease; }
+.cursor-auth-oauth-list { display:grid; gap:10px; }
+.cursor-auth-oauth-list .cursor-auth-oauth,.cursor-auth-telegram-row { border:0; }
+.cursor-auth-provider-icon { display:grid; place-items:center; flex:0 0 20px; width:20px; height:20px; }
+.cursor-auth-provider-icon img { display:block; width:20px; height:20px; object-fit:contain; }
+.cursor-auth-provider-icon>span { font-size:12px; font-weight:700; }
+.cursor-auth-telegram-row { position:relative; display:flex; align-items:center; justify-content:center; gap:10px; width:100%; height:42px; box-sizing:border-box; overflow:hidden; border:0; border-radius:3px; background:#eeede8; color:#24231f; font-size:15px; font-weight:500; }
+.cursor-auth-telegram-widget { position:absolute; inset:0; z-index:2; display:flex; align-items:center; justify-content:center; opacity:.001; overflow:hidden; cursor:pointer; }
+.cursor-auth-telegram-widget iframe { display:block; width:240px !important; height:42px !important; border:0 !important; transform:none; cursor:pointer; }
+.oauth-callback-page { display:grid; min-height:100vh; place-items:center; background:#f7f7f4; color:#77746a; font-size:14px; }
 .cursor-auth-oauth:hover,.cursor-auth-submit:hover { border-color:#cbc9c1; background:#e7e6e0; }
 .cursor-auth-oauth:disabled,.cursor-auth-submit:disabled { cursor:not-allowed; opacity:.55; }
 .cursor-auth-divider { display:flex; align-items:center; gap:12px; margin:19px 0; color:#aaa79f; font-size:11px; }

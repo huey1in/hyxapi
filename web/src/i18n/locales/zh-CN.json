@@ -21,6 +21,8 @@
     "auth.reset.backToLogin": "返回登录",
     "auth.github.redirecting": "正在跳转...",
     "auth.github.continue": "使用 GitHub 继续",
+    "auth.oauth.continueWith": "使用 {{provider}} 继续",
+    "auth.errors.oauthUnavailable": "第三方登录暂不可用",
     "auth.or": "或",
     "auth.processing": "处理中...",
     "auth.fields.username": "用户名",
