@@ -187,6 +187,14 @@ body {
 /* Cursor-inspired composition: quiet type, generous pacing, large product surfaces. */
 .cursor-home { --studio-bg:#f7f7f4; --studio-paper:#fdfdfb; --studio-ink:#24231f; --studio-muted:#77756e; --studio-line:#deddd7; --studio-orange:#24231f; }
 .cursor-home .home-nav { position:fixed; top:0; left:50%; z-index:50; width:min(1210px,calc(100% - 40px)); height:70px; box-sizing:border-box; border:0; transform:translateX(-50%); background:rgba(247,247,244,.92); backdrop-filter:blur(14px); }
+.console-home-nav { position:fixed; top:0; left:50%; z-index:50; display:flex; align-items:center; justify-content:space-between; width:min(1210px,calc(100% - 40px)); height:70px; box-sizing:border-box; transform:translateX(-50%); background:color-mix(in srgb,var(--page-bg) 92%,transparent); backdrop-filter:blur(14px); }
+.console-home-nav-left { display:flex; align-items:center; gap:12px; }
+.console-home-nav .home-brand { color:var(--ui-text-1,#24231f); font-size:21px; font-weight:600; }
+.console-home-nav .home-nav-links { gap:30px; color:var(--ui-text-2,#66645f); font-size:13px; }
+.console-home-nav .home-nav-links a:hover { color:var(--ui-text-1,#24231f); }
+.console-home-nav .home-nav-start { height:34px; padding:0 14px; border-radius:17px; background:var(--ui-text-1,#24231f); color:var(--page-bg,#fff) !important; }
+.console-menu-button { display:grid; place-items:center; width:34px; height:34px; color:var(--ui-text-1,#24231f); }
+.console-layout-body { padding-top:70px; }
 .cursor-home .brand-symbol { width:25px; height:25px; border-radius:7px; background:#24231f; font-size:12px; }
 .cursor-home .home-brand,.cursor-auth-header .home-brand { font-size:21px; font-weight:600; }.cursor-home .home-nav-links { gap:30px; font-size:13px; }.cursor-home .home-nav-start { height:34px; padding:0 14px; border-radius:17px; }
 .cursor-home .studio-hero { display:block; width:min(1210px,calc(100% - 40px)); min-height:0; padding:175px 0 55px; }
@@ -300,6 +308,11 @@ body[theme-mode='dark'] .cursor-home .footer-language-menu { border-color:#41413
 body[theme-mode='dark'] .cursor-home .footer-language-menu button { color:#d4d2cb; }
 body[theme-mode='dark'] .cursor-home .footer-language-menu button:hover,body[theme-mode='dark'] .cursor-home .footer-language-menu button.is-active { background:#383832; color:#fff; }
 @media (max-width:760px) {
+  .console-home-nav { width:calc(100% - 28px); height:62px; }
+  .console-layout-body { padding-top:62px; }
+  .console-home-nav .console-home-nav-links { display:flex; position:static; flex-direction:row; align-items:center; gap:18px; padding:0; border:0; background:transparent; }
+  .console-home-nav .console-home-nav-links a { padding:0; }
+  .console-home-nav .home-nav-start { height:34px; }
   .cursor-home .home-nav,.cursor-home .studio-hero,.cursor-home .product-frame,.cursor-home .model-trust,.cursor-home .plain-intro,.cursor-home .route-board,.cursor-home .detail-rows,.cursor-home .start-section,.cursor-home .studio-closing,.cursor-home .studio-footer { width:calc(100% - 28px); }
   .cursor-home .home-nav { height:62px; }.cursor-home .studio-hero { padding:134px 0 44px; }.cursor-home .studio-hero h1 { font-size:30px; }.cursor-home .studio-hero-copy>p { font-size:14px; }
   .cursor-home .product-frame { padding:42px 10px 0; border-radius:4px; }.cursor-home .model-trust { padding:75px 0 85px; }.cursor-home .model-trust h2 { font-size:20px; }.cursor-home .model-card { flex-basis:130px; width:130px; height:56px; }
@@ -321,7 +334,6 @@ body[theme-mode='dark'] .cursor-home .footer-language-menu button:hover,body[the
   .console-feature-content { width:100%; }
   .cursor-home .api-feature-frame .console-feature-content>div,
   .cursor-home .log-feature-frame .console-feature-content>div { width:100%; transform:none; }
-  .cursor-home .api-feature-frame .token-quick-start { display:none !important; }
   .cursor-home .log-feature-frame table { width:100%; table-layout:fixed !important; }
   .cursor-home .log-feature-frame th:nth-child(1),.cursor-home .log-feature-frame td:nth-child(1) { width:50%; }
   .cursor-home .log-feature-frame th:nth-child(2),.cursor-home .log-feature-frame td:nth-child(2) { width:20%; }

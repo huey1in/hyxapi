@@ -19,8 +19,13 @@ For commercial licensing, please contact support@quantumnous.com
 
 import React, { useContext, useEffect } from 'react';
 import { Navigate } from 'react-router-dom';
-import { useLoginModal } from '../context/LoginModal';
 import { UserContext } from '../context/User';
+
+export const redirectToAuth = (mode = 'login') => {
+  const next = `${window.location.pathname}${window.location.search}`;
+  const authMode = mode === 'register' ? 'register' : 'login';
+  window.location.assign(`/auth?mode=${authMode}&next=${encodeURIComponent(next)}`);
+};
 
 export function authHeader() {
   let user = JSON.parse(localStorage.getItem('user'));
@@ -36,18 +41,16 @@ export const AuthRedirect = ({ children }) => {
   return children;
 };
 
-// 校验登录状态：未登录时停留在当前路由 + 打开登录模态框，登录成功后 UserContext 变更会自动刷新此组件
+// 校验登录状态：未登录时跳转认证页，并通过 next 参数保留当前地址。
 function PrivateRoute({ children }) {
   const [userState] = useContext(UserContext);
-  const { openLoginModal } = useLoginModal();
   const hasUser = !!userState?.user || !!localStorage.getItem('user');
 
   useEffect(() => {
-    if (!hasUser) openLoginModal('login');
-  }, [hasUser, openLoginModal]);
+    if (!hasUser) redirectToAuth('login');
+  }, [hasUser]);
 
   if (!hasUser) {
-    // 未登录时返回空白占位，让 LoginModal 在当前路由上方覆盖显示
     return <div className='min-h-[40vh]' />;
   }
   return children;
@@ -55,13 +58,12 @@ function PrivateRoute({ children }) {
 
 export function AdminRoute({ children }) {
   const [userState] = useContext(UserContext);
-  const { openLoginModal } = useLoginModal();
   const raw = localStorage.getItem('user');
   const hasUser = !!userState?.user || !!raw;
 
   useEffect(() => {
-    if (!hasUser) openLoginModal('login');
-  }, [hasUser, openLoginModal]);
+    if (!hasUser) redirectToAuth('login');
+  }, [hasUser]);
 
   if (!hasUser) return <div className='min-h-[40vh]' />;
 

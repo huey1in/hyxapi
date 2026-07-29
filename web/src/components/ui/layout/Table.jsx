@@ -41,6 +41,7 @@ const Table = ({
   expandedKey,
   renderExpanded,
   tableLayout = 'auto',
+  minWidth,
 }) => {
   const keyOf = (row, i) => {
     if (typeof rowKey === 'function') return rowKey(row);
@@ -50,7 +51,13 @@ const Table = ({
 
   return (
     <div className='w-full overflow-x-auto rounded-2xl border border-ui-border bg-[var(--page-bg)] ui-scrollbar'>
-      <table className='w-full border-collapse' style={tableLayout === 'fixed' ? { tableLayout: 'fixed' } : undefined}>
+      <table
+        className='w-full border-collapse'
+        style={{
+          ...(tableLayout === 'fixed' ? { tableLayout: 'fixed' } : {}),
+          ...(minWidth ? { minWidth } : {}),
+        }}
+      >
         <thead>
           <tr className='border-b border-ui-border'>
             {columns.map((c) => (
@@ -95,7 +102,7 @@ const Table = ({
                     {columns.map((c) => (
                       <td
                         key={c.key}
-                        className={cn('text-ui-text', SIZE_PAD[size], ALIGN[c.align] || ALIGN.left)}
+                        className={cn('text-ui-text overflow-hidden', SIZE_PAD[size], ALIGN[c.align] || ALIGN.left)}
                       >
                         {c.render ? c.render(row, idx) : row[c.key]}
                       </td>

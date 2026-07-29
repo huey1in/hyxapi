@@ -57,6 +57,11 @@ const Auth = () => {
   const [feedback, setFeedback] = useState(null);
   const telegramRef = useRef(null);
   const next = params.get('next') || '/console';
+
+  useEffect(() => {
+    const aff = params.get('aff');
+    if (aff) localStorage.setItem('aff', aff);
+  }, [params]);
   const update = (key) => (event) => {
     setFeedback(null);
     setForm((value) => ({ ...value, [key]: event.target.value }));

@@ -1084,8 +1084,6 @@
     "固定价格值": "固定价格值",
     "图像生成": "图像生成",
     "图标": "图标",
-    "图标使用 react-icons（Simple Icons）或 URL/emoji，例如：github、gitlab、si:google": "图标使用 react-icons（Simple Icons）或 URL/emoji，例如：github、gitlab、si:google",
-    "图标使用@lobehub/icons库，如：OpenAI、Claude.Color，支持链式参数：OpenAI.Avatar.type={'platform'}、OpenRouter.Avatar.shape={'square'}，查询所有可用图标请 ": "图标使用@lobehub/icons库，如：OpenAI、Claude.Color，支持链式参数：OpenAI.Avatar.type={'platform'}、OpenRouter.Avatar.shape={'square'}，查询所有可用图标请 ",
     "图标文件不能超过 100KB，请压缩后重新上传": "图标文件不能超过 100KB，请压缩后重新上传",
     "图混合": "图混合",
     "图片倍率 {{imageRatio}}": "图片倍率 {{imageRatio}}",

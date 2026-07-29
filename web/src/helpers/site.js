@@ -18,7 +18,7 @@ export function homeSiteUrl() {
   return 'https://demo.claudeai.one';
 }
 
-// 读取邀请码：优先取当前 URL 上的 aff（如 /register?aff=xxx），否则回退 localStorage。
+// 读取邀请码：优先取当前认证 URL 上的 aff，否则回退 localStorage。
 function readAffCode() {
   try {
     const fromQuery = new URLSearchParams(window.location.search).get('aff');

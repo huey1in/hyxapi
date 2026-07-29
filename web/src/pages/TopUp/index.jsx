@@ -74,7 +74,7 @@ const TopUp = () => {
       const { data } = await API.get('/api/user/aff');
       if (data.success) {
         const base = statusState?.status?.server_address || window.location.origin;
-        setAffLink(`${base}/register?aff=${data.data}`);
+        setAffLink(`${base}/auth?mode=register&aff=${data.data}`);
       }
     } catch {}
   };

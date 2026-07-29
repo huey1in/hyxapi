@@ -5,9 +5,9 @@ import App from './App';
 import { UserProvider } from './context/User';
 import { StatusProvider } from './context/Status';
 import { ThemeProvider } from './context/Theme';
-import { LoginModalProvider } from './context/LoginModal';
 import { ToastContainer } from './components/ui';
 import { updateAPI } from './helpers/api';
+import { redirectToAuth } from './helpers/auth';
 import './index.css';
 import './i18n/i18n';
 
@@ -42,15 +42,14 @@ async function consumeHandoffCode() {
 
 async function bootstrap() {
   await consumeHandoffCode();
+  window.addEventListener('routify:auth-required', () => redirectToAuth('login'));
   createRoot(document.getElementById('root')).render(
     <BrowserRouter>
       <UserProvider>
         <StatusProvider>
           <ThemeProvider>
-            <LoginModalProvider>
-              <App />
-              <ToastContainer />
-            </LoginModalProvider>
+            <App />
+            <ToastContainer />
           </ThemeProvider>
         </StatusProvider>
       </UserProvider>

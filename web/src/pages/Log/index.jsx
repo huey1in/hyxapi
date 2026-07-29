@@ -75,6 +75,23 @@ const Quota = ({ row }) => {
   return <span style={{ color: 'var(--ui-text-3)' }}>—</span>;
 };
 
+const TruncatedField = ({ value, muted = false }) => (
+  <span
+    title={value || undefined}
+    style={{
+      display: 'block',
+      width: '100%',
+      minWidth: 0,
+      overflow: 'hidden',
+      textOverflow: 'ellipsis',
+      whiteSpace: 'nowrap',
+      color: muted ? 'var(--ui-text-2)' : undefined,
+    }}
+  >
+    {value || '—'}
+  </span>
+);
+
 const LogPage = ({ preview = false }) => {
   const [userState] = useContext(UserContext);
   const isAdmin = (userState?.user?.role || 1) >= 10;
@@ -152,21 +169,21 @@ const LogPage = ({ preview = false }) => {
       return [
         { key: 'time', title: '时间', render: (r) => <span style={{ whiteSpace: 'nowrap', fontSize: 12, color: 'var(--ui-text-2)' }}>{timestamp2string(r.created_at)}</span> },
         { key: 'type', title: '类型', render: (r) => <TypeBadge type={r.type} /> },
-        { key: 'model', title: '模型', render: (r) => <span style={{ whiteSpace: 'nowrap', maxWidth: 140, display: 'inline-block', overflow: 'hidden', textOverflow: 'ellipsis', verticalAlign: 'bottom' }} title={r.model_name}>{r.model_name || '—'}</span> },
+        { key: 'model', title: '模型', render: (r) => <TruncatedField value={r.model_name} /> },
         { key: 'quota', title: '积分', align: 'right', render: (r) => <Quota row={r} /> },
       ];
     }
     const cols = [
       { key: 'time', title: '时间', width: 150, render: (r) => <span style={{ whiteSpace: 'nowrap', color: 'var(--ui-text-2)' }}>{timestamp2string(r.created_at)}</span> },
       { key: 'type', title: '类型', width: 70, render: (r) => <TypeBadge type={r.type} /> },
-      { key: 'model', title: '模型', width: 130, render: (r) => <span style={{ whiteSpace: 'nowrap', maxWidth: 118, display: 'inline-block', overflow: 'hidden', textOverflow: 'ellipsis', verticalAlign: 'bottom' }} title={r.model_name}>{r.model_name || '—'}</span> },
+      { key: 'model', title: '模型', width: 150, render: (r) => <TruncatedField value={r.model_name} /> },
     ];
     if (isAdmin) {
-      cols.push({ key: 'username', title: '用户', width: 90, render: (r) => <span style={{ whiteSpace: 'nowrap', maxWidth: 78, display: 'inline-block', overflow: 'hidden', textOverflow: 'ellipsis', verticalAlign: 'bottom' }} title={r.username}>{r.username || '—'}</span> });
+      cols.push({ key: 'username', title: '用户', width: 110, render: (r) => <TruncatedField value={r.username} /> });
     }
     cols.push(
-      { key: 'token', title: '令牌', width: 90, render: (r) => <span style={{ whiteSpace: 'nowrap', maxWidth: 78, display: 'inline-block', overflow: 'hidden', textOverflow: 'ellipsis', verticalAlign: 'bottom', color: 'var(--ui-text-2)' }} title={r.token_name}>{r.token_name || '—'}</span> },
-      { key: 'group', title: '分组', width: 80, render: (r) => <span style={{ whiteSpace: 'nowrap', maxWidth: 68, display: 'inline-block', overflow: 'hidden', textOverflow: 'ellipsis', verticalAlign: 'bottom', color: 'var(--ui-text-2)' }} title={r.group}>{r.group || '—'}</span> },
+      { key: 'token', title: '令牌', width: 110, render: (r) => <TruncatedField value={r.token_name} muted /> },
+      { key: 'group', title: '分组', width: 96, render: (r) => <TruncatedField value={r.group} muted /> },
       { key: 'input', title: '输入', align: 'right', width: 64, render: (r) => <Num value={r.prompt_tokens || 0} /> },
       { key: 'output', title: '输出', align: 'right', width: 64, render: (r) => <Num value={r.completion_tokens || 0} /> },
       { key: 'cache', title: '缓存', align: 'right', width: 64, render: (r) => <Num value={r._cache} /> },
@@ -255,6 +272,7 @@ const LogPage = ({ preview = false }) => {
               size='md'
               rowKey='id'
               tableLayout={isMobile ? 'auto' : 'fixed'}
+              minWidth={isMobile ? 560 : (isAdmin ? 1120 : 1010)}
               emptyText='暂无数据'
               onRowClick={preview ? undefined : (r) => setExpanded((prev) => prev === r.id ? null : r.id)}
               expandedKey={expanded}

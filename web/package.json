@@ -11,8 +11,6 @@
     "build-storybook": "storybook build"
   },
   "dependencies": {
-    "@lobehub/icons": "^1.94.0",
-    "@visactor/vchart-semi-theme": "^1.12.0",
     "antd": "^6.3.7",
     "axios": "^1.7.7",
     "clsx": "^2.1.1",
@@ -26,7 +24,6 @@
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-i18next": "^13.5.0",
-    "react-icons": "^5.4.0",
     "react-markdown": "^10.1.0",
     "react-router-dom": "^6.28.0",
     "rehype-highlight": "^7.0.2",
@@ -34,7 +31,6 @@
     "remark-breaks": "^4.0.0",
     "remark-gfm": "^4.0.1",
     "remark-math": "^6.0.0",
-    "sse.js": "^2.6.0",
     "unist-util-visit": "^5.0.0"
   },
   "devDependencies": {

@@ -1,34 +1,33 @@
-import React from 'react';
+import React, { Suspense, lazy } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import PageLayout from './components/layout/PageLayout';
 
-import Dashboard     from './pages/Dashboard';
-import Channel       from './pages/Channel';
-import Token         from './pages/Token';
-import Log           from './pages/Log';
-import User          from './pages/User';
-import Redemption    from './pages/Redemption';
-import Subscription  from './pages/Subscription';
-import TopUp         from './pages/TopUp';
-import MySubscription from './pages/MySubscription';
-// import Chat         from './pages/Chat';
-import Setting       from './pages/Setting';
-import Operations    from './pages/Operations';
-import AuditLog      from './pages/AuditLog';
-import SystemStatus  from './pages/SystemStatus';
-import Setup         from './pages/Setup';
-import Personal      from './pages/Personal';
-import Notices       from './pages/Notices';
-import Forbidden     from './pages/Forbidden';
-import PasswordReset from './pages/PasswordReset';
-import Register     from './pages/Register';
-import Pricing      from './pages/Pricing';
-import PricingDetail from './pages/Pricing/Detail';
-import Home from './pages/Home';
-import Auth from './pages/Auth';
-import OAuthCallback from './pages/OAuthCallback';
+const Dashboard = lazy(() => import('./pages/Dashboard'));
+const Channel = lazy(() => import('./pages/Channel'));
+const Token = lazy(() => import('./pages/Token'));
+const Log = lazy(() => import('./pages/Log'));
+const User = lazy(() => import('./pages/User'));
+const Redemption = lazy(() => import('./pages/Redemption'));
+const Subscription = lazy(() => import('./pages/Subscription'));
+const TopUp = lazy(() => import('./pages/TopUp'));
+const MySubscription = lazy(() => import('./pages/MySubscription'));
+const Setting = lazy(() => import('./pages/Setting'));
+const Operations = lazy(() => import('./pages/Operations'));
+const AuditLog = lazy(() => import('./pages/AuditLog'));
+const SystemStatus = lazy(() => import('./pages/SystemStatus'));
+const Setup = lazy(() => import('./pages/Setup'));
+const Personal = lazy(() => import('./pages/Personal'));
+const Notices = lazy(() => import('./pages/Notices'));
+const Forbidden = lazy(() => import('./pages/Forbidden'));
+const PasswordReset = lazy(() => import('./pages/PasswordReset'));
+const Pricing = lazy(() => import('./pages/Pricing'));
+const PricingDetail = lazy(() => import('./pages/Pricing/Detail'));
+const Home = lazy(() => import('./pages/Home'));
+const Auth = lazy(() => import('./pages/Auth'));
+const OAuthCallback = lazy(() => import('./pages/OAuthCallback'));
 
 const App = () => (
+  <Suspense fallback={<div className='min-h-screen bg-[var(--page-bg)]' />}>
   <Routes>
     <Route element={<PageLayout />}>
       <Route path='/'                   element={<Home />} />
@@ -36,7 +35,6 @@ const App = () => (
       <Route path='/oauth/:provider'    element={<OAuthCallback />} />
       <Route path='/setup'              element={<Setup />} />
       <Route path='/user/reset'         element={<PasswordReset />} />
-      <Route path='/register'           element={<Register />} />
       <Route path='/forbidden'          element={<Forbidden />} />
       <Route path='/pricing'            element={<Pricing />} />
       <Route path='/pricing/model/*'    element={<PricingDetail />} />
@@ -55,7 +53,6 @@ const App = () => (
       <Route path='/console/subscription'     element={<Subscription />} />
       <Route path='/console/topup'            element={<TopUp />} />
       <Route path='/console/my-subscription'  element={<MySubscription />} />
-      {/* <Route path='/console/chat'             element={<Chat />} /> */}
       <Route path='/console/setting'          element={<Setting />} />
       <Route path='/console/personal'         element={<Personal />} />
       <Route path='/console/notices'          element={<Notices />} />
@@ -63,6 +60,7 @@ const App = () => (
       <Route path='*' element={<Navigate to='/' replace />} />
     </Route>
   </Routes>
+  </Suspense>
 );
 
 export default App;

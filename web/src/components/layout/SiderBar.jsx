@@ -1,18 +1,17 @@
 import React, { useContext, useMemo, useState } from 'react';
-import { NavLink, useNavigate } from 'react-router-dom';
+import { NavLink } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import {
   BarChart3, Key, FileText, Wallet, User,
   Radio, CreditCard, Ticket, Users, Settings,
-  ChevronLeft, X, Layers, Store, Bell, LogOut, TrendingUp, Activity, Shield,
+  ChevronLeft, X, Layers, Store, Bell, TrendingUp, Activity, Shield,
 } from 'lucide-react';
-import { isAdmin, isRoot, API, showError, updateAPI, renderQuota } from '../../helpers';
-import { UserContext } from '../../context/User';
+import { isAdmin, isRoot } from '../../helpers';
 import { StatusContext } from '../../context/Status';
 import { useMobileSidebar } from '../../context/MobileSidebar';
 import useIsMobile from '../../hooks/useIsMobile';
 import { cn } from '../ui/tokens';
-import { ThemeToggle } from '../ui';
+import { filterSidebarItems } from './sidebarItems';
 
 const LS_KEY = 'sidebar-collapsed';
 const EXPANDED = 256;
@@ -41,14 +40,11 @@ const NAV_ITEMS = [
 
 const SiderBar = ({ preview = false, previewActive = '/console' }) => {
   const { t } = useTranslation();
-  const navigate = useNavigate();
-  const [userState, userDispatch] = useContext(UserContext);
   const [statusState] = useContext(StatusContext);
   const admin = isAdmin();
   const root = isRoot();
   const isMobile = useIsMobile();
   const [mobileOpen, setMobileOpen] = useMobileSidebar();
-  const user = userState?.user;
   const [collapsed, setCollapsed] = useState(() => {
     try { return localStorage.getItem(LS_KEY) === '1'; } catch { return false; }
   });
@@ -63,14 +59,6 @@ const SiderBar = ({ preview = false, previewActive = '/console' }) => {
     return announcements.filter((a) => !readSet.has(getKey(a))).length;
   }, [statusState?.status?.announcements]);
 
-  const logout = async () => {
-    try { await API.get('/api/user/logout'); } catch (e) { showError(e); }
-    localStorage.removeItem('user');
-    updateAPI();
-    userDispatch?.({ type: 'logout' });
-    navigate('/');
-  };
-
   const toggle = () => {
     setCollapsed((c) => {
       const next = !c;
@@ -79,11 +67,7 @@ const SiderBar = ({ preview = false, previewActive = '/console' }) => {
     });
   };
 
-  const items = NAV_ITEMS.filter((it) => {
-    if (it.admin && !admin) return false;
-    if (it.root && !root) return false;
-    return true;
-  });
+  const items = filterSidebarItems(NAV_ITEMS, { preview, admin, root });
 
   const navContent = (
     <nav className='flex-1 flex flex-col gap-1 py-2 px-[10px] overflow-y-auto overflow-x-hidden'>
@@ -135,45 +119,6 @@ const SiderBar = ({ preview = false, previewActive = '/console' }) => {
     </nav>
   );
 
-  const renderUserFooter = (isCollapsed) => (
-    <div className='mt-auto border-t border-ui-divider p-[10px]'>
-      {isCollapsed ? (
-        <div className='flex flex-col items-center gap-1'>
-          <ThemeToggle size='md' variant='ghost' shape='square' />
-          <button
-            onClick={logout}
-            title={t('退出登录')}
-            className='flex items-center justify-center w-9 h-9 rounded-lg text-ui-text hover:bg-ui-bg-subtle transition-colors'
-          >
-            <LogOut size={18} className='flex-shrink-0' />
-          </button>
-        </div>
-      ) : (
-        <div className='flex flex-col gap-2'>
-          {user && (
-            <div className='px-1.5 py-1'>
-              <div className='text-sm font-medium text-ui-text truncate' title={user.username}>{user.username}</div>
-              <div className='flex items-baseline gap-1 mt-1'>
-                <span className='text-xs text-ui-text-3'>{t('余额')}</span>
-                <span className='text-sm font-semibold text-ui-text tabular-nums'>{renderQuota(user.quota || 0)}</span>
-              </div>
-            </div>
-          )}
-          <div className='flex items-center gap-1.5'>
-            <button
-              onClick={logout}
-              className='flex-1 flex items-center justify-center gap-2 h-9 rounded-lg text-sm text-ui-text border border-ui-border hover:bg-ui-bg-subtle transition-colors'
-            >
-              <LogOut size={16} className='flex-shrink-0' />
-              <span>{t('退出登录')}</span>
-            </button>
-            <ThemeToggle size='md' variant='outline' shape='square' />
-          </div>
-        </div>
-      )}
-    </div>
-  );
-
   if (isMobile) {
     if (!mobileOpen) return null;
     return (
@@ -190,7 +135,6 @@ const SiderBar = ({ preview = false, previewActive = '/console' }) => {
             </button>
           </div>
           {navContent}
-          {renderUserFooter(false)}
         </aside>
       </div>
     );
@@ -255,8 +199,6 @@ const SiderBar = ({ preview = false, previewActive = '/console' }) => {
           );
         })}
       </nav>
-
-      {!preview && renderUserFooter(collapsed)}
 
       {preview && (
         <div

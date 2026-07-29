@@ -1,22 +1,29 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useContext, useEffect, useRef, useState } from 'react';
 import { ArrowRight, ChevronDown, Globe2, Menu, Monitor, Moon, Sun, X } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { Claude, DeepSeek, Gemini, Mistral, OpenAI, XAI } from '@lobehub/icons';
 import Dashboard from '../Dashboard';
 import Pricing from '../Pricing';
 import Token from '../Token';
 import Log from '../Log';
 import SiderBar from '../../components/layout/SiderBar';
 import { useSetTheme, useTheme } from '../../context/Theme';
+import { UserContext } from '../../context/User';
+import { API, showError, updateAPI } from '../../helpers';
+
+const MODEL_ICON_CDN = 'https://registry.npmmirror.com/@lobehub/icons-static-png/latest/files/light';
+
+const ProviderIcon = ({ slug }) => (
+  <img src={`${MODEL_ICON_CDN}/${slug}.png`} alt='' width='44' height='44' loading='lazy' />
+);
 
 const modelProviders = [
-  { name: 'OpenAI', note: 'GPT 与 o 系列', Icon: OpenAI },
-  { name: 'Anthropic', note: 'Claude 系列', Icon: Claude.Color },
-  { name: 'Google', note: 'Gemini 系列', Icon: Gemini.Color },
-  { name: 'DeepSeek', note: 'DeepSeek 系列', Icon: DeepSeek.Color },
-  { name: 'xAI', note: 'Grok 系列', Icon: XAI },
-  { name: 'Mistral AI', note: 'Mistral 系列', Icon: Mistral.Color },
+  { name: 'OpenAI', slug: 'openai' },
+  { name: 'Anthropic', slug: 'claude-color' },
+  { name: 'Google', slug: 'gemini-color' },
+  { name: 'DeepSeek', slug: 'deepseek-color' },
+  { name: 'xAI', slug: 'xai' },
+  { name: 'Mistral AI', slug: 'mistral-color' },
 ];
 
 const moveModelSpotlight = (event) => {
@@ -38,6 +45,8 @@ const hideModelSpotlight = (event) => {
 };
 
 const Home = () => {
+  const navigate = useNavigate();
+  const [userState, userDispatch] = useContext(UserContext);
   const [menuOpen, setMenuOpen] = useState(false);
   const [languageOpen, setLanguageOpen] = useState(false);
   const brandSectionRef = useRef(null);
@@ -47,6 +56,20 @@ const Home = () => {
   const setTheme = useSetTheme();
   const currentLanguage = i18n.language?.startsWith('zh') ? 'zh-CN' : 'en';
   const en = currentLanguage === 'en';
+  const isLoggedIn = Boolean(userState?.user);
+
+  const logout = async () => {
+    try {
+      await API.get('/api/user/logout');
+    } catch (error) {
+      showError(error);
+    }
+    localStorage.removeItem('user');
+    updateAPI();
+    userDispatch?.({ type: 'logout' });
+    setMenuOpen(false);
+    navigate('/');
+  };
 
   const switchLanguage = (language) => {
     i18n.changeLanguage(language);
@@ -82,8 +105,16 @@ const Home = () => {
         <Link to='/' className='home-brand'>Routify</Link>
         <nav className={`home-nav-links${menuOpen ? ' is-open' : ''}`}>
           <Link to='/console'>{en ? 'Console' : '控制台'}</Link>
-          <Link to='/auth?mode=login'>{en ? 'Sign in' : '登录'}</Link>
-          <Link className='home-nav-start' to='/auth?mode=register'>{en ? 'Create account' : '创建账户'}</Link>
+          {isLoggedIn ? (
+            <button type='button' className='home-nav-start' onClick={logout}>
+              {en ? 'Sign out' : '退出登录'}
+            </button>
+          ) : (
+            <>
+              <Link to='/auth?mode=login'>{en ? 'Sign in' : '登录'}</Link>
+              <Link className='home-nav-start' to='/auth?mode=register'>{en ? 'Create account' : '创建账户'}</Link>
+            </>
+          )}
         </nav>
         <button className='home-menu-button' onClick={() => setMenuOpen(!menuOpen)} aria-label='切换菜单'>
           {menuOpen ? <X size={19} /> : <Menu size={19} />}
@@ -119,11 +150,11 @@ const Home = () => {
             <div className='model-track'>
               {[0, 1].map((group) => (
                 <div className='model-card-group' key={group} aria-hidden={group === 1 ? 'true' : undefined}>
-                  {modelProviders.map(({ name, Icon }) => (
+                  {modelProviders.map(({ name, slug }) => (
                     <article key={name} className='model-card' aria-label={group === 0 ? name : undefined}>
                       <span className='model-icon-stack'>
-                        <span className='model-icon-gray'><Icon size={44} /></span>
-                        <span className='model-icon-color'><Icon size={44} /></span>
+                        <span className='model-icon-gray'><ProviderIcon slug={slug} /></span>
+                        <span className='model-icon-color'><ProviderIcon slug={slug} /></span>
                       </span>
                     </article>
                   ))}

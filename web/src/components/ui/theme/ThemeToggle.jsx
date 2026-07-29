@@ -8,8 +8,8 @@
  */
 
 import React, { useEffect, useState, useCallback } from 'react';
+import { Moon, Sun } from 'lucide-react';
 import IconButton from '../button/IconButton';
-import { SunIcon, MoonIcon } from '../../layout/headerIcons';
 
 const STORAGE_KEY = 'theme';
 
@@ -37,7 +37,7 @@ const ThemeToggle = ({ size = 'md', variant = 'ghost', shape = 'square' }) => {
   const { isDark, toggle } = useTheme();
   return (
     <IconButton
-      icon={isDark ? SunIcon : MoonIcon}
+      icon={isDark ? Sun : Moon}
       size={size}
       variant={variant}
       shape={shape}

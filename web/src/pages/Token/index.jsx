@@ -76,13 +76,6 @@ const TokenPage = ({ preview = false }) => {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: isMobile ? 20 : 28, width: '100%', maxWidth: 960, marginInline: 'auto', padding: isMobile ? '16px' : '24px 16px' }}>
-      {/* 快速入门 */}
-      <div className='token-quick-start' style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, minmax(0, 1fr))', gap: 12 }}>
-        <StepCard num='01' title='创建 API key' desc='创建 API key 并妥善保存' />
-        <StepCard num='02' title='参看示例' desc='请在下方参看调用示例' />
-        <StepCard num='03' title='发送请求' desc='接入 AI 服务' />
-      </div>
-
       {/* API keys */}
       <div className='token-key-list' style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
@@ -126,14 +119,6 @@ const TokenPage = ({ preview = false }) => {
     </div>
   );
 };
-
-const StepCard = ({ num, title, desc }) => (
-  <div style={{ padding: 16, border: '1px solid var(--ui-border)', borderRadius: 16, background: 'var(--page-bg)' }}>
-    <div style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: 28, height: 28, marginBottom: 8, border: '1px solid #e3e8f0', borderRadius: '50%', fontWeight: 700, fontSize: 12, color: 'var(--ui-text)' }}>{num}.</div>
-    <div style={{ fontSize: 16, fontWeight: 500, color: 'var(--ui-text)', marginBottom: 4 }}>{title}</div>
-    <div style={{ fontSize: 14, color: 'var(--ui-text-3)' }}>{desc}</div>
-  </div>
-);
 
 const PILL = { display: 'inline-flex', alignItems: 'center', height: 20, paddingInline: 6, borderRadius: 5, fontSize: 11, whiteSpace: 'nowrap' };
 
