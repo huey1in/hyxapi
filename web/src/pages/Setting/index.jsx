@@ -5,6 +5,7 @@ import {
   PageShell, Button, IconButton, Input, NumberInput, Textarea, Switch, Tabs, Loading, EmptyState, Select, TagInput,
 } from '../../components/ui';
 import { Lock } from 'lucide-react';
+import { orderSettingKeysForSave } from './saveOrder.js';
 
 const TABS = [
   { key: 'platform',    label: '平台' },
@@ -929,7 +930,7 @@ const SettingPage = () => {
   const val = (k) => (dirty[k] !== undefined ? dirty[k] : (options[k] ?? ''));
 
   const save = async () => {
-    const keys = Object.keys(dirty);
+    const keys = orderSettingKeysForSave(Object.keys(dirty));
     if (keys.length === 0) return showSuccess('无变更');
     setSaving(true);
     try {
