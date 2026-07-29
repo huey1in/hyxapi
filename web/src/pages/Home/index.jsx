@@ -1,5 +1,5 @@
 import React, { useContext, useEffect, useRef, useState } from 'react';
-import { ArrowRight, ChevronDown, Globe2, Menu, Monitor, Moon, Sun, X } from 'lucide-react';
+import { ArrowRight, ChevronDown, Globe2, LockKeyhole, Menu, Monitor, Moon, RotateCw, Sun, X } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import Dashboard from '../Dashboard';
@@ -43,6 +43,14 @@ const ProviderIcon = ({ icon, name }) => (
       onError={(event) => { event.currentTarget.hidden = true; event.currentTarget.nextElementSibling.hidden = false; }}
     />
     <span hidden>{name?.charAt(0)?.toUpperCase() || '?'}</span>
+  </span>
+);
+
+const BrowserAddress = ({ children }) => (
+  <span className='mac-window-address'>
+    <LockKeyhole size={10} strokeWidth={2} aria-hidden='true' />
+    <span>{children}</span>
+    <RotateCw size={10} strokeWidth={2} aria-hidden='true' />
   </span>
 );
 
@@ -193,7 +201,7 @@ const Home = () => {
         <section id='inside' className='product-frame' aria-label='Routify 控制台预览'>
           <div className='product-frame-bar'>
             <div className='mac-window-controls' aria-hidden='true'><i /><i /><i /></div>
-            <span className='mac-window-address'>routifyapi.com</span>
+            <BrowserAddress>routifyapi.com</BrowserAddress>
             <span aria-hidden='true' />
           </div>
           <div className='product-shell'>
@@ -233,7 +241,7 @@ const Home = () => {
               <div className='product-frame marketplace-frame'>
                 <div className='product-frame-bar'>
                   <div className='mac-window-controls' aria-hidden='true'><i /><i /><i /></div>
-                  <span className='mac-window-address'>routifyapi.com/models</span>
+                  <BrowserAddress>routifyapi.com/models</BrowserAddress>
                   <span aria-hidden='true' />
                 </div>
                 <div className='product-shell'>
@@ -252,7 +260,7 @@ const Home = () => {
               <div className='product-frame console-feature-frame api-feature-frame'>
                 <div className='product-frame-bar'>
                   <div className='mac-window-controls' aria-hidden='true'><i /><i /><i /></div>
-                  <span className='mac-window-address'>routifyapi.com/api-keys</span>
+                  <BrowserAddress>routifyapi.com/api-keys</BrowserAddress>
                   <span aria-hidden='true' />
                 </div>
                 <div className='product-shell'>
@@ -280,7 +288,7 @@ const Home = () => {
               <div className='product-frame console-feature-frame log-feature-frame'>
                 <div className='product-frame-bar'>
                   <div className='mac-window-controls' aria-hidden='true'><i /><i /><i /></div>
-                  <span className='mac-window-address'>routifyapi.com/logs</span>
+                  <BrowserAddress>routifyapi.com/logs</BrowserAddress>
                   <span aria-hidden='true' />
                 </div>
                 <div className='product-shell'>
