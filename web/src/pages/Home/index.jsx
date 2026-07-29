@@ -9,21 +9,50 @@ import Log from '../Log';
 import SiderBar from '../../components/layout/SiderBar';
 import { useSetTheme, useTheme } from '../../context/Theme';
 import { UserContext } from '../../context/User';
+import { StatusContext } from '../../context/Status';
+import MarkdownRenderer from '../../components/common/markdown/MarkdownRenderer';
 import { API, showError, updateAPI } from '../../helpers';
+import { extractSupportedModelBrands } from './modelBrands';
 
 const MODEL_ICON_CDN = 'https://registry.npmmirror.com/@lobehub/icons-static-png/latest/files/light';
 
-const ProviderIcon = ({ slug }) => (
-  <img src={`${MODEL_ICON_CDN}/${slug}.png`} alt='' width='44' height='44' loading='lazy' />
+const ICON_SLUGS = {
+  openai: 'openai', claude: 'claude', gemini: 'gemini', deepseek: 'deepseek',
+  xai: 'xai', mistral: 'mistral', qwen: 'qwen', moonshot: 'moonshot',
+  zhipu: 'zhipu', meta: 'meta', cohere: 'cohere', doubao: 'doubao',
+  anthropic: 'claude-color', google: 'gemini-color', mistralai: 'mistral-color',
+};
+
+const iconSource = (icon) => {
+  if (/^https?:\/\//i.test(icon || '')) return icon;
+  const [name, variant] = String(icon || '').split('.');
+  const normalized = name.replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
+  const slug = ICON_SLUGS[normalized] || normalized;
+  const colorSuffix = String(variant || '').toLowerCase() === 'color' && !slug.endsWith('-color') ? '-color' : '';
+  return `${MODEL_ICON_CDN}/${slug}${colorSuffix}.png`;
+};
+
+const ProviderIcon = ({ icon, name }) => (
+  <span className='model-provider-image'>
+    <img
+      src={iconSource(icon)}
+      alt=''
+      width='44'
+      height='44'
+      loading='lazy'
+      onError={(event) => { event.currentTarget.hidden = true; event.currentTarget.nextElementSibling.hidden = false; }}
+    />
+    <span hidden>{name?.charAt(0)?.toUpperCase() || '?'}</span>
+  </span>
 );
 
 const modelProviders = [
-  { name: 'OpenAI', slug: 'openai' },
-  { name: 'Anthropic', slug: 'claude-color' },
-  { name: 'Google', slug: 'gemini-color' },
-  { name: 'DeepSeek', slug: 'deepseek-color' },
-  { name: 'xAI', slug: 'xai' },
-  { name: 'Mistral AI', slug: 'mistral-color' },
+  { name: 'OpenAI', icon: 'OpenAI' },
+  { name: 'Anthropic', icon: 'Claude.Color' },
+  { name: 'Google', icon: 'Gemini.Color' },
+  { name: 'DeepSeek', icon: 'DeepSeek.Color' },
+  { name: 'xAI', icon: 'XAI' },
+  { name: 'Mistral AI', icon: 'Mistral.Color' },
 ];
 
 const moveModelSpotlight = (event) => {
@@ -47,8 +76,11 @@ const hideModelSpotlight = (event) => {
 const Home = () => {
   const navigate = useNavigate();
   const [userState, userDispatch] = useContext(UserContext);
+  const [statusState] = useContext(StatusContext);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [supportedBrands, setSupportedBrands] = useState(modelProviders);
   const [languageOpen, setLanguageOpen] = useState(false);
+  const [legal, setLegal] = useState(null);
   const brandSectionRef = useRef(null);
   const languageRef = useRef(null);
   const { i18n } = useTranslation();
@@ -57,6 +89,21 @@ const Home = () => {
   const currentLanguage = i18n.language?.startsWith('zh') ? 'zh-CN' : 'en';
   const en = currentLanguage === 'en';
   const isLoggedIn = Boolean(userState?.user);
+  const status = statusState?.status || {};
+  const agreementEnabled = Boolean(status.user_agreement_enabled);
+  const privacyEnabled = Boolean(status.privacy_policy_enabled);
+
+  const openLegal = async (type) => {
+    const endpoint = type === 'terms' ? '/api/user-agreement' : '/api/privacy-policy';
+    setLegal({ type, content: '', loading: true });
+    try {
+      const response = await API.get(endpoint);
+      setLegal({ type, content: response?.data?.data || '', loading: false });
+    } catch (error) {
+      setLegal(null);
+      showError(error);
+    }
+  };
 
   const logout = async () => {
     try {
@@ -76,6 +123,17 @@ const Home = () => {
     try { localStorage.setItem('i18nextLng', language); } catch {}
     setLanguageOpen(false);
   };
+
+  useEffect(() => {
+    let active = true;
+    API.get('/api/pricing').then((response) => {
+      const payload = response?.data;
+      if (!active || !payload?.success) return;
+      const brands = extractSupportedModelBrands(payload.data, payload.vendors);
+      if (brands.length > 0) setSupportedBrands(brands);
+    }).catch(() => {});
+    return () => { active = false; };
+  }, []);
 
   useEffect(() => {
     const closeLanguageMenu = (event) => {
@@ -147,14 +205,14 @@ const Home = () => {
         <section className='model-trust'>
           <h2>{en ? 'Works with the models you already use' : '与你正在使用的模型一起工作'}</h2>
           <div className='model-marquee' onPointerMove={moveModelSpotlight} onPointerLeave={hideModelSpotlight}>
-            <div className='model-track'>
-              {[0, 1].map((group) => (
+            <div className={`model-track${supportedBrands.length < 8 ? ' is-static' : ''}`}>
+              {(supportedBrands.length < 8 ? [0] : [0, 1]).map((group) => (
                 <div className='model-card-group' key={group} aria-hidden={group === 1 ? 'true' : undefined}>
-                  {modelProviders.map(({ name, slug }) => (
+                  {supportedBrands.map(({ name, icon }) => (
                     <article key={name} className='model-card' aria-label={group === 0 ? name : undefined}>
                       <span className='model-icon-stack'>
-                        <span className='model-icon-gray'><ProviderIcon slug={slug} /></span>
-                        <span className='model-icon-color'><ProviderIcon slug={slug} /></span>
+                        <span className='model-icon-gray'><ProviderIcon icon={icon} name={name} /></span>
+                        <span className='model-icon-color'><ProviderIcon icon={icon} name={name} /></span>
                       </span>
                     </article>
                   ))}
@@ -242,11 +300,9 @@ const Home = () => {
 
       <footer className='site-footer'>
         <div className='site-footer-links'>
-          <div><span>{en ? 'Product' : '产品'}</span><Link to='/pricing'>{en ? 'Model marketplace' : '模型广场'}</Link><Link to='/console'>{en ? 'Console' : '控制台'}</Link><Link to='/console/token'>API {en ? 'keys' : '密钥'}</Link><Link to='/console/log'>{en ? 'Request logs' : '调用日志'}</Link><Link to='/console/channel'>{en ? 'Providers' : '渠道管理'}</Link></div>
-          <div><span>{en ? 'Manage' : '管理'}</span><Link to='/console/subscription'>{en ? 'Subscriptions' : '订阅'}</Link><Link to='/console/topup'>{en ? 'Top up' : '充值'}</Link><Link to='/console/redemption'>{en ? 'Redeem' : '兑换'}</Link><Link to='/console/system-status'>{en ? 'Service status' : '服务状态'}</Link></div>
-          <div><span>{en ? 'Account' : '账户'}</span><Link to='/auth?mode=login'>{en ? 'Sign in' : '登录'}</Link><Link to='/auth?mode=register'>{en ? 'Create account' : '创建账户'}</Link><Link to='/console/personal'>{en ? 'Profile' : '个人设置'}</Link><Link to='/console/my-subscription'>{en ? 'My subscription' : '我的订阅'}</Link></div>
-          <div><span>{en ? 'Resources' : '资源'}</span><Link to='/console/notices'>{en ? 'Notices' : '公告'}</Link><Link to='/console/operations'>{en ? 'Operations' : '运营信息'}</Link><Link to='/console/audit'>{en ? 'Audit logs' : '审计日志'}</Link><Link to='/console/setting'>{en ? 'Settings' : '系统设置'}</Link></div>
-          <div><span>{en ? 'Connect' : '连接'}</span><a href='mailto:support@routifyapi.com'>{en ? 'Contact us' : '联系我们'}</a><Link to='/console/system-status'>{en ? 'System status' : '运行状态'}</Link><a href='https://routifyapi.com'>routifyapi.com</a></div>
+          <div><span>{en ? 'Product' : '产品'}</span><Link to='/pricing'>{en ? 'Model marketplace' : '模型广场'}</Link><Link to='/console'>{en ? 'Console' : '控制台'}</Link><Link to='/console/token'>API {en ? 'keys' : '密钥'}</Link><Link to='/console/log'>{en ? 'Request logs' : '调用日志'}</Link></div>
+          <div><span>{en ? 'Contact' : '联系'}</span><a href='https://github.com/huey1in' target='_blank' rel='noopener noreferrer'>GitHub</a><a href='mailto:1in@yxh.me'>{en ? 'Email' : '邮箱'}</a></div>
+          <div><span>{en ? 'Legal' : '法律'}</span>{agreementEnabled ? <button type='button' onClick={() => openLegal('terms')}>{en ? 'Terms of Service' : '服务条款'}</button> : <span className='footer-link-disabled'>{en ? 'Terms of Service' : '服务条款'}</span>}{privacyEnabled ? <button type='button' onClick={() => openLegal('privacy')}>{en ? 'Privacy Policy' : '隐私政策'}</button> : <span className='footer-link-disabled'>{en ? 'Privacy Policy' : '隐私政策'}</span>}</div>
         </div>
         <div className='site-footer-bottom'>
           <span className='footer-copyright'>© 2026 Routify</span>
@@ -269,6 +325,12 @@ const Home = () => {
           </div>
         </div>
       </footer>
+      {legal && <div className='cursor-auth-legal-overlay' role='presentation' onMouseDown={() => setLegal(null)}>
+        <section className='cursor-auth-legal-dialog' role='dialog' aria-modal='true' aria-labelledby='home-legal-title' onMouseDown={(event) => event.stopPropagation()}>
+          <header><h2 id='home-legal-title'>{legal.type === 'terms' ? (en ? 'Terms of Service' : '服务条款') : (en ? 'Privacy Policy' : '隐私政策')}</h2><button type='button' onClick={() => setLegal(null)} aria-label={en ? 'Close' : '关闭'}>×</button></header>
+          <div className='cursor-auth-legal-content'>{legal.loading ? (en ? 'Loading...' : '加载中...') : <MarkdownRenderer content={legal.content} />}</div>
+        </section>
+      </div>}
     </div>
   );
 };
