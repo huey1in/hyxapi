@@ -39,7 +39,7 @@ const NAV_ITEMS = [
   { to: '/console/setting',      label: '系统设置',   icon: Settings,   root: true },
 ];
 
-const SiderBar = () => {
+const SiderBar = ({ preview = false, previewActive = '/console' }) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const [userState, userDispatch] = useContext(UserContext);
@@ -92,6 +92,20 @@ const SiderBar = () => {
           return <div key={`div-${idx}`} className='my-1.5 mx-1 h-px bg-ui-divider' />;
         }
         const Icon = item.icon;
+        if (preview) {
+          return (
+            <div
+              key={item.to}
+              className={cn(
+                'flex items-center gap-2 h-9 px-[10px] rounded-lg text-sm whitespace-nowrap',
+                item.to === previewActive ? 'bg-ui-bg-subtle font-medium text-ui-text' : 'text-ui-text',
+              )}
+            >
+              <span className='relative flex-shrink-0'><Icon size={22} /></span>
+              {!collapsed && <span>{t(item.label)}</span>}
+            </div>
+          );
+        }
         return (
           <NavLink
             key={item.to}
@@ -202,6 +216,20 @@ const SiderBar = () => {
             return <div key={`div-${idx}`} className='my-1.5 mx-1 h-px bg-ui-divider' />;
           }
           const Icon = item.icon;
+          if (preview) {
+            return (
+              <div
+                key={item.to}
+                className={cn(
+                  'flex items-center gap-2 h-9 px-[10px] rounded-lg text-sm whitespace-nowrap',
+                  item.to === previewActive ? 'bg-ui-bg-subtle font-medium text-ui-text' : 'text-ui-text',
+                )}
+              >
+                <span className='relative flex-shrink-0'><Icon size={22} /></span>
+                {!collapsed && <span>{t(item.label)}</span>}
+              </div>
+            );
+          }
           return (
             <NavLink
               key={item.to}
@@ -228,9 +256,28 @@ const SiderBar = () => {
         })}
       </nav>
 
-      {renderUserFooter(collapsed)}
+      {!preview && renderUserFooter(collapsed)}
 
-      <button
+      {preview && (
+        <div
+          aria-hidden='true'
+          className='hidden md:flex absolute top-1/2 -translate-y-1/2 items-center justify-center'
+          style={{
+            right: '-14px',
+            width: '14px',
+            height: '44px',
+            backgroundColor: 'var(--page-bg)',
+            border: '1px solid var(--ui-border)',
+            borderLeft: 'none',
+            borderRadius: '0 8px 8px 0',
+            zIndex: 10,
+          }}
+        >
+          <ChevronLeft size={12} className='text-[var(--ui-text-3)]' />
+        </div>
+      )}
+
+      {!preview && <button
         onClick={toggle}
         aria-label={collapsed ? '展开侧边栏' : '收起侧边栏'}
         className='hidden md:flex absolute top-1/2 -translate-y-1/2 items-center justify-center cursor-pointer hover:bg-[var(--ui-bg-subtle)] transition-colors'
@@ -253,7 +300,7 @@ const SiderBar = () => {
             transition: 'transform 0.2s ease',
           }}
         />
-      </button>
+      </button>}
     </aside>
   );
 };

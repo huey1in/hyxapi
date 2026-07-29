@@ -5,13 +5,13 @@ Login entry — 控制台不再内嵌登录模态框；所有登录入口统一�
 */
 
 import React, { createContext, useCallback, useContext, useEffect, useMemo } from 'react';
-import { redirectToHomeLogin } from '../../helpers/site';
 
 const LoginModalContext = createContext(null);
 
 export const LoginModalProvider = ({ children }) => {
   const openLoginModal = useCallback((m = 'login') => {
-    redirectToHomeLogin(m);
+    const next = `${window.location.pathname}${window.location.search}`;
+    window.location.assign(`/auth?mode=${m === 'register' ? 'register' : 'login'}&next=${encodeURIComponent(next)}`);
   }, []);
 
   const closeLoginModal = useCallback(() => {}, []);
@@ -19,10 +19,10 @@ export const LoginModalProvider = ({ children }) => {
 
   // API 401/403 触发的全局事件 → 跳转 home-site 登录页（替代原弹出登录模态框）
   useEffect(() => {
-    const handler = () => redirectToHomeLogin('login');
+    const handler = () => openLoginModal('login');
     window.addEventListener('routify:auth-required', handler);
     return () => window.removeEventListener('routify:auth-required', handler);
-  }, []);
+  }, [openLoginModal]);
 
   const value = useMemo(
     () => ({ open: false, mode: 'login', openLoginModal, closeLoginModal, switchMode }),

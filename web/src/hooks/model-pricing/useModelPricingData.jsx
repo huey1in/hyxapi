@@ -23,7 +23,7 @@ import { API, copy, showError, showInfo, showSuccess } from '../../helpers';
 import { UserContext } from '../../context/User';
 import { StatusContext } from '../../context/Status';
 
-export const useModelPricingData = () => {
+export const useModelPricingData = (previewModels = null) => {
   const { t } = useTranslation();
   const [searchValue, setSearchValue] = useState('');
   const compositionRef = useRef({ isComposition: false });
@@ -43,11 +43,11 @@ export const useModelPricingData = () => {
   const [currency, setCurrency] = useState('USD');
   const [showWithRecharge, setShowWithRecharge] = useState(false);
   const [tokenUnit, setTokenUnit] = useState('M');
-  const [models, setModels] = useState([]);
+  const [models, setModels] = useState(previewModels || []);
   const [vendorsMap, setVendorsMap] = useState({});
-  const [loading, setLoading] = useState(true);
-  const [groupRatio, setGroupRatio] = useState({});
-  const [usableGroup, setUsableGroup] = useState({});
+  const [loading, setLoading] = useState(!previewModels);
+  const [groupRatio, setGroupRatio] = useState(previewModels ? { default: 1, production: 1 } : {});
+  const [usableGroup, setUsableGroup] = useState(previewModels ? { default: '默认分组', production: '生产环境' } : {});
   const [endpointMap, setEndpointMap] = useState({});
   const [autoGroups, setAutoGroups] = useState([]);
 
@@ -315,8 +315,9 @@ export const useModelPricingData = () => {
   };
 
   useEffect(() => {
+    if (previewModels) return undefined;
     refresh().then();
-  }, []);
+  }, [previewModels]);
 
   // 当筛选条件变化时重置到第一页
   useEffect(() => {

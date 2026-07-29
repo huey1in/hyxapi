@@ -6,6 +6,7 @@ import { UserContext } from '../../context/User';
 import { IconButton, Loading, Table } from '../../components/ui';
 import useIsMobile from '../../hooks/useIsMobile';
 import useIsDark from '../../hooks/useIsDark';
+import { advancePreviewState, createPreviewState } from './dashboardPreviewSimulation';
 
 const StatMini = ({ label, value }) => (
   <div style={{ paddingBlock: 16, paddingInline: 16, border: '1px solid var(--ui-border)', borderRadius: 16 }}>
@@ -14,20 +15,27 @@ const StatMini = ({ label, value }) => (
   </div>
 );
 
-const Dashboard = () => {
+const Dashboard = ({ preview = false }) => {
   const navigate = useNavigate();
   const [userState] = useContext(UserContext);
+  const [previewState, setPreviewState] = useState(() => preview ? createPreviewState() : null);
   const [stats, setStats] = useState(null);
   const [cumStats, setCumStats] = useState({ quota: 0, tokens: 0, requests: 0 });
   const [dayStats, setDayStats] = useState({ quota: 0, tokens: 0, requests: 0 });
   const [rpm, setRpm] = useState(0);
   const [recentLogs, setRecentLogs] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(!preview);
   const [logsLoading, setLogsLoading] = useState(false);
   const isMobile = useIsMobile();
   const isDark = useIsDark();
 
   useEffect(() => {
+    if (preview) {
+      const timer = setInterval(() => {
+        setPreviewState((current) => advancePreviewState(current));
+      }, 2400);
+      return () => clearInterval(timer);
+    }
     (async () => {
       setLoading(true);
       try {
@@ -44,7 +52,7 @@ const Dashboard = () => {
       loadRpm();
     }, 5000);
     return () => clearInterval(timer);
-  }, [userState?.user]);
+  }, [userState?.user, preview]);
 
   const loadStats = async () => {
     try {
@@ -78,7 +86,11 @@ const Dashboard = () => {
     finally { if (!silent) setLogsLoading(false); }
   };
 
-  const u = stats || userState?.user || {};
+  const activeCumStats = preview ? previewState.cumulative : cumStats;
+  const activeDayStats = preview ? previewState.today : dayStats;
+  const activeRpm = preview ? previewState.rpm : rpm;
+  const activeRecentLogs = preview ? previewState.logs : recentLogs;
+  const u = preview ? previewState.user : (stats || userState?.user || {});
 
   if (loading) return <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '60vh' }}><Loading /></div>;
 
@@ -97,7 +109,8 @@ const Dashboard = () => {
             <div style={{ fontSize: 12, color: 'var(--ui-text-3)', marginTop: 4 }}>累计已使用: {renderQuota(u.used_quota || 0)}</div>
           </div>
           <button
-            onClick={() => navigate('/console/topup')}
+            onClick={preview ? undefined : () => navigate('/console/topup')}
+            disabled={preview}
             style={{
               cursor: 'pointer',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -115,24 +128,24 @@ const Dashboard = () => {
           <div>
             <div style={{ fontSize: 14, fontWeight: 400, color: 'var(--ui-text-3)', marginBottom: 8 }}>总请求数</div>
             <div style={{ fontSize: 28, fontWeight: 700, color: 'var(--ui-text)' }}>{renderNumber(u.request_count || 0)}</div>
-            <div style={{ fontSize: 12, color: 'var(--ui-text-3)', marginTop: 4 }}>累计 Token: {fmtTokens(cumStats.tokens || 0)}</div>
+            <div style={{ fontSize: 12, color: 'var(--ui-text-3)', marginTop: 4 }}>累计 Token: {fmtTokens(activeCumStats.tokens || 0)}</div>
           </div>
         </div>
       </div>
 
       {/* 今日统计 */}
       <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(4, 1fr)', gap: isMobile ? 8 : 12 }}>
-        <StatMini label='今日 Token' value={fmtTokens(dayStats.tokens || 0)} />
-        <StatMini label='今日消费' value={renderQuota(dayStats.quota || 0)} />
-        <StatMini label='今日请求数' value={renderNumber(dayStats.requests || 0)} />
-        <StatMini label='当前 RPM' value={renderNumber(rpm)} />
+        <StatMini label='今日 Token' value={fmtTokens(activeDayStats.tokens || 0)} />
+        <StatMini label='今日消费' value={renderQuota(activeDayStats.quota || 0)} />
+        <StatMini label='今日请求数' value={renderNumber(activeDayStats.requests || 0)} />
+        <StatMini label='当前 RPM' value={renderNumber(activeRpm)} />
       </div>
 
       {/* 最近活动 */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <span style={{ fontSize: 16, fontWeight: 600, color: 'var(--ui-text)' }}>最近活动</span>
-          <IconButton icon={RefreshCw} onClick={loadRecentLogs} disabled={logsLoading} title='刷新' />
+          <IconButton icon={RefreshCw} onClick={preview ? undefined : loadRecentLogs} disabled={preview || logsLoading} title='刷新' />
         </div>
         {logsLoading ? (
           <div style={{ padding: '32px 0', display: 'flex', justifyContent: 'center' }}><Loading size='sm' /></div>
@@ -142,9 +155,9 @@ const Dashboard = () => {
               size='sm'
               rowKey='id'
               emptyText='暂无记录'
-              onRowClick={() => navigate('/console/log')}
+              onRowClick={preview ? undefined : () => navigate('/console/log')}
               columns={recentColumns(isMobile)}
-              rows={recentLogs}
+              rows={activeRecentLogs}
             />
           </div>
         )}

@@ -13,5 +13,7 @@ new-api
 new-api.exe
 main.exe
 main
+routify-local.exe
+routify-local.exe~
 data/
 test_redis

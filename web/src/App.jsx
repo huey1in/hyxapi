@@ -24,11 +24,14 @@ import PasswordReset from './pages/PasswordReset';
 import Register     from './pages/Register';
 import Pricing      from './pages/Pricing';
 import PricingDetail from './pages/Pricing/Detail';
+import Home from './pages/Home';
+import Auth from './pages/Auth';
 
 const App = () => (
   <Routes>
     <Route element={<PageLayout />}>
-      <Route path='/'                   element={<Navigate to='/console' replace />} />
+      <Route path='/'                   element={<Home />} />
+      <Route path='/auth'               element={<Auth />} />
       <Route path='/setup'              element={<Setup />} />
       <Route path='/user/reset'         element={<PasswordReset />} />
       <Route path='/register'           element={<Register />} />

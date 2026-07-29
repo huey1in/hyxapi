@@ -7,6 +7,21 @@ import useIsMobile from '../../hooks/useIsMobile';
 
 const PAGE_SIZE = 20;
 
+const PREVIEW_MODELS = ['gpt-4.1', 'claude-sonnet-4', 'gemini-2.5-flash', 'deepseek-chat', 'grok-4', 'mistral-large'];
+const PREVIEW_LOGS = Array.from({ length: 9 }, (_, index) => ({
+  id: index + 1,
+  created_at: Math.floor(Date.now() / 1000) - index * 17,
+  type: 2,
+  model_name: PREVIEW_MODELS[index % PREVIEW_MODELS.length],
+  token_name: index % 2 ? 'development' : 'production',
+  group: index % 3 ? 'default' : 'production',
+  prompt_tokens: 860 + index * 317,
+  completion_tokens: 240 + index * 91,
+  quota: 120 + index * 47,
+  use_time: 0.42 + index * 0.08,
+  other: JSON.stringify({ frt: 180 + index * 34, cache_tokens: index % 3 === 0 ? 420 : 0 }),
+}));
+
 const TYPE_OPTIONS = [
   { value: 0, label: '全部' },
   { value: 1, label: '充值' },
@@ -60,13 +75,13 @@ const Quota = ({ row }) => {
   return <span style={{ color: 'var(--ui-text-3)' }}>—</span>;
 };
 
-const LogPage = () => {
+const LogPage = ({ preview = false }) => {
   const [userState] = useContext(UserContext);
   const isAdmin = (userState?.user?.role || 1) >= 10;
-  const [rows, setRows] = useState([]);
+  const [rows, setRows] = useState(preview ? PREVIEW_LOGS : []);
   const [page, setPage] = useState(1);
-  const [total, setTotal] = useState(0);
-  const [loading, setLoading] = useState(true);
+  const [total, setTotal] = useState(preview ? PREVIEW_LOGS.length : 0);
+  const [loading, setLoading] = useState(!preview);
   const [showFilters, setShowFilters] = useState(false);
   const [expanded, setExpanded] = useState(null);
   const isMobile = useIsMobile();
@@ -108,8 +123,8 @@ const LogPage = () => {
     } catch (e) { if (!silent) showError(e); } finally { if (!silent) setLoading(false); }
   };
   useEffect(() => {
-    load(1);
-  }, []);
+    if (!preview) load(1);
+  }, [preview]);
 
   const reset = () => {
     const empty = { token_name: '', model_name: '', group: '', request_id: '', channel: '', username: '', type: 0 };
@@ -180,10 +195,10 @@ const LogPage = () => {
       {/* 标题 */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <span style={{ fontSize: 18, fontWeight: 600, color: 'var(--ui-text)' }}>消费明细</span>
-        <div style={{ display: 'flex', gap: 6 }}>
+        {!preview && <div style={{ display: 'flex', gap: 6 }}>
           <IconButton icon={Filter} title='筛选' selected={showFilters} onClick={() => setShowFilters((s) => !s)} />
           <IconButton icon={RefreshCw} title='刷新' onClick={() => load(page)} />
-        </div>
+        </div>}
       </div>
 
       {/* 筛选面板 */}
@@ -241,9 +256,9 @@ const LogPage = () => {
               rowKey='id'
               tableLayout={isMobile ? 'auto' : 'fixed'}
               emptyText='暂无数据'
-              onRowClick={(r) => setExpanded((prev) => prev === r.id ? null : r.id)}
+              onRowClick={preview ? undefined : (r) => setExpanded((prev) => prev === r.id ? null : r.id)}
               expandedKey={expanded}
-              renderExpanded={(r) => <LogDetail row={r} isAdmin={isAdmin} isMobile={isMobile} onClose={() => setExpanded(null)} />}
+              renderExpanded={preview ? undefined : (r) => <LogDetail row={r} isAdmin={isAdmin} isMobile={isMobile} onClose={() => setExpanded(null)} />}
             />
           </div>
 

@@ -17,10 +17,15 @@ const toLocalInput = (ts) => {
 };
 const toUnix = (v) => (v ? Math.floor(new Date(v).getTime() / 1000) : 0);
 
-const TokenPage = () => {
-  const [rows, setRows] = useState([]);
-  const [keys, setKeys] = useState({});
-  const [loading, setLoading] = useState(true);
+const PREVIEW_TOKENS = [
+  { id: 1, name: 'production', key: 'rt_live_8a4f2c91', group: 'production', unlimited_quota: false, used_quota: 486200, remain_quota: 1513800, accessed_time: Math.floor(Date.now() / 1000) - 18 },
+  { id: 2, name: 'development', key: 'rt_test_3d71b6e8', group: 'default', unlimited_quota: true, used_quota: 128400, remain_quota: 0, accessed_time: Math.floor(Date.now() / 1000) - 94 },
+];
+
+const TokenPage = ({ preview = false }) => {
+  const [rows, setRows] = useState(preview ? PREVIEW_TOKENS : []);
+  const [keys, setKeys] = useState(preview ? { 1: 'sk-rt_live_8a4f2c91', 2: 'sk-rt_test_3d71b6e8' } : {});
+  const [loading, setLoading] = useState(!preview);
   const [editing, setEditing] = useState(null);
   const [confirm, setConfirm] = useState(null);
   const isMobile = useIsMobile();
@@ -49,7 +54,7 @@ const TokenPage = () => {
       else showError(message);
     } catch (e) { showError(e); } finally { setLoading(false); }
   };
-  useEffect(() => { load(); }, []);
+  useEffect(() => { if (!preview) load(); }, [preview]);
 
   const remove = async (row) => {
     try {
@@ -72,17 +77,17 @@ const TokenPage = () => {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: isMobile ? 20 : 28, width: '100%', maxWidth: 960, marginInline: 'auto', padding: isMobile ? '16px' : '24px 16px' }}>
       {/* 快速入门 */}
-      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, minmax(0, 1fr))', gap: 12 }}>
+      <div className='token-quick-start' style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, minmax(0, 1fr))', gap: 12 }}>
         <StepCard num='01' title='创建 API key' desc='创建 API key 并妥善保存' />
         <StepCard num='02' title='参看示例' desc='请在下方参看调用示例' />
         <StepCard num='03' title='发送请求' desc='接入 AI 服务' />
       </div>
 
       {/* API keys */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+      <div className='token-key-list' style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <span style={{ fontSize: 18, fontWeight: 600, color: 'var(--ui-text)' }}>API keys</span>
-          <button
+          {!preview && <button
             onClick={() => setEditing({ name: '', unlimited_quota: true, remain_quota: 500000, expired_time: -1, group: '' })}
             style={{
               cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 6,
@@ -94,25 +99,25 @@ const TokenPage = () => {
             onMouseLeave={(e) => { e.currentTarget.style.background = 'var(--page-bg)'; e.currentTarget.style.color = 'var(--ui-text)'; }}
           >
             <Plus size={14} /> 创建 API key
-          </button>
+          </button>}
         </div>
 
         {loading ? <Loading /> : rows.length === 0 ? (
           <div style={{ padding: '32px 0', textAlign: 'center', color: 'var(--ui-text-3)', fontSize: 14 }}>暂无 API key</div>
         ) : rows.map((row) => (
-          <KeyCard key={row.id} row={row} onCopy={() => copyKey(row)} onDelete={() => setConfirm({ title: `删除令牌 ${row.name}?`, onOk: () => remove(row) })} onEdit={() => setEditing({ ...row })} />
+          <KeyCard key={row.id} row={row} preview={preview} onCopy={() => copyKey(row)} onDelete={() => setConfirm({ title: `删除令牌 ${row.name}?`, onOk: () => remove(row) })} onEdit={() => setEditing({ ...row })} />
         ))}
       </div>
 
       {/* 调用示例 */}
       <CodeSamples origin={origin} />
 
-      <TokenEditModal
+      {!preview && <TokenEditModal
         open={!!editing}
         token={editing}
         onClose={() => setEditing(null)}
         onSaved={() => { setEditing(null); load(); }}
-      />
+      />}
 
       {confirm && (
         <ConfirmDialog open title={confirm.title} onConfirm={confirm.onOk}
@@ -132,7 +137,7 @@ const StepCard = ({ num, title, desc }) => (
 
 const PILL = { display: 'inline-flex', alignItems: 'center', height: 20, paddingInline: 6, borderRadius: 5, fontSize: 11, whiteSpace: 'nowrap' };
 
-const KeyCard = ({ row, onCopy, onDelete, onEdit }) => {
+const KeyCard = ({ row, preview = false, onCopy, onDelete, onEdit }) => {
   const isMobile = useIsMobile();
   const usageText = row.unlimited_quota
     ? `已用 ${renderQuota(row.used_quota || 0)}`
@@ -155,11 +160,11 @@ const KeyCard = ({ row, onCopy, onDelete, onEdit }) => {
           <span style={{ ...PILL, color: 'var(--ui-text-3)', border: '1px solid var(--ui-border)' }}>{row.group}</span>
         )}
       </div>
-      <div className={`flex gap-1 shrink-0 ${isMobile ? '' : 'opacity-0 group-hover:opacity-100'} transition-opacity`}>
+      {!preview && <div className={`flex gap-1 shrink-0 ${isMobile ? '' : 'opacity-0 group-hover:opacity-100'} transition-opacity`}>
         <IconButton icon={Copy} title='复制' onClick={onCopy} />
         <IconButton icon={Pencil} title='编辑' onClick={onEdit} />
         <IconButton icon={Trash2} variant='danger' title='删除' onClick={onDelete} />
-      </div>
+      </div>}
     </div>
     {/* 第二行：密钥 + 用量 + 时间 */}
     <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>

@@ -1,20 +1,10 @@
-import { useEffect } from 'react';
-import { useSearchParams, useNavigate } from 'react-router-dom';
-import { useLoginModal } from '../../context/LoginModal';
+import { Navigate, useSearchParams } from 'react-router-dom';
 
 const Register = () => {
-  const [searchParams] = useSearchParams();
-  const navigate = useNavigate();
-  const { openLoginModal } = useLoginModal();
-
-  useEffect(() => {
-    const aff = searchParams.get('aff');
-    if (aff) localStorage.setItem('aff', aff);
-    openLoginModal('register');
-    navigate('/', { replace: true });
-  }, []);
-
-  return null;
+  const [params] = useSearchParams();
+  const aff = params.get('aff');
+  if (aff) localStorage.setItem('aff', aff);
+  return <Navigate to='/auth?mode=register' replace />;
 };
 
 export default Register;

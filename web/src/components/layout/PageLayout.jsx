@@ -28,7 +28,8 @@ const PageLayout = () => {
   const location = useLocation();
   const mainRef = useRef(null);
   const isConsoleRoute = location.pathname.startsWith('/console');
-  const hideFooter = isConsoleRoute;
+  const isStandaloneRoute = location.pathname === '/' || location.pathname === '/auth';
+  const hideFooter = isConsoleRoute || isStandaloneRoute;
 
   // 路由切换时滚动回顶部
   useEffect(() => {
@@ -68,7 +69,7 @@ const PageLayout = () => {
         className='flex flex-col h-screen'
         style={{ backgroundColor: 'var(--page-bg)' }}
       >
-        {!isConsoleRoute && <HeaderBar />}
+        {!isConsoleRoute && !isStandaloneRoute && <HeaderBar />}
         <div className='flex-1 flex min-h-0'>
           {isConsoleRoute && <SiderBar />}
           <main

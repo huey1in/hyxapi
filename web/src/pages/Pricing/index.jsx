@@ -11,9 +11,24 @@ import { usePageTitle } from '../../hooks/common/usePageTitle';
 import { calculateModelPrice, getModelPriceItems, getLobeHubIcon, getModelIcon } from '../../helpers';
 import { QuotaTag, VendorTag } from './tags';
 
-const Pricing = () => {
+const PREVIEW_MODELS = [
+  { model_name: 'gpt-4.1', vendor_name: 'OpenAI', vendor_icon: 'OpenAI', quota_type: 0, model_ratio: 1, completion_ratio: 4, enable_groups: ['default', 'production'] },
+  { model_name: 'gpt-4o-mini', vendor_name: 'OpenAI', vendor_icon: 'OpenAI', quota_type: 0, model_ratio: 0.075, completion_ratio: 4, enable_groups: ['default'] },
+  { model_name: 'claude-sonnet-4', vendor_name: 'Anthropic', vendor_icon: 'Claude.Color', quota_type: 0, model_ratio: 1.5, completion_ratio: 5, enable_groups: ['default', 'production'] },
+  { model_name: 'claude-3.5-haiku', vendor_name: 'Anthropic', vendor_icon: 'Claude.Color', quota_type: 0, model_ratio: 0.4, completion_ratio: 5, enable_groups: ['default'] },
+  { model_name: 'gemini-2.5-pro', vendor_name: 'Google', vendor_icon: 'Gemini.Color', quota_type: 0, model_ratio: 0.625, completion_ratio: 5, enable_groups: ['default'] },
+  { model_name: 'gemini-2.5-flash', vendor_name: 'Google', vendor_icon: 'Gemini.Color', quota_type: 0, model_ratio: 0.15, completion_ratio: 4, enable_groups: ['default', 'production'] },
+  { model_name: 'deepseek-chat', vendor_name: 'DeepSeek', vendor_icon: 'DeepSeek.Color', quota_type: 0, model_ratio: 0.14, completion_ratio: 2, enable_groups: ['default'] },
+  { model_name: 'deepseek-reasoner', vendor_name: 'DeepSeek', vendor_icon: 'DeepSeek.Color', quota_type: 0, model_ratio: 0.275, completion_ratio: 8, enable_groups: ['production'] },
+  { model_name: 'grok-4', vendor_name: 'xAI', vendor_icon: 'XAI', quota_type: 0, model_ratio: 1.5, completion_ratio: 5, enable_groups: ['production'] },
+  { model_name: 'grok-3-mini', vendor_name: 'xAI', vendor_icon: 'XAI', quota_type: 0, model_ratio: 0.15, completion_ratio: 3.3, enable_groups: ['default'] },
+  { model_name: 'mistral-large', vendor_name: 'Mistral AI', vendor_icon: 'Mistral.Color', quota_type: 0, model_ratio: 1, completion_ratio: 3, enable_groups: ['default'] },
+  { model_name: 'mistral-small', vendor_name: 'Mistral AI', vendor_icon: 'Mistral.Color', quota_type: 0, model_ratio: 0.05, completion_ratio: 3, enable_groups: ['default', 'production'] },
+];
+
+const Pricing = ({ preview = false }) => {
   const { t } = useTranslation();
-  usePageTitle(t('模型广场'));
+  usePageTitle(preview ? '' : t('模型广场'));
 
   const {
     loading, filteredModels, models,
@@ -25,7 +40,7 @@ const Pricing = () => {
     currency, setCurrency, siteDisplayType, tokenUnit, displayPrice,
     currentPage, setCurrentPage, pageSize,
     refresh,
-  } = useModelPricingData();
+  } = useModelPricingData(preview ? PREVIEW_MODELS : null);
 
   const navigate = useNavigate();
   const location = useLocation();
@@ -33,8 +48,9 @@ const Pricing = () => {
   const isTokens = siteDisplayType === 'TOKENS';
   const [viewMode, setViewMode] = useState('card');
 
-  const goDetail = (row) =>
-    navigate(basePath + '/model/' + encodeURIComponent(row.model_name), { state: { model: row } });
+  const goDetail = (row) => {
+    if (!preview) navigate(basePath + '/model/' + encodeURIComponent(row.model_name), { state: { model: row } });
+  };
 
   const priceOf = (record) =>
     calculateModelPrice({
@@ -111,7 +127,7 @@ const Pricing = () => {
     const priceItems = pd.isPerToken ? getModelPriceItems(pd, t, siteDisplayType) : [];
     const gs = row.enable_groups || [];
     return (
-      <Card key={row.model_name} interactive='lift' onClick={() => goDetail(row)}>
+      <Card key={row.model_name} interactive={preview ? undefined : 'lift'} onClick={preview ? undefined : () => goDetail(row)}>
         <div className='flex flex-col gap-3'>
           <div className='flex items-start justify-between gap-2'>
             <div className='flex items-center gap-2 min-w-0'>
@@ -197,7 +213,7 @@ const Pricing = () => {
   return (
     <PageShell
       title={<span style={{ fontSize: 18, fontWeight: 600, color: 'var(--ui-text)' }}>{t('模型广场')}</span>}
-      actions={
+      actions={preview ? null :
         <>
           <div className='inline-flex items-center gap-0.5 rounded-xl border border-ui-border p-0.5'>
             <IconButton icon={LayoutGrid} size='sm' shape='square' selected={viewMode === 'card'} title={t('卡片视图')} onClick={() => setViewMode('card')} />
@@ -208,7 +224,7 @@ const Pricing = () => {
       }
     >
       {/* 筛选栏（用普通容器而非 Card，避免 overflow-hidden 裁剪下拉菜单） */}
-      <div className='border border-ui-border bg-[var(--page-bg)] rounded-2xl p-4'>
+      <div className='pricing-filter-panel border border-ui-border bg-[var(--page-bg)] rounded-2xl p-4'>
         <div className='flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:gap-2'>
           {/* 搜索框：移动端单独占一行 */}
           <div className='w-full sm:w-[280px]'>
@@ -264,7 +280,7 @@ const Pricing = () => {
         </div>
       </div>
 
-      <div className='mt-4' style={{ minHeight: 'calc(100vh - 320px)' }}>
+      <div className='pricing-results mt-4' style={{ minHeight: 'calc(100vh - 320px)' }}>
         {loading ? (
           <Card><div className='py-10'><Loading /></div></Card>
         ) : total === 0 ? (

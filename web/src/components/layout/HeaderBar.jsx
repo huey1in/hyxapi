@@ -7,7 +7,7 @@ import { UserContext } from '../../context/User';
 import { StatusContext } from '../../context/Status';
 import { useMobileSidebar } from '../../context/MobileSidebar';
 import useIsMobile from '../../hooks/useIsMobile';
-import { API, showError, updateAPI, homeSiteUrl } from '../../helpers';
+import { API, showError, updateAPI } from '../../helpers';
 import {
   GlobeIcon, ChevronDownIcon, WalletIcon, LogOutIcon,
 } from './headerIcons';
@@ -43,7 +43,7 @@ const HeaderBar = () => {
     const links = [];
     if (isConsoleRoute) {
       // 已在控制台内，导航项改为返回首页（独立部署的 home-site）
-      links.push({ key: 'home', text: t('首页'), externalLink: homeSiteUrl() });
+      links.push({ key: 'home', text: t('首页'), to: '/' });
     } else {
       links.push({ key: 'console', text: t('控制台'), to: '/console' });
     }
