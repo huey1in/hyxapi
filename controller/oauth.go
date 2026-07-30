@@ -130,7 +130,7 @@ func HandleOAuth(c *gin.Context) {
 	session.Set("role", user.Role)
 	session.Set("status", user.Status)
 	_ = session.Save()
-	c.Redirect(http.StatusFound, "/#code="+common.IssueHandoff(user.Id))
+	c.Redirect(http.StatusFound, "/console#code="+common.IssueHandoff(user.Id))
 }
 
 // handleOAuthBind handles binding OAuth account to existing user
