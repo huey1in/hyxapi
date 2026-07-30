@@ -8,6 +8,17 @@ import useIsMobile from '../../hooks/useIsMobile';
 const PAGE_SIZE = 20;
 
 const PREVIEW_MODELS = ['gpt-4.1', 'claude-sonnet-4', 'gemini-2.5-flash', 'deepseek-chat', 'grok-4', 'mistral-large'];
+const PREVIEW_USAGE = [
+  { input: 12840, output: 3240, cache: 11200, frt: 186 },
+  { input: 7640, output: 1180, cache: 6140, frt: 241 },
+  { input: 23180, output: 6840, cache: 18900, frt: 328 },
+  { input: 9820, output: 2360, cache: 0, frt: 214 },
+  { input: 31560, output: 9120, cache: 22400, frt: 472 },
+  { input: 6740, output: 840, cache: 5800, frt: 163 },
+  { input: 18720, output: 4560, cache: 13600, frt: 296 },
+  { input: 44200, output: 12700, cache: 30700, frt: 538 },
+  { input: 15480, output: 3280, cache: 0, frt: 257 },
+];
 const PREVIEW_LOGS = Array.from({ length: 9 }, (_, index) => ({
   id: index + 1,
   created_at: Math.floor(Date.now() / 1000) - index * 17,
@@ -15,11 +26,11 @@ const PREVIEW_LOGS = Array.from({ length: 9 }, (_, index) => ({
   model_name: PREVIEW_MODELS[index % PREVIEW_MODELS.length],
   token_name: index % 2 ? 'development' : 'production',
   group: index % 3 ? 'default' : 'production',
-  prompt_tokens: 860 + index * 317,
-  completion_tokens: 240 + index * 91,
-  quota: 120 + index * 47,
-  use_time: 0.42 + index * 0.08,
-  other: JSON.stringify({ frt: 180 + index * 34, cache_tokens: index % 3 === 0 ? 420 : 0 }),
+  prompt_tokens: PREVIEW_USAGE[index].input,
+  completion_tokens: PREVIEW_USAGE[index].output,
+  quota: 286 + index * 73,
+  use_time: 0.68 + index * 0.11,
+  other: JSON.stringify({ frt: PREVIEW_USAGE[index].frt, cache_tokens: PREVIEW_USAGE[index].cache }),
 }));
 
 const TYPE_OPTIONS = [
@@ -50,9 +61,9 @@ const TypeBadge = ({ type }) => {
   );
 };
 
-const Num = ({ value }) => (
+const Num = ({ value, compact = false }) => (
   value > 0
-    ? <span style={{ fontVariantNumeric: 'tabular-nums' }}>{renderNumber(value)}</span>
+    ? <span style={{ fontVariantNumeric: 'tabular-nums' }}>{compact && value >= 1000 ? `${(value / 1000).toFixed(1)}k` : renderNumber(value)}</span>
     : <span style={{ color: 'var(--ui-text-3)' }}>—</span>
 );
 
@@ -94,7 +105,7 @@ const TruncatedField = ({ value, muted = false }) => (
 
 const LogPage = ({ preview = false }) => {
   const [userState] = useContext(UserContext);
-  const isAdmin = (userState?.user?.role || 1) >= 10;
+  const isAdmin = !preview && (userState?.user?.role || 1) >= 10;
   const [rows, setRows] = useState(preview ? PREVIEW_LOGS : []);
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(preview ? PREVIEW_LOGS.length : 0);
@@ -165,6 +176,14 @@ const LogPage = ({ preview = false }) => {
   }), [rows]);
 
   const columns = useMemo(() => {
+    if (isMobile && preview) {
+      return [
+        { key: 'model', title: '模型', render: (r) => <TruncatedField value={r.model_name} /> },
+        { key: 'input', title: '输入', align: 'right', render: (r) => <Num value={r.prompt_tokens || 0} compact /> },
+        { key: 'output', title: '输出', align: 'right', render: (r) => <Num value={r.completion_tokens || 0} compact /> },
+        { key: 'cache', title: '缓存', align: 'right', render: (r) => <Num value={r._cache} compact /> },
+      ];
+    }
     if (isMobile) {
       return [
         { key: 'time', title: '时间', render: (r) => <span style={{ whiteSpace: 'nowrap', fontSize: 12, color: 'var(--ui-text-2)' }}>{timestamp2string(r.created_at)}</span> },
@@ -184,9 +203,9 @@ const LogPage = ({ preview = false }) => {
     cols.push(
       { key: 'token', title: '令牌', width: 110, render: (r) => <TruncatedField value={r.token_name} muted /> },
       { key: 'group', title: '分组', width: 96, render: (r) => <TruncatedField value={r.group} muted /> },
-      { key: 'input', title: '输入', align: 'right', width: 64, render: (r) => <Num value={r.prompt_tokens || 0} /> },
-      { key: 'output', title: '输出', align: 'right', width: 64, render: (r) => <Num value={r.completion_tokens || 0} /> },
-      { key: 'cache', title: '缓存', align: 'right', width: 64, render: (r) => <Num value={r._cache} /> },
+      { key: 'input', title: '输入', align: 'right', width: 64, render: (r) => <Num value={r.prompt_tokens || 0} compact={preview} /> },
+      { key: 'output', title: '输出', align: 'right', width: 64, render: (r) => <Num value={r.completion_tokens || 0} compact={preview} /> },
+      { key: 'cache', title: '缓存', align: 'right', width: 64, render: (r) => <Num value={r._cache} compact={preview} /> },
       { key: 'frt', title: '首字', align: 'right', width: 72, render: (r) => {
         const frt = r._other?.frt;
         // 流式：用真实首字时间；非流式（同步）：无首字概念，用总响应时长代替
@@ -205,7 +224,7 @@ const LogPage = ({ preview = false }) => {
       { key: 'quota', title: '积分', align: 'right', width: 80, render: (r) => <Quota row={r} /> },
     );
     return cols;
-  }, [isMobile, isAdmin]);
+  }, [isMobile, isAdmin, preview]);
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: isMobile ? 20 : 28, width: '100%', maxWidth: 1160, marginInline: 'auto', padding: isMobile ? '16px' : '24px 16px', minWidth: 0, overflow: 'hidden' }}>
@@ -265,14 +284,14 @@ const LogPage = ({ preview = false }) => {
       {/* 表格 */}
       {loading ? <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '60vh' }}><Loading /></div> : (
         <>
-          <div style={{ fontFamily: "'JetBrains Mono', 'Noto Sans SC', monospace", maxWidth: '100%', overflow: isMobile ? 'auto' : 'hidden' }}>
+          <div style={{ fontFamily: "'JetBrains Mono', 'Noto Sans SC', monospace", maxWidth: '100%', overflow: isMobile && !preview ? 'auto' : 'hidden' }}>
             <Table
               columns={columns}
               rows={enriched}
-              size='md'
+              size={isMobile && preview ? 'sm' : 'md'}
               rowKey='id'
               tableLayout={isMobile ? 'auto' : 'fixed'}
-              minWidth={isMobile ? 560 : (isAdmin ? 1120 : 1010)}
+              minWidth={isMobile ? (preview ? undefined : 560) : (isAdmin ? 1120 : 1010)}
               emptyText='暂无数据'
               onRowClick={preview ? undefined : (r) => setExpanded((prev) => prev === r.id ? null : r.id)}
               expandedKey={expanded}

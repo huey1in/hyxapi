@@ -201,7 +201,7 @@ const Home = () => {
         <section id='inside' className='product-frame' aria-label='Routify 控制台预览'>
           <div className='product-frame-bar'>
             <div className='mac-window-controls' aria-hidden='true'><i /><i /><i /></div>
-            <BrowserAddress>routifyapi.com</BrowserAddress>
+            <BrowserAddress>routifyapi.com/console</BrowserAddress>
             <span aria-hidden='true' />
           </div>
           <div className='product-shell'>
@@ -241,7 +241,7 @@ const Home = () => {
               <div className='product-frame marketplace-frame'>
                 <div className='product-frame-bar'>
                   <div className='mac-window-controls' aria-hidden='true'><i /><i /><i /></div>
-                  <BrowserAddress>routifyapi.com/models</BrowserAddress>
+                  <BrowserAddress>routifyapi.com/console/pricing</BrowserAddress>
                   <span aria-hidden='true' />
                 </div>
                 <div className='product-shell'>
@@ -260,7 +260,7 @@ const Home = () => {
               <div className='product-frame console-feature-frame api-feature-frame'>
                 <div className='product-frame-bar'>
                   <div className='mac-window-controls' aria-hidden='true'><i /><i /><i /></div>
-                  <BrowserAddress>routifyapi.com/api-keys</BrowserAddress>
+                  <BrowserAddress>routifyapi.com/console/token</BrowserAddress>
                   <span aria-hidden='true' />
                 </div>
                 <div className='product-shell'>
@@ -288,7 +288,7 @@ const Home = () => {
               <div className='product-frame console-feature-frame log-feature-frame'>
                 <div className='product-frame-bar'>
                   <div className='mac-window-controls' aria-hidden='true'><i /><i /><i /></div>
-                  <BrowserAddress>routifyapi.com/logs</BrowserAddress>
+                  <BrowserAddress>routifyapi.com/console/log</BrowserAddress>
                   <span aria-hidden='true' />
                 </div>
                 <div className='product-shell'>
@@ -300,6 +300,44 @@ const Home = () => {
           </div>
         </section>
         </div>
+
+        <section className='frontier-section' aria-labelledby='frontier-title'>
+          <h2 id='frontier-title'>{en ? 'Always at the frontier' : '始终保持前沿'}</h2>
+          <div className='frontier-grid'>
+            <article className='frontier-card'>
+              <div className='frontier-card-copy'>
+                <h3>{en ? 'The latest models, ready when you are' : '最新模型，上线即可使用'}</h3>
+                <p>{en ? 'Access new releases from leading providers through the same OpenAI-compatible API.' : '主流厂商发布新模型后，通过同一套 OpenAI 兼容接口即可接入。'}</p>
+                <Link to='/pricing'>{en ? 'Explore models' : '查看模型'} <ArrowRight size={14} /></Link>
+              </div>
+              <div className='frontier-visual frontier-model-menu' aria-hidden='true'>
+                <div className='frontier-composer'><span>{en ? 'Choose the best model for this request' : '为这次请求选择最佳模型'}</span><b>Auto</b></div>
+                <div className='frontier-model-list'>{['GPT-5.6', 'Claude Opus 5', 'Gemini 3.1 Pro', 'DeepSeek V4'].map((model, index) => <span key={model}><i />{model}{index === 0 && <b>{en ? 'New' : '新'}</b>}</span>)}</div>
+              </div>
+            </article>
+            <article className='frontier-card'>
+              <div className='frontier-card-copy'>
+                <h3>{en ? 'Every provider, one clear price' : '不同渠道，每一笔价格都清楚'}</h3>
+                <p>{en ? 'Compare routes for the same model and use prices below official rates without changing your SDK.' : '同一模型按渠道比较价格，无需更换 SDK，即可使用低于官方的线路。'}</p>
+                <Link to='/pricing'>{en ? 'Compare pricing' : '比较价格'} <ArrowRight size={14} /></Link>
+              </div>
+              <div className='frontier-visual frontier-price-list' aria-hidden='true'>
+                <div><span>{en ? 'Provider' : '渠道'}</span><span>{en ? 'Input / 1M' : '输入 / 1M'}</span><span>{en ? 'Status' : '状态'}</span></div>
+                <div><strong>Routify A</strong><b>$1.82</b><em>{en ? 'Best price' : '最低价'}</em></div><div><strong>Routify B</strong><b>$2.06</b><em>{en ? 'Available' : '可用'}</em></div><div><strong>{en ? 'Official' : '官方'}</strong><b>$3.00</b><em>{en ? 'Reference' : '参考'}</em></div>
+              </div>
+            </article>
+            <article className='frontier-card'>
+              <div className='frontier-card-copy'>
+                <h3>{en ? 'Automatic scheduling for every endpoint' : '自动调度，每个端点都无需操心'}</h3>
+                <p>{en ? 'Messages and completions requests are both scheduled automatically across available providers.' : 'Messages 与 Completions 端点都会由系统自动调度到可用渠道。'}</p>
+                <Link to='/console/log'>{en ? 'View request logs' : '查看调用日志'} <ArrowRight size={14} /></Link>
+              </div>
+              <div className='frontier-visual frontier-route-flow' aria-hidden='true'>
+                <div className='frontier-request'><small>POST</small><span>/v1/messages</span></div><div className='frontier-request frontier-request-secondary'><small>POST</small><span>/v1/chat/completions</span></div><div className='frontier-route-line'><i /><span>{en ? 'Scheduled automatically' : '系统自动调度'}</span><b>38 ms</b></div><div className='frontier-route-line'><i /><span>{en ? 'Provider responded' : '渠道响应成功'}</span><b>200</b></div><div className='frontier-route-total'><span>{en ? 'Requests completed' : '请求均已完成'}</span><strong>1.24 s</strong></div>
+              </div>
+            </article>
+          </div>
+        </section>
 
         <section ref={brandSectionRef} className='studio-closing giant-brand-section' aria-label='Routify'>
           <div className='giant-brand-word'>Rout<span>ify</span></div>
