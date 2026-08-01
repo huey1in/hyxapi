@@ -48,7 +48,10 @@ const Auth = () => {
   const [, dispatch] = React.useContext(UserContext);
   const [statusState] = React.useContext(StatusContext);
   const [mode, setMode] = useState(params.get('mode') === 'register' ? 'register' : 'login');
-  const [form, setForm] = useState({ username: '', password: '', confirm: '' });
+  const [form, setForm] = useState({ username: '', password: '', confirm: '', email: '', verificationCode: '' });
+  const [codeBusy, setCodeBusy] = useState(false);
+  const [codeCountdown, setCodeCountdown] = useState(0);
+  const [turnstileToken, setTurnstileToken] = useState('');
   const [resetEmail, setResetEmail] = useState('');
   const [resetSent, setResetSent] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -56,6 +59,7 @@ const Auth = () => {
   const [legal, setLegal] = useState(null);
   const [feedback, setFeedback] = useState(null);
   const telegramRef = useRef(null);
+  const turnstileRef = useRef(null);
   const next = params.get('next') || '/console';
 
   useEffect(() => {
@@ -66,6 +70,11 @@ const Auth = () => {
     setFeedback(null);
     setForm((value) => ({ ...value, [key]: event.target.value }));
   };
+  useEffect(() => {
+    if (!codeCountdown) return undefined;
+    const timer = setInterval(() => setCodeCountdown((value) => Math.max(0, value - 1)), 1000);
+    return () => clearInterval(timer);
+  }, [codeCountdown]);
   const showFeedback = (message, type = 'error') => setFeedback({ message, type });
   const changeMode = (nextMode) => {
     setMode(nextMode);
@@ -81,7 +90,12 @@ const Auth = () => {
     setBusy(true);
     try {
       const endpoint = mode === 'login' ? '/api/user/login' : '/api/user/register';
-      const response = await API.post(endpoint, { username: form.username.trim(), password: form.password });
+      if (statusState?.status?.turnstile_check && !turnstileToken) return showFeedback('请先完成安全验证');
+      if (mode === 'register' && (!form.email.trim() || !form.verificationCode.trim())) return showFeedback('请输入邮箱和验证码');
+      const response = await API.post(`${endpoint}${turnstileToken ? `?turnstile=${encodeURIComponent(turnstileToken)}` : ''}`, {
+        username: form.username.trim(), password: form.password,
+        ...(mode === 'register' ? { email: form.email.trim(), verification_code: form.verificationCode.trim() } : {}),
+      });
       const data = response?.data;
       if (!data?.success) return showFeedback(data?.message || t('auth.errors.operationFailed'));
       if (mode === 'register') {
@@ -100,6 +114,19 @@ const Auth = () => {
     } finally {
       setBusy(false);
     }
+  };
+
+  const sendVerificationCode = async () => {
+    if (!form.email.trim()) return showFeedback('请先输入邮箱');
+    if (statusState?.status?.turnstile_check && !turnstileToken) return showFeedback('请先完成安全验证');
+    setCodeBusy(true);
+    try {
+      const response = await API.get('/api/verification', { params: { email: form.email.trim(), turnstile: turnstileToken } });
+      if (!response?.data?.success) return showFeedback(response?.data?.message || '验证码发送失败');
+      setCodeCountdown(60);
+      showFeedback('验证码已发送，请查收邮箱', 'success');
+    } catch (error) { showFeedback(error?.response?.data?.message || error?.message || '验证码发送失败'); }
+    finally { setCodeBusy(false); }
   };
 
   const continueWithOAuth = async (provider, action) => {
@@ -164,6 +191,8 @@ const Auth = () => {
     ...customProviders.map((provider) => ({ id: `custom-${provider.id}`, label: provider.name, icon: getCustomProviderIcon(provider), action: () => onCustomOAuthClicked(provider) })),
   ].filter(Boolean);
   const telegramEnabled = Boolean(status.telegram_oauth && status.telegram_bot_name);
+  const emailVerificationEnabled = Boolean(status.email_verification);
+  const turnstileEnabled = Boolean(status.turnstile_check && status.turnstile_site_key);
   const oauthEnabled = oauthProviders.length > 0 || telegramEnabled;
   const agreementEnabled = Boolean(statusState?.status?.user_agreement_enabled);
   const privacyEnabled = Boolean(statusState?.status?.privacy_policy_enabled);
@@ -187,6 +216,20 @@ const Auth = () => {
     return () => { delete window[callbackName]; };
   }, [isReset, telegramEnabled, status.telegram_bot_name]);
 
+  useEffect(() => {
+    if (!turnstileEnabled || !turnstileRef.current) return undefined;
+    const render = () => {
+      if (!window.turnstile || !turnstileRef.current) return;
+      turnstileRef.current.replaceChildren();
+      window.turnstile.render(turnstileRef.current, { sitekey: status.turnstile_site_key, callback: setTurnstileToken, 'expired-callback': () => setTurnstileToken(''), 'error-callback': () => setTurnstileToken('') });
+    };
+    if (window.turnstile) render();
+    else {
+      const script = document.createElement('script'); script.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit'; script.async = true; script.onload = render; document.head.appendChild(script);
+    }
+    return () => { if (turnstileRef.current) turnstileRef.current.replaceChildren(); };
+  }, [turnstileEnabled, status.turnstile_site_key, mode]);
+
   const openLegal = async (type) => {
     const endpoint = type === 'terms' ? '/api/user-agreement' : '/api/privacy-policy';
     setLegal({ type, content: '', loading: true });
@@ -209,6 +252,7 @@ const Auth = () => {
             {feedback.type === 'error' ? <AlertCircle size={21} /> : <CheckCircle2 size={21} />}
             <span>{feedback.message}</span>
           </div>}
+          {turnstileEnabled && <div ref={turnstileRef} className='cursor-auth-turnstile' />}
           {!isReset && oauthEnabled && <div className='cursor-auth-oauth-list'>
             {oauthProviders.map(({ id, label, icon, action }) => <button className='cursor-auth-oauth' type='button' key={id} onClick={() => continueWithOAuth(id, action)} disabled={Boolean(oauthBusy)}>
               <ProviderIcon src={icon} label={label} />
@@ -226,6 +270,10 @@ const Auth = () => {
           </> : <><form onSubmit={submit} className='auth-form'>
             <label>{t('auth.fields.username')}<input value={form.username} onChange={update('username')} autoComplete='username' placeholder={t('auth.fields.usernamePlaceholder')} /></label>
             <label>{t('auth.fields.password')}<input value={form.password} onChange={update('password')} type='password' autoComplete={isLogin ? 'current-password' : 'new-password'} placeholder={t('auth.fields.passwordPlaceholder')} /></label>
+            {!isLogin && emailVerificationEnabled && <>
+              <label>{t('auth.fields.email')}<input value={form.email} onChange={update('email')} type='email' autoComplete='email' placeholder={t('auth.fields.emailPlaceholder')} /></label>
+              <div className='cursor-auth-code-row'><input value={form.verificationCode} onChange={update('verificationCode')} inputMode='numeric' placeholder='邮箱验证码' /><button type='button' onClick={sendVerificationCode} disabled={codeBusy || codeCountdown > 0}>{codeCountdown ? `${codeCountdown}s` : codeBusy ? '发送中…' : '发送验证码'}</button></div>
+            </>}
             {!isLogin && <label>{t('auth.fields.confirmPassword')}<input value={form.confirm} onChange={update('confirm')} type='password' autoComplete='new-password' placeholder={t('auth.fields.confirmPasswordPlaceholder')} /></label>}
             <button className='cursor-auth-submit' disabled={busy}>{busy ? t('auth.processing') : isLogin ? t('auth.login.submit') : t('auth.register.submit')}</button>
           </form>
