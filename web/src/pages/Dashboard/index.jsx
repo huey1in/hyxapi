@@ -204,10 +204,26 @@ const TokenUsageGrid = ({ data, days, bucketCount }) => {
   const start = new Date(); start.setHours(0, 0, 0, 0); start.setDate(start.getDate() - days + 1);
   const startSeconds = Math.floor(start.getTime() / 1000);
   const bucketSeconds = Math.ceil(days * 86400 / bucketCount);
-  const byBucket = new Map(data.map((item) => [Number(item.bucket_start), item]));
+  const byBucket = new Map();
+  data.forEach((item) => {
+    const itemStart = Number(item.bucket_start);
+    const index = Math.floor((itemStart - startSeconds) / bucketSeconds);
+    if (index < 0 || index >= bucketCount) return;
+    const previous = byBucket.get(index) || {};
+    byBucket.set(index, {
+      ...previous,
+      bucket_start: startSeconds + index * bucketSeconds,
+      quota: Number(previous.quota || 0) + Number(item.quota || 0),
+      requests: Number(previous.requests || 0) + Number(item.requests || 0),
+      tokens: Number(previous.tokens || 0) + Number(item.tokens || 0),
+      prompt_tokens: Number(previous.prompt_tokens || 0) + Number(item.prompt_tokens || 0),
+      completion_tokens: Number(previous.completion_tokens || 0) + Number(item.completion_tokens || 0),
+      cache_tokens: Number(previous.cache_tokens || 0) + Number(item.cache_tokens || 0),
+    });
+  });
   const cells = Array.from({ length: bucketCount }, (_, index) => {
     const bucketStart = startSeconds + index * bucketSeconds;
-    return { key: bucketStart, bucket_start: bucketStart, future: bucketStart > Date.now() / 1000, ...(byBucket.get(bucketStart) || {}) };
+    return { key: bucketStart, bucket_start: bucketStart, future: bucketStart > Date.now() / 1000, ...(byBucket.get(index) || {}) };
   });
   const nonZero = cells.map((cell) => Number(cell.tokens || 0)).filter(Boolean).sort((a, b) => a - b);
   const level = (tokens) => {
