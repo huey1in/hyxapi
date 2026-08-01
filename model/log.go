@@ -18,9 +18,9 @@ import (
 
 type Log struct {
 	Id               int    `json:"id" gorm:"index:idx_created_at_id,priority:1;index:idx_user_id_id,priority:2"`
-	UserId           int    `json:"user_id" gorm:"index;index:idx_user_id_id,priority:1"`
-	CreatedAt        int64  `json:"created_at" gorm:"bigint;index:idx_created_at_id,priority:2;index:idx_created_at_type"`
-	Type             int    `json:"type" gorm:"index:idx_created_at_type"`
+	UserId           int    `json:"user_id" gorm:"index;index:idx_user_id_id,priority:1;index:idx_logs_user_type_created,priority:1"`
+	CreatedAt        int64  `json:"created_at" gorm:"bigint;index:idx_created_at_id,priority:2;index:idx_created_at_type;index:idx_logs_type_created,priority:2;index:idx_logs_user_type_created,priority:3"`
+	Type             int    `json:"type" gorm:"index:idx_created_at_type;index:idx_logs_type_created,priority:1;index:idx_logs_user_type_created,priority:2"`
 	Content          string `json:"content"`
 	Username         string `json:"username" gorm:"index;index:index_username_model_name,priority:2;default:''"`
 	TokenName        string `json:"token_name" gorm:"index;default:''"`
@@ -725,14 +725,14 @@ func GetTokenUsageByDay(userID int, startTimestamp, endTimestamp int64) ([]Daily
 	return results, err
 }
 
-func GetTokenUsageByBucket(userID int, startTimestamp, endTimestamp, bucketSeconds int64) ([]DailyConsumption, error) {
+func GetTokenUsageByBucket(ctx context.Context, userID int, startTimestamp, endTimestamp, bucketSeconds int64) ([]DailyConsumption, error) {
 	if bucketSeconds < 1 {
 		bucketSeconds = 1
 	}
 	bucketExpr := tokenUsageBucketExpression(startTimestamp, bucketSeconds)
 	cacheExpr := fmt.Sprintf("COALESCE(SUM(%s), 0) + COALESCE(SUM(%s), 0)", jsonIntExtract("other", "cache_tokens"), jsonIntExtract("other", "cache_creation_tokens"))
 	selectExpr := fmt.Sprintf("%s as bucket_start, COALESCE(SUM(quota), 0) as quota, COUNT(*) as requests, COALESCE(SUM(prompt_tokens), 0) as prompt_tokens, COALESCE(SUM(completion_tokens), 0) as completion_tokens, %s as cache_tokens, COALESCE(SUM(prompt_tokens), 0) + COALESCE(SUM(completion_tokens), 0) as tokens", bucketExpr, cacheExpr)
-	tx := LOG_DB.Table("logs").
+	tx := LOG_DB.WithContext(ctx).Table("logs").
 		Select(selectExpr).
 		Where("type = ? AND created_at >= ? AND created_at <= ?", LogTypeConsume, startTimestamp, endTimestamp)
 	if userID > 0 {

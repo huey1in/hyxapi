@@ -1,6 +1,9 @@
 package controller
 
 import (
+	"context"
+	"encoding/json"
+	"fmt"
 	"net/http"
 	"strconv"
 	"time"
@@ -24,10 +27,28 @@ func getDailyTokenUsage(c *gin.Context, userID int) {
 	if bucketSeconds < 1 || bucketSeconds > 86400*31 {
 		bucketSeconds = 86400
 	}
-	data, err := model.GetTokenUsageByBucket(userID, startTimestamp, endTimestamp, bucketSeconds)
+	cacheKey := fmt.Sprintf("log:token-usage:v1:%d:%d:%d:%d", userID, startTimestamp, endTimestamp/15, bucketSeconds)
+	if common.RedisEnabled && common.RDB != nil {
+		if cached, err := common.RedisGet(cacheKey); err == nil {
+			var data []model.DailyConsumption
+			if json.Unmarshal([]byte(cached), &data) == nil {
+				common.ApiSuccess(c, data)
+				return
+			}
+		}
+	}
+
+	queryCtx, cancel := context.WithTimeout(c.Request.Context(), 12*time.Second)
+	defer cancel()
+	data, err := model.GetTokenUsageByBucket(queryCtx, userID, startTimestamp, endTimestamp, bucketSeconds)
 	if err != nil {
 		common.ApiError(c, err)
 		return
+	}
+	if common.RedisEnabled && common.RDB != nil {
+		if encoded, err := json.Marshal(data); err == nil {
+			_ = common.RedisSet(cacheKey, string(encoded), 15*time.Second)
+		}
 	}
 	common.ApiSuccess(c, data)
 }

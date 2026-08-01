@@ -6,7 +6,7 @@ import { Loading, Tabs } from '../../components/ui';
 import useIsMobile from '../../hooks/useIsMobile';
 import useIsDark from '../../hooks/useIsDark';
 import { advancePreviewState, createPreviewState } from './dashboardPreviewSimulation';
-import { getUsageBucketCount } from './usageGridLayout';
+import { getTokenUsageRequestConfig, getUsageBucketCount } from './usageGridLayout';
 
 const StatMini = ({ label, value }) => (
   <div className='dashboard-stat-mini'>
@@ -95,7 +95,7 @@ const Dashboard = ({ preview = false }) => {
       const rangeSeconds = days * 86400;
       const bucketSeconds = Math.ceil(rangeSeconds / usageBucketCount);
       const url = `${base}?start_timestamp=${Math.floor(start.getTime() / 1000)}&end_timestamp=${Math.floor(Date.now() / 1000)}&bucket_seconds=${bucketSeconds}`;
-      const res = await API.get(url);
+      const res = await API.get(url, getTokenUsageRequestConfig());
       if (res.data?.success) setRecentLogs(res.data.data || []);
     } catch { setRecentLogs([]); }
     finally { setLogsLoading(false); }
