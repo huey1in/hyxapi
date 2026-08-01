@@ -12,9 +12,9 @@ import { calculateModelPrice, getModelPriceItems, getLobeHubIcon, getModelIcon }
 import { QuotaTag, VendorTag } from './tags';
 
 const PREVIEW_MODELS = [
-  { model_name: 'gpt-4.1', vendor_name: 'OpenAI', vendor_icon: 'OpenAI', billing_type: 'tokens', input_price: 2, output_price: 8, cache_read_price: 0.5, enable_groups: ['default', 'production'] },
-  { model_name: 'gpt-4o-mini', vendor_name: 'OpenAI', vendor_icon: 'OpenAI', billing_type: 'tokens', input_price: 0.15, output_price: 0.6, cache_read_price: 0.075, enable_groups: ['default'] },
-  { model_name: 'claude-sonnet-4', vendor_name: 'Anthropic', vendor_icon: 'Anthropic', billing_type: 'tokens', input_price: 3, output_price: 15, cache_read_price: 0.3, enable_groups: ['default', 'production'] },
+  { model_name: 'gpt-4.1', vendor_name: 'OpenAI', vendor_icon: 'OpenAI', description: '适合复杂推理、编程与长上下文任务的通用模型。', billing_type: 'tokens', input_price: 2, output_price: 8, cache_read_price: 0.5, enable_groups: ['default', 'production'] },
+  { model_name: 'gpt-4o-mini', vendor_name: 'OpenAI', vendor_icon: 'OpenAI', description: '兼顾速度与成本，适合高并发轻量任务。', billing_type: 'tokens', input_price: 0.15, output_price: 0.6, cache_read_price: 0.075, enable_groups: ['default'] },
+  { model_name: 'claude-sonnet-4', vendor_name: 'Anthropic', vendor_icon: 'Anthropic', description: '面向代码、智能体和专业知识工作的高性能模型。', billing_type: 'tokens', input_price: 3, output_price: 15, cache_read_price: 0.3, enable_groups: ['default', 'production'] },
   { model_name: 'claude-3.5-haiku', vendor_name: 'Anthropic', vendor_icon: 'Anthropic', billing_type: 'tokens', input_price: 0.8, output_price: 4, cache_read_price: 0.08, enable_groups: ['default'] },
   { model_name: 'gemini-2.5-pro', vendor_name: 'Google', vendor_icon: 'Gemini.Color', billing_type: 'tokens', input_price: 1.25, output_price: 10, enable_groups: ['default'] },
   { model_name: 'gemini-2.5-flash', vendor_name: 'Google', vendor_icon: 'Gemini.Color', billing_type: 'tokens', input_price: 0.3, output_price: 2.5, enable_groups: ['default', 'production'] },
@@ -126,10 +126,9 @@ const Pricing = ({ preview = false }) => {
   const renderModelCard = (row) => {
     const pd = priceOf(row);
     const priceItems = pd.isPerToken ? getModelPriceItems(pd, t) : [];
-    const gs = row.enable_groups || [];
     return (
       <Card key={row.model_name} interactive={preview ? undefined : 'lift'} onClick={preview ? undefined : () => goDetail(row)}>
-        <div className='flex flex-col gap-3'>
+        <div className='flex flex-col'>
           <div className='flex items-start justify-between gap-2'>
             <div className='flex items-center gap-2 min-w-0'>
               <span className='flex-shrink-0'>{getLobeHubIcon(getModelIcon(row.model_name, row.vendor_icon), 22)}</span>
@@ -144,8 +143,15 @@ const Pricing = ({ preview = false }) => {
             </div>
           </div>
 
+          {row.description && (
+            <p className='mt-4 mb-0 min-h-10 text-xs leading-5 text-ui-text-3 line-clamp-2'>
+              {row.description}
+            </p>
+          )}
+
           <Divider />
 
+          <div className='mt-3'>
           {!pd.isPerToken ? (
             <div className='flex items-baseline justify-between'>
               <span className='text-xs text-ui-text-3'>{t('价格')}</span>
@@ -165,13 +171,8 @@ const Pricing = ({ preview = false }) => {
               ))}
             </div>
           )}
+          </div>
 
-          {gs.length > 0 && (
-            <div className='flex flex-wrap gap-1'>
-              {gs.slice(0, 3).map((g) => <Tag key={g}>{g}</Tag>)}
-              {gs.length > 3 && <span className='text-[11px] text-ui-text-3 self-center'>+{gs.length - 3}</span>}
-            </div>
-          )}
         </div>
       </Card>
     );

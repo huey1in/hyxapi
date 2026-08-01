@@ -1,20 +1,25 @@
 import React, { useContext, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { RefreshCw } from 'lucide-react';
-import { API, renderNumber, renderQuota, isAdmin, timestamp2string } from '../../helpers';
+import { API, renderNumber, renderQuota, isAdmin } from '../../helpers';
 import { UserContext } from '../../context/User';
-import { IconButton, Loading, Table } from '../../components/ui';
+import { Loading, Tabs } from '../../components/ui';
 import useIsMobile from '../../hooks/useIsMobile';
 import useIsDark from '../../hooks/useIsDark';
 import { advancePreviewState, createPreviewState } from './dashboardPreviewSimulation';
+import { getUsageBucketCount } from './usageGridLayout';
 
 const StatMini = ({ label, value }) => (
-  <div style={{ paddingBlock: 16, paddingInline: 16, border: '1px solid var(--ui-border)', borderRadius: 16 }}>
+  <div className='dashboard-stat-mini'>
     <div style={{ fontSize: 12, color: 'var(--ui-text-3)', marginBottom: 4 }}>{label}</div>
     <div style={{ fontSize: 20, fontWeight: 700, color: 'var(--ui-text)', fontVariantNumeric: 'tabular-nums' }}>{value}</div>
   </div>
 );
 
+const USAGE_RANGE_OPTIONS = [
+  { value: '1', label: '当天' },
+  { value: '7', label: '最近 7 天' },
+  { value: '30', label: '最近 30 天' },
+];
 const Dashboard = ({ preview = false }) => {
   const navigate = useNavigate();
   const [userState] = useContext(UserContext);
@@ -26,8 +31,10 @@ const Dashboard = ({ preview = false }) => {
   const [recentLogs, setRecentLogs] = useState([]);
   const [loading, setLoading] = useState(!preview);
   const [logsLoading, setLogsLoading] = useState(false);
+  const [usageDays, setUsageDays] = useState('1');
   const isMobile = useIsMobile();
   const isDark = useIsDark();
+  const usageBucketCount = getUsageBucketCount(isMobile);
 
   useEffect(() => {
     if (preview) {
@@ -43,16 +50,18 @@ const Dashboard = ({ preview = false }) => {
         if (res.data?.success) setStats(res.data.data);
       } catch {} finally { setLoading(false); }
     })();
-    loadRecentLogs();
     loadStats();
     loadRpm();
     const timer = setInterval(() => {
       loadStats();
-      loadRecentLogs(true);
       loadRpm();
     }, 5000);
     return () => clearInterval(timer);
   }, [userState?.user, preview]);
+
+  useEffect(() => {
+    if (!preview) loadTokenUsage(Number(usageDays));
+  }, [usageDays, userState?.user, preview, usageBucketCount]);
 
   const loadStats = async () => {
     try {
@@ -76,33 +85,39 @@ const Dashboard = ({ preview = false }) => {
     } catch {}
   };
 
-  const loadRecentLogs = async (silent = false) => {
-    if (!silent) setLogsLoading(true);
+  const loadTokenUsage = async (days) => {
+    setLogsLoading(true);
     try {
-      const url = isAdmin() ? '/api/log/?p=1&size=10&type=0' : '/api/log/self/?p=1&size=10&type=0';
+      const base = isAdmin() ? '/api/log/token-usage' : '/api/log/self/token-usage';
+      const start = new Date();
+      start.setHours(0, 0, 0, 0);
+      start.setDate(start.getDate() - Math.max(0, days - 1));
+      const rangeSeconds = days * 86400;
+      const bucketSeconds = Math.ceil(rangeSeconds / usageBucketCount);
+      const url = `${base}?start_timestamp=${Math.floor(start.getTime() / 1000)}&end_timestamp=${Math.floor(Date.now() / 1000)}&bucket_seconds=${bucketSeconds}`;
       const res = await API.get(url);
-      if (res.data?.success) setRecentLogs(res.data.data?.items || res.data.data || []);
-    } catch { if (!silent) setRecentLogs([]); }
-    finally { if (!silent) setLogsLoading(false); }
+      if (res.data?.success) setRecentLogs(res.data.data || []);
+    } catch { setRecentLogs([]); }
+    finally { setLogsLoading(false); }
   };
 
   const activeCumStats = preview ? previewState.cumulative : cumStats;
   const activeDayStats = preview ? previewState.today : dayStats;
   const activeRpm = preview ? previewState.rpm : rpm;
-  const activeRecentLogs = preview ? previewState.logs : recentLogs;
+  const activeRecentLogs = preview ? createPreviewUsage(Number(usageDays), usageBucketCount) : recentLogs;
   const u = preview ? previewState.user : (stats || userState?.user || {});
 
   if (loading) return <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '60vh' }}><Loading /></div>;
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: isMobile ? 20 : 28, width: '100%', maxWidth: 960, marginInline: 'auto', padding: isMobile ? '16px' : '24px 16px' }}>
+    <div className='dashboard-overview'>
       {/* 页面标题 */}
       <h1 style={{ fontSize: 18, fontWeight: 600, color: 'var(--ui-text)', paddingBlockEnd: 8 }}>{isAdmin() ? '全局用量' : '用量信息'}</h1>
 
       {/* 统计卡片 */}
-      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(2, 1fr)', gap: 12 }}>
+      <div className='dashboard-primary-stats'>
         {/* 积分余额 */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingBlock: 26, paddingInline: 20, border: '1px solid var(--ui-border)', borderRadius: 26 }}>
+        <div className='dashboard-primary-card'>
           <div>
             <div style={{ fontSize: 14, fontWeight: 400, color: 'var(--ui-text-3)', marginBottom: 8 }}>可用额度</div>
             <div style={{ fontSize: 28, fontWeight: 700, color: 'var(--ui-text)' }}>{renderQuota(u.quota || 0)}</div>
@@ -124,7 +139,7 @@ const Dashboard = ({ preview = false }) => {
           >+ 充值</button>
         </div>
         {/* 总请求 */}
-        <div style={{ display: 'flex', alignItems: 'center', paddingBlock: 26, paddingInline: 20, border: '1px solid var(--ui-border)', borderRadius: 26 }}>
+        <div className='dashboard-primary-card'>
           <div>
             <div style={{ fontSize: 14, fontWeight: 400, color: 'var(--ui-text-3)', marginBottom: 8 }}>总请求数</div>
             <div style={{ fontSize: 28, fontWeight: 700, color: 'var(--ui-text)' }}>{renderNumber(u.request_count || 0)}</div>
@@ -134,42 +149,28 @@ const Dashboard = ({ preview = false }) => {
       </div>
 
       {/* 今日统计 */}
-      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(4, 1fr)', gap: isMobile ? 8 : 12 }}>
+      <div className='dashboard-secondary-stats'>
         <StatMini label='今日 Token' value={fmtTokens(activeDayStats.tokens || 0)} />
         <StatMini label='今日消费' value={renderQuota(activeDayStats.quota || 0)} />
         <StatMini label='今日请求数' value={renderNumber(activeDayStats.requests || 0)} />
         <StatMini label='当前 RPM' value={renderNumber(activeRpm)} />
       </div>
 
-      {/* 最近活动 */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <span style={{ fontSize: 16, fontWeight: 600, color: 'var(--ui-text)' }}>最近活动</span>
-          <IconButton icon={RefreshCw} onClick={preview ? undefined : loadRecentLogs} disabled={preview || logsLoading} title='刷新' />
+      {/* Token 使用情况 */}
+      <div className='dashboard-token-usage'>
+        <div className='dashboard-token-usage__header'>
+          <span style={{ fontSize: 16, fontWeight: 600, color: 'var(--ui-text)' }}>Token 使用情况</span>
+          <Tabs value={usageDays} onChange={setUsageDays} items={USAGE_RANGE_OPTIONS} variant='pill' size='sm' />
         </div>
         {logsLoading ? (
           <div style={{ padding: '32px 0', display: 'flex', justifyContent: 'center' }}><Loading size='sm' /></div>
         ) : (
-          <div style={{ fontFamily: "'JetBrains Mono', 'Noto Sans SC', monospace" }}>
-            <Table
-              size='sm'
-              rowKey='id'
-              emptyText='暂无记录'
-              onRowClick={preview ? undefined : () => navigate('/console/log')}
-              columns={recentColumns(isMobile)}
-              rows={activeRecentLogs}
-            />
-          </div>
+          <TokenUsageGrid data={activeRecentLogs} days={Number(usageDays)} bucketCount={usageBucketCount} />
         )}
       </div>
 
     </div>
   );
-};
-
-const parseOther = (other) => {
-  if (!other) return {};
-  try { const p = typeof other === 'string' ? JSON.parse(other) : other; return p || {}; } catch { return {}; }
 };
 
 const fmtTokens = (n) => {
@@ -180,29 +181,51 @@ const fmtTokens = (n) => {
   return String(n);
 };
 
-const NumCell = ({ value }) => (
-  value > 0
-    ? <span style={{ fontVariantNumeric: 'tabular-nums' }}>{fmtTokens(value)}</span>
-    : <span style={{ color: 'var(--ui-text-3)' }}>—</span>
-);
-
-const recentColumns = (isMobile) => {
-  if (isMobile) {
-    return [
-      { key: 'time', title: '时间', render: (r) => <span style={{ whiteSpace: 'nowrap', fontSize: 11, color: 'var(--ui-text-2)' }}>{timestamp2string(r.created_at)}</span> },
-      { key: 'model', title: '模型', render: (r) => <span style={{ whiteSpace: 'nowrap' }}>{r.model_name || '—'}</span> },
-      { key: 'quota', title: '积分', align: 'right', render: (r) => r.quota > 0 ? <span style={{ fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}>{renderQuota(r.quota, 6)}</span> : <span style={{ color: 'var(--ui-text-3)' }}>—</span> },
-    ];
+const createPreviewUsage = (days, bucketCount) => {
+  const result = [];
+  const start = new Date(); start.setHours(0, 0, 0, 0); start.setDate(start.getDate() - days + 1);
+  const bucketSeconds = Math.ceil(days * 86400 / bucketCount);
+  const nowSeconds = Math.floor(Date.now() / 1000);
+  for (let index = 0; index < bucketCount; index += 1) {
+    const bucketStart = Math.floor(start.getTime() / 1000) + index * bucketSeconds;
+    if (bucketStart > nowSeconds) break;
+    const seed = (index * 17 + days * 31) % 29;
+    if (seed < 9) continue;
+    const prompt = (seed + 3) * 1820;
+    result.push({ bucket_start: bucketStart, prompt_tokens: prompt, completion_tokens: Math.round(prompt * 0.28), cache_tokens: Math.round(prompt * 0.62), tokens: Math.round(prompt * 1.28), requests: seed * 3 });
   }
-  return [
-    { key: 'time', title: '时间', render: (r) => <span style={{ whiteSpace: 'nowrap', color: 'var(--ui-text-2)' }}>{timestamp2string(r.created_at)}</span> },
-    { key: 'model', title: '模型', render: (r) => <span style={{ whiteSpace: 'nowrap', maxWidth: 200, display: 'inline-block', overflow: 'hidden', textOverflow: 'ellipsis', verticalAlign: 'bottom' }} title={r.model_name}>{r.model_name || '—'}</span> },
-    { key: 'group', title: '分组', render: (r) => <span style={{ whiteSpace: 'nowrap', color: 'var(--ui-text-2)' }}>{r.group || '—'}</span> },
-    { key: 'input', title: '输入', align: 'right', render: (r) => <NumCell value={r.prompt_tokens || 0} /> },
-    { key: 'output', title: '输出', align: 'right', render: (r) => <NumCell value={r.completion_tokens || 0} /> },
-    { key: 'cache', title: '缓存', align: 'right', render: (r) => { const o = parseOther(r.other); return <NumCell value={(o.cache_tokens || 0) + (o.cache_creation_tokens || 0)} />; } },
-    { key: 'quota', title: '积分', align: 'right', render: (r) => r.quota > 0 ? <span style={{ fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}>{renderQuota(r.quota, 6)}</span> : <span style={{ color: 'var(--ui-text-3)' }}>—</span> },
-  ];
+  return result;
+};
+
+const TokenUsageGrid = ({ data, days, bucketCount }) => {
+  const start = new Date(); start.setHours(0, 0, 0, 0); start.setDate(start.getDate() - days + 1);
+  const startSeconds = Math.floor(start.getTime() / 1000);
+  const bucketSeconds = Math.ceil(days * 86400 / bucketCount);
+  const byBucket = new Map(data.map((item) => [Number(item.bucket_start), item]));
+  const cells = Array.from({ length: bucketCount }, (_, index) => {
+    const bucketStart = startSeconds + index * bucketSeconds;
+    return { key: bucketStart, bucket_start: bucketStart, future: bucketStart > Date.now() / 1000, ...(byBucket.get(bucketStart) || {}) };
+  });
+  const nonZero = cells.map((cell) => Number(cell.tokens || 0)).filter(Boolean).sort((a, b) => a - b);
+  const level = (tokens) => {
+    if (!tokens || !nonZero.length) return 0;
+    const rank = nonZero.findIndex((value) => value >= tokens) / Math.max(1, nonZero.length - 1);
+    return Math.min(4, Math.max(1, Math.ceil(rank * 4)));
+  };
+  return (
+    <div className='token-usage-card'>
+      <div className='token-usage-grid'>
+        {cells.map((cell) => {
+          const total = Number(cell.tokens || 0);
+          const from = new Date(cell.bucket_start * 1000);
+          const to = new Date((cell.bucket_start + bucketSeconds) * 1000);
+          const timeLabel = `${from.toLocaleString('zh-CN', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })} - ${to.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' })}`;
+          const title = `${timeLabel}\n总 Token: ${fmtTokens(total)}\n输入: ${fmtTokens(cell.prompt_tokens || 0)} · 输出: ${fmtTokens(cell.completion_tokens || 0)} · 缓存: ${fmtTokens(cell.cache_tokens || 0)}`;
+          return <span key={cell.key} className={`token-usage-cell level-${cell.future ? 0 : level(total)}`} title={title} aria-label={title} />;
+        })}
+      </div>
+    </div>
+  );
 };
 
 export default Dashboard;

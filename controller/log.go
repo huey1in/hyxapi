@@ -3,12 +3,42 @@ package controller
 import (
 	"net/http"
 	"strconv"
+	"time"
 
 	"github.com/QuantumNous/new-api/common"
 	"github.com/QuantumNous/new-api/model"
 
 	"github.com/gin-gonic/gin"
 )
+
+func getDailyTokenUsage(c *gin.Context, userID int) {
+	endTimestamp := time.Now().Unix()
+	startTimestamp := time.Now().AddDate(-1, 0, 0).Unix()
+	if value, err := strconv.ParseInt(c.Query("start_timestamp"), 10, 64); err == nil && value > 0 {
+		startTimestamp = value
+	}
+	if value, err := strconv.ParseInt(c.Query("end_timestamp"), 10, 64); err == nil && value > 0 {
+		endTimestamp = value
+	}
+	bucketSeconds, _ := strconv.ParseInt(c.Query("bucket_seconds"), 10, 64)
+	if bucketSeconds < 1 || bucketSeconds > 86400*31 {
+		bucketSeconds = 86400
+	}
+	data, err := model.GetTokenUsageByBucket(userID, startTimestamp, endTimestamp, bucketSeconds)
+	if err != nil {
+		common.ApiError(c, err)
+		return
+	}
+	common.ApiSuccess(c, data)
+}
+
+func GetTokenUsageByDay(c *gin.Context) {
+	getDailyTokenUsage(c, 0)
+}
+
+func GetSelfTokenUsageByDay(c *gin.Context) {
+	getDailyTokenUsage(c, c.GetInt("id"))
+}
 
 func GetAllLogs(c *gin.Context) {
 	pageInfo := common.GetPageQuery(c)

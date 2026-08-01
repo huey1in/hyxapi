@@ -18,12 +18,22 @@ import (
 
 func GetOptions(c *gin.Context) {
 	var options []*model.Option
+	emailTemplateKeys := map[string]bool{
+		common.EmailTemplateVerificationKey:  false,
+		common.EmailTemplatePasswordResetKey: false,
+	}
 	common.OptionMapRWMutex.Lock()
 	for k, v := range common.OptionMap {
 		if model.IsRemovedModelPricingOption(k) {
 			continue
 		}
 		value := common.Interface2String(v)
+		if (k == common.EmailTemplateVerificationKey || k == common.EmailTemplatePasswordResetKey) && strings.TrimSpace(value) == "" {
+			value = common.GetEmailTemplate(k)
+		}
+		if _, ok := emailTemplateKeys[k]; ok {
+			emailTemplateKeys[k] = true
+		}
 		isSensitiveKey := strings.HasSuffix(k, "Token") ||
 			strings.HasSuffix(k, "Secret") ||
 			strings.HasSuffix(k, "Key") ||
@@ -36,6 +46,14 @@ func GetOptions(c *gin.Context) {
 			Key:   k,
 			Value: value,
 		})
+	}
+	for key, found := range emailTemplateKeys {
+		if !found {
+			options = append(options, &model.Option{
+				Key:   key,
+				Value: common.GetEmailTemplate(key),
+			})
+		}
 	}
 	common.OptionMapRWMutex.Unlock()
 	c.JSON(http.StatusOK, gin.H{

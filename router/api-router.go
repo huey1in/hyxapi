@@ -229,7 +229,9 @@ func SetApiRouter(router *gin.Engine) {
 		logRoute.GET("/", middleware.AdminAuth(), controller.GetAllLogs)
 		logRoute.DELETE("/", middleware.AdminAuth(), controller.DeleteHistoryLogs)
 		logRoute.GET("/stat", middleware.AdminAuth(), controller.GetLogsStat)
+		logRoute.GET("/token-usage", middleware.AdminAuth(), controller.GetTokenUsageByDay)
 		logRoute.GET("/self/stat", middleware.UserAuth(), controller.GetLogsSelfStat)
+		logRoute.GET("/self/token-usage", middleware.UserAuth(), controller.GetSelfTokenUsageByDay)
 		logRoute.GET("/self", middleware.UserAuth(), controller.GetUserLogs)
 
 		dataRoute := apiRouter.Group("/data")

@@ -103,7 +103,7 @@ const TokenPage = ({ preview = false }) => {
       </div>
 
       {/* 调用示例 */}
-      <CodeSamples origin={origin} />
+      <CodeSamples origin={origin} rows={rows} keys={keys} />
 
       {!preview && <TokenEditModal
         open={!!editing}
@@ -174,60 +174,89 @@ const KeyCard = ({ row, preview = false, onCopy, onDelete, onEdit }) => {
   );
 };
 
-const CodeSamples = ({ origin }) => {
-  const [tool, setTool] = useState('claude');
-  const [shell, setShell] = useState('unix');
-  const KEY = 'YOUR_API_KEY';
+const maskKey = (key) => {
+  if (!key || key === 'YOUR_API_KEY') return 'YOUR_API_KEY';
+  if (key.length <= 12) return `${key.slice(0, 4)}••••${key.slice(-3)}`;
+  return `${key.slice(0, 7)}••••••••${key.slice(-4)}`;
+};
 
-  const shells = useMemo(() => ({
-    unix: {
-      label: 'macOS / Linux',
-      title: 'Terminal',
-      code: `export ANTHROPIC_BASE_URL="${origin}"
-export ANTHROPIC_AUTH_TOKEN="${KEY}"
-export CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC=1`,
-    },
+const CodeSamples = ({ origin, rows = [], keys = {} }) => {
+  const [tool, setTool] = useState('claude');
+  const [shell, setShell] = useState('cmd');
+  const [selectedTokenId, setSelectedTokenId] = useState('');
+  const [showKey, setShowKey] = useState(false);
+  const tokenOptions = useMemo(() => rows
+    .filter((row) => keys[row.id])
+    .map((row) => ({
+      value: String(row.id),
+      label: row.name || '未命名',
+    })), [rows, keys]);
+
+  useEffect(() => {
+    if (tokenOptions.length === 0) {
+      setSelectedTokenId('');
+      return;
+    }
+    if (!tokenOptions.some((option) => option.value === selectedTokenId)) {
+      setSelectedTokenId(tokenOptions[0].value);
+    }
+  }, [tokenOptions, selectedTokenId]);
+
+  const fullKey = keys[selectedTokenId] || 'YOUR_API_KEY';
+  const displayKey = fullKey;
+
+  const buildShells = (key) => ({
     cmd: {
       label: 'Windows CMD',
       title: 'Command Prompt',
       code: `set ANTHROPIC_BASE_URL=${origin}
-set ANTHROPIC_AUTH_TOKEN=${KEY}
+set ANTHROPIC_AUTH_TOKEN=${key}
 set CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC=1`,
     },
     powershell: {
       label: 'PowerShell',
       title: 'PowerShell',
       code: `$env:ANTHROPIC_BASE_URL="${origin}"
-$env:ANTHROPIC_AUTH_TOKEN="${KEY}"
+$env:ANTHROPIC_AUTH_TOKEN="${key}"
 $env:CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC=1`,
     },
-  }), [origin]);
+    unix: {
+      label: 'macOS / Linux',
+      title: 'Terminal',
+      code: `export ANTHROPIC_BASE_URL="${origin}"
+export ANTHROPIC_AUTH_TOKEN="${key}"
+export CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC=1`,
+    },
+  });
 
-  const claudeSettings = `{
+  const shells = useMemo(() => buildShells(displayKey), [origin, displayKey]);
+  const copyShells = useMemo(() => buildShells(fullKey), [origin, fullKey]);
+
+  const buildClaudeSettings = (key) => `{
   "env": {
     "ANTHROPIC_BASE_URL": "${origin}",
-    "ANTHROPIC_AUTH_TOKEN": "${KEY}",
+    "ANTHROPIC_AUTH_TOKEN": "${key}",
     "CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC": "1",
     "CLAUDE_CODE_ATTRIBUTION_HEADER": "0"
   }
 }`;
 
-  const opencodeConfig = `{
-  "provider": {
-    "anthropic": {
-      "options": {
-        "baseURL": "${origin}/v1",
-        "apiKey": "${KEY}"
-      },
-      "npm": "@ai-sdk/anthropic"
-    }
-  },
-  "$schema": "https://opencode.ai/config.json"
-}`;
+  const buildCodexEnv = (key) => `set ROUTIFY_API_KEY=${key}`;
+  const codexConfig = `model_provider = "routify"
+
+[model_providers.routify]
+name = "Routify"
+base_url = "${origin}/v1"
+env_key = "ROUTIFY_API_KEY"
+wire_api = "responses"`;
+  const claudeSettings = buildClaudeSettings(displayKey);
+  const fullClaudeSettings = buildClaudeSettings(fullKey);
+  const codexEnv = buildCodexEnv(displayKey);
+  const fullCodexEnv = buildCodexEnv(fullKey);
 
   const TOOLS = [
     { key: 'claude', label: 'Claude Code' },
-    { key: 'opencode', label: 'OpenCode' },
+    { key: 'codex', label: 'Codex' },
   ];
 
   const tabBtn = (active) => ({
@@ -242,10 +271,19 @@ $env:CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC=1`,
     <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8 }}>
         <span style={{ fontSize: 18, fontWeight: 600, color: 'var(--ui-text)' }}>调用示例</span>
-        <div style={{ display: 'flex', gap: 4 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
           {TOOLS.map((tl) => (
             <button key={tl.key} onClick={() => setTool(tl.key)} style={tabBtn(tool === tl.key)}>{tl.label}</button>
           ))}
+          {tokenOptions.length > 0 && (
+            <Select
+              value={selectedTokenId}
+              onChange={(value) => { setSelectedTokenId(value); setShowKey(false); }}
+              options={tokenOptions}
+              size={28}
+              width={140}
+            />
+          )}
         </div>
       </div>
 
@@ -260,17 +298,18 @@ $env:CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC=1`,
               <button key={k} onClick={() => setShell(k)} style={tabBtn(shell === k)}>{s.label}</button>
             ))}
           </div>
-          <CodeBlock code={shells[shell].code} language='bash' title={shells[shell].title} />
+          <CodeBlock code={shells[shell].code} copyText={copyShells[shell].code} sensitiveText={fullKey} revealSensitive={showKey} onContentClick={() => setShowKey((value) => !value)} language='bash' title={shells[shell].title} />
 
           <div style={{ fontSize: 14, fontWeight: 500, color: 'var(--ui-text)', marginTop: 4 }}>VSCode Claude Code</div>
-          <CodeBlock code={claudeSettings} language='json' title='~/.claude/settings.json' />
+          <CodeBlock code={claudeSettings} copyText={fullClaudeSettings} sensitiveText={fullKey} revealSensitive={showKey} onContentClick={() => setShowKey((value) => !value)} language='json' title='~/.claude/settings.json' />
         </>
       ) : (
         <>
           <p style={{ fontSize: 13, color: 'var(--ui-text-3)', margin: 0 }}>
-            配置文件路径：~/.config/opencode/opencode.json（不存在需手动创建）。可使用默认 provider 或自定义，示例仅供参考。
+            在 Windows CMD 中设置令牌，然后将 provider 配置写入 ~/.codex/config.toml。
           </p>
-          <CodeBlock code={opencodeConfig} language='json' title='opencode.json' />
+          <CodeBlock code={codexEnv} copyText={fullCodexEnv} sensitiveText={fullKey} revealSensitive={showKey} onContentClick={() => setShowKey((value) => !value)} language='bash' title='Windows CMD' />
+          <CodeBlock code={codexConfig} language='toml' title='~/.codex/config.toml' />
         </>
       )}
 

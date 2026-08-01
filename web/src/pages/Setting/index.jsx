@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { RefreshCw, Save, Plus, Trash2 } from 'lucide-react';
 import { API, showError, showSuccess, isRoot } from '../../helpers';
 import {
@@ -7,6 +7,67 @@ import {
 import { Lock } from 'lucide-react';
 import { orderSettingKeysForSave } from './saveOrder.js';
 import ModelPricingEditor from './ModelPricingEditor.jsx';
+
+const EMAIL_TEMPLATE_META = {
+  EmailTemplateVerification: {
+    variables: <>{'{{siteName}}'} 站点名称、{'{{code}}'} 验证码、{'{{expireMinutes}}'} 有效期（分钟）</>,
+    previewValues: { siteName: 'Routify', code: '482913', expireMinutes: '10' },
+  },
+  EmailTemplatePasswordReset: {
+    variables: <>{'{{siteName}}'} 站点名称、{'{{resetLink}}'} 重置链接、{'{{expireMinutes}}'} 有效期（分钟）</>,
+    previewValues: { siteName: 'Routify', resetLink: 'https://routifyapi.com/auth/reset?token=example', expireMinutes: '10' },
+  },
+};
+
+const formatHtml = (html) => {
+  const source = String(html || '').trim();
+  if (!source) return '';
+  const tokens = source.replace(/>\s*</g, '><').match(/<![^>]*>|<[^>]+>|[^<]+/g) || [];
+  const voidTags = new Set(['area', 'base', 'br', 'col', 'embed', 'hr', 'img', 'input', 'link', 'meta', 'param', 'source', 'track', 'wbr']);
+  let depth = 0;
+  return tokens.map((token) => {
+    const trimmed = token.trim();
+    if (!trimmed) return '';
+    if (/^<\//.test(trimmed)) depth = Math.max(0, depth - 1);
+    const line = `${'  '.repeat(depth)}${trimmed}`;
+    const tag = trimmed.match(/^<([\w-]+)/)?.[1]?.toLowerCase();
+    if (tag && !voidTags.has(tag) && !/\/>$/.test(trimmed) && !/^<!/.test(trimmed) && !trimmed.includes(`</${tag}>`)) depth += 1;
+    return line;
+  }).filter(Boolean).join('\n');
+};
+
+const EmailTemplateEditor = ({ configKey, value, onChange }) => {
+  const [mode, setMode] = useState('edit');
+  const meta = EMAIL_TEMPLATE_META[configKey];
+  const previewHtml = useMemo(() => {
+    let rendered = value || '';
+    Object.entries(meta.previewValues).forEach(([key, replacement]) => {
+      rendered = rendered.replaceAll(`{{${key}}}`, replacement);
+    });
+    return rendered;
+  }, [meta, value]);
+
+  const format = () => onChange(formatHtml(value));
+
+  return (
+    <div className='email-template-editor'>
+      <div className='email-template-editor__toolbar'>
+        <div className='email-template-editor__modes'>
+          <Button size='sm' variant='toggle' selected={mode === 'edit'} onClick={() => setMode('edit')}>编辑</Button>
+          <Button size='sm' variant='toggle' selected={mode === 'preview'} onClick={() => setMode('preview')}>预览</Button>
+        </div>
+        {mode === 'edit' && <Button size='sm' variant='link' onClick={format}>格式化 HTML</Button>}
+      </div>
+      {mode === 'edit'
+          ? <Textarea value={value} onChange={onChange} rows={18} spellCheck={false} />
+        : <div className='email-template-editor__preview'>
+            <div className='email-template-editor__preview-label'>示例预览</div>
+            <iframe title={`${configKey} 邮件预览`} sandbox='' srcDoc={previewHtml} />
+          </div>}
+      <div className='email-template-editor__variables'>可用变量：{meta.variables}</div>
+    </div>
+  );
+};
 
 const TABS = [
   { key: 'platform',    label: '平台' },
@@ -638,7 +699,7 @@ const AffinityRulesEditor = ({ value, onChange }) => {
 
 const LIST_EDITOR_FIELDS = {
   'console_setting.announcements': [
-    { key: 'content', label: '内容', flex: 3 },
+    { key: 'content', label: '内容', type: 'textarea', fullWidth: true },
     { key: 'type', label: '类型', type: 'select', options: [{ value: 'default', label: '默认' }, { value: 'ongoing', label: '进行中' }, { value: 'success', label: '成功' }, { value: 'warning', label: '警告' }, { value: 'error', label: '错误' }] },
     { key: 'extra', label: '说明' },
   ],
@@ -668,16 +729,18 @@ const ListEditor = ({ configKey, value, onChange }) => {
     <div className='space-y-2'>
       {items.map((item, i) => (
         <div key={i} style={{ padding: '10px 12px', border: '1px solid var(--ui-border)', borderRadius: 10 }} className='space-y-2'>
-          <div className='flex items-start gap-2' style={{ minWidth: 0 }}>
+          <div className='flex flex-wrap items-start gap-2' style={{ minWidth: 0 }}>
             {fields.map((f) => (
-              <div key={f.key} style={{ flex: f.flex || 1, minWidth: 0 }}>
+              <div key={f.key} style={{ flex: f.fullWidth ? '0 0 100%' : (f.flex || 1), minWidth: f.fullWidth ? '100%' : 160 }}>
                 <div className='text-xs text-[#999] mb-1'>{f.label}</div>
                 {f.type === 'select'
                   ? <Select value={item[f.key] || f.options[0].value} options={f.options} onChange={(v) => update(i, f.key, v)} size={32} />
+                  : f.type === 'textarea'
+                    ? <Textarea value={item[f.key] || ''} onChange={(v) => update(i, f.key, v)} rows={6} width='100%' />
                   : <Input value={item[f.key] || ''} onChange={(v) => update(i, f.key, v)} width='100%' />}
               </div>
             ))}
-            <button type='button' onClick={() => remove(i)} style={{ flexShrink: 0, marginTop: 18, padding: 6, borderRadius: 6, border: 'none', background: 'transparent', cursor: 'pointer', color: 'var(--ui-text-3)' }}>
+            <button type='button' onClick={() => remove(i)} style={{ flexShrink: 0, alignSelf: 'flex-end', padding: 6, borderRadius: 6, border: 'none', background: 'transparent', cursor: 'pointer', color: 'var(--ui-text-3)' }}>
               <Trash2 size={15} />
             </button>
           </div>
@@ -732,7 +795,9 @@ const SettingPage = () => {
       const { data } = await API.get('/api/option/');
       if (data.success) {
         const map = {};
-        (data.data || []).forEach((it) => { map[it.key] = it.value; });
+        (data.data || []).forEach((it) => {
+          map[it.key] = EMAIL_TEMPLATE_META[it.key] ? formatHtml(it.value) : it.value;
+        });
         setOptions(map);
         setDirty({});
       } else showError(data.message);
@@ -806,10 +871,9 @@ const SettingPage = () => {
                           onChange={(arr) => set(k, JSON_ARRAY_TAG_KEYS.has(k) ? JSON.stringify(arr) : arr.join(NEWLINE_TAG_KEYS.has(k) ? '\n' : ','))}
                         />
                       : MULTILINE_KEYS.has(k)
-                        ? <><Textarea value={val(k)} onChange={(v) => set(k, v)} rows={6} placeholder={k === 'EmailTemplateVerification' ? '留空使用默认模板' : k === 'EmailTemplatePasswordReset' ? '留空使用默认模板' : ''} />
-                            {k === 'EmailTemplateVerification' && <div style={{ marginTop: 4, fontSize: 11, color: '#999', lineHeight: 1.5 }}>可用变量：{'{{siteName}}'} 站点名称、{'{{code}}'} 验证码、{'{{expireMinutes}}'} 有效期（分钟）</div>}
-                            {k === 'EmailTemplatePasswordReset' && <div style={{ marginTop: 4, fontSize: 11, color: '#999', lineHeight: 1.5 }}>可用变量：{'{{siteName}}'} 站点名称、{'{{resetLink}}'} 重置链接、{'{{expireMinutes}}'} 有效期（分钟）</div>}
-                          </>
+                        ? EMAIL_TEMPLATE_META[k]
+                          ? <EmailTemplateEditor configKey={k} value={val(k)} onChange={(v) => set(k, v)} />
+                          : <Textarea value={val(k)} onChange={(v) => set(k, v)} rows={12} />
                         : <Input value={val(k)} onChange={(v) => set(k, v)} />}
       </div>
     );

@@ -65,6 +65,10 @@ const highlight = (code, language) => {
 
 const CodeBlock = ({
   code = '',
+  copyText: copyContent,
+  onContentClick,
+  sensitiveText,
+  revealSensitive = false,
   language,
   title,
   showLineNumbers = false,
@@ -75,13 +79,24 @@ const CodeBlock = ({
   const content = String(code || children || '');
   const [copied, setCopied] = useState(false);
 
-  const html = useMemo(() => highlight(content, language), [content, language]);
+  const html = useMemo(() => {
+    const highlighted = highlight(content, language);
+    if (!sensitiveText || revealSensitive) return highlighted;
+    const visibleStart = sensitiveText.slice(0, 7);
+    const visibleEnd = sensitiveText.slice(-4);
+    const blurredMiddle = sensitiveText.slice(7, -4);
+    if (!blurredMiddle) return highlighted;
+    return highlighted.replaceAll(
+      sensitiveText,
+      `${visibleStart}<span class="blur-[4px] transition-[filter] duration-200">${blurredMiddle}</span>${visibleEnd}`,
+    );
+  }, [content, language, revealSensitive, sensitiveText]);
   const isHighlighted = html !== content;
 
   if (inline) return <Inline>{content}</Inline>;
 
   const copy = async () => {
-    const ok = await copyText(content);
+    const ok = await copyText(copyContent ?? content);
     if (ok) {
       setCopied(true);
       setTimeout(() => setCopied(false), 1500);
@@ -106,7 +121,12 @@ const CodeBlock = ({
         </button>
       </div>
       <pre
-        className={cn('px-4 py-3 overflow-auto text-[12.5px] leading-relaxed font-mono text-ui-text', `language-${language || 'text'}`)}
+        onClick={onContentClick}
+        className={cn(
+          'px-4 py-3 overflow-auto text-[12.5px] leading-relaxed font-mono text-ui-text',
+          `language-${language || 'text'}`,
+          onContentClick && 'cursor-pointer select-none',
+        )}
         style={maxHeight ? { maxHeight } : undefined}
       >
         {showLineNumbers ? (

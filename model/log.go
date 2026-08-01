@@ -665,22 +665,40 @@ func GetModelConsumption(startTimestamp, endTimestamp int64, limit int) ([]Model
 }
 
 type DailyConsumption struct {
-	Date     string `json:"date"`
-	Quota    int64  `json:"quota"`
-	Requests int64  `json:"requests"`
-	Tokens   int64  `json:"tokens"`
+	Date             string `json:"date"`
+	BucketStart      int64  `json:"bucket_start"`
+	Quota            int64  `json:"quota"`
+	Requests         int64  `json:"requests"`
+	Tokens           int64  `json:"tokens"`
+	PromptTokens     int64  `json:"prompt_tokens"`
+	CompletionTokens int64  `json:"completion_tokens"`
+	CacheTokens      int64  `json:"cache_tokens"`
+}
+
+func tokenUsageBucketExpression(startTimestamp, bucketSeconds int64) string {
+	switch common.LogSqlType {
+	case common.DatabaseTypePostgreSQL:
+		return fmt.Sprintf("%d + FLOOR((created_at - %d)::numeric / %d)::bigint * %d", startTimestamp, startTimestamp, bucketSeconds, bucketSeconds)
+	case common.DatabaseTypeMySQL:
+		return fmt.Sprintf("%d + FLOOR((created_at - %d) / %d) * %d", startTimestamp, startTimestamp, bucketSeconds, bucketSeconds)
+	default:
+		return fmt.Sprintf("%d + CAST((created_at - %d) / %d AS INTEGER) * %d", startTimestamp, startTimestamp, bucketSeconds, bucketSeconds)
+	}
+}
+
+func dailyLogDateExpression() string {
+	switch common.LogSqlType {
+	case common.DatabaseTypePostgreSQL:
+		return "TO_CHAR(TO_TIMESTAMP(created_at), 'YYYY-MM-DD')"
+	case common.DatabaseTypeMySQL:
+		return "DATE(FROM_UNIXTIME(created_at))"
+	default:
+		return "DATE(created_at, 'unixepoch')"
+	}
 }
 
 func GetConsumptionByDay(startTimestamp, endTimestamp int64) ([]DailyConsumption, error) {
-	var dateExpr string
-	switch common.LogSqlType {
-	case common.DatabaseTypePostgreSQL:
-		dateExpr = "TO_CHAR(TO_TIMESTAMP(created_at), 'YYYY-MM-DD')"
-	case common.DatabaseTypeMySQL:
-		dateExpr = "DATE(FROM_UNIXTIME(created_at))"
-	default:
-		dateExpr = "DATE(created_at, 'unixepoch')"
-	}
+	dateExpr := dailyLogDateExpression()
 
 	var results []DailyConsumption
 	err := LOG_DB.Table("logs").
@@ -689,6 +707,39 @@ func GetConsumptionByDay(startTimestamp, endTimestamp int64) ([]DailyConsumption
 		Group("date").
 		Order("date ASC").
 		Find(&results).Error
+	return results, err
+}
+
+func GetTokenUsageByDay(userID int, startTimestamp, endTimestamp int64) ([]DailyConsumption, error) {
+	dateExpr := dailyLogDateExpression()
+	cacheExpr := fmt.Sprintf("COALESCE(SUM(%s), 0) + COALESCE(SUM(%s), 0)", jsonIntExtract("other", "cache_tokens"), jsonIntExtract("other", "cache_creation_tokens"))
+	selectExpr := fmt.Sprintf("%s as date, COALESCE(SUM(quota), 0) as quota, COUNT(*) as requests, COALESCE(SUM(prompt_tokens), 0) as prompt_tokens, COALESCE(SUM(completion_tokens), 0) as completion_tokens, %s as cache_tokens, COALESCE(SUM(prompt_tokens), 0) + COALESCE(SUM(completion_tokens), 0) as tokens", dateExpr, cacheExpr)
+	tx := LOG_DB.Table("logs").
+		Select(selectExpr).
+		Where("type = ? AND created_at >= ? AND created_at <= ?", LogTypeConsume, startTimestamp, endTimestamp)
+	if userID > 0 {
+		tx = tx.Where("user_id = ?", userID)
+	}
+	var results []DailyConsumption
+	err := tx.Group("date").Order("date ASC").Find(&results).Error
+	return results, err
+}
+
+func GetTokenUsageByBucket(userID int, startTimestamp, endTimestamp, bucketSeconds int64) ([]DailyConsumption, error) {
+	if bucketSeconds < 1 {
+		bucketSeconds = 1
+	}
+	bucketExpr := tokenUsageBucketExpression(startTimestamp, bucketSeconds)
+	cacheExpr := fmt.Sprintf("COALESCE(SUM(%s), 0) + COALESCE(SUM(%s), 0)", jsonIntExtract("other", "cache_tokens"), jsonIntExtract("other", "cache_creation_tokens"))
+	selectExpr := fmt.Sprintf("%s as bucket_start, COALESCE(SUM(quota), 0) as quota, COUNT(*) as requests, COALESCE(SUM(prompt_tokens), 0) as prompt_tokens, COALESCE(SUM(completion_tokens), 0) as completion_tokens, %s as cache_tokens, COALESCE(SUM(prompt_tokens), 0) + COALESCE(SUM(completion_tokens), 0) as tokens", bucketExpr, cacheExpr)
+	tx := LOG_DB.Table("logs").
+		Select(selectExpr).
+		Where("type = ? AND created_at >= ? AND created_at <= ?", LogTypeConsume, startTimestamp, endTimestamp)
+	if userID > 0 {
+		tx = tx.Where("user_id = ?", userID)
+	}
+	var results []DailyConsumption
+	err := tx.Group("bucket_start").Order("bucket_start ASC").Find(&results).Error
 	return results, err
 }
 

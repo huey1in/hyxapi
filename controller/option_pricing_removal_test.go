@@ -37,6 +37,75 @@ func TestGetOptionsDoesNotExposeRemovedModelPricingOptions(t *testing.T) {
 	}
 	require.NoError(t, json.Unmarshal(recorder.Body.Bytes(), &response))
 	require.True(t, response.Success)
-	require.Len(t, response.Data, 1)
-	assert.Equal(t, "GroupRatio", response.Data[0].Key)
+	values := make(map[string]string, len(response.Data))
+	for _, option := range response.Data {
+		values[option.Key] = option.Value
+	}
+	assert.NotContains(t, values, "ModelRatio")
+	assert.Equal(t, `{"default":1}`, values["GroupRatio"])
+}
+
+func TestGetOptionsFillsDefaultEmailTemplates(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	common.OptionMapRWMutex.Lock()
+	originalOptionMap := common.OptionMap
+	common.OptionMap = map[string]string{
+		common.EmailTemplateVerificationKey:  "",
+		common.EmailTemplatePasswordResetKey: "<p>custom {{resetLink}}</p>",
+	}
+	common.OptionMapRWMutex.Unlock()
+	t.Cleanup(func() {
+		common.OptionMapRWMutex.Lock()
+		common.OptionMap = originalOptionMap
+		common.OptionMapRWMutex.Unlock()
+	})
+
+	recorder := httptest.NewRecorder()
+	ctx, _ := gin.CreateTestContext(recorder)
+	GetOptions(ctx)
+
+	var response struct {
+		Success bool            `json:"success"`
+		Data    []*model.Option `json:"data"`
+	}
+	require.NoError(t, json.Unmarshal(recorder.Body.Bytes(), &response))
+	require.True(t, response.Success)
+
+	values := make(map[string]string, len(response.Data))
+	for _, option := range response.Data {
+		values[option.Key] = option.Value
+	}
+	assert.Equal(t, common.DefaultEmailVerificationTemplate, values[common.EmailTemplateVerificationKey])
+	assert.Equal(t, "<p>custom {{resetLink}}</p>", values[common.EmailTemplatePasswordResetKey])
+}
+
+func TestGetOptionsIncludesMissingDefaultEmailTemplates(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	common.OptionMapRWMutex.Lock()
+	originalOptionMap := common.OptionMap
+	common.OptionMap = map[string]string{"GroupRatio": `{"default":1}`}
+	common.OptionMapRWMutex.Unlock()
+	t.Cleanup(func() {
+		common.OptionMapRWMutex.Lock()
+		common.OptionMap = originalOptionMap
+		common.OptionMapRWMutex.Unlock()
+	})
+
+	recorder := httptest.NewRecorder()
+	ctx, _ := gin.CreateTestContext(recorder)
+	GetOptions(ctx)
+
+	var response struct {
+		Success bool            `json:"success"`
+		Data    []*model.Option `json:"data"`
+	}
+	require.NoError(t, json.Unmarshal(recorder.Body.Bytes(), &response))
+	require.True(t, response.Success)
+
+	values := make(map[string]string, len(response.Data))
+	for _, option := range response.Data {
+		values[option.Key] = option.Value
+	}
+	assert.Equal(t, common.DefaultEmailVerificationTemplate, values[common.EmailTemplateVerificationKey])
+	assert.Equal(t, common.DefaultPasswordResetTemplate, values[common.EmailTemplatePasswordResetKey])
 }

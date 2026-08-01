@@ -209,10 +209,14 @@ const LogPage = ({ preview = false }) => {
     }
     if (isMobile) {
       return [
-        { key: 'time', title: '时间', render: (r) => <span style={{ whiteSpace: 'nowrap', fontSize: 12, color: 'var(--ui-text-2)' }}>{timestamp2string(r.created_at)}</span> },
-        { key: 'type', title: '类型', render: (r) => <TypeBadge type={r.type} /> },
-        { key: 'model', title: '模型', render: (r) => <TruncatedField value={r.model_name} /> },
-        { key: 'quota', title: '积分', align: 'right', render: (r) => <Quota row={r} /> },
+        { key: 'model', title: '模型', width: '65%', render: (r) => <TruncatedField value={r.model_name} /> },
+        {
+          key: 'quota',
+          title: '积分',
+          width: '35%',
+          align: 'right',
+          render: (r) => <span className='log-mobile-quota'><Quota row={r} /></span>,
+        },
       ];
     }
     const cols = [
@@ -307,14 +311,14 @@ const LogPage = ({ preview = false }) => {
       {/* 表格 */}
       {loading ? <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '60vh' }}><Loading /></div> : (
         <>
-          <div style={{ fontFamily: "'JetBrains Mono', 'Noto Sans SC', monospace", maxWidth: '100%', overflow: isMobile && !preview ? 'auto' : 'hidden' }}>
+          <div className={isMobile ? 'log-table-mobile' : undefined} style={{ fontFamily: "'JetBrains Mono', 'Noto Sans SC', monospace", maxWidth: '100%', overflow: 'hidden' }}>
             <Table
               columns={columns}
               rows={enriched}
               size={isMobile && preview ? 'sm' : 'md'}
               rowKey='id'
-              tableLayout={isMobile ? 'auto' : 'fixed'}
-              minWidth={isMobile ? (preview ? undefined : 560) : (isAdmin ? 1120 : 1010)}
+              tableLayout={isMobile && preview ? 'auto' : 'fixed'}
+              minWidth={isMobile ? undefined : (isAdmin ? 1120 : 1010)}
               emptyText='暂无数据'
               onRowClick={preview ? undefined : (r) => setExpanded((prev) => prev === r.id ? null : r.id)}
               expandedKey={expanded}
