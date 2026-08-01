@@ -158,7 +158,15 @@ func GetLogsStat(c *gin.Context) {
 			"requests": stat.Requests,
 		},
 	}
-	if bucketSeconds, parseErr := strconv.ParseInt(c.Query("bucket_seconds"), 10, 64); parseErr == nil && bucketSeconds > 0 {
+	bucketSeconds, _ := strconv.ParseInt(c.Query("bucket_seconds"), 10, 64)
+	if bucketSeconds < 1 && startTimestamp > 0 {
+		usageEnd := endTimestamp
+		if usageEnd == 0 {
+			usageEnd = time.Now().Unix()
+		}
+		bucketSeconds = (usageEnd - startTimestamp + 363) / 364
+	}
+	if bucketSeconds > 0 {
 		usageEnd := endTimestamp
 		if usageEnd == 0 {
 			usageEnd = time.Now().Unix()
@@ -195,7 +203,15 @@ func GetLogsSelfStat(c *gin.Context) {
 			"requests": quotaNum.Requests,
 		},
 	}
-	if bucketSeconds, parseErr := strconv.ParseInt(c.Query("bucket_seconds"), 10, 64); parseErr == nil && bucketSeconds > 0 {
+	bucketSeconds, _ := strconv.ParseInt(c.Query("bucket_seconds"), 10, 64)
+	if bucketSeconds < 1 && startTimestamp > 0 {
+		usageEnd := endTimestamp
+		if usageEnd == 0 {
+			usageEnd = time.Now().Unix()
+		}
+		bucketSeconds = (usageEnd - startTimestamp + 363) / 364
+	}
+	if bucketSeconds > 0 {
 		usageEnd := endTimestamp
 		if usageEnd == 0 {
 			usageEnd = time.Now().Unix()
