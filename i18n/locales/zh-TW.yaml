@@ -162,7 +162,6 @@ model.name_exists: "模型名稱已存在"
 model.id_missing: "缺少模型 ID"
 model.get_list_failed: "獲取模型列表失敗，請稍後重試"
 model.get_failed: "獲取上游模型失敗"
-model.reset_success: "重置模型倍率成功"
 
 # Vendor messages
 vendor.name_empty: "供應商名稱不能為空"

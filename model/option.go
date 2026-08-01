@@ -1,6 +1,7 @@
 package model
 
 import (
+	"errors"
 	"strconv"
 	"strings"
 	"time"
@@ -18,6 +19,27 @@ import (
 type Option struct {
 	Key   string `json:"key" gorm:"primaryKey"`
 	Value string `json:"value"`
+}
+
+var ErrRemovedModelPricingOption = errors.New("model pricing option has been removed")
+
+var removedModelPricingOptions = map[string]struct{}{
+	"ModelPrice":           {},
+	"ModelRatio":           {},
+	"CompletionRatio":      {},
+	"CompletionRatioMeta":  {},
+	"CacheRatio":           {},
+	"CreateCacheRatio":     {},
+	"ImageRatio":           {},
+	"AudioRatio":           {},
+	"AudioCompletionRatio": {},
+	"GroupGroupRatio":      {},
+	"ExposeRatioEnabled":   {},
+}
+
+func IsRemovedModelPricingOption(key string) bool {
+	_, removed := removedModelPricingOptions[key]
+	return removed
 }
 
 func AllOption() ([]*Option, error) {
@@ -102,17 +124,8 @@ func InitOptionMap() {
 	common.OptionMap["MultiKeyCooldownThreshold"] = strconv.Itoa(setting.MultiKeyCooldownThreshold)
 	common.OptionMap["MultiKeyCooldownWindowMinutes"] = strconv.Itoa(setting.MultiKeyCooldownWindowMinutes)
 	common.OptionMap["MultiKeyCooldownDurationMinutes"] = strconv.Itoa(setting.MultiKeyCooldownDurationMinutes)
-	common.OptionMap["ModelRatio"] = ratio_setting.ModelRatio2JSONString()
-	common.OptionMap["ModelPrice"] = ratio_setting.ModelPrice2JSONString()
-	common.OptionMap["CacheRatio"] = ratio_setting.CacheRatio2JSONString()
-	common.OptionMap["CreateCacheRatio"] = ratio_setting.CreateCacheRatio2JSONString()
 	common.OptionMap["GroupRatio"] = ratio_setting.GroupRatio2JSONString()
-	common.OptionMap["GroupGroupRatio"] = ratio_setting.GroupGroupRatio2JSONString()
 	common.OptionMap["UserUsableGroups"] = setting.UserUsableGroups2JSONString()
-	common.OptionMap["CompletionRatio"] = ratio_setting.CompletionRatio2JSONString()
-	common.OptionMap["ImageRatio"] = ratio_setting.ImageRatio2JSONString()
-	common.OptionMap["AudioRatio"] = ratio_setting.AudioRatio2JSONString()
-	common.OptionMap["AudioCompletionRatio"] = ratio_setting.AudioCompletionRatio2JSONString()
 	common.OptionMap["QuotaPerUnit"] = strconv.FormatFloat(common.QuotaPerUnit, 'f', -1, 64)
 	common.OptionMap["RetryTimes"] = strconv.Itoa(common.RetryTimes)
 	common.OptionMap["DataExportInterval"] = strconv.Itoa(common.DataExportInterval)
@@ -126,7 +139,6 @@ func InitOptionMap() {
 	common.OptionMap["AutomaticDisableKeywords"] = operation_setting.AutomaticDisableKeywordsToString()
 	common.OptionMap["AutomaticDisableStatusCodes"] = operation_setting.AutomaticDisableStatusCodesToString()
 	common.OptionMap["AutomaticRetryStatusCodes"] = operation_setting.AutomaticRetryStatusCodesToString()
-	common.OptionMap["ExposeRatioEnabled"] = strconv.FormatBool(ratio_setting.IsExposeRatioEnabled())
 
 	// 自动添加所有注册的模型配置
 	modelConfigs := config.GlobalConfig.ExportAllConfigs()
@@ -141,6 +153,9 @@ func InitOptionMap() {
 func loadOptionsFromDatabase() {
 	options, _ := AllOption()
 	for _, option := range options {
+		if IsRemovedModelPricingOption(option.Key) {
+			continue
+		}
 		err := updateOptionMap(option.Key, option.Value)
 		if err != nil {
 			common.SysLog("failed to update option map: " + err.Error())
@@ -157,6 +172,9 @@ func SyncOptions(frequency int) {
 }
 
 func UpdateOption(key string, value string) error {
+	if IsRemovedModelPricingOption(key) {
+		return ErrRemovedModelPricingOption
+	}
 	if isRemovedBrandingOption(key) {
 		if err := DB.Delete(&Option{Key: key}).Error; err != nil {
 			return err
@@ -191,6 +209,9 @@ func isRemovedBrandingOption(key string) bool {
 }
 
 func updateOptionMap(key string, value string) (err error) {
+	if IsRemovedModelPricingOption(key) {
+		return ErrRemovedModelPricingOption
+	}
 	common.OptionMapRWMutex.Lock()
 	defer common.OptionMapRWMutex.Unlock()
 	common.OptionMap[key] = value
@@ -273,8 +294,6 @@ func updateOptionMap(key string, value string) (err error) {
 			common.SMTPSSLEnabled = boolValue
 		case "SMTPForceAuthLogin":
 			common.SMTPForceAuthLogin = boolValue
-		case "ExposeRatioEnabled":
-			ratio_setting.SetExposeRatioEnabled(boolValue)
 		}
 	}
 	switch key {
@@ -377,28 +396,10 @@ func updateOptionMap(key string, value string) (err error) {
 		common.DataExportInterval, _ = strconv.Atoi(value)
 	case "DataExportDefaultTime":
 		common.DataExportDefaultTime = value
-	case "ModelRatio":
-		err = ratio_setting.UpdateModelRatioByJSONString(value)
 	case "GroupRatio":
 		err = ratio_setting.UpdateGroupRatioByJSONString(value)
-	case "GroupGroupRatio":
-		err = ratio_setting.UpdateGroupGroupRatioByJSONString(value)
 	case "UserUsableGroups":
 		err = setting.UpdateUserUsableGroupsByJSONString(value)
-	case "CompletionRatio":
-		err = ratio_setting.UpdateCompletionRatioByJSONString(value)
-	case "ModelPrice":
-		err = ratio_setting.UpdateModelPriceByJSONString(value)
-	case "CacheRatio":
-		err = ratio_setting.UpdateCacheRatioByJSONString(value)
-	case "CreateCacheRatio":
-		err = ratio_setting.UpdateCreateCacheRatioByJSONString(value)
-	case "ImageRatio":
-		err = ratio_setting.UpdateImageRatioByJSONString(value)
-	case "AudioRatio":
-		err = ratio_setting.UpdateAudioRatioByJSONString(value)
-	case "AudioCompletionRatio":
-		err = ratio_setting.UpdateAudioCompletionRatioByJSONString(value)
 	case "ChannelDisableThreshold":
 		common.ChannelDisableThreshold, _ = strconv.ParseFloat(value, 64)
 	case "QuotaPerUnit":

@@ -6,6 +6,29 @@ import { Button, IconButton, Input, Select, Pagination, Loading, Table } from '.
 import useIsMobile from '../../hooks/useIsMobile';
 
 const PAGE_SIZE = 20;
+const REQUEST_BILLING = 1;
+
+const TOKEN_PRICE_FIELDS = [
+  { key: 'input_price', label: '输入原价', unit: '1M tokens' },
+  { key: 'output_price', label: '输出原价', unit: '1M tokens' },
+  { key: 'cache_read_price', label: '缓存读取原价', unit: '1M tokens' },
+  { key: 'cache_write_price', label: '缓存写入原价', unit: '1M tokens' },
+  { key: 'image_price', label: '图像原价', unit: '1M tokens' },
+  { key: 'audio_input_price', label: '音频输入原价', unit: '1M tokens' },
+  { key: 'audio_output_price', label: '音频输出原价', unit: '1M tokens' },
+];
+const REQUEST_PRICE_FIELDS = [
+  { key: 'request_price', label: '按次原价', unit: '次' },
+];
+
+export const getBillingPriceFields = (other) => {
+  const definitions = Number(other?.billing_type) === REQUEST_BILLING
+    ? REQUEST_PRICE_FIELDS
+    : TOKEN_PRICE_FIELDS;
+  return definitions
+    .filter(({ key }) => other?.[key] != null)
+    .map((field) => ({ ...field, value: other[field.key] }));
+};
 
 const PREVIEW_MODELS = ['gpt-4.1', 'claude-sonnet-4', 'gemini-2.5-flash', 'deepseek-chat', 'grok-4', 'mistral-large'];
 const PREVIEW_USAGE = [
@@ -312,6 +335,13 @@ const LogPage = ({ preview = false }) => {
 
 const LogDetail = ({ row: r, isAdmin, isMobile, onClose }) => {
   const other = r._other;
+  const formatUnitPrice = (value, unit) => {
+    const numeric = Number(value);
+    const formatted = Number.isFinite(numeric)
+      ? numeric.toLocaleString('en-US', { maximumFractionDigits: 10 })
+      : String(value);
+    return `${formatted} USD / ${unit}`;
+  };
   return (
     <div style={{ padding: '16px 18px', background: 'var(--ui-bg-subtle)' }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
@@ -329,13 +359,10 @@ const LogDetail = ({ row: r, isAdmin, isMobile, onClose }) => {
         <DetailItem label='Completion Tokens' value={renderNumber(r.completion_tokens || 0)} />
         {r._cacheHit > 0 && <DetailItem label='缓存命中' value={renderNumber(r._cacheHit)} />}
         {r._cacheWrite > 0 && <DetailItem label='缓存创建' value={renderNumber(r._cacheWrite)} />}
-        {other?.cache_creation_ratio != null && <DetailItem label='缓存创建倍率' value={other.cache_creation_ratio} />}
-        {other?.cache_ratio != null && <DetailItem label='缓存倍率' value={other.cache_ratio} />}
-        {other?.model_ratio != null && <DetailItem label='模型倍率' value={other.model_ratio} />}
-        {other?.completion_ratio != null && <DetailItem label='补全倍率' value={other.completion_ratio} />}
+        {getBillingPriceFields(other).map(({ key, label, unit, value }) => (
+          <DetailItem key={key} label={label} value={formatUnitPrice(value, unit)} />
+        ))}
         {other?.group_ratio != null && <DetailItem label='分组倍率' value={other.group_ratio} />}
-        {other?.model_price != null && <DetailItem label='模型价格' value={other.model_price === 0 ? '默认' : other.model_price} />}
-        {other?.user_group_ratio != null && <DetailItem label='用户分组倍率' value={other.user_group_ratio === 0 ? '默认' : other.user_group_ratio} />}
         {r.use_time > 0 && <DetailItem label='耗时' value={`${r.use_time}s`} />}
         {other?.frt != null && other.frt > 0 && <DetailItem label='首字耗时' value={`${other.frt}ms`} />}
         {other?.wallet && <DetailItem label='计费来源' value={other.wallet} />}

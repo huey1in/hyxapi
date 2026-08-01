@@ -2,10 +2,14 @@ package helper
 
 import (
 	"fmt"
+	"math"
+	"strings"
 
 	"github.com/QuantumNous/new-api/common"
+	"github.com/QuantumNous/new-api/dto"
 	"github.com/QuantumNous/new-api/model"
 	relaycommon "github.com/QuantumNous/new-api/relay/common"
+	"github.com/QuantumNous/new-api/setting/model_setting"
 	"github.com/QuantumNous/new-api/setting/operation_setting"
 	"github.com/QuantumNous/new-api/setting/ratio_setting"
 	"github.com/QuantumNous/new-api/types"
@@ -13,11 +17,13 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+const tokenPriceUnit = 1_000_000.0
+
 func modelPriceNotConfiguredError(modelName string, userId int) error {
 	if model.IsAdmin(userId) {
 		return fmt.Errorf(
-			"模型 %s 的价格未配置。请前往「系统设置 → 分组与模型定价设置」中为该模型配置价格；"+
-				"Model %s price not configured. Configure the model price in System Settings → Group & Model Pricing.",
+			"模型 %s 的价格未配置。请前往「模型价格」中为该模型配置价格；"+
+				"Model %s price not configured. Configure the model price in Model Pricing.",
 			modelName, modelName,
 		)
 	}
@@ -28,180 +34,265 @@ func modelPriceNotConfiguredError(modelName string, userId int) error {
 	)
 }
 
-// https://docs.claude.com/en/docs/build-with-claude/prompt-caching#1-hour-cache-duration
-const claudeCacheCreation1hMultiplier = 6 / 3.75
+// ResolvePricingModelName selects the price row once per request. Gemini's
+// explicit zero thinking budget can use a separately priced -nothinking model,
+// while OriginModelName remains unchanged until the relay adapter runs.
+func ResolvePricingModelName(info *relaycommon.RelayInfo) string {
+	if info == nil {
+		return ""
+	}
+	if info.PricingModelName != "" {
+		return info.PricingModelName
+	}
 
-// HandleGroupRatio returns the group ratio info for the relay request.
+	pricingModelName := info.OriginModelName
+	geminiRequest, isGeminiRequest := info.Request.(*dto.GeminiChatRequest)
+	if isGeminiRequest &&
+		model_setting.GetGeminiSettings().ThinkingAdapterEnabled &&
+		!strings.HasSuffix(pricingModelName, "-nothinking") &&
+		geminiRequest.GenerationConfig.ThinkingConfig != nil &&
+		geminiRequest.GenerationConfig.ThinkingConfig.ThinkingBudget != nil &&
+		*geminiRequest.GenerationConfig.ThinkingConfig.ThinkingBudget == 0 {
+		candidate := pricingModelName + "-nothinking"
+		if ContainsModelPricing(candidate) {
+			pricingModelName = candidate
+		}
+	}
+
+	info.PricingModelName = pricingModelName
+	return pricingModelName
+}
+
+// HandleGroupRatio returns the group multiplier. Group pricing remains a
+// separate setting; model pricing rows contain only the provider's original
+// USD prices.
 func HandleGroupRatio(_ *gin.Context, relayInfo *relaycommon.RelayInfo) types.GroupRatioInfo {
 	return types.GroupRatioInfo{
-		GroupRatio:        ratio_setting.GetGroupRatio(relayInfo.UsingGroup),
-		GroupSpecialRatio: -1,
+		GroupRatio: ratio_setting.GetGroupRatio(relayInfo.UsingGroup),
 	}
 }
 
-func ModelPriceHelper(c *gin.Context, info *relaycommon.RelayInfo, promptTokens int, meta *types.TokenCountMeta) (types.PriceData, error) {
-	modelPrice, usePrice := ratio_setting.GetModelPrice(info.OriginModelName, false)
-
-	groupRatioInfo := HandleGroupRatio(c, info)
-
-	var preConsumedQuota int
-	var modelRatio float64
-	var completionRatio float64
-	var cacheRatio float64
-	var imageRatio float64
-	var cacheCreationRatio float64
-	var cacheCreationRatio5m float64
-	var cacheCreationRatio1h float64
-	var audioRatio float64
-	var audioCompletionRatio float64
-	var freeModel bool
-	if !usePrice {
-		preConsumedTokens := common.Max(promptTokens, common.PreConsumedQuota)
-		if meta.MaxTokens != 0 {
-			preConsumedTokens += meta.MaxTokens
-		}
-		var success bool
-		var matchName string
-		modelRatio, success, matchName = ratio_setting.GetModelRatio(info.OriginModelName)
-		if !success {
-			acceptUnsetRatio := false
-			if info.UserSetting.AcceptUnsetRatioModel {
-				acceptUnsetRatio = true
-			}
-			if !acceptUnsetRatio {
-				return types.PriceData{}, modelPriceNotConfiguredError(matchName, info.UserId)
-			}
-		}
-		completionRatio = ratio_setting.GetCompletionRatio(info.OriginModelName)
-		cacheRatio, _ = ratio_setting.GetCacheRatio(info.OriginModelName)
-		cacheCreationRatio, _ = ratio_setting.GetCreateCacheRatio(info.OriginModelName)
-		cacheCreationRatio5m = cacheCreationRatio
-		// 固定1h和5min缓存写入价格的比例
-		cacheCreationRatio1h = cacheCreationRatio * claudeCacheCreation1hMultiplier
-		imageRatio, _ = ratio_setting.GetImageRatio(info.OriginModelName)
-		audioRatio = ratio_setting.GetAudioRatio(info.OriginModelName)
-		audioCompletionRatio = ratio_setting.GetAudioCompletionRatio(info.OriginModelName)
-		ratio := modelRatio * groupRatioInfo.GroupRatio
-		preConsumedQuota = int(float64(preConsumedTokens) * ratio)
-	} else {
-		if meta.ImagePriceRatio != 0 {
-			modelPrice = modelPrice * meta.ImagePriceRatio
-		}
-		preConsumedQuota = int(modelPrice * common.QuotaPerUnit * groupRatioInfo.GroupRatio)
+func directTokenQuota(inputPrice, outputPrice float64, inputTokens, outputTokens int, groupRatio float64) int {
+	if inputTokens <= 0 && outputTokens <= 0 {
+		return 0
 	}
-
-	// check if free model pre-consume is disabled
-	if !operation_setting.GetQuotaSetting().EnableFreeModelPreConsume {
-		// if model price or ratio is 0, do not pre-consume quota
-		if groupRatioInfo.GroupRatio == 0 {
-			preConsumedQuota = 0
-			freeModel = true
-		} else if usePrice {
-			if modelPrice == 0 {
-				preConsumedQuota = 0
-				freeModel = true
-			}
-		} else {
-			if modelRatio == 0 {
-				preConsumedQuota = 0
-				freeModel = true
-			}
-		}
+	usd := (float64(inputTokens)*inputPrice + float64(outputTokens)*outputPrice) / tokenPriceUnit
+	if usd <= 0 || groupRatio <= 0 {
+		return 0
 	}
-
-	priceData := types.PriceData{
-		FreeModel:            freeModel,
-		ModelPrice:           modelPrice,
-		ModelRatio:           modelRatio,
-		CompletionRatio:      completionRatio,
-		GroupRatioInfo:       groupRatioInfo,
-		UsePrice:             usePrice,
-		CacheRatio:           cacheRatio,
-		ImageRatio:           imageRatio,
-		AudioRatio:           audioRatio,
-		AudioCompletionRatio: audioCompletionRatio,
-		CacheCreationRatio:   cacheCreationRatio,
-		CacheCreation5mRatio: cacheCreationRatio5m,
-		CacheCreation1hRatio: cacheCreationRatio1h,
-		QuotaToPreConsume:    preConsumedQuota,
+	quota := usd * common.QuotaPerUnit * groupRatio
+	if quota > 0 && quota < 1 {
+		return 1
 	}
-
-	if common.DebugEnabled {
-		println(fmt.Sprintf("model_price_helper result: %s", priceData.ToSetting()))
-	}
-	info.PriceData = priceData
-	return priceData, nil
+	return int(math.Round(quota))
 }
 
-// ModelPriceHelperPerCall 按次/按量计费的 PriceHelper (MJ、Task)
-func ModelPriceHelperPerCall(c *gin.Context, info *relaycommon.RelayInfo) (types.PriceData, error) {
-	groupRatioInfo := HandleGroupRatio(c, info)
-
-	modelPrice, success := ratio_setting.GetModelPrice(info.OriginModelName, true)
-	usePrice := success
-	var modelRatio float64
-
-	if !success {
-		defaultPrice, ok := ratio_setting.GetDefaultModelPriceMap()[info.OriginModelName]
-		if ok {
-			modelPrice = defaultPrice
-			usePrice = true
-		} else {
-			var ratioSuccess bool
-			var matchName string
-			modelRatio, ratioSuccess, matchName = ratio_setting.GetModelRatio(info.OriginModelName)
-			acceptUnsetRatio := false
-			if info.UserSetting.AcceptUnsetRatioModel {
-				acceptUnsetRatio = true
-			}
-			if !ratioSuccess && !acceptUnsetRatio {
-				return types.PriceData{}, modelPriceNotConfiguredError(matchName, info.UserId)
-			}
+func maxPrice(prices ...float64) float64 {
+	max := 0.0
+	for _, price := range prices {
+		if price > max {
+			max = price
 		}
 	}
-
-	var quota int
-	freeModel := false
-
-	if usePrice {
-		quota = int(modelPrice * common.QuotaPerUnit * groupRatioInfo.GroupRatio)
-		if !operation_setting.GetQuotaSetting().EnableFreeModelPreConsume {
-			if groupRatioInfo.GroupRatio == 0 || modelPrice == 0 {
-				quota = 0
-				freeModel = true
-			}
-		}
-	} else {
-		// 按量计费：以模型倍率的一半作为预扣额度
-		quota = int(modelRatio / 2 * common.QuotaPerUnit * groupRatioInfo.GroupRatio)
-		modelPrice = -1
-		if !operation_setting.GetQuotaSetting().EnableFreeModelPreConsume {
-			if groupRatioInfo.GroupRatio == 0 || modelRatio == 0 {
-				quota = 0
-				freeModel = true
-			}
-		}
-	}
-
-	priceData := types.PriceData{
-		FreeModel:      freeModel,
-		ModelPrice:     modelPrice,
-		ModelRatio:     modelRatio,
-		UsePrice:       usePrice,
-		Quota:          quota,
-		GroupRatioInfo: groupRatioInfo,
-	}
-	return priceData, nil
+	return max
 }
 
-func ContainPriceOrRatio(modelName string) bool {
-	_, ok := ratio_setting.GetModelPrice(modelName, false)
-	if ok {
+func highestTokenPrice(pricing *model.ModelPricing) float64 {
+	if pricing == nil {
+		return 0
+	}
+	return maxPrice(
+		pricing.InputPrice,
+		pricing.OutputPrice,
+		pricing.CacheReadPrice,
+		pricing.CacheWritePrice,
+		pricing.ImagePrice,
+		pricing.AudioInputPrice,
+		pricing.AudioOutputPrice,
+	)
+}
+
+func shouldSkipDirectFreeModelPreConsume(pricing *model.ModelPricing, groupRatio float64) bool {
+	if pricing == nil || operation_setting.GetQuotaSetting().EnableFreeModelPreConsume {
+		return false
+	}
+	if groupRatio == 0 {
 		return true
 	}
-	_, ok, _ = ratio_setting.GetModelRatio(modelName)
-	if ok {
-		return true
+	if pricing.BillingType == model.ModelPricingBillingRequest {
+		return pricing.RequestPrice == 0
+	}
+	return highestTokenPrice(pricing) == 0
+}
+
+func tokenMetaContainsFileType(meta *types.TokenCountMeta, fileType types.FileType) bool {
+	if meta == nil {
+		return false
+	}
+	for _, file := range meta.Files {
+		if file != nil && file.FileType == fileType {
+			return true
+		}
 	}
 	return false
+}
+
+// conservativeTokenPreConsumeQuota reserves enough quota for the most
+// expensive known interpretation of input/output tokens. Exact token classes
+// are only available after the upstream returns usage, so cache and known
+// media prices must be considered here and reconciled during settlement.
+func conservativeTokenPreConsumeQuota(
+	pricing *model.ModelPricing,
+	info *relaycommon.RelayInfo,
+	promptTokens int,
+	meta *types.TokenCountMeta,
+	groupRatio float64,
+) int {
+	if pricing == nil {
+		return 0
+	}
+	if meta == nil {
+		meta = &types.TokenCountMeta{}
+	}
+
+	inputPrice := maxPrice(
+		pricing.InputPrice,
+		pricing.CacheReadPrice,
+		pricing.CacheWritePrice,
+	)
+	outputPrice := pricing.OutputPrice
+
+	if tokenMetaContainsFileType(meta, types.FileTypeImage) {
+		inputPrice = maxPrice(inputPrice, pricing.ImagePrice)
+	}
+	if meta.ImagePriceRatio > 0 {
+		imagePrice := pricing.ImagePrice * meta.ImagePriceRatio
+		inputPrice = maxPrice(inputPrice, imagePrice)
+		outputPrice = maxPrice(outputPrice, imagePrice)
+	}
+
+	hasAudioInput := tokenMetaContainsFileType(meta, types.FileTypeAudio)
+	hasAudioOutput := hasAudioInput
+	if info != nil {
+		hasAudioInput = hasAudioInput || info.InputAudioFormat != "" || info.AudioUsage
+		hasAudioOutput = hasAudioOutput || info.OutputAudioFormat != "" || info.AudioUsage
+	}
+	if hasAudioInput {
+		inputPrice = maxPrice(inputPrice, pricing.AudioInputPrice)
+	}
+	if hasAudioOutput {
+		outputPrice = maxPrice(outputPrice, pricing.AudioOutputPrice)
+	}
+
+	inputTokens := common.Max(promptTokens, common.PreConsumedQuota)
+	return directTokenQuota(inputPrice, outputPrice, inputTokens, meta.MaxTokens, groupRatio)
+}
+
+func conservativePerCallTokenPreConsumeQuota(pricing *model.ModelPricing, groupRatio float64) int {
+	return directTokenQuota(highestTokenPrice(pricing), 0, common.PreConsumedQuota, 0, groupRatio)
+}
+
+func directRequestQuota(requestPrice, groupRatio float64) int {
+	if requestPrice <= 0 || groupRatio <= 0 {
+		return 0
+	}
+	quota := requestPrice * common.QuotaPerUnit * groupRatio
+	if quota > 0 && quota < 1 {
+		return 1
+	}
+	return int(math.Round(quota))
+}
+
+func applyDirectSchedule(price *model.ModelPricing, groupRatioInfo types.GroupRatioInfo) types.PriceData {
+	pd := types.PriceData{
+		Configured:     price != nil,
+		BillingType:    model.ModelPricingBillingToken,
+		GroupRatioInfo: groupRatioInfo,
+	}
+	if price == nil {
+		return pd
+	}
+	pd.BillingType = price.BillingType
+	pd.InputPrice = price.InputPrice
+	pd.OutputPrice = price.OutputPrice
+	pd.CacheReadPrice = price.CacheReadPrice
+	pd.CacheWritePrice = price.CacheWritePrice
+	pd.ImagePrice = price.ImagePrice
+	pd.AudioInputPrice = price.AudioInputPrice
+	pd.AudioOutputPrice = price.AudioOutputPrice
+	pd.RequestPrice = price.RequestPrice
+	return pd
+}
+
+// ModelPriceHelper computes the request pre-consumption amount from the
+// direct model schedule. Token prices are USD per million tokens and request
+// prices are USD per request; the selected group multiplier is applied once.
+func ModelPriceHelper(c *gin.Context, info *relaycommon.RelayInfo, promptTokens int, meta *types.TokenCountMeta) (types.PriceData, error) {
+	pricingModelName := ResolvePricingModelName(info)
+	modelPricing, configured := model.GetModelPricing(pricingModelName)
+	if !configured {
+		return types.PriceData{}, modelPriceNotConfiguredError(pricingModelName, info.UserId)
+	}
+	groupRatioInfo := HandleGroupRatio(c, info)
+	pd := applyDirectSchedule(modelPricing, groupRatioInfo)
+
+	if meta == nil {
+		meta = &types.TokenCountMeta{}
+	}
+	if modelPricing.BillingType == model.ModelPricingBillingRequest {
+		requestPrice := modelPricing.RequestPrice
+		if meta.ImagePriceRatio > 0 {
+			requestPrice *= meta.ImagePriceRatio
+		}
+		pd.RequestPrice = requestPrice
+		pd.QuotaToPreConsume = directRequestQuota(requestPrice, groupRatioInfo.GroupRatio)
+		pd.Quota = pd.QuotaToPreConsume
+	} else {
+		pd.QuotaToPreConsume = conservativeTokenPreConsumeQuota(modelPricing, info, promptTokens, meta, groupRatioInfo.GroupRatio)
+	}
+	pd.FreeModel = shouldSkipDirectFreeModelPreConsume(modelPricing, groupRatioInfo.GroupRatio)
+	if pd.FreeModel {
+		pd.QuotaToPreConsume = 0
+		pd.Quota = 0
+	}
+
+	info.PriceData = pd
+	if common.DebugEnabled {
+		println(fmt.Sprintf("model_price_helper result: %s", pd.ToSetting()))
+	}
+	return pd, nil
+}
+
+// ModelPriceHelperPerCall computes the amount used by asynchronous task and
+// image endpoints that bill once at submission time. Token schedules use a
+// conservative input-token reservation and are reconciled later when usage is
+// available; request schedules use their fixed request price.
+func ModelPriceHelperPerCall(c *gin.Context, info *relaycommon.RelayInfo) (types.PriceData, error) {
+	pricingModelName := ResolvePricingModelName(info)
+	modelPricing, configured := model.GetModelPricing(pricingModelName)
+	if !configured {
+		return types.PriceData{}, modelPriceNotConfiguredError(pricingModelName, info.UserId)
+	}
+	groupRatioInfo := HandleGroupRatio(c, info)
+	pd := applyDirectSchedule(modelPricing, groupRatioInfo)
+
+	if modelPricing.BillingType == model.ModelPricingBillingRequest {
+		pd.Quota = directRequestQuota(modelPricing.RequestPrice, groupRatioInfo.GroupRatio)
+		pd.QuotaToPreConsume = pd.Quota
+	} else {
+		pd.Quota = conservativePerCallTokenPreConsumeQuota(modelPricing, groupRatioInfo.GroupRatio)
+		pd.QuotaToPreConsume = pd.Quota
+	}
+	pd.FreeModel = shouldSkipDirectFreeModelPreConsume(modelPricing, groupRatioInfo.GroupRatio)
+	if pd.FreeModel {
+		pd.Quota = 0
+		pd.QuotaToPreConsume = 0
+	}
+	info.PriceData = pd
+	return pd, nil
+}
+
+func ContainsModelPricing(modelName string) bool {
+	_, ok := model.GetModelPricing(modelName)
+	return ok
 }

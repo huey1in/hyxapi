@@ -161,7 +161,6 @@ model.name_exists: "Model name already exists"
 model.id_missing: "Model ID is missing"
 model.get_list_failed: "Failed to get model list, please try again later"
 model.get_failed: "Failed to get upstream models"
-model.reset_success: "Model ratio reset successful"
 
 # Vendor messages
 vendor.name_empty: "Vendor name cannot be empty"

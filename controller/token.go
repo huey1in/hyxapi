@@ -19,6 +19,7 @@ func buildMaskedTokenResponse(token *model.Token) *model.Token {
 		return nil
 	}
 	maskedToken := *token
+	maskedToken.NormalizeGroupPolicy()
 	maskedToken.Key = token.GetMaskedKey()
 	return &maskedToken
 }
@@ -187,20 +188,24 @@ func AddToken(c *gin.Context) {
 		return
 	}
 	cleanToken := model.Token{
-		UserId:             c.GetInt("id"),
-		Name:               token.Name,
-		Key:                key,
-		CreatedTime:        common.GetTimestamp(),
-		AccessedTime:       common.GetTimestamp(),
-		ExpiredTime:        token.ExpiredTime,
-		RemainQuota:        token.RemainQuota,
-		UnlimitedQuota:     token.UnlimitedQuota,
-		ModelLimitsEnabled: token.ModelLimitsEnabled,
-		ModelLimits:        token.ModelLimits,
-		AllowIps:           nil,
-		Group:              token.Group,
-		CrossGroupRetry:    token.CrossGroupRetry,
+		UserId:                c.GetInt("id"),
+		Name:                  token.Name,
+		Key:                   key,
+		CreatedTime:           common.GetTimestamp(),
+		AccessedTime:          common.GetTimestamp(),
+		ExpiredTime:           token.ExpiredTime,
+		RemainQuota:           token.RemainQuota,
+		UnlimitedQuota:        token.UnlimitedQuota,
+		ModelLimitsEnabled:    token.ModelLimitsEnabled,
+		ModelLimits:           token.ModelLimits,
+		AllowIps:              nil,
+		Group:                 token.Group,
+		CrossGroupRetry:       token.CrossGroupRetry,
+		Groups:                token.Groups,
+		GroupSwitchCodes:      token.GroupSwitchCodes,
+		GroupSwitchRetryCount: token.GroupSwitchRetryCount,
 	}
+	cleanToken.NormalizeGroupPolicy()
 	err = cleanToken.Insert()
 	if err != nil {
 		common.ApiError(c, err)
@@ -278,6 +283,10 @@ func UpdateToken(c *gin.Context) {
 		cleanToken.AllowIps = nil
 		cleanToken.Group = token.Group
 		cleanToken.CrossGroupRetry = token.CrossGroupRetry
+		cleanToken.Groups = token.Groups
+		cleanToken.GroupSwitchCodes = token.GroupSwitchCodes
+		cleanToken.GroupSwitchRetryCount = token.GroupSwitchRetryCount
+		cleanToken.NormalizeGroupPolicy()
 	}
 	err = cleanToken.Update()
 	if err != nil {

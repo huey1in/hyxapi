@@ -258,6 +258,7 @@ func migrateDB() error {
 		&QuotaData{},
 		&Task{},
 		&Model{},
+		&ModelPricing{},
 		&Vendor{},
 		&Setup{},
 		&TwoFA{},

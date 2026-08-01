@@ -1060,7 +1060,11 @@ func BatchSetChannelTag(c *gin.Context) {
 		return
 	}
 	model.InitChannelCache()
-	model.RecordAuditLog(c, model.AuditUpdate, "channel", 0, fmt.Sprintf("批量设置标签 [%s]，共 %d 个渠道", channelBatch.Tag, len(channelBatch.Ids)))
+	tagValue := ""
+	if channelBatch.Tag != nil {
+		tagValue = *channelBatch.Tag
+	}
+	model.RecordAuditLog(c, model.AuditUpdate, "channel", 0, fmt.Sprintf("批量设置标签 [%s]，共 %d 个渠道", tagValue, len(channelBatch.Ids)))
 	c.JSON(http.StatusOK, gin.H{
 		"success": true,
 		"message": "",
@@ -1161,4 +1165,3 @@ func CopyChannel(c *gin.Context) {
 	model.RecordAuditLog(c, model.AuditCreate, "channel", clone.Id, fmt.Sprintf("复制渠道 #%d → #%d", id, clone.Id))
 	c.JSON(http.StatusOK, gin.H{"success": true, "message": "", "data": gin.H{"id": clone.Id}})
 }
-

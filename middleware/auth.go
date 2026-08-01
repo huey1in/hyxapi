@@ -376,15 +376,16 @@ func TokenAuth() func(c *gin.Context) {
 		userCache.WriteContext(c)
 
 		// 用户分组概念已删除：usingGroup 完全由 token.Group 决定，空值默认 "default"
-		usingGroup := strings.TrimSpace(token.Group)
-		if usingGroup == "" {
-			usingGroup = "default"
+		token.NormalizeGroupPolicy()
+		usingGroup := "auto"
+		if len(token.Groups) > 0 {
+			usingGroup = token.Groups[0]
 		}
-		if !ratio_setting.ContainsGroupRatio(usingGroup) {
+		if usingGroup != "auto" && !ratio_setting.ContainsGroupRatio(usingGroup) {
 			abortWithOpenAiMessage(c, http.StatusForbidden, fmt.Sprintf("分组 %s 已被弃用", usingGroup))
 			return
 		}
-		if _, ok := service.GetUserUsableGroups("")[usingGroup]; !ok {
+		if _, ok := service.GetUserUsableGroups("")[usingGroup]; !ok && usingGroup != "auto" {
 			abortWithOpenAiMessage(c, http.StatusForbidden, fmt.Sprintf("分组 %s 不存在", usingGroup))
 			return
 		}
@@ -416,8 +417,15 @@ func SetupContextForToken(c *gin.Context, token *model.Token, parts ...string) e
 	} else {
 		c.Set("token_model_limit_enabled", false)
 	}
-	common.SetContextKey(c, constant.ContextKeyTokenGroup, token.Group)
+	group := "auto"
+	if len(token.Groups) > 0 {
+		group = token.Groups[0]
+	}
+	common.SetContextKey(c, constant.ContextKeyTokenGroup, group)
 	common.SetContextKey(c, constant.ContextKeyTokenCrossGroupRetry, token.CrossGroupRetry)
+	c.Set("token_groups", token.Groups)
+	c.Set("token_group_switch_status_codes", token.GroupSwitchCodes)
+	c.Set("token_group_switch_retry_count", token.GroupSwitchRetryCount)
 	if len(parts) > 1 {
 		if model.IsAdmin(token.UserId) {
 			c.Set("specific_channel_id", parts[1])

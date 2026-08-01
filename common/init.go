@@ -153,19 +153,6 @@ func initConstantEnv() {
 	// 异步任务超时时间（分钟），超过此时间未完成的任务将被标记为失败并退款。0 表示禁用。
 	constant.TaskTimeoutMinutes = GetEnvOrDefault("TASK_TIMEOUT_MINUTES", 1440)
 
-	soraPatchStr := GetEnvOrDefaultString("TASK_PRICE_PATCH", "")
-	if soraPatchStr != "" {
-		var taskPricePatches []string
-		soraPatches := strings.Split(soraPatchStr, ",")
-		for _, patch := range soraPatches {
-			trimmedPatch := strings.TrimSpace(patch)
-			if trimmedPatch != "" {
-				taskPricePatches = append(taskPricePatches, trimmedPatch)
-			}
-		}
-		constant.TaskPricePatches = taskPricePatches
-	}
-
 	// Initialize trusted redirect domains for URL validation
 	trustedDomainsStr := GetEnvOrDefaultString("TRUSTED_REDIRECT_DOMAINS", "")
 	var trustedDomains []string

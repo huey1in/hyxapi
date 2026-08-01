@@ -171,7 +171,8 @@ func Relay(c *gin.Context, relayFormat types.RelayFormat) {
 	if priceData.FreeModel {
 		logger.LogInfo(c, fmt.Sprintf("模型 %s 免费，跳过预扣费", relayInfo.OriginModelName))
 	} else {
-		newAPIError = service.PreConsumeBilling(c, priceData.QuotaToPreConsume, relayInfo)
+		preConsumeQuota := relayPreConsumeQuota(relayFormat, priceData.BillingType, priceData.QuotaToPreConsume)
+		newAPIError = service.PreConsumeBilling(c, preConsumeQuota, relayInfo)
 		if newAPIError != nil {
 			return
 		}
@@ -189,15 +190,18 @@ func Relay(c *gin.Context, relayFormat types.RelayFormat) {
 	}()
 
 	retryParam := &service.RetryParam{
-		Ctx:        c,
-		TokenGroup: relayInfo.TokenGroup,
-		ModelName:  relayInfo.OriginModelName,
-		Retry:      common.GetPointer(0),
+		Ctx:               c,
+		TokenGroup:        relayInfo.TokenGroup,
+		ModelName:         relayInfo.OriginModelName,
+		Retry:             common.GetPointer(0),
+		TokenGroups:       c.GetStringSlice("token_groups"),
+		SwitchStatusCodes: statusCodeSet(c),
+		SwitchRetryCount:  c.GetInt("token_group_switch_retry_count"),
 	}
 	relayInfo.RetryIndex = 0
 	relayInfo.LastError = nil
 
-	for ; retryParam.GetRetry() <= common.RetryTimes; retryParam.IncreaseRetry() {
+	for ; retryParam.GetRetry() <= retryParam.MaxRetries(common.RetryTimes); retryParam.IncreaseRetry() {
 		relayInfo.RetryIndex = retryParam.GetRetry()
 		channel, channelErr := getChannel(c, relayInfo, retryParam)
 		if channelErr != nil {
@@ -252,6 +256,20 @@ func Relay(c *gin.Context, relayFormat types.RelayFormat) {
 
 		processChannelError(c, *types.NewChannelError(channel.Id, channel.Type, channel.Name, channel.ChannelInfo.IsMultiKey, common.GetContextKeyString(c, constant.ContextKeyChannelKey), channel.GetAutoBan()), newAPIError)
 
+		if !relayInfo.HasSendResponse() && retryParam.AdvanceGroup(newAPIError.StatusCode) {
+			relayInfo.TokenGroup = retryParam.TokenGroup
+			relayInfo.UsingGroup = retryParam.TokenGroup
+			relayInfo.ChannelMeta = nil
+			common.SetContextKey(c, constant.ContextKeyTokenGroup, retryParam.TokenGroup)
+			common.SetContextKey(c, constant.ContextKeyUsingGroup, retryParam.TokenGroup)
+			relayInfo.PriceData.GroupRatioInfo = helper.HandleGroupRatio(c, relayInfo)
+			logger.LogInfo(c, fmt.Sprintf("switch token group to %s after status %d", retryParam.TokenGroup, newAPIError.StatusCode))
+			continue
+		}
+		if !relayInfo.HasSendResponse() && retryParam.ShouldRetryCurrentGroup(newAPIError.StatusCode) {
+			continue
+		}
+
 		if !shouldRetry(c, newAPIError, common.RetryTimes-retryParam.GetRetry()) {
 			break
 		}
@@ -262,6 +280,28 @@ func Relay(c *gin.Context, relayFormat types.RelayFormat) {
 		retryLogStr := fmt.Sprintf("重试：%s", strings.Trim(strings.Join(strings.Fields(fmt.Sprint(useChannel)), "->"), "[]"))
 		logger.LogInfo(c, retryLogStr)
 	}
+}
+
+func statusCodeSet(c *gin.Context) map[int]struct{} {
+	result := make(map[int]struct{})
+	if c == nil {
+		return result
+	}
+	if value, ok := c.Get("token_group_switch_status_codes"); ok {
+		if codes, ok := value.([]int); ok {
+			for _, code := range codes {
+				result[code] = struct{}{}
+			}
+		}
+	}
+	return result
+}
+
+func relayPreConsumeQuota(relayFormat types.RelayFormat, billingType, standardQuota int) int {
+	if relayFormat == types.RelayFormatOpenAIRealtime && billingType == model.ModelPricingBillingToken {
+		return 0
+	}
+	return standardQuota
 }
 
 var upgrader = websocket.Upgrader{
@@ -321,8 +361,6 @@ func getChannel(c *gin.Context, info *relaycommon.RelayInfo, retryParam *service
 		}, nil
 	}
 	channel, selectGroup, err := service.CacheGetRandomSatisfiedChannel(retryParam)
-
-	info.PriceData.GroupRatioInfo = helper.HandleGroupRatio(c, info)
 
 	if err != nil {
 		return nil, types.NewError(fmt.Errorf("获取分组 %s 下模型 %s 的可用渠道失败（retry）: %s", selectGroup, info.OriginModelName, err.Error()), types.ErrorCodeGetChannelFailed, types.ErrOptionWithSkipRetry())
@@ -429,16 +467,6 @@ func RelayNotImplemented(c *gin.Context) {
 	})
 }
 
-func priceDataFreeModel(c *gin.Context, relayInfo *relaycommon.RelayInfo, request dto.Request) bool {
-	meta := fastTokenCountMetaForPricing(request)
-	tokens, _ := service.EstimateRequestToken(c, meta, relayInfo)
-	pd, err := helper.ModelPriceHelper(c, relayInfo, tokens, meta)
-	if err != nil {
-		return false
-	}
-	return pd.FreeModel
-}
-
 func scaledUsage(usage *dto.Usage, ratio float64) *dto.Usage {
 	if usage == nil {
 		return &dto.Usage{}
@@ -502,13 +530,16 @@ func RelayTask(c *gin.Context) {
 	}()
 
 	retryParam := &service.RetryParam{
-		Ctx:        c,
-		TokenGroup: relayInfo.TokenGroup,
-		ModelName:  relayInfo.OriginModelName,
-		Retry:      common.GetPointer(0),
+		Ctx:               c,
+		TokenGroup:        relayInfo.TokenGroup,
+		ModelName:         relayInfo.OriginModelName,
+		Retry:             common.GetPointer(0),
+		TokenGroups:       c.GetStringSlice("token_groups"),
+		SwitchStatusCodes: statusCodeSet(c),
+		SwitchRetryCount:  c.GetInt("token_group_switch_retry_count"),
 	}
 
-	for ; retryParam.GetRetry() <= common.RetryTimes; retryParam.IncreaseRetry() {
+	for ; retryParam.GetRetry() <= retryParam.MaxRetries(common.RetryTimes); retryParam.IncreaseRetry() {
 		var channel *model.Channel
 
 		if lockedCh, ok := relayInfo.LockedChannel.(*model.Channel); ok && lockedCh != nil {
@@ -559,6 +590,20 @@ func RelayTask(c *gin.Context) {
 				types.NewOpenAIError(taskErr.Error, types.ErrorCodeBadResponseStatusCode, taskErr.StatusCode))
 		}
 
+		if retryParam.AdvanceGroup(taskErr.StatusCode) {
+			relayInfo.TokenGroup = retryParam.TokenGroup
+			relayInfo.UsingGroup = retryParam.TokenGroup
+			relayInfo.ChannelMeta = nil
+			common.SetContextKey(c, constant.ContextKeyTokenGroup, retryParam.TokenGroup)
+			common.SetContextKey(c, constant.ContextKeyUsingGroup, retryParam.TokenGroup)
+			relayInfo.PriceData.GroupRatioInfo = helper.HandleGroupRatio(c, relayInfo)
+			logger.LogInfo(c, fmt.Sprintf("switch token group to %s after status %d", retryParam.TokenGroup, taskErr.StatusCode))
+			continue
+		}
+		if retryParam.ShouldRetryCurrentGroup(taskErr.StatusCode) {
+			continue
+		}
+
 		if !shouldRetryTaskRelay(c, channel.Id, taskErr, common.RetryTimes-retryParam.GetRetry()) {
 			break
 		}
@@ -583,12 +628,18 @@ func RelayTask(c *gin.Context) {
 		task.PrivateData.SubscriptionId = relayInfo.SubscriptionId
 		task.PrivateData.TokenId = relayInfo.TokenId
 		task.PrivateData.BillingContext = &model.TaskBillingContext{
-			ModelPrice:      relayInfo.PriceData.ModelPrice,
-			GroupRatio:      relayInfo.PriceData.GroupRatioInfo.GroupRatio,
-			ModelRatio:      relayInfo.PriceData.ModelRatio,
-			OtherRatios:     relayInfo.PriceData.OtherRatios,
-			OriginModelName: relayInfo.OriginModelName,
-			PerCallBilling:  common.StringsContains(constant.TaskPricePatches, relayInfo.OriginModelName) || relayInfo.PriceData.UsePrice,
+			BillingType:      relayInfo.PriceData.BillingType,
+			InputPrice:       relayInfo.PriceData.InputPrice,
+			OutputPrice:      relayInfo.PriceData.OutputPrice,
+			CacheReadPrice:   relayInfo.PriceData.CacheReadPrice,
+			CacheWritePrice:  relayInfo.PriceData.CacheWritePrice,
+			ImagePrice:       relayInfo.PriceData.ImagePrice,
+			AudioInputPrice:  relayInfo.PriceData.AudioInputPrice,
+			AudioOutputPrice: relayInfo.PriceData.AudioOutputPrice,
+			RequestPrice:     relayInfo.PriceData.RequestPrice,
+			GroupRatio:       relayInfo.PriceData.GroupRatioInfo.GroupRatio,
+			OtherRatios:      relayInfo.PriceData.OtherRatios,
+			OriginModelName:  relayInfo.OriginModelName,
 		}
 		task.Quota = result.Quota
 		task.Data = result.TaskData

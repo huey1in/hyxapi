@@ -540,7 +540,7 @@ func truncateBase64(s string) string {
 //  3. 都不满足 → 保持预扣额度不变
 func settleTaskBillingOnComplete(ctx context.Context, adaptor TaskPollingAdaptor, task *model.Task, taskResult *relaycommon.TaskInfo) {
 	// 0. 按次计费的任务不做差额结算
-	if bc := task.PrivateData.BillingContext; bc != nil && bc.PerCallBilling {
+	if bc := task.PrivateData.BillingContext; bc != nil && bc.BillingType == model.ModelPricingBillingRequest {
 		logger.LogInfo(ctx, fmt.Sprintf("任务 %s 按次计费，跳过差额结算", task.TaskID))
 		return
 	}
@@ -551,7 +551,7 @@ func settleTaskBillingOnComplete(ctx context.Context, adaptor TaskPollingAdaptor
 	}
 	// 2. 回退到 token 重算
 	if taskResult.TotalTokens > 0 {
-		RecalculateTaskQuotaByTokens(ctx, task, taskResult.TotalTokens)
+		RecalculateTaskQuotaByTokens(ctx, task, taskResult.TotalTokens, taskResult.CompletionTokens)
 		return
 	}
 	// 3. 无调整，保持预扣额度

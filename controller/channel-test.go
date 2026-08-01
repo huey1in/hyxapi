@@ -469,21 +469,40 @@ func testChannel(channel *model.Channel, testModel string, endpointType string, 
 	}
 	info.SetEstimatePromptTokens(usage.PromptTokens)
 
-	quota := 0
-	if !priceData.UsePrice {
-		quota = usage.PromptTokens + int(math.Round(float64(usage.CompletionTokens)*priceData.CompletionRatio))
-		quota = int(math.Round(float64(quota) * priceData.ModelRatio))
-		if priceData.ModelRatio != 0 && quota <= 0 {
-			quota = 1
-		}
-	} else {
-		quota = int(priceData.ModelPrice * common.QuotaPerUnit)
-	}
+	groupMultiplier := priceData.GroupRatioInfo.GroupRatio
+	anthropicUsage := usage.UsageSemantic == "anthropic" ||
+		(usage.UsageSemantic == "" && info.GetFinalRequestRelayFormat() == types.RelayFormatClaude)
+	quota, cacheWriteTokens := calculateChannelTestQuota(usage, &priceData, anthropicUsage)
 	tok := time.Now()
 	milliseconds := tok.Sub(tik).Milliseconds()
 	consumedTime := float64(milliseconds) / 1000.0
-	other := service.GenerateTextOtherInfo(c, info, priceData.ModelRatio, priceData.GroupRatioInfo.GroupRatio, priceData.CompletionRatio,
-		usage.PromptTokensDetails.CachedTokens, priceData.CacheRatio, priceData.ModelPrice, priceData.GroupRatioInfo.GroupSpecialRatio)
+	var other map[string]interface{}
+	if anthropicUsage {
+		other = service.GenerateClaudeOtherInfo(c, info,
+			priceData.InputPrice, groupMultiplier, priceData.OutputPrice,
+			usage.PromptTokensDetails.CachedTokens, priceData.CacheReadPrice,
+			cacheWriteTokens, priceData.CacheWritePrice,
+			usage.ClaudeCacheCreation5mTokens, priceData.CacheWritePrice,
+			usage.ClaudeCacheCreation1hTokens, priceData.CacheWritePrice,
+			priceData.RequestPrice)
+		other["usage_semantic"] = "anthropic"
+	} else {
+		other = service.GenerateTextOtherInfo(c, info, priceData.InputPrice, groupMultiplier, priceData.OutputPrice,
+			usage.PromptTokensDetails.CachedTokens, priceData.CacheReadPrice, priceData.RequestPrice)
+	}
+	if cacheWriteTokens > 0 {
+		other["cache_creation_tokens"] = cacheWriteTokens
+		other["cache_write_tokens"] = cacheWriteTokens
+		other["cache_write_price"] = priceData.CacheWritePrice
+	}
+	if usage.ClaudeCacheCreation5mTokens > 0 {
+		other["cache_creation_tokens_5m"] = usage.ClaudeCacheCreation5mTokens
+		other["cache_write_price_5m"] = priceData.CacheWritePrice
+	}
+	if usage.ClaudeCacheCreation1hTokens > 0 {
+		other["cache_creation_tokens_1h"] = usage.ClaudeCacheCreation1hTokens
+		other["cache_write_price_1h"] = priceData.CacheWritePrice
+	}
 	model.RecordConsumeLog(c, 1, model.RecordConsumeLogParams{
 		ChannelId:        channel.Id,
 		PromptTokens:     usage.PromptTokens,
@@ -503,6 +522,63 @@ func testChannel(channel *model.Channel, testModel string, endpointType string, 
 		localErr:    nil,
 		newAPIError: nil,
 	}
+}
+
+func calculateChannelTestQuota(usage *dto.Usage, priceData *types.PriceData, anthropicUsage bool) (int, int) {
+	if priceData == nil {
+		return 0, 0
+	}
+
+	cacheWriteTokens := 0
+	if usage != nil {
+		cacheWriteTokens = usage.PromptTokensDetails.CachedCreationTokens
+		cacheWriteSplitTokens := usage.ClaudeCacheCreation5mTokens + usage.ClaudeCacheCreation1hTokens
+		if cacheWriteSplitTokens > cacheWriteTokens {
+			cacheWriteTokens = cacheWriteSplitTokens
+		}
+	}
+	if priceData.BillingType == model.ModelPricingBillingRequest {
+		billableUSD := priceData.RequestPrice * priceData.GroupRatioInfo.GroupRatio
+		quota := int(math.Round(billableUSD * common.QuotaPerUnit))
+		if billableUSD > 0 && quota <= 0 {
+			quota = 1
+		}
+		return quota, cacheWriteTokens
+	}
+
+	if usage == nil {
+		return 0, 0
+	}
+
+	cacheReadTokens := usage.PromptTokensDetails.CachedTokens
+	imageTokens := usage.PromptTokensDetails.ImageTokens
+	audioInputTokens := usage.PromptTokensDetails.AudioTokens
+	audioOutputTokens := usage.CompletionTokenDetails.AudioTokens
+	baseInputTokens := usage.PromptTokens
+	if !anthropicUsage {
+		baseInputTokens -= cacheReadTokens + cacheWriteTokens
+	}
+	baseInputTokens -= imageTokens + audioInputTokens
+	if baseInputTokens < 0 {
+		baseInputTokens = 0
+	}
+	completionTextTokens := usage.CompletionTokens - audioOutputTokens
+	if completionTextTokens < 0 {
+		completionTextTokens = 0
+	}
+	directUSD := (float64(baseInputTokens)*priceData.InputPrice +
+		float64(cacheReadTokens)*priceData.CacheReadPrice +
+		float64(cacheWriteTokens)*priceData.CacheWritePrice +
+		float64(imageTokens)*priceData.ImagePrice +
+		float64(audioInputTokens)*priceData.AudioInputPrice +
+		float64(completionTextTokens)*priceData.OutputPrice +
+		float64(audioOutputTokens)*priceData.AudioOutputPrice) / 1_000_000
+	billableUSD := directUSD * priceData.GroupRatioInfo.GroupRatio
+	quota := int(math.Round(billableUSD * common.QuotaPerUnit))
+	if billableUSD > 0 && quota <= 0 {
+		quota = 1
+	}
+	return quota, cacheWriteTokens
 }
 
 func coerceTestUsage(usageAny any, isStream bool, estimatePromptTokens int) (*dto.Usage, error) {

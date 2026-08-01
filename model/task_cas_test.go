@@ -3,6 +3,7 @@ package model
 import (
 	"encoding/json"
 	"os"
+	"reflect"
 	"sync"
 	"testing"
 	"time"
@@ -35,6 +36,7 @@ func TestMain(m *testing.M) {
 
 	if err := db.AutoMigrate(
 		&Task{},
+		&ModelPricing{},
 		&User{},
 		&Token{},
 		&Log{},
@@ -53,12 +55,13 @@ func truncateTables(t *testing.T) {
 	t.Helper()
 	t.Cleanup(func() {
 		DB.Exec("DELETE FROM tasks")
+		DB.Exec("DELETE FROM model_pricing")
+		InvalidateModelPricingCache()
 		DB.Exec("DELETE FROM users")
 		DB.Exec("DELETE FROM tokens")
 		DB.Exec("DELETE FROM logs")
 		DB.Exec("DELETE FROM channels")
 		DB.Exec("DELETE FROM top_ups")
-		DB.Exec("DELETE FROM subscription_orders")
 		DB.Exec("DELETE FROM subscription_plans")
 		DB.Exec("DELETE FROM user_subscriptions")
 	})
@@ -86,6 +89,31 @@ func TestSnapshotEqual_Same(t *testing.T) {
 		Data:       json.RawMessage(`{"key":"value"}`),
 	}
 	assert.True(t, s.Equal(s))
+}
+
+func TestTaskBillingContextUsesDirectPriceFieldsOnly(t *testing.T) {
+	contextType := reflect.TypeOf(TaskBillingContext{})
+	for _, legacyField := range []string{
+		"ModelPrice",
+		"ModelRatio",
+		"PerCallBilling",
+	} {
+		_, exists := contextType.FieldByName(legacyField)
+		require.Falsef(t, exists, "legacy billing field %s must not be persisted", legacyField)
+	}
+	for _, directField := range []string{
+		"InputPrice",
+		"OutputPrice",
+		"CacheReadPrice",
+		"CacheWritePrice",
+		"ImagePrice",
+		"AudioInputPrice",
+		"AudioOutputPrice",
+		"RequestPrice",
+	} {
+		_, exists := contextType.FieldByName(directField)
+		require.Truef(t, exists, "direct billing field %s must be persisted", directField)
+	}
 }
 
 func TestSnapshotEqual_DifferentStatus(t *testing.T) {

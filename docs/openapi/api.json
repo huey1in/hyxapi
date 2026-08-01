@@ -336,7 +336,14 @@
         "responses": {
           "200": {
             "description": "成功",
-            "headers": {}
+            "headers": {},
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PricingResponse"
+                }
+              }
+            }
           }
         },
         "security": [
@@ -354,31 +361,6 @@
         "summary": "获取模型列表",
         "deprecated": false,
         "description": "🔐 需要登录（User权限）",
-        "tags": [
-          "系统"
-        ],
-        "parameters": [],
-        "responses": {
-          "200": {
-            "description": "成功",
-            "headers": {}
-          }
-        },
-        "security": [
-          {
-            "Combination343": []
-          },
-          {
-            "Combination1243": []
-          }
-        ]
-      }
-    },
-    "/api/ratio_config": {
-      "get": {
-        "summary": "获取倍率配置",
-        "deprecated": false,
-        "description": "🔓 无需鉴权",
         "tags": [
           "系统"
         ],
@@ -4843,31 +4825,6 @@
         ]
       }
     },
-    "/api/option/rest_model_ratio": {
-      "post": {
-        "summary": "重置模型倍率",
-        "deprecated": false,
-        "description": "👑 需要超级管理员权限（Root）",
-        "tags": [
-          "系统设置"
-        ],
-        "parameters": [],
-        "responses": {
-          "200": {
-            "description": "成功",
-            "headers": {}
-          }
-        },
-        "security": [
-          {
-            "Combination343": []
-          },
-          {
-            "Combination1243": []
-          }
-        ]
-      }
-    },
     "/api/option/migrate_console_setting": {
       "post": {
         "summary": "迁移控制台设置",
@@ -4893,9 +4850,9 @@
         ]
       }
     },
-    "/api/ratio_sync/channels": {
+    "/api/model-pricing": {
       "get": {
-        "summary": "获取可同步渠道",
+        "summary": "获取模型原价列表",
         "deprecated": false,
         "description": "👑 需要超级管理员权限（Root）",
         "tags": [
@@ -4905,7 +4862,92 @@
         "responses": {
           "200": {
             "description": "成功",
-            "headers": {}
+            "headers": {},
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ApiResponse"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "type": "array",
+                          "items": {
+                            "$ref": "#/components/schemas/ModelPricing"
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Combination343": []
+          },
+          {
+            "Combination1243": []
+          }
+        ]
+      },
+      "post": {
+        "summary": "保存模型原价",
+        "deprecated": false,
+        "description": "👑 需要超级管理员权限（Root）",
+        "tags": [
+          "系统设置"
+        ],
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ModelPricing"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "成功",
+            "headers": {},
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ApiResponse"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "$ref": "#/components/schemas/ModelPricing"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "请求体无效或模型价格校验失败",
+            "headers": {},
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
           }
         },
         "security": [
@@ -4918,19 +4960,58 @@
         ]
       }
     },
-    "/api/ratio_sync/fetch": {
-      "post": {
-        "summary": "获取上游倍率",
+    "/api/model-pricing/{id}": {
+      "delete": {
+        "summary": "删除模型原价",
         "deprecated": false,
         "description": "👑 需要超级管理员权限（Root）",
         "tags": [
           "系统设置"
         ],
-        "parameters": [],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "模型价格记录 ID",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "成功",
-            "headers": {}
+            "headers": {},
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "模型价格记录 ID 无效",
+            "headers": {},
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "模型价格记录不存在",
+            "headers": {},
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
           }
         },
         "security": [
@@ -4946,6 +5027,249 @@
   },
   "components": {
     "schemas": {
+      "PricingResponse": {
+        "type": "object",
+        "required": [
+          "success",
+          "data",
+          "vendors",
+          "group_ratio",
+          "usable_group",
+          "supported_endpoint"
+        ],
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "enum": [
+              true
+            ]
+          },
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Pricing"
+            }
+          },
+          "vendors": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PricingVendor"
+            }
+          },
+          "group_ratio": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "number"
+            }
+          },
+          "usable_group": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            }
+          },
+          "supported_endpoint": {
+            "type": "object",
+            "additionalProperties": {
+              "$ref": "#/components/schemas/EndpointInfo"
+            }
+          }
+        }
+      },
+      "Pricing": {
+        "type": "object",
+        "required": [
+          "model_name",
+          "billing_type",
+          "configured",
+          "input_price",
+          "output_price",
+          "cache_read_price",
+          "cache_write_price",
+          "image_price",
+          "audio_input_price",
+          "audio_output_price",
+          "request_price",
+          "enable_groups",
+          "supported_endpoint_types"
+        ],
+        "properties": {
+          "model_name": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "icon": {
+            "type": "string"
+          },
+          "tags": {
+            "type": "string"
+          },
+          "vendor_id": {
+            "type": "integer"
+          },
+          "billing_type": {
+            "type": "string",
+            "enum": [
+              "",
+              "tokens",
+              "request"
+            ],
+            "description": "configured 为 false 时为空字符串；否则为 tokens 或 request"
+          },
+          "configured": {
+            "type": "boolean",
+            "description": "仅匹配到已启用的模型价格记录时为 true；价格记录缺失或已禁用时为 false，此时所有价格字段为 0"
+          },
+          "input_price": {
+            "type": "number",
+            "description": "输入价格，USD / 1M tokens"
+          },
+          "output_price": {
+            "type": "number",
+            "description": "输出价格，USD / 1M tokens"
+          },
+          "cache_read_price": {
+            "type": "number",
+            "description": "缓存读取价格，USD / 1M tokens"
+          },
+          "cache_write_price": {
+            "type": "number",
+            "description": "缓存写入价格，USD / 1M tokens"
+          },
+          "image_price": {
+            "type": "number",
+            "description": "图片 token 价格，USD / 1M tokens"
+          },
+          "audio_input_price": {
+            "type": "number",
+            "description": "音频输入价格，USD / 1M tokens"
+          },
+          "audio_output_price": {
+            "type": "number",
+            "description": "音频输出价格，USD / 1M tokens"
+          },
+          "request_price": {
+            "type": "number",
+            "description": "按次价格，USD / request"
+          },
+          "enable_groups": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "supported_endpoint_types": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "PricingVendor": {
+        "type": "object",
+        "required": [
+          "id",
+          "name"
+        ],
+        "properties": {
+          "id": {
+            "type": "integer"
+          },
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "icon": {
+            "type": "string"
+          }
+        }
+      },
+      "EndpointInfo": {
+        "type": "object",
+        "required": [
+          "path",
+          "method"
+        ],
+        "properties": {
+          "path": {
+            "type": "string"
+          },
+          "method": {
+            "type": "string"
+          }
+        }
+      },
+      "ModelPricing": {
+        "type": "object",
+        "required": [
+          "model_name",
+          "billing_type"
+        ],
+        "properties": {
+          "id": {
+            "type": "integer"
+          },
+          "model_name": {
+            "type": "string"
+          },
+          "billing_type": {
+            "type": "integer",
+            "enum": [
+              0,
+              1
+            ],
+            "description": "0 按 token 计费，1 按请求计费"
+          },
+          "input_price": {
+            "type": "number",
+            "description": "输入价格，USD / 1M tokens"
+          },
+          "output_price": {
+            "type": "number",
+            "description": "输出价格，USD / 1M tokens"
+          },
+          "cache_read_price": {
+            "type": "number",
+            "description": "缓存读取价格，USD / 1M tokens"
+          },
+          "cache_write_price": {
+            "type": "number",
+            "description": "缓存写入价格，USD / 1M tokens"
+          },
+          "image_price": {
+            "type": "number",
+            "description": "图片 token 价格，USD / 1M tokens"
+          },
+          "audio_input_price": {
+            "type": "number",
+            "description": "音频输入价格，USD / 1M tokens"
+          },
+          "audio_output_price": {
+            "type": "number",
+            "description": "音频输出价格，USD / 1M tokens"
+          },
+          "request_price": {
+            "type": "number",
+            "description": "按次价格，USD / request"
+          },
+          "enabled": {
+            "type": "boolean"
+          },
+          "created_time": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "updated_time": {
+            "type": "integer",
+            "format": "int64"
+          }
+        }
+      },
       "ApiResponse": {
         "type": "object",
         "properties": {

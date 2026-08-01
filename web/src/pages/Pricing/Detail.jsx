@@ -54,10 +54,8 @@ const PricingDetail = () => {
   const {
     loading, models,
     selectedGroup, groupRatio, usableGroup, tokenUnit, displayPrice,
-    currency, siteDisplayType, copyText,
+    copyText,
   } = useModelPricingData();
-
-  const isTokens = siteDisplayType === 'TOKENS';
 
   const model = useMemo(() => {
     if (location.state?.model) return location.state.model;
@@ -98,16 +96,15 @@ const PricingDetail = () => {
     return targets.map((g) => {
       const pd = calculateModelPrice({
         record: model, selectedGroup: g, groupRatio, tokenUnit, displayPrice,
-        currency, quotaDisplayType: siteDisplayType,
       });
       return {
         group: pd.usedGroup || g,
         ratio: pd.usedGroupRatio,
         desc: usableGroup?.[pd.usedGroup || g],
-        items: getModelPriceItems(pd, t, siteDisplayType),
+        items: getModelPriceItems(pd, t),
       };
     });
-  }, [model, groupRatio, usableGroup, selectedGroup, tokenUnit, currency, siteDisplayType, t]); // eslint-disable-line
+  }, [model, groupRatio, usableGroup, selectedGroup, tokenUnit, displayPrice, t]);
 
   const priceRows = groupPricing[0]?.items.map((it) => ({ key: it.key, label: it.label, suffix: it.suffix })) || [];
 
@@ -180,7 +177,7 @@ const PricingDetail = () => {
                     <div className='text-xl font-medium text-ui-text break-all leading-tight'>{model.model_name}</div>
                     <div className='mt-2 flex flex-wrap items-center gap-2'>
                       <VendorTag name={model.vendor_name} icon={model.vendor_icon} />
-                      <QuotaTag type={model.quota_type} t={t} />
+                      <QuotaTag type={model.billing_type} t={t} />
                     </div>
                   </div>
                   <Button variant='secondary' icon={Copy} onClick={() => copyText(model.model_name)}>
@@ -200,7 +197,7 @@ const PricingDetail = () => {
             <Card>
               <div className='flex flex-col gap-3'>
                 <div className='flex items-center justify-between gap-2'>
-                  <SectionLabel>{isTokens ? t('倍率') : t('价格明细')}</SectionLabel>
+                  <SectionLabel>{t('价格明细')}</SectionLabel>
                   {groupPricing.length > 1 && (
                     <span className='text-xs text-ui-text-3'>{t('共 {{count}} 个分组', { count: groupPricing.length })}</span>
                   )}

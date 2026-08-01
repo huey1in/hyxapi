@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Plus, Trash2, Copy, Pencil } from 'lucide-react';
+import { Plus, Trash2, Copy, Pencil, ArrowUp, ArrowDown } from 'lucide-react';
 import { API, showError, showSuccess, timestamp2string, renderQuota, copy } from '../../helpers';
 import { quotaToDisplayAmount, displayAmountToQuota } from '../../helpers/quota';
 import {
@@ -124,6 +124,12 @@ const PILL = { display: 'inline-flex', alignItems: 'center', height: 20, padding
 
 const KeyCard = ({ row, preview = false, onCopy, onDelete, onEdit }) => {
   const isMobile = useIsMobile();
+  const tokenGroups = Array.isArray(row.groups) ? row.groups.filter(Boolean) : [];
+  const groupLabel = tokenGroups.length > 0
+    ? `${tokenGroups[0]}${tokenGroups.length > 1 ? ` +${tokenGroups.length - 1}` : ''}`
+    : row.group && row.group !== '[]'
+      ? row.group
+      : '自动分组';
   const usageText = row.unlimited_quota
     ? `已用 ${renderQuota(row.used_quota || 0)}`
     : `${renderQuota(row.used_quota || 0)} / ${renderQuota((row.used_quota || 0) + (row.remain_quota || 0))}`;
@@ -141,9 +147,7 @@ const KeyCard = ({ row, preview = false, onCopy, onDelete, onEdit }) => {
     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 6, minWidth: 0, flex: 1 }}>
         <span style={{ fontSize: 14, fontWeight: 500, color: 'var(--ui-text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{row.name || '未命名'}</span>
-        {row.group && (
-          <span style={{ ...PILL, color: 'var(--ui-text-3)', border: '1px solid var(--ui-border)' }}>{row.group}</span>
-        )}
+        <span style={{ ...PILL, color: 'var(--ui-text-3)', border: '1px solid var(--ui-border)' }}>{groupLabel}</span>
       </div>
       {!preview && <div className={`flex gap-1 shrink-0 ${isMobile ? '' : 'opacity-0 group-hover:opacity-100'} transition-opacity`}>
         <IconButton icon={Copy} title='复制' onClick={onCopy} />
@@ -287,11 +291,20 @@ const TokenEditModal = ({ open, token, onClose, onSaved }) => {
 
   useEffect(() => {
     if (!token) return;
+    const tokenGroups = Array.isArray(token.groups)
+      ? token.groups
+      : token.group && token.group !== '[]'
+        ? [token.group]
+        : [];
     setForm({
       ...token,
       model_limits_enabled: token.model_limits_enabled || false,
       model_limits: token.model_limits || '',
       allow_ips: token.allow_ips || '',
+      cross_group_retry: !!token.cross_group_retry,
+      groups: tokenGroups,
+      group_switch_status_codes: token.group_switch_status_codes || [429, 500, 502, 503, 504],
+      group_switch_retry_count: Number(token.group_switch_retry_count) || 0,
     });
   }, [token]);
 
@@ -306,14 +319,14 @@ const TokenEditModal = ({ open, token, onClose, onSaved }) => {
   }, []);
 
   useEffect(() => {
-    const group = form.group || '';
+    const group = form.groups?.[0] || form.group || '';
     const url = group ? `/api/user/models?group=${encodeURIComponent(group)}` : '/api/user/models';
     API.get(url).then((res) => {
       if (res.data?.success && Array.isArray(res.data.data)) {
         setModels(res.data.data.map((m) => ({ value: m, label: m })));
       }
     }).catch(() => setModels([]));
-  }, [form.group]);
+  }, [form.groups, form.group]);
 
   const save = async () => {
     if (!form.name?.trim()) return showError('请输入名称');
@@ -324,10 +337,14 @@ const TokenEditModal = ({ open, token, onClose, onSaved }) => {
         unlimited_quota: form.unlimited_quota,
         remain_quota: form.unlimited_quota ? 0 : Number(form.remain_quota) || 0,
         expired_time: Number(form.expired_time) || -1,
-        group: form.group || '',
+        group: form.groups?.[0] || '[]',
+        groups: form.groups || [],
+        group_switch_status_codes: (form.group_switch_status_codes || []).map(Number),
+        group_switch_retry_count: Math.max(0, Math.min(10, Number(form.group_switch_retry_count) || 0)),
         model_limits_enabled: !!form.model_limits_enabled,
         model_limits: form.model_limits || '',
         allow_ips: form.allow_ips || '',
+        cross_group_retry: !!form.cross_group_retry,
       };
       const res = isEdit
         ? await API.put('/api/token/', { ...payload, id: token.id })
@@ -339,6 +356,18 @@ const TokenEditModal = ({ open, token, onClose, onSaved }) => {
   };
 
   const selectedModels = form.model_limits ? form.model_limits.split(',').filter(Boolean) : [];
+  const selectedGroups = form.groups || [];
+  const addGroup = (value) => {
+    if (!value || selectedGroups.includes(value)) return;
+    u('groups')([...selectedGroups, value]);
+  };
+  const moveGroup = (index, delta) => {
+    const next = [...selectedGroups];
+    const target = index + delta;
+    if (target < 0 || target >= next.length) return;
+    [next[index], next[target]] = [next[target], next[index]];
+    u('groups')(next);
+  };
 
   return (
     <SlideOver
@@ -361,8 +390,51 @@ const TokenEditModal = ({ open, token, onClose, onSaved }) => {
 
         {groups.length > 0 && (
           <div>
-            <label className='block text-sm text-[#666] mb-1.5'>分组</label>
-            <Select value={form.group} onChange={u('group')} options={groups} placeholder='选择分组' />
+            <label className='block text-sm text-[#666] mb-1.5'>分组优先级</label>
+            <Select value='' onChange={addGroup} options={groups.filter((item) => !selectedGroups.includes(item.value))} placeholder='添加分组' />
+            <div className='mt-3 flex flex-col gap-2'>
+              {selectedGroups.length === 0 && (
+                <div className='flex w-full min-h-12 items-center gap-2 rounded-lg border border-ui-border bg-[var(--page-bg)] px-3 py-2'>
+                  <span className='flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-ui-bg-subtle text-xs font-medium text-ui-text-3'>A</span>
+                  <span className='min-w-0 flex-1 truncate text-sm font-medium text-ui-text'>自动分组</span>
+                </div>
+              )}
+              {selectedGroups.map((group, index) => (
+                <div key={group} className='flex w-full min-h-12 items-center gap-2 rounded-lg border border-ui-border bg-[var(--page-bg)] px-3 py-2'>
+                  <span className='flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-ui-bg-subtle text-xs font-medium text-ui-text-3'>{index + 1}</span>
+                  <span className='min-w-0 flex-1 truncate text-sm font-medium text-ui-text'>
+                    {groups.find((item) => item.value === group)?.label || group}
+                  </span>
+                  <IconButton icon={ArrowUp} size='sm' aria-label='提高优先级' disabled={index === 0} onClick={() => moveGroup(index, -1)} />
+                  <IconButton icon={ArrowDown} size='sm' aria-label='降低优先级' disabled={index === selectedGroups.length - 1} onClick={() => moveGroup(index, 1)} />
+                  <IconButton icon={Trash2} size='sm' tone='red' aria-label='删除分组' onClick={() => u('groups')(selectedGroups.filter((item) => item !== group))} />
+                </div>
+              ))}
+            </div>
+            {selectedGroups.length === 0 && <p className='mt-2 text-xs text-ui-text-3'>按当前模型的实际价格从低到高选择可用分组</p>}
+          </div>
+        )}
+
+        {selectedGroups.length > 1 && (
+          <div>
+            <label className='block text-sm text-[#666] mb-1.5'>切换分组的 HTTP 状态码</label>
+            <MultiSelect
+              options={[401, 403, 408, 429, 500, 502, 503, 504].map((code) => ({ value: String(code), label: String(code) }))}
+              value={(form.group_switch_status_codes || []).map(String)}
+              onChange={(values) => u('group_switch_status_codes')(values.map(Number))}
+              placeholder='选择触发切换的状态码'
+            />
+            <div className='mt-3'>
+              <label className='block text-sm text-[#666] mb-1.5'>切换前重试次数</label>
+              <NumberInput
+                value={form.group_switch_retry_count || 0}
+                onChange={u('group_switch_retry_count')}
+                min={0}
+                max={10}
+                step={1}
+              />
+              <p className='mt-1.5 text-xs text-ui-text-3'>命中以上状态码后，先在当前分组重试，超过次数才切换下一分组</p>
+            </div>
           </div>
         )}
 

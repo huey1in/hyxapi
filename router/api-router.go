@@ -47,7 +47,6 @@ func SetApiRouter(router *gin.Engine) {
 		apiRouter.GET("/oauth/telegram/bind", middleware.CriticalRateLimit(), controller.TelegramBind)
 		// Standard OAuth providers (GitHub, Discord, OIDC, LinuxDO) - unified route
 		apiRouter.GET("/oauth/:provider", middleware.CriticalRateLimit(), controller.HandleOAuth)
-		apiRouter.GET("/ratio_config", middleware.CriticalRateLimit(), controller.GetRatioConfig)
 
 		// Universal secure verification routes
 		apiRouter.POST("/verify", middleware.UserAuth(), middleware.CriticalRateLimit(), controller.UniversalVerify)
@@ -151,6 +150,16 @@ func SetApiRouter(router *gin.Engine) {
 			optionRoute.GET("/", controller.GetOptions)
 			optionRoute.PUT("/", controller.UpdateOption)
 			optionRoute.POST("/test_email", controller.SendTestEmail)
+		}
+
+		modelPricingRoute := apiRouter.Group("/model-pricing")
+		modelPricingRoute.Use(middleware.RootAuth())
+		{
+			modelPricingRoute.GET("", controller.AdminListModelPricings)
+			modelPricingRoute.POST("/sync/preview", controller.AdminPreviewModelPricingSync)
+			modelPricingRoute.POST("/sync/apply", controller.AdminApplyModelPricingSync)
+			modelPricingRoute.POST("", controller.AdminSaveModelPricing)
+			modelPricingRoute.DELETE("/:id", controller.AdminDeleteModelPricing)
 		}
 
 		channelRoute := apiRouter.Group("/channel")

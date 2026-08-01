@@ -34,7 +34,6 @@ type Model struct {
 
 	BoundChannels []BoundChannel `json:"bound_channels,omitempty" gorm:"-"`
 	EnableGroups  []string       `json:"enable_groups,omitempty" gorm:"-"`
-	QuotaTypes    []int          `json:"quota_types,omitempty" gorm:"-"`
 	NameRule      int            `json:"name_rule" gorm:"default:0"`
 
 	MatchedModels []string `json:"matched_models,omitempty" gorm:"-"`
@@ -73,4 +72,3 @@ func (mi *Model) Update() error {
 func (mi *Model) Delete() error {
 	return DB.Delete(mi).Error
 }
-

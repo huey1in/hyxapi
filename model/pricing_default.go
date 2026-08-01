@@ -71,7 +71,8 @@ var defaultVendorIcons = map[string]string{
 func initDefaultVendorMapping(metaMap map[string]*Model, vendorMap map[int]*Vendor, enableAbilities []AbilityWithChannel) {
 	for _, ability := range enableAbilities {
 		modelName := ability.Model
-		if _, exists := metaMap[modelName]; exists {
+		metadata, exists := metaMap[modelName]
+		if exists && metadata.VendorID != 0 {
 			continue
 		}
 
@@ -86,11 +87,18 @@ func initDefaultVendorMapping(metaMap map[string]*Model, vendorMap map[int]*Vend
 		}
 
 		// 创建模型元数据
-		metaMap[modelName] = &Model{
-			ModelName: modelName,
-			VendorID:  vendorID,
-			Status:    1,
-			NameRule:  NameRuleExact,
+		if exists {
+			metadata.VendorID = vendorID
+			if vendorID != 0 && DB != nil {
+				_ = DB.Model(&Model{}).Where("id = ?", metadata.Id).Update("vendor_id", vendorID).Error
+			}
+		} else {
+			metaMap[modelName] = &Model{
+				ModelName: modelName,
+				VendorID:  vendorID,
+				Status:    1,
+				NameRule:  NameRuleExact,
+			}
 		}
 	}
 }

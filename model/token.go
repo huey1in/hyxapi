@@ -1,6 +1,7 @@
 package model
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"strings"
@@ -12,23 +13,142 @@ import (
 )
 
 type Token struct {
-	Id                 int            `json:"id"`
-	UserId             int            `json:"user_id" gorm:"index"`
-	Key                string         `json:"key" gorm:"type:char(48);uniqueIndex"`
-	Status             int            `json:"status" gorm:"default:1"`
-	Name               string         `json:"name" gorm:"index" `
-	CreatedTime        int64          `json:"created_time" gorm:"bigint"`
-	AccessedTime       int64          `json:"accessed_time" gorm:"bigint"`
-	ExpiredTime        int64          `json:"expired_time" gorm:"bigint;default:-1"` // -1 means never expired
-	RemainQuota        int            `json:"remain_quota" gorm:"default:0"`
-	UnlimitedQuota     bool           `json:"unlimited_quota"`
-	ModelLimitsEnabled bool           `json:"model_limits_enabled"`
-	ModelLimits        string         `json:"model_limits" gorm:"type:text"`
-	AllowIps           *string        `json:"allow_ips" gorm:"default:''"`
-	UsedQuota          int            `json:"used_quota" gorm:"default:0"` // used quota
-	Group              string         `json:"group" gorm:"default:''"`
-	CrossGroupRetry    bool           `json:"cross_group_retry"` // 跨分组重试，仅auto分组有效
-	DeletedAt          gorm.DeletedAt `gorm:"index"`
+	Id                     int            `json:"id"`
+	UserId                 int            `json:"user_id" gorm:"index"`
+	Key                    string         `json:"key" gorm:"type:char(48);uniqueIndex"`
+	Status                 int            `json:"status" gorm:"default:1"`
+	Name                   string         `json:"name" gorm:"index" `
+	CreatedTime            int64          `json:"created_time" gorm:"bigint"`
+	AccessedTime           int64          `json:"accessed_time" gorm:"bigint"`
+	ExpiredTime            int64          `json:"expired_time" gorm:"bigint;default:-1"` // -1 means never expired
+	RemainQuota            int            `json:"remain_quota" gorm:"default:0"`
+	UnlimitedQuota         bool           `json:"unlimited_quota"`
+	ModelLimitsEnabled     bool           `json:"model_limits_enabled"`
+	ModelLimits            string         `json:"model_limits" gorm:"type:text"`
+	AllowIps               *string        `json:"allow_ips" gorm:"default:''"`
+	UsedQuota              int            `json:"used_quota" gorm:"default:0"` // used quota
+	Group                  string         `json:"group" gorm:"default:''"`
+	CrossGroupRetry        bool           `json:"cross_group_retry"` // 跨分组重试，仅auto分组有效
+	Groups                 []string       `json:"groups" gorm:"-"`
+	GroupSwitchCodes       []int          `json:"group_switch_status_codes" gorm:"-"`
+	GroupSwitchStatusCodes string         `json:"-" gorm:"type:text"`
+	GroupSwitchRetryCount  int            `json:"group_switch_retry_count" gorm:"not null;default:0"`
+	DeletedAt              gorm.DeletedAt `gorm:"index"`
+}
+
+func NormalizeTokenGroups(group string) []string {
+	group = strings.TrimSpace(group)
+	if group == "[]" {
+		return []string{}
+	}
+	var raw []string
+	if strings.HasPrefix(group, "[") {
+		_ = json.Unmarshal([]byte(group), &raw)
+	} else if group != "" {
+		raw = strings.Split(group, ",")
+	}
+	seen := make(map[string]struct{}, len(raw))
+	groups := make([]string, 0, len(raw))
+	for _, item := range raw {
+		item = strings.TrimSpace(item)
+		if item == "" {
+			continue
+		}
+		if _, ok := seen[item]; ok {
+			continue
+		}
+		seen[item] = struct{}{}
+		groups = append(groups, item)
+	}
+	if len(groups) == 0 {
+		return []string{"default"}
+	}
+	return groups
+}
+
+func EncodeTokenGroups(groups []string) string {
+	if len(groups) == 0 {
+		return "[]"
+	}
+	normalized := NormalizeTokenGroups(strings.Join(groups, ","))
+	if len(normalized) == 1 {
+		return normalized[0]
+	}
+	body, _ := json.Marshal(normalized)
+	return string(body)
+}
+
+func (token *Token) GetGroups() []string {
+	if token == nil {
+		return []string{"default"}
+	}
+	return NormalizeTokenGroups(token.Group)
+}
+
+func NormalizeGroupSwitchStatusCodes(codes []int) []int {
+	seen := make(map[int]struct{}, len(codes))
+	normalized := make([]int, 0, len(codes))
+	for _, code := range codes {
+		if code < 100 || code > 599 {
+			continue
+		}
+		if _, ok := seen[code]; ok {
+			continue
+		}
+		seen[code] = struct{}{}
+		normalized = append(normalized, code)
+	}
+	return normalized
+}
+
+func EncodeGroupSwitchStatusCodes(codes []int) string {
+	normalized := NormalizeGroupSwitchStatusCodes(codes)
+	if len(normalized) == 0 {
+		return ""
+	}
+	body, _ := json.Marshal(normalized)
+	return string(body)
+}
+
+func (token *Token) GetGroupSwitchStatusCodes() map[int]struct{} {
+	result := make(map[int]struct{})
+	if token == nil {
+		return result
+	}
+	var codes []int
+	_ = json.Unmarshal([]byte(token.GroupSwitchStatusCodes), &codes)
+	for _, code := range NormalizeGroupSwitchStatusCodes(codes) {
+		result[code] = struct{}{}
+	}
+	return result
+}
+
+func (token *Token) NormalizeGroupPolicy() {
+	if token == nil {
+		return
+	}
+	if token.Groups == nil {
+		token.Groups = token.GetGroups()
+	} else if len(token.Groups) == 0 {
+		token.Group = "[]"
+	} else {
+		token.Groups = NormalizeTokenGroups(strings.Join(token.Groups, ","))
+	}
+	if len(token.Groups) > 0 {
+		token.Group = EncodeTokenGroups(token.Groups)
+	}
+	if len(token.GroupSwitchCodes) == 0 && token.GroupSwitchStatusCodes != "" {
+		_ = json.Unmarshal([]byte(token.GroupSwitchStatusCodes), &token.GroupSwitchCodes)
+	}
+	token.GroupSwitchCodes = NormalizeGroupSwitchStatusCodes(token.GroupSwitchCodes)
+	token.GroupSwitchStatusCodes = EncodeGroupSwitchStatusCodes(token.GroupSwitchCodes)
+	if token.GroupSwitchRetryCount < 0 {
+		token.GroupSwitchRetryCount = 0
+	}
+	if token.GroupSwitchRetryCount > 10 {
+		token.GroupSwitchRetryCount = 10
+	}
+	token.CrossGroupRetry = len(token.Groups) > 1
 }
 
 func (token *Token) Clean() {
@@ -295,7 +415,7 @@ func (token *Token) Update() (err error) {
 		}
 	}()
 	err = DB.Model(token).Select("name", "status", "expired_time", "remain_quota", "unlimited_quota",
-		"model_limits_enabled", "model_limits", "allow_ips", "group", "cross_group_retry").Updates(token).Error
+		"model_limits_enabled", "model_limits", "allow_ips", "group", "cross_group_retry", "group_switch_status_codes", "group_switch_retry_count").Updates(token).Error
 	return err
 }
 

@@ -449,14 +449,7 @@ func OpenaiRealtimeHandler(c *gin.Context, info *relaycommon.RelayInfo) (*types.
 				if realtimeEvent.Type == dto.RealtimeEventTypeResponseDone {
 					realtimeUsage := realtimeEvent.Response.Usage
 					if realtimeUsage != nil {
-						usage.TotalTokens += realtimeUsage.TotalTokens
-						usage.InputTokens += realtimeUsage.InputTokens
-						usage.OutputTokens += realtimeUsage.OutputTokens
-						usage.InputTokenDetails.AudioTokens += realtimeUsage.InputTokenDetails.AudioTokens
-						usage.InputTokenDetails.CachedTokens += realtimeUsage.InputTokenDetails.CachedTokens
-						usage.InputTokenDetails.TextTokens += realtimeUsage.InputTokenDetails.TextTokens
-						usage.OutputTokenDetails.AudioTokens += realtimeUsage.OutputTokenDetails.AudioTokens
-						usage.OutputTokenDetails.TextTokens += realtimeUsage.OutputTokenDetails.TextTokens
+						accumulateRealtimeUsage(usage, realtimeUsage)
 						err := preConsumeUsage(c, info, usage, sumUsage)
 						if err != nil {
 							errChan <- fmt.Errorf("error consume usage: %v", err)
@@ -547,19 +540,38 @@ func OpenaiRealtimeHandler(c *gin.Context, info *relaycommon.RelayInfo) (*types.
 	return nil, sumUsage
 }
 
+func accumulateRealtimeUsage(dst, src *dto.RealtimeUsage) {
+	if dst == nil || src == nil {
+		return
+	}
+
+	dst.TotalTokens += src.TotalTokens
+	dst.InputTokens += src.InputTokens
+	dst.OutputTokens += src.OutputTokens
+	dst.InputTokenDetails.TextTokens += src.InputTokenDetails.TextTokens
+	dst.InputTokenDetails.AudioTokens += src.InputTokenDetails.AudioTokens
+	dst.InputTokenDetails.ImageTokens += src.InputTokenDetails.ImageTokens
+	dst.InputTokenDetails.CachedTokens += src.InputTokenDetails.CachedTokens
+	dst.InputTokenDetails.CachedCreationTokens += src.InputTokenDetails.CachedCreationTokens
+	if src.InputTokenDetails.CachedTokensDetails != nil {
+		if dst.InputTokenDetails.CachedTokensDetails == nil {
+			dst.InputTokenDetails.CachedTokensDetails = &dto.CachedTokenDetails{}
+		}
+		dst.InputTokenDetails.CachedTokensDetails.TextTokens += src.InputTokenDetails.CachedTokensDetails.TextTokens
+		dst.InputTokenDetails.CachedTokensDetails.AudioTokens += src.InputTokenDetails.CachedTokensDetails.AudioTokens
+		dst.InputTokenDetails.CachedTokensDetails.ImageTokens += src.InputTokenDetails.CachedTokensDetails.ImageTokens
+	}
+	dst.OutputTokenDetails.TextTokens += src.OutputTokenDetails.TextTokens
+	dst.OutputTokenDetails.AudioTokens += src.OutputTokenDetails.AudioTokens
+	dst.OutputTokenDetails.ReasoningTokens += src.OutputTokenDetails.ReasoningTokens
+}
+
 func preConsumeUsage(ctx *gin.Context, info *relaycommon.RelayInfo, usage *dto.RealtimeUsage, totalUsage *dto.RealtimeUsage) error {
 	if usage == nil || totalUsage == nil {
 		return fmt.Errorf("invalid usage pointer")
 	}
 
-	totalUsage.TotalTokens += usage.TotalTokens
-	totalUsage.InputTokens += usage.InputTokens
-	totalUsage.OutputTokens += usage.OutputTokens
-	totalUsage.InputTokenDetails.CachedTokens += usage.InputTokenDetails.CachedTokens
-	totalUsage.InputTokenDetails.TextTokens += usage.InputTokenDetails.TextTokens
-	totalUsage.InputTokenDetails.AudioTokens += usage.InputTokenDetails.AudioTokens
-	totalUsage.OutputTokenDetails.TextTokens += usage.OutputTokenDetails.TextTokens
-	totalUsage.OutputTokenDetails.AudioTokens += usage.OutputTokenDetails.AudioTokens
+	accumulateRealtimeUsage(totalUsage, usage)
 	// clear usage
 	err := service.PreWssConsumeQuota(ctx, info, usage)
 	return err

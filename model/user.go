@@ -890,6 +890,16 @@ func UpdateUserUsedQuotaAndRequestCount(id int, quota int) {
 	updateUserUsedQuotaAndRequestCount(id, quota, 1)
 }
 
+// UpdateUserUsedQuota applies a delta without changing the request count.
+// Negative deltas are used when an asynchronous pre-consumption is refunded.
+func UpdateUserUsedQuota(id int, quotaDelta int) {
+	if common.BatchUpdateEnabled {
+		addNewRecord(BatchUpdateTypeUsedQuota, id, quotaDelta)
+		return
+	}
+	updateUserUsedQuota(id, quotaDelta)
+}
+
 func updateUserUsedQuotaAndRequestCount(id int, quota int, count int) {
 	err := DB.Model(&User{}).Where("id = ?", id).Updates(
 		map[string]interface{}{

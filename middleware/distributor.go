@@ -132,6 +132,17 @@ func Distribute() func(c *gin.Context) {
 					return
 				}
 				usingGroup := common.GetContextKeyString(c, constant.ContextKeyUsingGroup)
+				if usingGroup == "auto" {
+					autoGroups := service.CheapestGroupsForModel(modelRequest.Model)
+					if len(autoGroups) == 0 {
+						abortWithOpenAiMessage(c, http.StatusServiceUnavailable, "没有支持该模型的可用分组", types.ErrorCodeModelNotFound)
+						return
+					}
+					usingGroup = autoGroups[0]
+					c.Set("token_groups", autoGroups)
+					common.SetContextKey(c, constant.ContextKeyTokenGroup, usingGroup)
+					common.SetContextKey(c, constant.ContextKeyUsingGroup, usingGroup)
+				}
 				// 订阅级分组限制：不在订阅 AllowedGroups 内的分组，由 billing_session 走钱包扣费
 				// 此处不再硬拒，避免阻断用户使用其他分组的能力
 				// check path is /pg/chat/completions

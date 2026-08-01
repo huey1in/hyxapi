@@ -28,18 +28,11 @@ type textQuotaSummary struct {
 	CacheCreationTokens1h    int
 	ImageTokens              int
 	AudioTokens              int
+	AudioOutputTokens        int
 	ModelName                string
 	TokenName                string
 	UseTimeSeconds           int64
-	CompletionRatio          float64
-	CacheRatio               float64
-	ImageRatio               float64
-	ModelRatio               float64
 	GroupRatio               float64
-	ModelPrice               float64
-	CacheCreationRatio       float64
-	CacheCreationRatio5m     float64
-	CacheCreationRatio1h     float64
 	Quota                    int
 	IsClaudeUsageSemantic    bool
 	UsageSemantic            string
@@ -49,8 +42,16 @@ type textQuotaSummary struct {
 	ClaudeWebSearchCallCount int
 	FileSearchPrice          float64
 	FileSearchCallCount      int
-	AudioInputPrice          float64
 	ImageGenerationCallPrice float64
+	BillingType              int
+	InputPrice               float64
+	OutputPrice              float64
+	CacheReadPrice           float64
+	CacheWritePrice          float64
+	ImagePrice               float64
+	AudioInputPrice          float64
+	AudioOutputPrice         float64
+	RequestPrice             float64
 }
 
 func cacheWriteTokensTotal(summary textQuotaSummary) int {
@@ -64,34 +65,31 @@ func cacheWriteTokensTotal(summary textQuotaSummary) int {
 	return summary.CacheCreationTokens
 }
 
-func isLegacyClaudeDerivedOpenAIUsage(relayInfo *relaycommon.RelayInfo, usage *dto.Usage) bool {
-	if relayInfo == nil || usage == nil {
-		return false
-	}
-	if relayInfo.GetFinalRequestRelayFormat() == types.RelayFormatClaude {
-		return false
-	}
-	if usage.UsageSource != "" || usage.UsageSemantic != "" {
-		return false
-	}
-	return usage.ClaudeCacheCreation5mTokens > 0 || usage.ClaudeCacheCreation1hTokens > 0
+func (summary textQuotaSummary) hasBillableUsage() bool {
+	return summary.BillingType == model.ModelPricingBillingRequest ||
+		summary.TotalTokens > 0 || summary.CacheTokens > 0 ||
+		summary.CacheCreationTokens > 0 || summary.ImageTokens > 0 ||
+		summary.AudioTokens > 0 || summary.AudioOutputTokens > 0 ||
+		summary.WebSearchCallCount > 0 || summary.ClaudeWebSearchCallCount > 0 ||
+		summary.FileSearchCallCount > 0 || summary.ImageGenerationCallPrice > 0
 }
 
 func calculateTextQuotaSummary(ctx *gin.Context, relayInfo *relaycommon.RelayInfo, usage *dto.Usage) textQuotaSummary {
 	summary := textQuotaSummary{
-		ModelName:            relayInfo.OriginModelName,
-		TokenName:            ctx.GetString("token_name"),
-		UseTimeSeconds:       time.Now().Unix() - relayInfo.StartTime.Unix(),
-		CompletionRatio:      relayInfo.PriceData.CompletionRatio,
-		CacheRatio:           relayInfo.PriceData.CacheRatio,
-		ImageRatio:           relayInfo.PriceData.ImageRatio,
-		ModelRatio:           relayInfo.PriceData.ModelRatio,
-		GroupRatio:           relayInfo.PriceData.GroupRatioInfo.GroupRatio,
-		ModelPrice:           relayInfo.PriceData.ModelPrice,
-		CacheCreationRatio:   relayInfo.PriceData.CacheCreationRatio,
-		CacheCreationRatio5m: relayInfo.PriceData.CacheCreation5mRatio,
-		CacheCreationRatio1h: relayInfo.PriceData.CacheCreation1hRatio,
-		UsageSemantic:        usageSemanticFromUsage(relayInfo, usage),
+		ModelName:        relayInfo.OriginModelName,
+		TokenName:        ctx.GetString("token_name"),
+		UseTimeSeconds:   time.Now().Unix() - relayInfo.StartTime.Unix(),
+		GroupRatio:       relayInfo.PriceData.GroupRatioInfo.GroupRatio,
+		UsageSemantic:    usageSemanticFromUsage(relayInfo, usage),
+		BillingType:      relayInfo.PriceData.BillingType,
+		InputPrice:       relayInfo.PriceData.InputPrice,
+		OutputPrice:      relayInfo.PriceData.OutputPrice,
+		CacheReadPrice:   relayInfo.PriceData.CacheReadPrice,
+		CacheWritePrice:  relayInfo.PriceData.CacheWritePrice,
+		ImagePrice:       relayInfo.PriceData.ImagePrice,
+		AudioInputPrice:  relayInfo.PriceData.AudioInputPrice,
+		AudioOutputPrice: relayInfo.PriceData.AudioOutputPrice,
+		RequestPrice:     relayInfo.PriceData.RequestPrice,
 	}
 	summary.IsClaudeUsageSemantic = summary.UsageSemantic == "anthropic"
 
@@ -102,7 +100,6 @@ func calculateTextQuotaSummary(ctx *gin.Context, relayInfo *relaycommon.RelayInf
 			TotalTokens:      relayInfo.GetEstimatePromptTokens(),
 		}
 	}
-
 	summary.PromptTokens = usage.PromptTokens
 	summary.CompletionTokens = usage.CompletionTokens
 	summary.TotalTokens = usage.PromptTokens + usage.CompletionTokens
@@ -110,52 +107,27 @@ func calculateTextQuotaSummary(ctx *gin.Context, relayInfo *relaycommon.RelayInf
 	summary.CacheCreationTokens = usage.PromptTokensDetails.CachedCreationTokens
 	summary.CacheCreationTokens5m = usage.ClaudeCacheCreation5mTokens
 	summary.CacheCreationTokens1h = usage.ClaudeCacheCreation1hTokens
+	summary.CacheCreationTokens = cacheWriteTokensTotal(summary)
 	summary.ImageTokens = usage.PromptTokensDetails.ImageTokens
 	summary.AudioTokens = usage.PromptTokensDetails.AudioTokens
-	legacyClaudeDerived := isLegacyClaudeDerivedOpenAIUsage(relayInfo, usage)
-	isOpenRouterClaudeBilling := relayInfo.ChannelMeta != nil &&
-		relayInfo.ChannelType == constant.ChannelTypeOpenRouter &&
-		summary.IsClaudeUsageSemantic
+	summary.AudioOutputTokens = usage.CompletionTokenDetails.AudioTokens
 
-	if isOpenRouterClaudeBilling {
-		summary.PromptTokens -= summary.CacheTokens
-		isUsingCustomSettings := relayInfo.PriceData.UsePrice || hasCustomModelRatio(summary.ModelName, relayInfo.PriceData.ModelRatio)
-		if summary.CacheCreationTokens == 0 && relayInfo.PriceData.CacheCreationRatio != 1 && usage.Cost != 0 && !isUsingCustomSettings {
-			maybeCacheCreationTokens := CalcOpenRouterCacheCreateTokens(*usage, relayInfo.PriceData)
-			if maybeCacheCreationTokens >= 0 && summary.PromptTokens >= maybeCacheCreationTokens {
-				summary.CacheCreationTokens = maybeCacheCreationTokens
-			}
-		}
-		summary.PromptTokens -= summary.CacheCreationTokens
-	}
+	groupRatio := decimal.NewFromFloat(summary.GroupRatio)
+	quotaPerUnit := decimal.NewFromFloat(common.QuotaPerUnit)
+	perMillion := decimal.NewFromInt(1_000_000)
 
-	dPromptTokens := decimal.NewFromInt(int64(summary.PromptTokens))
-	dCacheTokens := decimal.NewFromInt(int64(summary.CacheTokens))
-	dImageTokens := decimal.NewFromInt(int64(summary.ImageTokens))
-	dAudioTokens := decimal.NewFromInt(int64(summary.AudioTokens))
-	dCompletionTokens := decimal.NewFromInt(int64(summary.CompletionTokens))
-	dCachedCreationTokens := decimal.NewFromInt(int64(summary.CacheCreationTokens))
-	dCompletionRatio := decimal.NewFromFloat(summary.CompletionRatio)
-	dCacheRatio := decimal.NewFromFloat(summary.CacheRatio)
-	dImageRatio := decimal.NewFromFloat(summary.ImageRatio)
-	dModelRatio := decimal.NewFromFloat(summary.ModelRatio)
-	dGroupRatio := decimal.NewFromFloat(summary.GroupRatio)
-	dModelPrice := decimal.NewFromFloat(summary.ModelPrice)
-	dCacheCreationRatio := decimal.NewFromFloat(summary.CacheCreationRatio)
-	dCacheCreationRatio5m := decimal.NewFromFloat(summary.CacheCreationRatio5m)
-	dCacheCreationRatio1h := decimal.NewFromFloat(summary.CacheCreationRatio1h)
-	dQuotaPerUnit := decimal.NewFromFloat(common.QuotaPerUnit)
-
-	ratio := dModelRatio.Mul(dGroupRatio)
-
-	var dWebSearchQuota decimal.Decimal
+	// Built-in tools and image generation are independent USD add-ons.
+	toolQuota := decimal.Zero
 	if relayInfo.ResponsesUsageInfo != nil {
-		if webSearchTool, exists := relayInfo.ResponsesUsageInfo.BuiltInTools[dto.BuildInToolWebSearchPreview]; exists && webSearchTool.CallCount > 0 {
-			summary.WebSearchCallCount = webSearchTool.CallCount
-			summary.WebSearchPrice = operation_setting.GetWebSearchPricePerThousand(summary.ModelName, webSearchTool.SearchContextSize)
-			dWebSearchQuota = decimal.NewFromFloat(summary.WebSearchPrice).
-				Mul(decimal.NewFromInt(int64(webSearchTool.CallCount))).
-				Div(decimal.NewFromInt(1000)).Mul(dGroupRatio).Mul(dQuotaPerUnit)
+		if tool, ok := relayInfo.ResponsesUsageInfo.BuiltInTools[dto.BuildInToolWebSearchPreview]; ok && tool != nil && tool.CallCount > 0 {
+			summary.WebSearchCallCount = tool.CallCount
+			summary.WebSearchPrice = operation_setting.GetWebSearchPricePerThousand(summary.ModelName, tool.SearchContextSize)
+			toolQuota = toolQuota.Add(decimal.NewFromFloat(summary.WebSearchPrice).Mul(decimal.NewFromInt(int64(tool.CallCount))).Div(decimal.NewFromInt(1000)))
+		}
+		if tool, ok := relayInfo.ResponsesUsageInfo.BuiltInTools[dto.BuildInToolFileSearch]; ok && tool != nil && tool.CallCount > 0 {
+			summary.FileSearchCallCount = tool.CallCount
+			summary.FileSearchPrice = operation_setting.GetFileSearchPricePerThousand()
+			toolQuota = toolQuota.Add(decimal.NewFromFloat(summary.FileSearchPrice).Mul(decimal.NewFromInt(int64(tool.CallCount))).Div(decimal.NewFromInt(1000)))
 		}
 	} else if strings.HasSuffix(summary.ModelName, "search-preview") {
 		searchContextSize := ctx.GetString("chat_completion_web_search_context_size")
@@ -164,120 +136,57 @@ func calculateTextQuotaSummary(ctx *gin.Context, relayInfo *relaycommon.RelayInf
 		}
 		summary.WebSearchCallCount = 1
 		summary.WebSearchPrice = operation_setting.GetWebSearchPricePerThousand(summary.ModelName, searchContextSize)
-		dWebSearchQuota = decimal.NewFromFloat(summary.WebSearchPrice).
-			Div(decimal.NewFromInt(1000)).Mul(dGroupRatio).Mul(dQuotaPerUnit)
+		toolQuota = toolQuota.Add(decimal.NewFromFloat(summary.WebSearchPrice).Div(decimal.NewFromInt(1000)))
 	}
-
-	var dClaudeWebSearchQuota decimal.Decimal
 	summary.ClaudeWebSearchCallCount = ctx.GetInt("claude_web_search_requests")
 	if summary.ClaudeWebSearchCallCount > 0 {
 		summary.ClaudeWebSearchPrice = operation_setting.GetClaudeWebSearchPricePerThousand()
-		dClaudeWebSearchQuota = decimal.NewFromFloat(summary.ClaudeWebSearchPrice).
-			Div(decimal.NewFromInt(1000)).Mul(dGroupRatio).Mul(dQuotaPerUnit).
-			Mul(decimal.NewFromInt(int64(summary.ClaudeWebSearchCallCount)))
+		toolQuota = toolQuota.Add(decimal.NewFromFloat(summary.ClaudeWebSearchPrice).Mul(decimal.NewFromInt(int64(summary.ClaudeWebSearchCallCount))).Div(decimal.NewFromInt(1000)))
 	}
-
-	var dFileSearchQuota decimal.Decimal
-	if relayInfo.ResponsesUsageInfo != nil {
-		if fileSearchTool, exists := relayInfo.ResponsesUsageInfo.BuiltInTools[dto.BuildInToolFileSearch]; exists && fileSearchTool.CallCount > 0 {
-			summary.FileSearchCallCount = fileSearchTool.CallCount
-			summary.FileSearchPrice = operation_setting.GetFileSearchPricePerThousand()
-			dFileSearchQuota = decimal.NewFromFloat(summary.FileSearchPrice).
-				Mul(decimal.NewFromInt(int64(fileSearchTool.CallCount))).
-				Div(decimal.NewFromInt(1000)).Mul(dGroupRatio).Mul(dQuotaPerUnit)
-		}
-	}
-
-	var dImageGenerationCallQuota decimal.Decimal
 	if ctx.GetBool("image_generation_call") {
 		summary.ImageGenerationCallPrice = operation_setting.GetGPTImage1PriceOnceCall(ctx.GetString("image_generation_call_quality"), ctx.GetString("image_generation_call_size"))
-		dImageGenerationCallQuota = decimal.NewFromFloat(summary.ImageGenerationCallPrice).Mul(dGroupRatio).Mul(dQuotaPerUnit)
+		toolQuota = toolQuota.Add(decimal.NewFromFloat(summary.ImageGenerationCallPrice))
 	}
+	toolQuota = toolQuota.Mul(groupRatio).Mul(quotaPerUnit)
 
-	var audioInputQuota decimal.Decimal
-	if !relayInfo.PriceData.UsePrice {
-		baseTokens := dPromptTokens
-
-		var cachedTokensWithRatio decimal.Decimal
-		if !dCacheTokens.IsZero() {
-			if !summary.IsClaudeUsageSemantic && !legacyClaudeDerived {
-				baseTokens = baseTokens.Sub(dCacheTokens)
-			}
-			cachedTokensWithRatio = dCacheTokens.Mul(dCacheRatio)
-		}
-
-		var cachedCreationTokensWithRatio decimal.Decimal
-		hasSplitCacheCreationTokens := summary.CacheCreationTokens5m > 0 || summary.CacheCreationTokens1h > 0
-		if !dCachedCreationTokens.IsZero() || hasSplitCacheCreationTokens {
-			if !summary.IsClaudeUsageSemantic && !legacyClaudeDerived {
-				baseTokens = baseTokens.Sub(dCachedCreationTokens)
-				cachedCreationTokensWithRatio = dCachedCreationTokens.Mul(dCacheCreationRatio)
-			} else {
-				remaining := summary.CacheCreationTokens - summary.CacheCreationTokens5m - summary.CacheCreationTokens1h
-				if remaining < 0 {
-					remaining = 0
-				}
-				cachedCreationTokensWithRatio = decimal.NewFromInt(int64(remaining)).Mul(dCacheCreationRatio)
-				cachedCreationTokensWithRatio = cachedCreationTokensWithRatio.Add(decimal.NewFromInt(int64(summary.CacheCreationTokens5m)).Mul(dCacheCreationRatio5m))
-				cachedCreationTokensWithRatio = cachedCreationTokensWithRatio.Add(decimal.NewFromInt(int64(summary.CacheCreationTokens1h)).Mul(dCacheCreationRatio1h))
-			}
-		}
-
-		var imageTokensWithRatio decimal.Decimal
-		if !dImageTokens.IsZero() {
-			baseTokens = baseTokens.Sub(dImageTokens)
-			imageTokensWithRatio = dImageTokens.Mul(dImageRatio)
-		}
-
-		if !dAudioTokens.IsZero() {
-			summary.AudioInputPrice = operation_setting.GetGeminiInputAudioPricePerMillionTokens(summary.ModelName)
-			if summary.AudioInputPrice > 0 {
-				baseTokens = baseTokens.Sub(dAudioTokens)
-				audioInputQuota = decimal.NewFromFloat(summary.AudioInputPrice).
-					Div(decimal.NewFromInt(1000000)).Mul(dAudioTokens).Mul(dGroupRatio).Mul(dQuotaPerUnit)
-			}
-		}
-
-		promptQuota := baseTokens.Add(cachedTokensWithRatio).Add(imageTokensWithRatio).Add(cachedCreationTokensWithRatio)
-		completionQuota := dCompletionTokens.Mul(dCompletionRatio)
-		quotaCalculateDecimal := promptQuota.Add(completionQuota).Mul(ratio)
-		quotaCalculateDecimal = quotaCalculateDecimal.Add(dWebSearchQuota)
-		quotaCalculateDecimal = quotaCalculateDecimal.Add(dClaudeWebSearchQuota)
-		quotaCalculateDecimal = quotaCalculateDecimal.Add(dFileSearchQuota)
-		quotaCalculateDecimal = quotaCalculateDecimal.Add(audioInputQuota)
-		quotaCalculateDecimal = quotaCalculateDecimal.Add(dImageGenerationCallQuota)
-
-		if len(relayInfo.PriceData.OtherRatios) > 0 {
-			for _, otherRatio := range relayInfo.PriceData.OtherRatios {
-				quotaCalculateDecimal = quotaCalculateDecimal.Mul(decimal.NewFromFloat(otherRatio))
-			}
-		}
-
-		if !ratio.IsZero() && quotaCalculateDecimal.LessThanOrEqual(decimal.Zero) {
-			quotaCalculateDecimal = decimal.NewFromInt(1)
-		}
-		summary.Quota = int(quotaCalculateDecimal.Round(0).IntPart())
+	var directUSD decimal.Decimal
+	if summary.BillingType == model.ModelPricingBillingRequest {
+		directUSD = decimal.NewFromFloat(summary.RequestPrice)
 	} else {
-		quotaCalculateDecimal := dModelPrice.Mul(dQuotaPerUnit).Mul(dGroupRatio)
-		quotaCalculateDecimal = quotaCalculateDecimal.Add(dWebSearchQuota)
-		quotaCalculateDecimal = quotaCalculateDecimal.Add(dClaudeWebSearchQuota)
-		quotaCalculateDecimal = quotaCalculateDecimal.Add(dFileSearchQuota)
-		quotaCalculateDecimal = quotaCalculateDecimal.Add(audioInputQuota)
-		quotaCalculateDecimal = quotaCalculateDecimal.Add(dImageGenerationCallQuota)
-		if len(relayInfo.PriceData.OtherRatios) > 0 {
-			for _, otherRatio := range relayInfo.PriceData.OtherRatios {
-				quotaCalculateDecimal = quotaCalculateDecimal.Mul(decimal.NewFromFloat(otherRatio))
-			}
+		baseTokens := summary.PromptTokens
+		// OpenAI usage includes cache reads/writes in prompt_tokens. Anthropic
+		// reports input_tokens and cache classes independently.
+		if !summary.IsClaudeUsageSemantic {
+			baseTokens -= summary.CacheTokens + summary.CacheCreationTokens
 		}
-		summary.Quota = int(quotaCalculateDecimal.Round(0).IntPart())
+		baseTokens -= summary.ImageTokens + summary.AudioTokens
+		if baseTokens < 0 {
+			baseTokens = 0
+		}
+		completionTextTokens := summary.CompletionTokens - summary.AudioOutputTokens
+		if completionTextTokens < 0 {
+			completionTextTokens = 0
+		}
+		directUSD = directUSD.Add(decimal.NewFromInt(int64(baseTokens)).Mul(decimal.NewFromFloat(summary.InputPrice)).Div(perMillion))
+		directUSD = directUSD.Add(decimal.NewFromInt(int64(summary.CacheTokens)).Mul(decimal.NewFromFloat(summary.CacheReadPrice)).Div(perMillion))
+		directUSD = directUSD.Add(decimal.NewFromInt(int64(summary.CacheCreationTokens)).Mul(decimal.NewFromFloat(summary.CacheWritePrice)).Div(perMillion))
+		directUSD = directUSD.Add(decimal.NewFromInt(int64(summary.ImageTokens)).Mul(decimal.NewFromFloat(summary.ImagePrice)).Div(perMillion))
+		directUSD = directUSD.Add(decimal.NewFromInt(int64(summary.AudioTokens)).Mul(decimal.NewFromFloat(summary.AudioInputPrice)).Div(perMillion))
+		directUSD = directUSD.Add(decimal.NewFromInt(int64(completionTextTokens)).Mul(decimal.NewFromFloat(summary.OutputPrice)).Div(perMillion))
+		directUSD = directUSD.Add(decimal.NewFromInt(int64(summary.AudioOutputTokens)).Mul(decimal.NewFromFloat(summary.AudioOutputPrice)).Div(perMillion))
 	}
-
-	if summary.TotalTokens == 0 {
+	quota := directUSD.Mul(groupRatio).Mul(quotaPerUnit).Add(toolQuota)
+	for _, multiplier := range relayInfo.PriceData.OtherRatios {
+		if multiplier > 0 {
+			quota = quota.Mul(decimal.NewFromFloat(multiplier))
+		}
+	}
+	summary.Quota = int(quota.Round(0).IntPart())
+	if !summary.hasBillableUsage() && toolQuota.IsZero() {
 		summary.Quota = 0
-	} else if !ratio.IsZero() && summary.Quota == 0 {
+	} else if summary.Quota == 0 && quota.GreaterThan(decimal.Zero) {
 		summary.Quota = 1
 	}
-
 	return summary
 }
 
@@ -319,7 +228,7 @@ func PostTextConsumeQuota(ctx *gin.Context, relayInfo *relaycommon.RelayInfo, us
 		extraContent = append(extraContent, fmt.Sprintf("Image Generation Call 花费 %s", decimal.NewFromFloat(summary.ImageGenerationCallPrice).Mul(decimal.NewFromFloat(summary.GroupRatio)).Mul(decimal.NewFromFloat(common.QuotaPerUnit)).String()))
 	}
 
-	if summary.TotalTokens == 0 {
+	if !summary.hasBillableUsage() {
 		extraContent = append(extraContent, "上游没有返回计费信息，无法扣费（可能是上游超时）")
 		logger.LogError(ctx, fmt.Sprintf("total tokens is 0, cannot consume quota, userId %d, channelId %d, tokenId %d, model %s， pre-consumed quota %d", relayInfo.UserId, relayInfo.ChannelId, relayInfo.TokenId, summary.ModelName, relayInfo.FinalPreConsumedQuota))
 	} else {
@@ -345,22 +254,22 @@ func PostTextConsumeQuota(ctx *gin.Context, relayInfo *relaycommon.RelayInfo, us
 	var other map[string]interface{}
 	if summary.IsClaudeUsageSemantic {
 		other = GenerateClaudeOtherInfo(ctx, relayInfo,
-			summary.ModelRatio, summary.GroupRatio, summary.CompletionRatio,
-			summary.CacheTokens, summary.CacheRatio,
-			summary.CacheCreationTokens, summary.CacheCreationRatio,
-			summary.CacheCreationTokens5m, summary.CacheCreationRatio5m,
-			summary.CacheCreationTokens1h, summary.CacheCreationRatio1h,
-			summary.ModelPrice, relayInfo.PriceData.GroupRatioInfo.GroupSpecialRatio)
+			summary.InputPrice, summary.GroupRatio, summary.OutputPrice,
+			summary.CacheTokens, summary.CacheReadPrice,
+			summary.CacheCreationTokens, summary.CacheWritePrice,
+			summary.CacheCreationTokens5m, summary.CacheWritePrice,
+			summary.CacheCreationTokens1h, summary.CacheWritePrice,
+			summary.RequestPrice)
 		other["usage_semantic"] = "anthropic"
 	} else {
-		other = GenerateTextOtherInfo(ctx, relayInfo, summary.ModelRatio, summary.GroupRatio, summary.CompletionRatio, summary.CacheTokens, summary.CacheRatio, summary.ModelPrice, relayInfo.PriceData.GroupRatioInfo.GroupSpecialRatio)
+		other = GenerateTextOtherInfo(ctx, relayInfo, summary.InputPrice, summary.GroupRatio, summary.OutputPrice, summary.CacheTokens, summary.CacheReadPrice, summary.RequestPrice)
 	}
 	if adminRejectReason != "" {
 		other["reject_reason"] = adminRejectReason
 	}
 	if summary.ImageTokens != 0 {
 		other["image"] = true
-		other["image_ratio"] = summary.ImageRatio
+		other["image_price"] = summary.ImagePrice
 		other["image_output"] = summary.ImageTokens
 	}
 	if summary.WebSearchCallCount > 0 {
@@ -388,15 +297,15 @@ func PostTextConsumeQuota(ctx *gin.Context, relayInfo *relaycommon.RelayInfo, us
 	}
 	if summary.CacheCreationTokens > 0 {
 		other["cache_creation_tokens"] = summary.CacheCreationTokens
-		other["cache_creation_ratio"] = summary.CacheCreationRatio
+		other["cache_write_price"] = summary.CacheWritePrice
 	}
 	if summary.CacheCreationTokens5m > 0 {
 		other["cache_creation_tokens_5m"] = summary.CacheCreationTokens5m
-		other["cache_creation_ratio_5m"] = summary.CacheCreationRatio5m
+		other["cache_write_price_5m"] = summary.CacheWritePrice
 	}
 	if summary.CacheCreationTokens1h > 0 {
 		other["cache_creation_tokens_1h"] = summary.CacheCreationTokens1h
-		other["cache_creation_ratio_1h"] = summary.CacheCreationRatio1h
+		other["cache_write_price_1h"] = summary.CacheWritePrice
 	}
 	cacheWriteTokens := cacheWriteTokensTotal(summary)
 	if cacheWriteTokens > 0 {

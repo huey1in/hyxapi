@@ -10,7 +10,6 @@ import (
 
 	"github.com/QuantumNous/new-api/common"
 	"github.com/QuantumNous/new-api/constant"
-	"github.com/QuantumNous/new-api/setting/ratio_setting"
 	"github.com/QuantumNous/new-api/types"
 )
 
@@ -20,19 +19,18 @@ type Pricing struct {
 	Icon                   string                  `json:"icon,omitempty"`
 	Tags                   string                  `json:"tags,omitempty"`
 	VendorID               int                     `json:"vendor_id,omitempty"`
-	QuotaType              int                     `json:"quota_type"`
-	ModelRatio             float64                 `json:"model_ratio"`
-	ModelPrice             float64                 `json:"model_price"`
-	OwnerBy                string                  `json:"owner_by"`
-	CompletionRatio        float64                 `json:"completion_ratio"`
-	CacheRatio             *float64                `json:"cache_ratio,omitempty"`
-	CreateCacheRatio       *float64                `json:"create_cache_ratio,omitempty"`
-	ImageRatio             *float64                `json:"image_ratio,omitempty"`
-	AudioRatio             *float64                `json:"audio_ratio,omitempty"`
-	AudioCompletionRatio   *float64                `json:"audio_completion_ratio,omitempty"`
+	BillingType            string                  `json:"billing_type"`
+	Configured             bool                    `json:"configured"`
+	InputPrice             float64                 `json:"input_price"`
+	OutputPrice            float64                 `json:"output_price"`
+	CacheReadPrice         float64                 `json:"cache_read_price"`
+	CacheWritePrice        float64                 `json:"cache_write_price"`
+	ImagePrice             float64                 `json:"image_price"`
+	AudioInputPrice        float64                 `json:"audio_input_price"`
+	AudioOutputPrice       float64                 `json:"audio_output_price"`
+	RequestPrice           float64                 `json:"request_price"`
 	EnableGroup            []string                `json:"enable_groups"`
 	SupportedEndpointTypes []constant.EndpointType `json:"supported_endpoint_types"`
-	PricingVersion         string                  `json:"pricing_version,omitempty"`
 }
 
 type PricingVendor struct {
@@ -51,7 +49,6 @@ var (
 
 	// 缓存映射：模型名 -> 启用分组 / 计费类型
 	modelEnableGroups     = make(map[string][]string)
-	modelQuotaTypeMap     = make(map[string]int)
 	modelEnableGroupsLock = sync.RWMutex{}
 )
 
@@ -72,6 +69,15 @@ func GetPricing() []Pricing {
 		}
 	}
 	return pricingMap
+}
+
+// InvalidatePricingCache forces model metadata, enabled groups, endpoints,
+// vendors, and direct prices to be rebuilt on the next public pricing request.
+func InvalidatePricingCache() {
+	updatePricingLock.Lock()
+	pricingMap = nil
+	lastGetPricingTime = time.Time{}
+	updatePricingLock.Unlock()
 }
 
 // GetVendors 返回当前定价接口使用到的供应商信息
@@ -96,7 +102,6 @@ func GetModelSupportEndpointTypes(model string) []constant.EndpointType {
 }
 
 func updatePricing() {
-	//modelRatios := common.GetModelRatios()
 	enableAbilities, err := GetAllEnableAbilityWithChannels()
 	if err != nil {
 		common.SysLog(fmt.Sprintf("GetAllEnableAbilityWithChannels error: %v", err))
@@ -292,48 +297,30 @@ func updatePricing() {
 			pricing.Tags = meta.Tags
 			pricing.VendorID = meta.VendorID
 		}
-		modelPrice, findPrice := ratio_setting.GetModelPrice(model, false)
-		if findPrice {
-			pricing.ModelPrice = modelPrice
-			pricing.QuotaType = 1
-		} else {
-			modelRatio, _, _ := ratio_setting.GetModelRatio(model)
-			pricing.ModelRatio = modelRatio
-			pricing.CompletionRatio = ratio_setting.GetCompletionRatio(model)
-			pricing.QuotaType = 0
-		}
-		if cacheRatio, ok := ratio_setting.GetCacheRatio(model); ok {
-			pricing.CacheRatio = &cacheRatio
-		}
-		if createCacheRatio, ok := ratio_setting.GetCreateCacheRatio(model); ok {
-			pricing.CreateCacheRatio = &createCacheRatio
-		}
-		if imageRatio, ok := ratio_setting.GetImageRatio(model); ok {
-			pricing.ImageRatio = &imageRatio
-		}
-		if ratio_setting.ContainsAudioRatio(model) {
-			audioRatio := ratio_setting.GetAudioRatio(model)
-			pricing.AudioRatio = &audioRatio
-		}
-		if ratio_setting.ContainsAudioCompletionRatio(model) {
-			audioCompletionRatio := ratio_setting.GetAudioCompletionRatio(model)
-			pricing.AudioCompletionRatio = &audioCompletionRatio
+		// The public pricing response is sourced exclusively from the model
+		// pricing table. Missing rows remain visible as unconfigured models so
+		// administrators can identify them; the relay rejects them at billing
+		// time until a price schedule is created.
+		if modelPricing, ok := GetModelPricing(model); ok {
+			pricing.Configured = true
+			pricing.BillingType = modelPricing.BillingTypeName()
+			pricing.InputPrice = modelPricing.InputPrice
+			pricing.OutputPrice = modelPricing.OutputPrice
+			pricing.CacheReadPrice = modelPricing.CacheReadPrice
+			pricing.CacheWritePrice = modelPricing.CacheWritePrice
+			pricing.ImagePrice = modelPricing.ImagePrice
+			pricing.AudioInputPrice = modelPricing.AudioInputPrice
+			pricing.AudioOutputPrice = modelPricing.AudioOutputPrice
+			pricing.RequestPrice = modelPricing.RequestPrice
 		}
 		pricingMap = append(pricingMap, pricing)
-	}
-
-	// 防止大更新后数据不通用
-	if len(pricingMap) > 0 {
-		pricingMap[0].PricingVersion = "5a90f2b86c08bd983a9a2e6d66c255f4eaef9c4bc934386d2b6ae84ef0ff1f1f"
 	}
 
 	// 刷新缓存映射，供高并发快速查询
 	modelEnableGroupsLock.Lock()
 	modelEnableGroups = make(map[string][]string)
-	modelQuotaTypeMap = make(map[string]int)
 	for _, p := range pricingMap {
 		modelEnableGroups[p.ModelName] = p.EnableGroup
-		modelQuotaTypeMap[p.ModelName] = p.QuotaType
 	}
 	modelEnableGroupsLock.Unlock()
 

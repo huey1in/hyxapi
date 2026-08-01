@@ -3,14 +3,13 @@ package service
 import (
 	"context"
 	"fmt"
+	"math"
 	"strings"
 
 	"github.com/QuantumNous/new-api/common"
-	"github.com/QuantumNous/new-api/constant"
 	"github.com/QuantumNous/new-api/logger"
 	"github.com/QuantumNous/new-api/model"
 	relaycommon "github.com/QuantumNous/new-api/relay/common"
-	"github.com/QuantumNous/new-api/setting/ratio_setting"
 	"github.com/gin-gonic/gin"
 )
 
@@ -19,8 +18,7 @@ import (
 func LogTaskConsumption(c *gin.Context, info *relaycommon.RelayInfo) {
 	tokenName := c.GetString("token_name")
 	logContent := fmt.Sprintf("操作 %s", info.Action)
-	// 支持任务仅按次计费
-	if common.StringsContains(constant.TaskPricePatches, info.OriginModelName) {
+	if info.PriceData.BillingType == model.ModelPricingBillingRequest {
 		logContent = fmt.Sprintf("%s，按次计费", logContent)
 	} else {
 		if len(info.PriceData.OtherRatios) > 0 {
@@ -38,14 +36,16 @@ func LogTaskConsumption(c *gin.Context, info *relaycommon.RelayInfo) {
 	other := make(map[string]interface{})
 	other["is_task"] = true
 	other["request_path"] = c.Request.URL.Path
-	other["model_price"] = info.PriceData.ModelPrice
-	if info.PriceData.ModelRatio > 0 {
-		other["model_ratio"] = info.PriceData.ModelRatio
-	}
+	other["billing_type"] = info.PriceData.BillingType
+	other["input_price"] = info.PriceData.InputPrice
+	other["output_price"] = info.PriceData.OutputPrice
+	other["cache_read_price"] = info.PriceData.CacheReadPrice
+	other["cache_write_price"] = info.PriceData.CacheWritePrice
+	other["image_price"] = info.PriceData.ImagePrice
+	other["audio_input_price"] = info.PriceData.AudioInputPrice
+	other["audio_output_price"] = info.PriceData.AudioOutputPrice
+	other["request_price"] = info.PriceData.RequestPrice
 	other["group_ratio"] = info.PriceData.GroupRatioInfo.GroupRatio
-	if info.PriceData.GroupRatioInfo.HasSpecialRatio {
-		other["user_group_ratio"] = info.PriceData.GroupRatioInfo.GroupSpecialRatio
-	}
 	if info.IsModelMapped {
 		other["is_model_mapped"] = true
 		other["upstream_model_name"] = info.UpstreamModelName
@@ -120,10 +120,15 @@ func taskAdjustTokenQuota(ctx context.Context, task *model.Task, delta int) {
 func taskBillingOther(task *model.Task) map[string]interface{} {
 	other := make(map[string]interface{})
 	if bc := task.PrivateData.BillingContext; bc != nil {
-		other["model_price"] = bc.ModelPrice
-		if bc.ModelRatio > 0 {
-			other["model_ratio"] = bc.ModelRatio
-		}
+		other["billing_type"] = bc.BillingType
+		other["input_price"] = bc.InputPrice
+		other["output_price"] = bc.OutputPrice
+		other["cache_read_price"] = bc.CacheReadPrice
+		other["cache_write_price"] = bc.CacheWritePrice
+		other["image_price"] = bc.ImagePrice
+		other["audio_input_price"] = bc.AudioInputPrice
+		other["audio_output_price"] = bc.AudioOutputPrice
+		other["request_price"] = bc.RequestPrice
 		other["group_ratio"] = bc.GroupRatio
 		if len(bc.OtherRatios) > 0 {
 			for k, v := range bc.OtherRatios {
@@ -163,6 +168,8 @@ func RefundTaskQuota(ctx context.Context, task *model.Task, reason string) {
 
 	// 2. 退还令牌额度
 	taskAdjustTokenQuota(ctx, task, -quota)
+	model.UpdateUserUsedQuota(task.UserId, -quota)
+	model.UpdateChannelUsedQuota(task.ChannelId, -quota)
 
 	// 3. 记录日志
 	other := taskBillingOther(task)
@@ -185,7 +192,7 @@ func RefundTaskQuota(ctx context.Context, task *model.Task, reason string) {
 // actualQuota 是任务完成后的实际应扣额度，与预扣额度 (task.Quota) 做差额结算。
 // reason 用于日志记录（例如 "token重算" 或 "adaptor调整"）。
 func RecalculateTaskQuota(ctx context.Context, task *model.Task, actualQuota int, reason string) {
-	if actualQuota <= 0 {
+	if actualQuota < 0 {
 		return
 	}
 	preConsumedQuota := task.Quota
@@ -221,11 +228,13 @@ func RecalculateTaskQuota(ctx context.Context, task *model.Task, actualQuota int
 	if quotaDelta > 0 {
 		logType = model.LogTypeConsume
 		logQuota = quotaDelta
-		model.UpdateUserUsedQuotaAndRequestCount(task.UserId, quotaDelta)
+		model.UpdateUserUsedQuota(task.UserId, quotaDelta)
 		model.UpdateChannelUsedQuota(task.ChannelId, quotaDelta)
 	} else {
 		logType = model.LogTypeRefund
 		logQuota = -quotaDelta
+		model.UpdateUserUsedQuota(task.UserId, quotaDelta)
+		model.UpdateChannelUsedQuota(task.ChannelId, quotaDelta)
 	}
 	other := taskBillingOther(task)
 	other["task_id"] = task.TaskID
@@ -244,45 +253,54 @@ func RecalculateTaskQuota(ctx context.Context, task *model.Task, actualQuota int
 	})
 }
 
-// RecalculateTaskQuotaByTokens 根据实际 token 消耗重新计费（异步差额结算）。
-// 当任务成功且返回了 totalTokens 时，根据模型倍率和分组倍率重新计算实际扣费额度，
-// 与预扣费的差额进行补扣或退还。支持钱包和订阅计费来源。
-func RecalculateTaskQuotaByTokens(ctx context.Context, task *model.Task, totalTokens int) {
+// calculateTaskTokenQuota prices only the token dimensions supplied by a
+// polling adaptor, using the immutable direct-price snapshot from submission.
+func calculateTaskTokenQuota(bc *model.TaskBillingContext, totalTokens, completionTokens int, quotaPerUnit float64) (int, string) {
+	if bc == nil || totalTokens <= 0 || quotaPerUnit <= 0 || bc.GroupRatio < 0 {
+		return 0, "unpriced"
+	}
+
+	inputTokens := totalTokens
+	outputTokens := 0
+	strategy := "total-tokens-input-price"
+	if completionTokens > 0 && completionTokens <= totalTokens {
+		inputTokens -= completionTokens
+		outputTokens = completionTokens
+		strategy = "split-input-output"
+	}
+
+	usd := (float64(inputTokens)*bc.InputPrice + float64(outputTokens)*bc.OutputPrice) / 1_000_000
+	multiplier := bc.GroupRatio
+	for _, ratio := range bc.OtherRatios {
+		if ratio > 0 {
+			multiplier *= ratio
+		}
+	}
+	quota := usd * multiplier * quotaPerUnit
+	if quota > 0 && quota < 1 {
+		return 1, strategy
+	}
+	return int(math.Round(quota)), strategy
+}
+
+func RecalculateTaskQuotaByTokens(ctx context.Context, task *model.Task, totalTokens, completionTokens int) {
 	if totalTokens <= 0 {
 		return
 	}
 
-	modelName := taskModelName(task)
-
-	// 获取模型价格和倍率
-	modelRatio, hasRatioSetting, _ := ratio_setting.GetModelRatio(modelName)
-	// 只有配置了倍率(非固定价格)时才按 token 重新计费
-	if !hasRatioSetting || modelRatio <= 0 {
+	// 按次计费任务在提交时已经锁定固定价格，不需要按 token 重算。
+	bc := task.PrivateData.BillingContext
+	if bc == nil || bc.BillingType == model.ModelPricingBillingRequest {
 		return
 	}
 
 	// 获取分组倍率信息（用户分组概念已删除，task.Group 缺省回落到 "default"）
-	group := task.Group
-	if group == "" {
-		group = "default"
+
+	actualQuota, strategy := calculateTaskTokenQuota(bc, totalTokens, completionTokens, common.QuotaPerUnit)
+	if actualQuota < 0 {
+		return
 	}
 
-	groupRatio := ratio_setting.GetGroupRatio(group)
-	finalGroupRatio := groupRatio
-
-	// 计算 OtherRatios 乘积（视频折扣、时长等）
-	otherMultiplier := 1.0
-	if bc := task.PrivateData.BillingContext; bc != nil {
-		for _, r := range bc.OtherRatios {
-			if r != 1.0 && r > 0 {
-				otherMultiplier *= r
-			}
-		}
-	}
-
-	// 计算实际应扣费额度: totalTokens * modelRatio * groupRatio * otherMultiplier
-	actualQuota := int(float64(totalTokens) * modelRatio * finalGroupRatio * otherMultiplier)
-
-	reason := fmt.Sprintf("token重算：tokens=%d, modelRatio=%.2f, groupRatio=%.2f, otherMultiplier=%.4f", totalTokens, modelRatio, finalGroupRatio, otherMultiplier)
+	reason := fmt.Sprintf("direct price settlement: tokens=%d, completionTokens=%d, strategy=%s, inputPrice=%.6f USD/M, outputPrice=%.6f USD/M, groupRatio=%.2f", totalTokens, completionTokens, strategy, bc.InputPrice, bc.OutputPrice, bc.GroupRatio)
 	RecalculateTaskQuota(ctx, task, actualQuota, reason)
 }

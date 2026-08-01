@@ -6,6 +6,7 @@ import {
 } from '../../components/ui';
 import { Lock } from 'lucide-react';
 import { orderSettingKeysForSave } from './saveOrder.js';
+import ModelPricingEditor from './ModelPricingEditor.jsx';
 
 const TABS = [
   { key: 'platform',    label: '平台' },
@@ -50,7 +51,9 @@ const TAB_KEYS = {
     'fetch_setting.domain_list', 'fetch_setting.ip_filter_mode',
     'fetch_setting.ip_list', 'fetch_setting.allowed_ports',
   ],
-  pricing: ['ModelRatio', 'CompletionRatio', 'CacheRatio', 'CreateCacheRatio', 'ImageRatio', 'AudioRatio', 'AudioCompletionRatio', 'ModelPrice', 'GroupRatio', 'UserUsableGroups', 'ExposeRatioEnabled'],
+  // Model prices live in the model_pricing table and are managed through the
+  // model pricing API. Keep only group multipliers in the option store.
+  pricing: ['GroupRatio', 'UserUsableGroups'],
   limits: [
     'ChannelDisableThreshold', 'AutomaticDisableChannelEnabled', 'AutomaticEnableChannelEnabled',
     'AutomaticDisableKeywords', 'AutomaticDisableStatusCodes', 'AutomaticRetryStatusCodes',
@@ -120,20 +123,18 @@ const TAB_SECTIONS = {
     { title: '日志内容记录', gateKey: 'log_setting.log_request_body', keys: ['log_setting.log_request_body', 'log_setting.log_response_body', 'log_setting.max_body_log_bytes'] },
   ],
   pricing: [
-    { title: '模型倍率', component: 'CombinedRatioEditor', keys: ['ModelRatio', 'CompletionRatio', 'CacheRatio', 'CreateCacheRatio', 'ImageRatio', 'AudioRatio', 'AudioCompletionRatio'] },
-    { title: '模型定价', keys: ['ModelPrice'] },
+  { title: '模型价格', component: 'ModelPricingEditor', keys: [] },
     { title: '分组', component: 'GroupRatioEditor', keys: ['GroupRatio', 'UserUsableGroups'] },
-    { title: '其他', keys: ['ExposeRatioEnabled'] },
   ],
 };
 
-const WIDE_KEYS = new Set([...Array.from(new Set(['EmailDomainWhitelist', 'SensitiveWords', 'AutomaticDisableKeywords', 'AutomaticDisableStatusCodes', 'AutomaticRetryStatusCodes', 'fetch_setting.domain_list', 'fetch_setting.ip_list', 'fetch_setting.allowed_ports', 'global.thinking_model_blacklist', 'gemini.supported_imagine_models'])), 'ModelRatio', 'CompletionRatio', 'CacheRatio', 'CreateCacheRatio', 'ImageRatio', 'AudioRatio', 'AudioCompletionRatio', 'GroupRatio', 'ModelPrice', 'UserUsableGroups', 'claude.model_headers_settings', 'claude.default_max_tokens', 'gemini.safety_settings', 'gemini.version_settings', 'channel_affinity_setting.rules', 'console_setting.announcements', 'global.chat_completions_to_responses_policy', 'EmailTemplateVerification', 'EmailTemplatePasswordReset', 'AlipayPrivateKey', 'AlipayPublicKey']);
+const WIDE_KEYS = new Set([...Array.from(new Set(['EmailDomainWhitelist', 'SensitiveWords', 'AutomaticDisableKeywords', 'AutomaticDisableStatusCodes', 'AutomaticRetryStatusCodes', 'fetch_setting.domain_list', 'fetch_setting.ip_list', 'fetch_setting.allowed_ports', 'global.thinking_model_blacklist', 'gemini.supported_imagine_models'])), 'GroupRatio', 'UserUsableGroups', 'claude.model_headers_settings', 'claude.default_max_tokens', 'gemini.safety_settings', 'gemini.version_settings', 'channel_affinity_setting.rules', 'console_setting.announcements', 'global.chat_completions_to_responses_policy', 'EmailTemplateVerification', 'EmailTemplatePasswordReset', 'AlipayPrivateKey', 'AlipayPublicKey']);
 
 const MULTILINE_KEYS = new Set(['EmailTemplateVerification', 'EmailTemplatePasswordReset', 'AlipayPrivateKey', 'AlipayPublicKey']);
 const TAG_KEYS = new Set(['EmailDomainWhitelist', 'SensitiveWords', 'AutomaticDisableKeywords', 'AutomaticDisableStatusCodes', 'AutomaticRetryStatusCodes', 'fetch_setting.domain_list', 'fetch_setting.ip_list', 'fetch_setting.allowed_ports', 'global.thinking_model_blacklist', 'gemini.supported_imagine_models']);
 const JSON_ARRAY_TAG_KEYS = new Set(['fetch_setting.domain_list', 'fetch_setting.ip_list', 'fetch_setting.allowed_ports', 'global.thinking_model_blacklist', 'gemini.supported_imagine_models']);
 const NEWLINE_TAG_KEYS = new Set(['SensitiveWords', 'AutomaticDisableKeywords']);
-const JSON_KEYS = new Set(['ModelRatio', 'CompletionRatio', 'CacheRatio', 'CreateCacheRatio', 'ImageRatio', 'AudioRatio', 'AudioCompletionRatio', 'GroupRatio', 'ModelPrice', 'UserUsableGroups', 'claude.default_max_tokens', 'gemini.safety_settings', 'gemini.version_settings']);
+const JSON_KEYS = new Set(['GroupRatio', 'UserUsableGroups', 'claude.default_max_tokens', 'gemini.safety_settings', 'gemini.version_settings']);
 const RAW_JSON_KEYS = new Set(['claude.model_headers_settings', 'channel_affinity_setting.rules']);
 const POLICY_KEYS = new Set(['global.chat_completions_to_responses_policy']);
 const LIST_EDITOR_KEYS = new Set(['console_setting.announcements', 'PayMethods']);
@@ -146,7 +147,6 @@ const BOOL_KEYS = new Set([
   'AutomaticDisableChannelEnabled', 'AutomaticEnableChannelEnabled',
   'DataExportEnabled', 'LogConsumeEnabled',
   'BatchUpdateEnabled', 'MemoryCacheEnabled',
-  'ExposeRatioEnabled',
   'DisplayTokenStatEnabled',
   'passkey.enabled', 'passkey.allow_insecure_origin',
   'fetch_setting.enable_ssrf_protection', 'fetch_setting.allow_private_ip',
@@ -258,17 +258,8 @@ const LABELS = {
   RegisterEnabled: '允许注册',
   PasswordRegisterEnabled: '密码注册',
   PasswordLoginEnabled: '密码登录',
-  ModelRatio: '模型倍率',
-  CompletionRatio: '模型补全倍率',
-  CacheRatio: '缓存提示倍率',
-  CreateCacheRatio: '缓存创建倍率',
-  ImageRatio: '图片输入倍率',
-  AudioRatio: '音频输入倍率',
-  AudioCompletionRatio: '音频补全倍率',
   GroupRatio: '分组倍率',
-  ModelPrice: '模型定价',
   UserUsableGroups: '用户可选分组',
-  ExposeRatioEnabled: '暴露倍率接口',
   ChannelDisableThreshold: '渠道禁用阈值',
   AutomaticDisableChannelEnabled: '自动禁用异常渠道',
   AutomaticEnableChannelEnabled: '自动启用恢复渠道',
@@ -384,18 +375,7 @@ const SELECT_OPTIONS = {
 
 const toBool = (v) => v === true || v === 'true' || v === '1';
 
-const parseJsonMap = (value) => {
-  try {
-    const parsed = JSON.parse(value || '{}');
-    return parsed && typeof parsed === 'object' && !Array.isArray(parsed) ? parsed : {};
-  } catch {
-    return {};
-  }
-};
-
-const mapKeys = (value) => new Set(Object.keys(parseJsonMap(value)));
-
-const RatioEditor = ({ value, onChange, suggestions = [], configuredModels = new Set(), numericValue = true }) => {
+const RatioEditor = ({ value, onChange, numericValue = true }) => {
   const lastEmittedRef = useRef(null);
   const [pairs, setPairs] = useState(() => {
     try {
@@ -434,24 +414,8 @@ const RatioEditor = ({ value, onChange, suggestions = [], configuredModels = new
   };
   const add = () => sync([...pairs, { key: '', value: numericValue ? '1' : '' }]);
   const remove = (idx) => sync(pairs.filter((_, i) => i !== idx));
-  const addModel = (name) => sync([...pairs, { key: name, value: numericValue ? '1' : name }]);
-
-  const unsetModels = suggestions.filter((s) => !configuredModels.has(s) && !pairs.some((p) => p.key === s));
-
   return (
     <div className='space-y-2'>
-      {unsetModels.length > 0 && (
-        <div style={{ padding: '8px 10px', background: '#FFF8E8', borderRadius: 10, border: '1px solid #f0e6d0' }}>
-          <div className='text-xs text-[#999] mb-1.5'>未设置 ({unsetModels.length})</div>
-          <div className='flex flex-wrap gap-1'>
-            {unsetModels.map((m) => (
-              <button key={m} type='button' onClick={() => addModel(m)} style={{ height: 24, paddingInline: 8, borderRadius: 12, border: '1px solid var(--ui-border)', background: 'var(--page-bg)', fontSize: 11, color: 'var(--ui-text-2)', cursor: 'pointer' }} title='点击添加'>
-                + {m}
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
       {pairs.map((p, i) => (
         <div key={i} className='flex items-center gap-2' style={{ minWidth: 0 }}>
           <div style={{ flex: 1, minWidth: 0 }}>
@@ -473,165 +437,15 @@ const RatioEditor = ({ value, onChange, suggestions = [], configuredModels = new
   );
 };
 
-const RATIO_COLUMNS = [
-  { key: 'model',       jsonKey: 'ModelRatio',       label: '输入' },
-  { key: 'completion',   jsonKey: 'CompletionRatio',  label: '输出' },
-  { key: 'cache',        jsonKey: 'CacheRatio',       label: '缓存读' },
-  { key: 'cacheCreate',  jsonKey: 'CreateCacheRatio', label: '缓存写' },
-  { key: 'image',        jsonKey: 'ImageRatio',       label: '图片' },
-  { key: 'audio',        jsonKey: 'AudioRatio',       label: '音频入' },
-  { key: 'audioCompletion', jsonKey: 'AudioCompletionRatio', label: '音频出' },
-];
-
-const CombinedRatioEditor = ({ values, onChange, suggestions = [], configuredModels = new Set() }) => {
-  // values: { ModelRatio: '{...}', CompletionRatio: '{...}', ... }
-  // onChange: (jsonKey, newJsonStr) => void
-
-  const lastEmittedRef = useRef(null);
-
-  const parseMap = (jsonKey) => parseJsonMap(values[jsonKey]);
-
-  const snapshotValues = (source) => JSON.stringify(RATIO_COLUMNS.map((col) => [col.jsonKey, source[col.jsonKey] || '{}']));
-
-  // Build merged rows: { modelName: { model: 1.5, completion: 5, ... } }
-  const buildRows = () => {
-    const allModels = new Set();
-    const maps = {};
-    RATIO_COLUMNS.forEach((col) => {
-      maps[col.key] = parseMap(col.jsonKey);
-      Object.keys(maps[col.key]).forEach((m) => allModels.add(m));
-    });
-    const rows = [];
-    allModels.forEach((m) => {
-      const row = { name: m };
-      RATIO_COLUMNS.forEach((col) => {
-        if (maps[col.key][m] !== undefined) row[col.key] = String(maps[col.key][m]);
-      });
-      rows.push(row);
-    });
-    rows.sort((a, b) => a.name.localeCompare(b.name));
-    return rows;
-  };
-
-  const [rows, setRows] = useState(buildRows);
-
-  useEffect(() => {
-    if (snapshotValues(values) === lastEmittedRef.current) return;
-    setRows(buildRows());
-  }, [values.ModelRatio, values.CompletionRatio, values.CacheRatio, values.CreateCacheRatio, values.ImageRatio, values.AudioRatio, values.AudioCompletionRatio]);
-
-  // Determine which columns are visible (have at least one value)
-  const visibleCols = RATIO_COLUMNS.filter((col) =>
-    col.key === 'model' || col.key === 'completion' || rows.some((r) => r[col.key] !== undefined)
-  );
-
-  const syncToJson = (newRows) => {
-    setRows(newRows);
-    const nextValues = {};
-    RATIO_COLUMNS.forEach((col) => {
-      const obj = {};
-      newRows.forEach((r) => {
-        if (r.name.trim() && r[col.key] !== undefined && r[col.key] !== '') {
-          const n = Number(r[col.key]);
-          obj[r.name.trim()] = isNaN(n) ? r[col.key] : n;
-        }
-      });
-      nextValues[col.jsonKey] = JSON.stringify(obj, null, 2);
-    });
-    lastEmittedRef.current = snapshotValues(nextValues);
-    RATIO_COLUMNS.forEach((col) => {
-      onChange(col.jsonKey, nextValues[col.jsonKey]);
-    });
-  };
-
-  const updateCell = (idx, colKey, v) => {
-    const next = [...rows];
-    next[idx] = { ...next[idx], [colKey]: v };
-    syncToJson(next);
-  };
-
-  const updateName = (idx, v) => {
-    const next = [...rows];
-    next[idx] = { ...next[idx], name: v };
-    syncToJson(next);
-  };
-
-  const toggleCell = (idx, colKey) => {
-    const next = [...rows];
-    if (next[idx][colKey] !== undefined) {
-      const { [colKey]: _, ...rest } = next[idx];
-      next[idx] = rest;
-    } else {
-      next[idx] = { ...next[idx], [colKey]: '1' };
-    }
-    syncToJson(next);
-  };
-
-  const addRow = () => syncToJson([...rows, { name: '', model: '1', completion: '1' }]);
-  const addModel = (m) => syncToJson([...rows, { name: m, model: '1', completion: '1' }]);
-  const removeRow = (idx) => syncToJson(rows.filter((_, i) => i !== idx));
-
-  const unsetModels = suggestions.filter((s) => !configuredModels.has(s) && !rows.some((r) => r.name === s));
-
-  return (
-    <div className='space-y-3'>
-      {unsetModels.length > 0 && (
-        <div style={{ padding: '8px 10px', background: '#FFF8E8', borderRadius: 10, border: '1px solid #f0e6d0' }}>
-          <div className='text-xs text-[#999] mb-1.5'>未设置 ({unsetModels.length})</div>
-          <div className='flex flex-wrap gap-1'>
-            {unsetModels.map((m) => (
-              <button key={m} type='button' onClick={() => addModel(m)} style={{ height: 24, paddingInline: 8, borderRadius: 12, border: '1px solid var(--ui-border)', background: 'var(--page-bg)', fontSize: 11, color: 'var(--ui-text-2)', cursor: 'pointer' }} title='点击添加'>
-                + {m}
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Header */}
-      <div className='flex items-center gap-2' style={{ minWidth: 0, paddingRight: 32 }}>
-        <div style={{ flex: 1, minWidth: 0, fontSize: 12, color: '#999', paddingLeft: 2 }}>模型</div>
-        {visibleCols.map((col) => (
-          <div key={col.key} style={{ width: 70, flexShrink: 0, fontSize: 12, color: '#999', textAlign: 'center' }}>{col.label}</div>
-        ))}
-      </div>
-
-      {/* Rows */}
-      {rows.map((r, i) => (
-        <div key={i} className='flex items-center gap-2' style={{ minWidth: 0 }}>
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <Input value={r.name} onChange={(v) => updateName(i, v)} placeholder='模型名' width='100%' />
-          </div>
-          {visibleCols.map((col) => (
-            <div key={col.key} style={{ width: 70, flexShrink: 0 }}>
-              {r[col.key] !== undefined ? (
-                <Input value={r[col.key]} onChange={(v) => updateCell(i, col.key, v)} placeholder='—' width='100%' />
-              ) : (
-                <button type='button' onClick={() => toggleCell(i, col.key)} style={{ width: '100%', height: 32, borderRadius: 8, border: '1px dashed var(--ui-border)', background: 'transparent', cursor: 'pointer', color: '#ccc', fontSize: 12 }} title='点击启用'>
-                  —
-                </button>
-              )}
-            </div>
-          ))}
-          <button type='button' onClick={() => removeRow(i)} style={{ flexShrink: 0, padding: 6, borderRadius: 6, border: 'none', background: 'transparent', cursor: 'pointer', color: 'var(--ui-text-3)' }} title='删除'>
-            <Trash2 size={15} />
-          </button>
-        </div>
-      ))}
-
-      <div className='flex items-center gap-2'>
-        <Button size='sm' variant='toggle' icon={Plus} onClick={addRow}>添加</Button>
-        <span className='text-xs text-[#999]'>{rows.length} 个模型</span>
-      </div>
-    </div>
-  );
-};
-
 const GroupRatioEditor = ({ values, onChange, suggestions = [] }) => {
   // values: { GroupRatio: '{...}', UserUsableGroups: '{...}' }
   // onChange: (jsonKey, newJsonStr) => void
 
   const parseMap = (k) => { try { return JSON.parse(values[k] || '{}'); } catch { return {}; } };
+
+  const nextRowId = useRef(0);
+  const localSync = useRef(null);
+  const withId = (row) => ({ ...row, _id: `group-row-${nextRowId.current++}` });
 
   const buildRows = () => {
     const ratioMap = parseMap('GroupRatio');
@@ -639,12 +453,12 @@ const GroupRatioEditor = ({ values, onChange, suggestions = [] }) => {
     const allGroups = new Set([...Object.keys(ratioMap), ...Object.keys(usableMap)]);
     const rows = [];
     allGroups.forEach((g) => {
-      rows.push({
+      rows.push(withId({
         name: g,
         ratio: ratioMap[g] !== undefined ? String(ratioMap[g]) : '1',
         desc: usableMap[g] || '',
         usable: usableMap[g] !== undefined,
-      });
+      }));
     });
     rows.sort((a, b) => a.name.localeCompare(b.name));
     return rows;
@@ -653,6 +467,11 @@ const GroupRatioEditor = ({ values, onChange, suggestions = [] }) => {
   const [rows, setRows] = useState(buildRows);
 
   useEffect(() => {
+    const signature = `${values.GroupRatio || '{}'}\n${values.UserUsableGroups || '{}'}`;
+    if (localSync.current === signature) {
+      localSync.current = null;
+      return;
+    }
     setRows(buildRows());
   }, [values.GroupRatio, values.UserUsableGroups]);
 
@@ -666,8 +485,11 @@ const GroupRatioEditor = ({ values, onChange, suggestions = [] }) => {
       ratioObj[r.name.trim()] = isNaN(n) ? 1 : n;
       if (r.usable) usableObj[r.name.trim()] = r.desc || r.name.trim();
     });
-    onChange('GroupRatio', JSON.stringify(ratioObj, null, 2));
-    onChange('UserUsableGroups', JSON.stringify(usableObj, null, 2));
+    const nextRatio = JSON.stringify(ratioObj, null, 2);
+    const nextUsable = JSON.stringify(usableObj, null, 2);
+    localSync.current = `${nextRatio}\n${nextUsable}`;
+    onChange('GroupRatio', nextRatio);
+    onChange('UserUsableGroups', nextUsable);
   };
 
   const updateField = (idx, field, v) => {
@@ -683,8 +505,8 @@ const GroupRatioEditor = ({ values, onChange, suggestions = [] }) => {
     syncToJson(next);
   };
 
-  const addRow = () => syncToJson([...rows, { name: '', ratio: '1', desc: '', usable: false }]);
-  const addGroup = (g) => syncToJson([...rows, { name: g, ratio: '1', desc: g, usable: false }]);
+  const addRow = () => setRows((current) => [...current, withId({ name: '', ratio: '1', desc: '', usable: false })]);
+  const addGroup = (g) => syncToJson([...rows, withId({ name: g, ratio: '1', desc: g, usable: false })]);
   const removeRow = (idx) => syncToJson(rows.filter((_, i) => i !== idx));
 
   const unsetGroups = suggestions.filter((s) => !rows.some((r) => r.name === s));
@@ -714,7 +536,7 @@ const GroupRatioEditor = ({ values, onChange, suggestions = [] }) => {
 
       {/* Rows */}
       {rows.map((r, i) => (
-        <div key={i} className='flex items-center gap-2' style={{ minWidth: 0 }}>
+        <div key={r._id} className='flex items-center gap-2' style={{ minWidth: 0 }}>
           <div style={{ flex: 1, minWidth: 0 }}>
             <Input value={r.name} onChange={(v) => updateField(i, 'name', v)} placeholder='分组名' width='100%' />
           </div>
@@ -968,14 +790,12 @@ const SettingPage = () => {
               ? <RatioEditor
                   value={val(k)}
                   onChange={(v) => set(k, v)}
-                  suggestions={k === 'GroupRatio' || k === 'UserUsableGroups' ? groupList : (k.startsWith('claude.') || k.startsWith('gemini.') ? [] : modelList)}
-                  configuredModels={k === 'ModelPrice' ? mapKeys(val('ModelRatio')) : new Set()}
                   numericValue={k !== 'UserUsableGroups' && k !== 'gemini.safety_settings' && k !== 'gemini.version_settings'}
                 />
               : RAW_JSON_KEYS.has(k)
                 ? (k === 'channel_affinity_setting.rules'
                   ? <AffinityRulesEditor value={val(k)} onChange={(v) => set(k, v)} />
-                  : <RatioEditor value={val(k)} onChange={(v) => set(k, v)} suggestions={[]} numericValue={false} />)
+                  : <RatioEditor value={val(k)} onChange={(v) => set(k, v)} numericValue={false} />)
                 : POLICY_KEYS.has(k)
                   ? <PolicyEditor value={val(k)} onChange={(v) => set(k, v)} />
                   : LIST_EDITOR_KEYS.has(k)
@@ -996,19 +816,10 @@ const SettingPage = () => {
   };
 
   const renderSection = (title, sectionKeys, sectionDef) => {
-    // Special handling for CombinedRatioEditor
-    if (sectionDef?.component === 'CombinedRatioEditor') {
-      const ratioValues = {};
-      sectionKeys.forEach((k) => { ratioValues[k] = val(k); });
+    if (sectionDef?.component === 'ModelPricingEditor') {
       return (
         <div key={title} style={{ padding: '20px 22px', border: '1px solid var(--ui-border)', borderRadius: 26 }}>
-          <div style={{ fontSize: 15, fontWeight: 600, color: 'var(--ui-text)', marginBottom: 16 }}>{title}</div>
-          <CombinedRatioEditor
-            values={ratioValues}
-            onChange={(jsonKey, v) => set(jsonKey, v)}
-            suggestions={modelList}
-            configuredModels={mapKeys(val('ModelPrice'))}
-          />
+          <ModelPricingEditor modelSuggestions={modelList} />
         </div>
       );
     }

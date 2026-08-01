@@ -446,215 +446,118 @@ export const selectFilter = (input, option) => {
 };
 
 // -------------------------------
-// 模型定价计算工具函数
+// Direct model prices are stored in USD. Token prices are per 1M tokens;
+// request prices are per request. The selected group multiplier is applied
+// exactly once here and nowhere in the presentation layer.
 export const calculateModelPrice = ({
   record,
   selectedGroup,
-  groupRatio,
-  tokenUnit,
-  displayPrice,
-  currency,
-  quotaDisplayType = 'USD',
-  precision = 4,
+  groupRatio = {},
+  tokenUnit = 'M',
+  displayPrice = (value) => `$${Number(value || 0).toFixed(4)}`,
 }) => {
-  // 1. 选择实际使用的分组
+  groupRatio = groupRatio || {};
   let usedGroup = selectedGroup;
   let usedGroupRatio = groupRatio[selectedGroup];
 
   if (selectedGroup === 'all' || usedGroupRatio === undefined) {
-    // 在模型可用分组中选择倍率最小的分组，若无则使用 1
     let minRatio = Number.POSITIVE_INFINITY;
-    if (
-      Array.isArray(record.enable_groups) &&
-      record.enable_groups.length > 0
-    ) {
-      record.enable_groups.forEach((g) => {
-        const r = groupRatio[g];
-        if (r !== undefined && r < minRatio) {
-          minRatio = r;
-          usedGroup = g;
-          usedGroupRatio = r;
-        }
-      });
-    }
-
-    // 如果找不到合适分组倍率，回退为 1
-    if (usedGroupRatio === undefined) {
-      usedGroupRatio = 1;
-    }
-  }
-
-  // 2. 根据计费类型计算价格
-  if (record.quota_type === 0) {
-    // 按量计费
-    const isTokensDisplay = quotaDisplayType === 'TOKENS';
-    const inputRatioPriceUSD = record.model_ratio * 2 * usedGroupRatio;
-    const unitDivisor = tokenUnit === 'K' ? 1000 : 1;
-    const unitLabel = tokenUnit === 'K' ? 'K' : 'M';
-    const hasRatioValue = (value) =>
-      value !== undefined &&
-      value !== null &&
-      value !== '' &&
-      Number.isFinite(Number(value));
-
-    const formatRatio = (value) =>
-      hasRatioValue(value) ? Number(Number(value).toFixed(6)) : null;
-
-    if (isTokensDisplay) {
-      return {
-        inputRatio: formatRatio(record.model_ratio),
-        completionRatio: formatRatio(record.completion_ratio),
-        cacheRatio: formatRatio(record.cache_ratio),
-        createCacheRatio: formatRatio(record.create_cache_ratio),
-        imageRatio: formatRatio(record.image_ratio),
-        audioInputRatio: formatRatio(record.audio_ratio),
-        audioOutputRatio: formatRatio(record.audio_completion_ratio),
-        isPerToken: true,
-        isTokensDisplay: true,
-        usedGroup,
-        usedGroupRatio,
-      };
-    }
-
-    let symbol = '$';
-    if (currency === 'CNY') {
-      symbol = '¥';
-    } else if (currency === 'CUSTOM') {
-      try {
-        const statusStr = localStorage.getItem('status');
-        if (statusStr) {
-          const s = JSON.parse(statusStr);
-          symbol = s?.custom_currency_symbol || '¤';
-        } else {
-          symbol = '¤';
-        }
-      } catch (e) {
-        symbol = '¤';
+    (Array.isArray(record?.enable_groups) ? record.enable_groups : []).forEach((group) => {
+      const ratio = Number(groupRatio[group]);
+      if (Number.isFinite(ratio) && ratio < minRatio) {
+        minRatio = ratio;
+        usedGroup = group;
+        usedGroupRatio = ratio;
       }
-    }
+    });
+  }
+  usedGroupRatio = Number(usedGroupRatio);
+  if (!Number.isFinite(usedGroupRatio)) usedGroupRatio = 1;
 
-    const formatTokenPrice = (priceUSD) => {
-      const rawDisplayPrice = displayPrice(priceUSD);
-      const numericPrice =
-        parseFloat(rawDisplayPrice.replace(/[^0-9.]/g, '')) / unitDivisor;
-      return `${symbol}${numericPrice.toFixed(precision)}`;
-    };
+  const numeric = (value) => {
+    if (value === null || value === undefined || value === '') return null;
+    const parsed = Number(value);
+    return Number.isFinite(parsed) ? parsed : null;
+  };
+  const billingTypeValue = record?.billing_type;
+  const billingType = billingTypeValue === 0
+    ? 'tokens'
+    : billingTypeValue === 1
+      ? 'request'
+      : String(billingTypeValue || '').toLowerCase();
+  const isPerToken = billingType === 'tokens';
+  const isPerRequest = billingType === 'request';
+  const scaled = (value) => {
+    const parsed = numeric(value);
+    return parsed === null ? null : parsed * usedGroupRatio;
+  };
+  const format = (value) => {
+    if (value === null || value === undefined) return null;
+    return displayPrice(value);
+  };
+  const unitLabel = tokenUnit === 'K' ? 'K' : 'M';
+  const unitDivisor = tokenUnit === 'K' ? 1000 : 1;
 
-    const inputPrice = formatTokenPrice(inputRatioPriceUSD);
-    const audioInputPrice = hasRatioValue(record.audio_ratio)
-      ? formatTokenPrice(inputRatioPriceUSD * Number(record.audio_ratio))
-      : null;
-
+  if (isPerToken) {
+    const input = scaled(record.input_price);
+    const output = scaled(record.output_price);
+    const cacheRead = scaled(record.cache_read_price);
+    const cacheWrite = scaled(record.cache_write_price);
+    const image = scaled(record.image_price);
+    const audioInput = scaled(record.audio_input_price);
+    const audioOutput = scaled(record.audio_output_price);
+    const perUnit = (value) => (value === null ? null : format(value / unitDivisor));
     return {
-      inputPrice,
-      completionPrice: formatTokenPrice(
-        inputRatioPriceUSD * Number(record.completion_ratio),
-      ),
-      cachePrice: hasRatioValue(record.cache_ratio)
-        ? formatTokenPrice(inputRatioPriceUSD * Number(record.cache_ratio))
-        : null,
-      createCachePrice: hasRatioValue(record.create_cache_ratio)
-        ? formatTokenPrice(inputRatioPriceUSD * Number(record.create_cache_ratio))
-        : null,
-      imagePrice: hasRatioValue(record.image_ratio)
-        ? formatTokenPrice(inputRatioPriceUSD * Number(record.image_ratio))
-        : null,
-      audioInputPrice,
-      audioOutputPrice:
-        audioInputPrice && hasRatioValue(record.audio_completion_ratio)
-          ? formatTokenPrice(
-              inputRatioPriceUSD *
-                Number(record.audio_ratio) *
-                Number(record.audio_completion_ratio),
-            )
-          : null,
+      inputPrice: perUnit(input),
+      completionPrice: perUnit(output),
+      cachePrice: perUnit(cacheRead),
+      createCachePrice: perUnit(cacheWrite),
+      imagePrice: perUnit(image),
+      audioInputPrice: perUnit(audioInput),
+      audioOutputPrice: perUnit(audioOutput),
+      inputPriceUSD: input,
+      outputPriceUSD: output,
+      cacheReadPriceUSD: cacheRead,
+      cacheWritePriceUSD: cacheWrite,
+      imagePriceUSD: image,
+      audioInputPriceUSD: audioInput,
+      audioOutputPriceUSD: audioOutput,
       unitLabel,
       isPerToken: true,
-      isTokensDisplay: false,
       usedGroup,
       usedGroupRatio,
+      configured: record?.configured !== false,
     };
   }
 
-  if (record.quota_type === 1) {
-    // 按次计费
-    const priceUSD = parseFloat(record.model_price) * usedGroupRatio;
-    const displayVal = displayPrice(priceUSD);
-
+  if (isPerRequest) {
+    const request = scaled(record.request_price);
     return {
-      price: displayVal,
+      price: format(request),
+      priceUSD: request,
       isPerToken: false,
-      isTokensDisplay: false,
       usedGroup,
       usedGroupRatio,
+      configured: record?.configured !== false,
     };
   }
 
-  // 未知计费类型，返回占位信息
   return {
     price: '-',
     isPerToken: false,
-    isTokensDisplay: false,
     usedGroup,
     usedGroupRatio,
+    configured: record?.configured !== false,
   };
 };
 
-export const getModelPriceItems = (
-  priceData,
-  t,
-  quotaDisplayType = 'USD',
-) => {
+export const getModelPriceItems = (priceData, t) => {
+  const hasConfiguredPrice = (value) => {
+    if (value === null || value === undefined || value === '') return false;
+    const numeric = Number(value);
+    return Number.isFinite(numeric) && numeric > 0;
+  };
   if (priceData.isPerToken) {
-    if (quotaDisplayType === 'TOKENS' || priceData.isTokensDisplay) {
-      return [
-        {
-          key: 'input-ratio',
-          label: t('输入倍率'),
-          value: priceData.inputRatio,
-          suffix: 'x',
-        },
-        {
-          key: 'completion-ratio',
-          label: t('补全倍率'),
-          value: priceData.completionRatio,
-          suffix: 'x',
-        },
-        {
-          key: 'cache-ratio',
-          label: t('缓存读取倍率'),
-          value: priceData.cacheRatio,
-          suffix: 'x',
-        },
-        {
-          key: 'create-cache-ratio',
-          label: t('缓存创建倍率'),
-          value: priceData.createCacheRatio,
-          suffix: 'x',
-        },
-        {
-          key: 'image-ratio',
-          label: t('图片输入倍率'),
-          value: priceData.imageRatio,
-          suffix: 'x',
-        },
-        {
-          key: 'audio-input-ratio',
-          label: t('音频输入倍率'),
-          value: priceData.audioInputRatio,
-          suffix: 'x',
-        },
-        {
-          key: 'audio-output-ratio',
-          label: t('音频补全倍率'),
-          value: priceData.audioOutputRatio,
-          suffix: 'x',
-        },
-      ].filter(
-        (item) =>
-          item.value !== null && item.value !== undefined && item.value !== '',
-      );
-    }
 
     const unitSuffix = ` / 1${priceData.unitLabel} Tokens`;
     return [
@@ -662,45 +565,52 @@ export const getModelPriceItems = (
         key: 'input',
         label: t('输入价格'),
         value: priceData.inputPrice,
+        configuredValue: priceData.inputPriceUSD,
         suffix: unitSuffix,
       },
       {
         key: 'completion',
         label: t('补全价格'),
         value: priceData.completionPrice,
+        configuredValue: priceData.outputPriceUSD,
         suffix: unitSuffix,
       },
       {
         key: 'cache',
         label: t('缓存读取价格'),
         value: priceData.cachePrice,
+        configuredValue: priceData.cacheReadPriceUSD,
         suffix: unitSuffix,
       },
       {
         key: 'create-cache',
         label: t('缓存创建价格'),
         value: priceData.createCachePrice,
+        configuredValue: priceData.cacheWritePriceUSD,
         suffix: unitSuffix,
       },
       {
         key: 'image',
         label: t('图片输入价格'),
         value: priceData.imagePrice,
+        configuredValue: priceData.imagePriceUSD,
         suffix: unitSuffix,
       },
       {
         key: 'audio-input',
         label: t('音频输入价格'),
         value: priceData.audioInputPrice,
+        configuredValue: priceData.audioInputPriceUSD,
         suffix: unitSuffix,
       },
       {
         key: 'audio-output',
         label: t('音频补全价格'),
         value: priceData.audioOutputPrice,
+        configuredValue: priceData.audioOutputPriceUSD,
         suffix: unitSuffix,
       },
-    ].filter((item) => item.value !== null && item.value !== undefined && item.value !== '');
+    ].filter((item) => hasConfiguredPrice(item.configuredValue));
   }
 
   return [
@@ -708,24 +618,10 @@ export const getModelPriceItems = (
       key: 'fixed',
       label: t('模型价格'),
       value: priceData.price,
+      configuredValue: priceData.priceUSD,
       suffix: ` / ${t('次')}`,
     },
-  ].filter((item) => item.value !== null && item.value !== undefined && item.value !== '');
-};
-
-// 格式化价格信息（用于卡片视图）
-export const formatPriceInfo = (priceData, t, quotaDisplayType = 'USD') => {
-  const items = getModelPriceItems(priceData, t, quotaDisplayType);
-  return (
-    <>
-      {items.map((item) => (
-        <span key={item.key} style={{ color: 'var(--semi-color-text-1)' }}>
-          {item.label} {item.value}
-          {item.suffix}
-        </span>
-      ))}
-    </>
-  );
+  ].filter((item) => hasConfiguredPrice(item.configuredValue));
 };
 
 // -------------------------------

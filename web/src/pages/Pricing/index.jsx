@@ -12,18 +12,18 @@ import { calculateModelPrice, getModelPriceItems, getLobeHubIcon, getModelIcon }
 import { QuotaTag, VendorTag } from './tags';
 
 const PREVIEW_MODELS = [
-  { model_name: 'gpt-4.1', vendor_name: 'OpenAI', vendor_icon: 'OpenAI', quota_type: 0, model_ratio: 1, completion_ratio: 4, enable_groups: ['default', 'production'] },
-  { model_name: 'gpt-4o-mini', vendor_name: 'OpenAI', vendor_icon: 'OpenAI', quota_type: 0, model_ratio: 0.075, completion_ratio: 4, enable_groups: ['default'] },
-  { model_name: 'claude-sonnet-4', vendor_name: 'Anthropic', vendor_icon: 'Claude.Color', quota_type: 0, model_ratio: 1.5, completion_ratio: 5, enable_groups: ['default', 'production'] },
-  { model_name: 'claude-3.5-haiku', vendor_name: 'Anthropic', vendor_icon: 'Claude.Color', quota_type: 0, model_ratio: 0.4, completion_ratio: 5, enable_groups: ['default'] },
-  { model_name: 'gemini-2.5-pro', vendor_name: 'Google', vendor_icon: 'Gemini.Color', quota_type: 0, model_ratio: 0.625, completion_ratio: 5, enable_groups: ['default'] },
-  { model_name: 'gemini-2.5-flash', vendor_name: 'Google', vendor_icon: 'Gemini.Color', quota_type: 0, model_ratio: 0.15, completion_ratio: 4, enable_groups: ['default', 'production'] },
-  { model_name: 'deepseek-chat', vendor_name: 'DeepSeek', vendor_icon: 'DeepSeek.Color', quota_type: 0, model_ratio: 0.14, completion_ratio: 2, enable_groups: ['default'] },
-  { model_name: 'deepseek-reasoner', vendor_name: 'DeepSeek', vendor_icon: 'DeepSeek.Color', quota_type: 0, model_ratio: 0.275, completion_ratio: 8, enable_groups: ['production'] },
-  { model_name: 'grok-4', vendor_name: 'xAI', vendor_icon: 'XAI', quota_type: 0, model_ratio: 1.5, completion_ratio: 5, enable_groups: ['production'] },
-  { model_name: 'grok-3-mini', vendor_name: 'xAI', vendor_icon: 'XAI', quota_type: 0, model_ratio: 0.15, completion_ratio: 3.3, enable_groups: ['default'] },
-  { model_name: 'mistral-large', vendor_name: 'Mistral AI', vendor_icon: 'Mistral.Color', quota_type: 0, model_ratio: 1, completion_ratio: 3, enable_groups: ['default'] },
-  { model_name: 'mistral-small', vendor_name: 'Mistral AI', vendor_icon: 'Mistral.Color', quota_type: 0, model_ratio: 0.05, completion_ratio: 3, enable_groups: ['default', 'production'] },
+  { model_name: 'gpt-4.1', vendor_name: 'OpenAI', vendor_icon: 'OpenAI', billing_type: 'tokens', input_price: 2, output_price: 8, cache_read_price: 0.5, enable_groups: ['default', 'production'] },
+  { model_name: 'gpt-4o-mini', vendor_name: 'OpenAI', vendor_icon: 'OpenAI', billing_type: 'tokens', input_price: 0.15, output_price: 0.6, cache_read_price: 0.075, enable_groups: ['default'] },
+  { model_name: 'claude-sonnet-4', vendor_name: 'Anthropic', vendor_icon: 'Anthropic', billing_type: 'tokens', input_price: 3, output_price: 15, cache_read_price: 0.3, enable_groups: ['default', 'production'] },
+  { model_name: 'claude-3.5-haiku', vendor_name: 'Anthropic', vendor_icon: 'Anthropic', billing_type: 'tokens', input_price: 0.8, output_price: 4, cache_read_price: 0.08, enable_groups: ['default'] },
+  { model_name: 'gemini-2.5-pro', vendor_name: 'Google', vendor_icon: 'Gemini.Color', billing_type: 'tokens', input_price: 1.25, output_price: 10, enable_groups: ['default'] },
+  { model_name: 'gemini-2.5-flash', vendor_name: 'Google', vendor_icon: 'Gemini.Color', billing_type: 'tokens', input_price: 0.3, output_price: 2.5, enable_groups: ['default', 'production'] },
+  { model_name: 'deepseek-chat', vendor_name: 'DeepSeek', vendor_icon: 'DeepSeek.Color', billing_type: 'tokens', input_price: 0.27, output_price: 1.1, cache_read_price: 0.07, enable_groups: ['default'] },
+  { model_name: 'deepseek-reasoner', vendor_name: 'DeepSeek', vendor_icon: 'DeepSeek.Color', billing_type: 'tokens', input_price: 0.55, output_price: 2.19, cache_read_price: 0.14, enable_groups: ['production'] },
+  { model_name: 'grok-4', vendor_name: 'xAI', vendor_icon: 'XAI', billing_type: 'tokens', input_price: 3, output_price: 15, enable_groups: ['production'] },
+  { model_name: 'grok-3-mini', vendor_name: 'xAI', vendor_icon: 'XAI', billing_type: 'tokens', input_price: 0.3, output_price: 0.5, enable_groups: ['default'] },
+  { model_name: 'mistral-large', vendor_name: 'Mistral AI', vendor_icon: 'Mistral.Color', billing_type: 'tokens', input_price: 2, output_price: 6, enable_groups: ['default'] },
+  { model_name: 'mistral-small', vendor_name: 'Mistral AI', vendor_icon: 'Mistral.Color', billing_type: 'tokens', input_price: 0.1, output_price: 0.3, enable_groups: ['default', 'production'] },
 ];
 
 const Pricing = ({ preview = false }) => {
@@ -37,7 +37,7 @@ const Pricing = ({ preview = false }) => {
     filterQuotaType, setFilterQuotaType,
     filterVendor, setFilterVendor,
     groupRatio, usableGroup,
-    currency, setCurrency, siteDisplayType, tokenUnit, displayPrice,
+    currency, setCurrency, tokenUnit, displayPrice,
     currentPage, setCurrentPage, pageSize,
     refresh,
   } = useModelPricingData(preview ? PREVIEW_MODELS : null);
@@ -45,7 +45,6 @@ const Pricing = ({ preview = false }) => {
   const navigate = useNavigate();
   const location = useLocation();
   const basePath = location.pathname.startsWith('/console') ? '/console/pricing' : '/pricing';
-  const isTokens = siteDisplayType === 'TOKENS';
   const [viewMode, setViewMode] = useState('card');
 
   const goDetail = (row) => {
@@ -55,7 +54,6 @@ const Pricing = ({ preview = false }) => {
   const priceOf = (record) =>
     calculateModelPrice({
       record, selectedGroup, groupRatio, tokenUnit, displayPrice,
-      currency, quotaDisplayType: siteDisplayType,
     });
 
   // 选项
@@ -87,8 +85,8 @@ const Pricing = ({ preview = false }) => {
 
   const quotaOptions = [
     { value: 'all', label: t('全部计费方式') },
-    { value: '0', label: t('按量计费') },
-    { value: '1', label: t('按次计费') },
+    { value: 'tokens', label: t('按量计费') },
+    { value: 'request', label: t('按次计费') },
   ];
 
   const currencyOptions = [
@@ -105,10 +103,13 @@ const Pricing = ({ preview = false }) => {
 
   const renderPriceCell = (row) => {
     const pd = priceOf(row);
+    if (pd.configured === false) {
+      return <span className='text-ui-text-3'>{t('未配置价格')}</span>;
+    }
     if (!pd.isPerToken) {
       return <span className='tabular-nums text-ui-text'>{pd.price}</span>;
     }
-    const items = getModelPriceItems(pd, t, siteDisplayType).slice(0, 2);
+    const items = getModelPriceItems(pd, t).slice(0, 2);
     if (items.length === 0) return <span className='text-ui-text-3'>-</span>;
     return (
       <div className='flex flex-col gap-0.5'>
@@ -124,7 +125,7 @@ const Pricing = ({ preview = false }) => {
 
   const renderModelCard = (row) => {
     const pd = priceOf(row);
-    const priceItems = pd.isPerToken ? getModelPriceItems(pd, t, siteDisplayType) : [];
+    const priceItems = pd.isPerToken ? getModelPriceItems(pd, t) : [];
     const gs = row.enable_groups || [];
     return (
       <Card key={row.model_name} interactive={preview ? undefined : 'lift'} onClick={preview ? undefined : () => goDetail(row)}>
@@ -137,14 +138,17 @@ const Pricing = ({ preview = false }) => {
                 {row.vendor_name && <div className='text-xs text-ui-text-3 truncate'>{row.vendor_name}</div>}
               </div>
             </div>
-            <QuotaTag type={row.quota_type} t={t} />
+            <div className='flex items-center gap-1.5'>
+              <QuotaTag type={row.billing_type} t={t} />
+              {pd.configured === false && <Tag tone='warning'>{t('未配置价格')}</Tag>}
+            </div>
           </div>
 
           <Divider />
 
           {!pd.isPerToken ? (
             <div className='flex items-baseline justify-between'>
-              <span className='text-xs text-ui-text-3'>{isTokens ? t('倍率') : t('价格')}</span>
+              <span className='text-xs text-ui-text-3'>{t('价格')}</span>
               <span className='tabular-nums text-ui-text font-medium'>{pd.price}</span>
             </div>
           ) : priceItems.length === 0 ? (
@@ -185,13 +189,13 @@ const Pricing = ({ preview = false }) => {
       render: (row) => <VendorTag name={row.vendor_name} icon={row.vendor_icon} />,
     },
     {
-      key: 'quota_type',
+      key: 'billing_type',
       title: t('计费方式'),
-      render: (row) => <QuotaTag type={row.quota_type} t={t} />,
+      render: (row) => <QuotaTag type={row.billing_type} t={t} />,
     },
     {
       key: 'price',
-      title: isTokens ? t('倍率') : t('价格'),
+      title: t('价格'),
       render: renderPriceCell,
     },
     {
@@ -251,7 +255,7 @@ const Pricing = ({ preview = false }) => {
               <Select
                 options={quotaOptions}
                 value={String(filterQuotaType)}
-                onChange={(v) => setFilterQuotaType(v === 'all' ? 'all' : parseInt(v, 10))}
+                onChange={(v) => setFilterQuotaType(v || 'all')}
                 width='full'
               />
             </div>
@@ -263,16 +267,14 @@ const Pricing = ({ preview = false }) => {
                 width='full'
               />
             </div>
-            {!isTokens && (
-              <div className='sm:w-[150px]'>
-                <Select
-                  options={currencyOptions}
-                  value={currency}
-                  onChange={setCurrency}
-                  width='full'
-                />
-              </div>
-            )}
+            <div className='sm:w-[150px]'>
+              <Select
+                options={currencyOptions}
+                value={currency}
+                onChange={setCurrency}
+                width='full'
+              />
+            </div>
           </div>
           <span className='text-sm text-ui-text-3 tabular-nums sm:ml-auto'>
             {t('共 {{count}} 个模型', { count: total })}
