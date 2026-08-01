@@ -48,6 +48,7 @@ const Auth = () => {
   const [, dispatch] = React.useContext(UserContext);
   const [statusState] = React.useContext(StatusContext);
   const [mode, setMode] = useState(params.get('mode') === 'register' ? 'register' : 'login');
+  const [registerStep, setRegisterStep] = useState(1);
   const [form, setForm] = useState({ username: '', password: '', confirm: '', email: '', verificationCode: '' });
   const [codeBusy, setCodeBusy] = useState(false);
   const [codeCountdown, setCodeCountdown] = useState(0);
@@ -78,6 +79,7 @@ const Auth = () => {
   const showFeedback = (message, type = 'error') => setFeedback({ message, type });
   const changeMode = (nextMode) => {
     setMode(nextMode);
+    if (nextMode === 'register') setRegisterStep(1);
     setFeedback(null);
     setResetSent(false);
   };
@@ -85,7 +87,14 @@ const Auth = () => {
   const submit = async (event) => {
     event.preventDefault();
     setFeedback(null);
-    if (!form.username.trim() || !form.password) return showFeedback(t('auth.errors.credentialsRequired'));
+    if (!form.username.trim()) return showFeedback(t('auth.errors.credentialsRequired'));
+    if (mode === 'register' && registerStep === 1) { setRegisterStep(emailVerificationEnabled ? 2 : 3); return; }
+    if (mode === 'register' && registerStep === 2) {
+      if (!form.email.trim() || !form.verificationCode.trim()) return showFeedback('请输入邮箱和验证码');
+      setRegisterStep(3);
+      return;
+    }
+    if (!form.password) return showFeedback(t('auth.errors.credentialsRequired'));
     if (mode === 'register' && form.password !== form.confirm) return showFeedback(t('auth.errors.passwordMismatch'));
     setBusy(true);
     try {
@@ -197,6 +206,7 @@ const Auth = () => {
   const agreementEnabled = Boolean(statusState?.status?.user_agreement_enabled);
   const privacyEnabled = Boolean(statusState?.status?.privacy_policy_enabled);
   const headingKey = isReset ? 'reset' : isLogin ? 'login' : 'register';
+  const registerStepTitle = registerStep === 1 ? '创建用户名' : registerStep === 2 ? '验证邮箱' : '设置密码';
 
   useEffect(() => {
     if (isReset || !telegramEnabled || !telegramRef.current) return undefined;
@@ -247,7 +257,7 @@ const Auth = () => {
       <header className='cursor-auth-header'><Link to='/' className='home-brand'>Routify</Link></header>
       <main className='cursor-auth-main'>
         <div className='cursor-auth-panel'>
-          {!(isReset && resetSent) && <h1><span>{t(`auth.${headingKey}.title`)}</span><small>{t(`auth.${headingKey}.subtitle`)}</small></h1>}
+          {!(isReset && resetSent) && <h1><span>{!isReset && !isLogin ? registerStepTitle : t(`auth.${headingKey}.title`)}</span><small>{t(`auth.${headingKey}.subtitle`)}</small></h1>}
           {feedback && <div className={`cursor-auth-feedback is-${feedback.type}`} role={feedback.type === 'error' ? 'alert' : 'status'}>
             {feedback.type === 'error' ? <AlertCircle size={21} /> : <CheckCircle2 size={21} />}
             <span>{feedback.message}</span>
@@ -268,15 +278,16 @@ const Auth = () => {
             </form>}
             <p className='cursor-auth-switch'><button onClick={() => changeMode('login')}>{t('auth.reset.backToLogin')}</button></p>
           </> : <><form onSubmit={submit} className='auth-form'>
-            <label>{t('auth.fields.username')}<input value={form.username} onChange={update('username')} autoComplete='username' placeholder={t('auth.fields.usernamePlaceholder')} /></label>
-            <label>{t('auth.fields.password')}<input value={form.password} onChange={update('password')} type='password' autoComplete={isLogin ? 'current-password' : 'new-password'} placeholder={t('auth.fields.passwordPlaceholder')} /></label>
-            {!isLogin && emailVerificationEnabled && <>
+            {(isLogin || registerStep === 1) && <label>{t('auth.fields.username')}<input value={form.username} onChange={update('username')} autoComplete='username' placeholder={t('auth.fields.usernamePlaceholder')} autoFocus /></label>}
+            {(isLogin || registerStep === 3) && <label>{t('auth.fields.password')}<input value={form.password} onChange={update('password')} type='password' autoComplete={isLogin ? 'current-password' : 'new-password'} placeholder={t('auth.fields.passwordPlaceholder')} autoFocus /></label>}
+            {!isLogin && registerStep === 2 && emailVerificationEnabled && <>
               <label>{t('auth.fields.email')}<input value={form.email} onChange={update('email')} type='email' autoComplete='email' placeholder={t('auth.fields.emailPlaceholder')} /></label>
               <div className='cursor-auth-code-row'><input value={form.verificationCode} onChange={update('verificationCode')} inputMode='numeric' placeholder='邮箱验证码' /><button type='button' onClick={sendVerificationCode} disabled={codeBusy || codeCountdown > 0}>{codeCountdown ? `${codeCountdown}s` : codeBusy ? '发送中…' : '发送验证码'}</button></div>
             </>}
-            {!isLogin && <label>{t('auth.fields.confirmPassword')}<input value={form.confirm} onChange={update('confirm')} type='password' autoComplete='new-password' placeholder={t('auth.fields.confirmPasswordPlaceholder')} /></label>}
-            <button className='cursor-auth-submit' disabled={busy}>{busy ? t('auth.processing') : isLogin ? t('auth.login.submit') : t('auth.register.submit')}</button>
+            {!isLogin && registerStep === 3 && <label>{t('auth.fields.confirmPassword')}<input value={form.confirm} onChange={update('confirm')} type='password' autoComplete='new-password' placeholder={t('auth.fields.confirmPasswordPlaceholder')} /></label>}
+            <button className='cursor-auth-submit' disabled={busy}>{busy ? t('auth.processing') : isLogin ? t('auth.login.submit') : registerStep < 3 ? '下一步' : t('auth.register.submit')}</button>
           </form>
+          {!isLogin && registerStep > 1 && <button className='cursor-auth-forgot' onClick={() => { setRegisterStep((step) => step - 1); setFeedback(null); }}>上一步</button>}
           {isLogin && <button className='cursor-auth-forgot' onClick={() => changeMode('reset')}>{t('auth.login.forgotPassword')}</button>}
           <p className='cursor-auth-switch'>{t(isLogin ? 'auth.login.noAccount' : 'auth.register.hasAccount')} <button onClick={() => changeMode(isLogin ? 'register' : 'login')}>{t(isLogin ? 'auth.register.action' : 'auth.login.action')}</button></p>
           </>}

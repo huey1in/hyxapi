@@ -488,7 +488,7 @@ body[theme-mode='dark'] .cursor-home .footer-language-menu button:hover,body[the
 .cursor-auth-page .auth-form label { display:grid; gap:7px; color:#77746a; font-size:12px; }
 .cursor-auth-page .auth-form input { width:100%; height:40px; box-sizing:border-box; padding:0 12px; border:1px solid #cfcdc6; border-radius:4px; outline:0; background:#fbfbf8; color:#24231f; font-size:14px; }
 .cursor-auth-page .auth-form input::placeholder { color:#aaa79f; }
-.cursor-auth-page .auth-form input:focus { border-color:#8f8350; box-shadow:0 0 0 1px #8f8350; }
+.cursor-auth-page .auth-form input:focus { border-color:#8f8350; box-shadow:none; }
 .cursor-auth-page .auth-form .cursor-auth-submit { display:flex; align-items:center; justify-content:center; width:100%; height:42px; margin-top:6px; padding:0 16px; border:1px solid #24231f; border-radius:3px; background:#24231f; color:#f7f7f4; font-size:15px; font-weight:500; }
 .cursor-auth-forgot { display:block; margin:14px 0 0 auto; color:#77746a; font-size:12px; }
 .cursor-auth-forgot:hover { color:#24231f; text-decoration:underline; text-underline-offset:3px; }
@@ -784,8 +784,9 @@ input[type='number'] {
 .cursor-auth-turnstile { display:flex; justify-content:center; min-height:65px; margin:4px 0 12px; }
 .cursor-auth-code-row { display:flex; gap:8px; align-items:stretch; }
 .cursor-auth-code-row input { flex:1; min-width:0; }
-.cursor-auth-code-row button { flex:0 0 auto; border:0; border-radius:10px; padding:0 14px; background:var(--ui-bg-subtle); color:var(--ui-text); cursor:pointer; }
-.cursor-auth-code-row button:disabled { opacity:.55; cursor:not-allowed; }
+.cursor-auth-code-row button { display:inline-flex; align-items:center; justify-content:center; flex:0 0 auto; height:40px; margin:0; border:1px solid #cfcdc6; border-radius:4px; padding:0 16px; background:#fbfbf8; color:#24231f; font-size:13px; font-weight:500; line-height:1; white-space:nowrap; cursor:pointer; transition:border-color .18s ease,background-color .18s ease; }
+.cursor-auth-code-row button:hover:not(:disabled) { border-color:#8f8350; background:#f3f1e9; }
+.cursor-auth-code-row button:disabled { opacity:.5; cursor:not-allowed; }
 .email-template-editor__toolbar { display:flex; align-items:center; justify-content:space-between; gap:12px; }
 .email-template-editor__modes { display:flex; gap:4px; }
 .email-template-editor textarea {
