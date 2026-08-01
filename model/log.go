@@ -730,8 +730,9 @@ func GetTokenUsageByBucket(ctx context.Context, userID int, startTimestamp, endT
 		bucketSeconds = 1
 	}
 	bucketExpr := tokenUsageBucketExpression(startTimestamp, bucketSeconds)
-	cacheExpr := fmt.Sprintf("COALESCE(SUM(%s), 0) + COALESCE(SUM(%s), 0)", jsonIntExtract("other", "cache_tokens"), jsonIntExtract("other", "cache_creation_tokens"))
-	selectExpr := fmt.Sprintf("%s as bucket_start, COALESCE(SUM(quota), 0) as quota, COUNT(*) as requests, COALESCE(SUM(prompt_tokens), 0) as prompt_tokens, COALESCE(SUM(completion_tokens), 0) as completion_tokens, %s as cache_tokens, COALESCE(SUM(prompt_tokens), 0) + COALESCE(SUM(completion_tokens), 0) as tokens", bucketExpr, cacheExpr)
+	// Keep the dashboard query on indexed/native columns. Parsing the large
+	// request metadata JSON for every log can exceed the endpoint timeout.
+	selectExpr := fmt.Sprintf("%s as bucket_start, COALESCE(SUM(quota), 0) as quota, COUNT(*) as requests, COALESCE(SUM(prompt_tokens), 0) as prompt_tokens, COALESCE(SUM(completion_tokens), 0) as completion_tokens, 0 as cache_tokens, COALESCE(SUM(prompt_tokens), 0) + COALESCE(SUM(completion_tokens), 0) as tokens", bucketExpr)
 	tx := LOG_DB.WithContext(ctx).Table("logs").
 		Select(selectExpr).
 		Where("type = ? AND created_at >= ? AND created_at <= ?", LogTypeConsume, startTimestamp, endTimestamp)
