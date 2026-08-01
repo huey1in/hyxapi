@@ -159,7 +159,11 @@ func GetLogsStat(c *gin.Context) {
 		},
 	}
 	if bucketSeconds, parseErr := strconv.ParseInt(c.Query("bucket_seconds"), 10, 64); parseErr == nil && bucketSeconds > 0 {
-		usage, usageErr := loadTokenUsageData(c.Request.Context(), 0, startTimestamp, endTimestamp, bucketSeconds)
+		usageEnd := endTimestamp
+		if usageEnd == 0 {
+			usageEnd = time.Now().Unix()
+		}
+		usage, usageErr := loadTokenUsageData(c.Request.Context(), 0, startTimestamp, usageEnd, bucketSeconds)
 		if usageErr == nil {
 			response["data"].(gin.H)["token_usage"] = usage
 		}
@@ -192,7 +196,11 @@ func GetLogsSelfStat(c *gin.Context) {
 		},
 	}
 	if bucketSeconds, parseErr := strconv.ParseInt(c.Query("bucket_seconds"), 10, 64); parseErr == nil && bucketSeconds > 0 {
-		usage, usageErr := loadTokenUsageData(c.Request.Context(), c.GetInt("id"), startTimestamp, endTimestamp, bucketSeconds)
+		usageEnd := endTimestamp
+		if usageEnd == 0 {
+			usageEnd = time.Now().Unix()
+		}
+		usage, usageErr := loadTokenUsageData(c.Request.Context(), c.GetInt("id"), startTimestamp, usageEnd, bucketSeconds)
 		if usageErr == nil {
 			response["data"].(gin.H)["token_usage"] = usage
 		}
