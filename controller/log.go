@@ -27,30 +27,37 @@ func getDailyTokenUsage(c *gin.Context, userID int) {
 	if bucketSeconds < 1 || bucketSeconds > 86400*31 {
 		bucketSeconds = 86400
 	}
+	data, err := loadTokenUsageData(c.Request.Context(), userID, startTimestamp, endTimestamp, bucketSeconds)
+	if err != nil {
+		common.ApiError(c, err)
+		return
+	}
+	common.ApiSuccess(c, data)
+}
+
+func loadTokenUsageData(parent context.Context, userID int, startTimestamp, endTimestamp, bucketSeconds int64) ([]model.DailyConsumption, error) {
 	cacheKey := fmt.Sprintf("log:token-usage:v1:%d:%d:%d:%d", userID, startTimestamp, endTimestamp/15, bucketSeconds)
 	if common.RedisEnabled && common.RDB != nil {
 		if cached, err := common.RedisGet(cacheKey); err == nil {
 			var data []model.DailyConsumption
 			if json.Unmarshal([]byte(cached), &data) == nil {
-				common.ApiSuccess(c, data)
-				return
+				return data, nil
 			}
 		}
 	}
 
-	queryCtx, cancel := context.WithTimeout(c.Request.Context(), 12*time.Second)
+	queryCtx, cancel := context.WithTimeout(parent, 12*time.Second)
 	defer cancel()
 	data, err := model.GetTokenUsageByBucket(queryCtx, userID, startTimestamp, endTimestamp, bucketSeconds)
 	if err != nil {
-		common.ApiError(c, err)
-		return
+		return nil, err
 	}
 	if common.RedisEnabled && common.RDB != nil {
 		if encoded, err := json.Marshal(data); err == nil {
 			_ = common.RedisSet(cacheKey, string(encoded), 15*time.Second)
 		}
 	}
-	common.ApiSuccess(c, data)
+	return data, nil
 }
 
 func GetTokenUsageByDay(c *gin.Context) {
@@ -142,7 +149,7 @@ func GetLogsStat(c *gin.Context) {
 		common.ApiError(c, err)
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{
+	response := gin.H{
 		"success": true,
 		"message": "",
 		"data": gin.H{
@@ -150,7 +157,14 @@ func GetLogsStat(c *gin.Context) {
 			"tokens":   stat.Tokens,
 			"requests": stat.Requests,
 		},
-	})
+	}
+	if bucketSeconds, parseErr := strconv.ParseInt(c.Query("bucket_seconds"), 10, 64); parseErr == nil && bucketSeconds > 0 {
+		usage, usageErr := loadTokenUsageData(c.Request.Context(), 0, startTimestamp, endTimestamp, bucketSeconds)
+		if usageErr == nil {
+			response["data"].(gin.H)["token_usage"] = usage
+		}
+	}
+	c.JSON(http.StatusOK, response)
 	return
 }
 
@@ -168,7 +182,7 @@ func GetLogsSelfStat(c *gin.Context) {
 		common.ApiError(c, err)
 		return
 	}
-	c.JSON(200, gin.H{
+	response := gin.H{
 		"success": true,
 		"message": "",
 		"data": gin.H{
@@ -176,7 +190,14 @@ func GetLogsSelfStat(c *gin.Context) {
 			"tokens":   quotaNum.Tokens,
 			"requests": quotaNum.Requests,
 		},
-	})
+	}
+	if bucketSeconds, parseErr := strconv.ParseInt(c.Query("bucket_seconds"), 10, 64); parseErr == nil && bucketSeconds > 0 {
+		usage, usageErr := loadTokenUsageData(c.Request.Context(), c.GetInt("id"), startTimestamp, endTimestamp, bucketSeconds)
+		if usageErr == nil {
+			response["data"].(gin.H)["token_usage"] = usage
+		}
+	}
+	c.JSON(200, response)
 	return
 }
 

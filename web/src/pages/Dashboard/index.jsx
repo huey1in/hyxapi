@@ -60,7 +60,7 @@ const Dashboard = ({ preview = false }) => {
   }, [userState?.user, preview]);
 
   useEffect(() => {
-    if (!preview) loadTokenUsage(Number(usageDays));
+    if (!preview && usageDays !== '1') loadTokenUsage(Number(usageDays));
   }, [usageDays, userState?.user, preview, usageBucketCount]);
 
   const loadStats = async () => {
@@ -69,10 +69,13 @@ const Dashboard = ({ preview = false }) => {
       const todayStart = Math.floor(new Date().setHours(0, 0, 0, 0) / 1000);
       const [cum, today] = await Promise.all([
         API.get(base),
-        API.get(`${base}?start_timestamp=${todayStart}`),
+        API.get(`${base}?start_timestamp=${todayStart}&bucket_seconds=${Math.ceil(86400 / usageBucketCount)}`),
       ]);
       if (cum.data?.success) setCumStats(cum.data.data || { quota: 0, tokens: 0, requests: 0 });
-      if (today.data?.success) setDayStats(today.data.data || { quota: 0, tokens: 0, requests: 0 });
+      if (today.data?.success) {
+        setDayStats(today.data.data || { quota: 0, tokens: 0, requests: 0 });
+        if (usageDays === '1' && Array.isArray(today.data.data?.token_usage)) setRecentLogs(today.data.data.token_usage);
+      }
     } catch {}
   };
 
