@@ -27,6 +27,8 @@ func (b *recordingRealtimeBilling) NeedsRefund() bool { return false }
 
 func (b *recordingRealtimeBilling) GetPreConsumedQuota() int { return b.preConsumed }
 
+func (b *recordingRealtimeBilling) Reserve(_ int) error { return nil }
+
 func newRealtimePricingTestContext() *gin.Context {
 	gin.SetMode(gin.TestMode)
 	ctx, _ := gin.CreateTestContext(httptest.NewRecorder())

@@ -8,14 +8,14 @@ import (
 	"strings"
 
 	"github.com/QuantumNous/new-api/common"
-	"github.com/QuantumNous/new-api/dto"
 	"github.com/QuantumNous/new-api/relay/channel"
 	"github.com/QuantumNous/new-api/relay/channel/claude"
 	"github.com/QuantumNous/new-api/relay/channel/openai"
 	relaycommon "github.com/QuantumNous/new-api/relay/common"
 	"github.com/QuantumNous/new-api/relay/constant"
+	"github.com/QuantumNous/new-api/relaykit/dto"
+	"github.com/QuantumNous/new-api/relaykit/types"
 	"github.com/QuantumNous/new-api/setting/reasoning"
-	"github.com/QuantumNous/new-api/types"
 	"github.com/gin-gonic/gin"
 )
 
@@ -89,6 +89,7 @@ func (a *Adaptor) ConvertOpenAIRequest(c *gin.Context, info *relaycommon.RelayIn
 	if err := applyDeepSeekV4OpenAIThinkingSuffix(info, request); err != nil {
 		return nil, err
 	}
+
 	return request, nil
 }
 
@@ -101,7 +102,9 @@ func applyDeepSeekV4OpenAIThinkingSuffix(info *relaycommon.RelayInfo, request *d
 	if !ok {
 		return nil
 	}
-	thinking, err := common.Marshal(map[string]string{"type": thinkingType})
+	thinking, err := common.Marshal(map[string]string{
+		"type": thinkingType,
+	})
 	if err != nil {
 		return fmt.Errorf("error marshalling thinking: %w", err)
 	}
@@ -131,7 +134,9 @@ func applyDeepSeekV4ClaudeThinkingSuffix(info *relaycommon.RelayInfo, request *d
 	if effort == "" {
 		request.OutputConfig = nil
 	} else {
-		outputConfig, err := common.Marshal(map[string]string{"effort": effort})
+		outputConfig, err := common.Marshal(map[string]string{
+			"effort": effort,
+		})
 		if err != nil {
 			return fmt.Errorf("error marshalling output_config: %w", err)
 		}

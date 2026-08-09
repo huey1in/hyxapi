@@ -1,17 +1,14 @@
 package helper
 
 import (
-	"bytes"
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io"
 	"strings"
 
-	appcommon "github.com/QuantumNous/new-api/common"
-	"github.com/QuantumNous/new-api/dto"
 	"github.com/QuantumNous/new-api/relay/common"
 	relayconstant "github.com/QuantumNous/new-api/relay/constant"
+	"github.com/QuantumNous/new-api/relaykit/dto"
 	"github.com/QuantumNous/new-api/setting/ratio_setting"
 	"github.com/gin-gonic/gin"
 )
@@ -81,30 +78,4 @@ func ModelMappedHelper(c *gin.Context, info *common.RelayInfo, request dto.Reque
 		request.SetModelName(info.UpstreamModelName)
 	}
 	return nil
-}
-
-// PatchPassThroughBody patches the "model" field in a pass-through request body
-// when model mapping has occurred. Returns an io.Reader for the (possibly patched) body.
-// If no mapping occurred or patching fails, it falls back to the original storage.
-func PatchPassThroughBody(info *common.RelayInfo, storage appcommon.BodyStorage) io.Reader {
-	if !info.IsModelMapped || info.UpstreamModelName == "" {
-		return appcommon.ReaderOnly(storage)
-	}
-	bodyBytes, err := storage.Bytes()
-	if err != nil {
-		return appcommon.ReaderOnly(storage)
-	}
-	var bodyMap map[string]json.RawMessage
-	if json.Unmarshal(bodyBytes, &bodyMap) != nil {
-		return appcommon.ReaderOnly(storage)
-	}
-	if _, exists := bodyMap["model"]; !exists {
-		return appcommon.ReaderOnly(storage)
-	}
-	newModel, _ := json.Marshal(info.UpstreamModelName)
-	bodyMap["model"] = newModel
-	if patchedBody, err := json.Marshal(bodyMap); err == nil {
-		return bytes.NewReader(patchedBody)
-	}
-	return appcommon.ReaderOnly(storage)
 }

@@ -7,10 +7,10 @@ import (
 	"time"
 
 	"github.com/QuantumNous/new-api/common"
-	"github.com/QuantumNous/new-api/dto"
 	"github.com/QuantumNous/new-api/logger"
 	"github.com/QuantumNous/new-api/model"
 	relaycommon "github.com/QuantumNous/new-api/relay/common"
+	"github.com/QuantumNous/new-api/relaykit/dto"
 	"github.com/QuantumNous/new-api/setting/system_setting"
 
 	"github.com/bytedance/gopkg/util/gopool"
@@ -31,19 +31,12 @@ type TokenDetails struct {
 }
 
 func quotaInputTokenDetails(details dto.InputTokenDetails) TokenDetails {
-	var cachedDetails dto.CachedTokenDetails
-	if details.CachedTokensDetails != nil {
-		cachedDetails = *details.CachedTokensDetails
-	}
 	return TokenDetails{
-		TextTokens:        details.TextTokens,
-		AudioTokens:       details.AudioTokens,
-		ImageTokens:       details.ImageTokens,
-		CachedTokens:      details.CachedTokens,
-		CacheWriteTokens:  details.CachedCreationTokens,
-		CachedTextTokens:  cachedDetails.TextTokens,
-		CachedAudioTokens: cachedDetails.AudioTokens,
-		CachedImageTokens: cachedDetails.ImageTokens,
+		TextTokens:       details.TextTokens,
+		AudioTokens:      details.AudioTokens,
+		ImageTokens:      details.ImageTokens,
+		CachedTokens:     details.CachedTokens,
+		CacheWriteTokens: details.CacheCreationTokensTotal(),
 	}
 }
 

@@ -198,6 +198,10 @@ func GetTimeString() string {
 	return fmt.Sprintf("%s%d", now.Format("20060102150405"), now.UnixNano()%1e9)
 }
 
+func NewRequestId() string {
+	return GetTimeString() + GetRandomString(16)
+}
+
 func Max(a int, b int) int {
 	if a >= b {
 		return a
@@ -232,4 +236,3 @@ func Any2Type[T any](data any) (T, error) {
 	}
 	return res, nil
 }
-

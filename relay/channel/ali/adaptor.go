@@ -7,22 +7,27 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/QuantumNous/new-api/dto"
+	"github.com/QuantumNous/new-api/common"
 	"github.com/QuantumNous/new-api/relay/channel"
 	"github.com/QuantumNous/new-api/relay/channel/claude"
 	"github.com/QuantumNous/new-api/relay/channel/openai"
 	relaycommon "github.com/QuantumNous/new-api/relay/common"
 	"github.com/QuantumNous/new-api/relay/constant"
+	"github.com/QuantumNous/new-api/relaykit/dto"
+	"github.com/QuantumNous/new-api/relaykit/types"
 	"github.com/QuantumNous/new-api/service"
 	"github.com/QuantumNous/new-api/setting/model_setting"
-	"github.com/QuantumNous/new-api/types"
 
 	"github.com/gin-gonic/gin"
+	"github.com/samber/lo"
 )
 
 type Adaptor struct {
 	IsSyncImageModel bool
 }
+
+const aliAnthropicMessagesModelsEnv = "ALI_ANTHROPIC_MESSAGES_MODELS"
+const defaultAliAnthropicMessagesModels = "qwen,deepseek-v4,kimi,glm,minimax-m"
 
 /*
 	var syncModels = []string{
@@ -32,8 +37,22 @@ type Adaptor struct {
 	}
 */
 func supportsAliAnthropicMessages(modelName string) bool {
-	// Only models with the "qwen" designation can use the Claude-compatible interface; others require conversion.
-	return strings.Contains(strings.ToLower(modelName), "qwen")
+	normalizedModelName := strings.ToLower(strings.TrimSpace(modelName))
+	if normalizedModelName == "" {
+		return false
+	}
+
+	return lo.SomeBy(aliAnthropicMessagesModelPatterns(), func(pattern string) bool {
+		return strings.Contains(normalizedModelName, pattern)
+	})
+}
+
+func aliAnthropicMessagesModelPatterns() []string {
+	configuredModels := common.GetEnvOrDefaultString(aliAnthropicMessagesModelsEnv, defaultAliAnthropicMessagesModels)
+	return lo.FilterMap(strings.Split(configuredModels, ","), func(item string, _ int) (string, bool) {
+		pattern := strings.ToLower(strings.TrimSpace(item))
+		return pattern, pattern != ""
+	})
 }
 
 var syncModels = []string{
@@ -56,9 +75,13 @@ func (a *Adaptor) ConvertClaudeRequest(c *gin.Context, info *relaycommon.RelayIn
 		return req, nil
 	}
 
-	oaiReq, err := service.ClaudeToOpenAIRequest(*req, info)
+	result, err := service.ConvertRequest(c, info, types.RelayFormatOpenAI, req)
 	if err != nil {
 		return nil, err
+	}
+	oaiReq, ok := result.Value.(*dto.GeneralOpenAIRequest)
+	if !ok {
+		return nil, fmt.Errorf("expected OpenAI chat completions request, got %T", result.Value)
 	}
 	if info.SupportStreamOptions && info.IsStream {
 		oaiReq.StreamOptions = &dto.StreamOptions{IncludeUsage: true}
@@ -153,7 +176,7 @@ func (a *Adaptor) ConvertOpenAIRequest(c *gin.Context, info *relaycommon.RelayIn
 
 	switch info.RelayMode {
 	default:
-		aliReq := requestOpenAI2Ali(*request)
+		aliReq := requestOpenAI2Ali(*request, info.UpstreamModelName)
 		return aliReq, nil
 	}
 }

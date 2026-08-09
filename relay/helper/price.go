@@ -6,9 +6,10 @@ import (
 	"strings"
 
 	"github.com/QuantumNous/new-api/common"
-	"github.com/QuantumNous/new-api/dto"
 	"github.com/QuantumNous/new-api/model"
 	relaycommon "github.com/QuantumNous/new-api/relay/common"
+	"github.com/QuantumNous/new-api/relaykit/dto"
+	relaytypes "github.com/QuantumNous/new-api/relaykit/types"
 	"github.com/QuantumNous/new-api/setting/model_setting"
 	"github.com/QuantumNous/new-api/setting/operation_setting"
 	"github.com/QuantumNous/new-api/setting/ratio_setting"
@@ -125,7 +126,7 @@ func shouldSkipDirectFreeModelPreConsume(pricing *model.ModelPricing, groupRatio
 	return highestTokenPrice(pricing) == 0
 }
 
-func tokenMetaContainsFileType(meta *types.TokenCountMeta, fileType types.FileType) bool {
+func tokenMetaContainsFileType(meta *relaytypes.TokenCountMeta, fileType relaytypes.FileType) bool {
 	if meta == nil {
 		return false
 	}
@@ -145,14 +146,14 @@ func conservativeTokenPreConsumeQuota(
 	pricing *model.ModelPricing,
 	info *relaycommon.RelayInfo,
 	promptTokens int,
-	meta *types.TokenCountMeta,
+	meta *relaytypes.TokenCountMeta,
 	groupRatio float64,
 ) int {
 	if pricing == nil {
 		return 0
 	}
 	if meta == nil {
-		meta = &types.TokenCountMeta{}
+		meta = &relaytypes.TokenCountMeta{}
 	}
 
 	inputPrice := maxPrice(
@@ -162,7 +163,7 @@ func conservativeTokenPreConsumeQuota(
 	)
 	outputPrice := pricing.OutputPrice
 
-	if tokenMetaContainsFileType(meta, types.FileTypeImage) {
+	if tokenMetaContainsFileType(meta, relaytypes.FileTypeImage) {
 		inputPrice = maxPrice(inputPrice, pricing.ImagePrice)
 	}
 	if meta.ImagePriceRatio > 0 {
@@ -171,7 +172,7 @@ func conservativeTokenPreConsumeQuota(
 		outputPrice = maxPrice(outputPrice, imagePrice)
 	}
 
-	hasAudioInput := tokenMetaContainsFileType(meta, types.FileTypeAudio)
+	hasAudioInput := tokenMetaContainsFileType(meta, relaytypes.FileTypeAudio)
 	hasAudioOutput := hasAudioInput
 	if info != nil {
 		hasAudioInput = hasAudioInput || info.InputAudioFormat != "" || info.AudioUsage
@@ -227,7 +228,7 @@ func applyDirectSchedule(price *model.ModelPricing, groupRatioInfo types.GroupRa
 // ModelPriceHelper computes the request pre-consumption amount from the
 // direct model schedule. Token prices are USD per million tokens and request
 // prices are USD per request; the selected group multiplier is applied once.
-func ModelPriceHelper(c *gin.Context, info *relaycommon.RelayInfo, promptTokens int, meta *types.TokenCountMeta) (types.PriceData, error) {
+func ModelPriceHelper(c *gin.Context, info *relaycommon.RelayInfo, promptTokens int, meta *relaytypes.TokenCountMeta) (types.PriceData, error) {
 	pricingModelName := ResolvePricingModelName(info)
 	modelPricing, configured := model.GetModelPricing(pricingModelName)
 	if !configured {
@@ -237,7 +238,7 @@ func ModelPriceHelper(c *gin.Context, info *relaycommon.RelayInfo, promptTokens 
 	pd := applyDirectSchedule(modelPricing, groupRatioInfo)
 
 	if meta == nil {
-		meta = &types.TokenCountMeta{}
+		meta = &relaytypes.TokenCountMeta{}
 	}
 	if modelPricing.BillingType == model.ModelPricingBillingRequest {
 		requestPrice := modelPricing.RequestPrice
@@ -295,4 +296,8 @@ func ModelPriceHelperPerCall(c *gin.Context, info *relaycommon.RelayInfo) (types
 func ContainsModelPricing(modelName string) bool {
 	_, ok := model.GetModelPricing(modelName)
 	return ok
+}
+
+func HasModelBillingConfig(modelName string) bool {
+	return ContainsModelPricing(modelName)
 }

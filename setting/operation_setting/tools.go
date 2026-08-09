@@ -1,6 +1,14 @@
 package operation_setting
 
-import "strings"
+import (
+	"strings"
+	"sync"
+)
+
+var toolPriceOverrides = struct {
+	sync.RWMutex
+	prices map[string]float64
+}{prices: make(map[string]float64)}
 
 const (
 	// Web search
@@ -62,6 +70,41 @@ func GetWebSearchPricePerThousand(modelName string, contextSize string) float64 
 
 func GetFileSearchPricePerThousand() float64 {
 	return FileSearchPrice
+}
+
+func GetToolPriceForModel(toolName, modelName string) float64 {
+	toolPriceOverrides.RLock()
+	defer toolPriceOverrides.RUnlock()
+	if price, ok := toolPriceOverrides.prices[toolName+":"+modelName]; ok {
+		return price
+	}
+	if price, ok := toolPriceOverrides.prices[toolName]; ok {
+		return price
+	}
+	switch toolName {
+	case "web_search", "web_search_preview":
+		return GetWebSearchPricePerThousand(modelName, "")
+	case "file_search":
+		return GetFileSearchPricePerThousand()
+	default:
+		return 0
+	}
+}
+
+func SetToolPriceForTest(name string, price float64) {
+	toolPriceOverrides.Lock()
+	defer toolPriceOverrides.Unlock()
+	toolPriceOverrides.prices[name] = price
+}
+
+func DeleteToolPriceForTest(name string) {
+	toolPriceOverrides.Lock()
+	defer toolPriceOverrides.Unlock()
+	delete(toolPriceOverrides.prices, name)
+}
+
+func GetToolPrice(toolName string) float64 {
+	return GetToolPriceForModel(toolName, "")
 }
 
 func GetGeminiInputAudioPricePerMillionTokens(modelName string) float64 {

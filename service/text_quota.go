@@ -7,10 +7,10 @@ import (
 
 	"github.com/QuantumNous/new-api/common"
 	"github.com/QuantumNous/new-api/constant"
-	"github.com/QuantumNous/new-api/dto"
 	"github.com/QuantumNous/new-api/logger"
 	"github.com/QuantumNous/new-api/model"
 	relaycommon "github.com/QuantumNous/new-api/relay/common"
+	"github.com/QuantumNous/new-api/relaykit/dto"
 	"github.com/QuantumNous/new-api/setting/operation_setting"
 	"github.com/QuantumNous/new-api/types"
 
@@ -176,7 +176,7 @@ func calculateTextQuotaSummary(ctx *gin.Context, relayInfo *relaycommon.RelayInf
 		directUSD = directUSD.Add(decimal.NewFromInt(int64(summary.AudioOutputTokens)).Mul(decimal.NewFromFloat(summary.AudioOutputPrice)).Div(perMillion))
 	}
 	quota := directUSD.Mul(groupRatio).Mul(quotaPerUnit).Add(toolQuota)
-	for _, multiplier := range relayInfo.PriceData.OtherRatios {
+	for _, multiplier := range relayInfo.PriceData.OtherRatios() {
 		if multiplier > 0 {
 			quota = quota.Mul(decimal.NewFromFloat(multiplier))
 		}

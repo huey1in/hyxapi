@@ -4,9 +4,9 @@ import (
 	"testing"
 
 	"github.com/QuantumNous/new-api/common"
-	"github.com/QuantumNous/new-api/dto"
 	"github.com/QuantumNous/new-api/model"
 	relaycommon "github.com/QuantumNous/new-api/relay/common"
+	"github.com/QuantumNous/new-api/relaykit/dto"
 	"github.com/QuantumNous/new-api/types"
 	"github.com/stretchr/testify/require"
 )
@@ -75,18 +75,13 @@ func TestCalculateAudioQuotaChargesCachedInputOnce(t *testing.T) {
 	require.Equal(t, 275, quota)
 }
 
-func TestQuotaInputTokenDetailsCarriesCacheBreakdown(t *testing.T) {
+func TestQuotaInputTokenDetailsUsesUpstreamAggregateCacheFields(t *testing.T) {
 	details := quotaInputTokenDetails(dto.InputTokenDetails{
 		TextTokens:           600,
 		AudioTokens:          400,
 		ImageTokens:          200,
 		CachedTokens:         350,
 		CachedCreationTokens: 50,
-		CachedTokensDetails: &dto.CachedTokenDetails{
-			TextTokens:  100,
-			AudioTokens: 200,
-			ImageTokens: 50,
-		},
 	})
 
 	require.Equal(t, 600, details.TextTokens)
@@ -94,9 +89,9 @@ func TestQuotaInputTokenDetailsCarriesCacheBreakdown(t *testing.T) {
 	require.Equal(t, 200, details.ImageTokens)
 	require.Equal(t, 350, details.CachedTokens)
 	require.Equal(t, 50, details.CacheWriteTokens)
-	require.Equal(t, 100, details.CachedTextTokens)
-	require.Equal(t, 200, details.CachedAudioTokens)
-	require.Equal(t, 50, details.CachedImageTokens)
+	require.Zero(t, details.CachedTextTokens)
+	require.Zero(t, details.CachedAudioTokens)
+	require.Zero(t, details.CachedImageTokens)
 }
 
 func TestCalculateAudioQuotaUsesCacheWriteAndImagePrices(t *testing.T) {

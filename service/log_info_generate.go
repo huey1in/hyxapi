@@ -5,9 +5,10 @@ import (
 
 	"github.com/QuantumNous/new-api/common"
 	"github.com/QuantumNous/new-api/constant"
-	"github.com/QuantumNous/new-api/dto"
 	relaycommon "github.com/QuantumNous/new-api/relay/common"
-	"github.com/QuantumNous/new-api/types"
+	"github.com/QuantumNous/new-api/relaykit/dto"
+	relaytypes "github.com/QuantumNous/new-api/relaykit/types"
+	hosttypes "github.com/QuantumNous/new-api/types"
 
 	"github.com/gin-gonic/gin"
 )
@@ -184,13 +185,13 @@ func appendRequestConversionChain(relayInfo *relaycommon.RelayInfo, other map[st
 	chain := make([]string, 0, len(relayInfo.RequestConversionChain))
 	for _, f := range relayInfo.RequestConversionChain {
 		switch f {
-		case types.RelayFormatOpenAI:
+		case relaytypes.RelayFormatOpenAI:
 			chain = append(chain, "OpenAI Compatible")
-		case types.RelayFormatClaude:
+		case relaytypes.RelayFormatClaude:
 			chain = append(chain, "Claude Messages")
-		case types.RelayFormatGemini:
+		case relaytypes.RelayFormatGemini:
 			chain = append(chain, "Google Gemini")
-		case types.RelayFormatOpenAIResponses:
+		case relaytypes.RelayFormatOpenAIResponses:
 			chain = append(chain, "OpenAI Responses")
 		default:
 			chain = append(chain, string(f))
@@ -206,7 +207,7 @@ func appendFinalRequestFormat(relayInfo *relaycommon.RelayInfo, other map[string
 	if relayInfo == nil || other == nil {
 		return
 	}
-	if relayInfo.GetFinalRequestRelayFormat() == types.RelayFormatClaude {
+	if relayInfo.GetFinalRequestRelayFormat() == relaytypes.RelayFormatClaude {
 		// claude indicates the final upstream request format is Claude Messages.
 		// Frontend log rendering uses this to keep the original Claude input display.
 		other["claude"] = true
@@ -268,7 +269,7 @@ func GenerateClaudeOtherInfo(ctx *gin.Context, relayInfo *relaycommon.RelayInfo,
 	return info
 }
 
-func GenerateMjOtherInfo(relayInfo *relaycommon.RelayInfo, priceData types.PriceData) map[string]interface{} {
+func GenerateMjOtherInfo(relayInfo *relaycommon.RelayInfo, priceData hosttypes.PriceData) map[string]interface{} {
 	other := make(map[string]interface{})
 	other["request_price"] = priceData.RequestPrice
 	other["billing_type"] = priceData.BillingType

@@ -10,7 +10,7 @@ import (
 	"github.com/QuantumNous/new-api/logger"
 	"github.com/QuantumNous/new-api/model"
 	relaycommon "github.com/QuantumNous/new-api/relay/common"
-	"github.com/QuantumNous/new-api/types"
+	"github.com/QuantumNous/new-api/relaykit/types"
 
 	"github.com/bytedance/gopkg/util/gopool"
 	"github.com/gin-gonic/gin"
@@ -138,6 +138,13 @@ func (s *BillingSession) needsRefundLocked() bool {
 // GetPreConsumedQuota 返回实际预扣的额度。
 func (s *BillingSession) GetPreConsumedQuota() int {
 	return s.preConsumedQuota
+}
+
+// Reserve is a compatibility hook for the latest relay interface. Existing
+// Routify billing settles any additional usage after the response, so keeping
+// this as a no-op preserves the current charging behavior.
+func (s *BillingSession) Reserve(_ int) error {
+	return nil
 }
 
 // ---------------------------------------------------------------------------

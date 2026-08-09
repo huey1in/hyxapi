@@ -1,17 +1,19 @@
 package constant
 
-type EndpointType string
+import relaytypes "github.com/QuantumNous/new-api/relaykit/types"
+
+type EndpointType = relaytypes.EndpointType
 
 const (
-	EndpointTypeOpenAI                EndpointType = "openai"
-	EndpointTypeOpenAIResponse        EndpointType = "openai-response"
-	EndpointTypeOpenAIResponseCompact EndpointType = "openai-response-compact"
-	EndpointTypeAnthropic             EndpointType = "anthropic"
-	EndpointTypeGemini                EndpointType = "gemini"
-	EndpointTypeJinaRerank            EndpointType = "jina-rerank"
-	EndpointTypeImageGeneration       EndpointType = "image-generation"
-	EndpointTypeEmbeddings            EndpointType = "embeddings"
-	EndpointTypeOpenAIVideo           EndpointType = "openai-video"
+	EndpointTypeOpenAI                = relaytypes.EndpointTypeOpenAI
+	EndpointTypeOpenAIResponse        = relaytypes.EndpointTypeOpenAIResponse
+	EndpointTypeOpenAIResponseCompact = relaytypes.EndpointTypeOpenAIResponseCompact
+	EndpointTypeAnthropic             = relaytypes.EndpointTypeAnthropic
+	EndpointTypeGemini                = relaytypes.EndpointTypeGemini
+	EndpointTypeJinaRerank            = relaytypes.EndpointTypeJinaRerank
+	EndpointTypeImageGeneration       = relaytypes.EndpointTypeImageGeneration
+	EndpointTypeEmbeddings            = relaytypes.EndpointTypeEmbeddings
+	EndpointTypeOpenAIVideo           = relaytypes.EndpointTypeOpenAIVideo
 	//EndpointTypeMidjourney     EndpointType = "midjourney-proxy"
 	//EndpointTypeSuno           EndpointType = "suno-proxy"
 	//EndpointTypeKling          EndpointType = "kling"
