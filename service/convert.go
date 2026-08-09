@@ -165,6 +165,11 @@ func ClaudeToOpenAIRequest(claudeRequest dto.ClaudeRequest, info *relaycommon.Re
 						ImageUrl: &dto.MessageImageUrl{Url: imageData},
 					}
 					mediaMessages = append(mediaMessages, mediaMessage)
+				case "thinking":
+					// Handle thinking content - convert to reasoning_content for OpenAI format
+					if mediaMsg.Thinking != nil && *mediaMsg.Thinking != "" {
+						openAIMessage.ReasoningContent = *mediaMsg.Thinking
+					}
 				case "tool_use":
 					toolCall := dto.ToolCallRequest{
 						ID:   mediaMsg.Id,
