@@ -17,3 +17,6 @@ routify-local.exe
 routify-local.exe~
 data/
 test_redis
+
+# 数据导出，不入库
+exports/

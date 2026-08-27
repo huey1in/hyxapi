@@ -1,7 +1,6 @@
 import React, { useContext, useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { Copy, RefreshCw } from 'lucide-react';
-import { QRCode } from 'antd';
+import { Copy } from 'lucide-react';
 import { API, showError, showSuccess, showInfo, copy, renderQuota, timestamp2string } from '../../helpers';
 import { UserContext } from '../../context/User';
 import { StatusContext } from '../../context/Status';
@@ -15,13 +14,6 @@ const PAYMENT_ICON_CDN = {
   wxpay: 'https://cdn.simpleicons.org/wechat/07C160',
   wechat: 'https://cdn.simpleicons.org/wechat/07C160',
   qqpay: 'https://cdn.simpleicons.org/tencentqq/12B7F5',
-};
-
-const formatCountdown = (seconds) => {
-  const total = Math.max(0, Math.floor(seconds || 0));
-  const minutes = Math.floor(total / 60);
-  const remainSeconds = total % 60;
-  return `${String(minutes).padStart(2, '0')}:${String(remainSeconds).padStart(2, '0')}`;
 };
 
 const TopUp = () => {
@@ -39,8 +31,6 @@ const TopUp = () => {
   const [topups, setTopups] = useState([]);
   const [showHistory, setShowHistory] = useState(false);
   const [checkingOut, setCheckingOut] = useState(false);
-  const [paymentOrder, setPaymentOrder] = useState(null);
-  const [paymentNow, setPaymentNow] = useState(Date.now());
 
   const minTopUp = statusState?.status?.min_topup || 1;
   const epayEnabled = !!statusState?.status?.epay_enabled;
@@ -92,22 +82,6 @@ const TopUp = () => {
     if (c) setCode(c);
   }, []);
 
-  useEffect(() => {
-    if (!paymentOrder) return undefined;
-    const timer = setInterval(() => {
-      refreshUser();
-      loadTopups();
-    }, 5000);
-    return () => clearInterval(timer);
-  }, [paymentOrder]);
-
-  useEffect(() => {
-    if (!paymentOrder?.expiresAt) return undefined;
-    setPaymentNow(Date.now());
-    const timer = setInterval(() => setPaymentNow(Date.now()), 1000);
-    return () => clearInterval(timer);
-  }, [paymentOrder?.expiresAt]);
-
   const redeem = async () => {
     const key = code.trim();
     if (!key) return showInfo('请输入兑换码');
@@ -155,7 +129,7 @@ const TopUp = () => {
       setCheckingOut(true);
       try {
         const { data } = await API.post('/api/user/payment/alipay/checkout', { amount: topUpCount });
-        if (data.success && data.data?.pay_url) window.location.assign(data.data.pay_url);
+        if (data.success && data.data?.pay_url) window.open(data.data.pay_url, '_blank', 'noopener');
         else showError(data.message || '创建支付订单失败');
       } catch (e) { showError(e); } finally { setCheckingOut(false); }
       return;
@@ -166,21 +140,7 @@ const TopUp = () => {
       try {
         const { data } = await API.post('/api/user/payment/epay/checkout', { amount: topUpCount, type: payMethod.type });
         if (data.success && data.data?.pay_url) {
-          const expiresIn = Number(data.data.expires_in) || 180;
-          setMethodPickerOpen(false);
-          setPaymentOrder({
-            payUrl: data.data.pay_url,
-            qrValue: data.data.qr_value,
-            qrUrl: data.data.qr_url,
-            h5Url: data.data.h5_url,
-            tradeNo: data.data.trade_no,
-            methodName: payMethod.name,
-            methodType: payMethod.type,
-            amount: topUpCount,
-            totalText: payTotalText,
-            expiresAt: Date.now() + expiresIn * 1000,
-          });
-          loadTopups();
+          window.open(data.data.pay_url, '_blank', 'noopener');
         } else showError(data.message || '创建支付订单失败');
       } catch (e) { showError(e); } finally { setCheckingOut(false); }
       return;
@@ -373,52 +333,6 @@ const TopUp = () => {
                 {checkingOut && <Loading size='xs' />}
               </button>
             ))}
-          </div>
-        </Modal>
-      )}
-
-      {/* 支付二维码弹窗 */}
-      {paymentOrder && (
-        <Modal
-          open
-          title='扫码支付'
-          onClose={() => setPaymentOrder(null)}
-          hideFooter
-          width={430}
-        >
-          <div className='flex flex-col items-center gap-4'>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10 }}>
-              <img
-                alt={paymentOrder.methodName || '支付渠道'}
-                src={PAYMENT_ICON_CDN[paymentOrder.methodType] || PAYMENT_ICON_CDN.alipay}
-                style={{ width: 30, height: 30, display: 'block' }}
-              />
-              <div style={{ fontSize: 28, fontWeight: 600, color: 'var(--ui-text)' }}>{paymentOrder.totalText}</div>
-            </div>
-            <QRCode value={paymentOrder.qrValue || paymentOrder.payUrl} size={240} bordered={false} bgColor='transparent' />
-            <div style={{ width: '100%', fontSize: 12, color: 'var(--ui-text-3)', textAlign: 'center', wordBreak: 'break-all' }}>
-              订单号：{paymentOrder.tradeNo || '-'}
-            </div>
-            {paymentOrder.expiresAt && (
-              <div style={{ fontSize: 13, fontWeight: 600, color: paymentOrder.expiresAt <= paymentNow ? '#dc2626' : 'var(--ui-text)' }}>
-                {paymentOrder.expiresAt <= paymentNow
-                  ? '二维码已过期'
-                  : `剩余支付时间 ${formatCountdown((paymentOrder.expiresAt - paymentNow) / 1000)}`}
-              </div>
-            )}
-            <Button
-              icon={RefreshCw}
-              onClick={async () => {
-                await refreshUser();
-                await loadTopups();
-                showSuccess('已刷新支付状态');
-              }}
-            >
-              我已完成支付
-            </Button>
-            <div style={{ fontSize: 12, color: 'var(--ui-text-3)', textAlign: 'center', lineHeight: 1.6 }}>
-              使用手机扫码完成支付，支付成功后余额会自动刷新。
-            </div>
           </div>
         </Modal>
       )}

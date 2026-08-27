@@ -169,27 +169,12 @@ func RequestEpayCheckout(c *gin.Context) {
 		return
 	}
 
-	notifyURL := strings.TrimRight(service.GetCallbackAddress(), "/") + "/api/payment/epay/notify"
-	returnURL := strings.TrimRight(system_setting.ServerAddress, "/") + "/console/topup"
-	epayURL := service.BuildEpayPayURL(operation_setting.PayAddress, req.Type, outTradeNo, notifyURL, returnURL, "额度充值", money.StringFixed(2))
 	payURL := service.BuildEpayRedirectURL(system_setting.ServerAddress, req.Type, outTradeNo)
 
-	payload := gin.H{
+	common.ApiSuccess(c, gin.H{
 		"pay_url":  payURL,
 		"trade_no": outTradeNo,
-	}
-	if qr, err := service.FetchEpayConsoleQRCode(operation_setting.PayAddress, epayURL, outTradeNo); err == nil && qr != nil {
-		payload["qr_url"] = qr.QRURL
-		payload["qr_value"] = qr.QRValue
-		payload["h5_url"] = qr.H5URL
-		payload["expires_in"] = qr.RemainingSeconds
-		payload["epay_status"] = qr.Code
-		payload["epay_message"] = qr.Message
-	} else if err != nil {
-		common.SysError("epay qr fetch failed: " + err.Error())
-	}
-
-	common.ApiSuccess(c, payload)
+	})
 }
 
 // EpayRedirect 校验站内支付入口后跳转到易支付收银台。
