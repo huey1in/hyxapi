@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/http"
 	"regexp"
+	"slices"
 	"strings"
 	"sync"
 	"sync/atomic"
@@ -17,6 +18,7 @@ import (
 	"github.com/QuantumNous/new-api/relaykit/dto"
 	"github.com/QuantumNous/new-api/service"
 
+	"github.com/gin-gonic/gin"
 	"github.com/samber/lo"
 )
 
@@ -29,6 +31,26 @@ const (
 	channelUpstreamModelUpdateNotifyMaxModelDetails       = 12
 	channelUpstreamModelUpdateNotifyMaxFailedChannelIDs   = 10
 )
+
+var channelUpstreamModelUpdateSelectFields = []string{
+	"id",
+	"name",
+	"type",
+	"key",
+	"status",
+	"base_url",
+	"models",
+	"model_mapping",
+	"settings",
+	"setting",
+	"other",
+	"group",
+	"priority",
+	"weight",
+	"tag",
+	"channel_info",
+	"header_override",
+}
 
 var (
 	channelUpstreamModelUpdateTaskOnce    sync.Once
@@ -494,7 +516,7 @@ func runChannelUpstreamModelUpdateTaskOnce() {
 	for {
 		var channels []*model.Channel
 		query := model.DB.
-			Select("id", "name", "type", "key", "status", "base_url", "models", "settings", "setting", "other", "group", "priority", "weight", "tag", "channel_info", "header_override").
+			Select(channelUpstreamModelUpdateSelectFields).
 			Where("status = ?", common.ChannelStatusEnabled).
 			Order("id asc").
 			Limit(channelUpstreamModelUpdateTaskBatchSize)
@@ -630,5 +652,346 @@ func StartChannelUpstreamModelUpdateTask() {
 				runChannelUpstreamModelUpdateTaskOnce()
 			}
 		}()
+	})
+}
+
+type applyChannelUpstreamModelUpdatesRequest struct {
+	ID           int      `json:"id"`
+	AddModels    []string `json:"add_models"`
+	RemoveModels []string `json:"remove_models"`
+	IgnoreModels []string `json:"ignore_models"`
+}
+
+type applyAllChannelUpstreamModelUpdatesResult struct {
+	ChannelID             int      `json:"channel_id"`
+	ChannelName           string   `json:"channel_name"`
+	AddedModels           []string `json:"added_models"`
+	RemovedModels         []string `json:"removed_models"`
+	RemainingModels       []string `json:"remaining_models"`
+	RemainingRemoveModels []string `json:"remaining_remove_models"`
+}
+
+type detectChannelUpstreamModelUpdatesResult struct {
+	ChannelID       int      `json:"channel_id"`
+	ChannelName     string   `json:"channel_name"`
+	AddModels       []string `json:"add_models"`
+	RemoveModels    []string `json:"remove_models"`
+	LastCheckTime   int64    `json:"last_check_time"`
+	AutoAddedModels int      `json:"auto_added_models"`
+}
+
+// applyChannelUpstreamModelUpdates applies a caller-selected subset of the
+// previously detected pending add/remove models. Selection is intersected with
+// the staged lists so a stale client can never inject a model the detector did
+// not actually find; "add" wins when a model appears in both lists.
+func applyChannelUpstreamModelUpdates(
+	channel *model.Channel,
+	addModelsInput []string,
+	ignoreModelsInput []string,
+	removeModelsInput []string,
+) (
+	addedModels []string,
+	removedModels []string,
+	remainingModels []string,
+	remainingRemoveModels []string,
+	modelsChanged bool,
+	err error,
+) {
+	settings := channel.GetOtherSettings()
+	pendingAddModels := normalizeModelNames(settings.UpstreamModelUpdateLastDetectedModels)
+	pendingRemoveModels := normalizeModelNames(settings.UpstreamModelUpdateLastRemovedModels)
+	addModels := intersectModelNames(addModelsInput, pendingAddModels)
+	ignoreModels := intersectModelNames(ignoreModelsInput, pendingAddModels)
+	removeModels := intersectModelNames(removeModelsInput, pendingRemoveModels)
+	removeModels = subtractModelNames(removeModels, addModels)
+
+	originModels := normalizeModelNames(channel.GetModels())
+	nextModels := applySelectedModelChanges(originModels, addModels, removeModels)
+	modelsChanged = !slices.Equal(originModels, nextModels)
+	if modelsChanged {
+		channel.Models = strings.Join(nextModels, ",")
+	}
+
+	settings.UpstreamModelUpdateIgnoredModels = mergeModelNames(settings.UpstreamModelUpdateIgnoredModels, ignoreModels)
+	if len(addModels) > 0 {
+		settings.UpstreamModelUpdateIgnoredModels = subtractModelNames(settings.UpstreamModelUpdateIgnoredModels, addModels)
+	}
+	remainingModels = subtractModelNames(pendingAddModels, append(addModels, ignoreModels...))
+	remainingRemoveModels = subtractModelNames(pendingRemoveModels, removeModels)
+	settings.UpstreamModelUpdateLastDetectedModels = remainingModels
+	settings.UpstreamModelUpdateLastRemovedModels = remainingRemoveModels
+	settings.UpstreamModelUpdateLastCheckTime = common.GetTimestamp()
+
+	if err := updateChannelUpstreamModelSettings(channel, settings, modelsChanged); err != nil {
+		return nil, nil, nil, nil, false, err
+	}
+	if modelsChanged {
+		if err := channel.UpdateAbilities(nil); err != nil {
+			return addModels, removeModels, remainingModels, remainingRemoveModels, true, err
+		}
+	}
+	return addModels, removeModels, remainingModels, remainingRemoveModels, modelsChanged, nil
+}
+
+func collectPendingApplyUpstreamModelChanges(settings dto.ChannelOtherSettings) (pendingAddModels []string, pendingRemoveModels []string) {
+	return normalizeModelNames(settings.UpstreamModelUpdateLastDetectedModels), normalizeModelNames(settings.UpstreamModelUpdateLastRemovedModels)
+}
+
+func findEnabledChannelsAfterID(lastID int, batchSize int) ([]*model.Channel, error) {
+	var channels []*model.Channel
+	query := model.DB.
+		Select(channelUpstreamModelUpdateSelectFields).
+		Where("status = ?", common.ChannelStatusEnabled).
+		Order("id asc").
+		Limit(batchSize)
+	if lastID > 0 {
+		query = query.Where("id > ?", lastID)
+	}
+	return channels, query.Find(&channels).Error
+}
+
+func ApplyChannelUpstreamModelUpdates(c *gin.Context) {
+	var req applyChannelUpstreamModelUpdatesRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		common.ApiError(c, err)
+		return
+	}
+	if req.ID <= 0 {
+		c.JSON(http.StatusOK, gin.H{
+			"success": false,
+			"message": "invalid channel id",
+		})
+		return
+	}
+
+	channel, err := model.GetChannelById(req.ID, true)
+	if err != nil {
+		common.ApiError(c, err)
+		return
+	}
+	beforeSettings := channel.GetOtherSettings()
+	ignoredModels := intersectModelNames(req.IgnoreModels, beforeSettings.UpstreamModelUpdateLastDetectedModels)
+
+	addedModels, removedModels, remainingModels, remainingRemoveModels, modelsChanged, err := applyChannelUpstreamModelUpdates(
+		channel,
+		req.AddModels,
+		req.IgnoreModels,
+		req.RemoveModels,
+	)
+	if err != nil {
+		common.ApiError(c, err)
+		return
+	}
+
+	if modelsChanged {
+		refreshChannelRuntimeCache()
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"success": true,
+		"message": "",
+		"data": gin.H{
+			"id":                      channel.Id,
+			"added_models":            addedModels,
+			"removed_models":          removedModels,
+			"ignored_models":          ignoredModels,
+			"remaining_models":        remainingModels,
+			"remaining_remove_models": remainingRemoveModels,
+			"models":                  channel.Models,
+			"settings":                channel.OtherSettings,
+		},
+	})
+}
+
+func DetectChannelUpstreamModelUpdates(c *gin.Context) {
+	var req applyChannelUpstreamModelUpdatesRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		common.ApiError(c, err)
+		return
+	}
+	if req.ID <= 0 {
+		c.JSON(http.StatusOK, gin.H{
+			"success": false,
+			"message": "invalid channel id",
+		})
+		return
+	}
+
+	channel, err := model.GetChannelById(req.ID, true)
+	if err != nil {
+		common.ApiError(c, err)
+		return
+	}
+
+	settings := channel.GetOtherSettings()
+	modelsChanged, autoAdded, err := checkAndPersistChannelUpstreamModelUpdates(channel, &settings, true, false)
+	if err != nil {
+		common.ApiError(c, err)
+		return
+	}
+	if modelsChanged {
+		refreshChannelRuntimeCache()
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"success": true,
+		"message": "",
+		"data": detectChannelUpstreamModelUpdatesResult{
+			ChannelID:       channel.Id,
+			ChannelName:     channel.Name,
+			AddModels:       normalizeModelNames(settings.UpstreamModelUpdateLastDetectedModels),
+			RemoveModels:    normalizeModelNames(settings.UpstreamModelUpdateLastRemovedModels),
+			LastCheckTime:   settings.UpstreamModelUpdateLastCheckTime,
+			AutoAddedModels: autoAdded,
+		},
+	})
+}
+
+func ApplyAllChannelUpstreamModelUpdates(c *gin.Context) {
+	results := make([]applyAllChannelUpstreamModelUpdatesResult, 0)
+	failed := make([]int, 0)
+	refreshNeeded := false
+	addedModelCount := 0
+	removedModelCount := 0
+
+	lastID := 0
+	for {
+		channels, err := findEnabledChannelsAfterID(lastID, channelUpstreamModelUpdateTaskBatchSize)
+		if err != nil {
+			common.ApiError(c, err)
+			return
+		}
+		if len(channels) == 0 {
+			break
+		}
+		lastID = channels[len(channels)-1].Id
+
+		for _, channel := range channels {
+			if channel == nil {
+				continue
+			}
+
+			settings := channel.GetOtherSettings()
+			if !settings.UpstreamModelUpdateCheckEnabled {
+				continue
+			}
+
+			pendingAddModels, pendingRemoveModels := collectPendingApplyUpstreamModelChanges(settings)
+			if len(pendingAddModels) == 0 && len(pendingRemoveModels) == 0 {
+				continue
+			}
+
+			addedModels, removedModels, remainingModels, remainingRemoveModels, modelsChanged, err := applyChannelUpstreamModelUpdates(
+				channel,
+				pendingAddModels,
+				nil,
+				pendingRemoveModels,
+			)
+			if err != nil {
+				failed = append(failed, channel.Id)
+				continue
+			}
+			if modelsChanged {
+				refreshNeeded = true
+			}
+			addedModelCount += len(addedModels)
+			removedModelCount += len(removedModels)
+			results = append(results, applyAllChannelUpstreamModelUpdatesResult{
+				ChannelID:             channel.Id,
+				ChannelName:           channel.Name,
+				AddedModels:           addedModels,
+				RemovedModels:         removedModels,
+				RemainingModels:       remainingModels,
+				RemainingRemoveModels: remainingRemoveModels,
+			})
+		}
+
+		if len(channels) < channelUpstreamModelUpdateTaskBatchSize {
+			break
+		}
+	}
+
+	if refreshNeeded {
+		refreshChannelRuntimeCache()
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"success": true,
+		"message": "",
+		"data": gin.H{
+			"processed_channels": len(results),
+			"added_models":       addedModelCount,
+			"removed_models":     removedModelCount,
+			"failed_channel_ids": failed,
+			"results":            results,
+		},
+	})
+}
+
+// DetectAllChannelUpstreamModelUpdates forces a fresh detection pass across all
+// enabled channels without auto-applying, staging pending add/remove models for
+// explicit review. Unlike upstream this runs inline rather than through the
+// system-task framework (excluded from this fork); it still respects the same
+// force=true / allowAutoApply=false semantics as the manual trigger.
+func DetectAllChannelUpstreamModelUpdates(c *gin.Context) {
+	results := make([]detectChannelUpstreamModelUpdatesResult, 0)
+	failed := make([]int, 0)
+	refreshNeeded := false
+
+	lastID := 0
+	for {
+		channels, err := findEnabledChannelsAfterID(lastID, channelUpstreamModelUpdateTaskBatchSize)
+		if err != nil {
+			common.ApiError(c, err)
+			return
+		}
+		if len(channels) == 0 {
+			break
+		}
+		lastID = channels[len(channels)-1].Id
+
+		for _, channel := range channels {
+			if channel == nil {
+				continue
+			}
+			settings := channel.GetOtherSettings()
+			if !settings.UpstreamModelUpdateCheckEnabled {
+				continue
+			}
+			modelsChanged, autoAdded, err := checkAndPersistChannelUpstreamModelUpdates(channel, &settings, true, false)
+			if err != nil {
+				failed = append(failed, channel.Id)
+				continue
+			}
+			if modelsChanged {
+				refreshNeeded = true
+			}
+			results = append(results, detectChannelUpstreamModelUpdatesResult{
+				ChannelID:       channel.Id,
+				ChannelName:     channel.Name,
+				AddModels:       normalizeModelNames(settings.UpstreamModelUpdateLastDetectedModels),
+				RemoveModels:    normalizeModelNames(settings.UpstreamModelUpdateLastRemovedModels),
+				LastCheckTime:   settings.UpstreamModelUpdateLastCheckTime,
+				AutoAddedModels: autoAdded,
+			})
+		}
+
+		if len(channels) < channelUpstreamModelUpdateTaskBatchSize {
+			break
+		}
+	}
+
+	if refreshNeeded {
+		refreshChannelRuntimeCache()
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"success": true,
+		"message": "",
+		"data": gin.H{
+			"processed_channels": len(results),
+			"failed_channel_ids": failed,
+			"results":            results,
+		},
 	})
 }
