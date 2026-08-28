@@ -155,6 +155,8 @@ func SetApiRouter(router *gin.Engine) {
 			optionRoute.GET("/", controller.GetOptions)
 			optionRoute.PUT("/", controller.UpdateOption)
 			optionRoute.POST("/test_email", controller.SendTestEmail)
+			optionRoute.GET("/channel_affinity_cache", controller.GetChannelAffinityCacheStats)
+			optionRoute.DELETE("/channel_affinity_cache", controller.ClearChannelAffinityCache)
 		}
 
 		modelPricingRoute := apiRouter.Group("/model-pricing")
@@ -209,6 +211,7 @@ func SetApiRouter(router *gin.Engine) {
 		logRoute.DELETE("/", middleware.AdminAuth(), controller.DeleteHistoryLogs)
 		logRoute.GET("/stat", middleware.AdminAuth(), controller.GetLogsStat)
 		logRoute.GET("/token-usage", middleware.AdminAuth(), controller.GetTokenUsageByDay)
+		logRoute.GET("/channel_affinity_usage_cache", middleware.AdminAuth(), controller.GetChannelAffinityUsageCacheStats)
 		logRoute.GET("/self/stat", middleware.UserAuth(), controller.GetLogsSelfStat)
 		logRoute.GET("/self/token-usage", middleware.UserAuth(), controller.GetSelfTokenUsageByDay)
 		logRoute.GET("/self", middleware.UserAuth(), controller.GetUserLogs)
