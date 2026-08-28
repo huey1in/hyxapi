@@ -286,6 +286,11 @@ func InitResources() error {
 	model.CheckSetup()
 
 	// Initialize options, should after model.InitDB()
+	if common.IsMasterNode {
+		if err := model.MigrateRetiredFrontendOptions(); err != nil {
+			common.SysError("failed to migrate retired frontend options: " + err.Error())
+		}
+	}
 	model.InitOptionMap()
 
 	// 清理旧的磁盘缓存文件
