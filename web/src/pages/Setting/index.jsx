@@ -7,6 +7,7 @@ import {
 import { Lock } from 'lucide-react';
 import { orderSettingKeysForSave } from './saveOrder.js';
 import ModelPricingEditor from './ModelPricingEditor.jsx';
+import PermissionEditor from './PermissionEditor.jsx';
 
 const EMAIL_TEMPLATE_META = {
   EmailTemplateVerification: {
@@ -80,6 +81,7 @@ const TABS = [
   { key: 'affinity',    label: '渠道亲和' },
   { key: 'dashboard',   label: '仪表盘' },
   { key: 'performance', label: '性能' },
+  { key: 'permissions', label: '权限' },
 ];
 
 const TAB_KEYS = {
@@ -186,6 +188,9 @@ const TAB_SECTIONS = {
   pricing: [
   { title: '模型价格', component: 'ModelPricingEditor', keys: [] },
     { title: '分组', component: 'GroupRatioEditor', keys: ['GroupRatio', 'UserUsableGroups'] },
+  ],
+  permissions: [
+    { title: '渠道权限', component: 'PermissionEditor', keys: [] },
   ],
 };
 
@@ -884,6 +889,14 @@ const SettingPage = () => {
       return (
         <div key={title} style={{ padding: '20px 22px', border: '1px solid var(--ui-border)', borderRadius: 26 }}>
           <ModelPricingEditor modelSuggestions={modelList} />
+        </div>
+      );
+    }
+    if (sectionDef?.component === 'PermissionEditor') {
+      return (
+        <div key={title} style={{ padding: '20px 22px', border: '1px solid var(--ui-border)', borderRadius: 26 }}>
+          <div style={{ fontSize: 15, fontWeight: 600, color: 'var(--ui-text)', marginBottom: 16 }}>{title}</div>
+          <PermissionEditor />
         </div>
       );
     }
