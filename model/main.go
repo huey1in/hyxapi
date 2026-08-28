@@ -269,8 +269,13 @@ func migrateDB() error {
 		&UserOAuthBinding{},
 		&CasbinRule{},
 		&AuthzRole{},
+		&UserSession{},
+		&AuthFlow{},
 	)
 	if err != nil {
+		return err
+	}
+	if err := InitializeUserAuthVersions(); err != nil {
 		return err
 	}
 	dropLegacyBrandingOptions()

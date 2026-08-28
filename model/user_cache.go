@@ -1,26 +1,30 @@
 package model
 
 import (
+	"errors"
 	"fmt"
-	"time"
 
 	"github.com/QuantumNous/new-api/common"
 	"github.com/QuantumNous/new-api/constant"
 	"github.com/QuantumNous/new-api/relaykit/dto"
 
 	"github.com/gin-gonic/gin"
-
-	"github.com/bytedance/gopkg/util/gopool"
 )
+
+const userCacheSchemaVersion = 2
 
 // UserBase struct remains the same as it represents the cached data structure
 type UserBase struct {
-	Id       int    `json:"id"`
-	Email    string `json:"email"`
-	Quota    int    `json:"quota"`
-	Status   int    `json:"status"`
-	Username string `json:"username"`
-	Setting  string `json:"setting"`
+	Id          int    `json:"id"`
+	Group       string `json:"group"`
+	Email       string `json:"email"`
+	Quota       int    `json:"quota"`
+	Status      int    `json:"status"`
+	Role        int    `json:"role"`
+	Username    string `json:"username"`
+	Setting     string `json:"setting"`
+	AuthVersion int64  `json:"-"`
+	CacheSchema int    `json:"-"`
 }
 
 func (user *UserBase) WriteContext(c *gin.Context) {
@@ -47,6 +51,14 @@ func getUserCacheKey(userId int) string {
 	return fmt.Sprintf("user:%d", userId)
 }
 
+func userCacheTTLSeconds() int {
+	ttl := common.RedisKeyCacheSeconds()
+	if ttl <= 0 {
+		return 60
+	}
+	return ttl
+}
+
 // invalidateUserCache clears user cache
 func invalidateUserCache(userId int) error {
 	if !common.RedisEnabled {
@@ -61,58 +73,51 @@ func InvalidateUserCache(userId int) error {
 	return invalidateUserCache(userId)
 }
 
-// updateUserCache updates all user cache fields using hash
+func populateUserCache(user User) error {
+	if !common.RedisEnabled {
+		return nil
+	}
+	return writeUserCache(user.ToBaseUser(), true)
+}
+
+// updateUserCache refreshes non-quota user cache fields.
+// Quota is maintained by atomic quota delta paths and must not be overwritten
+// by stale user snapshots from profile/settings updates.
 func updateUserCache(user User) error {
 	if !common.RedisEnabled {
 		return nil
 	}
-
-	return common.RedisHSetObj(
-		getUserCacheKey(user.Id),
-		user.ToBaseUser(),
-		time.Duration(common.RedisKeyCacheSeconds())*time.Second,
-	)
+	return writeUserCache(user.ToBaseUser(), false)
 }
 
 // GetUserCache gets complete user cache from hash
-func GetUserCache(userId int) (userCache *UserBase, err error) {
-	var user *User
-	var fromDB bool
-	defer func() {
-		// Update Redis cache asynchronously on successful DB read
-		if shouldUpdateRedis(fromDB, err) && user != nil {
-			gopool.Go(func() {
-				if err := updateUserCache(*user); err != nil {
-					common.SysLog("failed to update user status cache: " + err.Error())
-				}
-			})
-		}
-	}()
-
+func GetUserCache(userId int) (*UserBase, error) {
 	// Try getting from Redis first
-	userCache, err = cacheGetUserBase(userId)
+	userCache, err := cacheGetUserBase(userId)
 	if err == nil {
 		return userCache, nil
 	}
 
-	// If Redis fails, get from DB
-	fromDB = true
-	user, err = GetUserById(userId, false)
+	// Redis misses and read failures both fall back to the shared database. A
+	// version fence newer than the database is the one exception: allowing that
+	// snapshot would re-authorize a user while a restrictive update is pending.
+	user, err := GetUserById(userId, false)
 	if err != nil {
-		return nil, err // Return nil and error if DB lookup fails
+		return nil, err
 	}
-
-	// Create cache object from user data
-	userCache = &UserBase{
-		Id:       user.Id,
-		Quota:    user.Quota,
-		Status:   user.Status,
-		Username: user.Username,
-		Setting:  user.Setting,
-		Email:    user.Email,
+	if common.RedisEnabled {
+		floor, floorErr := getUserAuthVersionFloor(userId)
+		if floorErr == nil && floor > user.AuthVersion {
+			return nil, ErrUserAuthCachePending
+		}
+		if err := populateUserCache(*user); err != nil {
+			if errors.Is(err, ErrUserAuthCachePending) {
+				return nil, err
+			}
+			common.SysLog("failed to synchronously populate user cache: " + err.Error())
+		}
 	}
-
-	return userCache, nil
+	return user.ToBaseUser(), nil
 }
 
 func cacheGetUserBase(userId int) (*UserBase, error) {
@@ -124,6 +129,16 @@ func cacheGetUserBase(userId int) (*UserBase, error) {
 	err := common.RedisHGetObj(getUserCacheKey(userId), &userCache)
 	if err != nil {
 		return nil, err
+	}
+	if userCache.Id != userId || userCache.CacheSchema != userCacheSchemaVersion || userCache.AuthVersion <= 0 {
+		return nil, fmt.Errorf("user cache schema is stale")
+	}
+	floor, err := getUserAuthVersionFloor(userId)
+	if err != nil {
+		return nil, err
+	}
+	if floor > userCache.AuthVersion {
+		return nil, ErrUserAuthCachePending
 	}
 	return &userCache, nil
 }

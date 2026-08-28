@@ -48,16 +48,21 @@ type User struct {
 	LinuxDOId        string         `json:"linux_do_id" gorm:"column:linux_do_id;index"`
 	Setting          string         `json:"setting" gorm:"type:text;column:setting"`
 	Remark           string         `json:"remark,omitempty" gorm:"type:varchar(255)" validate:"max=255"`
+	AuthVersion      int64          `json:"-" gorm:"type:bigint;not null;default:1;column:auth_version"`
 }
 
 func (user *User) ToBaseUser() *UserBase {
 	cache := &UserBase{
-		Id:       user.Id,
-		Quota:    user.Quota,
-		Status:   user.Status,
-		Username: user.Username,
-		Setting:  user.Setting,
-		Email:    user.Email,
+		Id:          user.Id,
+		Group:       "", // 用户分组概念已删除，恒为空
+		Quota:       user.Quota,
+		Status:      user.Status,
+		Role:        user.Role,
+		Username:    user.Username,
+		Setting:     user.Setting,
+		Email:       user.Email,
+		AuthVersion: user.AuthVersion,
+		CacheSchema: userCacheSchemaVersion,
 	}
 	return cache
 }
