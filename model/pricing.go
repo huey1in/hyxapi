@@ -19,6 +19,7 @@ type Pricing struct {
 	Icon                   string                  `json:"icon,omitempty"`
 	Tags                   string                  `json:"tags,omitempty"`
 	VendorID               int                     `json:"vendor_id,omitempty"`
+	OwnerBy                string                  `json:"owner_by,omitempty"`
 	BillingType            string                  `json:"billing_type"`
 	Configured             bool                    `json:"configured"`
 	InputPrice             float64                 `json:"input_price"`
