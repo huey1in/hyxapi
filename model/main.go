@@ -272,6 +272,7 @@ func migrateDB() error {
 		&UserSession{},
 		&AuthFlow{},
 		&Checkin{},
+		&PrefillGroup{},
 	)
 	if err != nil {
 		return err
