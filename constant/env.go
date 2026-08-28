@@ -19,6 +19,9 @@ var TaskQueryLimit int
 var TaskTimeoutMinutes int
 var TaskPricePatches []string
 
+// AnonymousRequestBodyLimitKB 匿名接口请求体上限（KB），0/负数回退默认 512KB。
+var AnonymousRequestBodyLimitKB int
+
 // TrustedRedirectDomains is a list of trusted domains for redirect URL validation.
 // Domains support subdomain matching (e.g., "example.com" matches "sub.example.com").
 var TrustedRedirectDomains []string
