@@ -73,4 +73,9 @@ const (
 	// ContextKeyLanguage stores the user's language preference for i18n
 	ContextKeyLanguage ContextKey = "language"
 	ContextKeyIsStream ContextKey = "is_stream"
+
+	// ContextKeyAuditLogged marks that the current request has already recorded
+	// a fine-grained audit log inside the handler, so the fallback audit in the
+	// auth chain skips it to avoid duplicate records.
+	ContextKeyAuditLogged ContextKey = "audit_logged"
 )
