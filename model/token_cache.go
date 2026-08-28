@@ -8,6 +8,10 @@ import (
 	"github.com/QuantumNous/new-api/constant"
 )
 
+func getTokenCacheKey(key string) string {
+	return fmt.Sprintf("token:%s", common.GenerateHMAC(key))
+}
+
 func cacheSetToken(token Token) error {
 	key := common.GenerateHMAC(token.Key)
 	token.Clean()
