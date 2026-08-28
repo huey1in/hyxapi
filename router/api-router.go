@@ -79,6 +79,8 @@ func SetApiRouter(router *gin.Engine) {
 				selfRoute.POST("/passkey/verify/finish", controller.PasskeyVerifyFinish)
 				selfRoute.DELETE("/passkey", controller.PasskeyDelete)
 				selfRoute.GET("/aff", controller.GetAffCode)
+				selfRoute.GET("/checkin", controller.GetCheckinStatus)
+				selfRoute.POST("/checkin", middleware.TurnstileCheck(), controller.DoCheckin)
 				selfRoute.POST("/topup", middleware.CriticalRateLimit(), controller.TopUp)
 				selfRoute.POST("/payment/epay/checkout", middleware.CriticalRateLimit(), controller.RequestEpayCheckout)
 				selfRoute.POST("/payment/alipay/checkout", middleware.CriticalRateLimit(), controller.RequestAlipayCheckout)

@@ -271,6 +271,7 @@ func migrateDB() error {
 		&AuthzRole{},
 		&UserSession{},
 		&AuthFlow{},
+		&Checkin{},
 	)
 	if err != nil {
 		return err
