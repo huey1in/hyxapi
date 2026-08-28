@@ -58,6 +58,8 @@ require (
 	gorm.io/gorm v1.25.2
 )
 
+require github.com/Azure/go-ntlmssp v0.1.1
+
 replace github.com/QuantumNous/new-api/relaykit => ./relaykit
 
 require (
@@ -70,7 +72,7 @@ require (
 	github.com/boombuler/barcode v1.1.0 // indirect
 	github.com/bytedance/sonic v1.14.1 // indirect
 	github.com/bytedance/sonic/loader v0.3.0 // indirect
-	github.com/casbin/casbin/v2 v2.135.0 // indirect
+	github.com/casbin/casbin/v2 v2.135.0
 	github.com/casbin/govaluate v1.3.0 // indirect
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect
 	github.com/cloudwego/base64x v0.1.6 // indirect

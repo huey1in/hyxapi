@@ -27,10 +27,7 @@ func shouldUseSMTPLoginAuth() bool {
 }
 
 func getSMTPAuth() smtp.Auth {
-	if shouldUseSMTPLoginAuth() {
-		return LoginAuth(SMTPAccount, SMTPToken)
-	}
-	return smtp.PlainAuth("", SMTPAccount, SMTPToken, SMTPServer)
+	return AutoSMTPAuth(SMTPAccount, SMTPToken)
 }
 
 func SendEmail(subject string, receiver string, content string) error {
