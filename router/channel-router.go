@@ -1,0 +1,65 @@
+package router
+
+import (
+	"net/http"
+
+	"github.com/QuantumNous/new-api/controller"
+	"github.com/QuantumNous/new-api/middleware"
+	"github.com/QuantumNous/new-api/service/authz"
+	"github.com/gin-gonic/gin"
+)
+
+type permissionRoute struct {
+	method     string
+	path       string
+	permission authz.Permission
+	handler    gin.HandlerFunc
+}
+
+func registerChannelRoutes(apiRouter *gin.RouterGroup) {
+	channelRoute := apiRouter.Group("/channel")
+	channelRoute.Use(middleware.AdminAuth())
+
+	channelRoute.POST("/:id/key",
+		middleware.RootAuth(),
+		middleware.CriticalRateLimit(),
+		middleware.DisableCache(),
+		middleware.SecureVerificationRequired(),
+		controller.GetChannelKey,
+	)
+
+	for _, route := range channelPermissionRoutes {
+		channelRoute.Handle(route.method, route.path,
+			middleware.RequirePermission(route.permission),
+			route.handler,
+		)
+	}
+}
+
+// channelPermissionRoutes 表驱动地声明渠道接口与所需权限。新增渠道接口时，
+// 在 controller 补齐 handler 后向此表追加一行即可，无需改动中间件逻辑。
+var channelPermissionRoutes = []permissionRoute{
+	{method: http.MethodGet, path: "/", permission: authz.ChannelRead, handler: controller.GetAllChannels},
+	{method: http.MethodGet, path: "/search", permission: authz.ChannelRead, handler: controller.SearchChannels},
+	{method: http.MethodGet, path: "/models", permission: authz.ChannelRead, handler: controller.ChannelListModels},
+	{method: http.MethodGet, path: "/models_enabled", permission: authz.ChannelRead, handler: controller.EnabledListModels},
+	{method: http.MethodGet, path: "/:id", permission: authz.ChannelRead, handler: controller.GetChannel},
+	{method: http.MethodGet, path: "/test", permission: authz.ChannelOperate, handler: controller.TestAllChannels},
+	{method: http.MethodGet, path: "/test/:id", permission: authz.ChannelOperate, handler: controller.TestChannel},
+	{method: http.MethodGet, path: "/update_balance", permission: authz.ChannelOperate, handler: controller.UpdateAllChannelsBalance},
+	{method: http.MethodGet, path: "/update_balance/:id", permission: authz.ChannelOperate, handler: controller.UpdateChannelBalance},
+	{method: http.MethodPost, path: "/", permission: authz.ChannelSensitiveWrite, handler: controller.AddChannel},
+	{method: http.MethodPut, path: "/", permission: authz.ChannelWrite, handler: controller.UpdateChannel},
+	{method: http.MethodDelete, path: "/disabled", permission: authz.ChannelSensitiveWrite, handler: controller.DeleteDisabledChannel},
+	{method: http.MethodPost, path: "/tag/disabled", permission: authz.ChannelOperate, handler: controller.DisableTagChannels},
+	{method: http.MethodPost, path: "/tag/enabled", permission: authz.ChannelOperate, handler: controller.EnableTagChannels},
+	{method: http.MethodPut, path: "/tag", permission: authz.ChannelWrite, handler: controller.EditTagChannels},
+	{method: http.MethodDelete, path: "/:id", permission: authz.ChannelSensitiveWrite, handler: controller.DeleteChannel},
+	{method: http.MethodPost, path: "/batch", permission: authz.ChannelSensitiveWrite, handler: controller.DeleteChannelBatch},
+	{method: http.MethodPost, path: "/fix", permission: authz.ChannelOperate, handler: controller.FixChannelsAbilities},
+	{method: http.MethodGet, path: "/fetch_models/:id", permission: authz.ChannelOperate, handler: controller.FetchUpstreamModels},
+	{method: http.MethodPost, path: "/fetch_models", permission: authz.ChannelSensitiveWrite, handler: controller.FetchModels},
+	{method: http.MethodPost, path: "/batch/tag", permission: authz.ChannelWrite, handler: controller.BatchSetChannelTag},
+	{method: http.MethodGet, path: "/tag/models", permission: authz.ChannelRead, handler: controller.GetTagModels},
+	{method: http.MethodPost, path: "/copy/:id", permission: authz.ChannelSensitiveWrite, handler: controller.CopyChannel},
+}
