@@ -1,4 +1,0 @@
-interface:
-  display_name: "Anthropic Web Style"
-  short_description: "Enterprise Anthropic web styling"
-  default_prompt: "Use $anthropic-web-style to create a web page that closely matches Anthropic's official visual style."
