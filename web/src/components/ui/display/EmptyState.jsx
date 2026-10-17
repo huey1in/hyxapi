@@ -7,7 +7,6 @@
  * action:      节点（通常是个 Button）
  */
 
-import React from 'react';
 import { Inbox } from 'lucide-react';
 import { cn } from '../tokens';
 

@@ -12,7 +12,6 @@
  * maxWidth: 默认 '1400px'
  */
 
-import React from 'react';
 
 const PageShell = ({ title, actions, maxWidth = '1400px', children }) => (
   <div

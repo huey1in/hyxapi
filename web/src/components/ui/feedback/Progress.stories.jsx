@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import Progress from './Progress';
 import Button from '../button/Button';
 

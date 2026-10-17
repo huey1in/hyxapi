@@ -5,7 +5,6 @@
  * showRange: 显示当前可见区间（默认 true）
  */
 
-import React from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import IconButton from '../button/IconButton';
 

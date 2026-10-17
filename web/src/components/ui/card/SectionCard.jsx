@@ -8,7 +8,6 @@
  * 实质是 Card variant='plain' 的语义封装。
  */
 
-import React from 'react';
 import Card from './Card';
 
 const SectionCard = ({ title, description, children }) => (

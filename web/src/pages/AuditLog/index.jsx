@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Filter, RefreshCw } from 'lucide-react';
 import { API, showError, timestamp2string } from '../../helpers';
 import { Button, IconButton, Input, Pagination, Loading, Table } from '../../components/ui';

@@ -7,7 +7,6 @@
  * closable: 显示 × 关闭按钮，触发 onClose
  */
 
-import React from 'react';
 import { X } from 'lucide-react';
 import { cn } from '../tokens';
 

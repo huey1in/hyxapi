@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Plus, Search, Pencil, Trash2, ShieldCheck, ShieldOff, ArrowUp, ArrowDown, CreditCard, DollarSign, Dices, Copy } from 'lucide-react';
 import { API, showError, showSuccess, renderQuota, timestamp2string } from '../../helpers';
 import { displayAmountToQuota } from '../../helpers/quota';

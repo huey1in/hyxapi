@@ -18,7 +18,6 @@
  *   showLabel: 中心显示百分比
  */
 
-import React from 'react';
 import { cn } from '../tokens';
 
 const TONE = {

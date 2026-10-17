@@ -5,7 +5,6 @@
  * spacing:     sm | md (默认) | lg
  */
 
-import React from 'react';
 import { cn } from '../tokens';
 
 const SPACING_H = { sm: 'my-2', md: 'my-4', lg: 'my-6' };

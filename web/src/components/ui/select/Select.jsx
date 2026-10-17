@@ -11,7 +11,7 @@
  * emptyText:  options 为空时显示
  */
 
-import React, { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { ChevronDown, Check } from 'lucide-react';
 import { cn, FOCUS_RING } from '../tokens';
 import { inputStyle, resolveWidth } from '../input/Input';

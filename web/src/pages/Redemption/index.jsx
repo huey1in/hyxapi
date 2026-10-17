@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Trash2, Copy, Power, PowerOff } from 'lucide-react';
 import { API, showError, showSuccess, copy, renderQuota, timestamp2string } from '../../helpers';
 import { quotaToDisplayAmount, displayAmountToQuota } from '../../helpers/quota';

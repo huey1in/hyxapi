@@ -17,7 +17,6 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 
-import React from 'react';
 import { showToast } from '../components/ui';
 import { TABLE_COMPACT_MODES_KEY } from '../constants';
 
@@ -43,10 +42,6 @@ export function getSystemName() {
   // Brand is hardcoded for the Routify build — do not read from server-side
   // Option/SystemName, which other operators may have set to "New API" etc.
   return 'Routify';
-}
-
-export function getLogo() {
-  return '/logo.png';
 }
 
 export function getUserIdFromLocalStorage() {
@@ -250,15 +245,6 @@ export function isDataCrossYear(timestamps) {
     timestamps.map((ts) => new Date(ts * 1000).getFullYear()),
   );
   return years.size > 1;
-}
-
-export function downloadTextAsFile(text, filename) {
-  let blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
-  let url = URL.createObjectURL(blob);
-  let a = document.createElement('a');
-  a.href = url;
-  a.download = filename;
-  a.click();
 }
 
 export const verifyJSON = (str) => {
@@ -595,122 +581,4 @@ export const getModelPriceItems = (priceData, t) => {
       suffix: ` / ${t('次')}`,
     },
   ].filter((item) => hasConfiguredPrice(item.configuredValue));
-};
-
-// -------------------------------
-// CardPro 分页配置函数
-// 用于创建 CardPro 的 paginationArea 配置
-export const createCardProPagination = ({
-  currentPage,
-  pageSize,
-  total,
-  onPageChange,
-  onPageSizeChange,
-  isMobile = false,
-  pageSizeOpts = [10, 20, 50, 100],
-  showSizeChanger = true,
-  t = (key) => key,
-}) => {
-  if (!total || total <= 0) return null;
-
-  const start = (currentPage - 1) * pageSize + 1;
-  const end = Math.min(currentPage * pageSize, total);
-  const totalPages = Math.ceil(total / pageSize);
-  const totalText = `${t('显示第')} ${start} ${t('条 - 第')} ${end} ${t('条，共')} ${total} ${t('条')}`;
-
-  return (
-    <>
-      {/* 桌面端左侧总数信息 */}
-      {!isMobile && (
-        <span
-          className='text-sm select-none'
-          style={{ color: 'var(--semi-color-text-2)' }}
-        >
-          {totalText}
-        </span>
-      )}
-
-      {/* 右侧分页控件 */}
-      <div className='flex items-center gap-2'>
-        {showSizeChanger && (
-          <select
-            className='text-sm border rounded px-2 py-1'
-            style={{ borderColor: 'var(--semi-color-border)' }}
-            value={pageSize}
-            onChange={(e) => onPageSizeChange(Number(e.target.value))}
-          >
-            {pageSizeOpts.map((opt) => (
-              <option key={opt} value={opt}>
-                {opt} {t('条')}/{t('页')}
-              </option>
-            ))}
-          </select>
-        )}
-        <button
-          className='px-2 py-1 text-sm border rounded disabled:opacity-40'
-          style={{ borderColor: 'var(--semi-color-border)' }}
-          disabled={currentPage <= 1}
-          onClick={() => onPageChange(currentPage - 1)}
-        >
-          ‹
-        </button>
-        <span className='text-sm select-none' style={{ color: 'var(--semi-color-text-1)' }}>
-          {currentPage} / {totalPages}
-        </span>
-        <button
-          className='px-2 py-1 text-sm border rounded disabled:opacity-40'
-          style={{ borderColor: 'var(--semi-color-border)' }}
-          disabled={currentPage >= totalPages}
-          onClick={() => onPageChange(currentPage + 1)}
-        >
-          ›
-        </button>
-      </div>
-    </>
-  );
-};
-
-// 模型定价筛选条件默认值
-const DEFAULT_PRICING_FILTERS = {
-  search: '',
-  showWithRecharge: false,
-  currency: 'USD',
-  showRatio: false,
-  viewMode: 'card',
-  tokenUnit: 'M',
-  filterGroup: 'all',
-  filterQuotaType: 'all',
-  filterEndpointType: 'all',
-  filterVendor: 'all',
-  filterTag: 'all',
-  currentPage: 1,
-};
-
-// 重置模型定价筛选条件
-export const resetPricingFilters = ({
-  handleChange,
-  setShowWithRecharge,
-  setCurrency,
-  setShowRatio,
-  setViewMode,
-  setFilterGroup,
-  setFilterQuotaType,
-  setFilterEndpointType,
-  setFilterVendor,
-  setFilterTag,
-  setCurrentPage,
-  setTokenUnit,
-}) => {
-  handleChange?.(DEFAULT_PRICING_FILTERS.search);
-  setShowWithRecharge?.(DEFAULT_PRICING_FILTERS.showWithRecharge);
-  setCurrency?.(DEFAULT_PRICING_FILTERS.currency);
-  setShowRatio?.(DEFAULT_PRICING_FILTERS.showRatio);
-  setViewMode?.(DEFAULT_PRICING_FILTERS.viewMode);
-  setTokenUnit?.(DEFAULT_PRICING_FILTERS.tokenUnit);
-  setFilterGroup?.(DEFAULT_PRICING_FILTERS.filterGroup);
-  setFilterQuotaType?.(DEFAULT_PRICING_FILTERS.filterQuotaType);
-  setFilterEndpointType?.(DEFAULT_PRICING_FILTERS.filterEndpointType);
-  setFilterVendor?.(DEFAULT_PRICING_FILTERS.filterVendor);
-  setFilterTag?.(DEFAULT_PRICING_FILTERS.filterTag);
-  setCurrentPage?.(DEFAULT_PRICING_FILTERS.currentPage);
 };

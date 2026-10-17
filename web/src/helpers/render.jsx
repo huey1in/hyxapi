@@ -45,7 +45,7 @@ function Tag({ color, children, prefixIcon, suffixIcon, onClick, size, shape }) 
   );
 }
 import { copy, showSuccess, showError } from './utils';
-import { MOBILE_BREAKPOINT } from '../hooks/common/useIsMobile';
+import { MOBILE_BREAKPOINT } from '../hooks/useIsMobile';
 import { visit } from 'unist-util-visit';
 import { Layers } from 'lucide-react';
 

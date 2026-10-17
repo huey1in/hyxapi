@@ -11,7 +11,6 @@
  * confirmText / cancelText
  */
 
-import React from 'react';
 import { X } from 'lucide-react';
 import ModalShell from './ModalShell';
 import IconButton from '../button/IconButton';

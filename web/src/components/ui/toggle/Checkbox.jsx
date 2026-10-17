@@ -4,7 +4,6 @@
  * size: sm | md (默认)
  */
 
-import React from 'react';
 import { Check, Minus } from 'lucide-react';
 import { cn, FOCUS_RING } from '../tokens';
 

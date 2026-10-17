@@ -11,7 +11,7 @@
  * inline     行内代码
  */
 
-import React, { useState, useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import { Copy, Check } from 'lucide-react';
 import { cn } from '../tokens';
 import { copy as copyText } from '../../../helpers';

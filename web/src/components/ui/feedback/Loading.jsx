@@ -6,7 +6,6 @@
  * label:      下方文字
  */
 
-import React from 'react';
 import { Loader2 } from 'lucide-react';
 
 const ICON_SIZE = { xs: 14, sm: 18, md: 24, lg: 32 };

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Trash2, AlertTriangle } from 'lucide-react';
 import Modal from './Modal';
 import ModalShell from './ModalShell';
@@ -6,7 +6,6 @@ import ConfirmDialog from './ConfirmDialog';
 import SlideOver from './SlideOver';
 import Drawer from './Drawer';
 import Button from '../button/Button';
-import Tag from '../feedback/Tag';
 
 export default { title: 'UI/Overlays' };
 

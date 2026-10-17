@@ -5,7 +5,7 @@
  * children:  必须是单一可获得 hover 事件的元素（按钮、图标等）
  */
 
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { cn } from '../tokens';
 
 const PLACE = {

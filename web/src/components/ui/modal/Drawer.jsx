@@ -5,7 +5,7 @@
  * size:      宽（左右）或高（上下），默认 320
  */
 
-import React, { useEffect } from 'react';
+import { useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { X } from 'lucide-react';
 import { cn } from '../tokens';

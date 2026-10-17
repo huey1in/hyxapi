@@ -1,4 +1,3 @@
-import React, { useState } from 'react';
 import Accordion from './Accordion';
 
 export default { title: 'UI/Accordion', component: Accordion };

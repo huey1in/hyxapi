@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Search } from 'lucide-react';
 import Input, { inputStyle } from './Input';
 import FieldRow from './FieldRow';

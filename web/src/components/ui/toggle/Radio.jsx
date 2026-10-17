@@ -8,7 +8,6 @@
  *   direction: row (默认) | column
  */
 
-import React from 'react';
 import { cn, FOCUS_RING } from '../tokens';
 
 const Radio = ({ checked, onChange, disabled, label, name }) => (

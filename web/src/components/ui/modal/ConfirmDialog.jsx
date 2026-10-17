@@ -8,7 +8,6 @@
  * confirmText / cancelText
  */
 
-import React from 'react';
 import ModalShell from './ModalShell';
 import Button from '../button/Button';
 

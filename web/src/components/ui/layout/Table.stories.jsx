@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import Table from './Table';
 import Tag from '../feedback/Tag';
 import IconButton from '../button/IconButton';

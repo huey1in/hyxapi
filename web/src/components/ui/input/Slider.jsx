@@ -8,7 +8,6 @@
  * width:    见 resolveWidth；默认 240
  */
 
-import React from 'react';
 import { cn } from '../tokens';
 import { resolveWidth } from './Input';
 

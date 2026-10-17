@@ -12,7 +12,7 @@
  * variant:    body-shell | flush（默认 flush）
  */
 
-import React, { useEffect, useRef } from 'react';
+import { useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { cn } from '../tokens';
 import useExitTransition from './useExitTransition';

@@ -1,4 +1,3 @@
-import React from 'react';
 import { ToastContainer, showSuccess, showError, showInfo, showWarning } from './Toast';
 import Button from '../button/Button';
 

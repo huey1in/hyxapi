@@ -1,4 +1,4 @@
-import React, { useContext, useEffect, useState, useCallback } from 'react';
+import { useContext, useEffect, useState } from 'react';
 import { Copy, Fingerprint, Trash2, KeyRound } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { API, showError, showSuccess, copy, timestamp2string, updateAPI } from '../../helpers';

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { CheckCircle2, Database, UserCog } from 'lucide-react';
 import { API, showError, showSuccess } from '../../helpers';
 import { Button, Card, Input, Loading, Notice, Steps } from '../../components/ui';

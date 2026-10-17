@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { RefreshCw, Plus, Inbox } from 'lucide-react';
 import PageShell from './PageShell';
 import SectionCard from '../card/SectionCard';

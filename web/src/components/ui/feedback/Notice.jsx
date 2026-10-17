@@ -7,7 +7,6 @@
  * action: 右侧节点
  */
 
-import React from 'react';
 import { Info, CheckCircle2, AlertTriangle, XCircle } from 'lucide-react';
 import { cn } from '../tokens';
 

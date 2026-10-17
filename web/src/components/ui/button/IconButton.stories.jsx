@@ -1,4 +1,3 @@
-import React from 'react';
 import { Plus, X, Search, Trash2, Edit2, MoreHorizontal, RefreshCw } from 'lucide-react';
 import IconButton from './IconButton';
 

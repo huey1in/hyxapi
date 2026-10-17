@@ -1,4 +1,3 @@
-import React from 'react';
 import { Plus, Search, ArrowRight, Save } from 'lucide-react';
 import Button from './Button';
 

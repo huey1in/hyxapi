@@ -6,7 +6,6 @@
  * count:  rect 模式下重复几条（间距 8px）
  */
 
-import React from 'react';
 import { cn } from '../tokens';
 
 const Skeleton = ({

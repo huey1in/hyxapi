@@ -1,4 +1,4 @@
-import React, { useContext, useMemo } from 'react';
+import { useContext, useMemo } from 'react';
 import { Megaphone } from 'lucide-react';
 import { marked } from 'marked';
 import { getRelativeTime } from '../../helpers';

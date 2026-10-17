@@ -8,7 +8,7 @@
  * searchable: 是否带搜索（默认 true）
  */
 
-import React, { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { ChevronDown, Check, Search, X } from 'lucide-react';
 import { cn, FOCUS_RING } from '../tokens';
 import { inputStyle, resolveWidth } from '../input/Input';

@@ -8,7 +8,6 @@
  * 状态推断：i < current → done；i === current → active；i > current → pending
  */
 
-import React from 'react';
 import { Check } from 'lucide-react';
 import { cn } from '../tokens';
 

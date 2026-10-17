@@ -13,7 +13,7 @@
  *       语义色仅用于左侧图标与一条细色条，不做整片彩色填充。
  */
 
-import React, { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { CheckCircle2, AlertTriangle, Info, XCircle, X } from 'lucide-react';
 

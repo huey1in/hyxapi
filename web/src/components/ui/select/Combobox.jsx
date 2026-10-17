@@ -4,7 +4,7 @@
  * 与 Select 接口一致，多一个搜索输入框过滤 options。
  */
 
-import React, { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { ChevronDown, Check, Search } from 'lucide-react';
 import { cn, FOCUS_RING } from '../tokens';
 import { inputStyle, resolveWidth } from '../input/Input';

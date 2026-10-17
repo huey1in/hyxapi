@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Plus, Trash2, Copy, Pencil, ArrowUp, ArrowDown } from 'lucide-react';
 import { API, showError, showSuccess, timestamp2string, renderQuota, copy } from '../../helpers';
 import { quotaToDisplayAmount, displayAmountToQuota } from '../../helpers/quota';
@@ -172,12 +172,6 @@ const KeyCard = ({ row, preview = false, onCopy, onDelete, onEdit }) => {
     </div>
   </div>
   );
-};
-
-const maskKey = (key) => {
-  if (!key || key === 'YOUR_API_KEY') return 'YOUR_API_KEY';
-  if (key.length <= 12) return `${key.slice(0, 4)}••••${key.slice(-3)}`;
-  return `${key.slice(0, 7)}••••••••${key.slice(-4)}`;
 };
 
 const CodeSamples = ({ origin, rows = [], keys = {} }) => {

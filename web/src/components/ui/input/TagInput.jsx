@@ -8,7 +8,7 @@
  * 行为：键入 Enter / 逗号 / 换行 提交当前文本为新 tag；Backspace 删最后一项。
  */
 
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { X } from 'lucide-react';
 import { cn } from '../tokens';
 import { resolveWidth } from './Input';

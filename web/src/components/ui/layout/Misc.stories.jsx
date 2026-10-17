@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import Breadcrumb from './Breadcrumb';
 import Steps from './Steps';
 import Slider from '../input/Slider';
