@@ -34,7 +34,6 @@ export let API = axios.create({
   },
 });
 
-
 function redirectToOAuthUrl(url, options = {}) {
   const { openInNewTab = false } = options;
   const targetUrl = typeof url === 'string' ? url : url.toString();
@@ -46,7 +45,6 @@ function redirectToOAuthUrl(url, options = {}) {
 
   window.location.assign(targetUrl);
 }
-
 
 function patchAPIInstance(instance) {
   const originalGet = instance.get.bind(instance);
@@ -139,7 +137,7 @@ const handleUnauthorized = (error) => {
   if (path === '/setup' || path.startsWith('/oauth/') || path === '/user/reset') {
     return;
   }
-  // 清掉本地用户态，让 PrivateRoute 重新判断
+  // 清掉本地用户态，再由全局认证事件触发跳转。
   try {
     localStorage.removeItem('user');
   } catch {}
@@ -153,7 +151,7 @@ const handleUnauthorized = (error) => {
 
 // 原来components中的utils.js
 
-export async function getOAuthState() {
+async function getOAuthState() {
   let path = '/api/oauth/state';
   let affCode = localStorage.getItem('aff');
   if (affCode && affCode.length > 0) {
@@ -281,15 +279,6 @@ export async function onCustomOAuthClicked(provider, options = {}) {
 }
 
 let channelModels = undefined;
-export async function loadChannelModels() {
-  const res = await API.get('/api/models');
-  const { success, data } = res.data;
-  if (!success) {
-    return;
-  }
-  channelModels = data;
-  localStorage.setItem('channel_models', JSON.stringify(data));
-}
 
 export function getChannelModels(type) {
   if (channelModels !== undefined && type in channelModels) {

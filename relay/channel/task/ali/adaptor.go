@@ -93,26 +93,6 @@ type AliUsage struct {
 	SR         dto.IntValue `json:"SR,omitempty"`
 }
 
-type AliMetadata struct {
-	// Input 相关
-	AudioURL       string          `json:"audio_url,omitempty"`       // 音频URL
-	ImgURL         string          `json:"img_url,omitempty"`         // 图片URL（图生视频）
-	FirstFrameURL  string          `json:"first_frame_url,omitempty"` // 首帧图片URL（首尾帧生视频）
-	LastFrameURL   string          `json:"last_frame_url,omitempty"`  // 尾帧图片URL（首尾帧生视频）
-	Media          []AliVideoMedia `json:"media,omitempty"`           // 媒体列表（wan2.7-i2v新协议）
-	NegativePrompt string          `json:"negative_prompt,omitempty"` // 反向提示词
-	Template       string          `json:"template,omitempty"`        // 视频特效模板
-
-	// Parameters 相关
-	Resolution   *string `json:"resolution,omitempty"`    // 分辨率: 480P/720P/1080P
-	Size         *string `json:"size,omitempty"`          // 尺寸: 如 "832*480"
-	Duration     *int    `json:"duration,omitempty"`      // 时长
-	PromptExtend *bool   `json:"prompt_extend,omitempty"` // 是否开启prompt智能改写
-	Watermark    *bool   `json:"watermark,omitempty"`     // 是否添加水印
-	Audio        *bool   `json:"audio,omitempty"`         // 是否添加音频
-	Seed         *int    `json:"seed,omitempty"`          // 随机数种子
-}
-
 // ============================
 // Adaptor implementation
 // ============================

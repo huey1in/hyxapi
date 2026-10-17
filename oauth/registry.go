@@ -30,30 +30,11 @@ func RegisterCustom(name string, provider Provider) {
 	customProviderSlugs[name] = true
 }
 
-// Unregister removes a provider from the registry
-func Unregister(name string) {
-	mu.Lock()
-	defer mu.Unlock()
-	delete(providers, name)
-	delete(customProviderSlugs, name)
-}
-
 // GetProvider returns the OAuth provider for the given name
 func GetProvider(name string) Provider {
 	mu.RLock()
 	defer mu.RUnlock()
 	return providers[name]
-}
-
-// GetAllProviders returns all registered OAuth providers
-func GetAllProviders() map[string]Provider {
-	mu.RLock()
-	defer mu.RUnlock()
-	result := make(map[string]Provider, len(providers))
-	for k, v := range providers {
-		result[k] = v
-	}
-	return result
 }
 
 // GetEnabledCustomProviders returns all enabled custom OAuth providers
@@ -69,21 +50,6 @@ func GetEnabledCustomProviders() []*GenericOAuthProvider {
 		}
 	}
 	return result
-}
-
-// IsProviderRegistered checks if a provider is registered
-func IsProviderRegistered(name string) bool {
-	mu.RLock()
-	defer mu.RUnlock()
-	_, ok := providers[name]
-	return ok
-}
-
-// IsCustomProvider checks if a provider is a custom provider
-func IsCustomProvider(name string) bool {
-	mu.RLock()
-	defer mu.RUnlock()
-	return customProviderSlugs[name]
 }
 
 // LoadCustomProviders loads all custom OAuth providers from the database
@@ -112,23 +78,4 @@ func LoadCustomProviders() error {
 
 	common.SysLog(fmt.Sprintf("Loaded %d custom OAuth providers", len(customProviders)))
 	return nil
-}
-
-// ReloadCustomProviders reloads all custom OAuth providers from the database
-func ReloadCustomProviders() error {
-	return LoadCustomProviders()
-}
-
-// RegisterOrUpdateCustomProvider registers or updates a single custom provider
-func RegisterOrUpdateCustomProvider(config *model.CustomOAuthProvider) {
-	provider := NewGenericOAuthProvider(config)
-	mu.Lock()
-	defer mu.Unlock()
-	providers[config.Slug] = provider
-	customProviderSlugs[config.Slug] = true
-}
-
-// UnregisterCustomProvider unregisters a custom provider by slug
-func UnregisterCustomProvider(slug string) {
-	Unregister(slug)
 }

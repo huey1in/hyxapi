@@ -20,9 +20,8 @@ import (
 )
 
 var (
-	httpClient              *http.Client
-	ssrfProtectedHTTPClient *http.Client
-	proxyClients            = proxyHTTPClientCache{
+	httpClient   *http.Client
+	proxyClients = proxyHTTPClientCache{
 		clients: make(map[string]*http.Client),
 		aliases: make(map[string]string),
 	}
@@ -51,24 +50,9 @@ func checkRedirect(req *http.Request, via []*http.Request) error {
 	return nil
 }
 
-func checkProtectedFetchRedirect(req *http.Request, via []*http.Request) error {
-	urlStr := req.URL.String()
-	if err := ValidateSSRFProtectedFetchURL(urlStr); err != nil {
-		return fmt.Errorf("redirect to %s blocked: %v", urlStr, err)
-	}
-	if len(via) >= 10 {
-		return fmt.Errorf("stopped after 10 redirects")
-	}
-	return nil
-}
-
 func validateURLWithCurrentFetchSetting(urlStr string, applyDomainIPFilter bool) error {
 	fetchSetting := system_setting.GetFetchSetting()
 	return common.ValidateURLWithFetchSetting(urlStr, fetchSetting.EnableSSRFProtection, fetchSetting.AllowPrivateIp, fetchSetting.DomainFilterMode, fetchSetting.IpFilterMode, fetchSetting.DomainList, fetchSetting.IpList, fetchSetting.AllowedPorts, applyDomainIPFilter && fetchSetting.ApplyIPFilterForDomain)
-}
-
-func ValidateSSRFProtectedFetchURL(urlStr string) error {
-	return validateURLWithCurrentFetchSetting(urlStr, true)
 }
 
 func newRelayHTTPTransport() *http.Transport {
@@ -117,7 +101,6 @@ func InitHttpClient() {
 	policy := defaultHTTPTransportPolicy()
 	httpClient = newDirectHTTPClient(policy, nil)
 	proxyClients.store(clientCacheKey("", policy), httpClient)
-	ssrfProtectedHTTPClient = newProtectedFetchHTTPClient()
 }
 
 // GetHttpClient returns the general outbound client used by relay/provider
@@ -125,19 +108,10 @@ func InitHttpClient() {
 // are root/operator-managed deployment targets, not arbitrary user-controlled
 // input, and may legitimately point at private networks, private-link endpoints,
 // self-hosted services, or local proxies. Code paths that fetch arbitrary
-// user-controlled URLs must use GetSSRFProtectedHTTPClient or
-// ValidateSSRFProtectedFetchURL instead.
+// user-controlled URLs must use DoDownloadRequest, which applies the protected
+// fetch settings and validates the initial URL and redirects.
 func GetHttpClient() *http.Client {
 	return httpClient
-}
-
-// GetSSRFProtectedHTTPClient 返回带拨号时 SSRF 校验的客户端。
-// ssrfProtectedHTTPClient 由 InitHttpClient 在启动时初始化，运行期只读。
-func GetSSRFProtectedHTTPClient() *http.Client {
-	if fetchSetting := system_setting.GetFetchSetting(); fetchSetting != nil && !fetchSetting.EnableSSRFProtection {
-		return GetHttpClient()
-	}
-	return ssrfProtectedHTTPClient
 }
 
 func newProxyURLConfig(parsedURL *url.URL) *proxyURLConfig {
@@ -159,28 +133,6 @@ func warnLegacyProxyURLOnce(config *proxyURLConfig) {
 			config.parsedURL.Host,
 		),
 	)
-}
-
-// NormalizeProxyURL validates a proxy URL using runtime-compatible rules and returns its canonical cache key.
-func NormalizeProxyURL(rawProxyURL string) (string, error) {
-	parsedURL, legacySuffixStripped, err := common.ParseProxyURLRuntime(rawProxyURL)
-	if err != nil {
-		return "", err
-	}
-	if parsedURL == nil {
-		return "", nil
-	}
-	config := newProxyURLConfig(parsedURL)
-	if legacySuffixStripped {
-		warnLegacyProxyURLOnce(config)
-	}
-	return config.cacheKey, nil
-}
-
-// ValidateProxyURL validates a channel proxy URL without connecting to it.
-func ValidateProxyURL(rawProxyURL string) error {
-	_, err := common.ParseProxyURLStrict(rawProxyURL)
-	return err
 }
 
 func (cache *proxyHTTPClientCache) store(fullKey string, client *http.Client) {
@@ -231,25 +183,6 @@ func (cache *proxyHTTPClientCache) getOrCreate(
 	}
 	cache.clients[fullKey] = client
 	return client, nil
-}
-
-func (cache *proxyHTTPClientCache) removeProxy(proxyCacheKey string) []*http.Client {
-	cache.mutex.Lock()
-	defer cache.mutex.Unlock()
-	removed := make([]*http.Client, 0)
-	prefix := proxyCacheKey + "\x00"
-	for key, client := range cache.clients {
-		if strings.HasPrefix(key, prefix) {
-			removed = append(removed, client)
-			delete(cache.clients, key)
-		}
-	}
-	for alias, canonicalKey := range cache.aliases {
-		if canonicalKey == proxyCacheKey {
-			delete(cache.aliases, alias)
-		}
-	}
-	return removed
 }
 
 func (cache *proxyHTTPClientCache) reset() map[string]*http.Client {
@@ -394,22 +327,6 @@ func getOrCreateDirectClient(policy HTTPTransportPolicy) (*http.Client, error) {
 	return proxyClients.getOrCreate("", nil, policy, func() (*http.Client, error) {
 		return newDirectHTTPClient(policy, nil), nil
 	})
-}
-
-// InvalidateProxyClient removes every cached policy variant for one proxy and
-// closes their idle connections (including all HTTP/2 shards).
-func InvalidateProxyClient(rawProxyURL string) {
-	parsedURL, legacySuffixStripped, err := common.ParseProxyURLRuntime(rawProxyURL)
-	if err != nil || parsedURL == nil {
-		return
-	}
-	config := newProxyURLConfig(parsedURL)
-	if legacySuffixStripped {
-		warnLegacyProxyURLOnce(config)
-	}
-	for _, client := range proxyClients.removeProxy(config.cacheKey) {
-		client.CloseIdleConnections()
-	}
 }
 
 // ResetProxyClientCache clears cached proxy and non-default direct policy clients

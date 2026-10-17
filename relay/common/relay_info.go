@@ -10,7 +10,6 @@ import (
 
 	"github.com/QuantumNous/new-api/common"
 	"github.com/QuantumNous/new-api/constant"
-	"github.com/QuantumNous/new-api/pkg/billingexpr"
 	relayconstant "github.com/QuantumNous/new-api/relay/constant"
 	"github.com/QuantumNous/new-api/relaykit/dto"
 	"github.com/QuantumNous/new-api/relaykit/relayconvert/convmeta"
@@ -30,10 +29,7 @@ type ThinkingContentInfo struct {
 }
 
 const (
-	LastMessageTypeNone     = convmeta.LastMessageTypeNone
-	LastMessageTypeText     = convmeta.LastMessageTypeText
-	LastMessageTypeTools    = convmeta.LastMessageTypeTools
-	LastMessageTypeThinking = convmeta.LastMessageTypeThinking
+	LastMessageTypeNone = convmeta.LastMessageTypeNone
 )
 
 // ClaudeConvertInfo now lives with the converters (convmeta); the alias keeps
@@ -159,12 +155,6 @@ type RelayInfo struct {
 	// int32 bound (or NaN fallback) while computing this request's charge.
 	// It is surfaced onto the consume/task log's admin_info for auditing.
 	QuotaClamp *common.QuotaClamp
-
-	// TieredBillingSnapshot captures tiered billing rules at pre-consume time.
-	// Auto-group retries refresh its group-dependent fields before each attempt
-	// and again before settlement. Non-nil only when billing mode is "tiered_expr".
-	TieredBillingSnapshot *billingexpr.BillingSnapshot
-	BillingRequestInput   *billingexpr.RequestInput
 
 	Request dto.Request
 
@@ -845,10 +835,6 @@ type TaskSubmitReq struct {
 	Metadata       map[string]interface{} `json:"metadata,omitempty"`
 }
 
-func (t *TaskSubmitReq) GetPrompt() string {
-	return t.Prompt
-}
-
 func (t *TaskSubmitReq) HasImage() bool {
 	return len(t.Images) > 0
 }
@@ -924,13 +910,6 @@ type TaskInfo struct {
 	Progress         string `json:"progress,omitempty"`
 	CompletionTokens int    `json:"completion_tokens,omitempty"` // 用于按倍率计费
 	TotalTokens      int    `json:"total_tokens,omitempty"`      // 用于按倍率计费
-}
-
-func FailTaskInfo(reason string) *TaskInfo {
-	return &TaskInfo{
-		Status: "FAILURE",
-		Reason: reason,
-	}
 }
 
 // RemoveDisabledFields 从请求 JSON 数据中移除渠道设置中禁用的字段

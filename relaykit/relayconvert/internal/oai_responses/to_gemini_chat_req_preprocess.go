@@ -13,10 +13,6 @@ const (
 	geminiResponsesInputTypeFunctionCallOutput   = "function_call_output"
 )
 
-const (
-	ResponsesInputTypeCustomToolCallOutput = geminiResponsesInputTypeCustomToolCallOutput
-)
-
 func PrepareOpenAIResponsesRequest(request dto.OpenAIResponsesRequest) (dto.OpenAIResponsesRequest, error) {
 	tools, err := filterGeminiResponsesTools(request.Tools)
 	if err != nil {

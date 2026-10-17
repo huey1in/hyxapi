@@ -84,25 +84,6 @@ func WriteDiskCacheFileString(cacheType DiskCacheType, data string) (string, err
 	return WriteDiskCacheFile(cacheType, []byte(data))
 }
 
-// ReadDiskCacheFile 读取磁盘缓存文件
-func ReadDiskCacheFile(filePath string) ([]byte, error) {
-	return os.ReadFile(filePath)
-}
-
-// ReadDiskCacheFileString 读取磁盘缓存文件为字符串
-func ReadDiskCacheFileString(filePath string) (string, error) {
-	data, err := os.ReadFile(filePath)
-	if err != nil {
-		return "", err
-	}
-	return string(data), nil
-}
-
-// RemoveDiskCacheFile 删除磁盘缓存文件
-func RemoveDiskCacheFile(filePath string) error {
-	return os.Remove(filePath)
-}
-
 // CleanupOldDiskCacheFiles 清理旧的缓存文件
 // maxAge: 文件最大存活时间
 // 注意：此函数只删除文件，不更新统计（因为无法知道每个文件的原始大小）
@@ -135,32 +116,6 @@ func CleanupOldDiskCacheFiles(maxAge time.Duration) error {
 		}
 	}
 	return nil
-}
-
-// GetDiskCacheInfo 获取磁盘缓存目录信息
-func GetDiskCacheInfo() (fileCount int, totalSize int64, err error) {
-	dir := GetDiskCacheDir()
-
-	entries, err := os.ReadDir(dir)
-	if err != nil {
-		if os.IsNotExist(err) {
-			return 0, 0, nil
-		}
-		return 0, 0, err
-	}
-
-	for _, entry := range entries {
-		if entry.IsDir() {
-			continue
-		}
-		info, err := entry.Info()
-		if err != nil {
-			continue
-		}
-		fileCount++
-		totalSize += info.Size()
-	}
-	return fileCount, totalSize, nil
 }
 
 // ShouldUseDiskCache 判断是否应该使用磁盘缓存

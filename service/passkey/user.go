@@ -62,10 +62,3 @@ func (u *WebAuthnUser) ModelUser() *model.User {
 	}
 	return u.user
 }
-
-func (u *WebAuthnUser) PasskeyCredential() *model.PasskeyCredential {
-	if u == nil {
-		return nil
-	}
-	return u.credential
-}

@@ -37,24 +37,12 @@ func (m *RWMap[K, V]) Get(key K) (V, bool) {
 	return value, exists
 }
 
-func (m *RWMap[K, V]) Set(key K, value V) {
-	m.mutex.Lock()
-	defer m.mutex.Unlock()
-	m.data[key] = value
-}
-
 func (m *RWMap[K, V]) AddAll(other map[K]V) {
 	m.mutex.Lock()
 	defer m.mutex.Unlock()
 	for k, v := range other {
 		m.data[k] = v
 	}
-}
-
-func (m *RWMap[K, V]) Clear() {
-	m.mutex.Lock()
-	defer m.mutex.Unlock()
-	m.data = make(map[K]V)
 }
 
 // ReadAll returns a copy of the entire map.
@@ -68,29 +56,11 @@ func (m *RWMap[K, V]) ReadAll() map[K]V {
 	return copiedMap
 }
 
-func (m *RWMap[K, V]) Len() int {
-	m.mutex.RLock()
-	defer m.mutex.RUnlock()
-	return len(m.data)
-}
-
 func LoadFromJsonString[K comparable, V any](m *RWMap[K, V], jsonStr string) error {
 	m.mutex.Lock()
 	defer m.mutex.Unlock()
 	m.data = make(map[K]V)
 	return common.Unmarshal([]byte(jsonStr), &m.data)
-}
-
-// LoadFromJsonStringWithCallback loads a JSON string into the RWMap and calls the callback on success.
-func LoadFromJsonStringWithCallback[K comparable, V any](m *RWMap[K, V], jsonStr string, onSuccess func()) error {
-	m.mutex.Lock()
-	defer m.mutex.Unlock()
-	m.data = make(map[K]V)
-	err := common.Unmarshal([]byte(jsonStr), &m.data)
-	if err == nil && onSuccess != nil {
-		onSuccess()
-	}
-	return err
 }
 
 // MarshalJSONString returns the JSON string representation of the RWMap.

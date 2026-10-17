@@ -40,11 +40,3 @@ func detectLanguage(c *gin.Context) string {
 	// 3. Return default language
 	return i18n.DefaultLang
 }
-
-// GetLanguage returns the current language from gin context
-func GetLanguage(c *gin.Context) string {
-	if lang := c.GetString(string(constant.ContextKeyLanguage)); lang != "" {
-		return lang
-	}
-	return i18n.DefaultLang
-}

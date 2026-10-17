@@ -36,13 +36,10 @@ const (
 	MsgTokenExhaustedCannotEable = "token.exhausted_cannot_enable"
 	MsgTokenInvalid              = "token.invalid"
 	MsgTokenNotProvided          = "token.not_provided"
-	MsgTokenExpired              = "token.expired"
-	MsgTokenExhausted            = "token.exhausted"
 )
 
 // Redemption related messages
 const (
-	MsgRedemptionNameLength        = "redemption.name_length"
 	MsgRedemptionCountPositive     = "redemption.count_positive"
 	MsgRedemptionCountMax          = "redemption.count_max"
 	MsgRedemptionCreateFailed      = "redemption.create_failed"
@@ -71,8 +68,6 @@ const (
 	MsgUserAlreadyAdmin              = "user.already_admin"
 	MsgUserAlreadyCommon             = "user.already_common"
 	MsgUserAdminCannotPromote        = "user.admin_cannot_promote"
-	MsgUserTransferSuccess           = "user.transfer_success"
-	MsgUserTransferFailed            = "user.transfer_failed"
 	MsgUserTopUpProcessing           = "user.topup_processing"
 	MsgUserRegisterFailed            = "user.register_failed"
 	MsgUserDefaultTokenFailed        = "user.default_token_failed"
@@ -83,7 +78,6 @@ const (
 const (
 	MsgOAuthInvalidCode     = "oauth.invalid_code"
 	MsgOAuthGetUserErr      = "oauth.get_user_error"
-	MsgOAuthAccountUsed     = "oauth.account_used"
 	MsgOAuthUnknownProvider = "oauth.unknown_provider"
 	MsgOAuthStateInvalid    = "oauth.state_invalid"
 	MsgOAuthNotEnabled      = "oauth.not_enabled"

@@ -133,22 +133,5 @@ func GetAllModelHealth() map[string][]ModelGroupHealth {
 	return result
 }
 
-// GetModelGroupHealth returns health for a specific model+group.
-func GetModelGroupHealth(model, group string) *ModelGroupHealth {
-	key := healthKey(group, model)
-	healthMu.RLock()
-	defer healthMu.RUnlock()
-	ring, ok := healthStore[key]
-	if !ok {
-		return nil
-	}
-	return &ModelGroupHealth{
-		Model:   model,
-		Group:   group,
-		Current: ring.latest(),
-		History: ring.records(),
-	}
-}
-
 // CleanupOldHealthRecords is now a no-op (no DB table to clean).
 func CleanupOldHealthRecords() {}

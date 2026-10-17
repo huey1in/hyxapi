@@ -21,7 +21,6 @@ export default {
         'ui-accent-hover': 'var(--ui-accent-hover)',
         'ui-danger':       'var(--ui-danger)',
         'ui-danger-bg':    'var(--ui-danger-bg)',
-        'ui-brand':        'var(--ui-brand)',
       },
     },
   },

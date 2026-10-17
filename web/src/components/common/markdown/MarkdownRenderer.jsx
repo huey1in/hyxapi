@@ -100,7 +100,7 @@ const getCodeText = (children) => {
   return out;
 };
 
-export function PreCode({ children, ...rest }) {
+function PreCode({ children, ...rest }) {
   const { t } = useTranslation();
   const [copied, setCopied] = useState(false);
   const lang = getLangFromChildren(children);

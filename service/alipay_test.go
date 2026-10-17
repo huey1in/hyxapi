@@ -1,8 +1,10 @@
 package service
 
 import (
+	"crypto"
 	"crypto/rand"
 	"crypto/rsa"
+	"crypto/sha256"
 	"crypto/x509"
 	"encoding/base64"
 	"encoding/pem"
@@ -114,4 +116,30 @@ func TestAlipayAcceptsBareBase64Keys(t *testing.T) {
 	if !AlipayVerify(params, base64.StdEncoding.EncodeToString(publicBlock.Bytes)) {
 		t.Fatal("bare base64 key material should be accepted")
 	}
+}
+
+func AlipaySign(params map[string]string, privateKey string) (string, error) {
+	key, err := parseAlipayPrivateKey(privateKey)
+	if err != nil {
+		return "", err
+	}
+	digest := sha256.Sum256([]byte(alipaySignSource(params)))
+	signature, err := rsa.SignPKCS1v15(rand.Reader, key, crypto.SHA256, digest[:])
+	if err != nil {
+		return "", err
+	}
+	return base64.StdEncoding.EncodeToString(signature), nil
+}
+
+func alipayVerifyRequestSignature(params map[string]string, publicKey string) bool {
+	key, err := parseAlipayPublicKey(publicKey)
+	if err != nil {
+		return false
+	}
+	signature, err := base64.StdEncoding.DecodeString(params["sign"])
+	if err != nil {
+		return false
+	}
+	digest := sha256.Sum256([]byte(alipayParamsSource(params, false)))
+	return rsa.VerifyPKCS1v15(key, crypto.SHA256, digest[:], signature) == nil
 }

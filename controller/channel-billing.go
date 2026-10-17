@@ -32,32 +32,9 @@ type OpenAISubscriptionResponse struct {
 	AccessUntil        int64   `json:"access_until"`
 }
 
-type OpenAIUsageDailyCost struct {
-	Timestamp float64 `json:"timestamp"`
-	LineItems []struct {
-		Name string  `json:"name"`
-		Cost float64 `json:"cost"`
-	}
-}
-
-type OpenAICreditGrants struct {
-	Object         string  `json:"object"`
-	TotalGranted   float64 `json:"total_granted"`
-	TotalUsed      float64 `json:"total_used"`
-	TotalAvailable float64 `json:"total_available"`
-}
-
 type OpenAIUsageResponse struct {
-	Object string `json:"object"`
-	//DailyCosts []OpenAIUsageDailyCost `json:"daily_costs"`
+	Object     string  `json:"object"`
 	TotalUsage float64 `json:"total_usage"` // unit: 0.01 dollar
-}
-
-type OpenAISBUsageResponse struct {
-	Msg  string `json:"msg"`
-	Data *struct {
-		Credit string `json:"credit"`
-	} `json:"data"`
 }
 
 type AIProxyUserOverviewResponse struct {

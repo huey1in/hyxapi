@@ -19,16 +19,6 @@ type SSRFProtection struct {
 	ApplyIPFilterForDomain bool     // 对域名启用IP过滤
 }
 
-// DefaultSSRFProtection 默认SSRF防护配置
-var DefaultSSRFProtection = &SSRFProtection{
-	AllowPrivateIp:   false,
-	DomainFilterMode: true,
-	DomainList:       []string{},
-	IpFilterMode:     true,
-	IpList:           []string{},
-	AllowedPorts:     []int{},
-}
-
 // NewSSRFProtectionFromFetchSetting builds an SSRFProtection from persisted fetch_setting values.
 func NewSSRFProtectionFromFetchSetting(allowPrivateIp bool, domainFilterMode bool, ipFilterMode bool, domainList, ipList, allowedPorts []string, applyIPFilterForDomain bool) (*SSRFProtection, error) {
 	allowedPortInts, err := parsePortRanges(allowedPorts)

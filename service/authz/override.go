@@ -5,10 +5,7 @@ import (
 	"sort"
 
 	"github.com/QuantumNous/new-api/common"
-	"github.com/QuantumNous/new-api/model"
 	"github.com/casbin/casbin/v2"
-	"gorm.io/gorm"
-	"gorm.io/gorm/clause"
 )
 
 type overridePolicy struct {
@@ -37,65 +34,6 @@ func SetUserPermissions(userID int, permissions PermissionsMap) error {
 		}
 	}
 	return nil
-}
-
-func SetUserPermissionsInTx(tx *gorm.DB, userID int, permissions PermissionsMap) error {
-	e := currentEnforcer()
-	if e == nil {
-		return fmt.Errorf("authz enforcer is not initialized")
-	}
-
-	for resource, actions := range permissions {
-		if !isKnownResource(resource) {
-			continue
-		}
-		if err := tx.Where("ptype = ? AND v0 = ? AND v1 = ?", "p", UserSubject(userID), resource).Delete(&model.CasbinRule{}).Error; err != nil {
-			return err
-		}
-		policies := userOverridePolicies(e, resource, actions)
-		if len(policies) == 0 {
-			continue
-		}
-		rules := make([]model.CasbinRule, 0, len(policies))
-		for _, policy := range policies {
-			rules = append(rules, newRule("p", []string{UserSubject(userID), policy.Resource, policy.Action, policy.Effect}))
-		}
-		if err := tx.Clauses(clause.OnConflict{DoNothing: true}).Create(&rules).Error; err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
-func ClearUserPermissions(userID int) error {
-	e := currentEnforcer()
-	if e == nil {
-		return fmt.Errorf("authz enforcer is not initialized")
-	}
-
-	for _, resource := range registry {
-		if _, err := e.RemoveFilteredPolicy(0, UserSubject(userID), resource.Resource); err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
-func ClearUserPermissionsInTx(tx *gorm.DB, userID int) error {
-	for _, resource := range registry {
-		if err := tx.Where("ptype = ? AND v0 = ? AND v1 = ?", "p", UserSubject(userID), resource.Resource).Delete(&model.CasbinRule{}).Error; err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
-func ClearUserAuthorization(userID int) error {
-	return ClearUserPermissions(userID)
-}
-
-func ClearUserAuthorizationInTx(tx *gorm.DB, userID int) error {
-	return ClearUserPermissionsInTx(tx, userID)
 }
 
 // ExplicitUserPermissions returns the effective permission matrix for the

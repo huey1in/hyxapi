@@ -6,7 +6,6 @@ import (
 	"strings"
 
 	"github.com/QuantumNous/new-api/relaykit/dto"
-	kitutil "github.com/QuantumNous/new-api/relaykit/relayconvert/kitutil"
 )
 
 const (
@@ -40,7 +39,7 @@ func ResponsesFinishReasonFromStatus(resp *dto.OpenAIResponsesResponse) (string,
 		return "", false
 	}
 
-	status := responseStatusString(resp)
+	status := resp.GetStatus()
 	if status != "incomplete" {
 		return "", false
 	}
@@ -226,15 +225,6 @@ func ExtractReasoningTextFromResponses(resp *dto.OpenAIResponsesResponse) string
 		}
 	}
 	return sb.String()
-}
-
-func responseStatusString(resp *dto.OpenAIResponsesResponse) string {
-	if resp == nil || len(resp.Status) == 0 {
-		return ""
-	}
-	var status string
-	_ = kitutil.Unmarshal(resp.Status, &status)
-	return strings.TrimSpace(status)
 }
 
 func ensureIncompleteResponse(resp *dto.OpenAIResponsesResponse) *dto.OpenAIResponsesResponse {

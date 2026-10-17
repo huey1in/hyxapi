@@ -18,12 +18,7 @@ For commercial licensing, please contact support@quantumnous.com
 */
 
 import { showToast } from '../components/ui';
-import { TABLE_COMPACT_MODES_KEY } from '../constants';
 
-const HTMLToastContent = ({ htmlContent }) => {
-  return <div dangerouslySetInnerHTML={{ __html: htmlContent }} />;
-};
-export default HTMLToastContent;
 export function isAdmin() {
   let user = localStorage.getItem('user');
   if (!user) return false;
@@ -132,39 +127,12 @@ export function showError(error) {
   }
 }
 
-export function showWarning(message) {
-  showToast({ type: 'warning', message });
-}
-
 export function showSuccess(message) {
   showToast({ type: 'success', message });
 }
 
 export function showInfo(message) {
   showToast({ type: 'info', message });
-}
-
-export function showNotice(message) {
-  showToast({ type: 'info', message });
-}
-
-export function openPage(url) {
-  window.open(url);
-}
-
-export function removeTrailingSlash(url) {
-  if (!url) return '';
-  if (url.endsWith('/')) {
-    return url.slice(0, -1);
-  } else {
-    return url;
-  }
-}
-
-export function getTodayStartTimestamp() {
-  var now = new Date();
-  now.setHours(0, 0, 0, 0);
-  return Math.floor(now.getTime() / 1000);
 }
 
 export function timestamp2string(timestamp) {
@@ -193,110 +161,6 @@ export function timestamp2string(timestamp) {
   return (
     year + '-' + month + '-' + day + ' ' + hour + ':' + minute + ':' + second
   );
-}
-
-export function timestamp2string1(
-  timestamp,
-  dataExportDefaultTime = 'hour',
-  showYear = false,
-) {
-  let date = new Date(timestamp * 1000);
-  let year = date.getFullYear();
-  let month = (date.getMonth() + 1).toString();
-  let day = date.getDate().toString();
-  let hour = date.getHours().toString();
-  if (month.length === 1) {
-    month = '0' + month;
-  }
-  if (day.length === 1) {
-    day = '0' + day;
-  }
-  if (hour.length === 1) {
-    hour = '0' + hour;
-  }
-  // 仅在跨年时显示年份
-  let str = showYear ? year + '-' + month + '-' + day : month + '-' + day;
-  if (dataExportDefaultTime === 'hour') {
-    str += ' ' + hour + ':00';
-  } else if (dataExportDefaultTime === 'week') {
-    let nextWeek = new Date(timestamp * 1000 + 6 * 24 * 60 * 60 * 1000);
-    let nextWeekYear = nextWeek.getFullYear();
-    let nextMonth = (nextWeek.getMonth() + 1).toString();
-    let nextDay = nextWeek.getDate().toString();
-    if (nextMonth.length === 1) {
-      nextMonth = '0' + nextMonth;
-    }
-    if (nextDay.length === 1) {
-      nextDay = '0' + nextDay;
-    }
-    // 周视图结束日期也仅在跨年时显示年份
-    let nextStr = showYear
-      ? nextWeekYear + '-' + nextMonth + '-' + nextDay
-      : nextMonth + '-' + nextDay;
-    str += ' - ' + nextStr;
-  }
-  return str;
-}
-
-// 检查时间戳数组是否跨年
-export function isDataCrossYear(timestamps) {
-  if (!timestamps || timestamps.length === 0) return false;
-  const years = new Set(
-    timestamps.map((ts) => new Date(ts * 1000).getFullYear()),
-  );
-  return years.size > 1;
-}
-
-export const verifyJSON = (str) => {
-  try {
-    JSON.parse(str);
-  } catch (e) {
-    return false;
-  }
-  return true;
-};
-
-export function verifyJSONPromise(value) {
-  try {
-    JSON.parse(value);
-    return Promise.resolve();
-  } catch (e) {
-    return Promise.reject('不是合法的 JSON 字符串');
-  }
-}
-
-export function shouldShowPrompt(id) {
-  let prompt = localStorage.getItem(`prompt-${id}`);
-  return !prompt;
-}
-
-export function setPromptShown(id) {
-  localStorage.setItem(`prompt-${id}`, 'true');
-}
-
-/**
- * 比较两个对象的属性，找出有变化的属性，并返回包含变化属性信息的数组
- * @param {Object} oldObject - 旧对象
- * @param {Object} newObject - 新对象
- * @return {Array} 包含变化属性信息的数组，每个元素是一个对象，包含 key, oldValue 和 newValue
- */
-export function compareObjects(oldObject, newObject) {
-  const changedProperties = [];
-
-  // 比较两个对象的属性
-  for (const key in oldObject) {
-    if (oldObject.hasOwnProperty(key) && newObject.hasOwnProperty(key)) {
-      if (oldObject[key] !== newObject[key]) {
-        changedProperties.push({
-          key: key,
-          oldValue: oldObject[key],
-          newValue: newObject[key],
-        });
-      }
-    }
-  }
-
-  return changedProperties;
 }
 
 // 计算相对时间（几天前、几小时前等）
@@ -350,58 +214,6 @@ export const formatDateString = (date) => {
   const month = String(date.getMonth() + 1).padStart(2, '0');
   const day = String(date.getDate()).padStart(2, '0');
   return `${year}-${month}-${day}`;
-};
-
-// 格式化日期时间字符串（包含时间）
-export const formatDateTimeString = (date) => {
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, '0');
-  const day = String(date.getDate()).padStart(2, '0');
-  const hours = String(date.getHours()).padStart(2, '0');
-  const minutes = String(date.getMinutes()).padStart(2, '0');
-  return `${year}-${month}-${day} ${hours}:${minutes}`;
-};
-
-function readTableCompactModes() {
-  try {
-    const json = localStorage.getItem(TABLE_COMPACT_MODES_KEY);
-    return json ? JSON.parse(json) : {};
-  } catch {
-    return {};
-  }
-}
-
-function writeTableCompactModes(modes) {
-  try {
-    localStorage.setItem(TABLE_COMPACT_MODES_KEY, JSON.stringify(modes));
-  } catch {
-    // ignore
-  }
-}
-
-export function getTableCompactMode(tableKey = 'global') {
-  const modes = readTableCompactModes();
-  return !!modes[tableKey];
-}
-
-export function setTableCompactMode(compact, tableKey = 'global') {
-  const modes = readTableCompactModes();
-  modes[tableKey] = compact;
-  writeTableCompactModes(modes);
-}
-
-// -------------------------------
-// Select 组件统一过滤逻辑
-// 使用方式： <Select filter={selectFilter} ... />
-// 统一的 Select 搜索过滤逻辑 -- 支持同时匹配 option.value 与 option.label
-export const selectFilter = (input, option) => {
-  if (!input) return true;
-
-  const keyword = input.trim().toLowerCase();
-  const valueText = (option?.value ?? '').toString().toLowerCase();
-  const labelText = (option?.label ?? '').toString().toLowerCase();
-
-  return valueText.includes(keyword) || labelText.includes(keyword);
 };
 
 // -------------------------------

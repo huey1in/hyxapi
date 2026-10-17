@@ -40,12 +40,6 @@ func sameSyncPricing(a, b model.ModelPricing) bool {
 		a.Enabled == b.Enabled
 }
 
-// BuildModelPricingSyncPreview compares canonical upstream prices with local
-// rows and omits models that do not need an update.
-func BuildModelPricingSyncPreview(local []model.ModelPricing, upstream []model.UpstreamModelPricing) []modelPricingSyncPreview {
-	return buildModelPricingSyncPreview(local, upstream, nil)
-}
-
 func buildModelPricingSyncPreview(local []model.ModelPricing, upstream []model.UpstreamModelPricing, descriptions map[string]string) []modelPricingSyncPreview {
 	localByName := make(map[string]model.ModelPricing, len(local))
 	for _, pricing := range local {

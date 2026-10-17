@@ -15,17 +15,6 @@ func (s *Set[T]) Add(item T) {
 	s.items[item] = struct{}{}
 }
 
-// Remove 从 Set 中移除一个元素
-func (s *Set[T]) Remove(item T) {
-	delete(s.items, item)
-}
-
-// Contains 检查 Set 是否包含某个元素
-func (s *Set[T]) Contains(item T) bool {
-	_, exists := s.items[item]
-	return exists
-}
-
 // Len 返回 Set 中元素的数量
 func (s *Set[T]) Len() int {
 	return len(s.items)

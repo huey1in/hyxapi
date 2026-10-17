@@ -36,20 +36,6 @@ func Catalog() []ResourceDefinition {
 	return result
 }
 
-// AllPermissions returns every registered permission.
-func AllPermissions() []Permission {
-	permissions := make([]Permission, 0)
-	for _, resource := range registry {
-		for _, action := range resource.Actions {
-			permissions = append(permissions, Permission{
-				Resource: resource.Resource,
-				Action:   action.Action,
-			})
-		}
-	}
-	return permissions
-}
-
 // PermissionsForRole returns the permissions whose DefaultRoles include roleKey.
 func PermissionsForRole(roleKey string) []Permission {
 	permissions := make([]Permission, 0)

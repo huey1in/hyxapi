@@ -4,7 +4,6 @@ import (
 	"github.com/QuantumNous/new-api/common"
 	"github.com/bytedance/gopkg/util/gopool"
 	"github.com/gin-gonic/gin"
-	"gorm.io/gorm"
 )
 
 const (
@@ -99,36 +98,6 @@ func backfillChannelNames(logs []*Log) {
 	}
 }
 
-func GetAuditAdminNames() ([]string, error) {
-	var names []string
-	err := LOG_DB.Model(&Log{}).Where("type = ?", LogTypeManage).
-		Distinct("username").Where("username != ''").
-		Order("username").Pluck("username", &names).Error
-	return names, err
-}
-
-func GetAuditStats(startTimestamp, endTimestamp int64) (total int64, err error) {
-	tx := LOG_DB.Model(&Log{}).Where("type = ?", LogTypeManage)
-	if startTimestamp != 0 {
-		tx = tx.Where("created_at >= ?", startTimestamp)
-	}
-	if endTimestamp != 0 {
-		tx = tx.Where("created_at <= ?", endTimestamp)
-	}
-	err = tx.Count(&total).Error
-	return
-}
-
-func jsonExtract(field, key string) string {
-	if common.UsingPostgreSQL {
-		return field + "::jsonb->>'" + key + "'"
-	}
-	if common.UsingSQLite {
-		return "json_extract(" + field + ", '$." + key + "')"
-	}
-	return "JSON_UNQUOTE(JSON_EXTRACT(" + field + ", '$." + key + "'))"
-}
-
 func jsonIntExtract(field, key string) string {
 	if common.UsingPostgreSQL {
 		return "COALESCE(NULLIF((NULLIF(" + field + ", '')::jsonb->>'" + key + "'), '')::bigint, 0)"
@@ -137,26 +106,4 @@ func jsonIntExtract(field, key string) string {
 		return "CAST(COALESCE(NULLIF(json_extract(NULLIF(" + field + ", ''), '$." + key + "'), ''), '0') AS INTEGER)"
 	}
 	return "CAST(COALESCE(NULLIF(JSON_UNQUOTE(JSON_EXTRACT(NULLIF(" + field + ", ''), '$." + key + "')), ''), '0') AS SIGNED)"
-}
-
-func GetAuditLogsByAction(action string, startTimestamp, endTimestamp int64, startIdx, num int) (logs []*Log, total int64, err error) {
-	tx := LOG_DB.Where("type = ?", LogTypeManage)
-
-	if action != "" {
-		tx = tx.Where(gorm.Expr(jsonExtract("other", "action")+" = ?", action))
-	}
-	if startTimestamp != 0 {
-		tx = tx.Where("created_at >= ?", startTimestamp)
-	}
-	if endTimestamp != 0 {
-		tx = tx.Where("created_at <= ?", endTimestamp)
-	}
-
-	err = tx.Model(&Log{}).Count(&total).Error
-	if err != nil {
-		return nil, 0, err
-	}
-
-	err = tx.Order("id desc").Limit(num).Offset(startIdx).Find(&logs).Error
-	return logs, total, err
 }

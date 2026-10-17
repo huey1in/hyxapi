@@ -42,13 +42,3 @@ func UpdateUserUsableGroupsByJSONString(jsonStr string) error {
 	userUsableGroups = make(map[string]string)
 	return json.Unmarshal([]byte(jsonStr), &userUsableGroups)
 }
-
-func GetUsableGroupDescription(groupName string) string {
-	userUsableGroupsMutex.RLock()
-	defer userUsableGroupsMutex.RUnlock()
-
-	if desc, ok := userUsableGroups[groupName]; ok {
-		return desc
-	}
-	return groupName
-}

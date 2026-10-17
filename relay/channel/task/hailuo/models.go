@@ -29,10 +29,6 @@ type BaseResp struct {
 	StatusMsg  string `json:"status_msg"`
 }
 
-type QueryTaskRequest struct {
-	TaskID string `json:"task_id"`
-}
-
 type QueryTaskResponse struct {
 	TaskID      string   `json:"task_id"`
 	Status      string   `json:"status"`
@@ -40,20 +36,6 @@ type QueryTaskResponse struct {
 	VideoWidth  int      `json:"video_width,omitempty"`
 	VideoHeight int      `json:"video_height,omitempty"`
 	BaseResp    BaseResp `json:"base_resp"`
-}
-
-type ErrorInfo struct {
-	StatusCode int    `json:"status_code"`
-	StatusMsg  string `json:"status_msg"`
-}
-
-type TaskStatusInfo struct {
-	TaskID    string `json:"task_id"`
-	Status    string `json:"status"`
-	FileID    string `json:"file_id,omitempty"`
-	VideoURL  string `json:"video_url,omitempty"`
-	ErrorCode int    `json:"error_code,omitempty"`
-	ErrorMsg  string `json:"error_msg,omitempty"`
 }
 
 type ModelConfig struct {

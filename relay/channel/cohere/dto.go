@@ -45,16 +45,10 @@ type CohereRerankResponseResult struct {
 }
 
 type CohereMeta struct {
-	//Tokens CohereTokens `json:"tokens"`
 	BilledUnits CohereBilledUnits `json:"billed_units"`
 }
 
 type CohereBilledUnits struct {
-	InputTokens  int `json:"input_tokens"`
-	OutputTokens int `json:"output_tokens"`
-}
-
-type CohereTokens struct {
 	InputTokens  int `json:"input_tokens"`
 	OutputTokens int `json:"output_tokens"`
 }

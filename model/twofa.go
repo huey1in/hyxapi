@@ -111,13 +111,6 @@ func (t *TwoFA) Delete() error {
 	})
 }
 
-// ResetFailedAttempts 重置失败尝试次数
-func (t *TwoFA) ResetFailedAttempts() error {
-	t.FailedAttempts = 0
-	t.LockedUntil = nil
-	return t.Update()
-}
-
 // IncrementFailedAttempts 增加失败尝试次数
 func (t *TwoFA) IncrementFailedAttempts() error {
 	t.FailedAttempts++

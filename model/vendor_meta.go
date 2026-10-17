@@ -37,11 +37,6 @@ func (v *Vendor) Update() error {
 	return DB.Save(v).Error
 }
 
-// Delete 软删除供应商
-func (v *Vendor) Delete() error {
-	return DB.Delete(v).Error
-}
-
 // IsVendorNameDuplicated 检查供应商名称是否重复（排除自身 ID）
 func IsVendorNameDuplicated(id int, name string) (bool, error) {
 	if name == "" {
@@ -86,4 +81,3 @@ func SearchVendors(keyword string, offset int, limit int) ([]*Vendor, int64, err
 	}
 	return vendors, total, nil
 }
-

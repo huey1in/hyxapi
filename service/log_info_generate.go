@@ -8,7 +8,6 @@ import (
 	relaycommon "github.com/QuantumNous/new-api/relay/common"
 	"github.com/QuantumNous/new-api/relaykit/dto"
 	relaytypes "github.com/QuantumNous/new-api/relaykit/types"
-	hosttypes "github.com/QuantumNous/new-api/types"
 
 	"github.com/gin-gonic/gin"
 )
@@ -267,13 +266,4 @@ func GenerateClaudeOtherInfo(ctx *gin.Context, relayInfo *relaycommon.RelayInfo,
 		info["cache_write_price_1h"] = cacheWritePrice1h
 	}
 	return info
-}
-
-func GenerateMjOtherInfo(relayInfo *relaycommon.RelayInfo, priceData hosttypes.PriceData) map[string]interface{} {
-	other := make(map[string]interface{})
-	other["request_price"] = priceData.RequestPrice
-	other["billing_type"] = priceData.BillingType
-	other["group_ratio"] = priceData.GroupRatioInfo.GroupRatio
-	appendRequestPath(nil, relayInfo, other)
-	return other
 }

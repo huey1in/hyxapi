@@ -427,26 +427,6 @@ func GetBase64Data(c *gin.Context, source types.FileSource, reason ...string) (s
 	return base64Str, cachedData.MimeType, nil
 }
 
-// GetMimeType 获取文件的 MIME 类型
-func GetMimeType(c *gin.Context, source types.FileSource) (string, error) {
-	if source.HasCache() {
-		return source.GetCache().MimeType, nil
-	}
-
-	if urlSource, ok := source.(*types.URLSource); ok {
-		mimeType, err := GetFileTypeFromUrl(c, urlSource.URL, "get_mime_type")
-		if err == nil && mimeType != "" && mimeType != "application/octet-stream" {
-			return mimeType, nil
-		}
-	}
-
-	cachedData, err := LoadFileSource(c, source, "get_mime_type")
-	if err != nil {
-		return "", err
-	}
-	return cachedData.MimeType, nil
-}
-
 // DetectFileType 检测文件类型
 func DetectFileType(mimeType string) types.FileType {
 	if strings.HasPrefix(mimeType, "image/") {

@@ -3,8 +3,6 @@ package types
 import (
 	"fmt"
 	"math"
-
-	"github.com/shopspring/decimal"
 )
 
 type GroupRatioInfo struct {
@@ -70,10 +68,6 @@ func (p *PriceData) OtherRatioMultiplier() float64 {
 
 func (p *PriceData) ApplyOtherRatiosToFloat(value float64) float64 {
 	return value * p.OtherRatioMultiplier()
-}
-
-func (p *PriceData) ApplyOtherRatiosToDecimal(value decimal.Decimal) decimal.Decimal {
-	return value.Mul(decimal.NewFromFloat(p.OtherRatioMultiplier()))
 }
 
 func (p *PriceData) RemoveOtherRatiosFromFloat(value float64) float64 {

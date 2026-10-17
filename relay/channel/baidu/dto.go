@@ -73,8 +73,3 @@ type BaiduAccessToken struct {
 	ExpiresIn        int64     `json:"expires_in,omitempty"`
 	ExpiresAt        time.Time `json:"-"`
 }
-
-type BaiduTokenResponse struct {
-	ExpiresIn   int    `json:"expires_in"`
-	AccessToken string `json:"access_token"`
-}

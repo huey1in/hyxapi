@@ -121,15 +121,3 @@ func HeaderNavModuleAuth(module string) gin.HandlerFunc {
 		TryUserAuth()(c)
 	}
 }
-
-func HeaderNavModulePublicOrUserAuth(module string) gin.HandlerFunc {
-	return func(c *gin.Context) {
-		access := getHeaderNavAccess(module)
-		if !access.Enabled || access.RequireAuth {
-			UserAuth()(c)
-			return
-		}
-
-		TryUserAuth()(c)
-	}
-}

@@ -3,8 +3,6 @@ package common
 import (
 	"fmt"
 	"math"
-
-	"github.com/shopspring/decimal"
 )
 
 // Quota conversions are centralized here so every billing path shares one
@@ -46,21 +44,6 @@ func (c *QuotaClamp) Error() string {
 	return fmt.Sprintf("quota conversion (%s) %s: original=%g, clamped=%d", c.Op, c.Kind, c.Original, c.Clamped)
 }
 
-// AuditMap renders the clamp as the marker stored under a log's
-// admin_info.quota_saturation. Centralized here so every billing path (consume
-// logs, task billing logs, task compensation logs) records the same shape.
-func (c *QuotaClamp) AuditMap() map[string]interface{} {
-	if c == nil {
-		return nil
-	}
-	return map[string]interface{}{
-		"op":       c.Op,
-		"kind":     c.Kind,
-		"original": c.Original,
-		"clamped":  c.Clamped,
-	}
-}
-
 // saturateQuota converts an already-rounded quota value to int, clamping to
 // the int32 range. Whenever clamping (what would otherwise be an integer
 // wraparound) or a NaN fallback is triggered it logs a warning, because in
@@ -85,13 +68,6 @@ func saturateQuota(value float64, op string) (int, *QuotaClamp) {
 	return clamp.Clamped, clamp
 }
 
-func strictQuota(quota int, clamp *QuotaClamp) (int, error) {
-	if clamp != nil {
-		return 0, clamp
-	}
-	return quota, nil
-}
-
 // QuotaFromFloat converts a computed quota value to int, truncating toward
 // zero, with saturation. Use for float products of prices, ratios, and
 // user-controlled multipliers (image n, video seconds, resolution ratios).
@@ -104,12 +80,6 @@ func QuotaFromFloat(value float64) int {
 // *QuotaClamp when the value was clamped, so billing callers can audit it.
 func QuotaFromFloatChecked(value float64) (int, *QuotaClamp) {
 	return saturateQuota(value, "QuotaFromFloat")
-}
-
-// QuotaFromFloatStrict converts an in-range value and returns a typed
-// *QuotaClamp error instead of allowing a saturated result to reach billing.
-func QuotaFromFloatStrict(value float64) (int, error) {
-	return strictQuota(QuotaFromFloatChecked(value))
 }
 
 // QuotaRound converts a float64 quota value to int using half-away-from-zero
@@ -125,24 +95,4 @@ func QuotaRound(value float64) int {
 // the value was clamped, so billing callers can audit it.
 func QuotaRoundChecked(value float64) (int, *QuotaClamp) {
 	return saturateQuota(math.Round(value), "QuotaRound")
-}
-
-// QuotaRoundStrict rounds an in-range value and returns a typed *QuotaClamp
-// error instead of allowing a saturated result to reach billing.
-func QuotaRoundStrict(value float64) (int, error) {
-	return strictQuota(QuotaRoundChecked(value))
-}
-
-// QuotaFromDecimal converts a computed quota decimal to int with saturation.
-// The decimal is rounded (half away from zero) before conversion.
-func QuotaFromDecimal(d decimal.Decimal) int {
-	quota, _ := QuotaFromDecimalChecked(d)
-	return quota
-}
-
-// QuotaFromDecimalChecked is QuotaFromDecimal but also returns a non-nil
-// *QuotaClamp when the value was clamped, so billing callers can audit it.
-func QuotaFromDecimalChecked(d decimal.Decimal) (int, *QuotaClamp) {
-	f, _ := d.Round(0).Float64()
-	return saturateQuota(f, "QuotaFromDecimal")
 }

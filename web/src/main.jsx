@@ -12,7 +12,7 @@ import './i18n/i18n';
 
 // 跨域单点登录：home-site 登录后带 #code= 跳转过来，渲染前用该一次性 code
 // 调用后端 exchange 接口，在本（控制台）域名上建立会话并写入本地用户态。
-// 必须在 render 之前完成，否则子组件 PrivateRoute 的 effect 会先于此处触发而跳走。
+// 必须在 render 之前完成，确保首次渲染前已恢复本地会话。
 async function consumeHandoffCode() {
   const hash = window.location.hash || '';
   const match = hash.match(/[#&]code=([^&]+)/);

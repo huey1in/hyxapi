@@ -3,18 +3,16 @@ package common
 import (
 	crand "crypto/rand"
 	"encoding/base64"
-	"encoding/json"
 	"fmt"
 	"log"
 	"math/big"
 	"math/rand"
 	"net"
 	"os"
-	"strconv"
 	"strings"
 	"time"
 
-	"github.com/google/uuid"
+	"github.com/QuantumNous/new-api/relaykit/relayconvert/kitutil"
 )
 
 func GetIp() (ip string) {
@@ -117,29 +115,11 @@ func IsRunningInContainer() bool {
 }
 
 func Interface2String(inter interface{}) string {
-	switch inter.(type) {
-	case string:
-		return inter.(string)
-	case int:
-		return fmt.Sprintf("%d", inter.(int))
-	case float64:
-		return strconv.FormatFloat(inter.(float64), 'f', -1, 64)
-	case bool:
-		if inter.(bool) {
-			return "true"
-		} else {
-			return "false"
-		}
-	case nil:
-		return ""
-	}
-	return fmt.Sprintf("%v", inter)
+	return kitutil.Interface2String(inter)
 }
 
 func GetUUID() string {
-	code := uuid.New().String()
-	code = strings.Replace(code, "-", "", -1)
-	return code
+	return kitutil.GetUUID()
 }
 
 const redeemChars = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ"
@@ -221,18 +201,4 @@ func RandomSleep() {
 
 func GetPointer[T any](v T) *T {
 	return &v
-}
-
-func Any2Type[T any](data any) (T, error) {
-	var zero T
-	bytes, err := json.Marshal(data)
-	if err != nil {
-		return zero, err
-	}
-	var res T
-	err = json.Unmarshal(bytes, &res)
-	if err != nil {
-		return zero, err
-	}
-	return res, nil
 }

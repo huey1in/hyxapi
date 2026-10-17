@@ -15,14 +15,6 @@ import (
 	"github.com/samber/lo"
 )
 
-type HasPrompt interface {
-	GetPrompt() string
-}
-
-type HasImage interface {
-	HasImage() bool
-}
-
 func GetFullRequestURL(baseURL string, requestURL string, channelType int) string {
 	fullRequestURL := fmt.Sprintf("%s%s", baseURL, requestURL)
 

@@ -31,15 +31,8 @@ const maxLogCount = 1000000
 var logCount int
 var setupLogLock sync.Mutex
 var setupLogWorking bool
-var currentLogPath string
 var currentLogPathMu sync.RWMutex
 var currentLogFile *os.File
-
-func GetCurrentLogPath() string {
-	currentLogPathMu.RLock()
-	defer currentLogPathMu.RUnlock()
-	return currentLogPath
-}
 
 func SetupLogger() {
 	defer func() {
@@ -61,7 +54,6 @@ func SetupLogger() {
 		}
 		currentLogPathMu.Lock()
 		oldFile := currentLogFile
-		currentLogPath = logPath
 		currentLogFile = fd
 		currentLogPathMu.Unlock()
 

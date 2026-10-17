@@ -40,12 +40,6 @@ func (topUp *TopUp) Insert() error {
 	return err
 }
 
-func (topUp *TopUp) Update() error {
-	var err error
-	err = DB.Save(topUp).Error
-	return err
-}
-
 func GetTopUpByTradeNo(tradeNo string) *TopUp {
 	var topUp *TopUp
 	var err error

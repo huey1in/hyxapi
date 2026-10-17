@@ -54,13 +54,6 @@ type TaskAdaptor interface {
 	// Return nil if no adjustment is needed.
 	AdjustBillingOnSubmit(info *relaycommon.RelayInfo, taskData []byte) map[string]float64
 
-	// AdjustBillingOnComplete returns the actual quota when a task reaches a
-	// terminal state (success/failure) during polling.
-	// Called by the polling loop after ParseTaskResult.
-	// Return a positive value to trigger delta settlement (supplement / refund).
-	// Return 0 to keep the pre-charged amount unchanged.
-	AdjustBillingOnComplete(task *model.Task, taskResult *relaycommon.TaskInfo) int
-
 	// ── Request / Response ───────────────────────────────────────────
 
 	BuildRequestURL(info *relaycommon.RelayInfo) (string, error)

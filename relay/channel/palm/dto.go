@@ -12,18 +12,6 @@ type PaLMFilter struct {
 	Message string `json:"message"`
 }
 
-type PaLMPrompt struct {
-	Messages []PaLMChatMessage `json:"messages"`
-}
-
-type PaLMChatRequest struct {
-	Prompt         PaLMPrompt `json:"prompt"`
-	Temperature    *float64   `json:"temperature,omitempty"`
-	CandidateCount int        `json:"candidateCount,omitempty"`
-	TopP           float64    `json:"topP,omitempty"`
-	TopK           uint       `json:"topK,omitempty"`
-}
-
 type PaLMError struct {
 	Code    int    `json:"code"`
 	Message string `json:"message"`

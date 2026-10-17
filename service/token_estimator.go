@@ -11,10 +11,9 @@ import (
 type Provider string
 
 const (
-	OpenAI  Provider = "openai"  // 代表 GPT-3.5, GPT-4, GPT-4o
-	Gemini  Provider = "gemini"  // 代表 Gemini 1.0, 1.5 Pro/Flash
-	Claude  Provider = "claude"  // 代表 Claude 3, 3.5 Sonnet
-	Unknown Provider = "unknown" // 兜底默认
+	OpenAI Provider = "openai" // 代表 GPT-3.5, GPT-4, GPT-4o
+	Gemini Provider = "gemini" // 代表 Gemini 1.0, 1.5 Pro/Flash
+	Claude Provider = "claude" // 代表 Claude 3, 3.5 Sonnet
 )
 
 // multipliers 定义不同厂商的计费权重

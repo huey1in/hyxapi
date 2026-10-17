@@ -241,34 +241,6 @@ func (s *UserSubscription) ParseAllowedModels() []string {
 	return parseStringSliceField(s.AllowedModels)
 }
 
-// IsModelAllowed 检查 model 是否在订阅允许范围内（空列表=不限制）
-func (s *UserSubscription) IsModelAllowed(model string) bool {
-	list := s.ParseAllowedModels()
-	if list == nil {
-		return true
-	}
-	for _, m := range list {
-		if m == model {
-			return true
-		}
-	}
-	return false
-}
-
-// IsGroupAllowed 检查 channel group 是否在订阅允许范围内
-func (s *UserSubscription) IsGroupAllowed(group string) bool {
-	list := s.ParseAllowedGroups()
-	if list == nil {
-		return true
-	}
-	for _, g := range list {
-		if g == group {
-			return true
-		}
-	}
-	return false
-}
-
 func parseStringSliceField(raw string) []string {
 	raw = strings.TrimSpace(raw)
 	if raw == "" || raw == "[]" || raw == "null" {

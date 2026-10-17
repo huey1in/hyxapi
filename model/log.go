@@ -297,49 +297,6 @@ func RecordConsumeLog(c *gin.Context, userId int, params RecordConsumeLogParams)
 	}
 }
 
-type RecordTaskBillingLogParams struct {
-	UserId    int
-	LogType   int
-	Content   string
-	ChannelId int
-	ModelName string
-	Quota     int
-	TokenId   int
-	Group     string
-	Other     map[string]interface{}
-}
-
-func RecordTaskBillingLog(params RecordTaskBillingLogParams) {
-	if params.LogType == LogTypeConsume && !common.LogConsumeEnabled {
-		return
-	}
-	username, _ := GetUsernameById(params.UserId, false)
-	tokenName := ""
-	if params.TokenId > 0 {
-		if token, err := GetTokenById(params.TokenId); err == nil {
-			tokenName = token.Name
-		}
-	}
-	log := &Log{
-		UserId:    params.UserId,
-		Username:  username,
-		CreatedAt: common.GetTimestamp(),
-		Type:      params.LogType,
-		Content:   params.Content,
-		TokenName: tokenName,
-		ModelName: params.ModelName,
-		Quota:     params.Quota,
-		ChannelId: params.ChannelId,
-		TokenId:   params.TokenId,
-		Group:     params.Group,
-		Other:     common.MapToJsonStr(params.Other),
-	}
-	err := LOG_DB.Create(log).Error
-	if err != nil {
-		common.SysLog("failed to record task billing log: " + err.Error())
-	}
-}
-
 func GetAllLogs(logType int, startTimestamp int64, endTimestamp int64, modelName string, username string, tokenName string, startIdx int, num int, channel int, group string, requestId string) (logs []*Log, total int64, err error) {
 	var tx *gorm.DB
 	if logType == LogTypeUnknown {
@@ -755,21 +712,6 @@ func GetConsumptionByDay(startTimestamp, endTimestamp int64) ([]DailyConsumption
 	return results, err
 }
 
-func GetTokenUsageByDay(userID int, startTimestamp, endTimestamp int64) ([]DailyConsumption, error) {
-	dateExpr := dailyLogDateExpression()
-	cacheExpr := fmt.Sprintf("COALESCE(SUM(%s), 0) + COALESCE(SUM(%s), 0)", jsonIntExtract("other", "cache_tokens"), jsonIntExtract("other", "cache_creation_tokens"))
-	selectExpr := fmt.Sprintf("%s as date, COALESCE(SUM(quota), 0) as quota, COUNT(*) as requests, COALESCE(SUM(prompt_tokens), 0) as prompt_tokens, COALESCE(SUM(completion_tokens), 0) as completion_tokens, %s as cache_tokens, COALESCE(SUM(prompt_tokens), 0) + COALESCE(SUM(completion_tokens), 0) as tokens", dateExpr, cacheExpr)
-	tx := LOG_DB.Table("logs").
-		Select(selectExpr).
-		Where("type = ? AND created_at >= ? AND created_at <= ?", LogTypeConsume, startTimestamp, endTimestamp)
-	if userID > 0 {
-		tx = tx.Where("user_id = ?", userID)
-	}
-	var results []DailyConsumption
-	err := tx.Group("date").Order("date ASC").Find(&results).Error
-	return results, err
-}
-
 func GetTokenUsageByBucket(ctx context.Context, userID int, startTimestamp, endTimestamp, bucketSeconds int64) ([]DailyConsumption, error) {
 	if bucketSeconds < 1 {
 		bucketSeconds = 1
@@ -839,46 +781,6 @@ func GetGroupConsumption(startTimestamp, endTimestamp int64, limit int) ([]Group
 		tx = tx.Where("created_at <= ?", endTimestamp)
 	}
 	err := tx.Group(logGroupCol).Order("quota DESC").Limit(limit).Find(&results).Error
-	return results, err
-}
-
-type ErrorStats struct {
-	TotalErrors int64 `json:"total_errors"`
-	TotalQuota  int64 `json:"total_quota"`
-}
-
-func GetErrorStats(startTimestamp, endTimestamp int64) (ErrorStats, error) {
-	var stats ErrorStats
-	tx := LOG_DB.Table("logs").
-		Select("COUNT(*) as total_errors, COALESCE(SUM(quota), 0) as total_quota").
-		Where("type = ?", LogTypeError)
-	if startTimestamp != 0 {
-		tx = tx.Where("created_at >= ?", startTimestamp)
-	}
-	if endTimestamp != 0 {
-		tx = tx.Where("created_at <= ?", endTimestamp)
-	}
-	err := tx.Scan(&stats).Error
-	return stats, err
-}
-
-type ErrorModelStat struct {
-	ModelName string `json:"model_name"`
-	Errors    int64  `json:"errors"`
-}
-
-func GetTopErrorModels(startTimestamp, endTimestamp int64, limit int) ([]ErrorModelStat, error) {
-	var results []ErrorModelStat
-	tx := LOG_DB.Table("logs").
-		Select("model_name, COUNT(*) as errors").
-		Where("type = ? AND model_name != ''", LogTypeError)
-	if startTimestamp != 0 {
-		tx = tx.Where("created_at >= ?", startTimestamp)
-	}
-	if endTimestamp != 0 {
-		tx = tx.Where("created_at <= ?", endTimestamp)
-	}
-	err := tx.Group("model_name").Order("errors DESC").Limit(limit).Find(&results).Error
 	return results, err
 }
 

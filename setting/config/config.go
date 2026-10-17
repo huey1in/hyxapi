@@ -4,10 +4,7 @@ import (
 	"encoding/json"
 	"reflect"
 	"strconv"
-	"strings"
 	"sync"
-
-	"github.com/QuantumNous/new-api/common"
 )
 
 // ConfigManager 统一管理所有配置
@@ -36,57 +33,6 @@ func (cm *ConfigManager) Get(name string) interface{} {
 	cm.mutex.RLock()
 	defer cm.mutex.RUnlock()
 	return cm.configs[name]
-}
-
-// LoadFromDB 从数据库加载配置
-func (cm *ConfigManager) LoadFromDB(options map[string]string) error {
-	cm.mutex.Lock()
-	defer cm.mutex.Unlock()
-
-	for name, config := range cm.configs {
-		prefix := name + "."
-		configMap := make(map[string]string)
-
-		// 收集属于此配置的所有选项
-		for key, value := range options {
-			if strings.HasPrefix(key, prefix) {
-				configKey := strings.TrimPrefix(key, prefix)
-				configMap[configKey] = value
-			}
-		}
-
-		// 如果找到配置项，则更新配置
-		if len(configMap) > 0 {
-			if err := updateConfigFromMap(config, configMap); err != nil {
-				common.SysError("failed to update config " + name + ": " + err.Error())
-				continue
-			}
-		}
-	}
-
-	return nil
-}
-
-// SaveToDB 将配置保存到数据库
-func (cm *ConfigManager) SaveToDB(updateFunc func(key, value string) error) error {
-	cm.mutex.RLock()
-	defer cm.mutex.RUnlock()
-
-	for name, config := range cm.configs {
-		configMap, err := configToMap(config)
-		if err != nil {
-			return err
-		}
-
-		for key, value := range configMap {
-			dbKey := name + "." + key
-			if err := updateFunc(dbKey, value); err != nil {
-				return err
-			}
-		}
-	}
-
-	return nil
 }
 
 // 辅助函数：将配置对象转换为map

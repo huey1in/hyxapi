@@ -4,12 +4,10 @@ import (
 	"flag"
 	"fmt"
 	"log"
-	"math"
 	"net/http"
 	"os"
 	"path/filepath"
 	"strconv"
-	"strings"
 	"time"
 
 	"github.com/QuantumNous/new-api/constant"
@@ -62,7 +60,6 @@ func InitEnv() {
 	} else {
 		CryptoSecret = SessionSecret
 	}
-	initUserSessionSettings()
 	if os.Getenv("SQLITE_PATH") != "" {
 		SQLitePath = os.Getenv("SQLITE_PATH")
 	}
@@ -109,7 +106,6 @@ func InitEnv() {
 	RelayMaxIdleConnsPerHost = GetEnvOrDefault("RELAY_MAX_IDLE_CONNS_PER_HOST", 100)
 
 	// Initialize string variables with GetEnvOrDefaultString
-	GeminiSafetySetting = GetEnvOrDefaultString("GEMINI_SAFETY_SETTING", "BLOCK_NONE")
 	CohereSafetySetting = GetEnvOrDefaultString("COHERE_SAFETY_SETTING", "NONE")
 
 	// Initialize rate limit variables
@@ -131,43 +127,6 @@ func InitEnv() {
 	initConstantEnv()
 }
 
-func initUserSessionSettings() {
-	UserSessionActiveLimit = positiveUserSessionEnv("USER_SESSION_ACTIVE_LIMIT", DefaultUserSessionActiveLimit)
-	UserSessionIssuanceLimit = positiveUserSessionEnv("USER_SESSION_ISSUANCE_LIMIT", DefaultUserSessionIssuanceLimit)
-	UserSessionIssuanceWindowSeconds = int64(positiveUserSessionEnv("USER_SESSION_ISSUANCE_WINDOW_SECONDS", DefaultUserSessionIssuanceWindowSeconds))
-	UserSessionRevokedRetentionDays = positiveUserSessionEnv("USER_SESSION_REVOKED_RETENTION_DAYS", DefaultUserSessionRevokedRetentionDays)
-	UserSessionHourlyAlertThreshold = positiveUserSessionEnv("USER_SESSION_HOURLY_ALERT_THRESHOLD", DefaultUserSessionHourlyAlertThreshold)
-
-	const secondsPerDay = 24 * 60 * 60
-	if int64(UserSessionRevokedRetentionDays) > math.MaxInt64/secondsPerDay {
-		SysError(fmt.Sprintf(
-			"USER_SESSION_REVOKED_RETENTION_DAYS is too large, using default value: %d",
-			DefaultUserSessionRevokedRetentionDays,
-		))
-		UserSessionRevokedRetentionDays = DefaultUserSessionRevokedRetentionDays
-	}
-	retentionSeconds := int64(UserSessionRevokedRetentionDays) * secondsPerDay
-	if UserSessionIssuanceWindowSeconds > retentionSeconds {
-		configuredWindow := UserSessionIssuanceWindowSeconds
-		UserSessionIssuanceWindowSeconds = retentionSeconds
-		SysError(fmt.Sprintf(
-			"USER_SESSION_ISSUANCE_WINDOW_SECONDS exceeds revoked retention; configured_window_seconds=%d revoked_retention_seconds=%d effective_window_seconds=%d",
-			configuredWindow,
-			retentionSeconds,
-			UserSessionIssuanceWindowSeconds,
-		))
-	}
-}
-
-func positiveUserSessionEnv(name string, fallback int) int {
-	value := GetEnvOrDefault(name, fallback)
-	if value <= 0 {
-		SysError(fmt.Sprintf("%s must be positive, using default value: %d", name, fallback))
-		return fallback
-	}
-	return value
-}
-
 func initConstantEnv() {
 	constant.StreamingTimeout = GetEnvOrDefault("STREAMING_TIMEOUT", 300)
 	constant.DifyDebug = GetEnvOrDefaultBool("DIFY_DEBUG", true)
@@ -180,7 +139,6 @@ func initConstantEnv() {
 	constant.CountToken = GetEnvOrDefaultBool("CountToken", true)
 	constant.GetMediaToken = GetEnvOrDefaultBool("GET_MEDIA_TOKEN", true)
 	constant.GetMediaTokenNotStream = GetEnvOrDefaultBool("GET_MEDIA_TOKEN_NOT_STREAM", false)
-	constant.UpdateTask = GetEnvOrDefaultBool("UPDATE_TASK", true)
 	constant.AzureDefaultAPIVersion = GetEnvOrDefaultString("AZURE_DEFAULT_API_VERSION", "2025-04-01-preview")
 	constant.NotifyLimitCount = GetEnvOrDefault("NOTIFY_LIMIT_COUNT", 2)
 	constant.NotificationLimitDurationMinute = GetEnvOrDefault("NOTIFICATION_LIMIT_DURATION_MINUTE", 10)
@@ -188,23 +146,7 @@ func initConstantEnv() {
 	constant.GenerateDefaultToken = GetEnvOrDefaultBool("GENERATE_DEFAULT_TOKEN", false)
 	// 是否启用错误日志
 	constant.ErrorLogEnabled = GetEnvOrDefaultBool("ERROR_LOG_ENABLED", false)
-	// 任务轮询时查询的最大数量
-	constant.TaskQueryLimit = GetEnvOrDefault("TASK_QUERY_LIMIT", 1000)
-	// 异步任务超时时间（分钟），超过此时间未完成的任务将被标记为失败并退款。0 表示禁用。
-	constant.TaskTimeoutMinutes = GetEnvOrDefault("TASK_TIMEOUT_MINUTES", 1440)
 	// 匿名接口（注册/登录/setup 等）请求体上限（KB），防超大请求/zip bomb
 	constant.AnonymousRequestBodyLimitKB = GetEnvOrDefault("ANONYMOUS_REQUEST_BODY_LIMIT_KB", 512)
 
-	// Initialize trusted redirect domains for URL validation
-	trustedDomainsStr := GetEnvOrDefaultString("TRUSTED_REDIRECT_DOMAINS", "")
-	var trustedDomains []string
-	domains := strings.Split(trustedDomainsStr, ",")
-	for _, domain := range domains {
-		trimmedDomain := strings.TrimSpace(domain)
-		if trimmedDomain != "" {
-			// Normalize domain to lowercase
-			trustedDomains = append(trustedDomains, strings.ToLower(trimmedDomain))
-		}
-	}
-	constant.TrustedRedirectDomains = trustedDomains
 }

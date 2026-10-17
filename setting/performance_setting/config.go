@@ -63,23 +63,8 @@ func syncToCommon() {
 	})
 }
 
-// GetPerformanceSetting 获取性能设置
-func GetPerformanceSetting() *PerformanceSetting {
-	return &performanceSetting
-}
-
 // UpdateAndSync 更新配置并同步到 common 包
 // 当配置从数据库加载后，需要调用此函数同步
 func UpdateAndSync() {
 	syncToCommon()
-}
-
-// GetCacheStats 获取缓存统计信息（代理到 common 包）
-func GetCacheStats() common.DiskCacheStats {
-	return common.GetDiskCacheStats()
-}
-
-// ResetStats 重置统计信息
-func ResetStats() {
-	common.ResetDiskCacheStats()
 }

@@ -18,20 +18,6 @@ import (
 	"github.com/QuantumNous/new-api/relaykit/types"
 )
 
-func MidjourneyErrorWrapper(code int, desc string) *taskdto.MidjourneyResponse {
-	return &taskdto.MidjourneyResponse{
-		Code:        code,
-		Description: desc,
-	}
-}
-
-func MidjourneyErrorWithStatusCodeWrapper(code int, desc string, statusCode int) *taskdto.MidjourneyResponseWithStatusCode {
-	return &taskdto.MidjourneyResponseWithStatusCode{
-		StatusCode: statusCode,
-		Response:   *MidjourneyErrorWrapper(code, desc),
-	}
-}
-
 //// OpenAIErrorWrapper wraps an error into an OpenAIErrorWithStatusCode
 //func OpenAIErrorWrapper(err error, code string, statusCode int) *dto.OpenAIErrorWithStatusCode {
 //	text := err.Error()
@@ -58,31 +44,6 @@ func MidjourneyErrorWithStatusCodeWrapper(code int, desc string, statusCode int)
 //	openaiErr.LocalError = true
 //	return openaiErr
 //}
-
-func ClaudeErrorWrapper(err error, code string, statusCode int) *dto.ClaudeErrorWithStatusCode {
-	text := err.Error()
-	lowerText := strings.ToLower(text)
-	if !strings.HasPrefix(lowerText, "get file base64 from url") {
-		if strings.Contains(lowerText, "post") || strings.Contains(lowerText, "dial") || strings.Contains(lowerText, "http") {
-			common.SysLog(fmt.Sprintf("error: %s", text))
-			text = "请求上游地址失败"
-		}
-	}
-	claudeError := types.ClaudeError{
-		Message: text,
-		Type:    "new_api_error",
-	}
-	return &dto.ClaudeErrorWithStatusCode{
-		Error:      claudeError,
-		StatusCode: statusCode,
-	}
-}
-
-func ClaudeErrorWrapperLocal(err error, code string, statusCode int) *dto.ClaudeErrorWithStatusCode {
-	claudeErr := ClaudeErrorWrapper(err, code, statusCode)
-	claudeErr.LocalError = true
-	return claudeErr
-}
 
 func RelayErrorHandler(ctx context.Context, resp *http.Response, showBodyWhenFail bool) (newApiErr *types.NewAPIError) {
 	newApiErr = types.InitOpenAIError(types.ErrorCodeBadResponseStatusCode, resp.StatusCode)

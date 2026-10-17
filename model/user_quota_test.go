@@ -16,7 +16,7 @@ func TestUpdateUserUsedQuotaAdjustsOnlyUsedQuota(t *testing.T) {
 	}
 	require.NoError(t, DB.Create(user).Error)
 
-	UpdateUserUsedQuota(user.Id, -40)
+	updateUserUsedQuota(user.Id, -40)
 
 	var stored User
 	require.NoError(t, DB.First(&stored, user.Id).Error)

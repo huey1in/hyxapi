@@ -86,9 +86,9 @@ func ReloadPolicy() error {
 }
 
 // StartPolicySync periodically reloads the authorization policy from the database.
-// The enforcer keeps an in-memory snapshot, and permission changes are written
-// straight to the DB (see SetUserPermissionsInTx) with only the local node's
-// snapshot refreshed afterwards. Without this loop other instances in a
+// The enforcer keeps an in-memory snapshot. Permission changes are persisted
+// locally, and this loop keeps other instances synchronized with the shared
+// policy database. Without it other instances in a
 // multi-node deployment would keep serving stale permissions (including not
 // honoring a revoked grant) until restart. Mirrors model.SyncOptions polling.
 func StartPolicySync(frequency int) {

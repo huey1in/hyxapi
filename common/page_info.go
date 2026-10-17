@@ -18,10 +18,6 @@ func (p *PageInfo) GetStartIdx() int {
 	return (p.Page - 1) * p.PageSize
 }
 
-func (p *PageInfo) GetEndIdx() int {
-	return p.Page * p.PageSize
-}
-
 func (p *PageInfo) GetPageSize() int {
 	return p.PageSize
 }

@@ -3,6 +3,7 @@ package dto
 import (
 	"encoding/json"
 	"fmt"
+	"strings"
 
 	kitutil "github.com/QuantumNous/new-api/relaykit/relayconvert/kitutil"
 	"github.com/QuantumNous/new-api/relaykit/types"
@@ -320,6 +321,16 @@ type OpenAIResponsesResponse struct {
 	Usage              *Usage             `json:"usage"`
 	User               json.RawMessage    `json:"user"`
 	Metadata           json.RawMessage    `json:"metadata"`
+}
+
+// GetStatus returns the normalized status string, or an empty string when absent or invalid.
+func (o *OpenAIResponsesResponse) GetStatus() string {
+	if o == nil || len(o.Status) == 0 {
+		return ""
+	}
+	var status string
+	_ = kitutil.Unmarshal(o.Status, &status)
+	return strings.TrimSpace(status)
 }
 
 // GetOpenAIError 从动态错误类型中提取OpenAIError结构

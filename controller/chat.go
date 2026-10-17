@@ -29,13 +29,13 @@ func Chat(c *gin.Context) {
 
 	useAccessToken := c.GetBool("use_access_token")
 	if useAccessToken {
-		newAPIError = types.NewError(errors.New("暂不支持使用 access token"), types.ErrorCodeAccessDenied, types.ErrOptionWithSkipRetry())
+		newAPIError = types.NewError(errors.New("暂不支持使用 access token"), types.ErrorCodeAccessDenied)
 		return
 	}
 
 	relayInfo, err := relaycommon.GenRelayInfo(c, types.RelayFormatOpenAI, nil, nil)
 	if err != nil {
-		newAPIError = types.NewError(err, types.ErrorCodeInvalidRequest, types.ErrOptionWithSkipRetry())
+		newAPIError = types.NewError(err, types.ErrorCodeInvalidRequest)
 		return
 	}
 
@@ -43,7 +43,7 @@ func Chat(c *gin.Context) {
 
 	userCache, err := model.GetUserCache(userId)
 	if err != nil {
-		newAPIError = types.NewError(err, types.ErrorCodeQueryDataError, types.ErrOptionWithSkipRetry())
+		newAPIError = types.NewError(err, types.ErrorCodeQueryDataError)
 		return
 	}
 	userCache.WriteContext(c)

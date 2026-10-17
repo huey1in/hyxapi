@@ -67,13 +67,6 @@ func (user *User) ToBaseUser() *UserBase {
 	return cache
 }
 
-func (user *User) GetAccessToken() string {
-	if user.AccessToken == nil {
-		return ""
-	}
-	return *user.AccessToken
-}
-
 func (user *User) SetAccessToken(token string) {
 	user.AccessToken = &token
 }
@@ -559,14 +552,6 @@ func (user *User) Delete() error {
 	return invalidateUserCache(user.Id)
 }
 
-func (user *User) HardDelete() error {
-	if user.Id == 0 {
-		return errors.New("id 为空！")
-	}
-	err := DB.Unscoped().Delete(user).Error
-	return err
-}
-
 // ValidateAndFill check password & user status
 func (user *User) ValidateAndFill() (err error) {
 	// When querying with struct, GORM will only query with non-zero fields,
@@ -597,14 +582,6 @@ func (user *User) FillUserById() error {
 		return errors.New("id 为空！")
 	}
 	DB.Where(User{Id: user.Id}).First(user)
-	return nil
-}
-
-func (user *User) FillUserByEmail() error {
-	if user.Email == "" {
-		return errors.New("email 为空！")
-	}
-	DB.Where(User{Email: user.Email}).First(user)
 	return nil
 }
 
@@ -893,16 +870,6 @@ func UpdateUserUsedQuotaAndRequestCount(id int, quota int) {
 		return
 	}
 	updateUserUsedQuotaAndRequestCount(id, quota, 1)
-}
-
-// UpdateUserUsedQuota applies a delta without changing the request count.
-// Negative deltas are used when an asynchronous pre-consumption is refunded.
-func UpdateUserUsedQuota(id int, quotaDelta int) {
-	if common.BatchUpdateEnabled {
-		addNewRecord(BatchUpdateTypeUsedQuota, id, quotaDelta)
-		return
-	}
-	updateUserUsedQuota(id, quotaDelta)
 }
 
 func updateUserUsedQuotaAndRequestCount(id int, quota int, count int) {

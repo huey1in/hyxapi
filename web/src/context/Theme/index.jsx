@@ -28,9 +28,6 @@ import {
 const ThemeContext = createContext(null);
 export const useTheme = () => useContext(ThemeContext);
 
-const ActualThemeContext = createContext(null);
-export const useActualTheme = () => useContext(ActualThemeContext);
-
 const SetThemeContext = createContext(null);
 export const useSetTheme = () => useContext(SetThemeContext);
 
@@ -106,9 +103,7 @@ export const ThemeProvider = ({ children }) => {
 
   return (
     <SetThemeContext.Provider value={setTheme}>
-      <ActualThemeContext.Provider value={actualTheme}>
-        <ThemeContext.Provider value={theme}>{children}</ThemeContext.Provider>
-      </ActualThemeContext.Provider>
+      <ThemeContext.Provider value={theme}>{children}</ThemeContext.Provider>
     </SetThemeContext.Provider>
   );
 };

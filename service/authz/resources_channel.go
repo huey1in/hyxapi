@@ -15,7 +15,6 @@ var (
 	ChannelOperate        = Permission{Resource: ResourceChannel, Action: ActionOperate}
 	ChannelWrite          = Permission{Resource: ResourceChannel, Action: ActionWrite}
 	ChannelSensitiveWrite = Permission{Resource: ResourceChannel, Action: ActionSensitiveWrite}
-	ChannelSecretView     = Permission{Resource: ResourceChannel, Action: ActionSecretView}
 )
 
 func init() {

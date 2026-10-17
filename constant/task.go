@@ -3,8 +3,7 @@ package constant
 type TaskPlatform string
 
 const (
-	TaskPlatformSuno       TaskPlatform = "suno"
-	TaskPlatformMidjourney              = "mj"
+	TaskPlatformSuno TaskPlatform = "suno"
 )
 
 const (
@@ -17,8 +16,3 @@ const (
 	TaskActionReferenceGenerate = "referenceGenerate"
 	TaskActionRemix             = "remixGenerate"
 )
-
-var SunoModel2Action = map[string]string{
-	"suno_music":  SunoActionMusic,
-	"suno_lyrics": SunoActionLyrics,
-}

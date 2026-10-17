@@ -38,7 +38,6 @@ const (
 	TaskStatusInProgress            = "IN_PROGRESS"
 	TaskStatusFailure               = "FAILURE"
 	TaskStatusSuccess               = "SUCCESS"
-	TaskStatusUnknown               = "UNKNOWN"
 )
 
 type Task struct {
@@ -63,15 +62,6 @@ type Task struct {
 	// 禁止返回给用户，内部可能包含key等隐私信息
 	PrivateData TaskPrivateData `json:"-" gorm:"column:private_data;type:json"`
 	Data        json.RawMessage `json:"data" gorm:"type:json"`
-}
-
-func (t *Task) SetData(data any) {
-	b, _ := common.Marshal(data)
-	t.Data = json.RawMessage(b)
-}
-
-func (t *Task) GetData(v any) error {
-	return common.Unmarshal(t.Data, &v)
 }
 
 type Properties struct {
@@ -354,45 +344,6 @@ func InitTask(platform constant.TaskPlatform, relayInfo *commonRelay.RelayInfo) 
 	return t
 }
 
-func GetTimedOutUnfinishedTasks(cutoffUnix int64, limit int) []*Task {
-	var tasks []*Task
-	err := DB.Where("progress != ?", "100%").
-		Where("status NOT IN ?", []string{TaskStatusFailure, TaskStatusSuccess}).
-		Where("submit_time < ?", cutoffUnix).
-		Order("submit_time").
-		Limit(limit).
-		Find(&tasks).Error
-	if err != nil {
-		return nil
-	}
-	return tasks
-}
-
-func GetAllUnFinishSyncTasks(limit int) []*Task {
-	var tasks []*Task
-	var err error
-	// get all tasks progress is not 100%
-	err = DB.Where("progress != ?", "100%").Where("status != ?", TaskStatusFailure).Where("status != ?", TaskStatusSuccess).Limit(limit).Order("id").Find(&tasks).Error
-	if err != nil {
-		return nil
-	}
-	return tasks
-}
-
-func GetByOnlyTaskId(taskId string) (*Task, bool, error) {
-	if taskId == "" {
-		return nil, false, nil
-	}
-	var task *Task
-	var err error
-	err = DB.Where("task_id = ?", taskId).First(&task).Error
-	exist, err := RecordExist(err)
-	if err != nil {
-		return nil, false, err
-	}
-	return task, exist, err
-}
-
 func GetByTaskId(userId int, taskId string) (*Task, bool, error) {
 	if taskId == "" {
 		return nil, false, nil
@@ -460,12 +411,6 @@ func (t *Task) Snapshot() taskSnapshot {
 	}
 }
 
-func (Task *Task) Update() error {
-	var err error
-	err = DB.Save(Task).Error
-	return err
-}
-
 // UpdateWithStatus performs a conditional UPDATE guarded by fromStatus (CAS).
 // Returns (true, nil) if this caller won the update, (false, nil) if
 // another process already moved the task out of fromStatus.
@@ -479,25 +424,6 @@ func (t *Task) UpdateWithStatus(fromStatus TaskStatus) (bool, error) {
 		return false, result.Error
 	}
 	return result.RowsAffected > 0, nil
-}
-
-// TaskBulkUpdateByID performs an unconditional bulk UPDATE by primary key IDs.
-// WARNING: This function has NO CAS (Compare-And-Swap) guard — it will overwrite
-// any concurrent status changes. DO NOT use in billing/quota lifecycle flows
-// (e.g., timeout, success, failure transitions that trigger refunds or settlements).
-// For status transitions that involve billing, use Task.UpdateWithStatus() instead.
-func TaskBulkUpdateByID(ids []int64, params map[string]any) error {
-	if len(ids) == 0 {
-		return nil
-	}
-	return DB.Model(&Task{}).
-		Where("id in (?)", ids).
-		Updates(params).Error
-}
-
-type TaskQuotaUsage struct {
-	Mode  string  `json:"mode"`
-	Count float64 `json:"count"`
 }
 
 func (t *Task) ToOpenAIVideo() *dto.OpenAIVideo {

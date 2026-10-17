@@ -51,7 +51,3 @@ type TaskDto struct {
 	Username   string          `json:"username,omitempty"`
 	Data       json.RawMessage `json:"data"`
 }
-
-type FetchReq struct {
-	IDs []string `json:"ids"`
-}

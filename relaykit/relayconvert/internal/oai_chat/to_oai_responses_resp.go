@@ -154,19 +154,10 @@ func UsageFromChatUsage(src *dto.Usage) *dto.Usage {
 }
 
 func responseOutputStatus(resp *dto.OpenAIResponsesResponse) string {
-	if resp == nil || responseStatusString(resp) != "incomplete" {
+	if resp.GetStatus() != "incomplete" {
 		return "completed"
 	}
 	return "incomplete"
-}
-
-func responseStatusString(resp *dto.OpenAIResponsesResponse) string {
-	if resp == nil || len(resp.Status) == 0 {
-		return ""
-	}
-	var status string
-	_ = kitutil.Unmarshal(resp.Status, &status)
-	return strings.TrimSpace(status)
 }
 
 func chatToolCallToResponsesOutput(toolCall dto.ToolCallRequest, responseID string, index int, status string) (dto.ResponsesOutput, error) {

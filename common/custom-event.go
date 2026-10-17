@@ -40,10 +40,6 @@ func checkWriter(writer io.Writer) stringWriter {
 var contentType = []string{"text/event-stream"}
 var noCache = []string{"no-cache"}
 
-var fieldReplacer = strings.NewReplacer(
-	"\n", "\\n",
-	"\r", "\\r")
-
 var dataReplacer = strings.NewReplacer(
 	"\n", "\n",
 	"\r", "\\r")

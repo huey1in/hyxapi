@@ -16,7 +16,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 For commercial licensing, please contact support@quantumnous.com
 */
-export function base64UrlToBuffer(base64url) {
+function base64UrlToBuffer(base64url) {
   if (!base64url) return new ArrayBuffer(0);
   let padding = '='.repeat((4 - (base64url.length % 4)) % 4);
   const base64 = (base64url + padding).replace(/-/g, '+').replace(/_/g, '/');
@@ -29,7 +29,7 @@ export function base64UrlToBuffer(base64url) {
   return buffer;
 }
 
-export function bufferToBase64Url(buffer) {
+function bufferToBase64Url(buffer) {
   if (!buffer) return '';
   const uintArray = new Uint8Array(buffer);
   let binary = '';
@@ -80,32 +80,6 @@ export function prepareCredentialCreationOptions(payload) {
   return publicKey;
 }
 
-export function prepareCredentialRequestOptions(payload) {
-  const options =
-    payload?.publicKey ||
-    payload?.PublicKey ||
-    payload?.options?.publicKey ||
-    payload?.options?.PublicKey ||
-    payload?.response ||
-    payload?.Response;
-  if (!options) {
-    throw new Error('无法从服务端响应中解析 Passkey 登录参数');
-  }
-  const publicKey = {
-    ...options,
-    challenge: base64UrlToBuffer(options.challenge),
-  };
-
-  if (Array.isArray(options.allowCredentials)) {
-    publicKey.allowCredentials = options.allowCredentials.map((item) => ({
-      ...item,
-      id: base64UrlToBuffer(item.id),
-    }));
-  }
-
-  return publicKey;
-}
-
 export function buildRegistrationResult(credential) {
   if (!credential) return null;
 
@@ -126,28 +100,6 @@ export function buildRegistrationResult(credential) {
       transports,
     },
     clientExtensionResults: credential.getClientExtensionResults?.() ?? {},
-  };
-}
-
-export function buildAssertionResult(assertion) {
-  if (!assertion) return null;
-
-  const { response } = assertion;
-
-  return {
-    id: assertion.id,
-    rawId: bufferToBase64Url(assertion.rawId),
-    type: assertion.type,
-    authenticatorAttachment: assertion.authenticatorAttachment,
-    response: {
-      authenticatorData: bufferToBase64Url(response.authenticatorData),
-      clientDataJSON: bufferToBase64Url(response.clientDataJSON),
-      signature: bufferToBase64Url(response.signature),
-      userHandle: response.userHandle
-        ? bufferToBase64Url(response.userHandle)
-        : null,
-    },
-    clientExtensionResults: assertion.getClientExtensionResults?.() ?? {},
   };
 }
 

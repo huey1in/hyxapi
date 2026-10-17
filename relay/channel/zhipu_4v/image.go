@@ -14,15 +14,6 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-type zhipuImageRequest struct {
-	Model            string `json:"model"`
-	Prompt           string `json:"prompt"`
-	Quality          string `json:"quality,omitempty"`
-	Size             string `json:"size,omitempty"`
-	WatermarkEnabled *bool  `json:"watermark_enabled,omitempty"`
-	UserID           string `json:"user_id,omitempty"`
-}
-
 type zhipuImageResponse struct {
 	Created       *int64            `json:"created,omitempty"`
 	Data          []zhipuImageData  `json:"data,omitempty"`

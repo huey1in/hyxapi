@@ -121,24 +121,6 @@ func NewPasskeyCredentialFromWebAuthn(userID int, credential *webauthn.Credentia
 	return passkey
 }
 
-func (p *PasskeyCredential) ApplyValidatedCredential(credential *webauthn.Credential) {
-	if credential == nil || p == nil {
-		return
-	}
-	p.CredentialID = base64.StdEncoding.EncodeToString(credential.ID)
-	p.PublicKey = base64.StdEncoding.EncodeToString(credential.PublicKey)
-	p.AttestationType = credential.AttestationType
-	p.AAGUID = base64.StdEncoding.EncodeToString(credential.Authenticator.AAGUID)
-	p.SignCount = credential.Authenticator.SignCount
-	p.CloneWarning = credential.Authenticator.CloneWarning
-	p.UserPresent = credential.Flags.UserPresent
-	p.UserVerified = credential.Flags.UserVerified
-	p.BackupEligible = credential.Flags.BackupEligible
-	p.BackupState = credential.Flags.BackupState
-	p.Attachment = string(credential.Authenticator.Attachment)
-	p.SetTransports(credential.Transport)
-}
-
 func GetPasskeyByUserID(userID int) (*PasskeyCredential, error) {
 	if userID == 0 {
 		common.SysLog("GetPasskeyByUserID: empty user ID")

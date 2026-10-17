@@ -28,16 +28,6 @@ import (
 // Request / Response structures
 // ============================
 
-type ContentItem struct {
-	Type     string    `json:"type"`                // "text" or "image_url"
-	Text     string    `json:"text,omitempty"`      // for text type
-	ImageURL *ImageURL `json:"image_url,omitempty"` // for image_url type
-}
-
-type ImageURL struct {
-	URL string `json:"url"`
-}
-
 type responseTask struct {
 	ID                 string `json:"id"`
 	TaskID             string `json:"task_id,omitempty"` //兼容旧接口

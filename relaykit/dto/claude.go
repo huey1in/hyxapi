@@ -58,15 +58,19 @@ func (c *ClaudeMediaMessage) IsStringContent() bool {
 }
 
 func (c *ClaudeMediaMessage) GetStringContent() string {
-	if c.Content == nil {
+	return getClaudeStringContent(c.Content)
+}
+
+func getClaudeStringContent(content any) string {
+	if content == nil {
 		return ""
 	}
-	switch c.Content.(type) {
+	switch content.(type) {
 	case string:
-		return c.Content.(string)
+		return content.(string)
 	case []any:
 		var contentStr string
-		for _, contentItem := range c.Content.([]any) {
+		for _, contentItem := range content.([]any) {
 			contentMap, ok := contentItem.(map[string]any)
 			if !ok {
 				continue
@@ -132,29 +136,7 @@ func (c *ClaudeMessage) IsStringContent() bool {
 }
 
 func (c *ClaudeMessage) GetStringContent() string {
-	if c.Content == nil {
-		return ""
-	}
-	switch c.Content.(type) {
-	case string:
-		return c.Content.(string)
-	case []any:
-		var contentStr string
-		for _, contentItem := range c.Content.([]any) {
-			contentMap, ok := contentItem.(map[string]any)
-			if !ok {
-				continue
-			}
-			if contentMap["type"] == ContentTypeText {
-				if subStr, ok := contentMap["text"].(string); ok {
-					contentStr += subStr
-				}
-			}
-		}
-		return contentStr
-	}
-
-	return ""
+	return getClaudeStringContent(c.Content)
 }
 
 func (c *ClaudeMessage) SetStringContent(content string) {

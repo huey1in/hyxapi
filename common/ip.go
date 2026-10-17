@@ -2,10 +2,6 @@ package common
 
 import "net"
 
-func ParseIP(s string) net.IP {
-	return net.ParseIP(s)
-}
-
 func IsIpInCIDRList(ip net.IP, cidrList []string) bool {
 	for _, cidr := range cidrList {
 		_, network, err := net.ParseCIDR(cidr)

@@ -52,10 +52,6 @@ func NewHybridCache[V any](cfg HybridCacheConfig[V]) *HybridCache[V] {
 	}
 }
 
-func (c *HybridCache[V]) FullKey(key string) string {
-	return c.ns.FullKey(key)
-}
-
 func (c *HybridCache[V]) redisOn() bool {
 	if c.redis == nil || c.redisCodec == nil {
 		return false

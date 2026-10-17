@@ -50,19 +50,6 @@ func alipaySignRequest(params map[string]string, privateKey string) (string, err
 	return base64.StdEncoding.EncodeToString(signature), nil
 }
 
-func alipayVerifyRequestSignature(params map[string]string, publicKey string) bool {
-	key, err := parseAlipayPublicKey(publicKey)
-	if err != nil {
-		return false
-	}
-	signature, err := base64.StdEncoding.DecodeString(params["sign"])
-	if err != nil {
-		return false
-	}
-	digest := sha256.Sum256([]byte(alipayParamsSource(params, false)))
-	return rsa.VerifyPKCS1v15(key, crypto.SHA256, digest[:], signature) == nil
-}
-
 func decodeAlipayKey(raw string) ([]byte, error) {
 	raw = strings.TrimSpace(raw)
 	if block, _ := pem.Decode([]byte(raw)); block != nil {
@@ -95,19 +82,6 @@ func parseAlipayPublicKey(raw string) (*rsa.PublicKey, error) {
 		}
 	}
 	return x509.ParsePKCS1PublicKey(der)
-}
-
-func AlipaySign(params map[string]string, privateKey string) (string, error) {
-	key, err := parseAlipayPrivateKey(privateKey)
-	if err != nil {
-		return "", err
-	}
-	digest := sha256.Sum256([]byte(alipaySignSource(params)))
-	signature, err := rsa.SignPKCS1v15(rand.Reader, key, crypto.SHA256, digest[:])
-	if err != nil {
-		return "", err
-	}
-	return base64.StdEncoding.EncodeToString(signature), nil
 }
 
 func AlipayVerify(params map[string]string, publicKey string) bool {

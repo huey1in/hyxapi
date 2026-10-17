@@ -110,19 +110,6 @@ func EncodeGroupSwitchStatusCodes(codes []int) string {
 	return string(body)
 }
 
-func (token *Token) GetGroupSwitchStatusCodes() map[int]struct{} {
-	result := make(map[int]struct{})
-	if token == nil {
-		return result
-	}
-	var codes []int
-	_ = json.Unmarshal([]byte(token.GroupSwitchStatusCodes), &codes)
-	for _, code := range NormalizeGroupSwitchStatusCodes(codes) {
-		result[code] = struct{}{}
-	}
-	return result
-}
-
 func (token *Token) NormalizeGroupPolicy() {
 	if token == nil {
 		return
@@ -447,10 +434,6 @@ func (token *Token) Delete() (err error) {
 	}()
 	err = DB.Delete(token).Error
 	return err
-}
-
-func (token *Token) IsModelLimitsEnabled() bool {
-	return token.ModelLimitsEnabled
 }
 
 func (token *Token) GetModelLimits() []string {

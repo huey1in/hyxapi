@@ -116,48 +116,6 @@ func GetImageFromUrl(url string) (mimeType string, data string, err error) {
 	return mimeType, data, nil
 }
 
-func DecodeUrlImageData(imageUrl string) (image.Config, string, error) {
-	response, err := DoDownloadRequest(imageUrl)
-	if err != nil {
-		common.SysLog(fmt.Sprintf("fail to get image from url: %s", err.Error()))
-		return image.Config{}, "", err
-	}
-	defer response.Body.Close()
-
-	if response.StatusCode != 200 {
-		err = errors.New(fmt.Sprintf("fail to get image from url: %s", response.Status))
-		return image.Config{}, "", err
-	}
-
-	mimeType := response.Header.Get("Content-Type")
-
-	if mimeType != "application/octet-stream" && !strings.HasPrefix(mimeType, "image/") {
-		return image.Config{}, "", fmt.Errorf("invalid content type: %s, required image/*", mimeType)
-	}
-
-	var readData []byte
-	for _, limit := range []int64{1024 * 8, 1024 * 24, 1024 * 64} {
-		common.SysLog(fmt.Sprintf("try to decode image config with limit: %d", limit))
-
-		// 从response.Body读取更多的数据直到达到当前的限制
-		additionalData := make([]byte, limit-int64(len(readData)))
-		n, _ := io.ReadFull(response.Body, additionalData)
-		readData = append(readData, additionalData[:n]...)
-
-		// 使用io.MultiReader组合已经读取的数据和response.Body
-		limitReader := io.MultiReader(bytes.NewReader(readData), response.Body)
-
-		var config image.Config
-		var format string
-		config, format, err = getImageConfig(limitReader)
-		if err == nil {
-			return config, format, nil
-		}
-	}
-
-	return image.Config{}, "", err // 返回最后一个错误
-}
-
 func getImageConfig(reader io.Reader) (image.Config, string, error) {
 	// Read all data so we can retry with different decoders
 	data, readErr := io.ReadAll(reader)

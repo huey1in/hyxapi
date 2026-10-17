@@ -17,65 +17,8 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 
-import { useContext, useEffect } from 'react';
-import { Navigate } from 'react-router-dom';
-import { UserContext } from '../context/User';
-
 export const redirectToAuth = (mode = 'login') => {
   const next = `${window.location.pathname}${window.location.search}`;
   const authMode = mode === 'register' ? 'register' : 'login';
   window.location.assign(`/auth?mode=${authMode}&next=${encodeURIComponent(next)}`);
 };
-
-export function authHeader() {
-  let user = JSON.parse(localStorage.getItem('user'));
-  if (user && user.token) {
-    return { Authorization: 'Bearer ' + user.token };
-  }
-  return {};
-}
-
-export const AuthRedirect = ({ children }) => {
-  const user = localStorage.getItem('user');
-  if (user) return <Navigate to='/console' replace />;
-  return children;
-};
-
-// 校验登录状态：未登录时跳转认证页，并通过 next 参数保留当前地址。
-function PrivateRoute({ children }) {
-  const [userState] = useContext(UserContext);
-  const hasUser = !!userState?.user || !!localStorage.getItem('user');
-
-  useEffect(() => {
-    if (!hasUser) redirectToAuth('login');
-  }, [hasUser]);
-
-  if (!hasUser) {
-    return <div className='min-h-[40vh]' />;
-  }
-  return children;
-}
-
-export function AdminRoute({ children }) {
-  const [userState] = useContext(UserContext);
-  const raw = localStorage.getItem('user');
-  const hasUser = !!userState?.user || !!raw;
-
-  useEffect(() => {
-    if (!hasUser) redirectToAuth('login');
-  }, [hasUser]);
-
-  if (!hasUser) return <div className='min-h-[40vh]' />;
-
-  try {
-    const user = userState?.user || (raw ? JSON.parse(raw) : null);
-    if (user && typeof user.role === 'number' && user.role >= 10) {
-      return children;
-    }
-  } catch (e) {
-    // ignore
-  }
-  return <Navigate to='/forbidden' replace />;
-}
-
-export { PrivateRoute };

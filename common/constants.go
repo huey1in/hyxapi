@@ -13,14 +13,10 @@ import (
 var StartTime = time.Now().Unix() // unit: second
 var Version = "v0.0.0"            // this hard coding will be replaced automatically when building, no need to manually change
 var SystemName = "Routify"
-var Logo = "/logo.png"
-
 var QuotaPerUnit = 500 * 1000.0 // $0.002 / 1K tokens
 // 保留旧变量以兼容历史逻辑，实际展示由 general_setting.quota_display_type 控制
 var DisplayInCurrencyEnabled = true
 var DisplayTokenStatEnabled = true
-var DrawingEnabled = true
-var TaskEnabled = true
 var DataExportEnabled = true
 var DataExportInterval = 5         // unit: minute
 var DataExportDefaultTime = "hour" // unit: minute
@@ -29,24 +25,6 @@ var DataExportDefaultTime = "hour" // unit: minute
 
 var SessionSecret = uuid.New().String()
 var CryptoSecret = uuid.New().String()
-var SessionCookieSecure = false
-var SessionCookieTrustedURLs []string
-
-const (
-	DefaultUserSessionActiveLimit           = 50
-	DefaultUserSessionIssuanceLimit         = 100
-	DefaultUserSessionIssuanceWindowSeconds = 24 * 60 * 60
-	DefaultUserSessionRevokedRetentionDays  = 7
-	DefaultUserSessionHourlyAlertThreshold  = 5000
-)
-
-var (
-	UserSessionActiveLimit           = DefaultUserSessionActiveLimit
-	UserSessionIssuanceLimit         = DefaultUserSessionIssuanceLimit
-	UserSessionIssuanceWindowSeconds = int64(DefaultUserSessionIssuanceWindowSeconds)
-	UserSessionRevokedRetentionDays  = DefaultUserSessionRevokedRetentionDays
-	UserSessionHourlyAlertThreshold  = DefaultUserSessionHourlyAlertThreshold
-)
 
 var OptionMap map[string]string
 var OptionMapRWMutex sync.RWMutex
@@ -129,20 +107,9 @@ var RetryTimes = 0
 
 var IsMasterNode bool
 
-const (
-	NodeNameSourceManual   = "manual"
-	NodeNameSourceHostname = "hostname"
-)
-
 // NodeName 节点名称，优先从 NODE_NAME 环境变量读取，未配置时回退主机名。
 // 用于审计日志和后台任务中标识节点身份；多实例部署时建议显式配置稳定 NODE_NAME。
 var NodeName = ""
-
-// NodeNameSource records how NodeName was chosen so future instance-management
-// reporting can distinguish operator-configured names from automatic fallback.
-var NodeNameSource = NodeNameSourceHostname
-
-var NodeNameManuallyConfigured bool
 
 var requestInterval int
 var RequestInterval time.Duration
@@ -156,8 +123,6 @@ var RelayTimeout int // unit is second
 var RelayIdleConnTimeout int
 var RelayMaxIdleConns int
 var RelayMaxIdleConnsPerHost int
-
-var GeminiSafetySetting string
 
 // https://docs.cohere.com/docs/safety-modes Type; NONE/CONTEXTUAL/STRICT
 var CohereSafetySetting string
@@ -200,12 +165,6 @@ var (
 	CriticalRateLimitNum            = 20
 	CriticalRateLimitDuration int64 = 20 * 60
 
-	UploadRateLimitNum            = 10
-	UploadRateLimitDuration int64 = 60
-
-	DownloadRateLimitNum            = 10
-	DownloadRateLimitDuration int64 = 60
-
 	// Per-user search rate limit (applies after authentication, keyed by user ID)
 	SearchRateLimitEnable         = true
 	SearchRateLimitNum            = 10
@@ -221,7 +180,6 @@ const (
 
 const (
 	TokenStatusEnabled   = 1 // don't use 0, 0 is the default value!
-	TokenStatusDisabled  = 2 // also don't use 0
 	TokenStatusExpired   = 3
 	TokenStatusExhausted = 4
 )
@@ -233,7 +191,6 @@ const (
 )
 
 const (
-	ChannelStatusUnknown          = 0
 	ChannelStatusEnabled          = 1 // don't use 0, 0 is the default value!
 	ChannelStatusManuallyDisabled = 2 // also don't use 0
 	ChannelStatusAutoDisabled     = 3
@@ -243,5 +200,4 @@ const (
 	TopUpStatusPending = "pending"
 	TopUpStatusSuccess = "success"
 	TopUpStatusFailed  = "failed"
-	TopUpStatusExpired = "expired"
 )

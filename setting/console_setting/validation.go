@@ -13,13 +13,7 @@ import (
 var (
 	urlRegex       = regexp.MustCompile(`^https?://(?:(?:[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?\.)*[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?|(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?))(?:\:[0-9]{1,5})?(?:/.*)?$`)
 	dangerousChars = []string{"<script", "<iframe", "javascript:", "onload=", "onerror=", "onclick="}
-	validColors    = map[string]bool{
-		"blue": true, "green": true, "cyan": true, "purple": true, "pink": true,
-		"red": true, "orange": true, "amber": true, "yellow": true, "lime": true,
-		"light-green": true, "teal": true, "light-blue": true, "indigo": true,
-		"violet": true, "grey": true,
-	}
-	slugRegex = regexp.MustCompile(`^[a-zA-Z0-9_-]+$`)
+	slugRegex      = regexp.MustCompile(`^[a-zA-Z0-9_-]+$`)
 )
 
 func parseJSONArray(jsonStr string, typeName string) ([]map[string]interface{}, error) {

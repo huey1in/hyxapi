@@ -20,7 +20,7 @@ func TestBuildModelPricingSyncPreviewReturnsOnlyNewAndChangedPrices(t *testing.T
 		{Provider: "provider", Pricing: model.ModelPricing{ModelName: "new-model", InputPrice: 3, OutputPrice: 6, Enabled: true}},
 	}
 
-	preview := BuildModelPricingSyncPreview(local, upstream)
+	preview := buildModelPricingSyncPreview(local, upstream, nil)
 
 	require.Len(t, preview, 2)
 	require.Equal(t, "changed-model", preview[0].ModelName)

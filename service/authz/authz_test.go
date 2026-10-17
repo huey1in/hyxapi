@@ -137,7 +137,7 @@ func TestSetUserPermissionsStoresOnlyOverrides(t *testing.T) {
 	assert.Empty(t, ExplicitUserOverrides(42))
 }
 
-func TestClearUserAuthorizationRemovesOverrides(t *testing.T) {
+func TestSetUserPermissionsClearsOverrides(t *testing.T) {
 	db := newAuthzTestDB(t)
 	require.NoError(t, Init(db))
 
@@ -149,50 +149,13 @@ func TestClearUserAuthorizationRemovesOverrides(t *testing.T) {
 	assert.True(t, Can(90, common.RoleAdminUser, ChannelSensitiveWrite))
 	assert.False(t, Can(90, common.RoleAdminUser, ChannelWrite))
 
-	require.NoError(t, ClearUserAuthorization(90))
+	require.NoError(t, SetUserPermissions(90, PermissionsMap{ResourceChannel: {}}))
 
 	assert.Empty(t, ExplicitUserOverrides(90))
 	assert.True(t, Can(90, common.RoleAdminUser, ChannelRead))
 	assert.True(t, Can(90, common.RoleAdminUser, ChannelWrite))
 	assert.False(t, Can(90, common.RoleAdminUser, ChannelSensitiveWrite))
 	assert.False(t, Can(90, common.RoleCommonUser, ChannelRead))
-}
-
-func TestSetUserPermissionsInTxDoesNotMutateEnforcerBeforeReload(t *testing.T) {
-	db := newAuthzTestDB(t)
-	require.NoError(t, Init(db))
-
-	require.NoError(t, db.Transaction(func(tx *gorm.DB) error {
-		return SetUserPermissionsInTx(tx, 42, PermissionsMap{ResourceChannel: {
-			ActionRead:           true,
-			ActionOperate:        true,
-			ActionWrite:          true,
-			ActionSensitiveWrite: true,
-			ActionSecretView:     false,
-		}})
-	}))
-
-	assert.False(t, Can(42, common.RoleAdminUser, ChannelSensitiveWrite))
-	require.NoError(t, ReloadPolicy())
-	assert.True(t, Can(42, common.RoleAdminUser, ChannelSensitiveWrite))
-}
-
-func TestSetUserPermissionsInTxRollbackLeavesNoPolicy(t *testing.T) {
-	db := newAuthzTestDB(t)
-	require.NoError(t, Init(db))
-
-	tx := db.Begin()
-	require.NoError(t, tx.Error)
-	require.NoError(t, SetUserPermissionsInTx(tx, 43, PermissionsMap{ResourceChannel: {
-		ActionSensitiveWrite: true,
-	}}))
-	require.NoError(t, tx.Rollback().Error)
-	require.NoError(t, ReloadPolicy())
-
-	assert.False(t, Can(43, common.RoleAdminUser, ChannelSensitiveWrite))
-	var count int64
-	require.NoError(t, db.Model(&model.CasbinRule{}).Where("v0 = ?", UserSubject(43)).Count(&count).Error)
-	assert.Equal(t, int64(0), count)
 }
 
 func TestAdapterAddPolicyIsIdempotent(t *testing.T) {

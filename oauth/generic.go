@@ -325,11 +325,6 @@ func normalizeAuthorizationTokenType(tokenType string) string {
 	return tokenType
 }
 
-// IsGenericProvider returns true for generic providers
-func (p *GenericOAuthProvider) IsGenericProvider() bool {
-	return true
-}
-
 func parseAccessPolicy(raw string) (*accessPolicy, error) {
 	var policy accessPolicy
 	if err := common.UnmarshalJsonStr(raw, &policy); err != nil {

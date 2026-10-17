@@ -220,17 +220,6 @@ func (channel *Channel) GetModels() []string {
 	return strings.Split(strings.Trim(channel.Models, ","), ",")
 }
 
-func (channel *Channel) GetGroups() []string {
-	if channel.Group == "" {
-		return []string{}
-	}
-	groups := strings.Split(strings.Trim(channel.Group, ","), ",")
-	for i, group := range groups {
-		groups[i] = strings.TrimSpace(group)
-	}
-	return groups
-}
-
 func (channel *Channel) GetOtherInfo() map[string]interface{} {
 	otherInfo := make(map[string]interface{})
 	if channel.OtherInfo != "" {
@@ -256,10 +245,6 @@ func (channel *Channel) GetTag() string {
 		return ""
 	}
 	return *channel.Tag
-}
-
-func (channel *Channel) SetTag(tag string) {
-	channel.Tag = &tag
 }
 
 func (channel *Channel) GetAutoBan() bool {
@@ -463,16 +448,6 @@ func (channel *Channel) GetStatusCodeMapping() string {
 		return ""
 	}
 	return *channel.StatusCodeMapping
-}
-
-func (channel *Channel) Insert() error {
-	var err error
-	err = DB.Create(channel).Error
-	if err != nil {
-		return err
-	}
-	err = channel.AddAbilities(nil)
-	return err
 }
 
 func (channel *Channel) Update() error {
@@ -858,15 +833,6 @@ func (channel *Channel) GetSetting() dto.ChannelSettings {
 		}
 	}
 	return setting
-}
-
-func (channel *Channel) SetSetting(setting dto.ChannelSettings) {
-	settingBytes, err := common.Marshal(setting)
-	if err != nil {
-		common.SysLog(fmt.Sprintf("failed to marshal setting: channel_id=%d, error=%v", channel.Id, err))
-		return
-	}
-	channel.Setting = common.GetPointer[string](string(settingBytes))
 }
 
 func (channel *Channel) GetOtherSettings() dto.ChannelOtherSettings {

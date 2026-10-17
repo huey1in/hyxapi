@@ -8,12 +8,6 @@ import (
 	"strings"
 )
 
-// ParseProxyURLStrict validates and normalizes a proxy URL for persistence.
-func ParseProxyURLStrict(rawProxyURL string) (*url.URL, error) {
-	parsedURL, _, err := parseProxyURL(rawProxyURL, false)
-	return parsedURL, err
-}
-
 // ParseProxyURLRuntime validates and normalizes a proxy URL for runtime use.
 // The boolean result reports whether a legacy path, query, or fragment was removed.
 func ParseProxyURLRuntime(rawProxyURL string) (*url.URL, bool, error) {

@@ -15,7 +15,4 @@ const (
 	RelayFormatOpenAIRealtime            = relaytypes.RelayFormatOpenAIRealtime
 	RelayFormatRerank                    = relaytypes.RelayFormatRerank
 	RelayFormatEmbedding                 = relaytypes.RelayFormatEmbedding
-
-	RelayFormatTask    = relaytypes.RelayFormatTask
-	RelayFormatMjProxy = relaytypes.RelayFormatMjProxy
 )

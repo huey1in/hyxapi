@@ -29,13 +29,6 @@ type Adaptor struct {
 const aliAnthropicMessagesModelsEnv = "ALI_ANTHROPIC_MESSAGES_MODELS"
 const defaultAliAnthropicMessagesModels = "qwen,deepseek-v4,kimi,glm,minimax-m"
 
-/*
-	var syncModels = []string{
-		"z-image",
-		"qwen-image",
-		"wan2.6",
-	}
-*/
 func supportsAliAnthropicMessages(modelName string) bool {
 	normalizedModelName := strings.ToLower(strings.TrimSpace(modelName))
 	if normalizedModelName == "" {
@@ -53,12 +46,6 @@ func aliAnthropicMessagesModelPatterns() []string {
 		pattern := strings.ToLower(strings.TrimSpace(item))
 		return pattern, pattern != ""
 	})
-}
-
-var syncModels = []string{
-	"z-image",
-	"qwen-image",
-	"wan2.6",
 }
 
 func isSyncImageModel(modelName string) bool {

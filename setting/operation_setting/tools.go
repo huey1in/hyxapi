@@ -31,16 +31,6 @@ const (
 )
 
 const (
-	// Gemini Audio Input Price
-	Gemini25FlashPreviewInputAudioPrice     = 1.00
-	Gemini25FlashProductionInputAudioPrice  = 1.00 // for `gemini-2.5-flash`
-	Gemini25FlashLitePreviewInputAudioPrice = 0.50
-	Gemini25FlashNativeAudioInputAudioPrice = 3.00
-	Gemini20FlashInputAudioPrice            = 0.70
-	GeminiRoboticsER15InputAudioPrice       = 1.00
-)
-
-const (
 	// Claude Web search
 	ClaudeWebSearchPrice = 10.00
 )
@@ -101,27 +91,6 @@ func DeleteToolPriceForTest(name string) {
 	toolPriceOverrides.Lock()
 	defer toolPriceOverrides.Unlock()
 	delete(toolPriceOverrides.prices, name)
-}
-
-func GetToolPrice(toolName string) float64 {
-	return GetToolPriceForModel(toolName, "")
-}
-
-func GetGeminiInputAudioPricePerMillionTokens(modelName string) float64 {
-	if strings.HasPrefix(modelName, "gemini-2.5-flash-preview-native-audio") {
-		return Gemini25FlashNativeAudioInputAudioPrice
-	} else if strings.HasPrefix(modelName, "gemini-2.5-flash-preview-lite") {
-		return Gemini25FlashLitePreviewInputAudioPrice
-	} else if strings.HasPrefix(modelName, "gemini-2.5-flash-preview") {
-		return Gemini25FlashPreviewInputAudioPrice
-	} else if strings.HasPrefix(modelName, "gemini-2.5-flash") {
-		return Gemini25FlashProductionInputAudioPrice
-	} else if strings.HasPrefix(modelName, "gemini-2.0-flash") {
-		return Gemini20FlashInputAudioPrice
-	} else if strings.HasPrefix(modelName, "gemini-robotics-er-1.5") {
-		return GeminiRoboticsER15InputAudioPrice
-	}
-	return 0
 }
 
 func GetGPTImage1PriceOnceCall(quality string, size string) float64 {

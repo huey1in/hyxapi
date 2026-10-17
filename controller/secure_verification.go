@@ -30,11 +30,6 @@ type UniversalVerifyRequest struct {
 	Code   string `json:"code,omitempty"`
 }
 
-type VerificationStatusResponse struct {
-	Verified  bool  `json:"verified"`
-	ExpiresAt int64 `json:"expires_at,omitempty"`
-}
-
 // UniversalVerify 通用验证接口
 // 支持 2FA 和 Passkey 验证，验证成功后在 session 中记录时间戳
 func UniversalVerify(c *gin.Context) {

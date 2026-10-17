@@ -22,13 +22,7 @@ const (
 )
 
 const (
-	StatusSuccess    = 0
-	StatusRateLimit  = 1002
-	StatusAuthFailed = 1004
-	StatusNoBalance  = 1008
-	StatusSensitive  = 1026
-	StatusParamError = 2013
-	StatusInvalidKey = 2049
+	StatusSuccess = 0
 )
 
 const (
