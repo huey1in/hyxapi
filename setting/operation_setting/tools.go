@@ -72,6 +72,8 @@ func GetToolPriceForModel(toolName, modelName string) float64 {
 		return price
 	}
 	switch toolName {
+	case "deepseek_search", "deepseek_fetch":
+		return 0.75
 	case "web_search", "web_search_preview":
 		return GetWebSearchPricePerThousand(modelName, "")
 	case "file_search":

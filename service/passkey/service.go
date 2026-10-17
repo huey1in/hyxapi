@@ -34,7 +34,7 @@ func BuildWebAuthn(r *http.Request) (*webauthn.WebAuthn, error) {
 		displayName = common.SystemName
 	}
 	if displayName == "" {
-		displayName = "Routify"
+		displayName = "Hyxware"
 	}
 
 	origins, err := resolveOrigins(r, settings)

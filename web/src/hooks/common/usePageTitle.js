@@ -7,7 +7,7 @@ import { getSystemName } from '../../helpers';
  */
 export function usePageTitle(pageTitle) {
   useEffect(() => {
-    const systemName = getSystemName() || 'TokenC';
+    const systemName = getSystemName() || 'Hyxware';
     if (pageTitle) {
       document.title = `${pageTitle} - ${systemName}`;
     } else {

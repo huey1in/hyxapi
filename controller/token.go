@@ -117,7 +117,7 @@ func GetTokenUsage(c *gin.Context) {
 
 	token, err := model.GetTokenByKey(strings.TrimPrefix(tokenKey, "sk-"), false)
 	if err != nil {
-		common.SysError("failed to get token by key: " + err.Error())
+		common.SysError(fmt.Sprintf("failed to get token by key: %s", err.Error()))
 		common.ApiErrorI18n(c, i18n.MsgTokenGetInfoFailed)
 		return
 	}
@@ -127,26 +127,51 @@ func GetTokenUsage(c *gin.Context) {
 		expiredAt = 0
 	}
 
+	data := gin.H{
+		"object":               "token_usage",
+		"name":                 token.Name,
+		"total_granted":        token.RemainQuota + token.UsedQuota,
+		"total_used":           token.UsedQuota,
+		"total_available":      token.RemainQuota,
+		"unlimited_quota":      token.UnlimitedQuota,
+		"model_limits":         token.GetModelLimitsMap(),
+		"model_limits_enabled": token.ModelLimitsEnabled,
+		"expires_at":           expiredAt,
+	}
+	// 用户额度只在令牌允许时返回；IP 白名单已由 TokenAuthReadOnly 检查。
+	if token.AllowUserQuotaQuery {
+		userQuota, err := model.GetUserQuota(token.UserId, false)
+		var userUsedQuota int
+		if err == nil {
+			userUsedQuota, err = model.GetUserUsedQuota(token.UserId)
+		}
+		if err != nil {
+			common.SysError(fmt.Sprintf("failed to get user quota: %s", err.Error()))
+			common.ApiErrorI18n(c, i18n.MsgTokenGetInfoFailed)
+			return
+		}
+		data["user_quota"] = gin.H{
+			"total_available": userQuota,
+			"total_used":      userUsedQuota,
+		}
+	}
+
 	c.JSON(http.StatusOK, gin.H{
 		"code":    true,
 		"message": "ok",
-		"data": gin.H{
-			"object":               "token_usage",
-			"name":                 token.Name,
-			"total_granted":        token.RemainQuota + token.UsedQuota,
-			"total_used":           token.UsedQuota,
-			"total_available":      token.RemainQuota,
-			"unlimited_quota":      token.UnlimitedQuota,
-			"model_limits":         token.GetModelLimitsMap(),
-			"model_limits_enabled": token.ModelLimitsEnabled,
-			"expires_at":           expiredAt,
-		},
+		"data":    data,
 	})
 }
 
+type tokenQuotaRequest struct {
+	model.Token
+	AllowUserQuotaQuery *bool `json:"allow_user_quota_query"`
+}
+
 func AddToken(c *gin.Context) {
-	token := model.Token{}
-	err := c.ShouldBindJSON(&token)
+	request := tokenQuotaRequest{}
+	err := c.ShouldBindJSON(&request)
+	token := request.Token
 	if err != nil {
 		common.ApiError(c, err)
 		return
@@ -198,13 +223,14 @@ func AddToken(c *gin.Context) {
 		UnlimitedQuota:        token.UnlimitedQuota,
 		ModelLimitsEnabled:    token.ModelLimitsEnabled,
 		ModelLimits:           token.ModelLimits,
-		AllowIps:              nil,
+		AllowIps:              token.AllowIps,
 		Group:                 token.Group,
 		CrossGroupRetry:       token.CrossGroupRetry,
 		Groups:                token.Groups,
 		GroupSwitchCodes:      token.GroupSwitchCodes,
 		GroupSwitchRetryCount: token.GroupSwitchRetryCount,
 	}
+	cleanToken.AllowUserQuotaQuery = request.AllowUserQuotaQuery == nil || *request.AllowUserQuotaQuery
 	cleanToken.NormalizeGroupPolicy()
 	err = cleanToken.Insert()
 	if err != nil {
@@ -234,8 +260,9 @@ func DeleteToken(c *gin.Context) {
 func UpdateToken(c *gin.Context) {
 	userId := c.GetInt("id")
 	statusOnly := c.Query("status_only")
-	token := model.Token{}
-	err := c.ShouldBindJSON(&token)
+	request := tokenQuotaRequest{}
+	err := c.ShouldBindJSON(&request)
+	token := request.Token
 	if err != nil {
 		common.ApiError(c, err)
 		return
@@ -280,7 +307,10 @@ func UpdateToken(c *gin.Context) {
 		cleanToken.UnlimitedQuota = token.UnlimitedQuota
 		cleanToken.ModelLimitsEnabled = token.ModelLimitsEnabled
 		cleanToken.ModelLimits = token.ModelLimits
-		cleanToken.AllowIps = nil
+		cleanToken.AllowIps = token.AllowIps
+		if request.AllowUserQuotaQuery != nil {
+			cleanToken.AllowUserQuotaQuery = *request.AllowUserQuotaQuery
+		}
 		cleanToken.Group = token.Group
 		cleanToken.CrossGroupRetry = token.CrossGroupRetry
 		cleanToken.Groups = token.Groups

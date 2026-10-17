@@ -63,16 +63,16 @@ const SlideOver = ({
         )}
         style={{ width: effectiveWidth }}
       >
-        <div className='flex items-center justify-between gap-3 px-4 md:px-6 pt-5 pb-3 flex-shrink-0'>
+        <div className='flex items-center justify-between gap-3 px-4 md:px-6 pt-5 pb-3 shrink-0'>
           <div className='flex items-center gap-2 min-w-0 flex-1'>{title}</div>
-          <div className='flex items-center gap-2 flex-shrink-0'>
+          <div className='flex items-center gap-2 shrink-0'>
             {headerExtra}
             <IconButton icon={X} onClick={onClose} aria-label='close' />
           </div>
         </div>
         <div className='flex-1 overflow-y-auto'>{children}</div>
         {footer && (
-          <div className='flex items-center justify-end gap-2 px-4 md:px-6 pt-3 pb-4 flex-shrink-0'>
+          <div className='flex items-center justify-end gap-2 px-4 md:px-6 pt-3 pb-4 shrink-0'>
             {footer}
           </div>
         )}

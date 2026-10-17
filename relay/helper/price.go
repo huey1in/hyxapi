@@ -8,6 +8,7 @@ import (
 	"github.com/QuantumNous/new-api/common"
 	"github.com/QuantumNous/new-api/model"
 	relaycommon "github.com/QuantumNous/new-api/relay/common"
+	relayconstant "github.com/QuantumNous/new-api/relay/constant"
 	"github.com/QuantumNous/new-api/relaykit/dto"
 	relaytypes "github.com/QuantumNous/new-api/relaykit/types"
 	"github.com/QuantumNous/new-api/setting/model_setting"
@@ -47,6 +48,9 @@ func ResolvePricingModelName(info *relaycommon.RelayInfo) string {
 	}
 
 	pricingModelName := info.OriginModelName
+	if normalized := ratio_setting.FormatMatchingModelName(pricingModelName); normalized != pricingModelName && !ContainsModelPricing(pricingModelName) {
+		pricingModelName = normalized
+	}
 	geminiRequest, isGeminiRequest := info.Request.(*dto.GeminiChatRequest)
 	if isGeminiRequest &&
 		model_setting.GetGeminiSettings().ThinkingAdapterEnabled &&
@@ -233,6 +237,9 @@ func ModelPriceHelper(c *gin.Context, info *relaycommon.RelayInfo, promptTokens 
 	modelPricing, configured := model.GetModelPricing(pricingModelName)
 	if !configured {
 		return types.PriceData{}, modelPriceNotConfiguredError(pricingModelName, info.UserId)
+	}
+	if (info.RelayMode == relayconstant.RelayModeToolsSearch || info.RelayMode == relayconstant.RelayModeToolsFetch) && modelPricing.BillingType != model.ModelPricingBillingRequest {
+		return types.PriceData{}, fmt.Errorf("%s requires per-request pricing (recommended USD 0.00075 per request)", pricingModelName)
 	}
 	groupRatioInfo := HandleGroupRatio(c, info)
 	pd := applyDirectSchedule(modelPricing, groupRatioInfo)

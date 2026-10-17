@@ -156,7 +156,10 @@ type RelayInfo struct {
 	// It is surfaced onto the consume/task log's admin_info for auditing.
 	QuotaClamp *common.QuotaClamp
 
-	Request dto.Request
+	WebSearchBillingKey string
+	WebFetchBillingKey  string
+	VendorToolUsage     func([]byte) map[string]int `json:"-"`
+	Request             dto.Request
 
 	// RequestConversionChain records request format conversions in order, e.g.
 	// ["openai", "openai_responses"] or ["openai", "claude"].
@@ -228,6 +231,9 @@ func (info *RelayInfo) InitChannelMeta(c *gin.Context) {
 	// Channel identity feeds the converter options snapshot (e.g.
 	// OpenRouterDialect); drop the cache so a cross-channel retry rebuilds it.
 	info.convOptions = nil
+	info.WebSearchBillingKey = ""
+	info.WebFetchBillingKey = ""
+	info.VendorToolUsage = nil
 
 	// reset some fields based on channel meta
 	// 重置某些字段，例如模型名称等
@@ -573,6 +579,10 @@ func GenRelayInfo(c *gin.Context, relayFormat types.RelayFormat, request dto.Req
 			return GenRelayInfoAlphaSearch(c, request), nil
 		}
 		return nil, errors.New("request is not a AlphaSearchRequest")
+	case types.RelayFormatDeepSeekTools:
+		info = genBaseRelayInfo(c, request)
+		info.RelayMode = relayconstant.Path2RelayMode(c.Request.URL.Path)
+		info.RelayFormat = relayFormat
 	case types.RelayFormatTask:
 		info = genBaseRelayInfo(c, nil)
 		info.TaskRelayInfo = &TaskRelayInfo{}
@@ -785,7 +795,10 @@ func (info *RelayInfo) ConvOptions() *convmeta.Options {
 			ThinkingAdapterBudgetTokensPercentage: geminiSettings.ThinkingAdapterBudgetTokensPercentage,
 			FunctionCallThoughtSignatureEnabled:   geminiSettings.FunctionCallThoughtSignatureEnabled,
 			SupportsImagine:                       model_setting.IsGeminiModelSupportImagine,
-			SafetySetting:                         model_setting.GetGeminiSafetySetting,
+			SupportsJSONSchema: func(modelName string) bool {
+				return info.GetChannelType() == constant.ChannelTypeVertexAi || model_setting.GetGeminiVersionSetting(modelName) != "v1"
+			},
+			SafetySetting: model_setting.GetGeminiSafetySetting,
 		},
 		OpenRouterDialect:      info != nil && info.GetChannelType() == constant.ChannelTypeOpenRouter,
 		PreserveThinkingSuffix: model_setting.ShouldPreserveThinkingSuffix,

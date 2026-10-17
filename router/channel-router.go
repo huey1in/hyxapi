@@ -39,6 +39,8 @@ func registerChannelRoutes(apiRouter *gin.RouterGroup) {
 // channelPermissionRoutes 表驱动地声明渠道接口与所需权限。新增渠道接口时，
 // 在 controller 补齐 handler 后向此表追加一行即可，无需改动中间件逻辑。
 var channelPermissionRoutes = []permissionRoute{
+	{method: http.MethodPut, path: "/priority", permission: authz.ChannelWrite, handler: controller.UpdateChannelPriorities},
+	{method: http.MethodPut, path: "/priority/move", permission: authz.ChannelWrite, handler: controller.MoveChannelPriority},
 	{method: http.MethodGet, path: "/", permission: authz.ChannelRead, handler: controller.GetAllChannels},
 	{method: http.MethodGet, path: "/search", permission: authz.ChannelRead, handler: controller.SearchChannels},
 	{method: http.MethodGet, path: "/models", permission: authz.ChannelRead, handler: controller.ChannelListModels},

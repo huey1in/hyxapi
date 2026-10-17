@@ -10,7 +10,7 @@ Pagination is client-side because the editor combines persisted `model_pricing` 
 
 ## Upstream Source and Mapping
 
-The backend fetches `https://models.dev/api.json` with a bounded timeout and response-size limit. It parses provider model costs and maps them into Routify's direct price schema:
+The backend fetches `https://models.dev/api.json` with a bounded timeout and response-size limit. It parses provider model costs and maps them into Hyxware's direct price schema:
 
 - `input` -> `input_price`
 - `output` -> `output_price`

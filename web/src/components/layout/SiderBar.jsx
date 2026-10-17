@@ -85,7 +85,7 @@ const SiderBar = ({ preview = false, previewActive = '/console' }) => {
                 item.to === previewActive ? 'bg-ui-bg-subtle font-medium text-ui-text' : 'text-ui-text',
               )}
             >
-              <span className='relative flex-shrink-0'><Icon size={22} /></span>
+              <span className='relative shrink-0'><Icon size={22} /></span>
               {!collapsed && <span>{t(item.label)}</span>}
             </div>
           );
@@ -106,7 +106,7 @@ const SiderBar = ({ preview = false, previewActive = '/console' }) => {
               )
             }
           >
-            <span className='relative flex-shrink-0'>
+            <span className='relative shrink-0'>
               <Icon size={isMobile ? 20 : 22} />
               {item.icon === Bell && unreadNotices > 0 && (
                 <span className='absolute -top-1 -right-1 w-2 h-2 rounded-full bg-red-500' />
@@ -142,7 +142,7 @@ const SiderBar = ({ preview = false, previewActive = '/console' }) => {
 
   return (
     <aside
-      className='relative flex-shrink-0 h-full flex flex-col border-r border-ui-divider'
+      className='relative shrink-0 h-full flex flex-col border-r border-ui-divider'
       style={{
         width: collapsed ? COLLAPSED : EXPANDED,
         transition: 'width 0.2s cubic-bezier(0.16, 1, 0.3, 1)',
@@ -169,7 +169,7 @@ const SiderBar = ({ preview = false, previewActive = '/console' }) => {
                   item.to === previewActive ? 'bg-ui-bg-subtle font-medium text-ui-text' : 'text-ui-text',
                 )}
               >
-                <span className='relative flex-shrink-0'><Icon size={22} /></span>
+                <span className='relative shrink-0'><Icon size={22} /></span>
                 {!collapsed && <span>{t(item.label)}</span>}
               </div>
             );
@@ -188,7 +188,7 @@ const SiderBar = ({ preview = false, previewActive = '/console' }) => {
                 )
               }
             >
-              <span className='relative flex-shrink-0'>
+              <span className='relative shrink-0'>
                 <Icon size={22} />
                 {item.icon === Bell && unreadNotices > 0 && (
                   <span className='absolute -top-1 -right-1 w-2 h-2 rounded-full bg-red-500' />

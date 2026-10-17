@@ -43,6 +43,9 @@ func (l *InMemoryRateLimiter) clearExpiredItems() {
 
 // Request parameter duration's unit is seconds
 func (l *InMemoryRateLimiter) Request(key string, maxRequestNum int, duration int64) bool {
+	if maxRequestNum <= 0 {
+		return true
+	}
 	l.mutex.Lock()
 	defer l.mutex.Unlock()
 	// [old <-- new]
@@ -67,4 +70,16 @@ func (l *InMemoryRateLimiter) Request(key string, maxRequestNum int, duration in
 		*(l.store[key]) = append(*(l.store[key]), now)
 	}
 	return true
+}
+
+// Check reads a bucket without adding a request. Success-only limits record a
+// request after the handler succeeds rather than consuming quota on failures.
+func (l *InMemoryRateLimiter) Check(key string, maxRequestNum int, duration int64) bool {
+	if maxRequestNum <= 0 {
+		return true
+	}
+	l.mutex.Lock()
+	defer l.mutex.Unlock()
+	queue, ok := l.store[key]
+	return !ok || len(*queue) < maxRequestNum || time.Now().Unix()-(*queue)[0] >= duration
 }

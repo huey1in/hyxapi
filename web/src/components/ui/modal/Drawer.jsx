@@ -57,7 +57,7 @@ const Drawer = ({
         style={{ [p.sizeKey]: size }}
       >
         {title && (
-          <div className='flex items-center justify-between gap-3 px-5 pt-4 pb-2 flex-shrink-0'>
+          <div className='flex items-center justify-between gap-3 px-5 pt-4 pb-2 shrink-0'>
             <div className='text-base font-semibold text-ui-text'>{title}</div>
             <IconButton icon={X} onClick={onClose} aria-label='close' />
           </div>

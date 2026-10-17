@@ -15,6 +15,7 @@ import (
 	"github.com/QuantumNous/new-api/oauth"
 	"github.com/QuantumNous/new-api/setting"
 	"github.com/QuantumNous/new-api/setting/console_setting"
+	"github.com/QuantumNous/new-api/setting/log_setting"
 	"github.com/QuantumNous/new-api/setting/operation_setting"
 	"github.com/QuantumNous/new-api/setting/system_setting"
 
@@ -74,12 +75,16 @@ func GetStatus(c *gin.Context) {
 		"epay_min_topup":              operation_setting.MinTopUp,
 		"topup_preset_amounts":        operation_setting.TopUpPresetAmounts,
 		"quota_per_unit":              common.QuotaPerUnit,
+		"quota_remind_enabled":        common.QuotaRemindEnabled,
+		"quota_remind_threshold":      common.QuotaRemindThreshold,
 		// 兼容旧前端：保留 display_in_currency，同时提供新的 quota_display_type
 		"display_in_currency":           operation_setting.IsCurrencyDisplay(),
 		"quota_display_type":            operation_setting.GetQuotaDisplayType(),
 		"custom_currency_symbol":        operation_setting.GetGeneralSetting().CustomCurrencySymbol,
 		"custom_currency_exchange_rate": operation_setting.GetGeneralSetting().CustomCurrencyExchangeRate,
 		"enable_batch_update":           common.BatchUpdateEnabled,
+		"log_export_enabled":            log_setting.GetSetting().UserExportEnabled,
+		"log_max_range_days":            log_setting.GetSetting().MaxRangeDays,
 		"enable_data_export":            common.DataExportEnabled,
 		"data_export_default_time":      common.DataExportDefaultTime,
 		"usd_exchange_rate":             operation_setting.USDExchangeRate,

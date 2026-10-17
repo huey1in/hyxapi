@@ -19,6 +19,7 @@ import (
 )
 
 type textQuotaSummary struct {
+	ToolCalls                map[string]*relaycommon.BuildInToolInfo
 	PromptTokens             int
 	CompletionTokens         int
 	TotalTokens              int
@@ -71,7 +72,7 @@ func (summary textQuotaSummary) hasBillableUsage() bool {
 		summary.CacheCreationTokens > 0 || summary.ImageTokens > 0 ||
 		summary.AudioTokens > 0 || summary.AudioOutputTokens > 0 ||
 		summary.WebSearchCallCount > 0 || summary.ClaudeWebSearchCallCount > 0 ||
-		summary.FileSearchCallCount > 0 || summary.ImageGenerationCallPrice > 0
+		summary.FileSearchCallCount > 0 || summary.ImageGenerationCallPrice > 0 || len(summary.ToolCalls) > 0
 }
 
 func calculateTextQuotaSummary(ctx *gin.Context, relayInfo *relaycommon.RelayInfo, usage *dto.Usage) textQuotaSummary {
@@ -142,6 +143,20 @@ func calculateTextQuotaSummary(ctx *gin.Context, relayInfo *relaycommon.RelayInf
 	if summary.ClaudeWebSearchCallCount > 0 {
 		summary.ClaudeWebSearchPrice = operation_setting.GetClaudeWebSearchPricePerThousand()
 		toolQuota = toolQuota.Add(decimal.NewFromFloat(summary.ClaudeWebSearchPrice).Mul(decimal.NewFromInt(int64(summary.ClaudeWebSearchCallCount))).Div(decimal.NewFromInt(1000)))
+	}
+	if relayInfo.ResponsesUsageInfo != nil {
+		summary.ToolCalls = map[string]*relaycommon.BuildInToolInfo{}
+		for name, tool := range relayInfo.ResponsesUsageInfo.BuiltInTools {
+			if tool == nil || tool.CallCount <= 0 || name == dto.BuildInToolWebSearchPreview || name == dto.BuildInToolFileSearch || name == dto.BuildInToolImageGeneration {
+				continue
+			}
+			price := operation_setting.GetToolPriceForModel(name, summary.ModelName)
+			if price <= 0 {
+				continue
+			}
+			summary.ToolCalls[name] = tool
+			toolQuota = toolQuota.Add(decimal.NewFromFloat(price).Mul(decimal.NewFromInt(int64(tool.CallCount))).Div(decimal.NewFromInt(1000)))
+		}
 	}
 	if ctx.GetBool("image_generation_call") {
 		summary.ImageGenerationCallPrice = operation_setting.GetGPTImage1PriceOnceCall(ctx.GetString("image_generation_call_quality"), ctx.GetString("image_generation_call_size"))
@@ -271,6 +286,9 @@ func PostTextConsumeQuota(ctx *gin.Context, relayInfo *relaycommon.RelayInfo, us
 		other["image"] = true
 		other["image_price"] = summary.ImagePrice
 		other["image_output"] = summary.ImageTokens
+	}
+	if len(summary.ToolCalls) > 0 {
+		other["tool_calls"] = summary.ToolCalls
 	}
 	if summary.WebSearchCallCount > 0 {
 		other["web_search"] = true

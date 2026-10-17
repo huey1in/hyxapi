@@ -34,9 +34,9 @@ export function isRoot() {
 }
 
 export function getSystemName() {
-  // Brand is hardcoded for the Routify build — do not read from server-side
+  // Brand is hardcoded for the Hyxware build — do not read from server-side
   // Option/SystemName, which other operators may have set to "New API" etc.
-  return 'Routify';
+  return 'Hyxware';
 }
 
 export function getUserIdFromLocalStorage() {
@@ -47,8 +47,7 @@ export function getUserIdFromLocalStorage() {
 }
 
 export function getFooterHTML() {
-  // Brand is hardcoded for the TokenC build — fall through to the default
-  // "基于 New API" footer rendered in components/layout/Footer.jsx.
+  // Use the built-in footer for the Hyxware build.
   return null;
 }
 

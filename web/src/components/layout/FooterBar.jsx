@@ -11,7 +11,7 @@ const FooterBar = () => {
   const [isMobile, setIsMobile] = useState(false);
   const [statusState] = useContext(StatusContext);
   const status = statusState?.status || {};
-  const systemName = getSystemName() || 'Routify';
+  const systemName = getSystemName() || 'Hyxware';
   const docsLink = status?.docs_link || '';
   const year = new Date().getFullYear();
 

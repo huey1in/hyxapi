@@ -18,7 +18,7 @@ const Skeleton = ({
   const base = 'bg-ui-bg-subtle animate-pulse';
   const radius =
     shape === 'circle' ? 'rounded-full'
-    : shape === 'line' ? 'rounded'
+    : shape === 'line' ? 'rounded-sm'
     : rounded || 'rounded-md';
 
   const h = height || (shape === 'line' ? '0.75em' : shape === 'circle' ? width : '1rem');

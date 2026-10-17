@@ -103,7 +103,7 @@ func TestConvertOpenAIResponsesRequestToGeminiFunctionCallConversation(t *testin
 	assert.Equal(t, map[string]interface{}{"ok": true}, got.Contents[1].Parts[0].FunctionResponse.Response)
 }
 
-func TestConvertOpenAIResponsesRequestToGeminiSkipsCustomToolCalls(t *testing.T) {
+func TestConvertOpenAIResponsesRequestToGeminiPreservesCustomToolHistory(t *testing.T) {
 	got := mustConvertResponsesToGemini(t, dto.OpenAIResponsesRequest{
 		Model: "gemini-test",
 		Input: mustGeminiRawMessage(t, []map[string]any{
@@ -141,16 +141,18 @@ func TestConvertOpenAIResponsesRequestToGeminiSkipsCustomToolCalls(t *testing.T)
 	})
 
 	assert.Empty(t, got.GetTools())
-	require.Len(t, got.Contents, 2)
+	require.Len(t, got.Contents, 3)
 	assert.Equal(t, "model", got.Contents[0].Role)
-	require.Len(t, got.Contents[0].Parts, 1)
-	assert.Equal(t, "before custom", got.Contents[0].Parts[0].Text)
-	assert.Nil(t, got.Contents[0].Parts[0].FunctionCall)
+	require.Len(t, got.Contents[0].Parts, 2)
+	require.NotNil(t, got.Contents[0].Parts[0].FunctionCall)
+	assert.Equal(t, "apply_patch", got.Contents[0].Parts[0].FunctionCall.FunctionName)
+	assert.Equal(t, "before custom", got.Contents[0].Parts[1].Text)
 
 	assert.Equal(t, "user", got.Contents[1].Role)
-	require.Len(t, got.Contents[1].Parts, 1)
-	assert.Equal(t, "next turn", got.Contents[1].Parts[0].Text)
-	assert.Nil(t, got.Contents[1].Parts[0].FunctionResponse)
+	require.Len(t, got.Contents[1].Parts, 2)
+	assert.Equal(t, map[string]any{"content": "ok"}, got.Contents[1].Parts[0].FunctionResponse.Response)
+	assert.Equal(t, map[string]any{"content": "legacy custom output"}, got.Contents[1].Parts[1].FunctionResponse.Response)
+	assert.Equal(t, "next turn", got.Contents[2].Parts[0].Text)
 }
 
 func mustConvertResponsesToGemini(t *testing.T, req dto.OpenAIResponsesRequest) *dto.GeminiChatRequest {

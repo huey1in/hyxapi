@@ -58,7 +58,7 @@ const Combobox = ({
         <span className={cn('truncate', !current && 'text-ui-text-3')}>
           {current?.label ?? placeholder}
         </span>
-        <ChevronDown size={14} className={cn('text-ui-text-3 flex-shrink-0 transition-transform', open && 'rotate-180')} />
+        <ChevronDown size={14} className={cn('text-ui-text-3 shrink-0 transition-transform', open && 'rotate-180')} />
       </button>
 
       {open && (
@@ -74,7 +74,7 @@ const Combobox = ({
                 value={keyword}
                 onChange={(e) => setKeyword(e.target.value)}
                 placeholder={searchPlaceholder}
-                className='flex-1 bg-transparent outline-none text-sm py-1 placeholder:text-ui-text-3'
+                className='flex-1 bg-transparent outline-hidden text-sm py-1 placeholder:text-ui-text-3'
               />
             </div>
           </div>
@@ -95,7 +95,7 @@ const Combobox = ({
                     )}
                   >
                     <span className='truncate'>{o.label}</span>
-                    {sel && <Check size={14} className='flex-shrink-0 text-ui-text-2' />}
+                    {sel && <Check size={14} className='shrink-0 text-ui-text-2' />}
                   </button>
                 );
               })

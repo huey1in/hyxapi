@@ -101,7 +101,13 @@ func SyncChannelCache(frequency int) {
 func GetRandomSatisfiedChannel(group string, model string, retry int, excludeChannels []int) (*Channel, error) {
 	// if memory cache is disabled, get channel directly from database
 	if !common.MemoryCacheEnabled {
-		return GetChannel(group, model, retry)
+		channel, err := GetChannel(group, model, retry)
+		if channel == nil {
+			if normalized := ratio_setting.FormatMatchingModelName(model); normalized != model {
+				return GetChannel(group, normalized, retry)
+			}
+		}
+		return channel, err
 	}
 
 	channelSyncLock.RLock()

@@ -85,7 +85,7 @@ const MultiSelect = ({
           ))}
           {value.length > 4 && <span className='text-[11px] text-ui-text-3'>+{value.length - 4}</span>}
         </span>
-        <ChevronDown size={14} className={cn('text-ui-text-3 flex-shrink-0 transition-transform', open && 'rotate-180')} />
+        <ChevronDown size={14} className={cn('text-ui-text-3 shrink-0 transition-transform', open && 'rotate-180')} />
       </button>
 
       {open && (
@@ -102,7 +102,7 @@ const MultiSelect = ({
                   value={keyword}
                   onChange={(e) => setKeyword(e.target.value)}
                   placeholder={searchPlaceholder}
-                  className='flex-1 bg-transparent outline-none text-sm py-1 placeholder:text-ui-text-3'
+                  className='flex-1 bg-transparent outline-hidden text-sm py-1 placeholder:text-ui-text-3'
                 />
               </div>
             </div>
@@ -124,7 +124,7 @@ const MultiSelect = ({
                     )}
                   >
                     <span className='truncate'>{o.label}</span>
-                    {sel && <Check size={14} className='flex-shrink-0 text-ui-text-2' />}
+                    {sel && <Check size={14} className='shrink-0 text-ui-text-2' />}
                   </button>
                 );
               })

@@ -20,7 +20,7 @@ const Radio = ({ checked, onChange, disabled, label, name }) => (
       onClick={() => !disabled && onChange?.()}
       name={name}
       className={cn(
-        'inline-flex items-center justify-center w-[18px] h-[18px] rounded-full border transition-colors flex-shrink-0',
+        'inline-flex items-center justify-center w-[18px] h-[18px] rounded-full border transition-colors shrink-0',
         checked ? 'border-ui-accent' : 'border-ui-border hover:border-ui-text-3',
         FOCUS_RING,
       )}

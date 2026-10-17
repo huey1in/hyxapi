@@ -30,7 +30,7 @@ const Switch = React.forwardRef(function Switch(
       disabled={disabled}
       onClick={() => !disabled && onChange?.(!checked)}
       className={cn(
-        'relative inline-flex items-center flex-shrink-0 rounded-full transition-colors duration-200',
+        'relative inline-flex items-center shrink-0 rounded-full transition-colors duration-200',
         s.track,
         checked ? 'bg-ui-accent' : 'bg-ui-bg-subtle',
         !checked && 'ring-1 ring-inset ring-ui-border',

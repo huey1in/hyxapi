@@ -112,3 +112,20 @@ const (
 	MsgDistributorGetChannelFailed    = "distributor.get_channel_failed"
 	MsgDistributorNoAvailableChannel  = "distributor.no_available_channel"
 )
+
+const (
+	MsgNotifyQuotaLowTitle             = "notify.quota_low_title"
+	MsgNotifySubscriptionQuotaLowTitle = "notify.subscription_quota_low_title"
+	MsgNotifyQuotaLowBark              = "notify.quota_low_bark"
+	MsgNotifyQuotaLowGotify            = "notify.quota_low_gotify"
+	MsgNotifyQuotaLowEmail             = "notify.quota_low_email"
+)
+
+const (
+	MsgChannelNotifyDisabledSubject = "channel.notify_disabled_subject"
+	MsgChannelNotifyDisabledContent = "channel.notify_disabled_content"
+	MsgChannelNotifyEnabledSubject  = "channel.notify_enabled_subject"
+	MsgChannelNotifyEnabledContent  = "channel.notify_enabled_content"
+	MsgChannelTestCompletedSubject  = "channel.test_completed_subject"
+	MsgChannelTestCompletedContent  = "channel.test_completed_content"
+)

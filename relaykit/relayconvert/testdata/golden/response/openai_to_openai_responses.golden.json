@@ -27,11 +27,11 @@
       "id": "chatcmpl-fixed_reasoning_0",
       "status": "completed",
       "role": "",
-      "content": [
+      "content": null,
+      "summary": [
         {
           "type": "summary_text",
-          "text": "Deep thought.",
-          "annotations": null
+          "text": "Deep thought."
         }
       ],
       "quality": "",

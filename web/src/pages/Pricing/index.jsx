@@ -131,7 +131,7 @@ const Pricing = ({ preview = false }) => {
         <div className='flex flex-col'>
           <div className='flex items-start justify-between gap-2'>
             <div className='flex items-center gap-2 min-w-0'>
-              <span className='flex-shrink-0'>{getLobeHubIcon(getModelIcon(row.model_name, row.vendor_icon), 22)}</span>
+              <span className='shrink-0'>{getLobeHubIcon(getModelIcon(row.model_name, row.vendor_icon), 22)}</span>
               <div className='min-w-0'>
                 <div className='font-medium text-ui-text truncate'>{row.model_name}</div>
                 {row.vendor_name && <div className='text-xs text-ui-text-3 truncate'>{row.vendor_name}</div>}

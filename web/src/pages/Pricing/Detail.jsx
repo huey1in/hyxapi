@@ -170,7 +170,7 @@ const PricingDetail = () => {
             <Card>
               <div className='flex flex-col gap-4'>
                 <div className='flex items-start gap-4'>
-                  <div className='flex-shrink-0 w-14 h-14 rounded-2xl bg-ui-bg-subtle flex items-center justify-center'>
+                  <div className='shrink-0 w-14 h-14 rounded-2xl bg-ui-bg-subtle flex items-center justify-center'>
                     {getLobeHubIcon(getModelIcon(model.model_name, model.vendor_icon), 30)}
                   </div>
                   <div className='min-w-0 flex-1'>
@@ -285,7 +285,7 @@ const PricingDetail = () => {
                     <React.Fragment key={sec.key}>
                       {i > 0 && <Divider spacing='sm' />}
                       <div className='flex flex-col gap-2 sm:flex-row sm:gap-4'>
-                        <div className='sm:w-32 sm:flex-shrink-0 sm:pt-1'>
+                        <div className='sm:w-32 sm:shrink-0 sm:pt-1'>
                           <SectionLabel>{sec.label}</SectionLabel>
                         </div>
                         <div className='flex flex-wrap gap-1.5'>

@@ -1,12 +1,12 @@
 {
   "translation": {
-    "auth.login.title": "欢迎使用 Routify",
+    "auth.login.title": "欢迎使用 Hyxware",
     "auth.login.subtitle": "一个入口，连接所有模型",
     "auth.login.submit": "登录",
     "auth.login.action": "登录",
     "auth.login.forgotPassword": "忘记密码？",
     "auth.login.noAccount": "还没有账户？",
-    "auth.register.title": "创建 Routify 账户",
+    "auth.register.title": "创建 Hyxware 账户",
     "auth.register.subtitle": "几分钟内开始调用模型",
     "auth.register.submit": "创建账户",
     "auth.register.action": "注册",
@@ -38,7 +38,7 @@
     "auth.errors.networkFailed": "网络请求失败",
     "auth.errors.emailRequired": "请输入邮箱地址",
     "auth.errors.sendFailed": "发送失败",
-    "auth.legalPrefix": "继续即表示你同意 Routify 的",
+    "auth.legalPrefix": "继续即表示你同意 Hyxware 的",
     "auth.terms": "服务条款",
     "auth.legalAnd": "和",
     "auth.privacy": "隐私政策",

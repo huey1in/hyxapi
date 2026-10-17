@@ -13,8 +13,8 @@ new-api
 new-api.exe
 main.exe
 main
-routify-local.exe
-routify-local.exe~
+hyxware-local.exe
+hyxware-local.exe~
 data/
 test_redis
 

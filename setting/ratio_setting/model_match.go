@@ -1,6 +1,9 @@
 package ratio_setting
 
-import "strings"
+import (
+	"github.com/QuantumNous/new-api/relaykit/relayconvert/reasoning"
+	"strings"
+)
 
 func normalizeThinkingBudgetModel(name, prefix, wildcard string) string {
 	if strings.HasPrefix(name, prefix) && strings.Contains(name, "-thinking-") {
@@ -13,6 +16,7 @@ func normalizeThinkingBudgetModel(name, prefix, wildcard string) string {
 // ability matching. It is unrelated to pricing and remains here because the
 // channel selection layer already depends on this package for group settings.
 func FormatMatchingModelName(name string) string {
+	name = reasoning.DeepSeekRoutingModel(name)
 	switch {
 	case strings.HasPrefix(name, "gemini-2.5-flash-lite"):
 		name = normalizeThinkingBudgetModel(name, "gemini-2.5-flash-lite", "gemini-2.5-flash-lite-thinking-*")

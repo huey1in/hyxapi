@@ -1,5 +1,5 @@
 /**
- * Routify UI library — 业务端统一从此处 import。
+ * Hyxware UI library — 业务端统一从此处 import。
  *
  *   import { Button, Card, Modal } from '@/components/ui';
  */

@@ -168,7 +168,7 @@ const Home = () => {
   return (
     <div className='home-page studio-home cursor-home'>
       <header className='home-nav'>
-        <Link to='/' className='home-brand'>Routify</Link>
+        <Link to='/' className='home-brand'>Hyxware</Link>
         <nav className={`home-nav-links${menuOpen ? ' is-open' : ''}`}>
           <Link to='/console'>{en ? 'Console' : '控制台'}</Link>
           {isLoggedIn ? (
@@ -190,18 +190,18 @@ const Home = () => {
       <main>
         <section className='studio-hero'>
           <div className='studio-hero-copy'>
-            <h1>{en ? 'Routify is the unified model gateway for AI applications.' : 'Routify 是面向 AI 应用的统一模型网关。'}</h1>
+            <h1>{en ? 'Hyxware is the unified model gateway for AI applications.' : 'Hyxware 是面向 AI 应用的统一模型网关。'}</h1>
             <div className='studio-actions'>
-              <Link to='/auth?mode=register'>{en ? 'Get started with Routify' : '开始使用 Routify'} <ArrowRight size={16} /></Link>
+              <Link to='/auth?mode=register'>{en ? 'Get started with Hyxware' : '开始使用 Hyxware'} <ArrowRight size={16} /></Link>
             </div>
           </div>
-          <div className='hero-side-note'><span>OPENAI COMPATIBLE</span><code>https://api.routify.dev/v1</code></div>
+          <div className='hero-side-note'><span>OPENAI COMPATIBLE</span><code>{`${window.location.origin}/v1`}</code></div>
         </section>
 
-        <section id='inside' className='product-frame' aria-label='Routify 控制台预览'>
+        <section id='inside' className='product-frame' aria-label='Hyxware 控制台预览'>
           <div className='product-frame-bar'>
             <div className='mac-window-controls' aria-hidden='true'><i /><i /><i /></div>
-            <BrowserAddress>routifyapi.com/console</BrowserAddress>
+            <BrowserAddress>{`${window.location.host}/console`}</BrowserAddress>
             <span aria-hidden='true' />
           </div>
           <div className='product-shell'>
@@ -236,12 +236,12 @@ const Home = () => {
             <p>{en ? 'Compare every provider for the same model. Choose lower-cost routes with prices below official rates.' : '同一模型接入不同渠道，每项价格清晰可查。灵活选择更低成本的线路，价格低于官方。'}</p>
             <Link to='/console/pricing'>{en ? 'View model pricing' : '查看模型价格'} <ArrowRight size={15} /></Link>
           </div>
-          <div className='marketplace-stage' aria-label='Routify 模型广场预览'>
+          <div className='marketplace-stage' aria-label='Hyxware 模型广场预览'>
             <div className='marketplace-preview-mat'>
               <div className='product-frame marketplace-frame'>
                 <div className='product-frame-bar'>
                   <div className='mac-window-controls' aria-hidden='true'><i /><i /><i /></div>
-                  <BrowserAddress>routifyapi.com/console/pricing</BrowserAddress>
+                  <BrowserAddress>{`${window.location.host}/console/pricing`}</BrowserAddress>
                   <span aria-hidden='true' />
                 </div>
                 <div className='product-shell'>
@@ -255,12 +255,12 @@ const Home = () => {
 
         <div className='feature-showcase-stack'>
         <section className='feature-showcase api-showcase' aria-labelledby='api-showcase-title'>
-          <div className='feature-stage feature-stage-right' aria-label='Routify API 页面预览'>
+          <div className='feature-stage feature-stage-right' aria-label='Hyxware API 页面预览'>
             <div className='feature-preview-mat'>
               <div className='product-frame console-feature-frame api-feature-frame'>
                 <div className='product-frame-bar'>
                   <div className='mac-window-controls' aria-hidden='true'><i /><i /><i /></div>
-                  <BrowserAddress>routifyapi.com/console/token</BrowserAddress>
+                  <BrowserAddress>{`${window.location.host}/console/token`}</BrowserAddress>
                   <span aria-hidden='true' />
                 </div>
                 <div className='product-shell'>
@@ -283,12 +283,12 @@ const Home = () => {
             <p>{en ? 'Track model, provider, tokens, latency, and actual cost in one complete request log.' : '模型、渠道、Token、延迟和实际成本逐条记录，问题定位与费用核对都回到同一份日志。'}</p>
             <Link to='/console/log'>{en ? 'View request logs' : '查看调用日志'} <ArrowRight size={15} /></Link>
           </div>
-          <div className='feature-stage feature-stage-left' aria-label='Routify 日志页面预览'>
+          <div className='feature-stage feature-stage-left' aria-label='Hyxware 日志页面预览'>
             <div className='feature-preview-mat'>
               <div className='product-frame console-feature-frame log-feature-frame'>
                 <div className='product-frame-bar'>
                   <div className='mac-window-controls' aria-hidden='true'><i /><i /><i /></div>
-                  <BrowserAddress>routifyapi.com/console/log</BrowserAddress>
+                  <BrowserAddress>{`${window.location.host}/console/log`}</BrowserAddress>
                   <span aria-hidden='true' />
                 </div>
                 <div className='product-shell'>
@@ -323,7 +323,7 @@ const Home = () => {
               </div>
               <div className='frontier-visual frontier-price-list' aria-hidden='true'>
                 <div><span>{en ? 'Provider' : '渠道'}</span><span>{en ? 'Input / 1M' : '输入 / 1M'}</span><span>{en ? 'Status' : '状态'}</span></div>
-                <div><strong>Routify A</strong><b>$1.82</b><em>{en ? 'Best price' : '最低价'}</em></div><div><strong>Routify B</strong><b>$2.06</b><em>{en ? 'Available' : '可用'}</em></div><div><strong>{en ? 'Official' : '官方'}</strong><b>$3.00</b><em>{en ? 'Reference' : '参考'}</em></div>
+                <div><strong>Hyxware A</strong><b>$1.82</b><em>{en ? 'Best price' : '最低价'}</em></div><div><strong>Hyxware B</strong><b>$2.06</b><em>{en ? 'Available' : '可用'}</em></div><div><strong>{en ? 'Official' : '官方'}</strong><b>$3.00</b><em>{en ? 'Reference' : '参考'}</em></div>
               </div>
             </article>
             <article className='frontier-card'>
@@ -339,8 +339,8 @@ const Home = () => {
           </div>
         </section>
 
-        <section ref={brandSectionRef} className='studio-closing giant-brand-section' aria-label='Routify'>
-          <div className='giant-brand-word'>Rout<span>ify</span></div>
+        <section ref={brandSectionRef} className='studio-closing giant-brand-section' aria-label='Hyxware'>
+          <div className='giant-brand-word'>Hyx<span>ware</span></div>
         </section>
       </main>
 
@@ -351,7 +351,7 @@ const Home = () => {
           <div><span>{en ? 'Legal' : '法律'}</span>{agreementEnabled ? <button type='button' onClick={() => openLegal('terms')}>{en ? 'Terms of Service' : '服务条款'}</button> : <span className='footer-link-disabled'>{en ? 'Terms of Service' : '服务条款'}</span>}{privacyEnabled ? <button type='button' onClick={() => openLegal('privacy')}>{en ? 'Privacy Policy' : '隐私政策'}</button> : <span className='footer-link-disabled'>{en ? 'Privacy Policy' : '隐私政策'}</span>}</div>
         </div>
         <div className='site-footer-bottom'>
-          <span className='footer-copyright'>© 2026 Routify</span>
+          <span className='footer-copyright'>© 2026 Hyxware</span>
           <span className='footer-status'>{en ? 'Compute services provided by ' : '计算服务由'}<a href='https://www.xunduyun.com/' target='_blank' rel='noopener noreferrer'>{en ? 'Xunduyun' : '迅度云'}</a>{en ? '' : '提供'}</span>
           <div className='footer-controls'>
             <div className='footer-theme-switch' aria-label='主题'>

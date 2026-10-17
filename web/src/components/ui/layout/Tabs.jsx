@@ -31,7 +31,7 @@ const Tabs = ({ items = [], value, onChange, variant = 'underline', size = 'md' 
                 'rounded-lg transition-colors',
                 SIZE_PAD[size].pill,
                 sel
-                  ? 'bg-[var(--page-bg)] text-ui-text shadow-sm'
+                  ? 'bg-[var(--page-bg)] text-ui-text shadow-xs'
                   : 'text-ui-text-2 hover:text-ui-text',
                 it.disabled && 'opacity-50 cursor-not-allowed',
                 FOCUS_RING,

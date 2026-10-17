@@ -81,7 +81,7 @@ const TokenPage = ({ preview = false }) => {
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <span style={{ fontSize: 18, fontWeight: 600, color: 'var(--ui-text)' }}>API keys</span>
           {!preview && <button
-            onClick={() => setEditing({ name: '', unlimited_quota: true, remain_quota: 500000, expired_time: -1, group: '' })}
+            onClick={() => setEditing({ name: '', allow_user_quota_query: true, unlimited_quota: true, remain_quota: 500000, expired_time: -1, group: '' })}
             style={{
               cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 6,
               height: 32, paddingInline: 16, border: '1px solid var(--ui-text)', borderRadius: 24,
@@ -235,13 +235,13 @@ export CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC=1`,
   }
 }`;
 
-  const buildCodexEnv = (key) => `set ROUTIFY_API_KEY=${key}`;
-  const codexConfig = `model_provider = "routify"
+  const buildCodexEnv = (key) => `set HYXWARE_API_KEY=${key}`;
+  const codexConfig = `model_provider = "hyxware"
 
-[model_providers.routify]
-name = "Routify"
+[model_providers.hyxware]
+name = "Hyxware"
 base_url = "${origin}/v1"
-env_key = "ROUTIFY_API_KEY"
+env_key = "HYXWARE_API_KEY"
 wire_api = "responses"`;
   const claudeSettings = buildClaudeSettings(displayKey);
   const fullClaudeSettings = buildClaudeSettings(fullKey);
@@ -368,6 +368,7 @@ const TokenEditModal = ({ open, token, onClose, onSaved }) => {
       const payload = {
         name: form.name.trim(),
         unlimited_quota: form.unlimited_quota,
+        allow_user_quota_query: !!form.allow_user_quota_query,
         remain_quota: form.unlimited_quota ? 0 : Number(form.remain_quota) || 0,
         expired_time: Number(form.expired_time) || -1,
         group: form.groups?.[0] || '[]',
@@ -472,8 +473,13 @@ const TokenEditModal = ({ open, token, onClose, onSaved }) => {
         )}
 
         <div className='flex items-center justify-between'>
-          <span className='text-sm text-ui-text'>不限额度</span>
+            <span className='text-sm text-ui-text'>不限额度</span>
           <Switch checked={!!form.unlimited_quota} onChange={u('unlimited_quota')} />
+        </div>
+
+        <div className='flex items-center justify-between'>
+          <span className='text-sm text-ui-text'>允许此令牌查询账户余额</span>
+          <Switch checked={!!form.allow_user_quota_query} onChange={u('allow_user_quota_query')} />
         </div>
 
         {!form.unlimited_quota && (
@@ -526,7 +532,7 @@ const TokenEditModal = ({ open, token, onClose, onSaved }) => {
             onChange={(e) => u('allow_ips')(e.target.value)}
             placeholder='每行一个 IP 地址，留空则不限制'
             rows={3}
-            className='w-full rounded-lg border border-ui-border bg-transparent px-3 py-2 text-sm text-ui-text resize-none outline-none focus:border-[#999] transition-colors'
+            className='w-full rounded-lg border border-ui-border bg-transparent px-3 py-2 text-sm text-ui-text resize-none outline-hidden focus:border-[#999] transition-colors'
           />
         </div>
       </div>

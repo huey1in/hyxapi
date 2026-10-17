@@ -1,12 +1,10 @@
 import assert from 'node:assert/strict';
-import { after, before, test } from 'node:test';
-import { fileURLToPath } from 'node:url';
-import { createServer } from 'vite';
+import { before, test } from 'node:test';
+import { loadTestModules } from '../../scripts/load-test-modules.mjs';
 
 let editor;
 let helpers;
 let log;
-let server;
 
 before(async () => {
   globalThis.window = {
@@ -17,19 +15,14 @@ before(async () => {
   };
   globalThis.localStorage = globalThis.window.localStorage;
 
-  server = await createServer({
-    root: fileURLToPath(new URL('../..', import.meta.url)),
-    configFile: false,
-    server: { middlewareMode: true },
-    appType: 'custom',
-  });
-  editor = await server.ssrLoadModule('/src/pages/Setting/ModelPricingEditor.jsx');
-  helpers = await server.ssrLoadModule('/src/helpers/utils.jsx');
-  log = await server.ssrLoadModule('/src/pages/Log/index.jsx');
-});
-
-after(async () => {
-  await server?.close();
+  const modules = await loadTestModules([
+    './src/pages/Setting/ModelPricingEditor.jsx',
+    './src/helpers/utils.jsx',
+    './src/pages/Log/index.jsx',
+  ]);
+  editor = modules.entry0;
+  helpers = modules.entry1;
+  log = modules.entry2;
 });
 
 test('saving one pricing row replaces only that row and preserves other drafts', () => {

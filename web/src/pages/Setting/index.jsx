@@ -8,15 +8,16 @@ import { Lock } from 'lucide-react';
 import { orderSettingKeysForSave } from './saveOrder.js';
 import ModelPricingEditor from './ModelPricingEditor.jsx';
 import PermissionEditor from './PermissionEditor.jsx';
+import { quotaToDisplayAmount, displayAmountToQuota } from '../../helpers/quota';
 
 const EMAIL_TEMPLATE_META = {
   EmailTemplateVerification: {
     variables: <>{'{{siteName}}'} 站点名称、{'{{code}}'} 验证码、{'{{expireMinutes}}'} 有效期（分钟）</>,
-    previewValues: { siteName: 'Routify', code: '482913', expireMinutes: '10' },
+    previewValues: { siteName: 'Hyxware', code: '482913', expireMinutes: '10' },
   },
   EmailTemplatePasswordReset: {
     variables: <>{'{{siteName}}'} 站点名称、{'{{resetLink}}'} 重置链接、{'{{expireMinutes}}'} 有效期（分钟）</>,
-    previewValues: { siteName: 'Routify', resetLink: 'https://routifyapi.com/auth/reset?token=example', expireMinutes: '10' },
+    previewValues: { siteName: 'Hyxware', resetLink: `${window.location.origin}/user/reset?email=example%40example.com&token=example`, expireMinutes: '10' },
   },
 };
 
@@ -120,7 +121,7 @@ const TAB_KEYS = {
   limits: [
     'ChannelDisableThreshold', 'AutomaticDisableChannelEnabled', 'AutomaticEnableChannelEnabled',
     'AutomaticDisableKeywords', 'AutomaticDisableStatusCodes', 'AutomaticRetryStatusCodes',
-    'QuotaForNewUser', 'QuotaForInviter', 'QuotaForInvitee', 'PreConsumedQuota', 'QuotaRemindThreshold',
+    'QuotaForNewUser', 'QuotaForInviter', 'QuotaForInvitee', 'PreConsumedQuota', 'QuotaRemindEnabled', 'QuotaRemindThreshold',
     'quota_setting.enable_free_model_pre_consume',
     'ModelRequestRateLimitEnabled', 'ModelRequestRateLimitCount', 'ModelRequestRateLimitDurationMinutes', 'ModelRequestRateLimitSuccessCount',
     'MultiKeyCooldownEnabled', 'MultiKeyCooldownThreshold', 'MultiKeyCooldownWindowMinutes', 'MultiKeyCooldownDurationMinutes',
@@ -143,7 +144,7 @@ const TAB_KEYS = {
     'monitor_setting.auto_test_channel_enabled', 'monitor_setting.auto_test_channel_minutes',
     'monitor_setting.model_health_enabled', 'monitor_setting.model_health_interval_minutes',
     'console_setting.announcements_enabled', 'console_setting.announcements',
-    'log_setting.log_request_body', 'log_setting.log_response_body', 'log_setting.max_body_log_bytes',
+    'log_setting.log_request_body', 'log_setting.log_response_body', 'log_setting.max_body_log_bytes', 'log_setting.user_export_enabled', 'log_setting.max_range_days',
   ],
   performance: ['StreamCacheQueueLength', 'BatchUpdateEnabled', 'BatchUpdateInterval', 'MemoryCacheEnabled', 'CacheKeyPrefix',
     'performance_setting.disk_cache_enabled', 'performance_setting.disk_cache_threshold_mb',
@@ -168,7 +169,7 @@ const TAB_SECTIONS = {
   ],
   limits: [
     { title: '渠道管理', keys: ['ChannelDisableThreshold', 'AutomaticDisableChannelEnabled', 'AutomaticEnableChannelEnabled', 'AutomaticDisableKeywords', 'AutomaticDisableStatusCodes', 'AutomaticRetryStatusCodes'] },
-    { title: '额度', keys: ['QuotaForNewUser', 'QuotaForInviter', 'QuotaForInvitee', 'PreConsumedQuota', 'QuotaRemindThreshold', 'quota_setting.enable_free_model_pre_consume'] },
+    { title: '额度', keys: ['QuotaForNewUser', 'QuotaForInviter', 'QuotaForInvitee', 'PreConsumedQuota', 'QuotaRemindEnabled', 'QuotaRemindThreshold', 'quota_setting.enable_free_model_pre_consume'] },
     { title: '请求限速', keys: ['ModelRequestRateLimitEnabled', 'ModelRequestRateLimitCount', 'ModelRequestRateLimitDurationMinutes', 'ModelRequestRateLimitSuccessCount'] },
     { title: '多 Key 冷却', gateKey: 'MultiKeyCooldownEnabled', keys: ['MultiKeyCooldownEnabled', 'MultiKeyCooldownThreshold', 'MultiKeyCooldownWindowMinutes', 'MultiKeyCooldownDurationMinutes'] },
     { title: '敏感词', keys: ['CheckSensitiveEnabled', 'CheckSensitiveOnPromptEnabled', 'StopOnSensitiveEnabled', 'SensitiveWords'] },
@@ -183,6 +184,7 @@ const TAB_SECTIONS = {
     { title: '渠道监控', keys: ['monitor_setting.auto_test_channel_enabled', 'monitor_setting.auto_test_channel_minutes'] },
     { title: '模型健康检测', keys: ['monitor_setting.model_health_enabled', 'monitor_setting.model_health_interval_minutes'] },
     { title: '前台展示', keys: ['console_setting.announcements_enabled', 'console_setting.announcements'] },
+    { title: '日志查询与导出', keys: ['log_setting.user_export_enabled', 'log_setting.max_range_days'] },
     { title: '日志内容记录', gateKey: 'log_setting.log_request_body', keys: ['log_setting.log_request_body', 'log_setting.log_response_body', 'log_setting.max_body_log_bytes'] },
   ],
   pricing: [
@@ -211,6 +213,7 @@ const BOOL_KEYS = new Set([
   'TelegramOAuthEnabled', 'TurnstileCheckEnabled',
   'RegisterEnabled', 'PasswordRegisterEnabled', 'PasswordLoginEnabled',
   'AutomaticDisableChannelEnabled', 'AutomaticEnableChannelEnabled',
+  'QuotaRemindEnabled',
   'DataExportEnabled', 'LogConsumeEnabled',
   'BatchUpdateEnabled', 'MemoryCacheEnabled',
   'DisplayTokenStatEnabled',
@@ -233,7 +236,7 @@ const BOOL_KEYS = new Set([
   'monitor_setting.model_health_enabled',
   'EpayEnabled',
   'AlipayEnabled',
-  'log_setting.log_request_body', 'log_setting.log_response_body',
+  'log_setting.log_request_body', 'log_setting.log_response_body', 'log_setting.user_export_enabled',
 ]);
 const NUMBER_KEYS = new Set([
   'ChannelDisableThreshold',
@@ -253,7 +256,7 @@ const NUMBER_KEYS = new Set([
   'performance_setting.disk_cache_threshold_mb', 'performance_setting.disk_cache_max_size_mb',
   'performance_setting.monitor_cpu_threshold', 'performance_setting.monitor_memory_threshold', 'performance_setting.monitor_disk_threshold',
   'Price', 'MinTopUp',
-  'log_setting.max_body_log_bytes',
+  'log_setting.max_body_log_bytes', 'log_setting.max_range_days',
 ]);
 
 const LABELS = {
@@ -333,7 +336,8 @@ const LABELS = {
   QuotaForInviter: '邀请人奖励额度',
   QuotaForInvitee: '被邀请人奖励额度',
   PreConsumedQuota: '预扣费额度',
-  QuotaRemindThreshold: '额度提醒阈值',
+  QuotaRemindEnabled: '低余额提醒',
+  QuotaRemindThreshold: '余额提醒阈值（当前显示货币）',
   DataExportEnabled: '数据看板',
   DataExportInterval: '数据导出间隔(分钟)',
   DataExportDefaultTime: '默认时间范围',
@@ -418,6 +422,8 @@ const LABELS = {
   // 日志内容记录
   'log_setting.log_request_body': '记录请求内容',
   'log_setting.log_response_body': '记录响应内容',
+  'log_setting.user_export_enabled': '允许普通用户导出日志',
+  'log_setting.max_range_days': '日志最大时间跨度（天）',
   'log_setting.max_body_log_bytes': '内容截断字节数',
 };
 
@@ -854,6 +860,8 @@ const SettingPage = () => {
         <label style={{ display: 'block', fontSize: 12, color: 'var(--ui-text-3)', marginBottom: 5 }}>{LABELS[k] || k}</label>
         {SELECT_OPTIONS[k]
           ? <Select value={val(k) || SELECT_OPTIONS[k][0].value} options={SELECT_OPTIONS[k]} onChange={(v) => set(k, v)} />
+          : k === 'QuotaRemindThreshold'
+            ? <NumberInput min={0} value={quotaToDisplayAmount(Number(val(k)) || 0)} onChange={(value) => set(k, String(displayAmountToQuota(value ?? 0)))} />
           : NUMBER_KEYS.has(k)
             ? <NumberInput value={Number(val(k)) || 0} onChange={(v) => set(k, String(v ?? 0))} />
             : JSON_KEYS.has(k)

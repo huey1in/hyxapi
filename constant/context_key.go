@@ -43,6 +43,7 @@ const (
 	ContextKeyChannelIsMultiKey        ContextKey = "channel_is_multi_key"
 	ContextKeyChannelMultiKeyIndex     ContextKey = "channel_multi_key_index"
 	ContextKeyChannelKey               ContextKey = "channel_key"
+	ContextKeyUpstreamRequestOrigin    ContextKey = "upstream_request_origin"
 
 	/* user related keys */
 	ContextKeyUserId      ContextKey = "id"

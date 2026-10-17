@@ -101,7 +101,7 @@ export const AllControls = () => {
       </Row>
       <Row title='FieldRow + Input 组合（完整表单视图）'>
         <FieldRow label='名称' required hint='1-20 字符'>
-          <input className='border border-ui-border rounded-xl bg-transparent text-ui-text outline-none focus:border-ui-text-3 transition-colors w-full px-3 py-2 text-sm' />
+          <input className='border border-ui-border rounded-xl bg-transparent text-ui-text outline-hidden focus:border-ui-text-3 transition-colors w-full px-3 py-2 text-sm' />
         </FieldRow>
       </Row>
     </div>

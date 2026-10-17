@@ -7,6 +7,7 @@ import {
 } from '../../components/ui';
 import { cn } from '../../components/ui/tokens';
 import { MODEL_FETCHABLE_CHANNEL_TYPES } from '../../constants/channel.constants';
+import { priorityMove } from './priority.js';
 
 const PAGE_SIZE = 20;
 
@@ -29,6 +30,36 @@ const ChannelPage = () => {
   const [selected, setSelected] = useState(new Set());
   const [tagMode, setTagMode] = useState(false);
   const [testing, setTesting] = useState(null);
+  const [dragMode, setDragMode] = useState(false);
+  const [dragged, setDragged] = useState(null);
+  const [placement, setPlacement] = useState('before');
+  const [priorityUndo, setPriorityUndo] = useState(null);
+  const [priorityBusy, setPriorityBusy] = useState(false);
+  const [dropTarget, setDropTarget] = useState(null);
+
+  const savePriorities = async (changes, undo = false) => {
+    if (!changes.length) return;
+    setPriorityBusy(true);
+    try {
+      const { data } = await API.put('/api/channel/priority', { changes });
+      if (!data.success) throw new Error(data.message);
+      setPriorityUndo(undo ? null : changes.map((change) => ({ ...change, before: change.priority, priority: change.before })));
+      await load(page, keyword);
+    } catch (error) { showError(error); } finally { setPriorityBusy(false); }
+  };
+
+  const movePriority = async (sourceID, targetID) => {
+    const request = priorityMove(rows, sourceID, targetID, placement);
+    if (!request) return;
+    setPriorityBusy(true);
+    try {
+      const { data } = await API.put('/api/channel/priority/move', request);
+      if (!data.success) throw new Error(data.message);
+      const changes = data.data?.changes || [];
+      setPriorityUndo(changes.length ? changes.map((change) => ({ ...change, before: change.priority, priority: change.before })) : null);
+      await load(page, keyword);
+    } catch (error) { showError(error); } finally { setPriorityBusy(false); }
+  };
 
   const load = async (p = 1, kw = '', s = statusF, ty = typeF, tm = tagMode) => {
     setLoading(true);
@@ -37,7 +68,7 @@ const ChannelPage = () => {
       const statusParam = s !== 'all' ? `&status=${s}` : '';
       const url = kw
         ? `/api/channel/search?keyword=${encodeURIComponent(kw)}&p=${p}&page_size=${PAGE_SIZE}&tag_mode=${tm}${typeParam}${statusParam}`
-        : `/api/channel/?p=${p}&page_size=${PAGE_SIZE}&id_sort=true&tag_mode=${tm}${typeParam}${statusParam}`;
+        : `/api/channel/?p=${p}&page_size=${PAGE_SIZE}&id_sort=false&tag_mode=${tm}${typeParam}${statusParam}`;
       const res = await API.get(url);
       const { success, data, message } = res.data || {};
       if (success) {
@@ -160,6 +191,8 @@ const ChannelPage = () => {
       title='渠道管理'
       actions={
         <>
+          <Button size='sm' variant='toggle' selected={dragMode} disabled={priorityBusy || tagMode} onClick={() => setDragMode((value) => !value)}>拖动排序</Button>
+          {priorityUndo && <Button size='sm' variant='toggle' disabled={priorityBusy} onClick={() => savePriorities(priorityUndo, true)}>撤销排序</Button>}
           {selected.size > 0 && (
             <>
               <span className='text-xs text-ui-text-3 mr-1'>已选 {selected.size} 项</span>
@@ -217,7 +250,23 @@ const ChannelPage = () => {
 
       {loading ? <Loading /> : (
         <>
-          <Table columns={columns} rows={rows} />
+          {dragMode && <div className='flex items-center gap-2 mb-3 text-sm'>
+            <span>拖放位置</span>
+            <Select value={placement} onChange={setPlacement} options={[{ value: 'before', label: '目标优先级之前' }, { value: 'same', label: '与目标同级' }, { value: 'after', label: '目标优先级之后' }]} />
+            <span>拖动渠道行以保存优先级，也可在编辑窗口直接填写。</span>
+          </div>}
+          <Table columns={columns} rows={dragMode ? [...rows].sort((a, b) => (b.priority || 0) - (a.priority || 0) || b.id - a.id) : rows} rowProps={dragMode ? (row) => ({
+            draggable: !priorityBusy,
+            style: { cursor: 'grab', outline: dropTarget === row.id ? '2px solid var(--ui-text-2)' : undefined },
+            onDragStart: (event) => { setDragged(row.id); event.dataTransfer.setData('text/plain', String(row.id)); event.dataTransfer.effectAllowed = 'move'; },
+            onDragOver: (event) => { event.preventDefault(); setDropTarget(row.id); },
+            onDragEnd: () => { setDragged(null); setDropTarget(null); },
+            onDrop: (event) => {
+              event.preventDefault(); setDropTarget(null);
+              if (priorityBusy) return;
+              movePriority(dragged, row.id);
+            },
+          }) : undefined} />
           <div className='mt-4 flex justify-end'>
             <Pagination total={total} pageSize={PAGE_SIZE} page={page} onChange={(p) => load(p, keyword)} />
           </div>
@@ -376,7 +425,7 @@ const ChannelTestModal = ({ channel, onClose }) => {
                   >
                     <ModelCdnIcon model={model} channelType={channel.type} />
                     <span className='min-w-0 flex-1 truncate font-mono text-xs'>{model}</span>
-                    {selected && <CheckSquare size={15} className='flex-shrink-0 text-ui-accent' />}
+                    {selected && <CheckSquare size={15} className='shrink-0 text-ui-accent' />}
                   </button>
                 );
               })}
@@ -464,7 +513,7 @@ const ModelCdnIcon = ({ model, channelType }) => {
   const slug = getModelIconSlug(model, channelType);
   if (failed) {
     return (
-      <span className='flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-md bg-ui-bg-subtle text-[10px] font-semibold text-ui-text-3'>
+      <span className='flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-ui-bg-subtle text-[10px] font-semibold text-ui-text-3'>
         {String(model || '?').slice(0, 1).toUpperCase()}
       </span>
     );
@@ -473,7 +522,7 @@ const ModelCdnIcon = ({ model, channelType }) => {
     <img
       src={`${MODEL_ICON_CDN}/${slug}.png`}
       alt=''
-      className='h-6 w-6 flex-shrink-0 rounded-md object-contain'
+      className='h-6 w-6 shrink-0 rounded-md object-contain'
       loading='lazy'
       onError={() => setFailed(true)}
     />
@@ -546,9 +595,9 @@ const KeyValueEditor = ({ value, onChange, keyPlaceholder = '键', valuePlacehol
       {pairs.map((p, i) => (
         <div key={i} className='flex items-center gap-2'>
           <Input value={p.k} onChange={(v) => update(i, 'k', v)} width='full' placeholder={keyPlaceholder} />
-          <span className='text-ui-text-3 text-xs flex-shrink-0'>→</span>
+          <span className='text-ui-text-3 text-xs shrink-0'>→</span>
           <Input value={p.v} onChange={(v) => update(i, 'v', v)} width='full' placeholder={valuePlaceholder} />
-          <button onClick={() => remove(i)} className='text-ui-text-3 hover:text-red-500 cursor-pointer text-sm flex-shrink-0'>✕</button>
+          <button onClick={() => remove(i)} className='text-ui-text-3 hover:text-red-500 cursor-pointer text-sm shrink-0'>✕</button>
         </div>
       ))}
       <button onClick={add} className='text-xs text-ui-text-2 hover:text-ui-text cursor-pointer underline'>
@@ -710,6 +759,11 @@ const ChannelEditModal = ({ channel, onClose, onSaved }) => {
 
         {/* 密钥与连接 */}
         <Section title='密钥与连接'>
+          {[1, 58, 59, 60].includes(Number(form.type)) && (
+            <Field label='Responses WebSocket' hint='允许 /v1/responses 的持久连接；高级自定义渠道需配置原生 Responses 路由。'>
+              <Switch size='sm' checked={!!form.setting?.responses_websocket_enabled} onChange={uSetting('responses_websocket_enabled')} />
+            </Field>
+          )}
           <Field label={<>密钥 {isEdit && <span className='text-ui-text-3 text-xs'>(留空不修改)</span>}</>}
             hint={mode === 'batch' ? '每行一个 key，将创建多个渠道' : mode === 'multi_to_single' ? '每行一个 key，合并为一个渠道' : '请输入渠道对应的鉴权密钥'}>
             <Textarea value={form.key || ''} onChange={u('key')} rows={mode !== 'single' || isMultiKey ? 5 : 2} placeholder='sk-...' width='full' />
@@ -741,6 +795,12 @@ const ChannelEditModal = ({ channel, onClose, onSaved }) => {
             </Field>
           )}
           {isAWS && (
+            <Field label='AWS 接口' hint='Mantle 使用原生 Messages；凭据格式为 APIKey|Region 或 AccessKey|SecretAccessKey|Region。'>
+              <Select value={form.other_settings?.aws_api_type || 'invoke_model'} onChange={uOther('aws_api_type')} width='full'
+                options={[{ value: 'invoke_model', label: 'InvokeModel（默认）' }, { value: 'mantle', label: 'Mantle Messages' }]} />
+            </Field>
+          )}
+          {isAWS && (
             <Field label='AWS Key 类型'>
               <Select value={form.other_settings?.aws_key_type || 'ak_sk'} onChange={uOther('aws_key_type')} width='full'
                 options={[{ value: 'ak_sk', label: 'AK/SK' }, { value: 'api_key', label: 'API Key' }]} />
@@ -750,6 +810,11 @@ const ChannelEditModal = ({ channel, onClose, onSaved }) => {
             <Field label='Vertex Key 类型'>
               <Select value={form.other_settings?.vertex_key_type || 'json'} onChange={uOther('vertex_key_type')} width='full'
                 options={[{ value: 'json', label: 'JSON 凭证' }, { value: 'api_key', label: 'API Key' }]} />
+            </Field>
+          )}
+          {isVertex && form.other_settings?.vertex_key_type === 'api_key' && (
+            <Field label='Vertex Project ID' hint='可选。普通 Vertex API Key 填写所属项目；Express 模式可留空。'>
+              <Input value={form.other_settings?.vertex_project_id || ''} onChange={uOther('vertex_project_id')} width='full' />
             </Field>
           )}
         </Section>

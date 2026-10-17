@@ -149,4 +149,4 @@ Expected: no formatting errors.
 
 - [ ] **Step 4: Restart and smoke-test the backend**
 
-Stop the existing Routify development process, start `go run main.go`, then request `/api/status` and verify HTTP 200. Confirm unauthenticated sync requests are rejected by root authentication.
+Stop the existing Hyxware development process, start `go run main.go`, then request `/api/status` and verify HTTP 200. Confirm unauthenticated sync requests are rejected by root authentication.

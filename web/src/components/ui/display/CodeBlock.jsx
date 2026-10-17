@@ -16,13 +16,13 @@ import { Copy, Check } from 'lucide-react';
 import { cn } from '../tokens';
 import { copy as copyText } from '../../../helpers';
 import Prism from 'prismjs';
-import 'prismjs/components/prism-jsx';
-import 'prismjs/components/prism-typescript';
-import 'prismjs/components/prism-tsx';
-import 'prismjs/components/prism-json';
-import 'prismjs/components/prism-bash';
-import 'prismjs/components/prism-css';
-import 'prismjs/components/prism-markdown';
+import 'prismjs/components/prism-jsx.js';
+import 'prismjs/components/prism-typescript.js';
+import 'prismjs/components/prism-tsx.js';
+import 'prismjs/components/prism-json.js';
+import 'prismjs/components/prism-bash.js';
+import 'prismjs/components/prism-css.js';
+import 'prismjs/components/prism-markdown.js';
 import './codeblock-theme.css';
 
 const ICON_BASE = 'https://registry.npmmirror.com/@lobehub/assets-fileicon/1.0.0/files/assets';
@@ -51,7 +51,7 @@ const LANG_META = {
 };
 
 const Inline = ({ children }) => (
-  <code className='inline px-1.5 py-0.5 rounded bg-ui-bg-subtle text-ui-text font-mono text-[0.85em]'>
+  <code className='inline px-1.5 py-0.5 rounded-sm bg-ui-bg-subtle text-ui-text font-mono text-[0.85em]'>
     {children}
   </code>
 );
@@ -109,7 +109,7 @@ const CodeBlock = ({
   return (
     <div className='rounded-xl overflow-hidden' style={{ backgroundColor: 'var(--ui-code-bg)' }}>
       <div className='flex items-center gap-2 px-3 py-1.5 text-xs select-none'>
-        <img src={`${ICON_BASE}/${meta.icon}`} alt='' width={16} height={16} className='flex-shrink-0' />
+        <img src={`${ICON_BASE}/${meta.icon}`} alt='' width={16} height={16} className='shrink-0' />
         <span className='text-ui-text-2 truncate flex-1'>{title || meta.label}</span>
         <button
           type='button'
@@ -135,7 +135,7 @@ const CodeBlock = ({
               const renderedLine = isHighlighted ? highlight(ln || ' ', language) : (ln || ' ');
               return (
                 <span key={i} className='flex'>
-                  <span className='select-none mr-4 w-6 text-right text-ui-text-3 tabular-nums flex-shrink-0'>{i + 1}</span>
+                  <span className='select-none mr-4 w-6 text-right text-ui-text-3 tabular-nums shrink-0'>{i + 1}</span>
                   <span className='flex-1' dangerouslySetInnerHTML={{ __html: renderedLine }} />
                 </span>
               );

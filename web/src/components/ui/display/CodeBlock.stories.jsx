@@ -18,10 +18,10 @@ export default function Demo({ name }) {
 }`;
 
 const jsonSample = `{
-  "name": "routify",
+  "name": "hyxware",
   "version": "0.1.0",
   "private": true,
-  "scripts": { "build": "vite build" }
+  "scripts": { "build": "rsbuild build" }
 }`;
 
 const bashSample = `# 安装依赖并启动

@@ -1,6 +1,8 @@
 package gemini
 
 import (
+	"maps"
+	"slices"
 	"strconv"
 	"strings"
 
@@ -10,26 +12,48 @@ import (
 	"github.com/QuantumNous/new-api/relaykit/relayconvert/reasoning"
 )
 
-var SupportedMimeTypes = map[string]bool{
-	"application/pdf": true,
-	"audio/mpeg":      true,
-	"audio/mp3":       true,
-	"audio/wav":       true,
-	"image/png":       true,
-	"image/jpeg":      true,
-	"image/jpg":       true,
-	"image/webp":      true,
-	"image/heic":      true,
-	"image/heif":      true,
-	"text/plain":      true,
-	"video/mov":       true,
-	"video/mpeg":      true,
-	"video/mp4":       true,
-	"video/mpg":       true,
-	"video/avi":       true,
-	"video/wmv":       true,
-	"video/mpegps":    true,
-	"video/flv":       true,
+var supportedMimeTypes = map[string]bool{
+	"application/pdf":           true,
+	"audio/mpeg":                true,
+	"audio/mp3":                 true,
+	"audio/wav":                 true,
+	"image/png":                 true,
+	"image/jpeg":                true,
+	"image/jpg":                 true,
+	"image/webp":                true,
+	"image/heic":                true,
+	"image/heif":                true,
+	"image/gif":                 true,
+	"image/avif":                true,
+	"text/plain":                true,
+	"text/html":                 true,
+	"text/css":                  true,
+	"text/javascript":           true,
+	"text/x-typescript":         true,
+	"text/csv":                  true,
+	"text/markdown":             true,
+	"text/x-python":             true,
+	"text/xml":                  true,
+	"text/rtf":                  true,
+	"application/x-javascript":  true,
+	"application/x-typescript":  true,
+	"application/x-python-code": true,
+	"application/json":          true,
+	"application/x-ipynb+json":  true,
+	"application/rtf":           true,
+	"video/mov":                 true,
+	"video/mpeg":                true,
+	"video/mp4":                 true,
+	"video/mpg":                 true,
+	"video/avi":                 true,
+	"video/wmv":                 true,
+	"video/mpegps":              true,
+	"video/flv":                 true,
+}
+
+func IsSupportedMimeType(mimeType string) bool {
+	mimeType = strings.ToLower(strings.TrimSpace(mimeType))
+	return supportedMimeTypes[mimeType] || strings.HasPrefix(mimeType, "audio/") || strings.HasPrefix(mimeType, "video/")
 }
 
 var SafetySettingCategories = []string{
@@ -194,11 +218,7 @@ func HasFunctionCallContent(call *dto.FunctionCall) bool {
 }
 
 func SupportedMimeTypesList() []string {
-	keys := make([]string, 0, len(SupportedMimeTypes))
-	for key := range SupportedMimeTypes {
-		keys = append(keys, key)
-	}
-	return keys
+	return append(slices.Sorted(maps.Keys(supportedMimeTypes)), "audio/*", "video/*")
 }
 
 func isNew25ProModel(modelName string) bool {

@@ -20,8 +20,8 @@ For commercial licensing, please contact support@quantumnous.com
 export function setStatusData(data) {
   localStorage.setItem('status', JSON.stringify(data));
   // Branding (system_name / logo / footer_html) is hardcoded for the
-  // TokenC build — see helpers/utils.getSystemName/getFooterHTML.
-  // Don't shadow them with whatever the backend Option store reports.
+  // Hyxware build — see helpers/utils.getSystemName/getFooterHTML.
+  // Don't shadow-sm them with whatever the backend Option store reports.
   localStorage.setItem('quota_per_unit', data.quota_per_unit);
   // 兼容：保留旧字段，同时写入新的额度展示类型
   localStorage.setItem('display_in_currency', data.display_in_currency);

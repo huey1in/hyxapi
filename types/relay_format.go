@@ -5,6 +5,7 @@ import relaytypes "github.com/QuantumNous/new-api/relaykit/types"
 type RelayFormat = relaytypes.RelayFormat
 
 const (
+	RelayFormatDeepSeekTools             = relaytypes.RelayFormatDeepSeekTools
 	RelayFormatOpenAI                    = relaytypes.RelayFormatOpenAI
 	RelayFormatClaude                    = relaytypes.RelayFormatClaude
 	RelayFormatGemini                    = relaytypes.RelayFormatGemini

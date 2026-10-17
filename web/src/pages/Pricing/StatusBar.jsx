@@ -24,13 +24,13 @@ const StatusBar = ({ history = [], slots = 60 }) => {
   return (
     <div className='flex items-stretch gap-[1.5px] h-7'>
       {Array.from({ length: placeholders }).map((_, i) => (
-        <div key={`placeholder-${i}`} title='暂无调用数据' className={`flex-1 rounded-sm ${PLACEHOLDER_COLOR}`} />
+        <div key={`placeholder-${i}`} title='暂无调用数据' className={`flex-1 rounded-xs ${PLACEHOLDER_COLOR}`} />
       ))}
       {chrono.map((rec, i) => {
         const color = STATUS_COLOR[rec.status] || PLACEHOLDER_COLOR;
         const cacheRate = rec.prompt_tokens > 0 ? ` · 缓存率 ${((rec.cache_tokens || 0) / rec.prompt_tokens * 100).toFixed(1)}%` : '';
         const title = `${fmtTime(rec.checked_at)} · 调用 ${rec.total} · 错误 ${rec.errors} · 延迟 ${rec.latency}ms${cacheRate}`;
-        return <div key={i} title={title} className={`flex-1 rounded-sm ${color}`} />;
+        return <div key={i} title={title} className={`flex-1 rounded-xs ${color}`} />;
       })}
     </div>
   );

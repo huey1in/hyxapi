@@ -260,10 +260,11 @@ type ToolCallRequest struct {
 }
 
 type FunctionRequest struct {
-	Description string `json:"description,omitempty"`
-	Name        string `json:"name"`
-	Parameters  any    `json:"parameters,omitempty"`
-	Arguments   string `json:"arguments,omitempty"`
+	Description          string `json:"description,omitempty"`
+	Name                 string `json:"name"`
+	Parameters           any    `json:"parameters,omitempty"`
+	ParametersJsonSchema any    `json:"parametersJsonSchema,omitempty"`
+	Arguments            string `json:"arguments,omitempty"`
 }
 
 type StreamOptions struct {

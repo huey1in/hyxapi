@@ -29,7 +29,7 @@ const VARIANT_STYLES = {
   solid:       'bg-ui-accent text-ui-accent-fg hover:bg-ui-accent-hover',
   danger:      'text-ui-danger hover:bg-ui-danger-bg',
   outline:     'border border-ui-border text-ui-text bg-transparent hover:bg-ui-bg-subtle',
-  circleSolid: 'bg-ui-accent text-ui-accent-fg hover:bg-ui-accent-hover shadow-sm',
+  circleSolid: 'bg-ui-accent text-ui-accent-fg hover:bg-ui-accent-hover shadow-xs',
 };
 
 const TONE_HOVER = {
@@ -88,7 +88,7 @@ const IconButton = React.forwardRef(function IconButton(
       aria-label={ariaLabel || title}
       aria-pressed={selected || undefined}
       className={cn(
-        'inline-flex items-center justify-center flex-shrink-0 transition-colors active:scale-95',
+        'inline-flex items-center justify-center shrink-0 transition-colors active:scale-95',
         shape === 'circle' ? 'rounded-full' : 'rounded-xl',
         SIZE_BOX[size],
         variantStyle,

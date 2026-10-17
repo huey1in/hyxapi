@@ -33,9 +33,11 @@ type StreamStatus struct {
 	EndError  error
 	endOnce   sync.Once
 
-	mu         sync.Mutex
-	Errors     []StreamErrorEntry
-	ErrorCount int
+	mu              sync.Mutex
+	Errors          []StreamErrorEntry
+	ErrorCount      int
+	requireTerminal bool
+	outcome         string
 }
 
 func NewStreamStatus() *StreamStatus {
@@ -89,9 +91,41 @@ func (s *StreamStatus) IsNormalEnd() bool {
 	if s == nil {
 		return true
 	}
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if s.requireTerminal && s.outcome != "completed" {
+		return false
+	}
 	return s.EndReason == StreamEndReasonDone ||
 		s.EndReason == StreamEndReasonEOF ||
 		s.EndReason == StreamEndReasonHandlerStop
+}
+
+func (s *StreamStatus) RequireTerminal() {
+	if s != nil {
+		s.mu.Lock()
+		s.requireTerminal = true
+		s.mu.Unlock()
+	}
+}
+func (s *StreamStatus) setOutcome(value string) {
+	if s != nil {
+		s.mu.Lock()
+		s.outcome = value
+		s.mu.Unlock()
+	}
+}
+func (s *StreamStatus) MarkCompleted()                           { s.setOutcome("completed") }
+func (s *StreamStatus) MarkFailed(code, kind string, status int) { s.setOutcome("failed") }
+func (s *StreamStatus) MarkIncomplete(reason string)             { s.setOutcome("incomplete") }
+func (s *StreamStatus) MarkCancelled()                           { s.setOutcome("cancelled") }
+func (s *StreamStatus) ResponseFailed() bool {
+	if s == nil {
+		return false
+	}
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return s.outcome == "failed"
 }
 
 func (s *StreamStatus) Summary() string {

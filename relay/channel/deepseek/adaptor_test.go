@@ -28,6 +28,15 @@ func TestGetRequestURL(t *testing.T) {
 	require.Equal(t, "https://api.deepseek.com/responses", responsesURL)
 }
 
+func TestDeepSeekClaudeModifierPreservesOutputConfig(t *testing.T) {
+	request := &dto.ClaudeRequest{Model: "deepseek-flash-max@thinking:off", OutputConfig: []byte(`{"effort":"max","format":{"type":"json"}}`)}
+	info := &relaycommon.RelayInfo{ChannelMeta: &relaycommon.ChannelMeta{UpstreamModelName: request.Model}}
+	require.NoError(t, applyDeepSeekV4ClaudeThinkingSuffix(info, request))
+	require.Equal(t, "deepseek-flash", request.Model)
+	require.Equal(t, "disabled", request.Thinking.Type)
+	require.JSONEq(t, `{"format":{"type":"json"}}`, string(request.OutputConfig))
+}
+
 func TestApplyDeepSeekV4OpenAIThinkingSuffix(t *testing.T) {
 	request := &dto.GeneralOpenAIRequest{Model: "deepseek-v4-pro-max"}
 	info := &relaycommon.RelayInfo{ChannelMeta: &relaycommon.ChannelMeta{UpstreamModelName: request.Model}}

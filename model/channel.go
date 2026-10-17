@@ -11,6 +11,7 @@ import (
 
 	"github.com/QuantumNous/new-api/common"
 	"github.com/QuantumNous/new-api/constant"
+	"github.com/QuantumNous/new-api/pkg/wsmanager"
 	"github.com/QuantumNous/new-api/relaykit/dto"
 	"github.com/QuantumNous/new-api/relaykit/types"
 
@@ -268,7 +269,7 @@ func (channel *Channel) SaveWithoutKey() error {
 func GetAllChannels(startIdx int, num int, selectAll bool, idSort bool) ([]*Channel, error) {
 	var channels []*Channel
 	var err error
-	order := "priority desc"
+	order := "COALESCE(priority, 0) DESC, id DESC"
 	if idSort {
 		order = "id desc"
 	}
@@ -282,7 +283,7 @@ func GetAllChannels(startIdx int, num int, selectAll bool, idSort bool) ([]*Chan
 
 func GetChannelsByTag(tag string, idSort bool, selectAll bool) ([]*Channel, error) {
 	var channels []*Channel
-	order := "priority desc"
+	order := "COALESCE(priority, 0) DESC, id DESC"
 	if idSort {
 		order = "id desc"
 	}
@@ -309,7 +310,7 @@ func SearchChannels(keyword string, group string, model string, idSort bool) ([]
 		baseURLCol = `"base_url"`
 	}
 
-	order := "priority desc"
+	order := "COALESCE(priority, 0) DESC, id DESC"
 	if idSort {
 		order = "id desc"
 	}
@@ -408,7 +409,11 @@ func BatchDeleteChannels(ids []int) error {
 			return err
 		}
 	}
-	return tx.Commit().Error
+	if err := tx.Commit().Error; err != nil {
+		return err
+	}
+	wsmanager.CloseChannelsAndBroadcast(ids, "channel deleted")
+	return nil
 }
 
 func (channel *Channel) GetPriority() int64 {
@@ -451,6 +456,7 @@ func (channel *Channel) GetStatusCodeMapping() string {
 }
 
 func (channel *Channel) Update() error {
+	previous, _ := GetChannelById(channel.Id, true)
 	// If this is a multi-key channel, recalculate MultiKeySize based on the current key list to avoid inconsistency after editing keys
 	if channel.ChannelInfo.IsMultiKey {
 		var keyStr string
@@ -496,6 +502,9 @@ func (channel *Channel) Update() error {
 	}
 	DB.Model(channel).First(channel, "id = ?", channel.Id)
 	err = channel.UpdateAbilities(nil)
+	if err == nil {
+		closeChangedChannelWebSockets(previous, channel)
+	}
 	return err
 }
 
@@ -526,6 +535,9 @@ func (channel *Channel) Delete() error {
 		return err
 	}
 	err = channel.DeleteAbilities()
+	if err == nil {
+		wsmanager.CloseChannelsAndBroadcast([]int{channel.Id}, "channel deleted")
+	}
 	return err
 }
 
@@ -584,6 +596,9 @@ func handlerMultiKeyUpdate(channel *Channel, usingKey string, status int, reason
 }
 
 func UpdateChannelStatus(channelId int, usingKey string, status int, reason string) bool {
+	if status != common.ChannelStatusEnabled {
+		defer wsmanager.CloseChannelsAndBroadcast([]int{channelId}, "channel or credential disabled")
+	}
 	if common.MemoryCacheEnabled {
 		channelStatusLock.Lock()
 		defer channelStatusLock.Unlock()
@@ -664,11 +679,18 @@ func EnableChannelByTag(tag string) error {
 }
 
 func DisableChannelByTag(tag string) error {
+	var ids []int
+	if err := DB.Model(&Channel{}).Where("tag = ?", tag).Pluck("id", &ids).Error; err != nil {
+		return err
+	}
 	err := DB.Model(&Channel{}).Where("tag = ?", tag).Update("status", common.ChannelStatusManuallyDisabled).Error
 	if err != nil {
 		return err
 	}
 	err = UpdateAbilityStatusByTag(tag, false)
+	if err == nil {
+		wsmanager.CloseChannelsAndBroadcast(ids, "channel disabled")
+	}
 	return err
 }
 
@@ -769,7 +791,7 @@ func SearchTags(keyword string, group string, model string, idSort bool) ([]*str
 		baseURLCol = `"base_url"`
 	}
 
-	order := "priority desc"
+	order := "COALESCE(priority, 0) DESC, id DESC"
 	if idSort {
 		order = "id desc"
 	}
@@ -818,6 +840,18 @@ func (channel *Channel) ValidateSettings() error {
 		if err != nil {
 			return err
 		}
+	}
+	if err := channelParams.ValidateHTTPTransport(); err != nil {
+		return err
+	}
+	var other dto.ChannelOtherSettings
+	if channel.OtherSettings != "" {
+		if err := common.UnmarshalJsonStr(channel.OtherSettings, &other); err != nil {
+			return err
+		}
+	}
+	if other.AwsApiType != "" && other.AwsApiType != dto.AwsApiTypeInvokeModel && other.AwsApiType != dto.AwsApiTypeMantle {
+		return fmt.Errorf("invalid AWS API type")
 	}
 	return nil
 }

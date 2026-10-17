@@ -1,12 +1,12 @@
 {
   "translation": {
-    "auth.login.title": "Welcome to Routify",
+    "auth.login.title": "Welcome to Hyxware",
     "auth.login.subtitle": "One gateway for every model",
     "auth.login.submit": "Sign in",
     "auth.login.action": "Sign in",
     "auth.login.forgotPassword": "Forgot password?",
     "auth.login.noAccount": "Don't have an account?",
-    "auth.register.title": "Create your Routify account",
+    "auth.register.title": "Create your Hyxware account",
     "auth.register.subtitle": "Start routing models in minutes",
     "auth.register.submit": "Create account",
     "auth.register.action": "Sign up",
@@ -38,7 +38,7 @@
     "auth.errors.networkFailed": "Network request failed",
     "auth.errors.emailRequired": "Enter your email address",
     "auth.errors.sendFailed": "Failed to send",
-    "auth.legalPrefix": "By continuing, you agree to Routify's ",
+    "auth.legalPrefix": "By continuing, you agree to Hyxware's ",
     "auth.terms": "Terms of Service",
     "auth.legalAnd": "and",
     "auth.privacy": "Privacy Policy",

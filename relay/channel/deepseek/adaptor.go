@@ -54,6 +54,9 @@ func (a *Adaptor) ConvertImageRequest(c *gin.Context, info *relaycommon.RelayInf
 }
 
 func (a *Adaptor) Init(info *relaycommon.RelayInfo) {
+	info.WebSearchBillingKey = SearchToolPriceKey
+	info.WebFetchBillingKey = FetchToolPriceKey
+	info.VendorToolUsage = responsesToolUsage
 }
 
 func (a *Adaptor) GetRequestURL(info *relaycommon.RelayInfo) (string, error) {
@@ -68,6 +71,10 @@ func (a *Adaptor) GetRequestURL(info *relaycommon.RelayInfo) (string, error) {
 		switch info.RelayMode {
 		case constant.RelayModeCompletions:
 			return fmt.Sprintf("%s/completions", fimBaseUrl), nil
+		case constant.RelayModeToolsSearch:
+			return fmt.Sprintf("%s/v1/tools/search", info.ChannelBaseUrl), nil
+		case constant.RelayModeToolsFetch:
+			return fmt.Sprintf("%s/v1/tools/fetch", info.ChannelBaseUrl), nil
 		case constant.RelayModeResponses:
 			return fmt.Sprintf("%s/responses", info.ChannelBaseUrl), nil
 		default:
@@ -98,7 +105,10 @@ func applyDeepSeekV4OpenAIThinkingSuffix(info *relaycommon.RelayInfo, request *d
 	if info != nil && info.ChannelMeta != nil && info.UpstreamModelName != "" {
 		modelName = info.UpstreamModelName
 	}
-	baseModel, thinkingType, effort, ok := reasoning.ParseDeepSeekV4ThinkingSuffix(modelName)
+	baseModel, thinkingType, effort, ok, parseErr := reasoning.ParseDeepSeekModel(modelName)
+	if parseErr != nil {
+		return parseErr
+	}
 	if !ok {
 		return nil
 	}
@@ -125,22 +135,32 @@ func applyDeepSeekV4ClaudeThinkingSuffix(info *relaycommon.RelayInfo, request *d
 	if info != nil && info.ChannelMeta != nil && info.UpstreamModelName != "" {
 		modelName = info.UpstreamModelName
 	}
-	baseModel, thinkingType, effort, ok := reasoning.ParseDeepSeekV4ThinkingSuffix(modelName)
+	baseModel, thinkingType, effort, ok, parseErr := reasoning.ParseDeepSeekModel(modelName)
+	if parseErr != nil {
+		return parseErr
+	}
 	if !ok {
 		return nil
 	}
 	request.Model = baseModel
 	request.Thinking = &dto.Thinking{Type: thinkingType}
-	if effort == "" {
-		request.OutputConfig = nil
-	} else {
-		outputConfig, err := common.Marshal(map[string]string{
-			"effort": effort,
-		})
-		if err != nil {
-			return fmt.Errorf("error marshalling output_config: %w", err)
+	output := map[string]any{}
+	if len(request.OutputConfig) > 0 {
+		if err := common.Unmarshal(request.OutputConfig, &output); err != nil {
+			return fmt.Errorf("invalid output_config: %w", err)
 		}
-		request.OutputConfig = outputConfig
+	}
+	delete(output, "effort")
+	if effort != "" {
+		output["effort"] = effort
+	}
+	request.OutputConfig = nil
+	if len(output) > 0 {
+		encoded, err := common.Marshal(output)
+		if err != nil {
+			return err
+		}
+		request.OutputConfig = encoded
 	}
 	if info != nil {
 		if info.ChannelMeta != nil {
@@ -161,16 +181,19 @@ func (a *Adaptor) ConvertEmbeddingRequest(c *gin.Context, info *relaycommon.Rela
 }
 
 func (a *Adaptor) ConvertOpenAIResponsesRequest(_ *gin.Context, info *relaycommon.RelayInfo, request dto.OpenAIResponsesRequest) (any, error) {
-	applyDeepSeekV4ResponsesThinkingSuffix(info, &request)
-	return request, nil
+	err := applyDeepSeekV4ResponsesThinkingSuffix(info, &request)
+	return request, err
 }
 
-func applyDeepSeekV4ResponsesThinkingSuffix(info *relaycommon.RelayInfo, request *dto.OpenAIResponsesRequest) {
+func applyDeepSeekV4ResponsesThinkingSuffix(info *relaycommon.RelayInfo, request *dto.OpenAIResponsesRequest) error {
 	modelName := request.Model
 	if info != nil && info.ChannelMeta != nil && info.UpstreamModelName != "" {
 		modelName = info.UpstreamModelName
 	}
-	baseModel, thinkingType, effort, ok := reasoning.ParseDeepSeekV4ThinkingSuffix(modelName)
+	baseModel, thinkingType, effort, ok, err := reasoning.ParseDeepSeekModel(modelName)
+	if err != nil {
+		return err
+	}
 	if ok {
 		if thinkingType == "disabled" {
 			effort = "none"
@@ -187,6 +210,7 @@ func applyDeepSeekV4ResponsesThinkingSuffix(info *relaycommon.RelayInfo, request
 	if info != nil && request.Reasoning != nil {
 		info.ReasoningEffort = request.Reasoning.Effort
 	}
+	return nil
 }
 
 func (a *Adaptor) DoRequest(c *gin.Context, info *relaycommon.RelayInfo, requestBody io.Reader) (any, error) {

@@ -107,54 +107,6 @@ func setupLogin(user *model.User, c *gin.Context) {
 			"display_name": user.DisplayName,
 			"role":         user.Role,
 			"status":       user.Status,
-			"handoff_code": common.IssueHandoff(user.Id),
-		},
-	})
-}
-
-// HandoffExchange 用一次性 code 在当前（控制台）域名上建立会话，实现跨域单点登录。
-func HandoffExchange(c *gin.Context) {
-	var req struct {
-		Code string `json:"code"`
-	}
-	if err := json.NewDecoder(c.Request.Body).Decode(&req); err != nil {
-		common.ApiErrorI18n(c, i18n.MsgInvalidParams)
-		return
-	}
-	userId, ok := common.ConsumeHandoff(req.Code)
-	if !ok {
-		c.JSON(http.StatusUnauthorized, gin.H{
-			"message": "invalid or expired handoff code",
-			"success": false,
-		})
-		return
-	}
-	user, err := model.GetUserById(userId, false)
-	if err != nil || user == nil {
-		c.JSON(http.StatusUnauthorized, gin.H{
-			"message": "user not found",
-			"success": false,
-		})
-		return
-	}
-	session := sessions.Default(c)
-	session.Set("id", user.Id)
-	session.Set("username", user.Username)
-	session.Set("role", user.Role)
-	session.Set("status", user.Status)
-	if err := session.Save(); err != nil {
-		common.ApiErrorI18n(c, i18n.MsgUserSessionSaveFailed)
-		return
-	}
-	c.JSON(http.StatusOK, gin.H{
-		"message": "",
-		"success": true,
-		"data": map[string]any{
-			"id":           user.Id,
-			"username":     user.Username,
-			"display_name": user.DisplayName,
-			"role":         user.Role,
-			"status":       user.Status,
 		},
 	})
 }
@@ -248,15 +200,16 @@ func Register(c *gin.Context) {
 		}
 		// 生成默认令牌
 		token := model.Token{
-			UserId:             insertedUser.Id, // 使用插入后的用户ID
-			Name:               cleanUser.Username + "的初始令牌",
-			Key:                key,
-			CreatedTime:        common.GetTimestamp(),
-			AccessedTime:       common.GetTimestamp(),
-			ExpiredTime:        -1,     // 永不过期
-			RemainQuota:        500000, // 示例额度
-			UnlimitedQuota:     true,
-			ModelLimitsEnabled: false,
+			AllowUserQuotaQuery: true,
+			UserId:              insertedUser.Id, // 使用插入后的用户ID
+			Name:                cleanUser.Username + "的初始令牌",
+			Key:                 key,
+			CreatedTime:         common.GetTimestamp(),
+			AccessedTime:        common.GetTimestamp(),
+			ExpiredTime:         -1,     // 永不过期
+			RemainQuota:         500000, // 示例额度
+			UnlimitedQuota:      true,
+			ModelLimitsEnabled:  false,
 		}
 		if err := token.Insert(); err != nil {
 			common.ApiErrorI18n(c, i18n.MsgCreateDefaultTokenErr)
@@ -659,17 +612,10 @@ func UpdateSelf(c *gin.Context) {
 			common.ApiError(c, err)
 			return
 		}
-		currentSetting := user.GetSetting()
-		if nsMap, ok := notifySettings.(map[string]interface{}); ok {
-			if nt, ok := nsMap["notify_type"].(string); ok {
-				currentSetting.NotifyType = nt
-			}
-			if qt, ok := nsMap["quota_warning_threshold"].(float64); ok {
-				currentSetting.QuotaWarningThreshold = qt
-			}
-			if ne, ok := nsMap["notification_email"].(string); ok {
-				currentSetting.NotificationEmail = ne
-			}
+		currentSetting, err := applyNotificationSettings(user.GetSetting(), notifySettings, user.Role)
+		if err != nil {
+			common.ApiError(c, err)
+			return
 		}
 		user.SetSetting(currentSetting)
 		if err := user.Update(false); err != nil {

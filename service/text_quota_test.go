@@ -137,6 +137,25 @@ func TestCalculateTextQuotaSummaryChargesSplitOnlyCacheWrites(t *testing.T) {
 	require.Equal(t, 300, summary.Quota)
 }
 
+func TestCalculateTextQuotaSummaryChargesClaudeCacheOnlyUsage(t *testing.T) {
+	for _, test := range []struct {
+		name      string
+		usage     dto.Usage
+		wantQuota int
+	}{
+		{"read", dto.Usage{UsageSemantic: "anthropic", PromptTokensDetails: dto.InputTokenDetails{CachedTokens: 100}}, 50},
+		{"write", dto.Usage{UsageSemantic: "anthropic", PromptTokensDetails: dto.InputTokenDetails{CachedCreationTokens: 100}}, 500},
+		{"split write", dto.Usage{UsageSemantic: "anthropic", ClaudeCacheCreation5mTokens: 30, ClaudeCacheCreation1hTokens: 70}, 500},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			summary := calculateTextQuotaSummary(newTextQuotaTestContext(), newTextQuotaRelayInfo(tokenPriceData()), &test.usage)
+			require.Zero(t, summary.TotalTokens)
+			require.True(t, summary.hasBillableUsage())
+			require.Equal(t, test.wantQuota, summary.Quota)
+		})
+	}
+}
+
 func TestCalculateTextQuotaSummaryDoesNotCreateNegativeTextOutputCharge(t *testing.T) {
 	priceData := tokenPriceData()
 	priceData.AudioOutputPrice = 10

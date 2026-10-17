@@ -288,6 +288,7 @@ type GeminiToChatStreamState struct {
 	sawToolCall   bool
 	finishEmitted bool
 	latestUsage   *dto.Usage
+	usageMetadata *dto.GeminiUsageMetadata
 }
 
 func NewGeminiToChatStreamState(id string, created int64) *GeminiToChatStreamState {
@@ -299,6 +300,12 @@ func NewGeminiToChatStreamState(id string, created int64) *GeminiToChatStreamSta
 		created = kitutil.GetTimestamp()
 	}
 	return &GeminiToChatStreamState{id: id, created: created}
+}
+
+func (s *GeminiToChatStreamState) ObserveUsage(metadata *dto.GeminiUsageMetadata, fallbackPromptTokens int) *dto.Usage {
+	s.usageMetadata = dto.MergeGeminiUsageMetadata(s.usageMetadata, metadata)
+	s.latestUsage = UsageFromGeminiMetadata(s.usageMetadata, fallbackPromptTokens)
+	return s.latestUsage
 }
 
 func (s *GeminiToChatStreamState) ConvertChunk(geminiResponse *dto.GeminiChatResponse, model string, usage *dto.Usage) []*dto.ChatCompletionsStreamResponse {

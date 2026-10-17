@@ -13,6 +13,7 @@ import (
 )
 
 type Token struct {
+	AllowUserQuotaQuery    bool           `json:"allow_user_quota_query" gorm:"not null;default:false"`
 	Id                     int            `json:"id"`
 	UserId                 int            `json:"user_id" gorm:"index"`
 	Key                    string         `json:"key" gorm:"type:char(48);uniqueIndex"`
@@ -402,7 +403,7 @@ func (token *Token) Update() (err error) {
 		}
 	}()
 	err = DB.Model(token).Select("name", "status", "expired_time", "remain_quota", "unlimited_quota",
-		"model_limits_enabled", "model_limits", "allow_ips", "group", "cross_group_retry", "group_switch_status_codes", "group_switch_retry_count").Updates(token).Error
+		"allow_user_quota_query", "model_limits_enabled", "model_limits", "allow_ips", "group", "cross_group_retry", "group_switch_status_codes", "group_switch_retry_count").Updates(token).Error
 	return err
 }
 

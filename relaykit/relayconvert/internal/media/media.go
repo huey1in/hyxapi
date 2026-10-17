@@ -2,11 +2,22 @@ package media
 
 import (
 	"errors"
+	"strings"
 	"sync"
 
 	"context"
 	"github.com/QuantumNous/new-api/relaykit/types"
 )
+
+// ResponsesImageDetail preserves supported quality hints and defaults unknown values.
+func ResponsesImageDetail(detail string) string {
+	switch strings.ToLower(strings.TrimSpace(detail)) {
+	case "low", "high", "original":
+		return strings.ToLower(strings.TrimSpace(detail))
+	default:
+		return "auto"
+	}
+}
 
 type MediaResolver struct {
 	GetBase64Data        func(c context.Context, source types.FileSource, reason ...string) (string, string, error)

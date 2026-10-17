@@ -19,7 +19,7 @@ const Loading = ({ size = 'md', fullscreen = false, label }) => {
   );
   if (fullscreen) {
     return (
-      <div className='fixed inset-0 z-[150] flex items-center justify-center bg-black/30 backdrop-blur-sm'>
+      <div className='fixed inset-0 z-[150] flex items-center justify-center bg-black/30 backdrop-blur-xs'>
         {inner}
       </div>
     );

@@ -73,6 +73,8 @@ func SetRelayRouter(router *gin.Engine) {
 		playgroundRouter.POST("/chat/completions", controller.Playground)
 	}
 	relayV1Router := router.Group("/v1")
+	// Each generation inside this connection runs token, model and subscription limits.
+	router.GET("/v1/responses", middleware.RouteTag("relay"), middleware.SystemPerformanceCheck(), middleware.TokenAuth(), controller.ResponsesWebSocket)
 	relayV1Router.Use(middleware.RouteTag("relay"))
 	relayV1Router.Use(middleware.SystemPerformanceCheck())
 	relayV1Router.Use(middleware.TokenAuth())
@@ -111,6 +113,8 @@ func SetRelayRouter(router *gin.Engine) {
 			controller.Relay(c, types.RelayFormatOpenAIResponsesCompaction)
 		})
 
+		httpRouter.POST("/tools/search", func(c *gin.Context) { controller.Relay(c, types.RelayFormatDeepSeekTools) })
+		httpRouter.POST("/tools/fetch", func(c *gin.Context) { controller.Relay(c, types.RelayFormatDeepSeekTools) })
 		// image related routes
 		httpRouter.POST("/edits", func(c *gin.Context) {
 			controller.Relay(c, types.RelayFormatOpenAIImage)

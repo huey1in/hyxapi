@@ -8,6 +8,7 @@
           "type": "input_text"
         },
         {
+          "detail": "auto",
           "image_url": "data:image/png;base64,aGVsbG8=",
           "type": "input_image"
         }

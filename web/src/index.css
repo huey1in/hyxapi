@@ -1,5 +1,37 @@
 @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;600;700&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&display=swap');
+@import 'tailwindcss';
+
+@source '../index.html';
+@source '../.storybook';
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme inline {
+  --font-sans: 'Kefaiii', 'Gilroy', 'MiSans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-mono: 'Menlo', 'Consolas', 'SF Mono', 'JetBrains Mono', ui-monospace, monospace;
+  --color-ui-bg: var(--ui-bg);
+  --color-ui-bg-elevated: var(--ui-bg-elevated);
+  --color-ui-bg-subtle: var(--ui-bg-subtle);
+  --color-ui-border: var(--ui-border);
+  --color-ui-divider: var(--ui-divider);
+  --color-ui-text: var(--ui-text);
+  --color-ui-text-2: var(--ui-text-2);
+  --color-ui-text-3: var(--ui-text-3);
+  --color-ui-accent: var(--ui-accent);
+  --color-ui-accent-fg: var(--ui-accent-fg);
+  --color-ui-accent-hover: var(--ui-accent-hover);
+  --color-ui-danger: var(--ui-danger);
+  --color-ui-danger-bg: var(--ui-danger-bg);
+}
+
+@layer base {
+  *, ::before, ::after, ::backdrop {
+    border-color: var(--color-gray-200, currentColor);
+  }
+  button:not(:disabled), [role='button']:not(:disabled) {
+    cursor: pointer;
+  }
+}
 
 @font-face {
   font-family: 'Kefaiii';
@@ -18,9 +50,6 @@
   unicode-range: U+0000-007F, U+2000-206F, U+2070-209F, U+20A0-20CF, U+2100-214F;
 }
 
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
 
 :root {
   --page-bg:          #FFFDF7;
@@ -92,7 +121,7 @@ body {
   .home-nav-links.is-open { display: flex; } .home-nav-links a { padding: 13px 10px; } .home-nav-start { height: auto; }
 }
 
-/* Routify public site v3: product-first, warm neutral, no template card grid. */
+/* Hyxware public site v3: product-first, warm neutral, no template card grid. */
 .studio-home { --studio-bg:#f3f1ec; --studio-paper:#fffefa; --studio-ink:#1d1d1b; --studio-muted:#6f6d67; --studio-line:#d7d3ca; --studio-orange:#e95d35; background:var(--studio-bg); color:var(--studio-ink); }
 .studio-home .home-nav { width:min(1200px, calc(100% - 56px)); height:76px; border-bottom:1px solid var(--studio-line); }
 .studio-home .home-brand { display:flex; align-items:center; gap:9px; font-size:18px; }
@@ -129,7 +158,7 @@ body {
 .cursor-home .studio-actions { margin-top:27px; }.cursor-home .studio-actions a:first-child { display:flex; padding:12px 17px; border-radius:20px; background:#292822; font-size:12px; }.cursor-home .studio-actions a:last-child:not(:first-child) { display:none; }
 .cursor-home .hero-side-note { display:none; }
 .cursor-home .product-frame { width:min(1210px,calc(100% - 40px)); border-color:#d2d1ca; border-radius:5px; box-shadow:none; }
-.cursor-home .product-frame { position:relative; box-sizing:border-box; padding:72px 54px 0; border:0; background:#d9ddd5 url('/routify-landscape-soft.jpg') center center / cover no-repeat; border-radius:7px; }
+.cursor-home .product-frame { position:relative; box-sizing:border-box; padding:72px 54px 0; border:0; background:#d9ddd5 url('/hyxware-landscape-soft.jpg') center center / cover no-repeat; border-radius:7px; }
 .cursor-home .product-frame-bar { border:0; border-radius:7px 7px 0 0; background:rgba(253,253,251,.82); backdrop-filter:blur(9px); }
 .cursor-home .product-shell { background:rgba(253,253,251,.93); backdrop-filter:blur(12px); }
 .cursor-home .product-shell { display:flex; height:560px; min-height:0; overflow:hidden; text-align:left; }.cursor-home .product-shell>aside { width:208px !important; height:100%; }.dashboard-preview-content { flex:1; min-width:0; height:100%; overflow:hidden; background:var(--page-bg); }.dashboard-preview-content>div { width:106.4%; transform:scale(.94); transform-origin:top left; }
@@ -139,7 +168,7 @@ body {
 .cursor-home .marketplace-showcase-copy p { max-width:330px; margin:12px 0 0; color:#77756e; font-size:17px; line-height:1.45; }
 .cursor-home .marketplace-showcase-copy a { display:inline-flex; align-items:center; gap:7px; margin-top:18px; color:#8b5e3c; font-size:13px; }
 .cursor-home .marketplace-stage { position:relative; min-width:0; overflow:hidden; }
-.cursor-home .marketplace-preview-mat { position:absolute; top:22px; left:42px; width:1030px; height:696px; box-sizing:border-box; padding:26px 0 0 40px; overflow:hidden; border:1px solid #cfcdc7; border-radius:6px; background:linear-gradient(rgba(239,241,237,.48),rgba(224,228,222,.56)),url('/routify-landscape-lake.jpg') center 44% / cover no-repeat; }
+.cursor-home .marketplace-preview-mat { position:absolute; top:22px; left:42px; width:1030px; height:696px; box-sizing:border-box; padding:26px 0 0 40px; overflow:hidden; border:1px solid #cfcdc7; border-radius:6px; background:linear-gradient(rgba(239,241,237,.48),rgba(224,228,222,.56)),url('/hyxware-landscape-lake.jpg') center 44% / cover no-repeat; }
 .cursor-home .marketplace-frame { position:relative; width:1300px; padding:0; border-radius:7px 0 0 7px; background:transparent; transform:scale(.74); transform-origin:top left; }
 .cursor-home .marketplace-frame .product-shell { height:820px; }
 .cursor-home .marketplace-frame .marketplace-preview-content>div { width:116.3%; transform:scale(.86); transform-origin:top left; }
@@ -176,8 +205,8 @@ body {
 .cursor-home .feature-showcase-copy a { display:inline-flex; align-items:center; gap:7px; margin-top:18px; color:#8b5e3c; font-size:13px; }
 .cursor-home .feature-stage { position:relative; min-width:0; overflow:hidden; }
 .cursor-home .feature-preview-mat { position:absolute; top:22px; width:1030px; height:696px; box-sizing:border-box; padding:26px 0 0 40px; overflow:hidden; border:1px solid #cfcdc7; border-radius:6px; background-position:center; background-size:cover; background-repeat:no-repeat; }
-.cursor-home .api-showcase .feature-preview-mat { background-image:linear-gradient(rgba(239,241,235,.5),rgba(226,230,221,.58)),url('/routify-landscape-meadow.jpg'); }
-.cursor-home .log-showcase .feature-preview-mat { background-image:linear-gradient(rgba(242,238,231,.48),rgba(227,225,218,.56)),url('/routify-landscape-hills.jpg'); }
+.cursor-home .api-showcase .feature-preview-mat { background-image:linear-gradient(rgba(239,241,235,.5),rgba(226,230,221,.58)),url('/hyxware-landscape-meadow.jpg'); }
+.cursor-home .log-showcase .feature-preview-mat { background-image:linear-gradient(rgba(242,238,231,.48),rgba(227,225,218,.56)),url('/hyxware-landscape-hills.jpg'); }
 .cursor-home .feature-stage-left .feature-preview-mat { right:42px; }
 .cursor-home .feature-stage-right .feature-preview-mat { left:42px; }
 .cursor-home .feature-preview-mat .console-feature-frame { position:relative; width:1300px; margin:0; padding:0; border-radius:7px 0 0 7px; background:transparent; transform:scale(.74); transform-origin:top left; }
@@ -192,9 +221,9 @@ body {
 @media (prefers-reduced-motion:reduce) { .cursor-home .model-track { animation-play-state:paused; } }
 .cursor-home .studio-closing { width:min(1210px,calc(100% - 40px)); padding:120px 0 90px; border-bottom:0; }.cursor-home .studio-closing p { font-size:clamp(28px,3.4vw,43px); }.cursor-home .studio-closing a { border-radius:21px; background:#292822; font-size:12px; }
 .cursor-home .frontier-section { width:min(1210px,calc(100% - 40px)); margin:0 auto; padding:20px 0 120px; }.cursor-home .frontier-section>h2 { margin:0 0 28px; font-size:24px; font-weight:450; }.cursor-home .frontier-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:10px; }.cursor-home .frontier-card { display:flex; flex-direction:column; min-width:0; min-height:560px; overflow:hidden; border-radius:6px; background:#efeee9; }.cursor-home .frontier-card-copy { padding:24px 18px 18px; }.cursor-home .frontier-card-copy h3 { margin:0; font-size:18px; font-weight:500; line-height:1.35; }.cursor-home .frontier-card-copy p { min-height:72px; margin:8px 0 0; color:#77756e; font-size:14px; line-height:1.55; }.cursor-home .frontier-card-copy a { display:inline-flex; align-items:center; gap:5px; margin-top:12px; color:#a5532f; font-size:13px; }.cursor-home .frontier-visual { flex:1; min-height:315px; margin:0 16px 16px; overflow:hidden; border-radius:4px; background:#deddd7; }
-.cursor-home .frontier-model-menu { padding:44px 20px 20px; background:linear-gradient(rgba(237,235,229,.62),rgba(226,224,217,.68)),url('/routify-landscape-lake.jpg') center / cover; }.cursor-home .frontier-composer { display:flex; align-items:center; justify-content:space-between; gap:10px; padding:14px; border-radius:8px; background:rgba(253,253,250,.92); color:#76736d; font-size:11px; box-shadow:0 8px 30px rgba(43,40,34,.1); }.cursor-home .frontier-composer b { padding:5px 8px; border-radius:12px; background:#eceae4; color:#34322d; font-weight:500; }.cursor-home .frontier-model-list { width:72%; margin:8px 0 0 auto; padding:6px; border-radius:8px; background:rgba(253,253,250,.95); box-shadow:0 12px 34px rgba(43,40,34,.12); }.cursor-home .frontier-model-list span { display:flex; align-items:center; gap:8px; min-height:38px; padding:0 8px; color:#4d4a44; font-size:11px; }.cursor-home .frontier-model-list i { width:8px; height:8px; border-radius:50%; background:#aaa79f; }.cursor-home .frontier-model-list b { margin-left:auto; color:#a5532f; font-size:9px; font-weight:500; }
-.cursor-home .frontier-price-list { align-self:stretch; padding:34px 20px; background:linear-gradient(rgba(238,239,234,.55),rgba(223,226,219,.64)),url('/routify-landscape-meadow.jpg') center / cover; }.cursor-home .frontier-price-list>div { display:grid; grid-template-columns:1.2fr .8fr .8fr; align-items:center; min-height:52px; padding:0 12px; background:rgba(253,253,250,.9); color:#77746d; font-size:10px; }.cursor-home .frontier-price-list>div:first-child { min-height:38px; border-radius:7px 7px 0 0; background:rgba(238,237,232,.94); color:#9a978f; }.cursor-home .frontier-price-list>div:last-child { border-radius:0 0 7px 7px; }.cursor-home .frontier-price-list strong,.cursor-home .frontier-price-list b { color:#393732; font-weight:500; }.cursor-home .frontier-price-list em { width:max-content; padding:4px 6px; border-radius:9px; background:#e7eee6; color:#55705b; font-style:normal; }
-.cursor-home .frontier-route-flow { padding:48px 24px 24px; background:linear-gradient(rgba(240,237,231,.54),rgba(226,223,216,.64)),url('/routify-landscape-hills.jpg') center / cover; }.cursor-home .frontier-request,.cursor-home .frontier-route-line,.cursor-home .frontier-route-total { display:flex; align-items:center; gap:9px; padding:13px 14px; background:rgba(253,253,250,.92); color:#77746d; font:10px 'JetBrains Mono',monospace; }.cursor-home .frontier-request { border-radius:7px 7px 0 0; }.cursor-home .frontier-request small { color:#52705a; }.cursor-home .frontier-route-line { border-top:1px solid #e4e2dc; }.cursor-home .frontier-route-line i { width:7px; height:7px; border-radius:50%; background:#6e9476; }.cursor-home .frontier-route-line b { margin-left:auto; color:#47443f; }.cursor-home .frontier-route-total { justify-content:space-between; margin-top:8px; border-radius:7px; color:#4a4741; }.cursor-home .frontier-route-total strong { font-size:13px; }
+.cursor-home .frontier-model-menu { padding:44px 20px 20px; background:linear-gradient(rgba(237,235,229,.62),rgba(226,224,217,.68)),url('/hyxware-landscape-lake.jpg') center / cover; }.cursor-home .frontier-composer { display:flex; align-items:center; justify-content:space-between; gap:10px; padding:14px; border-radius:8px; background:rgba(253,253,250,.92); color:#76736d; font-size:11px; box-shadow:0 8px 30px rgba(43,40,34,.1); }.cursor-home .frontier-composer b { padding:5px 8px; border-radius:12px; background:#eceae4; color:#34322d; font-weight:500; }.cursor-home .frontier-model-list { width:72%; margin:8px 0 0 auto; padding:6px; border-radius:8px; background:rgba(253,253,250,.95); box-shadow:0 12px 34px rgba(43,40,34,.12); }.cursor-home .frontier-model-list span { display:flex; align-items:center; gap:8px; min-height:38px; padding:0 8px; color:#4d4a44; font-size:11px; }.cursor-home .frontier-model-list i { width:8px; height:8px; border-radius:50%; background:#aaa79f; }.cursor-home .frontier-model-list b { margin-left:auto; color:#a5532f; font-size:9px; font-weight:500; }
+.cursor-home .frontier-price-list { align-self:stretch; padding:34px 20px; background:linear-gradient(rgba(238,239,234,.55),rgba(223,226,219,.64)),url('/hyxware-landscape-meadow.jpg') center / cover; }.cursor-home .frontier-price-list>div { display:grid; grid-template-columns:1.2fr .8fr .8fr; align-items:center; min-height:52px; padding:0 12px; background:rgba(253,253,250,.9); color:#77746d; font-size:10px; }.cursor-home .frontier-price-list>div:first-child { min-height:38px; border-radius:7px 7px 0 0; background:rgba(238,237,232,.94); color:#9a978f; }.cursor-home .frontier-price-list>div:last-child { border-radius:0 0 7px 7px; }.cursor-home .frontier-price-list strong,.cursor-home .frontier-price-list b { color:#393732; font-weight:500; }.cursor-home .frontier-price-list em { width:max-content; padding:4px 6px; border-radius:9px; background:#e7eee6; color:#55705b; font-style:normal; }
+.cursor-home .frontier-route-flow { padding:48px 24px 24px; background:linear-gradient(rgba(240,237,231,.54),rgba(226,223,216,.64)),url('/hyxware-landscape-hills.jpg') center / cover; }.cursor-home .frontier-request,.cursor-home .frontier-route-line,.cursor-home .frontier-route-total { display:flex; align-items:center; gap:9px; padding:13px 14px; background:rgba(253,253,250,.92); color:#77746d; font:10px 'JetBrains Mono',monospace; }.cursor-home .frontier-request { border-radius:7px 7px 0 0; }.cursor-home .frontier-request small { color:#52705a; }.cursor-home .frontier-route-line { border-top:1px solid #e4e2dc; }.cursor-home .frontier-route-line i { width:7px; height:7px; border-radius:50%; background:#6e9476; }.cursor-home .frontier-route-line b { margin-left:auto; color:#47443f; }.cursor-home .frontier-route-total { justify-content:space-between; margin-top:8px; border-radius:7px; color:#4a4741; }.cursor-home .frontier-route-total strong { font-size:13px; }
 .cursor-home .frontier-price-list { background-image:linear-gradient(rgba(238,239,234,.67),rgba(223,226,219,.74)),url('/frontier-forest.jpg'); }
 .cursor-home .frontier-route-flow { padding-top:36px; background-image:linear-gradient(rgba(240,237,231,.66),rgba(226,223,216,.73)),url('/frontier-mountains.jpg'); }
 .cursor-home .frontier-request-secondary { border-top:1px solid #e4e2dc; border-radius:0; }
@@ -222,7 +251,7 @@ body[theme-mode='dark'] .cursor-home :is(.marketplace-showcase-copy,.feature-sho
   .cursor-home .feature-showcase.log-showcase { grid-template-columns:1fr; }
 }
 .cursor-home .studio-closing.giant-brand-section { --brand-scale:1; --brand-pad:24px; display:flex; align-items:flex-end; width:min(1210px,calc(100% - 40px)); aspect-ratio:1210 / 355; box-sizing:border-box; padding:0 0 var(--brand-pad); overflow:hidden; border:0; }
-.cursor-home .giant-brand-word { color:#171714; font-family:'Gilroy','Noto Sans SC',sans-serif; font-size:340px; font-weight:600; line-height:.82; letter-spacing:0; white-space:nowrap; transform:scale(var(--brand-scale)); transform-origin:left bottom; }
+.cursor-home .giant-brand-word { color:#171714; font-family:'Gilroy','Noto Sans SC',sans-serif; font-size:300px; font-weight:600; line-height:.82; letter-spacing:0; white-space:nowrap; transform:scale(var(--brand-scale)); transform-origin:left bottom; }
 .cursor-home .giant-brand-word span { display:inline-block; transform:translateY(-36px); }
 .cursor-home .site-footer { width:100%; box-sizing:border-box; padding:68px max(20px,calc((100% - 1210px)/2)) 30px; background:#f2f1ed; color:#28251f; }
 .cursor-home .site-footer-links { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:48px; min-height:300px; }

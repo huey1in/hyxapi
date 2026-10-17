@@ -33,7 +33,7 @@ const HeaderBar = () => {
         >
           <Menu size={19} />
         </button>
-        <Link to='/' className='home-brand'>Routify</Link>
+        <Link to='/' className='home-brand'>Hyxware</Link>
       </div>
       <nav className='home-nav-links console-home-nav-links'>
         <Link to='/'>首页</Link>

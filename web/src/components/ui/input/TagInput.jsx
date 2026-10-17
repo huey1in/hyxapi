@@ -48,7 +48,7 @@ const TagInput = ({ value = [], onChange, placeholder, disabled, width }) => {
             <button
               type='button'
               onClick={() => removeAt(idx)}
-              className='inline-flex items-center justify-center -mr-0.5 ml-0.5 p-0.5 rounded hover:bg-black/10 dark:hover:bg-white/10'
+              className='inline-flex items-center justify-center -mr-0.5 ml-0.5 p-0.5 rounded-sm hover:bg-black/10 dark:hover:bg-white/10'
               aria-label='remove'
             >
               <X size={10} />
@@ -71,7 +71,7 @@ const TagInput = ({ value = [], onChange, placeholder, disabled, width }) => {
         }}
         onBlur={() => draft && commit(draft)}
         placeholder={value.length === 0 ? placeholder : ''}
-        className='flex-1 min-w-[80px] bg-transparent outline-none text-sm py-0.5 placeholder:text-ui-text-3'
+        className='flex-1 min-w-[80px] bg-transparent outline-hidden text-sm py-0.5 placeholder:text-ui-text-3'
       />
     </div>
   );

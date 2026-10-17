@@ -3,7 +3,9 @@ package controller
 import (
 	"fmt"
 	"net/http"
+	"net/url"
 	"strconv"
+	"strings"
 
 	"github.com/QuantumNous/new-api/common"
 	"github.com/QuantumNous/new-api/i18n"
@@ -49,6 +51,13 @@ func HandleOAuth(c *gin.Context) {
 			"success": false,
 			"message": i18n.T(c, i18n.MsgOAuthUnknownProvider),
 		})
+		return
+	}
+
+	// Providers may send browser callbacks to the API URL. Complete them on the
+	// same-origin page, which requests JSON and restores the local user state.
+	if strings.Contains(c.GetHeader("Accept"), "text/html") {
+		c.Redirect(http.StatusFound, "/oauth/"+url.PathEscape(providerName)+"?"+c.Request.URL.RawQuery)
 		return
 	}
 
@@ -123,14 +132,8 @@ func HandleOAuth(c *gin.Context) {
 		return
 	}
 
-	// 9. Setup login and redirect to home with one-time handoff code;
-	// the frontend (main.jsx) exchanges it for user info before first render.
-	session.Set("id", user.Id)
-	session.Set("username", user.Username)
-	session.Set("role", user.Role)
-	session.Set("status", user.Status)
-	_ = session.Save()
-	c.Redirect(http.StatusFound, "/console#code="+common.IssueHandoff(user.Id))
+	// 9. Establish the session and return user info to the same-origin callback.
+	setupLogin(user, c)
 }
 
 // handleOAuthBind handles binding OAuth account to existing user

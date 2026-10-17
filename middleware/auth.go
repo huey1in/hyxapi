@@ -233,9 +233,7 @@ func TokenOrUserAuth() func(c *gin.Context) {
 }
 
 // TokenAuthReadOnly 宽松版本的令牌认证中间件，用于只读查询接口。
-// 只验证令牌 key 是否存在，不检查令牌状态、过期时间和额度。
-// 即使令牌已过期、已耗尽或已禁用，也允许访问。
-// 仍然检查用户是否被封禁。
+// 允许过期或已耗尽的令牌读取用量；禁用令牌、被封禁用户及 IP 限制仍生效。
 func TokenAuthReadOnly() func(c *gin.Context) {
 	return func(c *gin.Context) {
 		key := c.Request.Header.Get("Authorization")
@@ -272,6 +270,17 @@ func TokenAuthReadOnly() func(c *gin.Context) {
 			return
 		}
 
+		if token.Status != common.TokenStatusEnabled && token.Status != common.TokenStatusExpired && token.Status != common.TokenStatusExhausted {
+			c.AbortWithStatusJSON(http.StatusForbidden, gin.H{"success": false, "message": "Token is disabled"})
+			return
+		}
+		if allowed := token.GetIpLimits(); len(allowed) > 0 {
+			ip := net.ParseIP(c.ClientIP())
+			if ip == nil || !common.IsIpInCIDRList(ip, allowed) {
+				c.AbortWithStatusJSON(http.StatusForbidden, gin.H{"success": false, "message": "Token IP is not allowed"})
+				return
+			}
+		}
 		userCache, err := model.GetUserCache(token.UserId)
 		if err != nil {
 			common.SysLog(fmt.Sprintf("TokenAuthReadOnly GetUserCache error for user %d: %v", token.UserId, err))
@@ -304,16 +313,17 @@ func TokenAuth() func(c *gin.Context) {
 		if c.Request.Header.Get("Sec-WebSocket-Protocol") != "" {
 			// Sec-WebSocket-Protocol: realtime, openai-insecure-api-key.sk-xxx, openai-beta.realtime-v1
 			// read sk from Sec-WebSocket-Protocol
-			key := c.Request.Header.Get("Sec-WebSocket-Protocol")
-			parts := strings.Split(key, ",")
+			parts := strings.Split(c.Request.Header.Get("Sec-WebSocket-Protocol"), ",")
 			for _, part := range parts {
 				part = strings.TrimSpace(part)
-				if strings.HasPrefix(part, "openai-insecure-api-key") {
-					key = strings.TrimPrefix(part, "openai-insecure-api-key.")
+				if strings.HasPrefix(part, "openai-insecure-api-key.") {
+					key := strings.TrimPrefix(part, "openai-insecure-api-key.")
+					if c.Request.Header.Get("Authorization") == "" && key != "" {
+						c.Request.Header.Set("Authorization", "Bearer "+key)
+					}
 					break
 				}
 			}
-			c.Request.Header.Set("Authorization", "Bearer "+key)
 		}
 		// 检查path包含/v1/messages 或 /v1/models
 		if strings.Contains(c.Request.URL.Path, "/v1/messages") || strings.Contains(c.Request.URL.Path, "/v1/models") {

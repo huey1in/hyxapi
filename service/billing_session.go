@@ -141,7 +141,7 @@ func (s *BillingSession) GetPreConsumedQuota() int {
 }
 
 // Reserve is a compatibility hook for the latest relay interface. Existing
-// Routify billing settles any additional usage after the response, so keeping
+// Hyxware billing settles any additional usage after the response, so keeping
 // this as a no-op preserves the current charging behavior.
 func (s *BillingSession) Reserve(_ int) error {
 	return nil

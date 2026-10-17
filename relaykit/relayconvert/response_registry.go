@@ -983,7 +983,7 @@ func convertGeminiChatStreamResponseChunkToOAIChat(_ context.Context, info convm
 	if !ok || streamState == nil {
 		return nil, nil, errors.New("Gemini chat to OAI chat stream state is required")
 	}
-	usage := UsageFromGeminiMetadata(geminiResponse.GetUsageMetadata(), fallbackPromptTokens(info))
+	usage := streamState.ObserveUsage(geminiResponse.GetUsageMetadata(), fallbackPromptTokens(info))
 	model := ""
 	if info != nil && info.HasChannelMeta() {
 		model = info.GetUpstreamModelName()

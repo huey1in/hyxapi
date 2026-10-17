@@ -3,7 +3,7 @@
  *
  * 业务方禁止传 className —— 通过 props 表达视觉。
  *
- * variant:  admin (默认 rounded-xl) | inline (rounded + bg-subtle)
+ * variant:  admin (默认 rounded-xl) | inline (rounded-sm + bg-subtle)
  * size:     数字，控制高度(px) 与字号；默认 36 → 字号 14
  * width:    见 resolveWidth；默认 100%（自适应容器）
  * prefix:   左侧 React 节点
@@ -22,9 +22,9 @@ import { X } from 'lucide-react';
 import { cn } from '../tokens';
 
 const VARIANT = {
-  admin:  'border border-ui-border rounded-xl bg-transparent text-ui-text outline-none focus:border-ui-text-3 transition-colors',
-  auth:   'border border-ui-border rounded-lg bg-transparent text-ui-text outline-none focus:ring-2 focus:ring-ui-accent transition-shadow',
-  inline: 'border border-ui-border rounded bg-ui-bg-subtle text-ui-text outline-none focus:ring-1 focus:ring-ui-accent/40 transition-shadow',
+  admin:  'border border-ui-border rounded-xl bg-transparent text-ui-text outline-hidden focus:border-ui-text-3 transition-colors',
+  auth:   'border border-ui-border rounded-lg bg-transparent text-ui-text outline-hidden focus:ring-2 focus:ring-ui-accent transition-shadow',
+  inline: 'border border-ui-border rounded-sm bg-ui-bg-subtle text-ui-text outline-hidden focus:ring-1 focus:ring-ui-accent/40 transition-shadow',
 };
 const COMMON = 'placeholder:text-ui-text-3 disabled:opacity-50 disabled:cursor-not-allowed';
 
@@ -97,7 +97,7 @@ const Input = React.forwardRef(function Input(
             invalid ? 'border-ui-danger' : 'border-ui-border',
           )
         : cn(
-            'border rounded bg-ui-bg-subtle transition-shadow focus-within:ring-1 focus-within:ring-ui-accent/40',
+            'border rounded-sm bg-ui-bg-subtle transition-shadow focus-within:ring-1 focus-within:ring-ui-accent/40',
             invalid ? 'border-ui-danger' : 'border-ui-border',
           );
 
@@ -127,14 +127,14 @@ const Input = React.forwardRef(function Input(
           paddingRight: hasSuffix ? 8 : padX,
           fontSize: fz,
         }}
-        className='flex-1 min-w-0 h-full bg-transparent outline-none text-ui-text placeholder:text-ui-text-3'
+        className='flex-1 min-w-0 h-full bg-transparent outline-hidden text-ui-text placeholder:text-ui-text-3'
         {...rest}
       />
       {showClear && (
         <button
           type='button'
           onClick={() => onChange?.('')}
-          className='flex items-center justify-center mr-1.5 p-0.5 rounded text-ui-text-3 hover:text-ui-text hover:bg-ui-bg-subtle'
+          className='flex items-center justify-center mr-1.5 p-0.5 rounded-sm text-ui-text-3 hover:text-ui-text hover:bg-ui-bg-subtle'
           tabIndex={-1}
           aria-label='clear'
         >

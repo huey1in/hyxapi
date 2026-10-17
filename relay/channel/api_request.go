@@ -6,12 +6,14 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 	"regexp"
 	"strings"
 	"sync"
 	"time"
 
 	common2 "github.com/QuantumNous/new-api/common"
+	appconstant "github.com/QuantumNous/new-api/constant"
 	"github.com/QuantumNous/new-api/logger"
 	"github.com/QuantumNous/new-api/relay/common"
 	"github.com/QuantumNous/new-api/relay/constant"
@@ -392,7 +394,36 @@ func DoWssRequest(a Adaptor, c *gin.Context, info *common.RelayInfo, requestBody
 		targetHeader.Set(key, value)
 	}
 	targetHeader.Set("Content-Type", c.Request.Header.Get("Content-Type"))
-	targetConn, _, err := websocket.DefaultDialer.Dial(fullRequestURL, targetHeader)
+	targetURL, err := url.Parse(fullRequestURL)
+	if err != nil {
+		return nil, err
+	}
+	if targetURL.Scheme == "https" {
+		targetURL.Scheme = "wss"
+	}
+	if targetURL.Scheme == "http" {
+		targetURL.Scheme = "ws"
+	}
+	common2.SetContextKey(c, appconstant.ContextKeyUpstreamRequestOrigin, targetURL.Scheme+"://"+targetURL.Host)
+	dialer := *websocket.DefaultDialer
+	if info.ChannelSetting.Proxy != "" {
+		proxyURL, err := url.Parse(info.ChannelSetting.Proxy)
+		if err != nil {
+			return nil, err
+		}
+		dialer.Proxy = http.ProxyURL(proxyURL)
+	}
+	// The handshake owns these fields; never forward the downstream key or protocols.
+	for _, name := range []string{"Connection", "Upgrade", "Sec-WebSocket-Key", "Sec-WebSocket-Version", "Sec-WebSocket-Extensions"} {
+		targetHeader.Del(name)
+	}
+	if info.RelayMode != constant.RelayModeRealtime {
+		targetHeader.Del("Sec-WebSocket-Protocol")
+	}
+	targetConn, response, err := dialer.DialContext(c.Request.Context(), targetURL.String(), targetHeader)
+	if response != nil && response.Body != nil {
+		response.Body.Close()
+	}
 	if err != nil {
 		return nil, fmt.Errorf("dial failed to %s: %w", common.SanitizeURLForLog(fullRequestURL), err)
 	}
@@ -529,6 +560,7 @@ func doRequest(c *gin.Context, req *http.Request, info *common.RelayInfo) (*http
 		}
 	}
 
+	common2.SetContextKey(c, appconstant.ContextKeyUpstreamRequestOrigin, req.URL.Scheme+"://"+req.URL.Host)
 	resp, err := relayClient.Do(req)
 	if err != nil {
 		logger.LogError(c, "do request failed: "+err.Error())

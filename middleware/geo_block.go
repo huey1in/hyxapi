@@ -19,7 +19,7 @@ const geoBlockedPageTemplate = `<!DOCTYPE html>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="robots" content="noindex">
-    <title>Routify — Service Not Available</title>
+    <title>Hyxware — Service Not Available</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         html, body { height: 100%%; }
@@ -60,7 +60,7 @@ const geoBlockedPageTemplate = `<!DOCTYPE html>
 <body>
     <main>
         <div class="content">
-            <div class="brand">Routify</div>
+            <div class="brand">Hyxware</div>
             <div class="code">403 &middot; REGION_NOT_SUPPORTED</div>
             <h1>%[2]s</h1>
             <p class="lead">%[3]s</p>
@@ -89,7 +89,7 @@ const geoBlockedPageTemplate = `<!DOCTYPE html>
             </div>
         </div>
     </main>
-    <footer>&copy; Routify. All rights reserved.</footer>
+    <footer>&copy; Hyxware. All rights reserved.</footer>
 </body>
 </html>`
 
@@ -139,8 +139,8 @@ func renderGeoBlockedPage(c *gin.Context) []byte {
 	zhFirst := strings.Contains(strings.ToLower(c.GetHeader("Accept-Language")), "zh")
 
 	var lang, title, lead, leadAlt, ipLabel, regionLabel, supportLabel, refLabel, timeLabel string
-	zhLead := "Routify 的服务覆盖范围不包含您所在的地区。我们的全部业务运营、服务器与数据处理均位于中国大陆以外，且不向中国大陆地区的用户提供注册或使用服务。"
-	enLead := "Routify is not available in your region. All of our operations, infrastructure, and data processing are located outside Mainland China, and we do not offer registration or services to users in Mainland China."
+	zhLead := "Hyxware 的服务覆盖范围不包含您所在的地区。我们的全部业务运营、服务器与数据处理均位于中国大陆以外，且不向中国大陆地区的用户提供注册或使用服务。"
+	enLead := "Hyxware is not available in your region. All of our operations, infrastructure, and data processing are located outside Mainland China, and we do not offer registration or services to users in Mainland China."
 
 	if zhFirst {
 		lang = "zh-CN"

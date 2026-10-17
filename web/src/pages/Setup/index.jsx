@@ -74,7 +74,7 @@ const Setup = () => {
     <div className='min-h-screen flex items-center justify-center p-6' style={{ backgroundColor: 'var(--page-bg)' }}>
       <Card className='w-full max-w-2xl'>
         <h1 className='text-2xl font-semibold text-ui-text-1 mb-1'>系统初始化</h1>
-        <p className='text-ui-text-2 text-sm mb-6'>跟随向导完成 Routify 首次部署</p>
+        <p className='text-ui-text-2 text-sm mb-6'>跟随向导完成 Hyxware 首次部署</p>
 
         <div className='mb-8'>
           <Steps

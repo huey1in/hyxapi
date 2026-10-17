@@ -52,7 +52,7 @@ const Accordion = ({
               )}
             >
               <span className='font-medium'>{it.title}</span>
-              <ChevronDown size={16} className={cn('flex-shrink-0 text-ui-text-2 transition-transform', open && 'rotate-180')} />
+              <ChevronDown size={16} className={cn('shrink-0 text-ui-text-2 transition-transform', open && 'rotate-180')} />
             </button>
             <div
               className={cn('grid transition-[grid-template-rows] duration-200', open ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]')}

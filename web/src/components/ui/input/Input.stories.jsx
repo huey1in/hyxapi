@@ -21,7 +21,7 @@ export const AllVariants = () => {
       <Row title='variant'>
         <div className='space-y-2'>
           <Input variant='admin' value={v1} onChange={setV1} placeholder='admin (默认 rounded-xl)' />
-          <Input variant='inline' value={v1} onChange={setV1} placeholder='inline (rounded + bg-subtle)' />
+          <Input variant='inline' value={v1} onChange={setV1} placeholder='inline (rounded-sm + bg-subtle)' />
         </div>
       </Row>
       <Row title='size (数值，控制高度 + 字号)'>

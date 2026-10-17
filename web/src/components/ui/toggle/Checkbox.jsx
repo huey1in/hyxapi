@@ -28,7 +28,7 @@ const Checkbox = ({
       disabled={disabled}
       onClick={() => !disabled && onChange?.(indeterminate ? true : !checked)}
       className={cn(
-        'inline-flex items-center justify-center rounded-md border transition-colors flex-shrink-0',
+        'inline-flex items-center justify-center rounded-md border transition-colors shrink-0',
         SIZE[size],
         checked || indeterminate
           ? 'bg-ui-accent border-ui-accent text-ui-accent-fg'

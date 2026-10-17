@@ -36,7 +36,11 @@ func (info *RelayInfo) CountBillableToolCall(itemType string, functionName strin
 
 	switch itemType {
 	case dto.BuildInCallWebSearchCall:
-		info.incrementBillableToolCall(resolveWebSearchToolName(info.ResponsesUsageInfo.BuiltInTools))
+		key := info.WebSearchBillingKey
+		if key == "" {
+			key = resolveWebSearchToolName(info.ResponsesUsageInfo.BuiltInTools)
+		}
+		info.incrementBillableToolCall(key)
 	case dto.BuildInCallFileSearchCall:
 		info.incrementBillableToolCall(dto.BuildInToolFileSearch)
 	case dto.BuildInCallFunctionCall, dto.BuildInCallToolUse:
@@ -191,4 +195,32 @@ func IsNonBillableResponsesStatus(status []byte) bool {
 	default:
 		return false
 	}
+}
+
+func (info *RelayInfo) SetBillableToolCount(name string, count int) {
+	if info == nil || count < 0 {
+		return
+	}
+	if info.ResponsesUsageInfo == nil {
+		info.ResponsesUsageInfo = &ResponsesUsageInfo{BuiltInTools: map[string]*BuildInToolInfo{}}
+	}
+	if info.ResponsesUsageInfo.BuiltInTools == nil {
+		info.ResponsesUsageInfo.BuiltInTools = map[string]*BuildInToolInfo{}
+	}
+	info.ResponsesUsageInfo.BuiltInTools[name] = &BuildInToolInfo{ToolName: name, CallCount: count}
+}
+func (info *RelayInfo) RecordVendorToolUsage(raw []byte) {
+	if info == nil || info.VendorToolUsage == nil {
+		return
+	}
+	for name, count := range info.VendorToolUsage(raw) {
+		info.SetBillableToolCount(name, count)
+	}
+}
+
+func (info *RelayInfo) CountBillableNamedTool(name string) {
+	if info.ResponsesUsageInfo == nil || info.ResponsesUsageInfo.BuiltInTools == nil {
+		info.SetBillableToolCount(name, 0)
+	}
+	info.incrementBillableToolCall(name)
 }

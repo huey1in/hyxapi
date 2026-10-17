@@ -41,6 +41,8 @@ func GetAndValidateRequest(c *gin.Context, format types.RelayFormat) (request dt
 	case types.RelayFormatOpenAIAlphaSearch:
 		request, err = GetAndValidateAlphaSearchRequest(c)
 
+	case types.RelayFormatDeepSeekTools:
+		request, err = GetAndValidateDeepSeekToolsRequest(c)
 	case types.RelayFormatOpenAIImage:
 		request, err = GetAndValidOpenAIImageRequest(c, relayMode)
 	case types.RelayFormatEmbedding:
@@ -120,6 +122,8 @@ func GetAndValidateEmbeddingRequest(c *gin.Context, relayMode int) (*dto.Embeddi
 // pre-consume quota math (preConsumedTokens * ratio); an unbounded value can
 // overflow the conversion and corrupt billing.
 const maxTokensLimit = math.MaxInt32 / 2
+
+func ExceedsMaxTokensLimit(values ...*uint) bool { return exceedsMaxTokensLimit(values...) }
 
 func exceedsMaxTokensLimit(values ...*uint) bool {
 	for _, v := range values {
@@ -402,5 +406,25 @@ func GetAndValidateGeminiBatchEmbeddingRequest(c *gin.Context) (*dto.GeminiBatch
 	if err != nil {
 		return nil, err
 	}
+	return request, nil
+}
+
+func GetAndValidateDeepSeekToolsRequest(c *gin.Context) (*dto.DeepSeekToolsRequest, error) {
+	request := &dto.DeepSeekToolsRequest{}
+	if err := common.UnmarshalBodyReusable(c, request); err != nil {
+		return nil, err
+	}
+	storage, err := common.GetBodyStorage(c)
+	if err != nil {
+		return nil, err
+	}
+	rawBody, err := storage.Bytes()
+	if err != nil {
+		return nil, err
+	}
+	if len(rawBody) == 0 || common.GetJsonType(rawBody) != "object" {
+		return nil, errors.New("request body is empty")
+	}
+	request.RawBody = rawBody
 	return request, nil
 }

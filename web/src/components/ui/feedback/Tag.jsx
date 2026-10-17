@@ -62,7 +62,7 @@ const Tag = ({
         <button
           type='button'
           onClick={(e) => { e.stopPropagation(); onClose?.(e); }}
-          className='inline-flex items-center justify-center -mr-0.5 ml-0.5 p-0.5 rounded text-ui-text-3 hover:text-ui-text hover:bg-ui-bg-subtle'
+          className='inline-flex items-center justify-center -mr-0.5 ml-0.5 p-0.5 rounded-sm text-ui-text-3 hover:text-ui-text hover:bg-ui-bg-subtle'
           aria-label='close'
         >
           <X size={10} />

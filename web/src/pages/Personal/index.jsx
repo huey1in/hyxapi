@@ -1,7 +1,7 @@
 import { useContext, useEffect, useState } from 'react';
 import { Copy, Fingerprint, Trash2, KeyRound } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { API, showError, showSuccess, copy, timestamp2string, updateAPI } from '../../helpers';
+import { API, showError, showSuccess, copy, timestamp2string, updateAPI, getCurrencyConfig } from '../../helpers';
 import { quotaToDisplayAmount, displayAmountToQuota } from '../../helpers/quota';
 import {
   isPasskeySupported, prepareCredentialCreationOptions, buildRegistrationResult,
@@ -43,21 +43,34 @@ const Personal = () => {
   const [secureVerifyCode, setSecureVerifyCode] = useState('');
   const [secureVerifyBusy, setSecureVerifyBusy] = useState(false);
   const [pendingAction, setPendingAction] = useState(null);
-  const [notifyEnabled, setNotifyEnabled] = useState(false);
-  const [notifyThreshold, setNotifyThreshold] = useState(1);
+  const [notifyEnabled, setNotifyEnabled] = useState(true);
+  const [notifyThreshold, setNotifyThreshold] = useState(0);
+  const [notifyOptions, setNotifyOptions] = useState({ notify_type: 'email' });
+  const [channelNotifyEnabled, setChannelNotifyEnabled] = useState(false);
+  const [modelNotifyEnabled, setModelNotifyEnabled] = useState(false);
   const [notifySaving, setNotifySaving] = useState(false);
   const isMobile = useIsMobile();
 
   const u = userState?.user || {};
+  const notifyCurrency = getCurrencyConfig();
   useEffect(() => {
     setForm({ original_password: '', password: '' });
     setAccessToken(u.access_token || '');
     try {
       const s = u.setting ? (typeof u.setting === 'string' ? JSON.parse(u.setting) : u.setting) : {};
-      setNotifyEnabled(!!s.notify_type);
-      setNotifyThreshold(s.quota_warning_threshold ? quotaToDisplayAmount(s.quota_warning_threshold) : 1);
+      setNotifyEnabled(s.quota_warning_enabled !== false);
+      setNotifyThreshold(quotaToDisplayAmount(s.quota_warning_threshold || 0));
+      setNotifyOptions({
+        notify_type: s.notify_type || 'email',
+        notification_email: s.notification_email || '',
+        webhook_url: s.webhook_url || '', webhook_secret: s.webhook_secret || '',
+        bark_url: s.bark_url || '', gotify_url: s.gotify_url || '',
+        gotify_token: s.gotify_token || '', gotify_priority: s.gotify_priority ?? 5,
+      });
+      setChannelNotifyEnabled(s.channel_notify_enabled ?? u.role >= 100);
+      setModelNotifyEnabled(s.upstream_model_update_notify_enabled === true);
     } catch {}
-  }, [u.id]);
+  }, [u.id, u.setting, u.role]);
 
   const refresh = async () => {
     try {
@@ -220,13 +233,20 @@ const Personal = () => {
   };
 
   const saveNotify = async () => {
+    if (!Number.isFinite(Number(notifyThreshold)) || Number(notifyThreshold) < 0) {
+      return showError('预警阈值不能为负数');
+    }
     setNotifySaving(true);
     try {
       const { data } = await API.put('/api/user/self', {
         notify_settings: {
-          notify_type: notifyEnabled ? 'email' : '',
-          quota_warning_threshold: displayAmountToQuota(notifyThreshold || 1),
-          notification_email: '',
+          ...notifyOptions,
+          quota_warning_enabled: notifyEnabled,
+          quota_warning_threshold: displayAmountToQuota(notifyThreshold),
+          ...(u.role >= 10 ? {
+            channel_notify_enabled: channelNotifyEnabled,
+            upstream_model_update_notify_enabled: modelNotifyEnabled,
+          } : {}),
         },
       });
       if (data.success) { showSuccess('通知设置已保存'); refresh(); }
@@ -303,44 +323,62 @@ const Personal = () => {
       <SettingGroup title='通知'>
         <SettingRow
           title='额度预警'
-          description={u.email ? '余额低于阈值时发送邮件提醒至账号邮箱' : '需要先绑定邮箱才能开启'}
-          last={!notifyEnabled}
+          description='默认开启；余额跌破阈值时提醒一次，充值恢复后可再次提醒'
         >
-          <Switch checked={notifyEnabled} onChange={(v) => {
-            if (v && !u.email) { showError('请先绑定邮箱'); return; }
-            setNotifyEnabled(v);
-            if (!v) {
-              API.put('/api/user/self', { notify_settings: { notify_type: '', quota_warning_threshold: 0, notification_email: '' } })
-                .then(({ data }) => { if (data.success) { showSuccess('已关闭额度预警'); refresh(); } else showError(data.message); })
-                .catch(showError);
-            }
-          }} />
+          <Switch checked={notifyEnabled} onChange={setNotifyEnabled} />
         </SettingRow>
         {notifyEnabled && (
           <>
-            <SettingRow title='预警阈值' description='余额低于此金额时触发通知' last>
+            <SettingRow title='预警阈值' description='按当前显示货币填写；0 使用系统默认阈值'>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                 <div style={{ position: 'relative', width: 120 }}>
-                  <span style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', fontSize: 14, color: 'var(--ui-text-3)', pointerEvents: 'none' }}>$</span>
+                  {notifyCurrency.type !== 'TOKENS' && <span style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', fontSize: 14, color: 'var(--ui-text-3)', pointerEvents: 'none' }}>{notifyCurrency.symbol}</span>}
                   <input
                     type='number'
-                    min={0.1}
+                    min={0}
                     step='any'
                     value={notifyThreshold}
                     onChange={(e) => setNotifyThreshold(e.target.value === '' ? '' : Number(e.target.value))}
                     style={{
-                      width: '100%', height: 36, paddingLeft: 26, paddingRight: 12,
+                      width: '100%', height: 36, paddingLeft: notifyCurrency.type === 'TOKENS' ? 12 : 26, paddingRight: 12,
                       border: '1px solid #e3e3e3', borderRadius: 12, fontSize: 14,
                       color: 'var(--ui-text)', background: 'transparent', outline: 'none',
                       boxSizing: 'border-box',
                     }}
                   />
                 </div>
-                <Button onClick={saveNotify} loading={notifySaving}>保存</Button>
               </div>
             </SettingRow>
           </>
         )}
+        {u.role >= 10 && <>
+          <SettingRow title='渠道通知' description='接收渠道自动启用、禁用和批量测试完成通知'>
+            <Switch checked={channelNotifyEnabled} onChange={setChannelNotifyEnabled} />
+          </SettingRow>
+          <SettingRow title='上游模型更新' description='接收定时巡检发现的上游模型变更通知'>
+            <Switch checked={modelNotifyEnabled} onChange={setModelNotifyEnabled} />
+          </SettingRow>
+        </>}
+        <SettingRow title='通知方式' description='用于已开启的各类通知'>
+          <Select value={notifyOptions.notify_type} options={[
+            { value: 'email', label: '邮件' }, { value: 'webhook', label: 'Webhook' },
+            { value: 'bark', label: 'Bark' }, { value: 'gotify', label: 'Gotify' },
+          ]} onChange={(value) => setNotifyOptions((previous) => ({ ...previous, notify_type: value }))} />
+        </SettingRow>
+        {(notifyOptions.notify_type === 'email'
+          ? [{ key: 'notification_email', label: '通知邮箱', placeholder: u.email || '留空使用账号邮箱' }]
+          : notifyOptions.notify_type === 'webhook'
+            ? [{ key: 'webhook_url', label: 'Webhook URL' }, { key: 'webhook_secret', label: 'Webhook 密钥', secret: true }]
+            : notifyOptions.notify_type === 'bark'
+              ? [{ key: 'bark_url', label: 'Bark URL' }]
+              : [{ key: 'gotify_url', label: 'Gotify URL' }, { key: 'gotify_token', label: 'Gotify Token', secret: true }]
+        ).map((field) => <SettingRow key={field.key} title={field.label}>
+          <Input type={field.secret ? 'password' : 'text'} value={notifyOptions[field.key] || ''} placeholder={field.placeholder}
+            onChange={(value) => setNotifyOptions((previous) => ({ ...previous, [field.key]: value }))} />
+        </SettingRow>)}
+        <SettingRow title='保存通知设置' description='验证码、密码重置等账号邮件不受通知开关影响' last>
+          <Button onClick={saveNotify} loading={notifySaving}>保存</Button>
+        </SettingRow>
       </SettingGroup>
 
       {/* 偏好 */}

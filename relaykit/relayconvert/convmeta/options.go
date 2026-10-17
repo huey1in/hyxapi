@@ -51,6 +51,8 @@ type GeminiOptions struct {
 	// SupportsImagine reports whether the model supports image generation
 	// (switches response modalities). Nil means "never".
 	SupportsImagine func(modelName string) bool
+	// SupportsJSONSchema enables lossless JSON Schema fields (v1beta and Vertex AI).
+	SupportsJSONSchema func(modelName string) bool
 	// SafetySetting returns the harm threshold for a category. Nil or empty
 	// return means no safetySettings are attached.
 	SafetySetting func(category string) string
@@ -76,4 +78,8 @@ func (o *GeminiOptions) SafetySettingFor(category string) string {
 
 func (o *Options) ShouldPreserveThinkingSuffix(modelName string) bool {
 	return o != nil && o.PreserveThinkingSuffix != nil && o.PreserveThinkingSuffix(modelName)
+}
+
+func (o *GeminiOptions) SupportsJSONSchemaModel(modelName string) bool {
+	return o != nil && o.SupportsJSONSchema != nil && o.SupportsJSONSchema(modelName)
 }

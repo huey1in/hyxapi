@@ -2,6 +2,8 @@ import { useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { Filter, RefreshCw } from 'lucide-react';
 import { API, showError, renderNumber, renderQuota, timestamp2string } from '../../helpers';
 import { UserContext } from '../../context/User';
+import { StatusContext } from '../../context/Status';
+import { logsToCSV, logQuery } from './export.js';
 import { Button, IconButton, Input, Select, Pagination, Loading, Table } from '../../components/ui';
 import useIsMobile from '../../hooks/useIsMobile';
 
@@ -128,6 +130,8 @@ const TruncatedField = ({ value, muted = false }) => (
 
 const LogPage = ({ preview = false }) => {
   const [userState] = useContext(UserContext);
+  const [statusState] = useContext(StatusContext);
+  const [exporting, setExporting] = useState(false);
   const isAdmin = !preview && (userState?.user?.role || 1) >= 10;
   const [rows, setRows] = useState(preview ? PREVIEW_LOGS : []);
   const [page, setPage] = useState(1);
@@ -138,7 +142,7 @@ const LogPage = ({ preview = false }) => {
   const isMobile = useIsMobile();
   const [filters, setFilters] = useState({
     token_name: '', model_name: '', group: '', request_id: '',
-    channel: '', username: '', type: 0,
+    channel: '', username: '', type: 0, start_timestamp: '', end_timestamp: '',
   });
   const pageRef = useRef(page);
   const filtersRef = useRef(filters);
@@ -151,19 +155,9 @@ const LogPage = ({ preview = false }) => {
     if (!silent) setLoading(true);
     setExpanded(null);
     try {
-      const params = new URLSearchParams({
-        p: String(p), size: String(PAGE_SIZE),
-        type: String(fl.type || 0),
-        token_name: fl.token_name || '',
-        model_name: fl.model_name || '',
-        group: fl.group || '',
-        request_id: fl.request_id || '',
-        start_timestamp: '0', end_timestamp: '0',
-      });
-      if (isAdmin) {
-        if (fl.channel) params.append('channel', fl.channel);
-        if (fl.username) params.append('username', fl.username);
-      }
+      const params = logQuery(fl, isAdmin);
+      params.set('p', String(p));
+      params.set('size', String(PAGE_SIZE));
       const url = (isAdmin ? '/api/log/?' : '/api/log/self/?') + params.toString();
       const { data } = await API.get(url);
       if (data.success) {
@@ -180,6 +174,22 @@ const LogPage = ({ preview = false }) => {
   const reset = () => {
     const empty = { token_name: '', model_name: '', group: '', request_id: '', channel: '', username: '', type: 0 };
     setFilters(empty); load(1, empty);
+  };
+
+  const exportLogs = async () => {
+    setExporting(true);
+    try {
+      const { data } = await API.get(`${isAdmin ? '/api/log/export' : '/api/log/self/export'}?${logQuery(filters, isAdmin)}`, {
+        responseType: 'text', transformResponse: [(data) => data], timeout: 0,
+      });
+      const csv = logsToCSV(data, localStorage.getItem('i18nextLng') || 'zh-CN', isAdmin);
+      const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }));
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `hyxware-logs-${new Date().toISOString().slice(0, 10)}.csv`;
+      link.click();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+    } catch (error) { showError(error); } finally { setExporting(false); }
   };
 
   // 解析每行的 other 字段，附加缓存/总量等派生数据
@@ -259,6 +269,7 @@ const LogPage = ({ preview = false }) => {
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <span style={{ fontSize: 18, fontWeight: 600, color: 'var(--ui-text)' }}>消费明细</span>
         {!preview && <div style={{ display: 'flex', gap: 6 }}>
+          {(isAdmin || statusState?.status?.log_export_enabled !== false) && <Button size='sm' variant='toggle' loading={exporting} disabled={exporting} onClick={exportLogs}>导出 CSV</Button>}
           <IconButton icon={Filter} title='筛选' selected={showFilters} onClick={() => setShowFilters((s) => !s)} />
           <IconButton icon={RefreshCw} title='刷新' onClick={() => load(page)} />
         </div>}
@@ -268,6 +279,10 @@ const LogPage = ({ preview = false }) => {
       {showFilters && (
         <div style={{ padding: 16, border: '1px solid var(--ui-border)', borderRadius: 16, display: 'flex', flexDirection: 'column', gap: 12 }}>
           <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(4, 1fr)', gap: 10 }}>
+            {['start_timestamp', 'end_timestamp'].map((key) => <label key={key} style={{ fontSize: 12, color: 'var(--ui-text-3)' }}>
+              {key === 'start_timestamp' ? '开始时间' : '结束时间'}
+              <Input type='datetime-local' value={filters[key] || ''} onChange={f(key)} width='full' />
+            </label>)}
             <div>
               <div style={{ fontSize: 12, color: 'var(--ui-text-3)', marginBottom: 4 }}>类型</div>
               <Select value={filters.type} onChange={(v) => f('type')(Number(v))} options={TYPE_OPTIONS} />

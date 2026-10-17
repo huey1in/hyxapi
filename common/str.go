@@ -117,6 +117,6 @@ func MaskEmail(email string) string {
 // openai.com -> ***.com
 // www.openai.com -> ***.***.com
 // api.openai.com -> ***.***.com
-func MaskSensitiveInfo(str string) string {
-	return kitutil.MaskSensitiveInfo(str)
+func MaskSensitiveInfo(str string, upstreamURLs ...string) string {
+	return kitutil.MaskSensitiveInfo(str, upstreamURLs...)
 }

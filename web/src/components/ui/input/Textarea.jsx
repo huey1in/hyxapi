@@ -63,7 +63,7 @@ const Textarea = React.forwardRef(function Textarea(
         ? { paddingLeft: flatStyle.paddingLeft, paddingRight: flatStyle.paddingRight, paddingTop: 10, paddingBottom: 6, fontSize: flatStyle.fontSize, backgroundColor: 'transparent' }
         : { ...flatStyle, paddingTop: 8, paddingBottom: 8 }}
       className={footer
-        ? 'block w-full resize-none border-0 outline-none focus:ring-0 text-ui-text-1 placeholder:text-ui-text-3'
+        ? 'block w-full resize-none border-0 outline-hidden focus:ring-0 text-ui-text-1 placeholder:text-ui-text-3'
         : cn(s.className, 'resize-none', invalid && '!border-ui-danger')}
       {...rest}
     />

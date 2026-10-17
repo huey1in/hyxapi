@@ -1,6 +1,7 @@
 package service
 
 import (
+	"errors"
 	"github.com/QuantumNous/new-api/model"
 	"github.com/gin-gonic/gin"
 )
@@ -82,6 +83,17 @@ func (p *RetryParam) ResetRetryNextTry() {
 }
 
 func CacheGetRandomSatisfiedChannel(param *RetryParam) (*model.Channel, string, error) {
+	if param.Ctx != nil && param.Ctx.GetBool("responses_websocket") {
+		if id := param.Ctx.GetInt("responses_ws_channel_id"); id > 0 {
+			channel, err := model.CacheGetChannel(id)
+			if err != nil || !model.SupportsResponsesWebSocket(channel, param.ModelName) || !model.IsChannelEnabledForGroupModel(param.TokenGroup, param.ModelName, id) {
+				return nil, param.TokenGroup, errors.New("the WebSocket channel is no longer available for this group and model")
+			}
+			return channel, param.TokenGroup, nil
+		}
+		channel, err := model.GetResponsesWebSocketChannel(param.TokenGroup, param.ModelName, param.ExcludeChannels)
+		return channel, param.TokenGroup, err
+	}
 	channel, err := model.GetRandomSatisfiedChannel(param.TokenGroup, param.ModelName, param.GetRetry(), param.ExcludeChannels)
 	if err != nil {
 		return nil, param.TokenGroup, err

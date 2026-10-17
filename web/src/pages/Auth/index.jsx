@@ -210,7 +210,7 @@ const Auth = () => {
 
   useEffect(() => {
     if (isReset || !telegramEnabled || !telegramRef.current) return undefined;
-    const callbackName = `routifyTelegramLogin_${Date.now()}`;
+    const callbackName = `hyxwareTelegramLogin_${Date.now()}`;
     window[callbackName] = finishTelegramLogin;
     telegramRef.current.replaceChildren();
     const script = document.createElement('script');
@@ -254,7 +254,7 @@ const Auth = () => {
 
   return (
     <div className='cursor-auth-page'>
-      <header className='cursor-auth-header'><Link to='/' className='home-brand'>Routify</Link></header>
+      <header className='cursor-auth-header'><Link to='/' className='home-brand'>Hyxware</Link></header>
       <main className='cursor-auth-main'>
         <div className='cursor-auth-panel'>
           {!(isReset && resetSent) && <h1><span>{!isReset && !isLogin ? registerStepTitle : t(`auth.${headingKey}.title`)}</span><small>{t(`auth.${headingKey}.subtitle`)}</small></h1>}

@@ -46,7 +46,7 @@ const PageLayout = () => {
   }, []);  // eslint-disable-line
 
   useEffect(() => {
-    document.title = getSystemName() || 'Routify';
+    document.title = getSystemName() || 'Hyxware';
   }, [location.pathname]);
 
   return (

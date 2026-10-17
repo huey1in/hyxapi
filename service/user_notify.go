@@ -14,41 +14,57 @@ import (
 	"github.com/QuantumNous/new-api/setting/system_setting"
 )
 
-func NotifyRootUser(t string, subject string, content string) {
-	user := model.GetRootUser().ToBaseUser()
-	err := NotifyUser(user.Id, user.Email, user.GetSetting(), dto.NewNotify(t, subject, content, nil))
-	if err != nil {
-		common.SysLog(fmt.Sprintf("failed to notify root user: %s", err.Error()))
+func receivesChannelNotifications(role int, settings dto.UserSetting) bool {
+	if role < common.RoleAdminUser {
+		return false
 	}
+	if settings.ChannelNotifyEnabled != nil {
+		return *settings.ChannelNotifyEnabled
+	}
+	return role == common.RoleRootUser
+}
+
+func NotifyChannelWatchers(notifyType string, render func(lang string) (string, string)) {
+	notifyAdmins(notifyType, receivesChannelNotifications, render)
 }
 
 func NotifyUpstreamModelUpdateWatchers(subject string, content string) {
+	sentCount := notifyAdmins(dto.NotifyTypeChannelUpdate, func(_ int, settings dto.UserSetting) bool {
+		return settings.UpstreamModelUpdateNotifyEnabled
+	}, func(_ string) (string, string) { return subject, content })
+	common.SysLog(fmt.Sprintf("upstream model update notifications sent: %d", sentCount))
+}
+
+func notifyAdmins(notifyType string, receives func(int, dto.UserSetting) bool, render func(string) (string, string)) int {
 	var users []model.User
 	if err := model.DB.
 		Select("id", "email", "role", "status", "setting").
 		Where("status = ? AND role >= ?", common.UserStatusEnabled, common.RoleAdminUser).
 		Find(&users).Error; err != nil {
 		common.SysLog(fmt.Sprintf("failed to query upstream update notification users: %s", err.Error()))
-		return
+		return 0
 	}
 
-	notification := dto.NewNotify(dto.NotifyTypeChannelUpdate, subject, content, nil)
 	sentCount := 0
 	for _, user := range users {
 		userSetting := user.GetSetting()
-		if !userSetting.UpstreamModelUpdateNotifyEnabled {
+		if !receives(user.Role, userSetting) {
 			continue
 		}
-		if err := NotifyUser(user.Id, user.Email, userSetting, notification); err != nil {
+		subject, content := render(userSetting.Language)
+		if err := NotifyUser(user.Id, user.Email, userSetting, dto.NewNotify(notifyType, subject, content, nil)); err != nil {
 			common.SysLog(fmt.Sprintf("failed to notify user %d for upstream model update: %s", user.Id, err.Error()))
 			continue
 		}
 		sentCount++
 	}
-	common.SysLog(fmt.Sprintf("upstream model update notifications sent: %d", sentCount))
+	return sentCount
 }
 
 func NotifyUser(userId int, userEmail string, userSetting dto.UserSetting, data dto.Notify) error {
+	if data.Type == dto.NotifyTypeQuotaExceed && (!common.QuotaRemindEnabled || userSetting.QuotaWarningEnabled != nil && !*userSetting.QuotaWarningEnabled) {
+		return nil
+	}
 	notifyType := userSetting.NotifyType
 	if notifyType == "" {
 		notifyType = dto.NotifyTypeEmail

@@ -38,6 +38,7 @@ const Table = ({
   hoverable = true,
   emptyText = '暂无数据',
   onRowClick,
+  rowProps,
   expandedKey,
   renderExpanded,
   tableLayout = 'auto',
@@ -90,6 +91,7 @@ const Table = ({
               return (
                 <React.Fragment key={rk}>
                   <tr
+                    {...rowProps?.(row, idx)}
                     onClick={onRowClick ? () => onRowClick(row, idx) : undefined}
                     className={cn(
                       (!isLast && !isExpanded) && 'border-b border-ui-divider',

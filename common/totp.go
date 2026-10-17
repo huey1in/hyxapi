@@ -115,7 +115,7 @@ func Get2FAIssuer() string {
 	if SystemName != "" {
 		return SystemName
 	}
-	return "Routify"
+	return "Hyxware"
 }
 
 // ValidateNumericCode 验证数字验证码格式

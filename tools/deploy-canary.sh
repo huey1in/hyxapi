@@ -3,11 +3,11 @@
 # canary 金丝雀实例部署脚本
 #
 # 拓扑：
-#   routify:local   -> 生产实例（3000 master / 3001 slave）
-#   routify:canary  -> 金丝雀实例（3002 slave），新代码先只在这上面跑
+#   hyxware:local   -> 生产实例（3000 master / 3001 slave）
+#   hyxware:canary  -> 金丝雀实例（3002 slave），新代码先只在这上面跑
 #
 # 用法：
-#   tools/deploy-canary.sh build        # 用当前代码构建 routify:canary 镜像
+#   tools/deploy-canary.sh build        # 用当前代码构建 hyxware:canary 镜像
 #   tools/deploy-canary.sh deploy       # 用 canary 镜像重建金丝雀容器（不接流量）
 #   tools/deploy-canary.sh test         # 本地健康探测 3002
 #   tools/deploy-canary.sh on           # 金丝雀接入 nginx（weight=1 灰度）
@@ -19,14 +19,14 @@
 #   2. tools/deploy-canary.sh deploy   （部署到金丝雀，此时不接线上流量）
 #   3. tools/deploy-canary.sh test     （本地/手动验证新代码）
 #   4. tools/deploy-canary.sh on       （接入灰度，仅 ~9% 流量）
-#   5. 观察正常后，把新代码再构建进 routify:local 并滚动升级生产实例
+#   5. 观察正常后，把新代码再构建进 hyxware:local 并滚动升级生产实例
 #   6. 出问题随时 tools/deploy-canary.sh off 秒级回滚
 # =============================================================================
 set -euo pipefail
 
 CANARY_NAME="new-api-canary"
 CANARY_PORT="3002"
-CANARY_IMG="routify:canary"
+CANARY_IMG="hyxware:canary"
 NGINX_BIN="/www/server/nginx/sbin/nginx"
 NGINX_CONF="/www/server/panel/vhost/nginx/routifyapi.com.conf"
 UPSTREAM_LINE='    server 127.0.0.1:3002 weight=1;   # 金丝雀（先测试后接入，weight 越小流量越少）'

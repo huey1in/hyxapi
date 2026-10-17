@@ -10,18 +10,22 @@ import (
 
 	"github.com/QuantumNous/new-api/common"
 	"github.com/QuantumNous/new-api/model"
+	"github.com/QuantumNous/new-api/setting/log_setting"
 
 	"github.com/gin-gonic/gin"
 )
 
 func getDailyTokenUsage(c *gin.Context, userID int) {
 	endTimestamp := time.Now().Unix()
-	startTimestamp := time.Now().AddDate(-1, 0, 0).Unix()
+	startTimestamp := endTimestamp - min(int64(365*86400), log_setting.GetSetting().MaxRangeSeconds())
 	if value, err := strconv.ParseInt(c.Query("start_timestamp"), 10, 64); err == nil && value > 0 {
 		startTimestamp = value
 	}
 	if value, err := strconv.ParseInt(c.Query("end_timestamp"), 10, 64); err == nil && value > 0 {
 		endTimestamp = value
+	}
+	if userID > 0 && !applyLogRange(c, &startTimestamp, &endTimestamp, false) {
+		return
 	}
 	bucketSeconds, _ := strconv.ParseInt(c.Query("bucket_seconds"), 10, 64)
 	if bucketSeconds < 1 || bucketSeconds > 86400*31 {
@@ -96,6 +100,9 @@ func GetUserLogs(c *gin.Context) {
 	logType, _ := strconv.Atoi(c.Query("type"))
 	startTimestamp, _ := strconv.ParseInt(c.Query("start_timestamp"), 10, 64)
 	endTimestamp, _ := strconv.ParseInt(c.Query("end_timestamp"), 10, 64)
+	if !applyLogRange(c, &startTimestamp, &endTimestamp, false) {
+		return
+	}
 	tokenName := c.Query("token_name")
 	modelName := c.Query("model_name")
 	group := c.Query("group")
@@ -185,6 +192,9 @@ func GetLogsSelfStat(c *gin.Context) {
 	logType, _ := strconv.Atoi(c.Query("type"))
 	startTimestamp, _ := strconv.ParseInt(c.Query("start_timestamp"), 10, 64)
 	endTimestamp, _ := strconv.ParseInt(c.Query("end_timestamp"), 10, 64)
+	if !applyLogRange(c, &startTimestamp, &endTimestamp, false) {
+		return
+	}
 	tokenName := c.Query("token_name")
 	modelName := c.Query("model_name")
 	channel, _ := strconv.Atoi(c.Query("channel"))
