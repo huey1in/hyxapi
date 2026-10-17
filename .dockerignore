@@ -3,7 +3,7 @@
 *.md
 .vscode
 .gitignore
-Makefile
+makefile
 docs
 .eslintcache
 .gocache

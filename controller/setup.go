@@ -148,10 +148,3 @@ func PostSetup(c *gin.Context) {
 		"message": "系统初始化成功",
 	})
 }
-
-func boolToString(b bool) string {
-	if b {
-		return "true"
-	}
-	return "false"
-}

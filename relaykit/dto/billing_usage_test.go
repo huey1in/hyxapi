@@ -87,3 +87,26 @@ func TestBillingUsageJSONUsesProtocolNamedFields(t *testing.T) {
 	assert.Nil(t, clone.ClaudeUsage.BillingUsage)
 	assert.Nil(t, clone.GeminiUsageMetadata.BillingUsage)
 }
+
+func TestCloneBillingUsageDoesNotAliasCachedTokenDetails(t *testing.T) {
+	source := &BillingUsage{OpenAIUsage: &Usage{
+		PromptTokensDetails: InputTokenDetails{
+			CachedTokensDetails: &CachedTokenDetails{TextTokens: 11},
+		},
+		InputTokensDetails: &InputTokenDetails{
+			CachedTokensDetails: &CachedTokenDetails{AudioTokens: 22},
+		},
+	}}
+
+	clone := CloneBillingUsage(source)
+	require.NotNil(t, clone.OpenAIUsage)
+	require.NotNil(t, clone.OpenAIUsage.PromptTokensDetails.CachedTokensDetails)
+	require.NotNil(t, clone.OpenAIUsage.InputTokensDetails)
+	require.NotNil(t, clone.OpenAIUsage.InputTokensDetails.CachedTokensDetails)
+
+	clone.OpenAIUsage.PromptTokensDetails.CachedTokensDetails.TextTokens = 99
+	clone.OpenAIUsage.InputTokensDetails.CachedTokensDetails.AudioTokens = 88
+
+	assert.Equal(t, 11, source.OpenAIUsage.PromptTokensDetails.CachedTokensDetails.TextTokens)
+	assert.Equal(t, 22, source.OpenAIUsage.InputTokensDetails.CachedTokensDetails.AudioTokens)
+}

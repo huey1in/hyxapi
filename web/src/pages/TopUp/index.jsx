@@ -5,7 +5,7 @@ import { API, showError, showSuccess, showInfo, copy, renderQuota, timestamp2str
 import { UserContext } from '../../context/User';
 import { StatusContext } from '../../context/Status';
 import {
-  Button, IconButton, Input, Modal, Loading,
+  IconButton, Input, Modal, Loading,
 } from '../../components/ui';
 import useIsMobile from '../../hooks/useIsMobile';
 

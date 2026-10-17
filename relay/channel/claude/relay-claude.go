@@ -19,10 +19,6 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func stopReasonClaude2OpenAI(reason string) string {
-	return relayconvert.StopReasonClaudeToOpenAI(reason)
-}
-
 func maybeMarkClaudeRefusal(c *gin.Context, stopReason string) {
 	if c == nil {
 		return
@@ -41,17 +37,6 @@ func ResponseClaude2OpenAI(claudeResponse *dto.ClaudeResponse) *dto.OpenAITextRe
 }
 
 type ClaudeResponseInfo = relayconvert.ClaudeResponseInfo
-
-func cacheCreationTokensForOpenAIUsage(usage *dto.Usage) int {
-	if usage == nil {
-		return 0
-	}
-	openAIUsage := relayconvert.UsageFromClaudeUsage(usage)
-	if openAIUsage == nil {
-		return 0
-	}
-	return openAIUsage.PromptTokens - usage.PromptTokens - usage.PromptTokensDetails.CachedTokens
-}
 
 func buildOpenAIStyleUsageFromClaudeUsage(usage *dto.Usage) dto.Usage {
 	mapped := relayconvert.UsageFromClaudeUsage(usage)

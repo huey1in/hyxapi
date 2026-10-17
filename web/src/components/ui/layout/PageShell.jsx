@@ -13,7 +13,6 @@
  */
 
 import React from 'react';
-import { cn } from '../tokens';
 
 const PageShell = ({ title, actions, maxWidth = '1400px', children }) => (
   <div

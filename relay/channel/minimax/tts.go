@@ -3,7 +3,6 @@ package minimax
 import (
 	"encoding/hex"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -12,7 +11,6 @@ import (
 	relaycommon "github.com/QuantumNous/new-api/relay/common"
 	"github.com/QuantumNous/new-api/relaykit/dto"
 	"github.com/QuantumNous/new-api/relaykit/types"
-	"github.com/QuantumNous/new-api/service"
 	"github.com/gin-gonic/gin"
 )
 
@@ -91,20 +89,6 @@ type MiniMaxBaseResp struct {
 	StatusMsg  string `json:"status_msg"`
 }
 
-func getContentTypeByFormat(format string) string {
-	contentTypeMap := map[string]string{
-		"mp3":  "audio/mpeg",
-		"wav":  "audio/wav",
-		"flac": "audio/flac",
-		"aac":  "audio/aac",
-		"pcm":  "audio/pcm",
-	}
-	if ct, ok := contentTypeMap[format]; ok {
-		return ct
-	}
-	return "audio/mpeg" // default to mp3
-}
-
 func handleTTSResponse(c *gin.Context, resp *http.Response, info *relaycommon.RelayInfo) (usage any, err *types.NewAPIError) {
 	body, readErr := io.ReadAll(resp.Body)
 	if readErr != nil {
@@ -170,29 +154,4 @@ func handleTTSResponse(c *gin.Context, resp *http.Response, info *relaycommon.Re
 	}
 
 	return usage, nil
-}
-
-func handleChatCompletionResponse(c *gin.Context, resp *http.Response, info *relaycommon.RelayInfo) (usage any, err *types.NewAPIError) {
-	body, readErr := io.ReadAll(resp.Body)
-	if readErr != nil {
-		return nil, types.NewErrorWithStatusCode(
-			errors.New("failed to read minimax response"),
-			types.ErrorCodeReadResponseBodyFailed,
-			http.StatusInternalServerError,
-		)
-	}
-	defer resp.Body.Close()
-
-	// Set response headers
-	for key, values := range resp.Header {
-		if !service.ShouldCopyUpstreamHeader(c, key, values) {
-			continue
-		}
-		for _, value := range values {
-			c.Header(key, value)
-		}
-	}
-
-	c.Data(resp.StatusCode, "application/json", body)
-	return nil, nil
 }

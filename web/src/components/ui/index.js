@@ -53,5 +53,3 @@ export { default as Pagination } from './layout/Pagination';
 export { default as Steps }      from './layout/Steps';
 export { default as Breadcrumb } from './layout/Breadcrumb';
 export { default as PageShell }  from './layout/PageShell';
-
-export { default as ThemeToggle, useTheme } from './theme/ThemeToggle';

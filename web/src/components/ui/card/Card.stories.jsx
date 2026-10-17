@@ -1,6 +1,5 @@
 import React from 'react';
 import Card from './Card';
-import { Plus } from 'lucide-react';
 import Button from '../button/Button';
 
 export default { title: 'UI/Card', component: Card };

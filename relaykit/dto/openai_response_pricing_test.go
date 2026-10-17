@@ -19,6 +19,7 @@ func TestInputTokenDetailsUnmarshalsCachedTokenDetails(t *testing.T) {
 	}`), &details)
 
 	require.NoError(t, err)
+	require.NotNil(t, details.CachedTokensDetails)
 	require.Equal(t, 100, details.CachedTokensDetails.TextTokens)
 	require.Equal(t, 150, details.CachedTokensDetails.AudioTokens)
 	require.Equal(t, 50, details.CachedTokensDetails.ImageTokens)

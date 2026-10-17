@@ -19,7 +19,6 @@ pre[class*='language-'] {
   --tok-string:   #379d4a;
   --tok-number:   #892b8a;
   --tok-function: #d59300;
-  --tok-property: #B1108E;
   --tok-attr:     #B1108E;
   --tok-builtin:  #0072f5;
 }
@@ -31,7 +30,6 @@ html.dark {
   --tok-string:   #6ee7b7;
   --tok-number:   #c4b5fd;
   --tok-function: #fbbf24;
-  --tok-property: #f0abfc;
   --tok-attr:     #f0abfc;
   --tok-builtin:  #93c5fd;
 }

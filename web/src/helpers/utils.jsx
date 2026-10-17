@@ -17,11 +17,9 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 
-import { toastConstants } from '../constants';
 import React from 'react';
 import { showToast } from '../components/ui';
 import { TABLE_COMPACT_MODES_KEY } from '../constants';
-import { MOBILE_BREAKPOINT } from '../hooks/common/useIsMobile';
 
 const HTMLToastContent = ({ htmlContent }) => {
   return <div dangerouslySetInnerHTML={{ __html: htmlContent }} />;
@@ -109,31 +107,6 @@ export async function copy(text) {
     console.error(e);
     return false;
   }
-}
-
-// isMobile 函数已移除，请改用 useIsMobile Hook
-
-let showErrorOptions = { autoClose: toastConstants.ERROR_TIMEOUT };
-let showWarningOptions = { autoClose: toastConstants.WARNING_TIMEOUT };
-let showSuccessOptions = { autoClose: toastConstants.SUCCESS_TIMEOUT };
-let showInfoOptions = { autoClose: toastConstants.INFO_TIMEOUT };
-let showNoticeOptions = { autoClose: false };
-
-const isMobileScreen = window.matchMedia(
-  `(max-width: ${MOBILE_BREAKPOINT - 1}px)`,
-).matches;
-if (isMobileScreen) {
-  showErrorOptions.position = 'top-center';
-  // showErrorOptions.transition = 'flip';
-
-  showSuccessOptions.position = 'top-center';
-  // showSuccessOptions.transition = 'flip';
-
-  showInfoOptions.position = 'top-center';
-  // showInfoOptions.transition = 'flip';
-
-  showNoticeOptions.position = 'top-center';
-  // showNoticeOptions.transition = 'flip';
 }
 
 export function showError(error) {

@@ -15,6 +15,7 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"strings"
 	"testing"
 
 	"github.com/QuantumNous/new-api/relaykit/dto"
@@ -69,8 +70,9 @@ func checkGolden(t *testing.T, name string, got []byte) {
 		return
 	}
 	want, err := os.ReadFile(path)
-	require.NoError(t, err, "golden file missing, run: go test ./service/relayconvert -run TestGolden -update")
-	require.Equal(t, string(want), string(got), "conversion output drifted from golden snapshot %s", path)
+	require.NoError(t, err, "golden file missing, run from relaykit/: go test ./relayconvert -run TestGolden -update")
+	// Git may check out fixtures with CRLF; JSON serialization always emits LF.
+	require.Equal(t, strings.ReplaceAll(string(want), "\r\n", "\n"), string(got), "conversion output drifted from golden snapshot %s", path)
 }
 
 // goldenInfo mirrors the host's default converter options (new-api's
@@ -386,10 +388,6 @@ func TestGoldenStreamConversionMatrix(t *testing.T) {
 // ---------------------------------------------------------------------------
 // Fixture helpers
 // ---------------------------------------------------------------------------
-
-func rawJSON(s string) json.RawMessage {
-	return json.RawMessage(s)
-}
 
 // deepCopyFixture guards against converters mutating shared fixture state
 // between subtests (JSON round-trip through the concrete type).

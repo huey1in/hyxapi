@@ -155,8 +155,16 @@ func cloneOpenAIUsage(usage *Usage) *Usage {
 	}
 	clone := *usage
 	clone.BillingUsage = nil
+	if usage.PromptTokensDetails.CachedTokensDetails != nil {
+		details := *usage.PromptTokensDetails.CachedTokensDetails
+		clone.PromptTokensDetails.CachedTokensDetails = &details
+	}
 	if usage.InputTokensDetails != nil {
 		inputTokensDetails := *usage.InputTokensDetails
+		if inputTokensDetails.CachedTokensDetails != nil {
+			details := *inputTokensDetails.CachedTokensDetails
+			inputTokensDetails.CachedTokensDetails = &details
+		}
 		clone.InputTokensDetails = &inputTokensDetails
 	}
 	return &clone

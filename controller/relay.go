@@ -468,17 +468,6 @@ func RelayNotImplemented(c *gin.Context) {
 	})
 }
 
-func scaledUsage(usage *dto.Usage, ratio float64) *dto.Usage {
-	if usage == nil {
-		return &dto.Usage{}
-	}
-	return &dto.Usage{
-		PromptTokens:     int(float64(usage.PromptTokens) * ratio),
-		CompletionTokens: int(float64(usage.CompletionTokens) * ratio),
-		TotalTokens:      int(float64(usage.TotalTokens) * ratio),
-	}
-}
-
 func RelayNotFound(c *gin.Context) {
 	err := types.OpenAIError{
 		Message: fmt.Sprintf("Invalid URL (%s %s)", c.Request.Method, c.Request.URL.Path),

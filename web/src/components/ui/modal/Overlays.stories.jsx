@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Trash2, AlertTriangle, Plus } from 'lucide-react';
+import { Trash2, AlertTriangle } from 'lucide-react';
 import Modal from './Modal';
 import ModalShell from './ModalShell';
 import ConfirmDialog from './ConfirmDialog';

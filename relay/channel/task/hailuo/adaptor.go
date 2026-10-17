@@ -283,21 +283,3 @@ func (a *TaskAdaptor) buildVideoURL(_, fileID string) string {
 
 	return retrieveResp.File.DownloadURL
 }
-
-func contains(slice []string, item string) bool {
-	for _, s := range slice {
-		if s == item {
-			return true
-		}
-	}
-	return false
-}
-
-func containsInt(slice []int, item int) bool {
-	for _, s := range slice {
-		if s == item {
-			return true
-		}
-	}
-	return false
-}

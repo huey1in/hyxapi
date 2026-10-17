@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Plus, Search, Pencil, Trash2, ShieldCheck, ShieldOff, ArrowUp, ArrowDown, CreditCard, DollarSign, Dices, Copy } from 'lucide-react';
 import { API, showError, showSuccess, renderQuota, timestamp2string } from '../../helpers';
-import { quotaToDisplayAmount, displayAmountToQuota } from '../../helpers/quota';
+import { displayAmountToQuota } from '../../helpers/quota';
 import {
   PageShell, Card, Button, IconButton, Input, NumberInput, Table, Pagination,
   Tag, Modal, SlideOver, ConfirmDialog, Loading, Select,
