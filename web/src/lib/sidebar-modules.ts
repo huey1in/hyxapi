@@ -1,9 +1,11 @@
+import { ROLE } from './roles';
+
 export type SidebarModules = Record<string, Record<string, boolean>>;
 
 export const sidebarSections = [
   { key: 'console', title: 'Console Area', modules: [
     { key: 'detail', title: 'Dashboard' }, { key: 'token', title: 'Token Management' },
-    { key: 'log', title: 'Usage Logs' }, { key: 'audit', title: 'Audit Logs' },
+    { key: 'log', title: 'Usage Logs' }, { key: 'audit', title: 'Audit Logs', admin: true },
     { key: 'midjourney', title: 'Drawing Logs' }, { key: 'task', title: 'Task Logs' },
   ] },
   { key: 'personal', title: 'Personal Center Area', modules: [
@@ -11,6 +13,13 @@ export const sidebarSections = [
     { key: 'security', title: 'Security & Access' },
   ] },
 ] as const;
+
+export function sidebarSectionsForRole(role: number) {
+  return sidebarSections.map((section) => ({
+    ...section,
+    modules: section.modules.filter((module) => !('admin' in module) || role >= ROLE.ADMIN),
+  }));
+}
 
 // Invalid/legacy values do not narrow navigation. Only actual booleans count;
 // personal preferences can never override the administrator or role checks.

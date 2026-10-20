@@ -7,6 +7,7 @@ const { entry0: { filterSidebarItems } } = await loadTestModules(['./src/compone
 const items = [
   { to: '/console' },
   { to: '/console/channel', admin: true },
+  { to: '/console/audit', admin: true },
   { to: '/console/setting', root: true },
 ];
 
@@ -18,5 +19,6 @@ test('preview sidebar never inherits administrator entries', () => {
 });
 
 test('real sidebar still follows the signed-in role', () => {
-  assert.equal(filterSidebarItems(items, { preview: false, admin: true, root: false }).length, 2);
+  assert.deepEqual(filterSidebarItems(items, { preview: false, admin: false, root: false }), [{ to: '/console' }]);
+  assert.deepEqual(filterSidebarItems(items, { preview: false, admin: true, root: false }), items.slice(0, 3));
 });

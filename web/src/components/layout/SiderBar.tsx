@@ -32,7 +32,6 @@ const NAV_ITEMS: NavItem[] = [
   { to: '/console/topup',      label: '充值',     icon: Wallet },
   { to: '/console/my-subscription', label: '订阅',   icon: CreditCard },
   { to: '/console/log',        label: '日志',     icon: FileText },
-  { to: '/console/audit',      label: '审计日志', icon: Shield },
   { to: '/console/task',       label: '异步任务', icon: ListChecks },
   { to: '/console/midjourney', label: 'Midjourney', icon: ListChecks },
   { to: '/console/notices',    label: '通知',     icon: Bell },
@@ -46,6 +45,7 @@ const NAV_ITEMS: NavItem[] = [
   { to: '/console/subscription', label: '订阅管理',   icon: Layers,     admin: true },
   { to: '/console/redemption',   label: '兑换码管理', icon: Ticket,     admin: true },
   { to: '/console/user',         label: '用户管理',   icon: Users,      admin: true },
+  { to: '/console/audit',        label: '审计日志',   icon: Shield,     admin: true },
   { divider: true, root: true },
   { to: '/console/setting',      label: '系统设置',   icon: Settings,   root: true },
 ];

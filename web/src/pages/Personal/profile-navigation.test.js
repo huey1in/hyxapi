@@ -31,6 +31,15 @@ test('legacy sidebar values fail open for display and reset preserves unknown mo
   assert.equal(current.chat.chat, false);
 });
 
+test('personal sidebar settings expose audit navigation only to administrators', () => {
+  const keysFor = (role) => sidebar.sidebarSectionsForRole(role).flatMap((section) => section.modules.map((module) => module.key));
+  assert.equal(keysFor(0).includes('audit'), false);
+  assert.equal(keysFor(1).includes('audit'), false);
+  assert.equal(keysFor(10).includes('audit'), true);
+  assert.equal(keysFor(100).includes('audit'), true);
+  assert.deepEqual(keysFor(1), keysFor(10).filter((key) => key !== 'audit'));
+});
+
 test('check-in calendar handles leap years, week boundaries, and year transitions', () => {
   assert.equal(calendar.moveMonth('2024-01', -1), '2023-12');
   assert.equal(calendar.moveMonth('2024-12', 1), '2025-01');
