@@ -42,6 +42,7 @@ export default function PageLayout() {
   const needsAuthentication = isConsoleRoute || Boolean(module && modules[module].enabled && modules[module].requireAuth);
   const ready = authReady && resolvedAuthMode === needsAuthentication;
   const isStandaloneRoute = ['/', '/auth', '/setup', '/user/reset'].includes(location.pathname) || location.pathname.startsWith('/oauth/');
+  const showHeader = !isStandaloneRoute && !isConsoleRoute;
   const hideFooter = isConsoleRoute || isStandaloneRoute;
 
   useEffect(() => { if (mainRef.current) mainRef.current.scrollTop = 0; }, [location.pathname]);
@@ -94,8 +95,8 @@ export default function PageLayout() {
   return <MobileSidebarProvider>
     <SecurityVerification />
     <div className='app-layout' style={{ backgroundColor: 'var(--page-bg)' }}>
-      {!isStandaloneRoute && <HeaderBar showMenu={isConsoleRoute} loading={isConsoleRoute && (!ready || !statusState.status)} />}
-      <div className={cn('app-layout-body', !isStandaloneRoute && 'console-layout-body')}>
+      {showHeader && <HeaderBar />}
+      <div className={cn('app-layout-body', isConsoleRoute && 'console-layout-body', showHeader && 'public-layout-body')}>
         {isConsoleRoute && <SiderBar loading={!ready || !user || !statusState.status} />}
         <main ref={mainRef} className='app-layout-main'>
           {statusError && <div role='alert' className='flex items-center justify-center gap-3 px-4 py-3 text-sm text-ui-text-2'>{t(statusError)}<Button variant='link' onClick={() => setStatusAttempt((value) => value + 1)}>{t('Retry')}</Button></div>}

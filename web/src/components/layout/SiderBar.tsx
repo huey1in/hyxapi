@@ -1,12 +1,12 @@
 import { useContext, useEffect, useRef, useState } from 'react';
 import type { LucideIcon } from 'lucide-react';
 import { canOpenConsolePage } from '../../lib/console-routes';
-import { NavLink } from 'react-router-dom';
+import { Link, NavLink } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import {
   BarChart3, Key, FileText, Wallet, User,
   Radio, CreditCard, Ticket, Users, Settings,
-  ChevronLeft, X, Layers, Store, Bell, TrendingUp, Activity, Shield, ListChecks,
+  ChevronLeft, Menu, X, Layers, Store, Bell, TrendingUp, Activity, Shield, ListChecks,
 } from 'lucide-react';
 import { StatusContext } from '../../context/Status';
 import { useMobileSidebar } from '../../context/MobileSidebar';
@@ -17,6 +17,8 @@ import { useAuthStore } from '../../stores/auth-store';
 import { isSidebarModuleVisible, parseSidebarModules } from '../../lib/sidebar-modules';
 import { useNotifications } from '../../features/notifications/use-notifications';
 import Skeleton from '../ui/feedback/Skeleton';
+import SidebarUserCard from './SidebarUserCard';
+import { getSystemName } from '../../helpers';
 
 const LS_KEY = 'sidebar-collapsed';
 const EXPANDED = 256;
@@ -56,6 +58,7 @@ const SiderBar = ({ preview = false, previewActive = '/console', loading = false
   const root = (currentUser?.role ?? 0) >= 100;
   const isMobile = useIsMobile();
   const [mobileOpen, setMobileOpen] = useMobileSidebar();
+  const brand = getSystemName() || 'Hyxware';
   const [collapsed, setCollapsed] = useState(() => {
     try { return localStorage.getItem(LS_KEY) === '1'; } catch { return false; }
   });
@@ -147,25 +150,31 @@ const SiderBar = ({ preview = false, previewActive = '/console', loading = false
     </nav>
   );
 
+  const brandText = collapsed && !isMobile ? Array.from(brand)[0] : brand;
+  const brandClass = 'home-brand max-w-full truncate';
+  const brandContent = preview ? <span className={brandClass} title={brand}>{brandText}</span> : <Link to='/' className={brandClass} aria-label={brand} title={brand}>{brandText}</Link>;
+
   if (isMobile) {
-    if (!mobileOpen) return null;
-    return (
-      <div className='fixed inset-0 z-[150] flex'>
+    if (preview) return null;
+    return <>
+      <button type='button' className='console-menu-button fixed left-0 top-1/2 z-40 -translate-y-1/2 rounded-r-xl border border-l-0 border-ui-border bg-[var(--page-bg)] shadow-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ui-text' style={{ width: 28, height: 48 }} onClick={() => setMobileOpen(true)} aria-label={t('Open sidebar')} aria-expanded={mobileOpen} aria-controls='console-mobile-sidebar' aria-hidden={mobileOpen || undefined} tabIndex={mobileOpen ? -1 : undefined}><Menu size={16} /></button>
+      {mobileOpen && <div className='fixed inset-0 z-[150] flex'>
         <div className='absolute inset-0 bg-black/40' onClick={() => setMobileOpen(false)} />
-        <aside ref={drawer} role='dialog' aria-modal='true' aria-label={t('Console navigation')}
+        <aside id='console-mobile-sidebar' ref={drawer} role='dialog' aria-modal='true' aria-label={t('Console navigation')}
           className='console-sidebar relative flex flex-col h-full bg-[var(--page-bg)] shadow-2xl animate-slide-in-left'
           style={{ width: EXPANDED }}
         >
-          <div className='flex items-center justify-between h-[60px] px-4 border-b border-ui-divider shrink-0'>
-            <span className='text-[18px] font-semibold text-ui-text tracking-tight'>{t('Console')}</span>
-            <button aria-label={t('Close sidebar')} onClick={() => setMobileOpen(false)} className='p-1.5 cursor-pointer'>
+          <div className='console-sidebar-brand relative flex items-center h-[60px] pl-6 pr-12 border-b border-ui-divider shrink-0'>
+            {brandContent}
+            <button type='button' aria-label={t('Close sidebar')} onClick={() => setMobileOpen(false)} className='absolute right-3 p-1.5 cursor-pointer'>
               <X size={22} className='text-ui-text-2' />
             </button>
           </div>
           {navContent}
+          <SidebarUserCard loading={loading} preview={preview} />
         </aside>
-      </div>
-    );
+      </div>}
+    </>;
   }
 
   return (
@@ -177,12 +186,12 @@ const SiderBar = ({ preview = false, previewActive = '/console', loading = false
         backgroundColor: 'var(--page-bg)',
       }}
     >
-      <div className={cn('flex shrink-0 items-center h-[52px] px-4', collapsed && 'justify-center')}>
-        {!collapsed && <span className='text-[18px] font-semibold text-ui-text tracking-tight'>{t('Console')}</span>}
-        {collapsed && <span className='text-[18px] font-semibold text-ui-text'>{Array.from(t('Console'))[0]}</span>}
+      <div className={cn('console-sidebar-brand flex shrink-0 items-center h-[60px]', collapsed ? 'justify-center px-1' : 'px-6')}>
+        {brandContent}
       </div>
 
       {navContent}
+      <SidebarUserCard compact={collapsed} loading={loading} preview={preview} />
 
       {preview && (
         <div
