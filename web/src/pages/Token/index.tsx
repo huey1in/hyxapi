@@ -24,11 +24,10 @@ const TokenPage = ({ preview = false }: { preview?: boolean }) => {
   const [confirm, setConfirm] = useState<{ title: string; description: string; onOk: () => Promise<void> } | null>(null);
 
   useEffect(() => { setEditing(null); setConfirm(null); }, [management.identity]);
-  const requestDelete = (tokens: { id: number; name: string }[]) => {
-    const targets = tokens.map(({ id, name }) => ({ id, name }));
-    setConfirm({ title: t('Delete {{count}} API keys?', { count: targets.length }),
-      description: t('This deletes all selected keys, including keys on other pages. Existing clients using them will stop working.'),
-      onOk: async () => { if (await management.deleteTokens(targets)) setConfirm(null); },
+  const requestDelete = (token: { id: number; name: string }) => {
+    setConfirm({ title: t('Delete API key?'),
+      description: `${token.name}\n${t('Clients using this API key will stop working.')}`,
+      onOk: async () => { if (await management.deleteToken(token)) setConfirm(null); },
     });
   };
 
@@ -50,11 +49,9 @@ const TokenPage = ({ preview = false }: { preview?: boolean }) => {
         <Plus size={14} /> {t('Create API key')}</button></div>}
 
       <div className='token-key-list' style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-        {!preview && <TokenListControls key={management.identity} management={management}
-          onDeleteSelected={() => requestDelete(Object.values(management.selected))} />}
+        {!preview && <TokenListControls key={management.identity} management={management} />}
         <TokenTable rows={rows} loading={loading} preview={preview} disabled={management.busy}
-          selected={management.selected} onSelect={management.toggleSelection} onToggle={management.changeStatus}
-          onCopy={(row) => management.copyTokens([row], false)} onDelete={(row) => requestDelete([row])}
+          onToggle={management.changeStatus} onCopy={management.copyToken} onDelete={requestDelete}
           onEdit={async (row) => { const token = await management.loadToken(row); if (token) setEditing(token); }} />
       </div>
 

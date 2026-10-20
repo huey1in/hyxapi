@@ -1,6 +1,8 @@
 import { z } from 'zod';
 import { isAxiosError, isCancel } from 'axios';
 
+export const TOKEN_PAGE_SIZE = 10;
+
 const flag = z.preprocess((value) => value === 1 ? true : value === 0 ? false : value, z.boolean()).default(false);
 const text = z.string().nullish().transform((value) => value ?? '');
 export const tokenListItemSchema = z.object({
@@ -15,7 +17,6 @@ export const tokenSchema = tokenListItemSchema.extend({
 });
 export type ManagedToken = z.infer<typeof tokenSchema>;
 export type TokenListItem = z.infer<typeof tokenListItemSchema>;
-export type TokenSelection = Record<number, { id: number; name: string }>;
 export const tokenPageSchema = z.object({ items: z.array(tokenListItemSchema), total: z.number().int().nonnegative() });
 
 export function tokenErrorMessage(error: unknown): string {

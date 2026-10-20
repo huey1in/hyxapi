@@ -636,7 +636,9 @@ input[type='number'] {
 .token-management-page { flex:1; min-height:0; gap:20px; }
 .token-management-page > .console-page-header,.token-page-toolbar,.token-page-pagination { flex-shrink:0; }
 .token-page-toolbar { display:flex; align-items:center; justify-content:flex-end; }
-.token-management-page .token-key-list { flex:1; min-height:0; }
+/* Reserve one header and ten compact rows, shrinking only in short viewports. */
+.token-management-page .token-key-list { flex:0 1 calc(40px + 10 * 49px); min-height:0; }
+.token-management-page .token-key-list tbody tr { height:49px; }
 .token-management-page .token-key-list > :not(:last-child) { flex-shrink:0; }
 .token-management-page .token-key-list > :last-child { min-height:0; }
 .pricing-model-grid { grid-template-columns:repeat(auto-fill,minmax(min(100%,260px),1fr)); gap:12px; margin-bottom:16px; }

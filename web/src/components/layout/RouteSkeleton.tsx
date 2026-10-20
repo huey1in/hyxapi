@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { ConsolePage, DashboardStatsSkeleton, PersonalSkeleton, StatisticsSkeleton, MySubscriptionSkeleton, PricingCardsSkeleton } from './PageSkeletons';
 import ConsolePageHeader from './ConsolePageHeader';
 import TokenTable from '../../pages/Token/TokenTable';
+import { TOKEN_PAGE_SIZE } from '../../pages/Token/token-management';
 import Pagination from '../ui/layout/Pagination';
 import Skeleton from '../ui/feedback/Skeleton';
 
@@ -15,7 +16,7 @@ export default function RouteSkeleton() {
     <ConsolePageHeader title='API keys' />
     <div className='token-page-toolbar'><Skeleton width={140} height={32} rounded='rounded-full' /></div>
     <div className='token-key-list flex flex-col gap-3'><TokenTable loading /></div>
-    <div className='token-page-pagination'><Pagination page={1} pageSize={20} total={0} onChange={() => {}} /></div>
+    <div className='token-page-pagination'><Pagination page={1} pageSize={TOKEN_PAGE_SIZE} total={0} onChange={() => {}} /></div>
   </div>;
   if (pathname === '/console/pricing' || pathname === '/pricing') return <div className='console-content-page'>
     <ConsolePageHeader title={t('Model Marketplace')} />

@@ -3,32 +3,23 @@ import { Copy, Pencil, Power, Trash2 } from 'lucide-react';
 import { IconButton, Table } from '../../components/ui';
 import type { TableColumn } from '../../components/ui/layout/Table';
 import { timestamp2string } from '../../helpers';
-import type { TokenListItem, TokenSelection } from './token-management';
+import { TOKEN_PAGE_SIZE } from './token-management';
+import type { TokenListItem } from './token-management';
 
 type Props = {
   rows?: TokenListItem[];
   loading?: boolean;
   preview?: boolean;
   disabled?: boolean;
-  selected?: TokenSelection;
-  onSelect?: (rows: TokenListItem[], checked: boolean) => void;
   onCopy?: (row: TokenListItem) => void;
   onToggle?: (row: TokenListItem) => void;
   onEdit?: (row: TokenListItem) => void;
   onDelete?: (row: TokenListItem) => void;
 };
 
-export default function TokenTable({ rows = [], loading = false, preview = false, disabled = false, selected = {}, onSelect, onCopy, onToggle, onEdit, onDelete }: Props) {
+export default function TokenTable({ rows = [], loading = false, preview = false, disabled = false, onCopy, onToggle, onEdit, onDelete }: Props) {
   const { t } = useTranslation();
   const columns: TableColumn<TokenListItem>[] = [
-    ...(!preview ? [{
-      key: 'selection', width: 40,
-      title: <input type='checkbox' aria-label={t('Select visible keys')} disabled={disabled || !rows.length || !onSelect}
-        checked={!!rows.length && rows.every((row) => !!selected[row.id])}
-        onChange={(event) => onSelect?.(rows, event.target.checked)} />,
-      render: (row: TokenListItem) => <input type='checkbox' aria-label={t('Select API key {{name}}', { name: row.name })}
-        checked={!!selected[row.id]} disabled={disabled || !onSelect} onChange={(event) => onSelect?.([row], event.target.checked)} />,
-    }] : []),
     { key: 'name', title: t('Name'), width: 160, render: (row) => <span className='block truncate font-medium' title={row.name || t('Untitled')}>{row.name || t('Untitled')}</span> },
     { key: 'key', title: 'Key', width: 176, render: (row) => <span className='whitespace-nowrap font-mono text-xs text-ui-text-2'>{row.key.startsWith('sk-') ? row.key : `sk-${row.key}`}</span> },
     { key: 'created_time', title: t('Creation date'), width: 156, render: (row) => <span className='whitespace-nowrap text-xs tabular-nums text-ui-text-2'>{row.created_time > 0 ? timestamp2string(row.created_time) : '—'}</span> },
@@ -44,6 +35,6 @@ export default function TokenTable({ rows = [], loading = false, preview = false
     }] : []),
   ];
 
-  return <Table columns={columns} rows={rows} rowKey='id' size='sm' tableLayout='fixed' minWidth={preview ? 648 : 832}
-    loading={loading} emptyText={t('No API keys')} rowProps={(row) => ({ 'aria-label': row.name, 'data-token-id': row.id })} />;
+  return <Table columns={columns} rows={rows} rowKey='id' size='sm' tableLayout='fixed' minWidth={preview ? 648 : 792}
+    loading={loading} skeletonRows={TOKEN_PAGE_SIZE} emptyText={t('No API keys')} rowProps={(row) => ({ 'aria-label': row.name, 'data-token-id': row.id })} />;
 }
