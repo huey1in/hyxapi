@@ -3,7 +3,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { Plus, Search, Pencil, Trash2, ShieldCheck, ShieldOff, ArrowUp, ArrowDown, CreditCard, DollarSign, MoreHorizontal, Copy } from 'lucide-react';
 import { API, copy, showSuccess, renderQuota } from '../../helpers';
-import { PageShell, Card, Button, IconButton, Input, Table, Pagination, Tag, Modal, ConfirmDialog, Loading, Select } from '../../components/ui';
+import { PageShell, Card, Button, IconButton, Input, Table, Pagination, Tag, Modal, ConfirmDialog, Select } from '../../components/ui';
 import type { TableColumn } from '../../components/ui/layout/Table';
 import { useAuthStore } from '../../stores/auth-store';
 import type { AuthUser } from '../../stores/auth-store';
@@ -99,7 +99,7 @@ function UsersWorkspace({ actor }: { actor: AuthUser | null }) {
       {groupList.isError && <p role='alert' className='mt-2 text-xs text-ui-danger'>{t('Group filters could not be loaded. Refresh this page to retry.')}</p>}
     </Card>
     {list.isError && <p role='alert' className='mb-3 text-sm text-ui-danger'>{t(userErrorMessage(list.error))}</p>}
-    {list.isPending ? <Loading /> : <Table columns={columns} rows={rows} minWidth={1360} emptyText={t('No users')} />}
+    <Table loading={list.isPending} columns={columns} rows={rows} minWidth={1360} emptyText={t('No users')} />
     <div className='mt-4 flex justify-end'><Pagination total={total} pageSize={pageSize} page={page} onChange={setPage} /></div>
     {windowState?.kind === 'create' && <UserEditModal actorRole={actor.role} user={null} onClose={() => setWindowState(null)} onSaved={saved} />}
     {windowState?.kind === 'edit' && <UserEditModal key={windowState.user.id} actorRole={actor.role} user={windowState.user} onClose={() => setWindowState(null)} onSaved={saved} />}

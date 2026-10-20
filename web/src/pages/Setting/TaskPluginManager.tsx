@@ -1,8 +1,9 @@
+import Skeleton from '../../components/ui/feedback/Skeleton';
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { Plus, RefreshCw } from 'lucide-react';
-import { Button, Input, Loading, Pagination, Table, Tabs } from '../../components/ui';
+import { Button, Input, Pagination, Table, Tabs, ContentSkeleton } from '../../components/ui';
 import { useAuthStore } from '../../stores/auth-store';
 import { apiErrorMessage } from '../../lib/api-error';
 import TaskPluginEditor, { PluginConfirmation } from './TaskPluginEditor';
@@ -28,14 +29,14 @@ function PluginSession({ identity }: { identity: string }) {
     {runtimeQuery.isError ? <div role='alert' className='space-y-2 text-sm text-ui-danger'><p>{t(apiErrorMessage(runtimeQuery.error, 'Unable to load plugin runtime'))}</p><Button size='sm' onClick={() => void runtimeQuery.refetch()}>{t('Retry runtime')}</Button></div> : runtime && <div className='text-xs text-ui-text-3'>{t('Runtime generation {{generation}} · Last publication: {{status}}', { generation: runtime.current_generation, status: t(runtime.last_rebuild.status) })}{Object.keys(runtime.plugin_errors).length > 0 && <details className='mt-2'><summary>{t('View loading errors')}</summary><pre className='whitespace-pre-wrap break-all'>{JSON.stringify(runtime.plugin_errors, null, 2)}</pre></details>}{runtime.database_error && <p role='alert'>{runtime.database_error}</p>}</div>}
     {tab === 'installed' ? <>
       <Input aria-label={t('Search plugin name or key')} value={search} onChange={(value) => { setSearch(value); setPage(1); }} placeholder={t('Search plugin name or key')} />
-      {listQuery.isError ? <div role='alert' className='space-y-2 text-sm text-ui-danger'><p>{t(apiErrorMessage(listQuery.error, 'Unable to load plugins'))}</p><Button onClick={() => void listQuery.refetch()}>{t('Retry plugins')}</Button></div> : !listQuery.data ? <Loading /> : <><Table rowKey={(row) => row.meta.key} minWidth={650} rows={filtered.slice((currentPage - 1) * 20, currentPage * 20)} columns={[
+      {listQuery.isError ? <div role='alert' className='space-y-2 text-sm text-ui-danger'><p>{t(apiErrorMessage(listQuery.error, 'Unable to load plugins'))}</p><Button onClick={() => void listQuery.refetch()}>{t('Retry plugins')}</Button></div> : <><Table loading={!listQuery.data} rowKey={(row) => row.meta.key} minWidth={650} rows={filtered.slice((currentPage - 1) * 20, currentPage * 20)} columns={[
         { key: 'name', title: t('Plugin'), render: (row) => <div><div>{row.meta.name || row.meta.key}</div><div className='text-xs text-ui-text-3'>{row.meta.key} · {row.meta.version}</div></div> },
         { key: 'source', title: t('Source'), render: (row) => t(sourceLabels[row.source]) },
         { key: 'runtime', title: t('Status'), render: (row) => <div title={row.runtime_error}>{t(statusLabels[row.runtime_status])}</div> },
         { key: 'usage', title: t('In use'), render: (row) => t('{{channels}} channels / {{tasks}} tasks', { channels: row.channel_count, tasks: row.in_flight_count }) },
         { key: 'actions', title: t('Actions'), render: (row) => <div className='flex items-center gap-2'><Button size='sm' variant='toggle' onClick={() => openEditor({ key: row.meta.key, source: '', remark: '', enabled: true, icon: '' })}>{t('Manage')}</Button><Button size='sm' variant='link' onClick={() => setConfirmation({ kind: 'status', key: row.meta.key, enabled: !row.enabled })}>{t(row.enabled ? 'Disable' : 'Enable')}</Button></div> },
       ]} /><Pagination page={currentPage} pageSize={20} total={filtered.length} onChange={setPage} /></>}
-    </> : sourcesQuery.isError ? <div role='alert' className='space-y-2 text-sm text-ui-danger'><p>{t(apiErrorMessage(sourcesQuery.error, 'Unable to load marketplace sources'))}</p><Button onClick={() => void sourcesQuery.refetch()}>{t('Retry sources')}</Button></div> : !sources ? <Loading /> : <TaskPluginMarketplace key={JSON.stringify(sources)} identity={identity} sources={sources} onImport={openEditor} onSaved={() => void sourcesQuery.refetch()} />}
+    </> : sourcesQuery.isError ? <div role='alert' className='space-y-2 text-sm text-ui-danger'><p>{t(apiErrorMessage(sourcesQuery.error, 'Unable to load marketplace sources'))}</p><Button onClick={() => void sourcesQuery.refetch()}>{t('Retry sources')}</Button></div> : !sources ? <ContentSkeleton variant='form'><div className='flex flex-wrap items-end gap-3'><div className='min-w-40 flex-1 space-y-1.5'><Skeleton width={120} height={16} /><Skeleton height={36} rounded='rounded-full' /></div><Skeleton width={130} height={36} rounded='rounded-full' /><Skeleton width={100} height={36} rounded='rounded-full' /></div></ContentSkeleton> : <TaskPluginMarketplace key={JSON.stringify(sources)} identity={identity} sources={sources} onImport={openEditor} onSaved={() => void sourcesQuery.refetch()} />}
     {editor && <TaskPluginEditor key={`${editor.draft.key ?? 'new'}:${editor.generation}`} identity={identity} initial={editor.draft} onClose={() => setEditor(null)} onSaved={refresh} />}
     {confirmation && <PluginConfirmation key={JSON.stringify(confirmation)} action={confirmation} onClose={() => setConfirmation(null)} onSaved={refresh} />}
   </div>;

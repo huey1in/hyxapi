@@ -1,7 +1,8 @@
+import Skeleton from '../../components/ui/feedback/Skeleton';
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
-import { Button, Loading, PageShell, Select } from '../../components/ui';
+import { Button, PageShell, Select, ContentSkeleton } from '../../components/ui';
 import { useAuthStore } from '../../stores/auth-store';
 import { apiErrorMessage } from '../../lib/api-error';
 import { readWalletData } from '../../features/payments/wallet-query';
@@ -16,7 +17,7 @@ function SubscriptionCodesTab({ identity }: { identity: string }) {
   const plans = query.isError ? [] : query.data?.map((item) => item.plan) ?? [];
   const plan = plans.find((item) => item.id === selected) ?? plans[0];
   if (query.isError) return <div role='alert' className='space-y-2 text-sm text-ui-danger'><p>{t(apiErrorMessage(query.error, 'Unable to load plans'))}</p><Button onClick={() => void query.refetch()}>{t('Retry')}</Button></div>;
-  if (!query.data) return <Loading />;
+  if (!query.data) return <ContentSkeleton variant='form'><div className='flex flex-wrap items-end justify-between gap-3 rounded-2xl border border-ui-border p-4'><div className='grid w-60 max-w-full gap-1.5 text-xs text-ui-text-3'>{t('Select plan')}<Skeleton height={36} rounded='rounded-full' /></div><Skeleton width={110} height={36} rounded='rounded-full' /></div></ContentSkeleton>;
   return <div className='space-y-4'>
     <div className='flex flex-wrap items-end justify-between gap-3 rounded-2xl border border-ui-border p-4'>
       <label className='grid w-60 max-w-full gap-1.5 text-xs text-ui-text-3'>{t('Select plan')}<Select aria-label={t('Select plan')} width='full' value={plan ? String(plan.id) : ''} onChange={(value) => setSelected(Number(value))} options={plans.map((item) => ({ value: String(item.id), label: item.title }))} /></label>

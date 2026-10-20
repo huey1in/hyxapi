@@ -3,15 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { Plus, Trash2 } from 'lucide-react';
 import { z } from 'zod';
-import {
-  Button,
-  Input,
-  Loading,
-  Modal,
-  Select,
-  Table,
-  showSuccess,
-} from '../../components/ui';
+import { Button, Input, Modal, Select, Table, showSuccess } from '../../components/ui';
 import { useOwnedOperation } from '../../hooks/useOwnedOperation';
 import { apiErrorMessage } from '../../lib/api-error';
 import {
@@ -202,10 +194,9 @@ export default function TaskPluginMarketplace({
         <p className="text-sm text-ui-text-3">
           {t('Select a marketplace source, then load available plugins.')}
         </p>
-      ) : query.isFetching ? (
-        <Loading />
       ) : (
         <Table
+          loading={query.isPending}
           rows={query.data ?? []}
           rowKey="key"
           minWidth={560}

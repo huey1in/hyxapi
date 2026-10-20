@@ -1,7 +1,8 @@
+import { OffersSkeleton } from '../../components/layout/PageSkeletons';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { API, renderQuota } from '../../helpers';
-import { Button, ConfirmDialog, Loading, Modal, Select, Tag, showSuccess } from '../../components/ui';
+import { Button, ConfirmDialog, Modal, Select, Tag, showSuccess } from '../../components/ui';
 import { useAuthStore } from '../../stores/auth-store';
 import { apiErrorMessage } from '../../lib/api-error';
 import type { ApiEnvelope } from '../../types/api';
@@ -47,7 +48,7 @@ function Offers({ onPurchased, identity }: Props & { identity: string }) {
   const { t, i18n } = useTranslation(); const [selected, setSelected] = useState<SubscriptionPlan | null>(null);
   const info = useWalletPaymentInfo(identity);
   const offers = useWalletOffers(identity); const subscriptions = useWalletSubscriptions(identity);
-  if (offers.isPending || info.isPending || subscriptions.isPending) return <Loading size='sm' />;
+  if (offers.isPending || info.isPending || subscriptions.isPending) return <OffersSkeleton />;
   if (offers.isError || info.isError || subscriptions.isError) return <div role='alert' className='space-y-2 text-sm text-ui-danger'><p>{t(apiErrorMessage(offers.error || info.error || subscriptions.error, 'Unable to load subscription plans'))}</p><Button onClick={() => { void offers.refetch(); void info.refetch(); void subscriptions.refetch(); }}>{t('Retry')}</Button></div>;
   if (!offers.data?.length || !info.data) return null;
   const unitLabels: Record<string, string> = { hour: 'Hours', day: 'Days', week: 'Weeks', month: 'Months', year: 'Years', custom: 'Seconds' };

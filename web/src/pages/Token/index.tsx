@@ -1,7 +1,7 @@
 import { useContext, useEffect, useState } from 'react';
 import { Plus } from 'lucide-react';
-import { ConfirmDialog, Loading, Pagination } from '../../components/ui';
-import useIsMobile from '../../hooks/useIsMobile';
+import { ConfirmDialog, Pagination } from '../../components/ui';
+import { ConsolePage, TokenCardsSkeleton } from '../../components/layout/PageSkeletons';
 import { StatusContext } from '../../context/Status';
 import ClientLaunchDialog from '../../features/chat/ClientLaunchDialog';
 import { useChatPresets } from '../../features/chat/use-chat-presets';
@@ -30,7 +30,6 @@ const TokenPage = ({ preview = false }: { preview?: boolean }) => {
   const [confirm, setConfirm] = useState<{ title: string; description: string; onOk: () => Promise<void> } | null>(null);
   const [clientToken, setClientToken] = useState<number | null>(null);
   const { presets } = useChatPresets();
-  const isMobile = useIsMobile();
 
   useEffect(() => { setEditing(null); setConfirm(null); setClientToken(null); }, [management.identity]);
   const requestDelete = (tokens: { id: number; name: string }[]) => {
@@ -44,7 +43,7 @@ const TokenPage = ({ preview = false }: { preview?: boolean }) => {
   const origin = typeof window !== 'undefined' ? window.location.origin : 'https://api.example.com';
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: isMobile ? 20 : 28, width: '100%', maxWidth: 960, marginInline: 'auto', padding: isMobile ? '16px' : '24px 16px' }}>
+    <ConsolePage>
       {/* API keys */}
       <div className='token-key-list' style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
@@ -65,7 +64,7 @@ const TokenPage = ({ preview = false }: { preview?: boolean }) => {
 
         {!preview && <TokenListControls key={management.identity} management={management} visibleRows={visibleRows}
           onDeleteSelected={() => requestDelete(Object.values(management.selected))} />}
-        {loading ? <Loading /> : visibleRows.length === 0 ? (
+        {loading ? <TokenCardsSkeleton clientEnabled={presets.length > 0} /> : visibleRows.length === 0 ? (
           <div style={{ padding: '32px 0', textAlign: 'center', color: 'var(--ui-text-3)', fontSize: 14 }}>{t('No API keys')}</div>
         ) : visibleRows.map((row) => (
           <KeyCard key={row.id} row={row} preview={preview} disabled={management.busy}
@@ -96,7 +95,7 @@ const TokenPage = ({ preview = false }: { preview?: boolean }) => {
           loading={management.busy} closeOnConfirm={false} confirmText={t('Delete')} cancelText={t('Cancel')}
           onClose={() => { if (!management.busy) setConfirm(null); }} />
       )}
-    </div>
+    </ConsolePage>
   );
 };
 

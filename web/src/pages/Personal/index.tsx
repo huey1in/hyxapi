@@ -2,12 +2,12 @@ import { useEffect, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { API } from '../../helpers';
-import { Button, Loading } from '../../components/ui';
+import { Button } from '../../components/ui';
 import { useAuthStore } from '../../stores/auth-store';
 import type { AuthUser } from '../../stores/auth-store';
 import { authResult } from '../../lib/secure-verification';
 import { apiErrorMessage } from '../../lib/api-error';
-import useIsMobile from '../../hooks/useIsMobile';
+import { ConsolePage, PersonalSkeleton } from '../../components/layout/PageSkeletons';
 import AccountSettings from './AccountSettings';
 import SecuritySettings from './SecuritySettings';
 import NotificationSettings, { PersonalPreferences } from './NotificationSettings';
@@ -21,7 +21,6 @@ import AccountBindings from './AccountBindings';
 
 function PersonalProfile({ identity }: { identity: string }) {
   const { t } = useTranslation();
-  const isMobile = useIsMobile();
   const user = useAuthStore((state) => state.auth.user);
   const [ready, setReady] = useState(false);
   const profile = useQuery({
@@ -36,11 +35,11 @@ function PersonalProfile({ identity }: { identity: string }) {
     const result = await authResult<AuthUser>(API.get('/api/user/self', { signal, disableDuplicate: true, skipErrorHandler: true }));
     signal.throwIfAborted(); useAuthStore.getState().auth.setUser(result);
   };
-  if (profile.isPending) return <Loading />;
+  if (profile.isPending) return <PersonalSkeleton />;
   if (profile.error) return <div role='alert' className='p-6 text-sm'>{t(apiErrorMessage(profile.error, 'Unable to load profile'))} <Button onClick={() => void profile.refetch()} loading={profile.isFetching}>{t('Retry')}</Button></div>;
-  if (!ready) return <Loading />;
+  if (!ready) return <PersonalSkeleton />;
   if (!user || !profile.data) return null;
-  return <div style={{ display: 'flex', flexDirection: 'column', gap: 24, width: '100%', maxWidth: 720, marginInline: 'auto', padding: isMobile ? '16px' : '24px 16px' }}>
+  return <ConsolePage width={720} gap={24} mobileGap={24}>
     <AccountSettings user={user} refresh={refresh} />
     <SecuritySettings identity={identity} refresh={refresh} />
     <LoginSessions />
@@ -50,7 +49,7 @@ function PersonalProfile({ identity }: { identity: string }) {
     <SidebarSettings />
     <NotificationSettings user={user} refresh={refresh} />
     <PersonalPreferences user={user} refresh={refresh} />
-  </div>;
+  </ConsolePage>;
 }
 
 export default function Personal() {

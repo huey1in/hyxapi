@@ -1,3 +1,4 @@
+import { MySubscriptionSkeleton } from '../../components/layout/PageSkeletons';
 import { useEffect, useState } from 'react';
 import type { ReactNode } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
@@ -6,7 +7,7 @@ import { useTranslation } from 'react-i18next';
 import { RefreshCw } from 'lucide-react';
 import { z } from 'zod';
 import { API, renderQuota } from '../../helpers';
-import { Button, Tag, IconButton, Loading, Select } from '../../components/ui';
+import { Button, Tag, IconButton, Select } from '../../components/ui';
 import type { ApiEnvelope } from '../../types/api';
 import { useAuthStore } from '../../stores/auth-store';
 import { useOwnedOperation } from '../../hooks/useOwnedOperation';
@@ -78,7 +79,7 @@ function MySubscription({ identity }: { identity: string }) {
   };
   return <div style={{ display: 'flex', flexDirection: 'column', gap: mobile ? 20 : 28, width: '100%', maxWidth: 960, marginInline: 'auto', padding: mobile ? '16px' : '24px 16px' }}>
     <div className='flex items-center justify-between gap-2'><h1 className='text-lg font-semibold text-ui-text'>{t('My subscriptions')}</h1><IconButton icon={RefreshCw} title={t('Refresh')} aria-label={t('Refresh subscriptions')} disabled={busy || query.isFetching} onClick={() => void query.refetch()} /></div>
-    {query.isFetching ? <Loading /> : query.isError ? <div role='alert' className='space-y-2 text-sm text-ui-danger'><p>{t(apiErrorMessage(query.error, 'Unable to load subscriptions'))}</p><Button onClick={() => void query.refetch()}>{t('Retry')}</Button></div> : data && <>
+    {query.isPending ? <MySubscriptionSkeleton /> : query.isError ? <div role='alert' className='space-y-2 text-sm text-ui-danger'><p>{t(apiErrorMessage(query.error, 'Unable to load subscriptions'))}</p><Button onClick={() => void query.refetch()}>{t('Retry')}</Button></div> : data && <>
       <div className='space-y-2 rounded-[26px] border border-ui-border p-5'><label className='text-sm text-ui-text-2'>{t('Billing priority')}</label><Select width='full' aria-label={t('Billing priority')} value={data.billing_preference} disabled={busy} options={[
         { value: 'subscription_first', label: t('Subscription first, then balance') }, { value: 'wallet_first', label: t('Balance first, then subscription') }, { value: 'subscription_only', label: t('Subscription only') }, { value: 'wallet_only', label: t('Balance only') },
       ]} onChange={setPreference} /></div>

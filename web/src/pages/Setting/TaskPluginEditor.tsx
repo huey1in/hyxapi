@@ -1,9 +1,10 @@
+import { LayoutSkeleton } from '../../components/ui/feedback/ContentSkeleton';
 import { cloneElement, useEffect, useId, useRef, useState } from 'react';
 import type { ReactElement } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { z } from 'zod';
-import { Button, ConfirmDialog, Input, Loading, Modal, Switch, Textarea, showSuccess } from '../../components/ui';
+import { Button, ConfirmDialog, Input, Modal, Switch, Textarea, showSuccess } from '../../components/ui';
 import { useOwnedOperation } from '../../hooks/useOwnedOperation';
 import { apiErrorMessage } from '../../lib/api-error';
 import { pluginBase, pluginPath, pluginDetailSchema, pluginVersionsSchema, PluginUsageError } from './task-plugin-data';
@@ -70,7 +71,7 @@ export default function TaskPluginEditor({ identity, initial, onClose, onSaved }
   });
   const title = initial.key ? t('Manage plugin · {{key}}', { key: initial.key }) : draft.marketName ? t('Install plugin · {{name}}', { name: draft.marketName }) : t('Import plugin');
   return <Modal open width={880} title={title} onClose={onClose} footer={<><Button variant='secondary' onClick={onClose}>{t('Cancel')}</Button><Button loading={busy} disabled={unavailable || !draft.source.trim()} onClick={save}>{t('Save plugin')}</Button></>}>
-    {query.isError ? <div role='alert' className='space-y-2 text-sm text-ui-danger'><p>{t(apiErrorMessage(query.error, 'Unable to load plugin'))}</p><Button onClick={() => void query.refetch()}>{t('Retry')}</Button></div> : pending ? <Loading /> : <fieldset disabled={busy} className='space-y-4'>
+    {query.isError ? <div role='alert' className='space-y-2 text-sm text-ui-danger'><p>{t(apiErrorMessage(query.error, 'Unable to load plugin'))}</p><Button onClick={() => void query.refetch()}>{t('Retry')}</Button></div> : <LayoutSkeleton loading={pending}><fieldset disabled={busy || pending} className='space-y-4'>
       <p className='text-xs text-ui-text-3'>{t('Saved versions are immutable. Change the source version before saving. New versions of an existing plugin require activation in version management.')}</p>
       <div className='flex flex-wrap gap-2'><Button size='sm' variant='toggle' onClick={() => sourceFile.current?.click()}>{t('Choose .js file')}</Button><Button size='sm' variant='toggle' onClick={() => iconFile.current?.click()}>{t('Choose icon')}</Button>{draft.icon && <span className='self-center text-xs text-ui-text-3'>{t('Icon selected')}</span>}</div>
       <input ref={sourceFile} type='file' accept='.js,.mjs,text/javascript' hidden onChange={(event) => { const file = event.target.files?.[0]; event.target.value = ''; readSource(file); }} />
@@ -91,7 +92,7 @@ export default function TaskPluginEditor({ identity, initial, onClose, onSaved }
           {output && <pre className='whitespace-pre-wrap break-all text-xs'>{output}</pre>}
         </div></details>
       </>}
-    </fieldset>}
+    </fieldset></LayoutSkeleton>}
     {confirmation && <PluginConfirmation key={JSON.stringify(confirmation)} action={confirmation} onClose={() => setConfirmation(null)} onSaved={refresh} />}
     {activate && <ActivateVersion pluginKey={initial.key!} version={activate} onClose={() => setActivate(null)} onSaved={refresh} />}
   </Modal>;

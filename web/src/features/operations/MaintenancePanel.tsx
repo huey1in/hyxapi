@@ -1,3 +1,5 @@
+import { LayoutSkeleton } from '../../components/ui/feedback/ContentSkeleton';
+import Skeleton from '../../components/ui/feedback/Skeleton';
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
@@ -36,11 +38,12 @@ function MaintenanceSession({ identity }: { identity: string }) {
   const stats = statsQuery.isError ? undefined : statsQuery.data; const logs = logsQuery.isError ? undefined : logsQuery.data;
   const page = Math.min(logPage, Math.max(1, Math.ceil((logs?.files.length || 0) / 10))); const refresh = () => { void statsQuery.refetch(); void logsQuery.refetch(); };
   const choose = (type: ActionType) => setAction({ type, mode, value }); const invalidValue = !validLogRetention(mode, value);
-  return <Panel title={t('Local maintenance')} actions={<Button size='sm' variant='toggle' onClick={refresh} loading={statsQuery.isFetching || logsQuery.isFetching}>{t('Refresh maintenance data')}</Button>}>
+  const pending = statsQuery.isPending || logsQuery.isPending;
+  return <LayoutSkeleton loading={pending}><Panel title={t('Local maintenance')} actions={<Button size='sm' variant='toggle' onClick={refresh} loading={statsQuery.isFetching || logsQuery.isFetching}>{t('Refresh maintenance data')}</Button>}>
     {(statsQuery.isError || logsQuery.isError) && <div className='space-y-2'><Message error={t(errorText(statsQuery.error || logsQuery.error))} /><Button onClick={refresh}>{t('Retry')}</Button></div>}
     <div className='space-y-4 rounded-2xl border border-ui-border p-4'><div className='grid grid-cols-2 gap-4 sm:grid-cols-4'>{[
       [t('Disk cache hits'), stats?.cache_stats.disk_cache_hits.toLocaleString(i18n.language) ?? '—'], [t('Memory cache hits'), stats?.cache_stats.memory_cache_hits.toLocaleString(i18n.language) ?? '—'], [t('Current heap memory'), stats ? bytes(stats.memory_stats.alloc) : '—'], [t('GC count'), stats?.memory_stats.num_gc.toLocaleString(i18n.language) ?? '—'],
-    ].map(([label, text]) => <div key={label}><p className='text-xs text-ui-text-3'>{label}</p><p className='mt-1 text-lg font-semibold tabular-nums text-ui-text'>{text}</p></div>)}</div>
+    ].map(([label, text]) => <div key={label}><p className='text-xs text-ui-text-3'>{label}</p><div className='mt-1 text-lg font-semibold tabular-nums text-ui-text'>{pending ? <div className='flex h-7 items-center'><Skeleton width={85} height={18} /></div> : text}</div></div>)}</div>
       {stats && <div className='space-y-1 break-all text-xs text-ui-text-3'><p>{t('Cache directory: {{path}} · {{count}} files / {{size}}', { path: stats.disk_cache_info.path, count: stats.disk_cache_info.file_count, size: bytes(stats.disk_cache_info.total_size) })}</p><p>{t('Overload protection: {{state}}. New requests pause after three consecutive threshold violations.', { state: stats.config.monitor_enabled ? t('Enabled at CPU {{cpu}}% / memory {{memory}}% / disk {{disk}}%', { cpu: stats.config.monitor_cpu_threshold, memory: stats.config.monitor_memory_threshold, disk: stats.config.monitor_disk_threshold }) : t('Disabled') })}</p></div>}
       <div className='flex flex-wrap gap-2'>{(['gc', 'reset_stats', 'disk_cache'] as const).map((type) => <Button key={type} size='sm' disabled={Boolean(action)} onClick={() => choose(type)}>{t(titles[type])}</Button>)}</div>
     </div>
@@ -53,7 +56,7 @@ function MaintenanceSession({ identity }: { identity: string }) {
       ]} /><Pagination page={page} pageSize={10} total={logs.files.length} onChange={setLogPage} /></>}
     </div>
     {action && <MaintenanceAction key={action.type} action={action} onClose={() => setAction(null)} onSaved={refresh} />}
-  </Panel>;
+  </Panel></LayoutSkeleton>;
 }
 export default function MaintenancePanel() {
   const identity = useAuthStore((state) => `${state.auth.user?.id}:${state.auth.session?.sid}:${state.auth.user?.role}`); const root = useAuthStore((state) => state.auth.user?.role === 100);

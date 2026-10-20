@@ -9,6 +9,6 @@ export const PageShell = LegacyPageShell as ComponentType<PropsWithChildren<{ ti
 export const SlideOver = LegacySlideOver as ComponentType<PropsWithChildren<{ open: boolean; onClose: () => void; title: string; width?: number; footer?: ReactNode }>>;
 export const ConfirmDialog = LegacyConfirmDialog as ComponentType<{ open: boolean; onClose: () => void; title: string; description?: ReactNode; onConfirm: () => void; confirmText?: string; closeOnConfirm?: boolean; loading?: boolean }>;
 type Column<T> = { key: string; title: ReactNode; render: (row: T) => ReactNode };
-export const Table = LegacyTable as <T>(props: { columns: Column<T>[]; rows: T[]; rowKey?: string; minWidth?: number }) => ReactNode;
+export const Table = LegacyTable as <T>(props: { columns: Column<T>[]; rows: T[]; rowKey?: string; minWidth?: number; loading?: boolean }) => ReactNode;
 export function Field({ label, children }: PropsWithChildren<{ label: string }>) { return <label className='grid min-w-0 gap-1.5 text-sm text-ui-text-2'><span>{label}</span>{children}</label>; }
 export function ErrorMessage({ message }: { message: string }) { return message ? <p role='alert' className='break-words text-sm text-ui-danger'>{message}</p> : null; }

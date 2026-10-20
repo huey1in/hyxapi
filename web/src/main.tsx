@@ -20,7 +20,7 @@ const root = document.getElementById('root');
 if (!root) throw new Error('Missing application root');
 createRoot(root).render(
   <QueryClientProvider client={queryClient}>
-    <BrowserRouter>
+    <BrowserRouter future={{ v7_startTransition: true }}>
       <UserProvider>
         <StatusProvider>
           <ThemeProvider>

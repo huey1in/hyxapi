@@ -4,6 +4,7 @@ import { Trash2, Copy, Pencil, ExternalLink, Power } from 'lucide-react';
 import { IconButton } from '../../components/ui';
 import { timestamp2string, renderQuota } from '../../helpers';
 import useIsMobile from '../../hooks/useIsMobile';
+import { TokenCardFrame } from '../../components/layout/PageSkeletons';
 import { manualTokenGroups } from './autoGroups';
 import { effectiveTokenStatus } from './token-management';
 import type { ManagedToken } from './token-management';
@@ -27,14 +28,7 @@ const KeyCard = ({ row, preview = false, disabled = false, selected, onSelect, o
     : `${renderQuota(row.used_quota || 0)} / ${renderQuota((row.used_quota || 0) + (row.remain_quota || 0))}`;
 
   return (
-  <div
-    className='group' data-token-id={row.id}
-    style={{
-      position: 'relative', display: 'flex', flexDirection: 'column', gap: 10,
-      paddingBlock: isMobile ? 14 : 12, paddingInline: isMobile ? 14 : 18,
-      border: '1px solid var(--ui-border)', borderRadius: 26, background: 'var(--page-bg)',
-    }}
-  >
+  <TokenCardFrame data-token-id={row.id}>
     {/* 第一行：名称 + 分组 + 操作 */}
     <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', alignItems: isMobile ? 'stretch' : 'center', justifyContent: 'space-between', gap: 8 }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 6, minWidth: 0, flex: 1 }}>
@@ -71,7 +65,7 @@ const KeyCard = ({ row, preview = false, disabled = false, selected, onSelect, o
       {row.model_limits_enabled && <span className='break-all'>{t('Allowed models: {{models}}', { models: row.model_limits || t('None') })}</span>}
       {row.allow_ips && <span className='break-all'>{t('Allowed IPs: {{ips}}', { ips: row.allow_ips })}</span>}
     </div>}
-  </div>
+  </TokenCardFrame>
   );
 };
 

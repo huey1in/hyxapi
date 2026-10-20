@@ -1,3 +1,4 @@
+import { ProfileRowsSkeleton } from '../../components/layout/PageSkeletons';
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
@@ -63,7 +64,7 @@ function Tokens({ identity }: { identity: string }) {
       <SettingRow title={t('Personal tokens for the management API')} description={t('Grant specific permissions; the full token is shown only once')} last={!items.length && !legacy}>
         <div className='flex flex-wrap justify-end gap-1.5 max-w-[180px] sm:max-w-none'><Button variant='toggle' onClick={() => setRecords({})} disabled={busy}>{t('Access records')}</Button><Button variant='toggle' onClick={() => open()} disabled={busy || !catalog || !!data.error || items.length >= catalog.max_tokens}>{t('Create')}</Button></div>
       </SettingRow>
-      {data.isPending && <p className='p-4 text-sm text-ui-text-3'>{t('Loading...')}</p>}
+      {data.isPending && <ProfileRowsSkeleton lines={3} />}
       {message && <div role='alert' className='p-4 text-sm text-ui-text-2'>{t(message)} <Button onClick={() => void data.refetch()} loading={data.isFetching}>{t('Retry')}</Button></div>}
       {items.map((item, index) => <SettingRow key={item.id} last={index === items.length - 1 && !legacy}
         title={<>{item.name} {item.expires_at > 0 && item.expires_at * 1000 <= Date.now() && <Tag color='grey'>{t('Expired')}</Tag>}</>}

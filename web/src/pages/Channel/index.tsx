@@ -29,7 +29,6 @@ import {
   Pagination,
   Tag,
   ConfirmDialog,
-  Loading,
 } from '../../components/ui';
 import { CHANNEL_TYPE_OPTIONS as TYPE_OPTIONS } from '../../constants/channel-types';
 import { priorityMove, priorityRestore } from './priority';
@@ -689,8 +688,6 @@ function ChannelSession({ identity }: { identity: string }) {
           <p>{t(apiErrorMessage(query.error, 'Unable to load channels'))}</p>
           <Button onClick={refresh}>{t('Retry')}</Button>
         </div>
-      ) : loading ? (
-        <Loading />
       ) : (
         <>
           {dragMode && (
@@ -711,6 +708,7 @@ function ChannelSession({ identity }: { identity: string }) {
             </div>
           )}
           <Table
+            loading={loading}
             columns={columns}
             rows={
               dragMode

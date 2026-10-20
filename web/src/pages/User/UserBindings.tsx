@@ -1,7 +1,8 @@
+import Skeleton from '../../components/ui/feedback/Skeleton';
 import { useContext, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { API, showSuccess } from '../../helpers';
-import { Button, ConfirmDialog, Loading, SlideOver, Switch } from '../../components/ui';
+import { Button, ConfirmDialog, SlideOver, Switch, ContentSkeleton } from '../../components/ui';
 import { StatusContext } from '../../context/Status';
 import type { ApiEnvelope } from '../../types/api';
 import { managedUserSchema, userErrorMessage } from './user-management';
@@ -55,7 +56,7 @@ export default function UserBindings({ user, onClose, onChanged }: { user: Manag
     <div className='px-6 pb-6 space-y-4'>
       <label className='flex items-center justify-between text-sm'>{t('Show bound accounts only')}<Switch checked={boundOnly} onChange={setBoundOnly} /></label>
       <label className='flex items-center justify-between text-sm'>{t('Show binding identifiers')}<Switch checked={reveal} onChange={setReveal} /></label>
-      {loading ? <Loading /> : error ? <p role='alert'>{t(error)}</p> : bindings.filter((binding) => !boundOnly || binding.value).map((binding) => <div key={binding.key} className='rounded-xl border border-ui-border p-3 space-y-2'>
+      {loading ? <ContentSkeleton variant='form'><div className='space-y-4'>{[0, 1, 2].map((index) => <div key={index} className='rounded-xl border border-ui-border p-3 space-y-2'><div className='flex items-center justify-between gap-2'><Skeleton width={100} height={20} /><Skeleton width={70} height={28} /></div><Skeleton width='70%' height={16} /></div>)}</div></ContentSkeleton> : error ? <p role='alert'>{t(error)}</p> : bindings.filter((binding) => !boundOnly || binding.value).map((binding) => <div key={binding.key} className='rounded-xl border border-ui-border p-3 space-y-2'>
         <div className='flex items-center justify-between gap-2'><span className='text-sm font-medium'>{t(binding.label)}</span><Button size='sm' variant='toggle' disabled={busy || !binding.value} onClick={() => setTarget(binding)}>{t('Unbind')}</Button></div>
         <p className='text-xs text-ui-text-3 break-all'>{binding.value ? reveal ? binding.value : '••••••••' : t('Not bound')}{!binding.enabled && ` · ${t('Provider disabled')}`}</p>
       </div>)}

@@ -1,3 +1,4 @@
+import { LayoutSkeleton } from '../../components/ui/feedback/ContentSkeleton';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { z } from 'zod';
@@ -15,7 +16,6 @@ import {
   Textarea,
   Switch,
   Tabs,
-  Loading,
   EmptyState,
   Select,
   TagInput,
@@ -572,9 +572,7 @@ function SettingPageContent() {
             </Button>
           </div>
         )}
-        {loading ? (
-          <Loading />
-        ) : loadError ? (
+        {loadError ? (
           <div
             role="alert"
             className="space-y-3 rounded-2xl border border-ui-border p-5"
@@ -583,23 +581,25 @@ function SettingPageContent() {
             <Button onClick={() => void load()}>{t('Retry')}</Button>
           </div>
         ) : (
-          <fieldset key={epoch} disabled={saving} className="min-w-0 space-y-5">
-            {active === 'plugins' ? (
-              <>
-                {renderSection('任务插件', ['TaskPluginEnabled'])}
-                <TaskPluginManager />
-              </>
-            ) : sections ? (
-              sections.map((section) =>
-                renderSection(section.title, section.keys, section),
-              )
-            ) : (
-              renderSection(
-                TABS.find((tab) => tab.key === active)?.label || active,
-                TAB_KEYS[active] || [],
-              )
-            )}
-          </fieldset>
+          <LayoutSkeleton loading={loading}>
+            <fieldset key={epoch} disabled={saving || loading} className="min-w-0 space-y-5">
+              {active === 'plugins' ? (
+                <>
+                  {renderSection('任务插件', ['TaskPluginEnabled'])}
+                  <TaskPluginManager />
+                </>
+              ) : sections ? (
+                sections.map((section) =>
+                  renderSection(section.title, section.keys, section),
+                )
+              ) : (
+                renderSection(
+                  TABS.find((tab) => tab.key === active)?.label || active,
+                  TAB_KEYS[active] || [],
+                )
+              )}
+            </fieldset>
+          </LayoutSkeleton>
         )}
         {saveRequest && (
           <SettingsSave

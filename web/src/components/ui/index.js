@@ -10,6 +10,7 @@ export { default as IconButton } from './button/IconButton';
 export { default as Tag }        from './feedback/Tag';
 export { default as Loading }    from './feedback/Loading';
 export { default as Skeleton }   from './feedback/Skeleton';
+export { default as ContentSkeleton } from './feedback/ContentSkeleton';
 export { default as Tooltip }    from './feedback/Tooltip';
 export { default as Notice }     from './feedback/Notice';
 export { default as Progress }   from './feedback/Progress';

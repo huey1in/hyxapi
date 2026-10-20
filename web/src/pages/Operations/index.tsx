@@ -1,5 +1,6 @@
+import { ReportSection, StatCard, StatisticsSkeleton } from '../../components/layout/PageSkeletons';
 import { useState } from 'react';
-import type { CSSProperties, PropsWithChildren, ReactNode } from 'react';
+import type { CSSProperties, ReactNode } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { useAuthStore } from '../../stores/auth-store';
@@ -9,7 +10,7 @@ import type { OperationsReport, ChannelConsumption, GroupConsumption } from '../
 import type { TableColumn } from '../../components/ui/layout/Table';
 import { RefreshCw } from 'lucide-react';
 import { renderQuota, renderNumber } from '../../helpers';
-import { Button, Table, Loading, IconButton } from '../../components/ui';
+import { Button, Table, IconButton } from '../../components/ui';
 import useIsMobile from '../../hooks/useIsMobile';
 
 /* ─── helpers ─── */
@@ -40,13 +41,7 @@ const RANGES = [
 
 /* ─── atoms ─── */
 
-const StatMini = ({ label, value, sub }: { label: ReactNode; value: ReactNode; sub?: ReactNode }) => (
-  <div style={{ paddingBlock: 16, paddingInline: 16, border: '1px solid var(--ui-border)', borderRadius: 16 }}>
-    <div style={{ fontSize: 12, color: 'var(--ui-text-3)', marginBottom: 4 }}>{label}</div>
-    <div style={{ fontSize: 20, fontWeight: 700, color: 'var(--ui-text)', fontVariantNumeric: 'tabular-nums' }}>{value}</div>
-    {sub && <div style={{ fontSize: 12, color: 'var(--ui-text-3)', marginTop: 2 }}>{sub}</div>}
-  </div>
-);
+const StatMini = StatCard;
 
 const MiniBar = ({ value, max = 100, color }: { value: number; max?: number; color?: string }) => {
   const pct = max > 0 ? Math.min((value / max) * 100, 100) : 0;
@@ -58,15 +53,7 @@ const MiniBar = ({ value, max = 100, color }: { value: number; max?: number; col
   );
 };
 
-const Section = ({ title, right, children }: PropsWithChildren<{ title: ReactNode; right?: ReactNode }>) => (
-  <div>
-    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-      <span style={{ fontSize: 16, fontWeight: 600, color: 'var(--ui-text)' }}>{title}</span>
-      {right && <span style={{ fontSize: 13, color: 'var(--ui-text-3)' }}>{right}</span>}
-    </div>
-    {children}
-  </div>
-);
+const Section = ReportSection;
 
 /* ─── page ─── */
 
@@ -179,7 +166,7 @@ function OperationsSession({ identity }: { identity: string }) {
   const data = query.isError ? undefined : query.data;
   return <div style={{ display: 'flex', flexDirection: 'column', gap: isMobile ? 20 : 28, width: '100%', maxWidth: 960, marginInline: 'auto', padding: isMobile ? '16px' : '24px 16px' }}>
     <div className='flex flex-wrap items-center justify-between gap-3'><h1 className='text-lg font-semibold text-ui-text'>{t('Operations report')}</h1><div className='flex flex-wrap items-center gap-1.5'><div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, padding: 3, background: 'var(--ui-bg-subtle)', borderRadius: 16 }}>{RANGES.map((item, index) => <button key={item.days} aria-pressed={range.index === index} onClick={() => refresh(index)} style={{ height: 28, paddingInline: 12, borderRadius: 14, fontSize: 13, border: 'none', cursor: 'pointer', color: range.index === index ? 'var(--ui-text)' : 'var(--ui-text-3)', background: range.index === index ? 'var(--page-bg)' : 'transparent', fontWeight: range.index === index ? 500 : 400, boxShadow: range.index === index ? '0 1px 3px rgba(0,0,0,0.08)' : 'none' }}>{t(item.label)}</button>)}</div><IconButton icon={RefreshCw} onClick={() => refresh()} disabled={query.isFetching} aria-label={t('Refresh operations report')} /></div></div>
-    {query.isError ? <div role='alert' className='space-y-2 text-sm text-ui-danger'><p>{t(errorText(query.error))}</p><Button onClick={() => refresh()}>{t('Retry')}</Button></div> : !data ? <Loading /> : <OperationsCards data={data} isMobile={isMobile} selectedRangeLabel={t(RANGES[range.index].label)} />}
+    {query.isError ? <div role='alert' className='space-y-2 text-sm text-ui-danger'><p>{t(errorText(query.error))}</p><Button onClick={() => refresh()}>{t('Retry')}</Button></div> : !data ? <StatisticsSkeleton /> : <OperationsCards data={data} isMobile={isMobile} selectedRangeLabel={t(RANGES[range.index].label)} />}
   </div>;
 }
 export default function OperationsAccount() {

@@ -1,4 +1,4 @@
-import { Suspense, lazy } from 'react';
+import { lazy } from 'react';
 import { Routes, Route, Navigate, useParams } from 'react-router-dom';
 import PageLayout from './components/layout/PageLayout';
 
@@ -41,7 +41,6 @@ const LegacyChatRedirect = () => {
 };
 
 const App = () => (
-  <Suspense fallback={<div className='min-h-screen bg-[var(--page-bg)]' />}>
   <Routes>
     <Route element={<PageLayout />}>
       <Route path='/'                   element={<Home />} />
@@ -89,7 +88,6 @@ const App = () => (
       <Route path='*' element={<Navigate to='/' replace />} />
     </Route>
   </Routes>
-  </Suspense>
 );
 
 export default App;

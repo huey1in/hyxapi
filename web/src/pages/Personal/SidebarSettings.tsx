@@ -1,3 +1,4 @@
+import { ProfileRowsSkeleton } from '../../components/layout/PageSkeletons';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { API, showSuccess } from '../../helpers';
@@ -37,7 +38,7 @@ function SidebarSettingsForm() {
   return <SettingGroup title={t('Sidebar Personal Settings')}>
     <p className='px-4 pt-4 text-xs text-ui-text-3'>{t('Customize sidebar display content')}</p>
     {error && <div role='alert' className='p-4 text-sm text-ui-text-2'>{t('Unable to load sidebar settings')} <Button onClick={load} loading={busy}>{t('Retry')}</Button></div>}
-    {!error && !loaded && <p className='p-4 text-sm text-ui-text-3'>{t('Loading...')}</p>}
+    {!error && !loaded && <ProfileRowsSkeleton rows={sidebarSections.reduce((count, section) => count + section.modules.length + 1, 0)} lines={0} switches />}
     {loaded && sidebarSections.map((section) => <div key={section.key} className='border-b border-ui-divider'>
       <SettingRow title={t(section.title)}><Switch aria-label={t(section.title)} checked={config[section.key]?.enabled !== false} disabled={busy} onChange={(value) => toggle(section.key, 'enabled', value)} /></SettingRow>
       {section.modules.map((module, index) => <SettingRow key={module.key} title={t(module.title)} last={index === section.modules.length - 1}>

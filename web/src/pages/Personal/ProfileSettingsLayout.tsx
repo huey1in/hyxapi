@@ -1,7 +1,7 @@
 import type { PropsWithChildren, ReactNode } from 'react';
 
 export const SettingGroup = ({ title, children }: PropsWithChildren<{ title: ReactNode }>) => (
-  <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+  <div data-setting-group={typeof title === 'string' ? title : undefined} style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
     <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--ui-text-3)', letterSpacing: '0.03em', paddingLeft: 2 }}>{title}</span>
     <div style={{ border: '1px solid #e9e9e9', borderRadius: 16, overflow: 'hidden' }}>
       {children}

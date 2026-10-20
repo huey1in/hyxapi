@@ -9,7 +9,7 @@ import { useAuthStore } from '../../stores/auth-store';
 import { useOwnedOperation } from '../../hooks/useOwnedOperation';
 import { apiErrorMessage } from '../../lib/api-error';
 import { readWalletData, walletRequestConfig } from '../payments/wallet-query';
-import { Button, Checkbox, ConfirmDialog, IconButton, Input, Loading, Modal, NumberInput, Pagination, Select, Table, Tag, showError, showSuccess } from '../../components/ui';
+import { Button, Checkbox, ConfirmDialog, IconButton, Input, Modal, NumberInput, Pagination, Select, Table, Tag, showError, showSuccess } from '../../components/ui';
 import type { TableColumn } from '../../components/ui/layout/Table';
 import type { ApiEnvelope } from '../../types/api';
 import { codeStatus, codesURL, localExpiry, redemptionPageSchema, serializeRedemptionDraft } from './codes';
@@ -114,7 +114,7 @@ export default function QuotaCodesTab() {
         <Button variant='toggle' disabled={busy} onClick={() => setConfirmation({ title: t('Delete Invalid Redemption Codes?'), invalid: true })}>{t('Delete invalid redemption codes')}</Button>
       </div>
     </form>
-    {query.isError ? <div role='alert' className='space-y-2 text-sm text-ui-danger'><p>{t(apiErrorMessage(query.error, 'Unable to load redemption codes'))}</p><Button onClick={refresh}>{t('Retry')}</Button></div> : !data ? <Loading /> : <><Table columns={columns} rows={rows} rowKey='id' minWidth={1050} /><div className='mt-4 flex justify-end'><Pagination total={total} pageSize={PAGE_SIZE} page={page} onChange={setPage} /></div></>}
+    {query.isError ? <div role='alert' className='space-y-2 text-sm text-ui-danger'><p>{t(apiErrorMessage(query.error, 'Unable to load redemption codes'))}</p><Button onClick={refresh}>{t('Retry')}</Button></div> : <><Table loading={!data} columns={columns} rows={rows} rowKey='id' minWidth={1050} /><div className='mt-4 flex justify-end'><Pagination total={total} pageSize={PAGE_SIZE} page={page} onChange={setPage} /></div></>}
     {generated && <Modal open title={t('Redemption codes created')} onClose={() => setGenerated(undefined)} hideFooter width={520}><div className='space-y-3'><p className='text-sm text-ui-text-2'>{t('Save these redemption codes in a safe place:')}</p><pre className='max-h-64 overflow-auto whitespace-pre-wrap break-all rounded-lg bg-ui-bg-subtle p-3 font-mono text-xs'>{generated.join('\n')}</pre><div className='flex justify-end gap-2'><Button variant='toggle' onClick={() => void copied(generated.join('\n'))}>{t('Copy all')}</Button><Button onClick={() => setGenerated(undefined)}>{t('Done')}</Button></div></div></Modal>}
     {editing && <EditCode key={editing.id} code={editing} onClose={() => setEditing(undefined)} onSaved={refresh} />}
     {confirmation && <DeleteCodes confirmation={confirmation} onClose={() => setConfirmation(undefined)} onSaved={refresh} />}

@@ -3,7 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { RefreshCw, Save, Search, ShieldCheck } from 'lucide-react';
 import { API, showSuccess } from '../../helpers';
-import { Button, IconButton, Select, Switch, Loading, EmptyState, Tag, Input, Pagination } from '../../components/ui';
+import { Button, IconButton, Select, Switch, EmptyState, Tag, Input, Pagination, ContentSkeleton } from '../../components/ui';
 import type { ApiEnvelope } from '../../types/api';
 import type { AdminPermissionMatrix, PermissionCatalog } from '../../lib/admin-permissions';
 import { normalizeAdminPermissions } from '../../lib/admin-permissions';
@@ -12,6 +12,8 @@ import { useAuthStore } from '../../stores/auth-store';
 import { useOwnedOperation } from '../../hooks/useOwnedOperation';
 import { userPageSchema } from '../User/user-management';
 import { permissionCatalogSchema, permissionDetailsSchema } from './permission-settings';
+import { LayoutSkeleton } from '../../components/ui/feedback/ContentSkeleton';
+import Skeleton from '../../components/ui/feedback/Skeleton';
 
 type Administrator = { id: number; username: string };
 
@@ -46,9 +48,9 @@ function TargetPermissions({ target, identity, catalog }: { target: Administrato
       <Button variant='toggle' disabled={busy || unavailable} onClick={() => setDraft(normalizeAdminPermissions({}, catalog))}>{t('Reset to role defaults')}</Button>
       <IconButton icon={RefreshCw} title={t('Refresh')} disabled={busy || details.isFetching} onClick={() => void details.refetch()} />
     </div>
-    {details.isPending || details.isFetching ? <Loading /> : details.error ? <div role='alert' className='space-y-3 text-sm text-ui-text-2'>
+    {details.error ? <div role='alert' className='space-y-3 text-sm text-ui-text-2'>
       <p>{t(apiErrorMessage(details.error, 'Unable to load administrator permissions'))}</p><Button variant='toggle' onClick={() => void details.refetch()}>{t('Retry')}</Button>
-    </div> : catalog.resources.map((resource) => <div key={resource.resource} className='min-w-0 rounded-[26px] border border-ui-border px-[22px] py-5'>
+    </div> : <LayoutSkeleton loading={details.isPending} className='[&>div]:space-y-5'>{catalog.resources.map((resource) => <div key={resource.resource} className='min-w-0 rounded-[26px] border border-ui-border px-[22px] py-5'>
       <h4 className='mb-1 text-[15px] font-semibold text-ui-text'>{t(resource.label_key)}</h4>
       <p className='mb-4 text-xs leading-relaxed text-ui-text-3'>{t('Changes override this administrator’s role defaults. Reset restores the defaults from the permission catalog.')}</p>
       <div className='space-y-3'>{resource.actions.map((action) => <div key={action.action} className='flex items-center justify-between gap-4 rounded-xl border border-ui-border p-3'>
@@ -61,7 +63,7 @@ function TargetPermissions({ target, identity, catalog }: { target: Administrato
         </div>
         <Switch size='sm' aria-label={t(action.label_key)} checked={draft?.[resource.resource]?.[action.action] ?? false} disabled={busy || unavailable} onChange={(checked) => setDraft((current) => ({ ...current, [resource.resource]: { ...current?.[resource.resource], [action.action]: checked } }))} />
       </div>)}</div>
-    </div>)}
+    </div>)}</LayoutSkeleton>}
   </section>;
 }
 
@@ -106,7 +108,7 @@ function PermissionWorkspace({ identity }: { identity: string }) {
       </label>
       <Pagination page={page} pageSize={20} total={users.data?.total ?? 0} onChange={setPage} />
     </>}
-    {catalog.isPending ? <Loading /> : catalog.error ? <div role='alert' className='space-y-2 text-sm'><p>{t(apiErrorMessage(catalog.error, 'Unable to load permission catalog'))}</p><Button variant='toggle' onClick={() => void catalog.refetch()}>{t('Retry')}</Button></div> : target && catalog.data ? <TargetPermissions key={target.id} target={target} identity={identity} catalog={catalog.data} /> : <EmptyState icon={ShieldCheck} title={t('Select an administrator to edit permissions')} />}
+    {catalog.isPending ? <ContentSkeleton variant='form'><div className='flex flex-col items-center gap-4 py-10'><Skeleton width={32} height={32} /><Skeleton width={260} height={20} /></div></ContentSkeleton> : catalog.error ? <div role='alert' className='space-y-2 text-sm'><p>{t(apiErrorMessage(catalog.error, 'Unable to load permission catalog'))}</p><Button variant='toggle' onClick={() => void catalog.refetch()}>{t('Retry')}</Button></div> : target && catalog.data ? <TargetPermissions key={target.id} target={target} identity={identity} catalog={catalog.data} /> : <EmptyState icon={ShieldCheck} title={t('Select an administrator to edit permissions')} />}
   </div>;
 }
 

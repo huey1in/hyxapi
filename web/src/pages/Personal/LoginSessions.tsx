@@ -1,3 +1,4 @@
+import { ProfileRowsSkeleton } from '../../components/layout/PageSkeletons';
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
@@ -36,7 +37,7 @@ function Sessions({ identity }: { identity: string }) {
       <SettingRow title={t('Manage login sessions')} description={t('Revoked devices must sign in again')}>
         <Button variant='toggle' onClick={() => setConfirm('others')} disabled={busy || !sessions.data?.some((session) => !session.current)}>{t('Sign out other devices')}</Button>
       </SettingRow>
-      {sessions.isPending && <p className='p-4 text-sm text-ui-text-3'>{t('Loading...')}</p>}
+      {sessions.isPending && <ProfileRowsSkeleton lines={4} />}
       {message && <div role='alert' className='p-4 text-sm text-ui-text-2'>{t(message)} <Button onClick={() => void sessions.refetch()} loading={sessions.isFetching}>{t('Retry')}</Button></div>}
       {sessions.data?.map((session, index) => <SettingRow key={session.sid} last={index === (sessions.data?.length ?? 0) - 1}
         title={<span>{t(session.current ? 'Current device' : 'Other device')} {session.current && <Tag color='green'>{t('Current')}</Tag>}</span>}

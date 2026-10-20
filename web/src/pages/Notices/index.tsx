@@ -1,7 +1,8 @@
+import { ParagraphSkeleton } from '../../components/ui/feedback/ContentSkeleton';
 import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Megaphone, RefreshCw } from 'lucide-react';
-import { Button, EmptyState, Loading, Pagination } from '../../components/ui';
+import { Button, EmptyState, Pagination } from '../../components/ui';
 import { useAuthStore } from '../../stores/auth-store';
 import useIsMobile from '../../hooks/useIsMobile';
 import ConfiguredContent from '../../components/common/markdown/ConfiguredContent';
@@ -30,7 +31,7 @@ function Notifications() {
     </div>
     <section aria-label={t('Site notice')} className='min-w-0 space-y-4 rounded-[26px] border border-ui-border p-6'>
       <div className='flex items-center justify-between gap-3'><h2 className='text-sm font-semibold'>{t('Site notice')}</h2><Button size='sm' variant='toggle' icon={RefreshCw} loading={notice.isFetching} onClick={() => void notice.refetch()}>{t('Refresh')}</Button></div>
-      {notice.isPending ? <Loading /> : notice.error ? <div role='alert' className='space-y-3 text-sm text-ui-text-2'><p>{t('Unable to load site notice')}</p><Button variant='toggle' onClick={() => void notice.refetch()}>{t('Retry')}</Button></div> : content ? <ConfiguredContent content={content} title={t('Site notice')} /> : <p className='text-sm text-ui-text-3'>{t('No site notice configured')}</p>}
+      {notice.isPending ? <ParagraphSkeleton /> : notice.error ? <div role='alert' className='space-y-3 text-sm text-ui-text-2'><p>{t('Unable to load site notice')}</p><Button variant='toggle' onClick={() => void notice.refetch()}>{t('Retry')}</Button></div> : content ? <ConfiguredContent content={content} title={t('Site notice')} /> : <p className='text-sm text-ui-text-3'>{t('No site notice configured')}</p>}
     </section>
     <section aria-label={t('System announcements')} className='min-w-0 rounded-[26px] border border-ui-border p-6'>
       <h2 className='mb-5 text-sm font-semibold'>{t('System announcements')}</h2>

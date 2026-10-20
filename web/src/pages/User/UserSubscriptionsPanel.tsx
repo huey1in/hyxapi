@@ -1,8 +1,9 @@
+import Skeleton from '../../components/ui/feedback/Skeleton';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { API, showSuccess, renderQuota } from '../../helpers';
 import SubscriptionResetDialog from '../../features/payments/SubscriptionResetDialog';
-import { Button, Select, SlideOver, ConfirmDialog, Loading, Tag } from '../../components/ui';
+import { Button, Select, SlideOver, ConfirmDialog, Tag, ContentSkeleton } from '../../components/ui';
 import type { ApiEnvelope } from '../../types/api';
 import type { ManagedUser } from './user-management';
 import { userErrorMessage } from './user-management';
@@ -39,7 +40,7 @@ export default function UserSubscriptionsPanel({ user, onClose }: { user: Manage
   const planName = (id: number) => plans.find((plan) => plan.id === id)?.title || t('Plan #{{id}}', { id });
   return <SlideOver open title={<h2 className='text-lg font-semibold'>{t('Manage subscriptions · {{username}}', { username: user.username })}</h2>} onClose={() => { if (!busy) onClose(); }} width={480}>
     <div className='px-6 pb-6 space-y-5'>
-      {loading ? <Loading /> : <>
+      {loading ? <ContentSkeleton variant='tokens'><div className='space-y-5'><div className='rounded-2xl border border-ui-border p-4 space-y-2'><div className='text-sm'>{t('Assign plan')}</div><div className='flex gap-2'><Skeleton height={36} /><Skeleton width={70} height={36} /></div></div><Skeleton width={150} height={28} />{[0, 1].map((index) => <div key={index} className='rounded-xl border border-ui-border px-4 py-3.5 space-y-2'><div className='flex justify-between gap-2'><Skeleton width={140} height={20} /><Skeleton width={55} height={20} /></div><Skeleton height={16} /><Skeleton height={6} /><div className='flex gap-2'><Skeleton width={80} height={28} /><Skeleton width={100} height={28} /></div></div>)}</div></ContentSkeleton> : <>
         {error && <p role='alert' className='text-sm text-ui-danger'>{t(error)}</p>}
         <div className='rounded-2xl border border-ui-border p-4 space-y-2'>
           <label className='block text-sm'>{t('Assign plan')}</label>

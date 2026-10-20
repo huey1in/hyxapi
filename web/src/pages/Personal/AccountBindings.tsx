@@ -1,3 +1,4 @@
+import { ProfileRowsSkeleton } from '../../components/layout/PageSkeletons';
 import { useContext, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
@@ -85,7 +86,7 @@ function Bindings({ identity }: { identity: string }) {
   if (!providers.length && !bindings.length && !showWeChat && !query.error && !query.isPending) return null;
   return <>
     <SettingGroup title={t('Linked accounts')}>
-      {query.isPending && <p className='p-4 text-sm text-ui-text-3'>{t('Loading...')}</p>}
+      {query.isPending && <ProfileRowsSkeleton />}
       {message && <div role='alert' className='p-4 text-sm text-ui-text-2'>{t(message)} <Button onClick={() => void query.refetch()} loading={query.isFetching}>{t('Retry')}</Button></div>}
       {providers.map((provider, index) => <SettingRow key={provider.slug} title={provider.name} description={t(provider.bound ? 'Linked' : 'Not linked')} last={index === providers.length - 1 && !bindings.length && !showWeChat}>
         <Button variant='toggle' disabled={provider.bound || busy || wechat || !!query.error || query.isPending} onClick={() => prepare(provider)}>{t(provider.bound ? 'Linked' : 'Link account')}</Button>

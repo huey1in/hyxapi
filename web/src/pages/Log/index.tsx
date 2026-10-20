@@ -13,7 +13,7 @@ import type { EnrichedLog, LogFilters } from './log-data';
 import { dashboardStatsSchema } from '../Dashboard/dashboard-data';
 import LogExportButton from './LogExportButton';
 import type { TableColumn } from '../../components/ui/layout/Table';
-import { Button, IconButton, Input, Select, Pagination, Loading, Table, showError } from '../../components/ui';
+import { Button, IconButton, Input, Select, Pagination, Table, showError } from '../../components/ui';
 import useIsMobile from '../../hooks/useIsMobile';
 import { ExpressionBillingLog } from '../../features/pricing/ExpressionBillingLog';
 import ToolSurcharges from '../../features/pricing/ToolSurcharges';
@@ -297,10 +297,11 @@ const LogContent = ({ preview = false }: { preview?: boolean }) => {
       )}
 
       {/* 表格 */}
-      {loading ? <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '60vh' }}><Loading /></div> : (
+      {(
         <>
           {!logs.error && <div className={isMobile ? 'log-table-mobile' : undefined} style={{ fontFamily: "'JetBrains Mono', 'Noto Sans SC', monospace", maxWidth: '100%', overflow: 'hidden' }}>
             <Table
+              loading={loading}
               columns={columns}
               rows={enriched}
               size={isMobile && preview ? 'sm' : 'md'}

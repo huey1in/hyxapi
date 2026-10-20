@@ -683,3 +683,17 @@ html.dark .token-usage-cell.level-4 { background:#45c976; }
   .cursor-home .home-nav-links.public-site-navigation.is-open,.console-home-nav .home-nav-links.public-site-navigation.is-open { display:flex; }
   .home-nav-links.public-site-navigation>a:not(.home-nav-start) { padding:13px 10px; }
 }
+
+/* Loading forms retain their actual labels, field sizes and responsive layout. */
+.layout-skeleton :is(input, textarea, button, [role="combobox"], [role="switch"]) {
+  color: transparent !important;
+  background: var(--ui-bg-subtle) !important;
+  border-color: transparent !important;
+  box-shadow: none !important;
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+.layout-skeleton :is(input, textarea)::placeholder { color: transparent !important; }
+.layout-skeleton :is(button, [role="combobox"], [role="switch"]) * { visibility: hidden; }
+@media (prefers-reduced-motion: reduce) {
+  .layout-skeleton :is(input, textarea, button, [role="combobox"], [role="switch"]) { animation: none; }
+}

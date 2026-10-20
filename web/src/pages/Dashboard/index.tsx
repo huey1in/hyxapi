@@ -1,3 +1,4 @@
+import { DashboardStatsSkeleton, TokenUsageSkeleton } from '../../components/layout/PageSkeletons';
 import { useContext, useEffect, useState } from 'react';
 import type { ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -9,7 +10,7 @@ import { API, renderNumber, renderQuota } from '../../helpers';
 import type { ApiEnvelope } from '../../types/api';
 import { StatusContext } from '../../context/Status';
 import { useAuthStore } from '../../stores/auth-store';
-import { Button, Loading, Tabs } from '../../components/ui';
+import { Button, Tabs } from '../../components/ui';
 import useIsMobile from '../../hooks/useIsMobile';
 import useIsDark from '../../hooks/useIsDark';
 import { advancePreviewState, createPreviewState } from './dashboardPreviewSimulation';
@@ -70,7 +71,6 @@ function DashboardContent({ preview = false }: { preview?: boolean }) {
   const refresh = () => void Promise.allSettled([profile.refetch(), cumulative.refetch(), daily.refetch(), ...(days === 1 ? [] : [history.refetch()])]);
   const refreshing = profile.isFetching || cumulative.isFetching || daily.isFetching;
   const usageOptions = allowedDays.map((value) => ({ value: String(value), label: value === 1 ? t('Today') : t('Past {{days}} days', { days: value }) }));
-  if (!preview && profile.isPending) return <div className='flex min-h-[60vh] items-center justify-center'><Loading /></div>;
 
   return (
     <div className='dashboard-overview'>
@@ -79,6 +79,7 @@ function DashboardContent({ preview = false }: { preview?: boolean }) {
       {overviewError && <div role='alert' className='flex flex-wrap items-center justify-between gap-3 rounded-xl border border-ui-border p-4 text-sm text-ui-text-2'><span>{t('Unable to load overview')}</span><Button variant='toggle' onClick={refresh}>{t('Retry')}</Button></div>}
 
       {/* 统计卡片 */}
+      {!preview && profile.isPending ? <DashboardStatsSkeleton /> : <>
       <div className='dashboard-primary-stats'>
         {/* 积分余额 */}
         <div className='dashboard-primary-card'>
@@ -119,6 +120,7 @@ function DashboardContent({ preview = false }: { preview?: boolean }) {
         <StatMini label={t('Requests today')} value={activeDayStats ? renderNumber(activeDayStats.requests) : '—'} />
         <StatMini label={t('Current RPM')} value={activeRpm == null ? '—' : renderNumber(activeRpm)} caption={`${t('Current TPM')}: ${activeTpm == null ? '—' : fmtTokens(activeTpm)}`} />
       </div>
+      </>}
 
       {!preview && <PerformanceOverview />}
       {!preview && <UsageFlow />}
@@ -131,7 +133,7 @@ function DashboardContent({ preview = false }: { preview?: boolean }) {
           <Tabs value={String(days)} onChange={setUsageDays} items={usageOptions} variant='pill' size='sm' />
         </div>
         {logsLoading ? (
-          <div style={{ padding: '32px 0', display: 'flex', justifyContent: 'center' }}><Loading size='sm' /></div>
+          <TokenUsageSkeleton />
         ) : usageError ? <div role='alert' className='space-y-3 p-5 text-sm text-ui-text-2'><p>{t('Unable to load token usage')}</p><Button variant='toggle' onClick={() => void (days === 1 ? daily.refetch() : history.refetch())}>{t('Retry')}</Button></div> : (
           <TokenUsageGrid data={activeRecentLogs} days={days} bucketCount={usageBucketCount} />
         )}

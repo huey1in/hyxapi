@@ -1,11 +1,9 @@
+import { PricingCardsSkeleton } from '../../components/layout/PageSkeletons';
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useLocation, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { Search, RefreshCw, LayoutGrid, List } from 'lucide-react';
-import {
-  PageShell, Card, Input, Select, Table, Pagination, Tag,
-  EmptyState, Loading, IconButton, Divider, Button,
-} from '../../components/ui';
+import { PageShell, Card, Input, Select, Table, Pagination, Tag, EmptyState, IconButton, Divider, Button } from '../../components/ui';
 import { useModelPricingData } from '../../hooks/model-pricing/useModelPricingData';
 import { usePageTitle } from '../../hooks/common/usePageTitle';
 import { calculateModelPrice, getModelPriceItems, getLobeHubIcon, getModelIcon } from '../../helpers';
@@ -167,7 +165,7 @@ const Pricing = ({ preview = false }: { preview?: boolean }) => {
     const pd = priceOf(row);
     const priceItems = pd.isPerToken ? getModelPriceItems(pd, t) : [];
     return (
-      <Card key={row.model_name} interactive={preview ? undefined : 'lift'} onClick={preview ? undefined : () => goDetail(row)}>
+      <Card key={row.model_name} data-pricing-model={row.model_name} interactive={preview ? undefined : 'lift'} onClick={preview ? undefined : () => goDetail(row)}>
         <div className='flex flex-col'>
           <div className='flex items-start justify-between gap-2'>
             <div className='flex items-center gap-2 min-w-0'>
@@ -343,7 +341,7 @@ const Pricing = ({ preview = false }: { preview?: boolean }) => {
 
       <div className='pricing-results mt-4' style={{ minHeight: 'calc(100vh - 320px)' }}>
         {loading ? (
-          <Card><div className='py-10'><Loading /></div></Card>
+          viewMode === 'card' ? <PricingCardsSkeleton preview={preview} /> : <Table loading columns={columns} rows={[]} />
         ) : error ? (<Card><div role='alert' className='space-y-3'><p>{t('Unable to load model pricing')}</p><Button onClick={() => void refresh()}>{t('Retry')}</Button></div></Card>) : total === 0 ? (
           <Card>
             <EmptyState

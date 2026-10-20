@@ -1,4 +1,5 @@
-import { useContext, useEffect, useRef, useState } from 'react';
+import { Suspense, useContext, useEffect, useRef, useState } from 'react';
+import type { ReactNode } from 'react';
 import { Navigate, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { bootstrapAuthentication, resolveAuthentication } from '../../lib/auth-session';
@@ -8,6 +9,7 @@ import SecurityVerification from '../auth/SecurityVerification';
 import HeaderBar from './HeaderBar';
 import SiderBar from './SiderBar';
 import FooterBar from './FooterBar';
+import RouteSkeleton from './RouteSkeleton';
 import Forbidden from '../../pages/Forbidden';
 import { Button } from '../ui';
 import { MobileSidebarProvider } from '../../context/MobileSidebar';
@@ -77,6 +79,16 @@ export default function PageLayout() {
 
   const needsSetup = statusState.status?.setup === false && location.pathname !== '/setup';
   const allowed = !isConsoleRoute || canOpenConsolePage(location.pathname, user);
+  let content: ReactNode;
+  if (needsSetup) content = <Navigate to='/setup' replace />;
+  else if (module && (!statusState.status || statusError)) content = <RouteSkeleton />;
+  else if (moduleAccess === 'disabled') content = <Navigate to='/' replace />;
+  else if (needsAuthentication && !ready) content = authError ? <div role='alert' className='p-8 space-y-3'>
+    <p>{t(authError)}</p><Button onClick={() => setAuthAttempt((value) => value + 1)}>{t('Retry')}</Button>
+  </div> : <RouteSkeleton />;
+  else if (!allowed) content = <Forbidden />;
+  else content = <Suspense fallback={<RouteSkeleton />}><Outlet /></Suspense>;
+
   return <MobileSidebarProvider>
     <SecurityVerification />
     <div className='flex flex-col h-screen' style={{ backgroundColor: 'var(--page-bg)' }}>
@@ -85,11 +97,7 @@ export default function PageLayout() {
         {isConsoleRoute && ready && user && <SiderBar />}
         <main ref={mainRef} className='flex-1 min-w-0 overflow-y-auto overflow-x-hidden flex flex-col'>
           {statusError && <div role='alert' className='flex items-center justify-center gap-3 px-4 py-3 text-sm text-ui-text-2'>{t(statusError)}<Button variant='link' onClick={() => setStatusAttempt((value) => value + 1)}>{t('Retry')}</Button></div>}
-          <div className='flex-1'>
-            {needsSetup ? <Navigate to='/setup' replace /> : module && (!statusState.status || statusError) ? <p role='status' className='p-8 text-ui-text-2'>{t('Loading site status…')}</p> : moduleAccess === 'disabled' ? <Navigate to='/' replace /> : needsAuthentication && !ready ? <div role={authError ? 'alert' : 'status'} className='p-8 space-y-3'>
-              <p>{t(authError || 'Verifying sign-in status…')}</p>{authError && <Button onClick={() => setAuthAttempt((value) => value + 1)}>{t('Retry')}</Button>}
-            </div> : !allowed ? <Forbidden /> : <Outlet />}
-          </div>
+          <div className='flex-1'>{content}</div>
           {!hideFooter && <FooterBar />}
         </main>
       </div>

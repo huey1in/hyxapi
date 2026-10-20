@@ -5,6 +5,7 @@ import type { Deployment, Page, Settings } from './api';
 import DeploymentSettings from './DeploymentSettings';
 import DeploymentForm from './DeploymentForm';
 import DeploymentDetails from './DeploymentDetails';
+
 import { Button, ErrorMessage, Input, PageShell, Pagination, Select, Table } from './ui';
 
 function DeploymentSession({ root }: { root: boolean }) {
@@ -19,6 +20,7 @@ function DeploymentSession({ root }: { root: boolean }) {
   const [keyword, setKeyword] = useState('');
   const [revision, setRevision] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [loaded, setLoaded] = useState(false);
   const [error, setError] = useState('');
   const refresh = () => setRevision((value) => value + 1);
   const saved = () => { setSelected(undefined); setCreating(false); setConfiguration(false); refresh(); };
@@ -35,7 +37,7 @@ function DeploymentSession({ root }: { root: boolean }) {
           if (!abort.signal.aborted) { setRows(result.items || []); setTotal(result.total || 0); }
         } else { setRows([]); setTotal(0); }
       } catch (cause) { if (!abort.signal.aborted) setError(errorText(cause)); }
-      finally { if (!abort.signal.aborted) setLoading(false); }
+      finally { if (!abort.signal.aborted) { setLoading(false); setLoaded(true); } }
     })();
     return () => abort.abort();
   }, [page, filter, revision]);
@@ -45,13 +47,13 @@ function DeploymentSession({ root }: { root: boolean }) {
       <p className='text-sm text-ui-text-2'>管理 io.net GPU 部署、容器与日志。计算资源和费用由 io.net 账户管理。</p>
       {settings && !settings.can_connect && <p className='rounded-xl border border-ui-border p-4 text-sm text-ui-text-2'>部署服务尚未启用或未配置密钥。{root ? '请打开部署配置完成连接。' : '请联系超级管理员配置。'}</p>}
       <div className='grid gap-3 sm:grid-cols-2'><Input aria-label='筛选当前页部署名称' placeholder='筛选当前页部署名称' value={keyword} onChange={setKeyword} /><Select width='full' value={filter} onChange={(value) => { setFilter(value); setPage(1); }} options={[{ value: '', label: '全部部署状态' }, ...Object.entries(statuses).map(([value, label]) => ({ value, label }))]} /></div>
-      <Table<Deployment> rows={rows.filter((item) => item.deployment_name.toLowerCase().includes(keyword.toLowerCase()))} rowKey='id' minWidth={720} columns={[
+      {<Table<Deployment> loading={!loaded} rows={rows.filter((item) => item.deployment_name.toLowerCase().includes(keyword.toLowerCase()))} rowKey='id' minWidth={720} columns={[
         { key: 'name', title: '部署', render: (item) => <div className='max-w-64 break-all text-sm font-medium'>{item.deployment_name}<p className='text-xs font-normal text-ui-text-3'>{item.id}</p></div> },
         { key: 'status', title: '状态', render: (item) => statuses[item.status] || item.status },
         { key: 'hardware', title: '硬件', render: (item) => item.hardware_info || item.hardware_name || '—' },
         { key: 'time', title: '剩余 / 创建时间', render: (item) => <div className='whitespace-nowrap text-xs'>{item.compute_minutes_remaining} 分钟<p className='text-ui-text-3'>{date(item.created_at)}</p></div> },
         { key: 'actions', title: '管理', render: (item) => <Button size='sm' onClick={() => setSelected(item)}>管理部署</Button> },
-      ]} />
+      ]} />}
       <Pagination page={page} pageSize={20} total={total} onChange={setPage} />
     </div>
     {configuration && settings && root && <DeploymentSettings settings={settings} onClose={() => setConfiguration(false)} onSaved={saved} />}

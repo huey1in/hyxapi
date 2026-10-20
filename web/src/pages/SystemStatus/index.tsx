@@ -1,5 +1,6 @@
+import { ReportSection, StatCard, StatisticsSkeleton } from '../../components/layout/PageSkeletons';
 import { useEffect, useState } from 'react';
-import type { CSSProperties, PropsWithChildren, ReactNode } from 'react';
+import type { CSSProperties, ReactNode } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { useAuthStore } from '../../stores/auth-store';
@@ -12,7 +13,7 @@ import { renderQuota, renderNumber } from '../../helpers';
 import SystemTasksPanel from './SystemTasksPanel';
 import InstancesPanel from '../../features/operations/InstancesPanel';
 import MaintenancePanel from '../../features/operations/MaintenancePanel';
-import { Button, Loading, IconButton, Table } from '../../components/ui';
+import { Button, IconButton, Table } from '../../components/ui';
 import useIsMobile from '../../hooks/useIsMobile';
 import type { TableColumn } from '../../components/ui/layout/Table';
 
@@ -64,13 +65,7 @@ const fmtLatency = (n = 0) => {
 
 /* ─── atoms ─── */
 
-const StatMini = ({ label, value, sub }: { label: ReactNode; value: ReactNode; sub?: ReactNode }) => (
-  <div style={{ paddingBlock: 16, paddingInline: 16, border: '1px solid var(--ui-border)', borderRadius: 16 }}>
-    <div style={{ fontSize: 12, color: 'var(--ui-text-3)', marginBottom: 4 }}>{label}</div>
-    <div style={{ fontSize: 20, fontWeight: 700, color: 'var(--ui-text)', fontVariantNumeric: 'tabular-nums' }}>{value}</div>
-    {sub && <div style={{ fontSize: 12, color: 'var(--ui-text-3)', marginTop: 2 }}>{sub}</div>}
-  </div>
-);
+const StatMini = StatCard;
 
 const MiniBar = ({ value, max = 100, color }: { value: number; max?: number; color?: string }) => {
   const pct = max > 0 ? Math.min((value / max) * 100, 100) : 0;
@@ -97,15 +92,7 @@ const ResourceCard = ({ label, value, detail }: { label: ReactNode; value: numbe
   );
 };
 
-const Section = ({ title, right, children }: PropsWithChildren<{ title: ReactNode; right?: ReactNode }>) => (
-  <div>
-    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-      <span style={{ fontSize: 16, fontWeight: 600, color: 'var(--ui-text)' }}>{title}</span>
-      {right && <span style={{ fontSize: 13, color: 'var(--ui-text-3)' }}>{right}</span>}
-    </div>
-    {children}
-  </div>
-);
+const Section = ReportSection;
 
 const PoolCard = ({ title, data }: { title: ReactNode; data: PoolStatus }) => {
   const { t } = useTranslation();
@@ -309,7 +296,7 @@ function SystemStatusSession({ identity, root }: { identity: string; root: boole
   const data = query.isError ? undefined : query.data;
   return <div style={{ display: 'flex', flexDirection: 'column', gap: isMobile ? 20 : 28, width: '100%', maxWidth: 960, marginInline: 'auto', padding: isMobile ? '16px' : '24px 16px' }}>
     <div className='flex flex-wrap items-center justify-between gap-3'><div className='flex flex-wrap items-center gap-3'><h1 className='text-lg font-semibold text-ui-text'>{t('System status')}</h1><span className='text-xs tabular-nums text-ui-text-3'>{t('Refresh in {{seconds}}s', { seconds: countdown })}</span></div><IconButton icon={RefreshCw} onClick={() => void query.refetch()} disabled={query.isFetching} aria-label={t('Refresh system status')} /></div>
-    {query.isError ? <div role='alert' className='space-y-2 text-sm text-ui-danger'><p>{t(apiErrorMessage(query.error))}</p><Button onClick={() => void query.refetch()}>{t('Retry')}</Button></div> : !data ? <Loading /> : <StatusCards data={data} isMobile={isMobile} />}
+    {query.isError ? <div role='alert' className='space-y-2 text-sm text-ui-danger'><p>{t(apiErrorMessage(query.error))}</p><Button onClick={() => void query.refetch()}>{t('Retry')}</Button></div> : !data ? <StatisticsSkeleton system /> : <StatusCards data={data} isMobile={isMobile} />}
     {root && <><InstancesPanel /><MaintenancePanel /><SystemTasksPanel /></>}
     {data && <div className='pb-2 text-right text-xs text-ui-text-3'>{data.system.go_version} · {data.system.version}</div>}
   </div>;

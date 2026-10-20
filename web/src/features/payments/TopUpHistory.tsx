@@ -1,8 +1,9 @@
+import Skeleton from '../../components/ui/feedback/Skeleton';
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { API, timestamp2string } from '../../helpers';
-import { Button, ConfirmDialog, Input, Loading, Modal, Pagination, Select, showSuccess } from '../../components/ui';
+import { Button, ConfirmDialog, Input, Modal, Pagination, Select, showSuccess } from '../../components/ui';
 import type { ApiEnvelope } from '../../types/api';
 import { apiErrorMessage } from '../../lib/api-error';
 import { useOwnedOperation } from '../../hooks/useOwnedOperation';
@@ -36,17 +37,17 @@ export default function TopUpHistory({ identity, role, onClose, onSaved }: { ide
       <div className='min-w-0 flex-1'><Input aria-label={t('Search trade number')} placeholder={t('Search trade number')} value={search} onChange={setSearch} /></div>
       <Button type='submit' variant='secondary'>{t('Search')}</Button><Button variant='link' onClick={() => void query.refetch()}>{t('Refresh')}</Button>
     </form>
-    {query.isFetching ? <Loading size='sm' /> : query.isError ? <div role='alert' className='space-y-2 text-sm text-ui-danger'><p>{t(apiErrorMessage(query.error, 'Unable to load wallet data'))}</p><Button onClick={() => void query.refetch()}>{t('Retry')}</Button></div> : data && <>
-      <div className='max-h-[400px] overflow-auto'><table className='w-full border-collapse text-sm'>
+    {query.isError ? <div role='alert' className='space-y-2 text-sm text-ui-danger'><p>{t(apiErrorMessage(query.error, 'Unable to load wallet data'))}</p><Button onClick={() => void query.refetch()}>{t('Retry')}</Button></div> : <>
+      <div className='max-h-[400px] overflow-auto' role={query.isPending ? 'status' : undefined} aria-label={query.isPending ? t('Loading...') : undefined} aria-busy={query.isPending || undefined} data-loading-skeleton={query.isPending ? 'table' : undefined}><table className='w-full border-collapse text-sm'>
         <thead><tr className='border-b border-ui-divider text-ui-text-3'><th className='px-3 py-2 text-left font-normal'>{t('Time')}</th><th className='px-3 py-2 text-left font-normal'>{t('Description')}</th><th className='px-3 py-2 text-right font-normal'>{t('Payment amount')}</th>{admin && <th className='px-3 py-2 font-normal'>{t('Actions')}</th>}</tr></thead>
-        <tbody>{!data.items.length ? <tr><td colSpan={admin ? 4 : 3} className='px-3 py-6 text-center text-ui-text-3'>{t('No top-up records')}</td></tr> : data.items.map((order) => <tr key={order.id} className='border-b border-ui-divider text-ui-text'>
+        <tbody>{query.isPending ? Array.from({ length: 4 }, (_, index) => <tr key={index} aria-hidden='true' className='border-b border-ui-divider'>{Array.from({ length: admin ? 4 : 3 }, (_, column) => <td key={column} className='px-3 py-2'><Skeleton width='75%' height={36} /></td>)}</tr>) : !data?.items.length ? <tr><td colSpan={admin ? 4 : 3} className='px-3 py-6 text-center text-ui-text-3'>{t('No top-up records')}</td></tr> : data.items.map((order) => <tr key={order.id} className='border-b border-ui-divider text-ui-text'>
           <td className='whitespace-nowrap px-3 py-2'>{order.create_time ? timestamp2string(order.create_time) : '—'}</td>
           <td className='px-3 py-2'><div>{order.payment_method || order.payment_provider || '—'} · {t(statusLabels[order.status] || order.status)}</div><div className='break-all text-xs text-ui-text-3'>{order.trade_no}{admin && ` · ${t('User #{{id}}', { id: order.user_id })}`}</div></td>
           <td className='px-3 py-2 text-right tabular-nums'>{order.money.toFixed(2)}</td>
           {admin && <td className='px-3 py-2'>{order.status === 'pending' && <Button size='sm' variant='link' onClick={() => setComplete(order)}>{t('Complete order')}</Button>}</td>}
         </tr>)}</tbody>
       </table></div>
-      <Pagination page={page} pageSize={pageSize} total={data.total} onChange={(value: number) => { setPage(value); setComplete(null); }} />
+      <Pagination page={page} pageSize={pageSize} total={data?.total ?? 0} onChange={(value: number) => { setPage(value); setComplete(null); }} />
     </>}
     {complete && <CompleteOrder key={complete.id} order={complete} onClose={() => setComplete(null)} onSaved={() => { void query.refetch(); onSaved(); }} />}
   </Modal>;

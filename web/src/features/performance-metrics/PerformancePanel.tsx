@@ -2,16 +2,24 @@ import { useState } from 'react';
 import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
-import { Button, Card, Loading, Select, Tag } from '../../components/ui';
+import { Button, Card, Select, Tag, ContentSkeleton } from '../../components/ui';
 import { useModelPerformance, usePerformanceSummary } from './api';
 import { formatLatency, formatSuccessRate, formatThroughput, successTone, trendSamples, ttftSamples } from './format';
 import type { ModelSummary, SeriesPoint, SuccessPoint } from './types';
+import Skeleton from '../../components/ui/feedback/Skeleton';
 
 function Stat({ label, children }: { label: string; children: ReactNode }) {
   return <div className='min-w-0 rounded-xl bg-ui-bg-subtle p-3'>
     <div className='text-xs text-ui-text-3'>{label}</div>
     <div className='mt-1 text-base tabular-nums text-ui-text break-words'>{children}</div>
   </div>;
+}
+
+function MetricsSkeleton() {
+  const { t } = useTranslation();
+  return <ContentSkeleton variant='cards'><div className='grid grid-cols-1 sm:grid-cols-3 gap-2'>
+    {['Request success rate', 'Average request latency', 'Output throughput'].map((label) => <Stat key={label} label={t(label)}><div className='flex h-6 items-center'><Skeleton width={80} height={16} className='[&>div]:bg-ui-border' /></div></Stat>)}
+  </div></ContentSkeleton>;
 }
 
 function SuccessHistory({ points }: { points: SuccessPoint[] }) {
@@ -41,7 +49,7 @@ export function PerformanceOverview() {
     <div className='flex flex-wrap items-center justify-between gap-2'>
       <h2 className='text-sm font-medium text-ui-text'>{t("Performance overview")}</h2><span className='text-xs text-ui-text-3'>{t("Past 24 hours")}</span>
     </div>
-    {metrics.isLoading ? <Loading /> : metrics.isError ? <MetricsError retry={() => { void metrics.refetch(); }} /> : <>
+    {metrics.isLoading ? <MetricsSkeleton /> : metrics.isError ? <MetricsError retry={() => { void metrics.refetch(); }} /> : <>
       <div className='grid grid-cols-1 sm:grid-cols-3 gap-2'>
         <Stat label={t("Request success rate")}>{formatSuccessRate(summary?.success_rate, i18n.language)}</Stat>
         <Stat label={t("Average request latency")}>{formatLatency(summary?.avg_latency_ms, i18n.language)}</Stat>
@@ -92,7 +100,7 @@ export function ModelPerformance({ model }: { model: string }) {
         { value: '24', label: t("Past 24 hours") }, { value: '168', label: t("Past 7 days") }, { value: '720', label: t("Past 30 days") },
       ]} />
     </div>
-    {metrics.isLoading ? <Loading /> : metrics.isError ? <MetricsError retry={() => { void metrics.refetch(); }} /> : <>
+    {metrics.isLoading ? <MetricsSkeleton /> : metrics.isError ? <MetricsError retry={() => { void metrics.refetch(); }} /> : <>
       <div className='grid grid-cols-1 sm:grid-cols-3 gap-2'>
         <Stat label={t("Request success rate")}>{formatSuccessRate(summary?.success_rate, i18n.language)}</Stat>
         <Stat label={t("Average request latency")}>{formatLatency(summary?.avg_latency_ms, i18n.language)}</Stat>

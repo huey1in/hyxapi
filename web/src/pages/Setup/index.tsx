@@ -1,9 +1,10 @@
+import Skeleton from '../../components/ui/feedback/Skeleton';
 import { useEffect, useRef, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { z } from 'zod';
 import { API, showSuccess } from '../../helpers';
-import { Button, Card, Input, Loading, Notice, Steps } from '../../components/ui';
+import { Button, Card, Input, Notice, Steps, ContentSkeleton } from '../../components/ui';
 import { authResult } from '../../lib/secure-verification';
 import { apiErrorMessage } from '../../lib/api-error';
 import { useAuthOperation } from '../Auth/useAuthOperation';
@@ -57,7 +58,7 @@ export default function Setup() {
     <Card className='w-full max-w-2xl'>
       <h1 className='text-2xl font-semibold text-ui-text-1 mb-1'>{t('System initialization')}</h1>
       <p className='text-ui-text-2 text-sm mb-6'>{t('Complete the first-time Hyxware setup')}</p>
-      {query.isPending ? <Loading /> : query.isError ? <div role='alert' className='space-y-3'><Notice kind='warning'>{t(apiErrorMessage(query.error, 'Unable to load setup status'))}</Notice><Button onClick={() => void query.refetch()}>{t('Retry')}</Button></div> : status && <>
+      {query.isPending ? <ContentSkeleton variant='form'><div className='mb-8'><Steps items={stepKeys.map((key) => ({ title: t(key) }))} current={0} /></div><Skeleton height={44} /><Skeleton className='mt-3' width='75%' height={20} /><div className='mt-8 flex justify-between'><Skeleton width={85} height={36} /><Skeleton width={65} height={36} /></div></ContentSkeleton> : query.isError ? <div role='alert' className='space-y-3'><Notice kind='warning'>{t(apiErrorMessage(query.error, 'Unable to load setup status'))}</Notice><Button onClick={() => void query.refetch()}>{t('Retry')}</Button></div> : status && <>
         <div className='mb-8'><Steps items={stepKeys.map((key) => ({ title: t(key) }))} current={step} /></div>
         {error && <div role='alert' className='mb-4'><Notice kind='warning'>{error}</Notice></div>}
         {step === 0 && <div className='space-y-3'>

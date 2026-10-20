@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { renderQuota } from '../../helpers';
-import { Button, Input, Loading, Modal, Pagination, Switch, Table, Tabs } from '../../components/ui';
+import { Button, Input, Modal, Pagination, Switch, Table, Tabs } from '../../components/ui';
 import type { TableColumn } from '../../components/ui/layout/Table';
 import { useAuthStore } from '../../stores/auth-store';
 import { apiErrorMessage } from '../../lib/api-error';
@@ -52,7 +52,7 @@ function MidjourneyPage({ identity, admin }: { identity: string; admin: boolean 
       <div className='flex flex-wrap gap-2'><Button type='submit' variant='toggle' disabled={Boolean(validation)}>{t('Search')}</Button><Button type='button' variant='link' onClick={() => { setFilters(emptyTaskFilters()); setApplied(emptyTaskFilters()); setBadDates({}); setPage(1); setSelected(null); }}>{t('Reset')}</Button></div>
     </form>
     {validation && <p role='alert' className='text-sm text-ui-danger'>{t(validation)}</p>}
-    {query.isError ? <div role='alert' className='space-y-2 text-sm text-ui-danger'><p>{t(apiErrorMessage(query.error))}</p><Button onClick={() => void query.refetch()}>{t('Retry')}</Button></div> : query.isFetching && !query.data ? <Loading /> : <><Table rows={rows} rowKey='id' minWidth={720} emptyText={t('No Midjourney tasks')} columns={columns} /><Pagination page={page} pageSize={20} total={query.data?.total || 0} onChange={(value: number) => { setPage(value); setSelected(null); }} /></>}
+    {query.isError ? <div role='alert' className='space-y-2 text-sm text-ui-danger'><p>{t(apiErrorMessage(query.error))}</p><Button onClick={() => void query.refetch()}>{t('Retry')}</Button></div> : <><Table loading={query.isPending} rows={rows} rowKey='id' minWidth={720} emptyText={t('No Midjourney tasks')} columns={columns} /><Pagination page={page} pageSize={20} total={query.data?.total || 0} onChange={(value: number) => { setPage(value); setSelected(null); }} /></>}
     {selected && <MidjourneyDetails key={selected.id} row={selected} onClose={() => setSelected(null)} />}
   </div>;
 }

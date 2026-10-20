@@ -5,7 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { z } from 'zod';
 import { Copy } from 'lucide-react';
 import { API, copy, renderQuota } from '../../helpers';
-import { Button, IconButton, Input, Loading, Select, showError, showSuccess } from '../../components/ui';
+import { Button, IconButton, Input, Select, showError, showSuccess, ContentSkeleton, Skeleton } from '../../components/ui';
 import { useAuthStore } from '../../stores/auth-store';
 import { apiErrorMessage } from '../../lib/api-error';
 import useIsMobile from '../../hooks/useIsMobile';
@@ -74,12 +74,11 @@ function TopUp({ identity }: { identity: string }) {
   const canRedeem = paymentInfo?.enable_redemption === true;
   return <div style={{ display: 'flex', flexDirection: 'column', gap: isMobile ? 20 : 28, width: '100%', maxWidth: 960, marginInline: 'auto', padding: isMobile ? '16px' : '24px 16px' }}>
     <div className='flex flex-wrap items-center justify-between gap-4 rounded-[26px] border border-ui-border px-5 py-[26px]'>
-      <div><div className='mb-1.5 text-[13px] text-ui-text-3'>{t('Current balance')}</div><div className='text-[28px] font-bold text-ui-text'>{user ? renderQuota(user.quota) : '—'}</div><div className='mt-1 text-xs text-ui-text-3'>{t('Total used: {{amount}}', { amount: user ? renderQuota(user.used_quota) : '—' })}</div></div>
+      <div><div className='mb-1.5 text-[13px] text-ui-text-3'>{t('Current balance')}</div><div className='text-[28px] font-bold text-ui-text'>{profile.isPending ? <Skeleton width={140} height={34} /> : user ? renderQuota(user.quota) : '—'}</div><div className='mt-1 text-xs text-ui-text-3'>{t('Total used: {{amount}}', { amount: user ? renderQuota(user.used_quota) : '—' })}</div></div>
       <Button size='sm' variant='secondary' onClick={() => setShowHistory(true)}>{t('Top-up history')}</Button>
     </div>
-    {profile.isPending && <Loading size='sm' />}
     {profile.isError && <div role='alert' className='space-y-2 text-sm text-ui-danger'><p>{t(apiErrorMessage(profile.error, 'Unable to load wallet data'))}</p><Button onClick={refreshUser}>{t('Retry')}</Button></div>}
-    {info.isPending ? <Loading size='sm' /> : info.isError ? <div role='alert' className='space-y-2 text-sm text-ui-danger'><p>{t(apiErrorMessage(info.error, 'Unable to load payment methods'))}</p><Button onClick={() => void info.refetch()}>{t('Retry')}</Button></div> : methods.length > 0 && <section className='flex flex-col gap-4'>
+    {info.isPending ? <ContentSkeleton variant='form'><section className='flex flex-col gap-4'><h2 className='text-lg font-semibold text-ui-text'>{t('Top up now')}</h2><Skeleton height={36} rounded='rounded-full' /><div className='grid gap-2' style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(80px, 1fr))' }}>{[0, 1, 2, 3, 4].map((index) => <Skeleton key={index} height={45} />)}</div><div className='rounded-xl border border-ui-border px-[18px] py-4'><div className='mb-1.5 text-[13px] text-ui-text-3'>{t('Payment total')}</div><Skeleton width={140} height={42} /></div><Skeleton height={48} rounded='rounded-full' /></section></ContentSkeleton> : info.isError ? <div role='alert' className='space-y-2 text-sm text-ui-danger'><p>{t(apiErrorMessage(info.error, 'Unable to load payment methods'))}</p><Button onClick={() => void info.refetch()}>{t('Retry')}</Button></div> : methods.length > 0 && <section className='flex flex-col gap-4'>
       <div className='flex items-center justify-between gap-2'><h2 className='text-lg font-semibold text-ui-text'>{t('Top up now')}</h2>{canRedeem && <Button size='sm' variant='secondary' onClick={() => setRedeemOpen(true)}>{t('Redemption code')}</Button>}</div>
       <Select width='full' aria-label={t('Payment method')} value={method?.id || ''} onChange={setSelectedMethod} disabled={checkingOut} options={methods.map((item) => ({ value: item.id, label: t(item.name) }))} />
       {method?.provider !== 'creem' && <fieldset disabled={checkingOut} className='grid gap-2' style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(80px, 1fr))' }}>

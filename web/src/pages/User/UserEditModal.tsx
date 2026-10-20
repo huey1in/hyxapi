@@ -1,8 +1,9 @@
+import { LayoutSkeleton } from '../../components/ui/feedback/ContentSkeleton';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Copy, Dices } from 'lucide-react';
 import { API, copy, showSuccess } from '../../helpers';
-import { Button, IconButton, Input, Loading, Select, SlideOver, Switch, Textarea, showError } from '../../components/ui';
+import { Button, IconButton, Input, Select, SlideOver, Switch, Textarea, showError } from '../../components/ui';
 import type { ApiEnvelope } from '../../types/api';
 import type { PermissionCatalog } from '../../lib/admin-permissions';
 import { normalizeAdminPermissions } from '../../lib/admin-permissions';
@@ -61,7 +62,7 @@ export default function UserEditModal({ user, actorRole, onClose, onSaved }: Pro
   return <SlideOver open title={<h2 className='text-lg font-semibold'>{user ? t('Edit user #{{id}}', { id: user.id }) : t('Create user')}</h2>} width={480} onClose={() => { if (!busy) onClose(); }}
     footer={<><Button variant='toggle' disabled={busy} onClick={onClose}>{t('Cancel')}</Button><Button loading={busy} disabled={loading || !!error} onClick={() => void save()}>{t(user ? 'Save' : 'Create')}</Button></>}>
     <div className='px-6 pb-6 space-y-4'>
-      {loading ? <Loading /> : error ? <p role='alert'>{t(error)}</p> : <fieldset disabled={busy} className='space-y-4'>
+      {error ? <p role='alert'>{t(error)}</p> : <LayoutSkeleton loading={loading}><fieldset disabled={busy || loading} className='space-y-4'>
         <label className='block space-y-1.5 text-sm'>{t('Username')}<Input aria-label={t('Username')} value={form.username} onChange={(value) => change('username', value)} disabled={!!user || busy} width='full' /></label>
         <label className='block space-y-1.5 text-sm'>{t('Display name')}<Input aria-label={t('Display name')} value={form.display_name} onChange={(value) => change('display_name', value)} width='full' /></label>
         <label className='block space-y-1.5 text-sm'>{t('Password')} {user && <span className='text-xs text-ui-text-3'>{t('Leave blank to keep the password')}</span>}
@@ -81,7 +82,7 @@ export default function UserEditModal({ user, actorRole, onClose, onSaved }: Pro
             <Switch aria-label={t(action.label_key)} checked={matrix[resource.resource]?.[action.action] === true} onChange={(checked) => change('admin_permissions', { ...matrix, [resource.resource]: { ...matrix[resource.resource], [action.action]: checked } })} />
           </label>)}
         </section>)}
-      </fieldset>}
+      </fieldset></LayoutSkeleton>}
     </div>
   </SlideOver>;
 }

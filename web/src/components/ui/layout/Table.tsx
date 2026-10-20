@@ -17,6 +17,8 @@
 import React from 'react';
 import type { CSSProperties, HTMLAttributes, Key, ReactNode } from 'react';
 import { cn } from '../tokens';
+import { useTranslation } from 'react-i18next';
+import Skeleton from '../feedback/Skeleton';
 
 const SIZE_PAD = {
   sm: 'px-3 py-2.5 text-xs',
@@ -52,6 +54,8 @@ export interface TableProps<T extends object> {
   renderExpanded?: (row: T, index: number) => ReactNode;
   tableLayout?: 'auto' | 'fixed';
   minWidth?: CSSProperties['minWidth'];
+  loading?: boolean;
+  skeletonRows?: number;
 }
 
 function Table<T extends object>({
@@ -68,7 +72,10 @@ function Table<T extends object>({
   renderExpanded,
   tableLayout = 'auto',
   minWidth,
+  loading = false,
+  skeletonRows = 6,
 }: TableProps<T>) {
+  const { t } = useTranslation();
   const keyOf = (row: T, i: number): Key => {
     if (typeof rowKey === 'function') return rowKey(row);
     const value: unknown = rowKey === undefined ? Reflect.get(row, 'id') : row[rowKey];
@@ -76,7 +83,9 @@ function Table<T extends object>({
   };
 
   return (
-    <div className='w-full overflow-x-auto rounded-2xl border border-ui-border bg-[var(--page-bg)] ui-scrollbar'>
+    <div role={loading ? 'status' : undefined} aria-label={loading ? t('Loading...') : undefined} aria-busy={loading || undefined}
+      data-loading-skeleton={loading ? 'table' : undefined}
+      className='w-full overflow-x-auto rounded-2xl border border-ui-border bg-[var(--page-bg)] ui-scrollbar'>
       <table
         className='w-full border-collapse'
         style={{
@@ -84,7 +93,7 @@ function Table<T extends object>({
           ...(minWidth ? { minWidth } : {}),
         }}
       >
-        <thead>
+        <thead inert={loading || undefined}>
           <tr className='border-b border-ui-border'>
             {columns.map((c) => (
               <th
@@ -102,7 +111,11 @@ function Table<T extends object>({
           </tr>
         </thead>
         <tbody>
-          {rows.length === 0 ? (
+          {loading ? Array.from({ length: skeletonRows }, (_, row) => <tr key={row} aria-hidden='true' className={cn(row < skeletonRows - 1 && 'border-b border-ui-divider', striped && row % 2 === 1 && 'bg-ui-border')}>
+            {columns.map((column) => <td key={column.key} className={cn(SIZE_PAD[size], ALIGN[column.align ?? 'left'])}>
+              <Skeleton height={16} width='80%' className={column.align === 'right' ? 'ml-auto' : column.align === 'center' ? 'mx-auto' : undefined} />
+            </td>)}
+          </tr>) : rows.length === 0 ? (
             <tr>
               <td colSpan={columns.length} className={cn('text-center text-ui-text-3', SIZE_PAD[size])}>
                 {emptyText}

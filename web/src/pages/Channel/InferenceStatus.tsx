@@ -1,9 +1,10 @@
+import Skeleton from '../../components/ui/feedback/Skeleton';
 import { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { TFunction } from 'i18next';
 import { useQuery } from '@tanstack/react-query';
 import { API } from '../../helpers';
-import { Button, Loading, Modal, Switch } from '../../components/ui';
+import { Button, ContentSkeleton, Modal, Switch } from '../../components/ui';
 import { hasPermission } from '../../lib/admin-permissions';
 import { useAuthStore } from '../../stores/auth-store';
 import { metricMean, metricRatio, metricValue, recentMetrics } from './inference-status';
@@ -107,7 +108,7 @@ export default function InferenceStatusDialog({ channel, onClose, onSyncModels, 
         <Switch size='sm' checked={autoRefresh} onChange={setAutoRefresh} />{t('Auto refresh (5 seconds)')}
       </label>
     </div>
-    {query.isPending && <Loading label={t('Fetching status')} />}
+    {query.isPending && <ContentSkeleton variant='cards'><div className='space-y-4'><div className='flex flex-wrap gap-6'><Skeleton width={120} height={20} /><Skeleton width={200} height={20} /></div><div className='grid grid-cols-2 sm:grid-cols-4 gap-2'>{[0, 1, 2, 3].map((index) => <div key={index} className='border border-ui-border rounded-lg p-3 space-y-2'><Skeleton height={16} /><Skeleton width='65%' height={16} /></div>)}</div><h4 className='text-sm font-medium'>{t('Served models')}</h4><div className='border border-ui-border rounded-lg p-3 space-y-2'><Skeleton width={180} height={20} /><Skeleton width='60%' height={20} /><Skeleton width='45%' height={20} /></div><div className='grid sm:grid-cols-2 gap-2'>{[0, 1].map((index) => <div key={index} className='border border-ui-border rounded-lg p-3'><Skeleton height={20} /></div>)}</div></div></ContentSkeleton>}
     {query.isError && <p role='alert' className='text-sm text-ui-danger'>
       {snapshot ? t('Refresh failed. Showing the last successful snapshot.') : query.error.message}
     </p>}

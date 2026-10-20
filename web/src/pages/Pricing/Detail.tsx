@@ -1,3 +1,5 @@
+import { ParagraphSkeleton } from '../../components/ui/feedback/ContentSkeleton';
+import { PricingDetailSkeleton } from '../../components/layout/PageSkeletons';
 import React, { useMemo, useState, useEffect } from 'react';
 import type { ReactNode } from 'react';
 import { useQuery } from '@tanstack/react-query';
@@ -7,9 +9,7 @@ import type { TableColumn } from '../../components/ui/layout/Table';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { ArrowLeft, Copy } from 'lucide-react';
-import {
-  PageShell, Card, Tag, Table, Button, Divider, Loading, EmptyState, Select,
-} from '../../components/ui';
+import { PageShell, Card, Tag, Table, Button, Divider, EmptyState, Select } from '../../components/ui';
 import { useModelPricingData } from '../../hooks/model-pricing/useModelPricingData';
 import { usePageTitle } from '../../hooks/common/usePageTitle';
 import { API, calculateModelPrice, getModelPriceItems, getLobeHubIcon, getModelIcon } from '../../helpers';
@@ -139,7 +139,7 @@ const PricingDetail = () => {
           </div>
         </div>
         {error ? (<Card><div role='alert' className='space-y-3'><p>{t('Unable to load model pricing')}</p><Button onClick={() => void refresh()}>{t('Retry')}</Button></div></Card>) : loading && !model ? (
-          <Card><div className='py-10'><Loading /></div></Card>
+          <PricingDetailSkeleton />
         ) : !model ? (
           <Card>
             <EmptyState
@@ -246,7 +246,7 @@ const PricingDetail = () => {
                     <span className='text-xs text-ui-text-3'>{t("Recent calls")}</span>
                   </div>
                   {health.isError ? (<div role='alert' className='flex flex-wrap items-center gap-3 text-xs text-ui-text-3'>{t('Unable to load service status')}<Button variant='link' onClick={() => void health.refetch()}>{t('Retry')}</Button></div>) : health.isPending ? (
-                    <div className='py-2'><Loading /></div>
+                    <ParagraphSkeleton lines={2} />
                   ) : (
                     <div className='flex flex-col gap-5'>
                       {model.enable_groups.map((g) => {

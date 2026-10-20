@@ -1,3 +1,4 @@
+import Skeleton from '../../components/ui/feedback/Skeleton';
 import { useContext, useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
@@ -6,7 +7,7 @@ import { API, renderQuota } from '../../helpers';
 import type { ApiEnvelope } from '../../types/api';
 import { StatusContext } from '../../context/Status';
 import { useAuthStore } from '../../stores/auth-store';
-import { Button, Card, Checkbox, Loading, MultiSelect, Select } from '../../components/ui';
+import { Button, Card, Checkbox, ContentSkeleton, MultiSelect, Select } from '../../components/ui';
 import { flowRowsSchema, flowTimeRange } from './data';
 import { buildDashboardFlowData, getFlowStages } from './flow';
 import { layoutFlow } from './layout';
@@ -67,7 +68,7 @@ function UsageFlowContent() {
       </div>)}
     </div></details>
     {(filters.length > 0 || activeNode || activeLink) && <Button size='sm' variant='link' onClick={reset}>{t('Clear flow selection')}</Button>}
-    {!enabled ? <p className='text-sm text-ui-text-3'>{t('Usage data collection is disabled.')}</p> : query.isPending ? <Loading /> : query.isError ? <div role='alert' className='space-y-2 text-sm text-ui-text-2'><p>{t('Unable to load usage flow')}</p><Button size='sm' variant='toggle' onClick={() => void query.refetch()}>{t('Retry')}</Button></div> : <>
+    {!enabled ? <p className='text-sm text-ui-text-3'>{t('Usage data collection is disabled.')}</p> : query.isPending ? <ContentSkeleton variant='cards'><div className='space-y-4'><div className='flex flex-wrap gap-5'>{[0, 1, 2].map((index) => <Skeleton key={index} width={100} height={16} />)}</div><div className='flex h-64 items-center justify-between gap-8 overflow-hidden rounded-xl border border-ui-border p-5'>{visibleStages.map((stage) => <div key={stage} className='flex h-full min-w-0 flex-col justify-around gap-4'><Skeleton width={70} height={16} /><Skeleton width={12} height={65} /><Skeleton width={12} height={40} /></div>)}</div></div></ContentSkeleton> : query.isError ? <div role='alert' className='space-y-2 text-sm text-ui-text-2'><p>{t('Unable to load usage flow')}</p><Button size='sm' variant='toggle' onClick={() => void query.refetch()}>{t('Retry')}</Button></div> : <>
       <div className='flex flex-wrap gap-x-5 gap-y-1 text-xs tabular-nums text-ui-text-2' aria-label={t('Flow totals')}>
         <span>{t('Quota')}: {renderQuota(result.summary.quota)}</span><span>{t('Tokens')}: {new Intl.NumberFormat(i18n.language).format(result.summary.tokens)}</span><span>{t('Requests')}: {new Intl.NumberFormat(i18n.language).format(result.summary.requests)}</span>
       </div>
