@@ -5,6 +5,7 @@
  * value:      当前值
  * onChange:   选中回调
  * placeholder: 未选中显示文字
+ * prefix:     触发器内部左侧提示
  * size:       sm | md (默认) | lg
  * placement:  bottom-start | bottom-end | top-start | top-end
  * disabled
@@ -24,6 +25,7 @@ export interface SelectProps<V extends SelectValue> {
   value?: V | null;
   onChange?: (value: V) => void;
   placeholder?: ReactNode;
+  prefix?: ReactNode;
   emptyText?: ReactNode;
   placement?: 'bottom-start' | 'bottom-end' | 'top-start' | 'top-end';
   disabled?: boolean;
@@ -38,6 +40,7 @@ function Select<V extends SelectValue>({
   value,
   onChange,
   placeholder = '请选择',
+  prefix,
   emptyText = '无可用选项',
   placement = 'bottom-start',
   disabled = false,
@@ -82,13 +85,15 @@ function Select<V extends SelectValue>({
         style={s.style}
         className={cn(
           s.className,
-          'w-full inline-flex items-center justify-between gap-2 cursor-pointer text-left',
+          'w-full inline-flex items-center justify-between cursor-pointer text-left',
+          prefix ? 'gap-1.5' : 'gap-2',
           open && 'border-ui-text-3',
           FOCUS_RING,
           disabled && 'cursor-not-allowed',
         )}
       >
-        <span className={cn('truncate', !current && 'text-ui-text-3')}>
+        {prefix && <span className='shrink-0 text-xs text-ui-text-3' aria-hidden='true'>{prefix}</span>}
+        <span className={cn('truncate', prefix && 'min-w-0 flex-1', !current && 'text-ui-text-3')}>
           {current?.label ?? placeholder}
         </span>
         <ChevronDown size={14} className={cn('text-ui-text-3 shrink-0 transition-transform', open && 'rotate-180')} />

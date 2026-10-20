@@ -106,8 +106,8 @@ export function DashboardStatsSkeleton() {
   const { t } = useTranslation();
   return <div className='flex flex-col gap-4 min-[769px]:gap-7'>
     <DashboardPrimaryStatsSkeleton />
-    <div className='space-y-3'><ContentSkeleton variant='dashboard'><div className='dashboard-usage-filters'>{['Time range', 'API Key'].map((label, index) => <div key={label} className={`dashboard-filter-field${index ? ' dashboard-key-filter' : ''}`}>
-      <div className='text-xs text-ui-text-3'>{t(label)}</div><Skeleton height={32} rounded='rounded-xl' />
+    <div className='space-y-3'><ContentSkeleton variant='dashboard'><div className='dashboard-usage-filters'>{['Time', 'API Key'].map((label, index) => <div key={label} className={`dashboard-filter-field${index ? ' dashboard-key-filter' : ''}`}>
+      <div className='flex h-8 w-full items-center gap-1.5 rounded-xl border border-ui-border px-[11px]'><span className='shrink-0 text-xs text-ui-text-3'>{index ? label : t(label)}</span><Skeleton width={28} height={14} /></div>
     </div>)}</div></ContentSkeleton><DashboardUsageStatsSkeleton /></div>
   </div>;
 }

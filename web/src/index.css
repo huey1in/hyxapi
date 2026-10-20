@@ -635,7 +635,7 @@ input[type='number'] {
 .dashboard-primary-stats { display:grid; grid-template-columns:repeat(2, minmax(0, 1fr)); gap:12px; }
 .dashboard-primary-card { display:flex; align-items:center; justify-content:space-between; min-width:0; padding:26px 20px; border:1px solid var(--ui-border); border-radius:26px; }
 .dashboard-usage-filters { display:flex; flex-wrap:wrap; justify-content:flex-start; align-items:flex-end; gap:8px; }
-.dashboard-filter-field { display:flex; flex:0 1 120px; min-width:0; max-width:100%; flex-direction:column; gap:6px; }
+.dashboard-filter-field { display:flex; flex:0 1 120px; min-width:0; max-width:100%; }
 .dashboard-key-filter { flex-basis:144px; }
 .dashboard-secondary-stats { display:grid; grid-template-columns:repeat(3, minmax(0, 1fr)); gap:12px; }
 .dashboard-stat-mini { display:flex; flex-direction:column; min-width:0; padding:16px; border:1px solid var(--ui-border); border-radius:16px; }

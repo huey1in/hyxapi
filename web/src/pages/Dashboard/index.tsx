@@ -105,15 +105,13 @@ function DashboardContent({ preview = false }: { preview?: boolean }) {
       <section className='space-y-3' aria-label={t('Usage statistics')} data-dashboard-usage>
         <div className='dashboard-usage-filters'>
           <div className='dashboard-filter-field'>
-            <label htmlFor='dashboard-period' className='text-xs text-ui-text-3'>{t('Time range')}</label>
-            <Select id='dashboard-period' size={32} aria-label={t('Time range')} value={typeof range === 'string' ? range : 'custom'} options={[...dashboardPeriods.map((period) => ({ value: period.value, label: t(period.label) })), { value: 'custom', label: <span title={customRangeTitle}>{t('Custom range')}</span> }]} onChange={(value) => {
+            <Select id='dashboard-period' size={32} prefix={t('Time')} aria-label={t('Time range')} value={typeof range === 'string' ? range : 'custom'} options={[...dashboardPeriods.map((period) => ({ value: period.value, label: <span title={t(period.label)}>{t(period.label)}</span> })), { value: 'custom', label: <span title={customRangeTitle}>{t('Custom range')}</span> }]} onChange={(value) => {
               if (value === 'custom') setRangeDialogOpen(true);
               else setRange(value);
             }} />
           </div>
           <div className='dashboard-filter-field dashboard-key-filter'>
-            <label htmlFor='dashboard-key' className='text-xs text-ui-text-3'>API Key</label>
-            <Select id='dashboard-key' size={32} aria-label='API Key' value={selectedKey.id} disabled={!preview && keys.isPending} options={[{ value: 0, label: t('All API keys') }, ...keyChoices.map((key) => ({ value: key.id, label: <span title={`${key.name || 'API Key'} (#${key.id})`}>{key.name || 'API Key'} (#{key.id})</span> }))]} onChange={(id) => setSelectedKey(keyChoices.find((key) => key.id === id) ?? { id: 0, name: '' })} />
+            <Select id='dashboard-key' size={32} prefix='API Key' aria-label='API Key' value={selectedKey.id} disabled={!preview && keys.isPending} options={[{ value: 0, label: t('All') }, ...keyChoices.map((key) => ({ value: key.id, label: <span title={`${key.name || 'API Key'} (#${key.id})`}>{key.name || 'API Key'} (#{key.id})</span> }))]} onChange={(id) => setSelectedKey(keyChoices.find((key) => key.id === id) ?? { id: 0, name: '' })} />
           </div>
         </div>
         {rangeDialogOpen && <DashboardRangeDialog initialRange={dashboardRange(range)} onClose={closeRangeDialog} onApply={(next) => { setRange(next); closeRangeDialog(); }} />}
