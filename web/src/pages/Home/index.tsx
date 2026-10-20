@@ -7,7 +7,7 @@ import { interfaceLanguages, normalizeLanguage } from '../../i18n/language';
 import Dashboard from '../Dashboard';
 import Pricing from '../Pricing';
 import Token from '../Token';
-import Log from '../Log';
+import Log from '../Log/UsageLogs';
 import SiderBar from '../../components/layout/SiderBar';
 import { useSetTheme, useTheme } from '../../context/Theme';
 import { StatusContext } from '../../context/Status';

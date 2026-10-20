@@ -6,7 +6,7 @@ const { entry0: sidebar, entry1: calendar, entry2: { filterSidebarItems } } = aw
 
 test('sidebar preferences only narrow administrator visibility and never bypass roles', () => {
   const admin = sidebar.parseSidebarModules('{"console":{"token":false},"personal":{"topup":false}}');
-  const user = sidebar.parseSidebarModules('{"console":{"token":true,"log":false},"admin":{"channel":true}}');
+  const user = sidebar.parseSidebarModules('{"console":{"token":true,"log":false,"task":false,"midjourney":false},"admin":{"channel":true}}');
   assert.equal(sidebar.isSidebarModuleVisible('/console/token', admin, user), false);
   assert.equal(sidebar.isSidebarModuleVisible('/console/log', admin, user), false);
   assert.equal(sidebar.isSidebarModuleVisible('/console/my-subscription', admin, user), false);

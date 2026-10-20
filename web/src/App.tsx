@@ -1,14 +1,13 @@
 import { lazy } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import PageLayout from './components/layout/PageLayout';
+import LegacyLogRedirect from './pages/Log/LegacyLogRedirect';
 
 const Dashboard = lazy(() => import('./pages/Dashboard'));
 const Channel = lazy(() => import('./pages/Channel'));
 const Metadata = lazy(() => import('./features/metadata'));
 const Token = lazy(() => import('./pages/Token'));
 const Log = lazy(() => import('./pages/Log'));
-const Task = lazy(() => import('./pages/Task'));
-const Midjourney = lazy(() => import('./pages/Task/Midjourney'));
 const User = lazy(() => import('./pages/User'));
 const Redemption = lazy(() => import('./pages/Redemption'));
 const Subscription = lazy(() => import('./pages/Subscription'));
@@ -55,8 +54,8 @@ const App = () => (
       <Route path='/console/vendors'          element={<Metadata kind='vendors' />} />
       <Route path='/console/token'            element={<Token />} />
       <Route path='/console/log'              element={<Log />} />
-      <Route path='/console/task'             element={<Task />} />
-      <Route path='/console/midjourney'       element={<Midjourney />} />
+      <Route path='/console/task'             element={<LegacyLogRedirect tab='tasks' />} />
+      <Route path='/console/midjourney'       element={<LegacyLogRedirect tab='midjourney' />} />
       <Route path='/console/user'             element={<User />} />
       <Route path='/console/operations'       element={<Operations />} />
       <Route path='/console/audit'            element={<AuditLog />} />

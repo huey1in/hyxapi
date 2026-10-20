@@ -5,8 +5,8 @@ export type SidebarModules = Record<string, Record<string, boolean>>;
 export const sidebarSections = [
   { key: 'console', title: 'Console Area', modules: [
     { key: 'detail', title: 'Dashboard' }, { key: 'token', title: 'Token Management' },
-    { key: 'log', title: 'Usage Logs' }, { key: 'audit', title: 'Audit Logs', admin: true },
-    { key: 'midjourney', title: 'Drawing Logs' }, { key: 'task', title: 'Task Logs' },
+    { key: 'log', title: 'Request logs' }, { key: 'task', title: 'Async tasks' },
+    { key: 'midjourney', title: 'Midjourney' }, { key: 'audit', title: 'Audit Logs', admin: true },
   ] },
   { key: 'personal', title: 'Personal Center Area', modules: [
     { key: 'topup', title: 'Wallet Management' }, { key: 'personal', title: 'Personal Settings' },
@@ -37,7 +37,8 @@ export function parseSidebarModules(raw: unknown): SidebarModules {
 
 const routes: Record<string, readonly (readonly [string, string])[]> = {
   '/console': [['console', 'detail']],
-  '/console/token': [['console', 'token']], '/console/log': [['console', 'log']],
+  '/console/token': [['console', 'token']],
+  '/console/log': [['console', 'log'], ['console', 'task'], ['console', 'midjourney']],
   '/console/audit': [['console', 'audit']], '/console/task': [['console', 'task']],
   '/console/midjourney': [['console', 'midjourney']],
   '/console/topup': [['personal', 'topup']], '/console/my-subscription': [['personal', 'topup']],
@@ -53,9 +54,12 @@ const routes: Record<string, readonly (readonly [string, string])[]> = {
 export function isSidebarModuleVisible(route: string, admin: SidebarModules, user: SidebarModules = {}): boolean {
   const mappings = routes[route];
   if (!mappings) return true;
-  return mappings.some(([section, module]) =>
-    admin[section]?.enabled !== false && admin[section]?.[module] !== false &&
-    user[section]?.enabled !== false && user[section]?.[module] !== false);
+  return mappings.some(([section, module]) => isSidebarModuleEnabled(section, module, admin, user));
+}
+
+export function isSidebarModuleEnabled(section: string, module: string, admin: SidebarModules, user: SidebarModules = {}): boolean {
+  return admin[section]?.enabled !== false && admin[section]?.[module] !== false &&
+    user[section]?.enabled !== false && user[section]?.[module] !== false;
 }
 
 export function defaultSidebarModules(current: SidebarModules = {}): SidebarModules {

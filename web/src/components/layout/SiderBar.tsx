@@ -6,7 +6,7 @@ import { useTranslation } from 'react-i18next';
 import {
   BarChart3, Key, FileText, Wallet, User,
   Radio, CreditCard, Ticket, Users, Settings,
-  ChevronLeft, Menu, X, Layers, Store, Bell, TrendingUp, Activity, Shield, ListChecks,
+  ChevronLeft, Menu, X, Layers, Store, Bell, TrendingUp, Activity, Shield,
 } from 'lucide-react';
 import { StatusContext } from '../../context/Status';
 import { useMobileSidebar } from '../../context/MobileSidebar';
@@ -32,8 +32,6 @@ const NAV_ITEMS: NavItem[] = [
   { to: '/console/topup',      label: '充值',     icon: Wallet },
   { to: '/console/my-subscription', label: '订阅',   icon: CreditCard },
   { to: '/console/log',        label: '日志',     icon: FileText },
-  { to: '/console/task',       label: '异步任务', icon: ListChecks },
-  { to: '/console/midjourney', label: 'Midjourney', icon: ListChecks },
   { to: '/console/notices',    label: '通知',     icon: Bell },
   { to: '/console/personal',   label: '设置',     icon: User },
   { divider: true, admin: true },

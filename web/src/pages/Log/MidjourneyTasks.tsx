@@ -42,8 +42,8 @@ function MidjourneyPage({ identity, admin }: { identity: string; admin: boolean 
     ...(all ? [{ key: 'channel', title: t('Channel'), render: (row: MidjourneyRow) => row.channel_id }] : []),
     { key: 'detail', title: t('Details'), render: (row) => <Button size='sm' variant='toggle' onClick={() => setSelected(row)}>{t('View task')}</Button> },
   ];
-  return <div className='space-y-4'>
-    <div className='flex flex-wrap items-center justify-between gap-3'><h1 className='text-xl font-semibold text-ui-text'>{t('Midjourney tasks')}</h1><div className='flex flex-wrap items-center gap-3'><label className='flex items-center gap-2 text-xs text-ui-text-3'><Switch checked={refresh} onChange={setRefresh} />{t('Auto refresh')}</label><Button size='sm' variant='toggle' loading={query.isFetching} onClick={() => void query.refetch()}>{t('Refresh')}</Button></div></div>
+  return <div className='min-w-0 space-y-5'>
+    <div className='flex flex-wrap justify-end gap-3'><label className='flex items-center gap-2 text-xs text-ui-text-3'><Switch checked={refresh} onChange={setRefresh} />{t('Auto refresh')}</label><Button size='sm' variant='toggle' loading={query.isFetching} onClick={() => void query.refetch()}>{t('Refresh')}</Button></div>
     {admin && <Tabs value={scope} onChange={(value) => { setScope(value); setPage(1); setSelected(null); }} items={[{ value: 'self', label: t('My tasks') }, { value: 'all', label: t('All tasks') }]} />}
     <form className='grid grid-cols-1 items-end gap-3 sm:grid-cols-2 lg:grid-cols-4' onSubmit={(event) => { event.preventDefault(); if (!validation) { setApplied({ ...filters }); setPage(1); setSelected(null); } }}>
       <label className='grid gap-1 text-xs text-ui-text-3'>{t('Task ID')}<Input aria-label={t('Task ID')} value={filters.task_id} onChange={(value) => setFilters((previous) => ({ ...previous, task_id: value }))} /></label>
@@ -56,7 +56,7 @@ function MidjourneyPage({ identity, admin }: { identity: string; admin: boolean 
     {selected && <MidjourneyDetails key={selected.id} row={selected} onClose={() => setSelected(null)} />}
   </div>;
 }
-export default function MidjourneyAccount() {
+export default function MidjourneyTasks() {
   const identity = useAuthStore((state) => `${state.auth.user?.id}:${state.auth.session?.sid}:${state.auth.user?.role}`); const admin = useAuthStore((state) => (state.auth.user?.role ?? 1) >= 10);
   return <MidjourneyPage key={identity} identity={identity} admin={admin} />;
 }
