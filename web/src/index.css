@@ -152,7 +152,14 @@ body {
 .console-home-nav .home-nav-start { height:34px; padding:0 14px; border-radius:17px; background:var(--ui-text-1,#24231f); color:var(--page-bg,#fff) !important; }
 .console-menu-button { display:grid; place-items:center; width:34px; height:34px; color:var(--ui-text-1,#24231f); }
 @media (min-width:768px) { .console-menu-button { display:none; } }
+.app-layout { display:flex; flex-direction:column; height:100vh; height:100dvh; overflow:hidden; }
+.app-layout-body { display:flex; flex:1; min-height:0; overflow:hidden; }
 .console-layout-body { padding-top:70px; }
+.app-layout-main { display:flex; flex-direction:column; flex:1; min-width:0; min-height:0; overflow-x:hidden; overflow-y:auto; overscroll-behavior-y:contain; }
+.console-layout-body > .app-layout-main { scrollbar-gutter:stable; }
+.console-sidebar { min-height:0; }
+.console-sidebar-nav { min-height:0; overscroll-behavior-y:contain; }
+.console-sidebar-nav > * { flex-shrink:0; }
 .cursor-home .home-brand,.cursor-auth-header .home-brand { font-size:21px; font-weight:600; }.cursor-home .home-nav-links { gap:30px; font-size:13px; }.cursor-home .home-nav-start { height:34px; padding:0 14px; border-radius:17px; }
 .cursor-home .studio-hero { display:block; width:min(1210px,calc(100% - 40px)); min-height:0; padding:175px 0 55px; }
 .cursor-home .studio-hero-copy { max-width:760px; }.cursor-home .studio-hero h1 { max-width:760px; font-size:clamp(29px,3vw,40px); font-weight:450; line-height:1.25; }.cursor-home .studio-hero-copy>p { max-width:610px; margin-top:18px; font-size:15px; line-height:1.65; }
@@ -629,28 +636,6 @@ input[type='number'] {
 .dashboard-primary-card { display:flex; align-items:center; justify-content:space-between; min-width:0; padding:26px 20px; border:1px solid var(--ui-border); border-radius:26px; }
 .dashboard-secondary-stats { display:grid; grid-template-columns:repeat(4, minmax(0, 1fr)); gap:12px; }
 .dashboard-stat-mini { min-width:0; padding:16px; border:1px solid var(--ui-border); border-radius:16px; }
-.dashboard-token-usage { display:flex; flex-direction:column; gap:12px; margin-top:50px; }
-.dashboard-token-usage__header { display:flex; align-items:center; justify-content:space-between; gap:16px; }
-.token-usage-card { padding:18px; border:1px solid var(--ui-border); border-radius:18px; overflow:hidden; }
-.token-usage-grid {
-  display:grid;
-  grid-template-rows:repeat(7, 1fr);
-  grid-auto-flow:column;
-  grid-template-columns:repeat(52, minmax(0, 1fr));
-  gap:4px;
-  width:100%;
-  aspect-ratio:52 / 7;
-}
-.token-usage-cell { width:100%; aspect-ratio:1; border-radius:3px; background:#e9edf1; }
-.token-usage-cell.level-1 { background:#b7ebc6; }
-.token-usage-cell.level-2 { background:#69cf8a; }
-.token-usage-cell.level-3 { background:#2eaa5e; }
-.token-usage-cell.level-4 { background:#16783d; }
-html.dark .token-usage-cell { background:#262b30; }
-html.dark .token-usage-cell.level-1 { background:#194d30; }
-html.dark .token-usage-cell.level-2 { background:#217442; }
-html.dark .token-usage-cell.level-3 { background:#2c9a56; }
-html.dark .token-usage-cell.level-4 { background:#45c976; }
 @media (max-width: 768px) {
   .dashboard-overview { gap:16px; padding:14px 16px 24px; }
   .dashboard-overview > h1 { margin:0; padding:4px 0 8px !important; }
@@ -658,22 +643,9 @@ html.dark .token-usage-cell.level-4 { background:#45c976; }
   .dashboard-primary-card { min-height:112px; padding:18px 20px; border-radius:20px; }
   .dashboard-secondary-stats { grid-template-columns:repeat(2, minmax(0, 1fr)); gap:8px; }
   .dashboard-stat-mini { padding:13px 14px; border-radius:14px; }
-  .dashboard-token-usage { gap:10px; margin-top:34px; }
-  .dashboard-token-usage__header { gap:10px; }
-  .dashboard-token-usage__header > span { flex:0 0 auto; }
-  .token-usage-card { padding:12px; border-radius:16px; }
-  .token-usage-grid {
-    grid-template-rows:repeat(8, 1fr);
-    grid-template-columns:repeat(22, minmax(0, 1fr));
-    gap:3px;
-    aspect-ratio:22 / 8;
-  }
-  .token-usage-cell { border-radius:2px; }
 }
 @media (max-width: 420px) {
   .dashboard-overview { padding-inline:12px; }
-  .dashboard-token-usage__header { align-items:flex-start; flex-direction:column; }
-  .dashboard-token-usage__header > div { align-self:stretch; }
 }
 
 /* Public navigation includes all enabled modules. Keep console controls compact. */

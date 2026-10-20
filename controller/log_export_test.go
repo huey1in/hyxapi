@@ -74,7 +74,7 @@ func TestLogStatPublishesLiveRatesAndKeepsRenamedUserHistoryPrivate(t *testing.T
 		c, _ := gin.CreateTestContext(response)
 		c.Set("id", user.Id)
 		c.Set("username", user.Username)
-		c.Request = httptest.NewRequest(http.MethodGet, fmt.Sprintf("/api/log/stat?start_timestamp=%d&end_timestamp=%d&model_name=rate-test", now-3700, now-3500), nil)
+		c.Request = httptest.NewRequest(http.MethodGet, fmt.Sprintf("/api/log/stat?start_timestamp=%d&end_timestamp=%d&model_name=rate-test&bucket_seconds=60", now-3700, now-3500), nil)
 		if self {
 			GetLogsSelfStat(c)
 		} else {
@@ -87,6 +87,7 @@ func TestLogStatPublishesLiveRatesAndKeepsRenamedUserHistoryPrivate(t *testing.T
 		}
 		require.NoError(t, json.Unmarshal(response.Body.Bytes(), &result))
 		require.True(t, result.Success)
+		require.NotContains(t, response.Body.String(), `"token_usage"`)
 		require.Equal(t, 9, result.Data.Quota)
 		require.EqualValues(t, 300, result.Data.Tokens)
 		require.Equal(t, 1, result.Data.Requests)

@@ -674,27 +674,10 @@ func GetModelConsumption(startTimestamp, endTimestamp int64, limit int) ([]Model
 }
 
 type DailyConsumption struct {
-	Date             string `json:"date"`
-	BucketStart      int64  `json:"bucket_start"`
-	Quota            int64  `json:"quota"`
-	Requests         int64  `json:"requests"`
-	Tokens           int64  `json:"tokens"`
-	PromptTokens     int64  `json:"prompt_tokens"`
-	CompletionTokens int64  `json:"completion_tokens"`
-	CacheTokens      int64  `json:"cache_tokens"`
-}
-
-func tokenUsageBucketExpression(startTimestamp, bucketSeconds int64) string {
-	switch common.LogSqlType {
-	case common.DatabaseTypePostgreSQL:
-		return fmt.Sprintf("%d + FLOOR((created_at - %d)::numeric / %d)::bigint * %d", startTimestamp, startTimestamp, bucketSeconds, bucketSeconds)
-	case common.DatabaseTypeMySQL:
-		return fmt.Sprintf("%d + FLOOR((created_at - %d) / %d) * %d", startTimestamp, startTimestamp, bucketSeconds, bucketSeconds)
-	case common.DatabaseTypeClickHouse:
-		return fmt.Sprintf("%d + intDiv(created_at - %d, %d) * %d", startTimestamp, startTimestamp, bucketSeconds, bucketSeconds)
-	default:
-		return fmt.Sprintf("%d + CAST((created_at - %d) / %d AS INTEGER) * %d", startTimestamp, startTimestamp, bucketSeconds, bucketSeconds)
-	}
+	Date     string `json:"date"`
+	Quota    int64  `json:"quota"`
+	Requests int64  `json:"requests"`
+	Tokens   int64  `json:"tokens"`
 }
 
 func dailyLogDateExpression() string {
@@ -720,25 +703,6 @@ func GetConsumptionByDay(startTimestamp, endTimestamp int64) ([]DailyConsumption
 		Group("date").
 		Order("date ASC").
 		Find(&results).Error
-	return results, err
-}
-
-func GetTokenUsageByBucket(ctx context.Context, userID int, startTimestamp, endTimestamp, bucketSeconds int64) ([]DailyConsumption, error) {
-	if bucketSeconds < 1 {
-		bucketSeconds = 1
-	}
-	bucketExpr := tokenUsageBucketExpression(startTimestamp, bucketSeconds)
-	// Keep the dashboard query on indexed/native columns. Parsing the large
-	// request metadata JSON for every log can exceed the endpoint timeout.
-	selectExpr := fmt.Sprintf("%s as bucket_start, COALESCE(SUM(quota), 0) as quota, COUNT(*) as requests, COALESCE(SUM(prompt_tokens), 0) as prompt_tokens, COALESCE(SUM(completion_tokens), 0) as completion_tokens, 0 as cache_tokens, COALESCE(SUM(prompt_tokens), 0) + COALESCE(SUM(completion_tokens), 0) as tokens", bucketExpr)
-	tx := LOG_DB.WithContext(ctx).Table("logs").
-		Select(selectExpr).
-		Where("type = ? AND created_at >= ? AND created_at <= ?", LogTypeConsume, startTimestamp, endTimestamp)
-	if userID > 0 {
-		tx = tx.Where("user_id = ?", userID)
-	}
-	var results []DailyConsumption
-	err := tx.Group("bucket_start").Order("bucket_start ASC").Find(&results).Error
 	return results, err
 }
 

@@ -1,76 +1,14 @@
 package controller
 
 import (
-	"context"
-	"encoding/json"
-	"fmt"
 	"net/http"
 	"strconv"
-	"time"
 
 	"github.com/QuantumNous/new-api/common"
 	"github.com/QuantumNous/new-api/model"
-	"github.com/QuantumNous/new-api/setting/log_setting"
 
 	"github.com/gin-gonic/gin"
 )
-
-func getDailyTokenUsage(c *gin.Context, userID int) {
-	endTimestamp := time.Now().Unix()
-	startTimestamp := endTimestamp - min(int64(365*86400), log_setting.GetSetting().MaxRangeSeconds())
-	if value, err := strconv.ParseInt(c.Query("start_timestamp"), 10, 64); err == nil && value > 0 {
-		startTimestamp = value
-	}
-	if value, err := strconv.ParseInt(c.Query("end_timestamp"), 10, 64); err == nil && value > 0 {
-		endTimestamp = value
-	}
-	if userID > 0 && !applyLogRange(c, &startTimestamp, &endTimestamp, false) {
-		return
-	}
-	bucketSeconds, _ := strconv.ParseInt(c.Query("bucket_seconds"), 10, 64)
-	if bucketSeconds < 1 || bucketSeconds > 86400*31 {
-		bucketSeconds = 86400
-	}
-	data, err := loadTokenUsageData(c.Request.Context(), userID, startTimestamp, endTimestamp, bucketSeconds)
-	if err != nil {
-		common.ApiError(c, err)
-		return
-	}
-	common.ApiSuccess(c, data)
-}
-
-func loadTokenUsageData(parent context.Context, userID int, startTimestamp, endTimestamp, bucketSeconds int64) ([]model.DailyConsumption, error) {
-	cacheKey := fmt.Sprintf("log:token-usage:v1:%d:%d:%d:%d", userID, startTimestamp, endTimestamp/15, bucketSeconds)
-	if common.RedisEnabled && common.RDB != nil {
-		if cached, err := common.RedisGet(cacheKey); err == nil {
-			var data []model.DailyConsumption
-			if json.Unmarshal([]byte(cached), &data) == nil {
-				return data, nil
-			}
-		}
-	}
-
-	queryCtx, cancel := context.WithTimeout(parent, 12*time.Second)
-	defer cancel()
-	data, err := model.GetTokenUsageByBucket(queryCtx, userID, startTimestamp, endTimestamp, bucketSeconds)
-	if err != nil {
-		return nil, err
-	}
-	if common.RedisEnabled && common.RDB != nil {
-		if encoded, err := json.Marshal(data); err == nil {
-			_ = common.RedisSet(cacheKey, string(encoded), 15*time.Second)
-		}
-	}
-	return data, nil
-}
-
-func GetTokenUsageByDay(c *gin.Context) {
-	getDailyTokenUsage(c, 0)
-}
-
-func GetSelfTokenUsageByDay(c *gin.Context) {
-	getDailyTokenUsage(c, c.GetInt("id"))
-}
 
 func GetAllLogs(c *gin.Context) {
 	pageInfo := common.GetPageQuery(c)
@@ -172,24 +110,6 @@ func GetLogsStat(c *gin.Context) {
 			"tpm":      stat.Tpm,
 		},
 	}
-	bucketSeconds, _ := strconv.ParseInt(c.Query("bucket_seconds"), 10, 64)
-	if bucketSeconds < 1 && startTimestamp > 0 {
-		usageEnd := endTimestamp
-		if usageEnd == 0 {
-			usageEnd = time.Now().Unix()
-		}
-		bucketSeconds = (usageEnd - startTimestamp + 363) / 364
-	}
-	if bucketSeconds > 0 {
-		usageEnd := endTimestamp
-		if usageEnd == 0 {
-			usageEnd = time.Now().Unix()
-		}
-		usage, usageErr := loadTokenUsageData(c.Request.Context(), 0, startTimestamp, usageEnd, bucketSeconds)
-		if usageErr == nil {
-			response["data"].(gin.H)["token_usage"] = usage
-		}
-	}
 	c.JSON(http.StatusOK, response)
 	return
 }
@@ -219,24 +139,6 @@ func GetLogsSelfStat(c *gin.Context) {
 			"rpm":      quotaNum.Rpm,
 			"tpm":      quotaNum.Tpm,
 		},
-	}
-	bucketSeconds, _ := strconv.ParseInt(c.Query("bucket_seconds"), 10, 64)
-	if bucketSeconds < 1 && startTimestamp > 0 {
-		usageEnd := endTimestamp
-		if usageEnd == 0 {
-			usageEnd = time.Now().Unix()
-		}
-		bucketSeconds = (usageEnd - startTimestamp + 363) / 364
-	}
-	if bucketSeconds > 0 {
-		usageEnd := endTimestamp
-		if usageEnd == 0 {
-			usageEnd = time.Now().Unix()
-		}
-		usage, usageErr := loadTokenUsageData(c.Request.Context(), c.GetInt("id"), startTimestamp, usageEnd, bucketSeconds)
-		if usageErr == nil {
-			response["data"].(gin.H)["token_usage"] = usage
-		}
 	}
 	c.JSON(200, response)
 	return

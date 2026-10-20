@@ -47,8 +47,6 @@ var accessTokenRouteRules = map[string]accessTokenRouteRule{
 	"GET /api/operations/summary":                  accessTokenScopeRule("billing:read"),
 	"GET /api/operations/consumption_trend":        accessTokenScopeRule("log:read"),
 	"GET /api/operations/enhanced":                 accessTokenScopeRule("log:read"),
-	"GET /api/log/self/token-usage":                accessTokenScopeRule("usage:read"),
-	"GET /api/log/token-usage":                     accessTokenScopeRule("log:read"),
 	"GET /api/model-pricing":                       accessTokenScopeRule("model:read"),
 	"GET /api/subscription/admin/plans/:id/codes":  accessTokenScopeRule("billing:read"),
 	"GET /api/system-status":                       accessTokenScopeRule("ops:read"),

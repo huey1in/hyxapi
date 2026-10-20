@@ -100,13 +100,6 @@ export function DashboardStatsSkeleton() {
   </div></ContentSkeleton>;
 }
 
-export function TokenUsageSkeleton() {
-  const mobile = useIsMobile();
-  return <ContentSkeleton variant='dashboard'><div className='token-usage-card'>
-    <div className='token-usage-grid'>{Array.from({ length: mobile ? 176 : 364 }, (_, index) => <Skeleton key={index} height='100%' rounded='rounded-sm' />)}</div>
-  </div></ContentSkeleton>;
-}
-
 export function PricingCardsSkeleton({ preview = false }: { preview?: boolean }) {
   return <ContentSkeleton variant='cards'><div className='grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 mb-4'>
     {Array.from({ length: 8 }, (_, index) => <Card key={index} data-pricing-placeholder>

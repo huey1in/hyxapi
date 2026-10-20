@@ -9,8 +9,9 @@ import { useAuthStore } from '../../stores/auth-store';
 import { useOwnedOperation } from '../../hooks/useOwnedOperation';
 import PublicNavLinks from './PublicNavLinks';
 import { parseHeaderNavModules } from '../../lib/nav-modules';
+import Skeleton from '../ui/feedback/Skeleton';
 
-export default function HeaderBar({ showMenu = false }: { showMenu?: boolean }) {
+export default function HeaderBar({ showMenu = false, loading = false }: { showMenu?: boolean; loading?: boolean }) {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const location = useLocation();
@@ -33,11 +34,13 @@ export default function HeaderBar({ showMenu = false }: { showMenu?: boolean }) 
       {showMenu && <button type='button' className='console-menu-button md:hidden' onClick={() => setMobileOpen(true)} aria-label={t('Open sidebar')}><Menu size={19} /></button>}
       <Link to='/' className='home-brand'>Hyxware</Link>
     </div>
-    <nav ref={publicNav} id='public-header-navigation' aria-label={t('Main navigation')} className={`home-nav-links${consolePage ? ' console-home-nav-links' : ` public-site-navigation${publicMenu ? ' is-open' : ''}`}`} onKeyDown={(event) => { if (event.key === 'Escape' && publicMenu) { setPublicMenu(false); publicMenuButton.current?.focus(); } }}>
+    <nav ref={publicNav} id='public-header-navigation' aria-label={t('Main navigation')} aria-busy={loading} className={`home-nav-links${consolePage ? ' console-home-nav-links' : ` public-site-navigation${publicMenu ? ' is-open' : ''}`}`} onKeyDown={(event) => { if (event.key === 'Escape' && publicMenu) { setPublicMenu(false); publicMenuButton.current?.focus(); } }}>
+      {loading ? <Skeleton width={150} height={34} rounded='rounded-full' /> : <>
       {consolePage ? parseHeaderNavModules(status.status?.HeaderNavModules).home && <Link to='/'>{t('Home')}</Link> : <PublicNavLinks status={status.status} onNavigate={() => setPublicMenu(false)} />}
       {user ? <button type='button' className='home-nav-start' onClick={logout} disabled={busy}>{t('Sign out')}</button> : <>
         <Link to='/auth?mode=login'>{t('Sign in')}</Link>
         {status.status?.register_enabled !== false && <Link className='home-nav-start' to='/auth?mode=register'>{t('Create account')}</Link>}
+      </>}
       </>}
     </nav>
     {!consolePage && <button ref={publicMenuButton} type='button' className='home-menu-button' aria-label={t('Toggle navigation menu')} aria-expanded={publicMenu} aria-controls='public-header-navigation' onClick={() => setPublicMenu((value) => !value)}>{publicMenu ? <X size={19} /> : <Menu size={19} />}</button>}

@@ -83,6 +83,24 @@ func TestSetApiRouterRejectsRemovedHandoffEndpoint(t *testing.T) {
 	}
 }
 
+func TestDashboardTokenUsageEndpointsAreRemoved(t *testing.T) {
+	previousMode := gin.Mode()
+	gin.SetMode(gin.TestMode)
+	t.Cleanup(func() { gin.SetMode(previousMode) })
+	engine := gin.New()
+	SetApiRouter(engine)
+	for _, path := range []string{"/api/log/token-usage", "/api/log/self/token-usage"} {
+		recorder := httptest.NewRecorder()
+		engine.ServeHTTP(recorder, httptest.NewRequest(http.MethodGet, path, nil))
+		if recorder.Code != http.StatusNotFound {
+			t.Errorf("removed endpoint %s returned %d, want 404", path, recorder.Code)
+		}
+		if _, exists := middleware.AccessTokenRouteRule("GET " + path); exists {
+			t.Errorf("removed endpoint %s still declares an access token policy", path)
+		}
+	}
+}
+
 func TestModelDeploymentEndpointsAreRemoved(t *testing.T) {
 	previousMode := gin.Mode()
 	gin.SetMode(gin.TestMode)

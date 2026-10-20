@@ -1,4 +1,4 @@
-import { useContext, useEffect, useMemo, useRef, useState } from 'react';
+import { useContext, useEffect, useRef, useState } from 'react';
 import type { LucideIcon } from 'lucide-react';
 import { canOpenConsolePage } from '../../lib/console-routes';
 import { NavLink } from 'react-router-dom';
@@ -16,6 +16,7 @@ import { filterSidebarItems } from './sidebarItems';
 import { useAuthStore } from '../../stores/auth-store';
 import { isSidebarModuleVisible, parseSidebarModules } from '../../lib/sidebar-modules';
 import { useNotifications } from '../../features/notifications/use-notifications';
+import Skeleton from '../ui/feedback/Skeleton';
 
 const LS_KEY = 'sidebar-collapsed';
 const EXPANDED = 256;
@@ -47,7 +48,7 @@ const NAV_ITEMS: NavItem[] = [
   { to: '/console/setting',      label: '系统设置',   icon: Settings,   root: true },
 ];
 
-const SiderBar = ({ preview = false, previewActive = '/console' }: { preview?: boolean; previewActive?: string }) => {
+const SiderBar = ({ preview = false, previewActive = '/console', loading = false }: { preview?: boolean; previewActive?: string; loading?: boolean }) => {
   const { t } = useTranslation();
   const [statusState] = useContext(StatusContext);
   const currentUser = useAuthStore((state) => state.auth.user);
@@ -77,7 +78,7 @@ const SiderBar = ({ preview = false, previewActive = '/console' }: { preview?: b
     return () => { element?.removeEventListener('keydown', keydown); if (previousFocus?.isConnected) previousFocus.focus(); };
   }, [isMobile, mobileOpen, preview, setMobileOpen]);
 
-  const { unread: unreadNotices } = useNotifications(!preview);
+  const { unread: unreadNotices } = useNotifications(!preview && !loading);
 
   const toggle = () => {
     setCollapsed((c) => {
@@ -92,8 +93,11 @@ const SiderBar = ({ preview = false, previewActive = '/console' }: { preview?: b
   const items = filterSidebarItems(NAV_ITEMS, { preview, admin, root, isVisible: (route) => preview || (canOpenConsolePage(route, currentUser) && isSidebarModuleVisible(route, adminModules, userModules)) });
 
   const navContent = (
-    <nav aria-label={t('Console navigation')} className='flex-1 flex flex-col gap-1 py-2 px-[10px] overflow-y-auto overflow-x-hidden'>
-      {items.map((item, idx) => {
+    <nav aria-label={t('Console navigation')} aria-busy={loading} className='console-sidebar-nav flex-1 flex flex-col gap-1 py-2 px-[10px] overflow-y-auto overflow-x-hidden'>
+      {loading ? Array.from({ length: 9 }, (_, index) => <div key={index} className={cn('flex items-center gap-2 px-[10px]', isMobile ? 'h-12' : 'h-9')}>
+        <Skeleton width={isMobile ? 20 : 22} height={isMobile ? 20 : 22} className='shrink-0' />
+        {(!collapsed || isMobile) && <Skeleton width={index % 3 === 0 ? 90 : 65} height={14} />}
+      </div>) : items.map((item, idx) => {
         if (item.divider) {
           return <div key={`div-${idx}`} className='my-1.5 mx-1 h-px bg-ui-divider' />;
         }
@@ -149,7 +153,7 @@ const SiderBar = ({ preview = false, previewActive = '/console' }: { preview?: b
       <div className='fixed inset-0 z-[150] flex'>
         <div className='absolute inset-0 bg-black/40' onClick={() => setMobileOpen(false)} />
         <aside ref={drawer} role='dialog' aria-modal='true' aria-label={t('Console navigation')}
-          className='relative flex flex-col h-full bg-[var(--page-bg)] shadow-2xl animate-slide-in-left'
+          className='console-sidebar relative flex flex-col h-full bg-[var(--page-bg)] shadow-2xl animate-slide-in-left'
           style={{ width: EXPANDED }}
         >
           <div className='flex items-center justify-between h-[60px] px-4 border-b border-ui-divider shrink-0'>
@@ -166,14 +170,14 @@ const SiderBar = ({ preview = false, previewActive = '/console' }: { preview?: b
 
   return (
     <aside
-      className='relative shrink-0 h-full flex flex-col border-r border-ui-divider'
+      className='console-sidebar relative shrink-0 h-full flex flex-col border-r border-ui-divider'
       style={{
         width: collapsed ? COLLAPSED : EXPANDED,
         transition: 'width 0.2s cubic-bezier(0.16, 1, 0.3, 1)',
         backgroundColor: 'var(--page-bg)',
       }}
     >
-      <div className={cn('flex items-center h-[52px] px-4', collapsed && 'justify-center')}>
+      <div className={cn('flex shrink-0 items-center h-[52px] px-4', collapsed && 'justify-center')}>
         {!collapsed && <span className='text-[18px] font-semibold text-ui-text tracking-tight'>{t('Console')}</span>}
         {collapsed && <span className='text-[18px] font-semibold text-ui-text'>{Array.from(t('Console'))[0]}</span>}
       </div>
