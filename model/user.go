@@ -225,13 +225,6 @@ func UpdateUserBindColumn(userId int, column string, value string) error {
 func generateDefaultSidebarConfigForRole(userRole int) string {
 	defaultConfig := map[string]any{}
 
-	// 聊天区域 - 所有用户都可以访问
-	defaultConfig["chat"] = map[string]any{
-		"enabled":    true,
-		"playground": true,
-		"chat":       true,
-	}
-
 	// 控制台区域 - 所有用户都可以访问
 	defaultConfig["console"] = map[string]any{
 		"enabled":    true,

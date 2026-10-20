@@ -73,7 +73,7 @@ func TestConcurrentPersonalSettingsFormsMergeLatestRow(t *testing.T) {
 	}
 	operations := []operation{
 		{UpdateSelf, `{"language":"ja"}`},
-		{UpdateSelf, `{"sidebar_modules":"{\"chat\":{\"enabled\":false}}"}`},
+		{UpdateSelf, `{"sidebar_modules":"{\"console\":{\"enabled\":false}}"}`},
 		{UpdateSubscriptionPreference, `{"billing_preference":"wallet_only"}`},
 		{UpdateUserSetting, `{"record_ip_log":true,"quota_warning_threshold":456}`},
 	}
@@ -101,7 +101,7 @@ func TestConcurrentPersonalSettingsFormsMergeLatestRow(t *testing.T) {
 	current, err := model.GetUserSetting(user.Id, true)
 	require.NoError(t, err)
 	require.Equal(t, "ja", current.Language)
-	require.Equal(t, `{"chat":{"enabled":false}}`, current.SidebarModules)
+	require.Equal(t, `{"console":{"enabled":false}}`, current.SidebarModules)
 	require.Equal(t, "wallet_only", current.BillingPreference)
 	require.True(t, current.RecordIpLog)
 	require.Equal(t, float64(456), current.QuotaWarningThreshold)

@@ -35,10 +35,8 @@
     "remark-gfm": "^4.0.1",
     "remark-math": "^6.0.0",
     "unist-util-visit": "^5.0.0",
-    "zustand": "^5.0.14",
     "zod": "^4.4.3",
-    "nanoid": "^5.1.16",
-    "sse.js": "^2.8.0"
+    "zustand": "^5.0.14"
   },
   "devDependencies": {
     "@rsbuild/core": "^2.2.13",

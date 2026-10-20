@@ -47,8 +47,6 @@ func InitOptionMap() {
 	common.OptionMapRWMutex.Lock()
 	common.OptionMap = make(map[string]string)
 	common.OptionMap["Notice"] = ""
-	common.OptionMap["model_deployment.ionet.enabled"] = "false"
-	common.OptionMap["model_deployment.ionet.api_key"] = ""
 	common.OptionMap["MjNotifyEnabled"] = strconv.FormatBool(setting.MjNotifyEnabled)
 	common.OptionMap["MjAccountFilterEnabled"] = strconv.FormatBool(setting.MjAccountFilterEnabled)
 	common.OptionMap["MjModeClearEnabled"] = strconv.FormatBool(setting.MjModeClearEnabled)
@@ -187,7 +185,6 @@ func InitOptionMap() {
 	common.OptionMap["GroupRatio"] = ratio_setting.GroupRatio2JSONString()
 	common.OptionMap["UserUsableGroups"] = setting.UserUsableGroups2JSONString()
 	common.OptionMap["AutoGroups"] = setting.AutoGroups2JsonString()
-	common.OptionMap["Chats"] = setting.Chats2JsonString()
 	common.OptionMap["DefaultUseAutoGroup"] = strconv.FormatBool(setting.DefaultUseAutoGroup)
 	common.OptionMap["MaxTokenAutoGroups"] = strconv.Itoa(setting.GetMaxTokenAutoGroups())
 	common.OptionMap["QuotaPerUnit"] = strconv.FormatFloat(common.QuotaPerUnit, 'f', -1, 64)
@@ -236,7 +233,7 @@ func loadOptionsFromDatabase() {
 		if key := canonicalGroupRatioOption(option.Key); key != option.Key && persistedKeys[key] {
 			continue
 		}
-		if IsRemovedModelPricingOption(option.Key) {
+		if IsRemovedModelPricingOption(option.Key) || IsRemovedFeatureOption(option.Key) {
 			continue
 		}
 		if IsPasskeyDomainOption(option.Key) {
@@ -260,6 +257,9 @@ func SyncOptions(frequency int) {
 }
 
 func UpdateOption(key string, value string) error {
+	if key == "SidebarModulesAdmin" {
+		value = CleanSidebarModules(value)
+	}
 	if groupRatioOptionAlias(canonicalGroupRatioOption(key)) != "" {
 		return UpdateOptionsBulk(map[string]string{key: value})
 	}
@@ -324,6 +324,12 @@ func isRemovedBrandingOption(key string) bool {
 }
 
 func updateOptionMap(key string, value string) (err error) {
+	if IsRemovedFeatureOption(key) {
+		return ErrRemovedFeatureOption
+	}
+	if key == "SidebarModulesAdmin" {
+		value = CleanSidebarModules(value)
+	}
 	key = canonicalGroupRatioOption(key)
 	if groupRatioOptionAlias(key) != "" {
 		if err := validateOptionValue(key, value); err != nil {
@@ -528,8 +534,6 @@ func updateOptionMap(key string, value string) (err error) {
 		common.TopUpLink = value
 	case "AutoGroups":
 		err = setting.UpdateAutoGroupsByJsonString(value)
-	case "Chats":
-		err = setting.UpdateChatsByJsonString(value)
 	case "MaxTokenAutoGroups":
 		err = setting.UpdateMaxTokenAutoGroups(value)
 	case "ModelPrice":
@@ -718,6 +722,10 @@ func handleConfigUpdate(key, value string) bool {
 func UpdateOptionsBulk(values map[string]string) error {
 	if len(values) == 0 {
 		return nil
+	}
+	if value, exists := values["SidebarModulesAdmin"]; exists {
+		values = maps.Clone(values)
+		values["SidebarModulesAdmin"] = CleanSidebarModules(value)
 	}
 	values, err := normalizedGroupRatioOptions(values)
 	if err != nil {

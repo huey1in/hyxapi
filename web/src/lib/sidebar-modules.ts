@@ -1,9 +1,6 @@
 export type SidebarModules = Record<string, Record<string, boolean>>;
 
 export const sidebarSections = [
-  { key: 'chat', title: 'Chat Area', modules: [
-    { key: 'playground', title: 'Playground' }, { key: 'chat', title: 'Chat' },
-  ] },
   { key: 'console', title: 'Console Area', modules: [
     { key: 'detail', title: 'Dashboard' }, { key: 'token', title: 'Token Management' },
     { key: 'log', title: 'Usage Logs' }, { key: 'audit', title: 'Audit Logs' },
@@ -22,6 +19,7 @@ export function parseSidebarModules(raw: unknown): SidebarModules {
     const value: unknown = typeof raw === 'string' ? JSON.parse(raw) : raw;
     if (!value || typeof value !== 'object' || Array.isArray(value)) return {};
     return Object.fromEntries(Object.entries(value).flatMap(([section, modules]) => {
+      if (section === 'chat') return [];
       if (!modules || typeof modules !== 'object' || Array.isArray(modules)) return [];
       return [[section, Object.fromEntries(Object.entries(modules).filter((entry): entry is [string, boolean] => typeof entry[1] === 'boolean'))]];
     }));
@@ -30,7 +28,6 @@ export function parseSidebarModules(raw: unknown): SidebarModules {
 
 const routes: Record<string, readonly (readonly [string, string])[]> = {
   '/console': [['console', 'detail']],
-  '/console/playground': [['chat', 'playground']], '/console/chat': [['chat', 'chat']],
   '/console/token': [['console', 'token']], '/console/log': [['console', 'log']],
   '/console/audit': [['console', 'audit']], '/console/task': [['console', 'task']],
   '/console/midjourney': [['console', 'midjourney']],
@@ -39,7 +36,7 @@ const routes: Record<string, readonly (readonly [string, string])[]> = {
   // the corresponding upstream modules remains visible.
   '/console/personal': [['personal', 'personal'], ['personal', 'security']],
   '/console/channel': [['admin', 'channel']], '/console/models': [['admin', 'models']],
-  '/console/vendors': [['admin', 'models']], '/console/deployments': [['admin', 'models']],
+  '/console/vendors': [['admin', 'models']],
   '/console/redemption': [['admin', 'redemption']], '/console/user': [['admin', 'user']],
   '/console/subscription': [['admin', 'subscription']], '/console/setting': [['admin', 'setting']],
 };
@@ -54,6 +51,7 @@ export function isSidebarModuleVisible(route: string, admin: SidebarModules, use
 
 export function defaultSidebarModules(current: SidebarModules = {}): SidebarModules {
   const result = structuredClone(current);
+  delete result.chat;
   for (const section of sidebarSections) {
     result[section.key] = { ...result[section.key], enabled: true };
     for (const module of section.modules) result[section.key][module.key] = true;

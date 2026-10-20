@@ -1,6 +1,7 @@
 package router
 
 import (
+	"embed"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -80,4 +81,51 @@ func TestSetApiRouterRejectsRemovedHandoffEndpoint(t *testing.T) {
 	if recorder.Code != http.StatusNotFound {
 		t.Fatalf("removed endpoint returned %d, want 404", recorder.Code)
 	}
+}
+
+func TestModelDeploymentEndpointsAreRemoved(t *testing.T) {
+	previousMode := gin.Mode()
+	gin.SetMode(gin.TestMode)
+	t.Cleanup(func() { gin.SetMode(previousMode) })
+	engine := gin.New()
+	SetApiRouter(engine)
+	for _, path := range []string{
+		"/api/deployments/", "/api/deployments/search", "/api/deployments/settings",
+		"/api/deployments/settings/test-connection", "/api/deployments/test-connection",
+		"/api/deployments/hardware-types", "/api/deployments/locations",
+		"/api/deployments/available-replicas", "/api/deployments/price-estimation",
+		"/api/deployments/check-name", "/api/deployments/1", "/api/deployments/1/name",
+		"/api/deployments/1/extend", "/api/deployments/1/logs",
+		"/api/deployments/1/containers", "/api/deployments/1/containers/1",
+	} {
+		for _, method := range []string{http.MethodGet, http.MethodPost, http.MethodPut, http.MethodDelete} {
+			recorder := httptest.NewRecorder()
+			engine.ServeHTTP(recorder, httptest.NewRequest(method, path, nil))
+			if recorder.Code != http.StatusNotFound {
+				t.Errorf("%s %s returned %d, want 404", method, path, recorder.Code)
+			}
+		}
+	}
+}
+
+func TestSessionChatEndpointsAreRemovedWhileAPIChatRemains(t *testing.T) {
+	previousMode := gin.Mode()
+	gin.SetMode(gin.TestMode)
+	t.Cleanup(func() { gin.SetMode(previousMode) })
+	engine := gin.New()
+	SetRelayRouter(engine)
+	SetWebRouter(engine, embed.FS{}, []byte("dashboard"))
+	for _, path := range []string{"/pg/chat/completions", "/chat/completions"} {
+		recorder := httptest.NewRecorder()
+		engine.ServeHTTP(recorder, httptest.NewRequest(http.MethodPost, path, nil))
+		if recorder.Code != http.StatusNotFound {
+			t.Errorf("removed endpoint %s returned %d, want 404", path, recorder.Code)
+		}
+	}
+	for _, route := range engine.Routes() {
+		if route.Method == http.MethodPost && route.Path == "/v1/chat/completions" {
+			return
+		}
+	}
+	t.Fatal("standard chat completion API is missing")
 }

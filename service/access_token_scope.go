@@ -85,10 +85,6 @@ var accessTokenStaticResources = []AccessTokenResource{
 		accessTokenView("View models and vendors, and preview upstream sync."),
 		accessTokenEdit("Edit models and vendors, and sync them from upstream."),
 	}},
-	{Resource: "deployment", LabelKey: "Deployments", group: AccessTokenGroupAdmin, minRole: common.RoleAdminUser, Actions: []authz.ActionDefinition{
-		accessTokenView("View deployments and price estimates."),
-		accessTokenEdit("Create, edit, and delete deployments, and test connections."),
-	}},
 	{Resource: "log", LabelKey: "Logs", group: AccessTokenGroupAdmin, minRole: common.RoleAdminUser, Actions: []authz.ActionDefinition{
 		accessTokenView("View all users' usage logs, statistics, and tasks."),
 	}},

@@ -411,7 +411,6 @@
   "error finalizing Gemini stream response: %s": "生成 Gemini 流式响应的结束段出错: %s",
   "error handling last response: %s, lastStreamData: [%s]": "处理最后一段流数据出错: %s, lastStreamData: [%s]",
   "error handling stream format: %s": "转换并发送流数据出错: %s",
-  "error marshalling chats: %s": "序列化聊天配置出错: %s",
   "error marshalling model ratio: %s": "序列化模型倍率出错: %s",
   "error marshalling stream response: %s": "序列化流式响应出错: %s",
   "error marshalling topup group ratio: %s": "序列化充值分组倍率出错: %s",

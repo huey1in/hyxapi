@@ -512,7 +512,7 @@ func openTaskDialectDatabase(t *testing.T, models ...any) (*gorm.DB, common.Data
 }
 
 func TestImmediateTaskSettlementDatabase(t *testing.T) {
-	db, dialect := openTaskDialectDatabase(t, &model.User{}, &model.Channel{}, &model.Task{}, &model.Log{})
+	db, dialect := openTaskDialectDatabase(t, &model.User{}, &model.Token{}, &model.Channel{}, &model.Task{}, &model.Log{})
 	oldDB, oldLogDB := model.DB, model.LOG_DB
 	oldMain, oldLog := common.MainDatabaseType(), common.LogDatabaseType()
 	oldRedis, oldMemory, oldBatch, oldConsume, oldExport := common.RedisEnabled, common.MemoryCacheEnabled, common.BatchUpdateEnabled, common.LogConsumeEnabled, common.DataExportEnabled
@@ -563,6 +563,8 @@ export function buildQueryRequest(){throw new Error("completed submissions must 
 			initial := int(20 * common.QuotaPerUnit)
 			user := model.User{Username: fmt.Sprintf("task_user_%d", index), AffCode: fmt.Sprintf("task_aff_%d", index), Quota: initial}
 			require.NoError(t, db.Create(&user).Error)
+			token := model.Token{UserId: user.Id, Key: fmt.Sprintf("task-token-%d", index), Name: "task billing", Status: common.TokenStatusEnabled, RemainQuota: initial}
+			require.NoError(t, db.Create(&token).Error)
 			ch := model.Channel{Name: "test provider", Type: constant.ChannelTypeTaskPlugin}
 			require.NoError(t, db.Create(&ch).Error)
 			c := taskSubmissionTestContext()
@@ -579,7 +581,7 @@ export function buildQueryRequest(){throw new Error("completed submissions must 
 			info.OriginModelName = "document-model"
 			info.UserGroup = "default"
 			info.UsingGroup = "default"
-			info.IsPlayground = true
+			info.TokenId, info.TokenKey = token.Id, token.Key
 			info.UserSetting.BillingPreference = "wallet_only"
 			info.PublicTaskID = model.GenerateTaskID()
 			info.LockedChannel = &ch
@@ -602,6 +604,8 @@ export function buildQueryRequest(){throw new Error("completed submissions must 
 			require.NoError(t, db.First(&updated, user.Id).Error)
 			assert.Equal(t, initial-want, updated.Quota)
 			assert.Equal(t, want, updated.UsedQuota)
+			require.NoError(t, db.First(&token, token.Id).Error)
+			assert.Equal(t, initial-want, token.RemainQuota)
 			var logs []model.Log
 			require.NoError(t, db.Where("user_id = ?", user.Id).Find(&logs).Error)
 			require.Len(t, logs, 1)

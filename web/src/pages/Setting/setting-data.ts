@@ -8,7 +8,6 @@ import {
 import { invalidPaymentSettings } from '../../features/payments/payment-setup-data';
 import { invalidConsoleContentChanges } from '../../features/dashboard-content/content';
 import { invalidGroupPricingChanges } from './group-pricing-rules';
-import { validChatTemplate } from '../../features/chat/chat-links';
 
 export type Settings = Record<string, string>;
 const count = z.number().int().nonnegative().safe();
@@ -94,10 +93,6 @@ export const settingJSON: Record<string, z.ZodType> = {
     }),
   ),
   HeaderNavModules: jsonObject,
-  Chats: z
-    .array(z.record(name, z.string().refine(validChatTemplate)))
-    .max(100)
-    .refine((rows) => rows.every((row) => Object.keys(row).length === 1)),
 };
 export function parseJSON<T extends z.ZodType>(
   raw: string,

@@ -59,20 +59,6 @@ func SetRelayRouter(router *gin.Engine) {
 		})
 	}
 
-	chatRouter := router.Group("/chat")
-	chatRouter.Use(middleware.RouteTag("relay"))
-	chatRouter.Use(middleware.SystemPerformanceCheck())
-	chatRouter.Use(middleware.UserAuth(), middleware.Distribute())
-	{
-		chatRouter.POST("/completions", controller.Chat)
-	}
-	playgroundRouter := router.Group("/pg")
-	playgroundRouter.Use(middleware.RouteTag("relay"))
-	playgroundRouter.Use(middleware.SystemPerformanceCheck())
-	playgroundRouter.Use(middleware.UserAuth(), middleware.Distribute())
-	{
-		playgroundRouter.POST("/chat/completions", controller.Playground)
-	}
 	relayV1Router := router.Group("/v1")
 	// Each generation inside this connection runs token, model and subscription limits.
 	router.GET("/v1/responses", middleware.RouteTag("relay"), middleware.SystemPerformanceCheck(), middleware.TokenAuth(), controller.ResponsesWebSocket)

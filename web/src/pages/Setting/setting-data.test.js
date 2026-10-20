@@ -50,7 +50,7 @@ test('numeric and financial drafts reject blanks without converting them to zero
   );
   assert.notDeepEqual(data.invalidSettingKeys({ StripeUnitPrice: '' }, {}), []);
 });
-test('hidden-tab validation checks nested headers, check-in, site links, chat and policy JSON', () => {
+test('hidden-tab validation checks nested headers, check-in, site links and policy JSON', () => {
   const stored = {
     'checkin_setting.min_quota': '0',
     'checkin_setting.max_quota': '10',
@@ -60,7 +60,6 @@ test('hidden-tab validation checks nested headers, check-in, site links, chat an
     { 'checkin_setting.min_quota': '11' },
     { 'checkin_setting.max_quota': '1.5' },
     { HeaderNavModules: '[]' },
-    { Chats: '[{"bad":"javascript:alert(1)"}]' },
     { 'claude.model_headers_settings': '{"model":"[object Object]"}' },
     { 'channel_affinity_setting.rules': '{}' },
     { 'global.chat_completions_to_responses_policy': '{"enabled":"true"}' },

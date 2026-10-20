@@ -116,7 +116,6 @@ Transitive dependencies should be audited before a final external release.
 | web      | production  | npm       | `lucide-react`                                          | `1.25.0`                             | ISC                     |
 | web      | production  | npm       | `marked`                                                | `18.0.6`                             | MIT                     |
 | web      | production  | npm       | `motion`                                                | `12.42.2`                            | MIT                     |
-| web      | production  | npm       | `nanoid`                                                | `5.1.16`                             | MIT                     |
 | web      | production  | npm       | `next-themes`                                           | `0.4.6`                              | MIT                     |
 | web      | production  | npm       | `node-forge`                                            | `1.4.0`                              | BSD-3-Clause OR GPL-2.0 |
 | web      | production  | npm       | `qrcode.react`                                          | `4.2.0`                              | ISC                     |
@@ -131,7 +130,6 @@ Transitive dependencies should be audited before a final external release.
 | web      | production  | npm       | `recharts`                                              | `3.9.1`                              | MIT                     |
 | web      | production  | npm       | `shiki`                                                 | `4.3.1`                              | MIT                     |
 | web      | production  | npm       | `sonner`                                                | `2.0.7`                              | MIT                     |
-| web      | production  | npm       | `sse.js`                                                | `2.8.0`                              | Apache-2.0              |
 | web      | production  | npm       | `stream-markdown-parser`                                | `1.2.18`                             | MIT                     |
 | web      | production  | npm       | `tailwind-merge`                                        | `3.6.0`                              | MIT                     |
 | web      | production  | npm       | `tailwindcss`                                           | `4.3.3`                              | MIT                     |

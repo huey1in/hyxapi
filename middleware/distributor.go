@@ -19,7 +19,6 @@ import (
 	"github.com/QuantumNous/new-api/model"
 	"github.com/QuantumNous/new-api/pkg/jsplugin"
 	relayconstant "github.com/QuantumNous/new-api/relay/constant"
-	"github.com/QuantumNous/new-api/relaykit/dto"
 	"github.com/QuantumNous/new-api/relaykit/types"
 	"github.com/QuantumNous/new-api/service"
 	"github.com/QuantumNous/new-api/setting/ratio_setting"
@@ -29,7 +28,6 @@ import (
 
 type ModelRequest struct {
 	Model string `json:"model"`
-	Group string `json:"group,omitempty"`
 }
 
 func Distribute() func(c *gin.Context) {
@@ -152,24 +150,6 @@ func Distribute() func(c *gin.Context) {
 
 				// 订阅级分组限制：不在订阅 AllowedGroups 内的分组，由 billing_session 走钱包扣费
 				// 此处不再硬拒，避免阻断用户使用其他分组的能力
-				// check path is /pg/chat/completions
-				if strings.HasPrefix(c.Request.URL.Path, "/pg/chat/completions") {
-					playgroundRequest := &dto.PlayGroundRequest{}
-					err = common.UnmarshalBodyReusable(c, playgroundRequest)
-					if err != nil {
-						abortWithOpenAiMessage(c, http.StatusBadRequest, i18n.T(c, i18n.MsgDistributorInvalidPlayground, map[string]any{"Error": err.Error()}))
-						return
-					}
-					if playgroundRequest.Group != "" {
-						if !service.GroupInUserUsableGroups(usingGroup, playgroundRequest.Group) && playgroundRequest.Group != usingGroup {
-							abortWithOpenAiMessage(c, http.StatusForbidden, i18n.T(c, i18n.MsgDistributorGroupAccessDenied))
-							return
-						}
-						usingGroup = playgroundRequest.Group
-						common.SetContextKey(c, constant.ContextKeyUsingGroup, usingGroup)
-					}
-				}
-
 				var selectGroup string
 				var selectErr *service.ChannelSelectError
 				channel, selectGroup, selectErr = service.SelectChannelForRequest(c, modelRequest.Model, &service.RetryParam{Ctx: c, ModelName: modelRequest.Model, TokenGroup: usingGroup, RequestPath: c.Request.URL.Path, Retry: common.GetPointer(0)})
@@ -341,12 +321,7 @@ func getModelFromJSONBody(c *gin.Context) (*ModelRequest, error) {
 		return nil, errors.New("model must be provided once")
 	}
 
-	values := gjson.GetManyBytes(requestBody, "model", "group")
-	model, err := getJSONStringValue(values[0], "model")
-	if err != nil {
-		return nil, err
-	}
-	group, err := getJSONStringValue(values[1], "group")
+	model, err := getJSONStringValue(gjson.GetBytes(requestBody, "model"), "model")
 	if err != nil {
 		return nil, err
 	}
@@ -358,7 +333,6 @@ func getModelFromJSONBody(c *gin.Context) (*ModelRequest, error) {
 
 	return &ModelRequest{
 		Model: model,
-		Group: group,
 	}, nil
 }
 
@@ -585,17 +559,6 @@ func getModelRequest(c *gin.Context) (*ModelRequest, bool, error) {
 		}
 		c.Set("relay_mode", relayMode)
 	}
-	if strings.HasPrefix(c.Request.URL.Path, "/pg/chat/completions") {
-		// playground chat completions
-		req, err := getModelFromRequest(c)
-		if err != nil {
-			return nil, false, err
-		}
-		modelRequest.Model = req.Model
-		modelRequest.Group = req.Group
-		common.SetContextKey(c, constant.ContextKeyTokenGroup, modelRequest.Group)
-	}
-
 	if strings.HasPrefix(c.Request.URL.Path, "/v1/responses/compact") && modelRequest.Model != "" {
 		modelRequest.Model = ratio_setting.WithCompactModelSuffix(modelRequest.Model)
 	}

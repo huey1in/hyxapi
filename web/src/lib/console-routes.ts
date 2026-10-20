@@ -3,7 +3,7 @@ import { hasPermission } from './admin-permissions';
 import { ROLE } from './roles';
 
 export const isConsolePath = (path: string) => path === '/console' || path.startsWith('/console/');
-const adminPages = new Set(['channel', 'models', 'vendors', 'deployments', 'user', 'operations', 'system-status', 'redemption', 'subscription']);
+const adminPages = new Set(['channel', 'models', 'vendors', 'user', 'operations', 'system-status', 'redemption', 'subscription']);
 
 // Sidebar preferences control discoverability. Authorization uses the role and
 // capability matrix returned by the server, including for direct navigation.

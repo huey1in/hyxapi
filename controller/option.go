@@ -27,7 +27,7 @@ func GetOptions(c *gin.Context) {
 	}
 	common.OptionMapRWMutex.Lock()
 	for k, v := range common.OptionMap {
-		if model.IsRemovedModelPricingOption(k) {
+		if model.IsRemovedModelPricingOption(k) || model.IsRemovedFeatureOption(k) {
 			continue
 		}
 		value := common.Interface2String(v)

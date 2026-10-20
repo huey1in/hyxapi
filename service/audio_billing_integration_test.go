@@ -38,6 +38,7 @@ func TestAudioExpressionSettlesWalletAndRecordsActivePrice(t *testing.T) {
 			require.NoError(t, model.DB.AutoMigrate(&model.Channel{}, &model.Log{}))
 			const userID, balance = 800, 1_000_000
 			seedTieredSettlementUser(t, userID, balance)
+			seedToken(t, userID, userID, "audio-billing-key", balance)
 			channel := &model.Channel{Name: "audio-billing-test"}
 			require.NoError(t, model.DB.Create(channel).Error)
 			ctx := newTextQuotaTestContext()
@@ -47,7 +48,7 @@ func TestAudioExpressionSettlesWalletAndRecordsActivePrice(t *testing.T) {
 			info.ChannelMeta = &relaycommon.ChannelMeta{ChannelId: channel.Id}
 			info.UserId = userID
 			info.OriginModelName, info.StartTime = "audio-expression", time.Now()
-			info.IsPlayground, info.ForcePreConsume = true, true
+			info.TokenId, info.TokenKey, info.ForcePreConsume = userID, "audio-billing-key", true
 			info.UserSetting = dto.UserSetting{BillingPreference: "wallet_only", QuotaWarningEnabled: common.GetPointer(false)}
 			info.PriceData = types.PriceData{BillingType: model.ModelPricingBillingToken,
 				BillingMode: "tiered_expr", GroupRatioInfo: types.GroupRatioInfo{GroupRatio: 1}}
@@ -56,6 +57,9 @@ func TestAudioExpressionSettlesWalletAndRecordsActivePrice(t *testing.T) {
 			quota, err := model.GetUserQuota(userID, false)
 			require.NoError(t, err)
 			require.Equal(t, balance-tc.quota, quota)
+			token, err := model.GetTokenById(userID)
+			require.NoError(t, err)
+			require.Equal(t, balance-tc.quota, token.RemainQuota)
 			var log model.Log
 			require.NoError(t, model.DB.Where("user_id = ?", userID).First(&log).Error)
 			require.Equal(t, tc.quota, log.Quota)

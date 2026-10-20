@@ -20,13 +20,13 @@ export function TokenCardFrame({ children, ...props }: PropsWithChildren<{ 'data
   return <div {...props} className='group' style={{ position: 'relative', display: 'flex', flexDirection: 'column', gap: 10, paddingBlock: mobile ? 14 : 12, paddingInline: mobile ? 14 : 18, border: '1px solid var(--ui-border)', borderRadius: 26, background: 'var(--page-bg)' }}>{children}</div>;
 }
 
-export function TokenCardsSkeleton({ clientEnabled = false }: { clientEnabled?: boolean }) {
+export function TokenCardsSkeleton() {
   const mobile = useIsMobile();
   return <ContentSkeleton variant='tokens'><div className='flex flex-col gap-3'>
     {[0, 1, 2].map((index) => <TokenCardFrame key={index} data-token-placeholder>
       <div style={{ display: 'flex', flexDirection: mobile ? 'column' : 'row', alignItems: mobile ? 'stretch' : 'center', justifyContent: 'space-between', gap: 8 }}>
         <div className='flex min-h-[21px] items-center gap-1.5'><Skeleton width={13} height={13} rounded='rounded-sm' /><Skeleton width={110} height={14} /><Skeleton width={60} height={20} /></div>
-        <div className={`flex h-9 items-center gap-1 ${mobile ? 'self-end' : ''}`}>{Array.from({ length: clientEnabled ? 5 : 4 }, (_, action) => <Skeleton key={action} width={36} height={36} rounded='rounded-xl' />)}</div>
+        <div className={`flex h-9 items-center gap-1 ${mobile ? 'self-end' : ''}`}>{Array.from({ length: 4 }, (_, action) => <Skeleton key={action} width={36} height={36} rounded='rounded-xl' />)}</div>
       </div>
       <div className='flex flex-wrap items-center gap-2'><Skeleton width={126} height={18} /><Skeleton width={90} height={20} /><Skeleton width={56} height={20} /><Skeleton width={90} height={16} className='ml-auto' /></div>
       <Skeleton width={145} height={16} />

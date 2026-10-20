@@ -30,6 +30,7 @@ func PatchUserSetting(ctx context.Context, userID int, patch func(dto.UserSettin
 		if err != nil {
 			return err
 		}
+		updated.SidebarModules = CleanSidebarModules(updated.SidebarModules)
 		encoded, err := common.Marshal(updated)
 		if err != nil {
 			return err

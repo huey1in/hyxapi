@@ -19,6 +19,16 @@ func useTestSessionSecret(t *testing.T) {
 	t.Cleanup(func() { common.SessionSecret = previous })
 }
 
+func TestRemovedModelDeploymentScopesCannotBeGranted(t *testing.T) {
+	for _, scope := range []string{"deployment:read", "deployment:write"} {
+		_, err := NormalizeAccessTokenScopes(1, common.RoleRootUser, []string{"model:read", scope})
+		require.ErrorIs(t, err, ErrAccessTokenScopeInvalid)
+	}
+	scopes, err := NormalizeAccessTokenScopes(1, common.RoleRootUser, []string{"model:read", "model:write"})
+	require.NoError(t, err)
+	require.Equal(t, []string{"model:read", "model:write"}, scopes)
+}
+
 func TestAccessTokenRoundTripAndPurposeIsolation(t *testing.T) {
 	setupAuthSessionTestDB(t)
 	useTestSessionSecret(t)

@@ -305,6 +305,15 @@ func migrateDB() error {
 		return err
 	}
 	dropLegacyBrandingOptions()
+	if err := purgeRemovedFeatureOptions(DB); err != nil {
+		return err
+	}
+	if err := purgeRemovedFeatureTokenScopes(DB); err != nil {
+		return err
+	}
+	if err := purgeRemovedFeatureUserSettings(DB); err != nil {
+		return err
+	}
 	if common.UsingSQLite {
 		if err := ensureSubscriptionPlanTableSQLite(); err != nil {
 			return err

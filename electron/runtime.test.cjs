@@ -29,9 +29,9 @@ test('desktop isolates local state from inherited database credentials and retai
   assert.throws(() => serverEnvironment(dataDir, 3000), /invalid/);
 });
 
-test('external links allow supported clients and reject local executable and credential URLs', () => {
-  for (const value of ['https://example.com', 'http://localhost:3000', 'cherrystudio://import?data=encoded', 'ccswitch://import']) assert.equal(externalURL(value), true, value);
-  for (const value of ['file:///C:/Windows/test.exe', 'javascript:alert(1)', 'data:text/html,abc', 'https://key:secret@example.com', 'unknown://run', 'not a URL']) assert.equal(externalURL(value), false, value);
+test('external links allow HTTP and reject custom protocols, executable and credential URLs', () => {
+  for (const value of ['https://example.com', 'http://localhost:3000']) assert.equal(externalURL(value), true, value);
+  for (const value of ['file:///C:/Windows/test.exe', 'javascript:alert(1)', 'data:text/html,abc', 'https://key:secret@example.com', 'cherrystudio://import?data=encoded', 'ccswitch://import', 'unknown://run', 'not a URL']) assert.equal(externalURL(value), false, value);
 });
 
 test('ephemeral port selection leaves an occupied server running', async (t) => {

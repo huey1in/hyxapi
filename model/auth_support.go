@@ -9,12 +9,14 @@ import (
 	"github.com/QuantumNous/new-api/setting/operation_setting"
 	"github.com/QuantumNous/new-api/setting/ratio_setting"
 	"github.com/QuantumNous/new-api/setting/system_setting"
-	"strings"
 )
 
 var ErrWalletQuotaLimitExceeded error = common.NewMessage("Wallet quota limit exceeded")
 
 func validateOptionValue(key, value string) error {
+	if IsRemovedFeatureOption(key) {
+		return ErrRemovedFeatureOption
+	}
 	consoleTypes := map[string]string{
 		"console_setting.api_info":           "ApiInfo",
 		"console_setting.faq":                "FAQ",
@@ -41,16 +43,6 @@ func validateOptionValue(key, value string) error {
 		return ratio_setting.ValidateGroupGroupRatio(value)
 	case "group_ratio_setting.group_special_usable_group":
 		return ratio_setting.ValidateGroupSpecialUsableGroups(value)
-	case "model_deployment.ionet.enabled":
-		if value != "true" && value != "false" {
-			return fmt.Errorf("deployment enabled must be true or false")
-		}
-	case "model_deployment.ionet.api_key":
-		if strings.ContainsAny(value, "\r\n") || len(value) > 8192 {
-			return fmt.Errorf("invalid io.net API key")
-		}
-	case "Chats":
-		return setting.ValidateChatsJSON(value)
 	case "MaxTokenAutoGroups":
 		return setting.ValidateMaxTokenAutoGroups(value)
 	case "AutoGroups":

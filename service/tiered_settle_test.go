@@ -376,10 +376,12 @@ func TestPrepareTieredBillingForSelectedGroupStartsBillingAfterFreeGroup(t *test
 
 	const userID = 700
 	seedTieredSettlementUser(t, userID, 500_000)
+	seedToken(t, userID, userID, "tiered-settlement-key", 500_000)
 
 	relayInfo := &relaycommon.RelayInfo{
 		UserId:          userID,
-		IsPlayground:    true,
+		TokenId:         userID,
+		TokenKey:        "tiered-settlement-key",
 		ForcePreConsume: true,
 		OriginModelName: "gpt-test",
 		UserSetting: dto.UserSetting{
@@ -411,6 +413,9 @@ func TestPrepareTieredBillingForSelectedGroupStartsBillingAfterFreeGroup(t *test
 	userQuota, err := model.GetUserQuota(userID, false)
 	require.NoError(t, err)
 	assert.Equal(t, 400_000, userQuota)
+	token, err := model.GetTokenById(userID)
+	require.NoError(t, err)
+	assert.Equal(t, 400_000, token.RemainQuota)
 }
 
 func TestPrepareTieredBillingForSelectedGroupPaidToFreeKeepsFreeModelFalse(t *testing.T) {
@@ -452,10 +457,12 @@ func TestPrepareTieredBillingForSelectedGroupTopUpArrearsAllowsNegativeBalance(t
 	// uncovered 30k becomes arrears (negative balance), mirroring how
 	// settlement charges a positive delta unconditionally.
 	seedTieredSettlementUser(t, userID, 20_000)
+	seedToken(t, userID, userID, "tiered-settlement-key", 450_000)
 
 	relayInfo := &relaycommon.RelayInfo{
 		UserId:                userID,
-		IsPlayground:          true,
+		TokenId:               userID,
+		TokenKey:              "tiered-settlement-key",
 		FinalPreConsumedQuota: 50_000,
 		TieredBillingSnapshot: &billingexpr.BillingSnapshot{
 			BillingMode:               "tiered_expr",
@@ -493,6 +500,9 @@ func TestPrepareTieredBillingForSelectedGroupTopUpArrearsAllowsNegativeBalance(t
 	userQuota, err = model.GetUserQuota(userID, false)
 	require.NoError(t, err)
 	assert.Equal(t, -10_000, userQuota)
+	token, err := model.GetTokenById(userID)
+	require.NoError(t, err)
+	assert.Equal(t, 420_000, token.RemainQuota)
 }
 
 func TestBillingSessionReserveWalletTopUpDecrementsBalance(t *testing.T) {
@@ -500,10 +510,12 @@ func TestBillingSessionReserveWalletTopUpDecrementsBalance(t *testing.T) {
 
 	const userID = 702
 	seedTieredSettlementUser(t, userID, 500_000)
+	seedToken(t, userID, userID, "tiered-settlement-key", 450_000)
 
 	relayInfo := &relaycommon.RelayInfo{
-		UserId:       userID,
-		IsPlayground: true,
+		UserId:   userID,
+		TokenId:  userID,
+		TokenKey: "tiered-settlement-key",
 	}
 	session := &BillingSession{
 		relayInfo:        relayInfo,
@@ -518,6 +530,9 @@ func TestBillingSessionReserveWalletTopUpDecrementsBalance(t *testing.T) {
 	userQuota, err := model.GetUserQuota(userID, false)
 	require.NoError(t, err)
 	assert.Equal(t, 450_000, userQuota)
+	token, err := model.GetTokenById(userID)
+	require.NoError(t, err)
+	assert.Equal(t, 400_000, token.RemainQuota)
 }
 
 func TestTryTieredSettleUsesFinalGroupAfterRetry(t *testing.T) {

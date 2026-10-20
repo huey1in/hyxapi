@@ -8,9 +8,11 @@ import { ThemeProvider } from './context/Theme';
 import { ToastContainer } from './components/ui';
 import { redirectToAuth } from './helpers/auth';
 import { useAuthStore } from './stores/auth-store';
+import { clearRetiredFeatureStorage } from './lib/retired-feature-storage';
 import './index.css';
 import './i18n/i18n';
 
+try { clearRetiredFeatureStorage(window.localStorage); } catch { /* Storage may be unavailable. */ }
 window.addEventListener('hyxware:auth-required', () => redirectToAuth('login'));
 const queryClient = new QueryClient();
 useAuthStore.subscribe((next, previous) => {

@@ -8,7 +8,7 @@ const { spawn } = require('node:child_process');
 function externalURL(value) {
   try {
     const url = new URL(value);
-    return ['https:', 'http:', 'cherrystudio:', 'ccswitch:', 'aionui:', 'deepchat:', 'aqbot:'].includes(url.protocol)
+    return ['https:', 'http:'].includes(url.protocol)
       && !url.username && !url.password;
   } catch { return false; }
 }

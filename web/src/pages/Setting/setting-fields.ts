@@ -32,7 +32,6 @@ export const TABS = [
   { key: 'pricing', label: '定价/分组' },
   { key: 'limits', label: '限制' },
   { key: 'model', label: '模型适配' },
-  { key: 'chat', label: '聊天客户端' },
   { key: 'plugins', label: '插件' },
   { key: 'affinity', label: '渠道亲和' },
   { key: 'dashboard', label: '仪表盘' },
@@ -41,7 +40,6 @@ export const TABS = [
 ];
 
 export const TAB_KEYS: Record<string, string[]> = {
-  chat: ['Chats'],
   platform: [
     'ServerAddress',
     'HeaderNavModules',

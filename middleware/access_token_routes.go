@@ -312,30 +312,6 @@ var accessTokenRouteRules = map[string]accessTokenRouteRule{
 	"POST /api/models/":                     accessTokenScopeRule("model:write"),
 	"PUT /api/models/":                      accessTokenScopeRule("model:write"),
 	"DELETE /api/models/:id":                accessTokenScopeRule("model:write"),
-
-	// router/api-router.go: /api/deployments
-	"GET /api/deployments/settings":                     accessTokenScopeRule("deployment:read"),
-	"POST /api/deployments/settings/test-connection":    accessTokenScopeRule("deployment:write"),
-	"GET /api/deployments/":                             accessTokenScopeRule("deployment:read"),
-	"GET /api/deployments/search":                       accessTokenScopeRule("deployment:read"),
-	"POST /api/deployments/test-connection":             accessTokenScopeRule("deployment:write"),
-	"GET /api/deployments/hardware-types":               accessTokenScopeRule("deployment:read"),
-	"GET /api/deployments/locations":                    accessTokenScopeRule("deployment:read"),
-	"GET /api/deployments/available-replicas":           accessTokenScopeRule("deployment:read"),
-	"POST /api/deployments/price-estimation":            accessTokenScopeRule("deployment:read"),
-	"GET /api/deployments/check-name":                   accessTokenScopeRule("deployment:read"),
-	"POST /api/deployments/":                            accessTokenScopeRule("deployment:write"),
-	"GET /api/deployments/:id":                          accessTokenScopeRule("deployment:read"),
-	"GET /api/deployments/:id/logs":                     accessTokenScopeRule("deployment:read"),
-	"GET /api/deployments/:id/containers":               accessTokenScopeRule("deployment:read"),
-	"GET /api/deployments/:id/containers/:container_id": accessTokenScopeRule("deployment:read"),
-	"PUT /api/deployments/:id":                          accessTokenScopeRule("deployment:write"),
-	"PUT /api/deployments/:id/name":                     accessTokenScopeRule("deployment:write"),
-	"POST /api/deployments/:id/extend":                  accessTokenScopeRule("deployment:write"),
-	"DELETE /api/deployments/:id":                       accessTokenScopeRule("deployment:write"),
-
-	// router/relay-router.go
-	"POST /pg/chat/completions": accessTokenSessionRule,
 }
 
 var (

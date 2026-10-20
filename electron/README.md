@@ -1,8 +1,8 @@
 # Hyxware Desktop
 
 The desktop application runs the existing Hyxware interface with a private local
-SQLite server. It supports a system tray, a single application instance, external
-chat clients, and persistent data under the operating system's application data
+SQLite server. It supports a system tray, a single application instance, and
+persistent data under the operating system's application data
 directory. Closing the window hides it; choose **Quit** to stop the local server.
 If the system tray is unavailable, closing the window quits.
 
@@ -25,7 +25,7 @@ Signing credentials are supplied through electron-builder's environment settings
 
 The application chooses a free port once, retains it in `server-port`, and binds
 the server to `127.0.0.1`. Restarting preserves the same browser origin and local
-chat history. If another service occupies that port, stop that service first;
+preferences. If another service occupies that port, stop that service first;
 the desktop application will report the conflict.
 It ignores inherited database and Redis connection strings. Use **Open data
 folder** in the application menu to find the database, file logs and persistent

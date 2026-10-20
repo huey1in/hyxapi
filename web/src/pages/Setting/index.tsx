@@ -6,7 +6,6 @@ import { Lock, RefreshCw, Save } from 'lucide-react';
 import { API } from '../../helpers';
 import PaymentSetup from '../../features/payments/PaymentSetup';
 import { remainingSettingDrafts } from '../../features/payments/payment-setup-data';
-import ChatPresetsEditor from '../../features/chat/ChatPresetsEditor';
 import {
   PageShell,
   Button,
@@ -216,15 +215,6 @@ function SettingPageContent() {
             value={val(key)}
             onChange={(value) => set(key, value)}
             disabled={saving}
-          />
-        </div>
-      );
-    if (key === 'Chats')
-      return (
-        <div key={key} style={{ gridColumn: '1 / -1', minWidth: 0 }}>
-          <ChatPresetsEditor
-            value={val(key) || '[]'}
-            onChange={(value) => set(key, value)}
           />
         </div>
       );

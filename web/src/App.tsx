@@ -1,18 +1,14 @@
 import { lazy } from 'react';
-import { Routes, Route, Navigate, useParams } from 'react-router-dom';
+import { Routes, Route, Navigate } from 'react-router-dom';
 import PageLayout from './components/layout/PageLayout';
 
 const Dashboard = lazy(() => import('./pages/Dashboard'));
 const Channel = lazy(() => import('./pages/Channel'));
 const Metadata = lazy(() => import('./features/metadata'));
-const Deployment = lazy(() => import('./features/deployment'));
 const Token = lazy(() => import('./pages/Token'));
 const Log = lazy(() => import('./pages/Log'));
 const Task = lazy(() => import('./pages/Task'));
 const Midjourney = lazy(() => import('./pages/Task/Midjourney'));
-const Playground = lazy(() => import('./features/playground'));
-const ChatClients = lazy(() => import('./features/chat'));
-const ChatPage = lazy(() => import('./features/chat/ChatPage'));
 const User = lazy(() => import('./pages/User'));
 const Redemption = lazy(() => import('./pages/Redemption'));
 const Subscription = lazy(() => import('./pages/Subscription'));
@@ -35,11 +31,6 @@ const Rankings = lazy(() => import('./features/public-pages/Rankings'));
 const PublicDocument = lazy(() => import('./features/public-pages/PublicDocument'));
 const OAuthCallback = lazy(() => import('./pages/OAuthCallback'));
 
-const LegacyChatRedirect = () => {
-  const { chatId } = useParams();
-  return <Navigate to={`/console/chat/${encodeURIComponent(chatId || '')}`} replace />;
-};
-
 const App = () => (
   <Routes>
     <Route element={<PageLayout />}>
@@ -55,8 +46,6 @@ const App = () => (
       <Route path='/privacy-policy' element={<PublicDocument kind='privacy' />} />
       <Route path='/pricing'            element={<Pricing />} />
       <Route path='/pricing/model/*'    element={<PricingDetail />} />
-      <Route path='/chat/:chatId'       element={<LegacyChatRedirect />} />
-      <Route path='/chat2link'          element={<Navigate to='/console/chat2link' replace />} />
 
       <Route path='/console'                  element={<Dashboard />} />
       <Route path='/console/pricing'          element={<Pricing />} />
@@ -64,15 +53,10 @@ const App = () => (
       <Route path='/console/channel'          element={<Channel />} />
       <Route path='/console/models'           element={<Metadata />} />
       <Route path='/console/vendors'          element={<Metadata kind='vendors' />} />
-      <Route path='/console/deployments'      element={<Deployment />} />
       <Route path='/console/token'            element={<Token />} />
       <Route path='/console/log'              element={<Log />} />
       <Route path='/console/task'             element={<Task />} />
       <Route path='/console/midjourney'       element={<Midjourney />} />
-      <Route path='/console/playground'      element={<Playground />} />
-      <Route path='/console/chat'            element={<ChatClients />} />
-      <Route path='/console/chat/:chatId'    element={<ChatPage />} />
-      <Route path='/console/chat2link'       element={<ChatPage redirect />} />
       <Route path='/console/user'             element={<User />} />
       <Route path='/console/operations'       element={<Operations />} />
       <Route path='/console/audit'            element={<AuditLog />} />

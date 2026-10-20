@@ -1,6 +1,6 @@
 import type { CSSProperties } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Trash2, Copy, Pencil, ExternalLink, Power } from 'lucide-react';
+import { Trash2, Copy, Pencil, Power } from 'lucide-react';
 import { IconButton } from '../../components/ui';
 import { timestamp2string, renderQuota } from '../../helpers';
 import useIsMobile from '../../hooks/useIsMobile';
@@ -9,10 +9,10 @@ import { manualTokenGroups } from './autoGroups';
 import { effectiveTokenStatus } from './token-management';
 import type { ManagedToken } from './token-management';
 
-type Props = { row: ManagedToken; preview?: boolean; disabled?: boolean; selected: boolean; onSelect: (checked: boolean) => void; onToggle: () => void; onCopy: () => void; onDelete: () => void; onEdit: () => void; onClient?: () => void };
+type Props = { row: ManagedToken; preview?: boolean; disabled?: boolean; selected: boolean; onSelect: (checked: boolean) => void; onToggle: () => void; onCopy: () => void; onDelete: () => void; onEdit: () => void };
 const PILL: CSSProperties = { display: 'inline-flex', alignItems: 'center', height: 20, paddingInline: 6, borderRadius: 5, fontSize: 11, whiteSpace: 'nowrap' };
 
-const KeyCard = ({ row, preview = false, disabled = false, selected, onSelect, onToggle, onCopy, onDelete, onEdit, onClient }: Props) => {
+const KeyCard = ({ row, preview = false, disabled = false, selected, onSelect, onToggle, onCopy, onDelete, onEdit }: Props) => {
   const { t } = useTranslation();
   const status = effectiveTokenStatus(row);
   const statusLabel = t(({ 1: 'Enabled', 2: 'Disabled', 3: 'Expired', 4: 'Exhausted' } as Record<number, string>)[status] || 'Unavailable');
@@ -38,7 +38,6 @@ const KeyCard = ({ row, preview = false, disabled = false, selected, onSelect, o
       </div>
       {!preview && <div className={`flex gap-1 shrink-0 ${isMobile ? 'self-end' : 'opacity-0 group-hover:opacity-100'} transition-opacity`}>
         <IconButton icon={Power} title={t(row.status === 1 ? 'Disable API key' : 'Enable API key')} disabled={disabled} onClick={onToggle} />
-        {onClient && <IconButton icon={ExternalLink} title={t('Open chat client')} onClick={onClient} />}
         <IconButton icon={Copy} title={t('Copy')} onClick={onCopy} />
         <IconButton icon={Pencil} title={t('Edit')} onClick={onEdit} />
         <IconButton icon={Trash2} variant='danger' title={t('Delete')} onClick={onDelete} />

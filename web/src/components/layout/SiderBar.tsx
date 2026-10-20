@@ -6,14 +6,13 @@ import { useTranslation } from 'react-i18next';
 import {
   BarChart3, Key, FileText, Wallet, User,
   Radio, CreditCard, Ticket, Users, Settings,
-  ChevronLeft, X, Layers, Store, Bell, TrendingUp, Activity, Shield, ListChecks, MessageSquare,
+  ChevronLeft, X, Layers, Store, Bell, TrendingUp, Activity, Shield, ListChecks,
 } from 'lucide-react';
 import { StatusContext } from '../../context/Status';
 import { useMobileSidebar } from '../../context/MobileSidebar';
 import useIsMobile from '../../hooks/useIsMobile';
 import { cn } from '../ui/tokens';
 import { filterSidebarItems } from './sidebarItems';
-import { useChatPresets } from '../../features/chat/use-chat-presets';
 import { useAuthStore } from '../../stores/auth-store';
 import { isSidebarModuleVisible, parseSidebarModules } from '../../lib/sidebar-modules';
 import { useNotifications } from '../../features/notifications/use-notifications';
@@ -26,7 +25,6 @@ type NavItem = { to: string; label: string; icon: LucideIcon; end?: boolean; adm
 const NAV_ITEMS: NavItem[] = [
   { to: '/console',            label: '概览',     icon: BarChart3, end: true },
   { to: '/console/pricing',    label: '模型广场', icon: Store },
-  { to: '/console/playground', label: '在线调试', icon: MessageSquare },
   { to: '/console/token',      label: 'API',      icon: Key },
   { to: '/console/topup',      label: '充值',     icon: Wallet },
   { to: '/console/my-subscription', label: '订阅',   icon: CreditCard },
@@ -42,7 +40,6 @@ const NAV_ITEMS: NavItem[] = [
   { to: '/console/channel',      label: '渠道管理',   icon: Radio,      admin: true },
   { to: '/console/models',       label: '模型管理',   icon: Layers,     admin: true },
   { to: '/console/vendors',      label: '供应商管理', icon: Store,      admin: true },
-  { to: '/console/deployments',   label: '模型部署',   icon: Layers,     admin: true },
   { to: '/console/subscription', label: '订阅管理',   icon: Layers,     admin: true },
   { to: '/console/redemption',   label: '兑换码管理', icon: Ticket,     admin: true },
   { to: '/console/user',         label: '用户管理',   icon: Users,      admin: true },
@@ -53,7 +50,6 @@ const NAV_ITEMS: NavItem[] = [
 const SiderBar = ({ preview = false, previewActive = '/console' }: { preview?: boolean; previewActive?: string }) => {
   const { t } = useTranslation();
   const [statusState] = useContext(StatusContext);
-  const { presets } = useChatPresets();
   const currentUser = useAuthStore((state) => state.auth.user);
   const admin = (currentUser?.role ?? 0) >= 10;
   const root = (currentUser?.role ?? 0) >= 100;
@@ -91,11 +87,9 @@ const SiderBar = ({ preview = false, previewActive = '/console' }: { preview?: b
     });
   };
 
-  const navigation = [...NAV_ITEMS];
-  if (presets.length && !preview) navigation.splice(3, 0, { to: '/console/chat', label: '聊天客户端', icon: MessageSquare });
   const adminModules = parseSidebarModules(statusState?.status?.SidebarModulesAdmin);
   const userModules = currentUser?.permissions?.sidebar_settings === false ? {} : parseSidebarModules(currentUser?.sidebar_modules);
-  const items = filterSidebarItems(navigation, { preview, admin, root, isVisible: (route) => preview || (canOpenConsolePage(route, currentUser) && isSidebarModuleVisible(route, adminModules, userModules)) });
+  const items = filterSidebarItems(NAV_ITEMS, { preview, admin, root, isVisible: (route) => preview || (canOpenConsolePage(route, currentUser) && isSidebarModuleVisible(route, adminModules, userModules)) });
 
   const navContent = (
     <nav aria-label={t('Console navigation')} className='flex-1 flex flex-col gap-1 py-2 px-[10px] overflow-y-auto overflow-x-hidden'>

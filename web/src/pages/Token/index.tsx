@@ -3,8 +3,6 @@ import { Plus } from 'lucide-react';
 import { ConfirmDialog, Pagination } from '../../components/ui';
 import { ConsolePage, TokenCardsSkeleton } from '../../components/layout/PageSkeletons';
 import { StatusContext } from '../../context/Status';
-import ClientLaunchDialog from '../../features/chat/ClientLaunchDialog';
-import { useChatPresets } from '../../features/chat/use-chat-presets';
 import { useTranslation } from 'react-i18next';
 import { useTokenManagement } from './use-token-management';
 import { effectiveTokenStatus } from './token-management';
@@ -28,10 +26,8 @@ const TokenPage = ({ preview = false }: { preview?: boolean }) => {
   const visibleRows = rows.filter((row) => management.status === 'all' || String(effectiveTokenStatus(row)) === management.status);
   const [editing, setEditing] = useState<Partial<ManagedToken> | null>(null);
   const [confirm, setConfirm] = useState<{ title: string; description: string; onOk: () => Promise<void> } | null>(null);
-  const [clientToken, setClientToken] = useState<number | null>(null);
-  const { presets } = useChatPresets();
 
-  useEffect(() => { setEditing(null); setConfirm(null); setClientToken(null); }, [management.identity]);
+  useEffect(() => { setEditing(null); setConfirm(null); }, [management.identity]);
   const requestDelete = (tokens: { id: number; name: string }[]) => {
     const targets = tokens.map(({ id, name }) => ({ id, name }));
     setConfirm({ title: t('Delete {{count}} API keys?', { count: targets.length }),
@@ -64,13 +60,12 @@ const TokenPage = ({ preview = false }: { preview?: boolean }) => {
 
         {!preview && <TokenListControls key={management.identity} management={management} visibleRows={visibleRows}
           onDeleteSelected={() => requestDelete(Object.values(management.selected))} />}
-        {loading ? <TokenCardsSkeleton clientEnabled={presets.length > 0} /> : visibleRows.length === 0 ? (
+        {loading ? <TokenCardsSkeleton /> : visibleRows.length === 0 ? (
           <div style={{ padding: '32px 0', textAlign: 'center', color: 'var(--ui-text-3)', fontSize: 14 }}>{t('No API keys')}</div>
         ) : visibleRows.map((row) => (
           <KeyCard key={row.id} row={row} preview={preview} disabled={management.busy}
             selected={!!management.selected[row.id]} onSelect={(checked) => management.toggleSelection([row], checked)}
             onToggle={() => management.changeStatus(row)}
-            onClient={presets.length && keys[row.id] ? () => setClientToken(row.id) : undefined}
             onCopy={() => management.copyTokens([row], false)} onDelete={() => requestDelete([row])} onEdit={() => setEditing({ ...row })} />
         ))}
       </div>
@@ -79,7 +74,6 @@ const TokenPage = ({ preview = false }: { preview?: boolean }) => {
 
       {/* 调用示例 */}
       <CodeSamples key={management.identity} origin={origin} rows={rows} keys={keys} />
-      {clientToken && <ClientLaunchDialog key={clientToken} tokenKey={keys[clientToken]} onClose={() => setClientToken(null)} />}
 
       {!preview && <TokenEditModal
         key={management.identity}

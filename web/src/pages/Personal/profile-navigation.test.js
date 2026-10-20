@@ -20,11 +20,14 @@ test('legacy sidebar values fail open for display and reset preserves unknown mo
   for (const value of [null, 'bad-json', '[]', 'null', '{"console":false}', '{"console":{"token":"false"}}']) {
     assert.equal(sidebar.isSidebarModuleVisible('/console/token', sidebar.parseSidebarModules(value)), true);
   }
-  const current = { admin: { user: false }, chat: { future_module: false, chat: false } };
+  const current = { admin: { user: false }, console: { future_module: false, token: false }, chat: { chat: false } };
   const defaults = sidebar.defaultSidebarModules(current);
-  assert.equal(defaults.chat.chat, true);
-  assert.equal(defaults.chat.future_module, false);
+  assert.equal(defaults.console.token, true);
+  assert.equal(defaults.console.future_module, false);
   assert.equal(defaults.admin.user, false);
+  assert.equal(defaults.chat, undefined);
+  assert.deepEqual(sidebar.parseSidebarModules(current).chat, undefined);
+  assert.equal(current.console.token, false);
   assert.equal(current.chat.chat, false);
 });
 
