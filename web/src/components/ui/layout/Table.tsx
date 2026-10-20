@@ -41,6 +41,7 @@ export interface TableColumn<T> {
 }
 
 export interface TableProps<T extends object> {
+  className?: string;
   columns?: TableColumn<T>[];
   rows?: T[];
   rowKey?: keyof T | ((row: T) => Key);
@@ -59,6 +60,7 @@ export interface TableProps<T extends object> {
 }
 
 function Table<T extends object>({
+  className,
   columns = [],
   rows = [],
   rowKey,
@@ -85,7 +87,7 @@ function Table<T extends object>({
   return (
     <div role={loading ? 'status' : undefined} aria-label={loading ? t('Loading...') : undefined} aria-busy={loading || undefined}
       data-loading-skeleton={loading ? 'table' : undefined}
-      className='w-full overflow-x-auto rounded-2xl border border-ui-border bg-[var(--page-bg)] ui-scrollbar'>
+      className={cn('w-full overflow-x-auto rounded-2xl border border-ui-border bg-[var(--page-bg)] ui-scrollbar', className)}>
       <table
         className='w-full border-collapse'
         style={{

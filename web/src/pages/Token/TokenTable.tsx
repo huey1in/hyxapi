@@ -21,9 +21,9 @@ export default function TokenTable({ rows = [], loading = false, preview = false
   const { t } = useTranslation();
   const columns: TableColumn<TokenListItem>[] = [
     { key: 'name', title: t('Name'), width: 160, render: (row) => <span className='block truncate font-medium' title={row.name || t('Untitled')}>{row.name || t('Untitled')}</span> },
-    { key: 'key', title: 'Key', width: 176, render: (row) => <span className='whitespace-nowrap font-mono text-xs text-ui-text-2'>{row.key.startsWith('sk-') ? row.key : `sk-${row.key}`}</span> },
-    { key: 'created_time', title: t('Creation date'), width: 156, render: (row) => <span className='whitespace-nowrap text-xs tabular-nums text-ui-text-2'>{row.created_time > 0 ? timestamp2string(row.created_time) : '—'}</span> },
-    { key: 'accessed_time', title: t('Last used date'), width: 156, render: (row) => <span className='whitespace-nowrap text-xs tabular-nums text-ui-text-2'>{row.accessed_time > 0 ? timestamp2string(row.accessed_time) : t('Never used')}</span> },
+    { key: 'key', title: 'Key', width: 208, render: (row) => <span className='whitespace-nowrap font-mono'>{row.key.startsWith('sk-') ? row.key : `sk-${row.key}`}</span> },
+    { key: 'created_time', title: t('Creation date'), width: 168, render: (row) => <span className='whitespace-nowrap tabular-nums'>{row.created_time > 0 ? timestamp2string(row.created_time) : '—'}</span> },
+    { key: 'accessed_time', title: t('Last used date'), width: 168, render: (row) => <span className='whitespace-nowrap tabular-nums'>{row.accessed_time > 0 ? timestamp2string(row.accessed_time) : t('Never used')}</span> },
     ...(!preview ? [{
       key: 'actions', title: t('Actions'), width: 144, align: 'right' as const,
       render: (row: TokenListItem) => <div className='inline-flex items-center gap-0.5'>
@@ -35,6 +35,6 @@ export default function TokenTable({ rows = [], loading = false, preview = false
     }] : []),
   ];
 
-  return <Table columns={columns} rows={rows} rowKey='id' size='sm' tableLayout='fixed' minWidth={preview ? 648 : 792}
+  return <Table className='api-key-table' columns={columns} rows={rows} rowKey='id' size='sm' tableLayout='fixed' minWidth={preview ? 704 : 848}
     loading={loading} skeletonRows={TOKEN_PAGE_SIZE} emptyText={t('No API keys')} rowProps={(row) => ({ 'aria-label': row.name, 'data-token-id': row.id })} />;
 }
