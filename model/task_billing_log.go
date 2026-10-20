@@ -51,7 +51,6 @@ type RecordTaskBillingLogParams struct {
 	TokenId   int
 	Group     string
 	Other     *LogOther
-	NodeName  string
 }
 
 func RecordTaskBillingLog(params RecordTaskBillingLogParams) {
@@ -74,12 +73,7 @@ func RecordTaskBillingLog(params RecordTaskBillingLogParams) {
 		common.SysError("failed to record task billing log: " + err.Error())
 	}
 	if params.LogType == LogTypeConsume && common.DataExportEnabled {
-		nodeName := params.NodeName
-		if nodeName == "" {
-			nodeName = common.NodeName
-		}
 		LogQuotaData(QuotaDataLogParams{UserID: params.UserId, Username: username, ModelName: params.ModelName,
-			Quota: params.Quota, CreatedAt: createdAt, UseGroup: params.Group, TokenID: params.TokenId,
-			ChannelID: params.ChannelId, NodeName: nodeName})
+			Quota: params.Quota, CreatedAt: createdAt})
 	}
 }

@@ -10,7 +10,7 @@ import type { ApiEnvelope } from '../../types/api';
 import { logQuery } from './export';
 import { emptyLogFilters, enrichLog, getBillingPriceFields, logPageSchema, logSchema, validateLogFilters } from './log-data';
 import type { EnrichedLog, LogFilters } from './log-data';
-import { dashboardStatsSchema } from '../Dashboard/dashboard-data';
+import { logStatsSchema } from './log-data';
 import LogExportButton from './LogExportButton';
 import type { TableColumn } from '../../components/ui/layout/Table';
 import { Button, IconButton, Input, Select, Pagination, Table, showError } from '../../components/ui';
@@ -143,10 +143,10 @@ const LogContent = ({ preview = false }: { preview?: boolean }) => {
     return logPageSchema.parse(data.data);
   } });
   const stats = useQuery({ ...common, queryKey: ['consumption-log-stat', identity, queryString], queryFn: async ({ signal }) => {
-    const { data } = await API.get<ApiEnvelope<unknown>>(`${base}/stat?${queryString}`, { signal, timeout: 15000, disableDuplicate: true, skipErrorHandler: true });
+    const { data } = await API.get<ApiEnvelope<unknown>>(`${base}/stat?${queryString}`, { params: { include_rates: true }, signal, timeout: 15000, disableDuplicate: true, skipErrorHandler: true });
     signal.throwIfAborted();
     if (!data.success) throw new Error(data.message || 'Unable to load log statistics');
-    return dashboardStatsSchema.parse(data.data);
+    return logStatsSchema.parse(data.data);
   } });
   const refresh = () => void Promise.allSettled([logs.refetch(), stats.refetch()]);
   const load = (p = 1, fl = query.filters) => {

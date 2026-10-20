@@ -27,7 +27,15 @@ func TestPerformanceAPIOnlyPublishesActiveGroupAggregates(t *testing.T) {
 	} {
 		require.NoError(t, model.UpsertPerfMetric(&metric))
 	}
-	for _, handler := range []gin.HandlerFunc{GetPerfMetrics, GetPerfMetricsSummary} {
+	type performanceSummary struct {
+		SuccessRate float64 `json:"success_rate"`
+		AvgTPS      float64 `json:"avg_tps"`
+	}
+	for _, list := range []bool{false, true} {
+		handler := GetPerfMetrics
+		if list {
+			handler = GetPerfMetricsSummary
+		}
 		recorder := httptest.NewRecorder()
 		c, _ := gin.CreateTestContext(recorder)
 		c.Request = httptest.NewRequest(http.MethodGet, "/?model=perf-api-test", nil)
@@ -36,16 +44,22 @@ func TestPerformanceAPIOnlyPublishesActiveGroupAggregates(t *testing.T) {
 		var result struct {
 			Success bool `json:"success"`
 			Data    struct {
-				Summary struct {
-					SuccessRate float64 `json:"success_rate"`
-					AvgTPS      float64 `json:"avg_tps"`
-				} `json:"summary"`
+				Summary *performanceSummary  `json:"summary"`
+				Models  []performanceSummary `json:"models"`
 			} `json:"data"`
 		}
 		require.NoError(t, json.Unmarshal(recorder.Body.Bytes(), &result))
 		require.True(t, result.Success)
-		require.Equal(t, 50.0, result.Data.Summary.SuccessRate)
-		require.Equal(t, 20.0, result.Data.Summary.AvgTPS)
+		if list {
+			require.Nil(t, result.Data.Summary)
+			require.Len(t, result.Data.Models, 1)
+			require.Equal(t, 50.0, result.Data.Models[0].SuccessRate)
+			require.Equal(t, 20.0, result.Data.Models[0].AvgTPS)
+		} else {
+			require.NotNil(t, result.Data.Summary)
+			require.Equal(t, 50.0, result.Data.Summary.SuccessRate)
+			require.Equal(t, 20.0, result.Data.Summary.AvgTPS)
+		}
 		for _, private := range []string{"removed-private-group", "request_count", "success_count", "channel_id", "api_key"} {
 			require.NotContains(t, recorder.Body.String(), private)
 		}

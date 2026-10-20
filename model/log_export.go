@@ -9,7 +9,7 @@ import (
 
 // LogFilter is shared by paginated searches and keyset exports.
 type LogFilter struct {
-	Type, Channel                                                       int
+	Type, Channel, TokenID                                              int
 	StartTimestamp, EndTimestamp                                        int64
 	ModelName, Username, TokenName, Group, RequestId, UpstreamRequestId string
 }
@@ -49,6 +49,9 @@ func buildLogQuery(f LogFilter, userID int) (*gorm.DB, error) {
 	}
 	if f.Channel != 0 {
 		q = q.Where("logs.channel_id = ?", f.Channel)
+	}
+	if f.TokenID > 0 {
+		q = q.Where("logs.token_id = ?", f.TokenID)
 	}
 	if f.StartTimestamp != 0 {
 		q = q.Where("logs.created_at >= ?", f.StartTimestamp)

@@ -76,7 +76,6 @@ type ModelSummary struct {
 }
 
 type SummaryAllResult struct {
-	Summary     *Summary       `json:"summary"`
 	WindowStart int64          `json:"window_start"`
 	WindowEnd   int64          `json:"window_end"`
 	Models      []ModelSummary `json:"models"`

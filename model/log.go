@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"sort"
 	"time"
 
 	"github.com/QuantumNous/new-api/common"
@@ -325,8 +326,7 @@ func RecordConsumeLog(c *gin.Context, userId int, params RecordConsumeLogParams)
 	if common.DataExportEnabled {
 		gopool.Go(func() {
 			LogQuotaData(QuotaDataLogParams{UserID: userId, Username: username, ModelName: params.ModelName,
-				Quota: params.Quota, CreatedAt: log.CreatedAt, TokenUsed: params.PromptTokens + params.CompletionTokens,
-				UseGroup: params.Group, TokenID: params.TokenId, ChannelID: params.ChannelId, NodeName: common.NodeName})
+				Quota: params.Quota, CreatedAt: log.CreatedAt, TokenUsed: params.PromptTokens + params.CompletionTokens})
 		})
 	}
 }
@@ -429,8 +429,54 @@ type Stat struct {
 	Quota    int   `json:"quota"`
 	Tokens   int64 `json:"tokens"`
 	Requests int   `json:"requests"`
-	Rpm      int   `json:"rpm"`
-	Tpm      int64 `json:"tpm"`
+}
+
+type LogRates struct {
+	Rpm int   `json:"rpm"`
+	Tpm int64 `json:"tpm"`
+}
+
+// LogTokenOption exposes historical key identities without reading key secrets.
+type LogTokenOption struct {
+	ID   int    `json:"id"`
+	Name string `json:"name"`
+}
+
+func GetLogTokenOptions(ctx context.Context, filter LogFilter, userID int) ([]LogTokenOption, error) {
+	filter.Type, filter.TokenID = LogTypeConsume, 0
+	query, err := buildLogQuery(filter, userID)
+	if err != nil {
+		return nil, err
+	}
+	options := make([]LogTokenOption, 0)
+	err = query.WithContext(ctx).Where("logs.token_id > 0").
+		Select("token_id AS id, MAX(token_name) AS name").Group("token_id").Order("token_id DESC").Scan(&options).Error
+	if err != nil {
+		return nil, err
+	}
+	// Include unused current keys and prefer current names after a rename. The
+	// main and log databases can be separate, so merge metadata without a join.
+	currentQuery := DB.WithContext(ctx).Model(&Token{}).Select("id, name")
+	if userID > 0 {
+		currentQuery = currentQuery.Where("user_id = ?", userID)
+	}
+	var current []LogTokenOption
+	if err := currentQuery.Find(&current).Error; err != nil {
+		return nil, err
+	}
+	byID := make(map[int]LogTokenOption, len(options)+len(current))
+	for _, option := range options {
+		byID[option.ID] = option
+	}
+	for _, option := range current {
+		byID[option.ID] = option
+	}
+	options = make([]LogTokenOption, 0, len(byID))
+	for _, option := range byID {
+		options = append(options, option)
+	}
+	sort.Slice(options, func(i, j int) bool { return options[i].ID > options[j].ID })
+	return options, nil
 }
 
 type ActiveOperationsStat struct {
@@ -449,42 +495,43 @@ type RequestHealthStat struct {
 }
 
 func SumUsedQuota(logType int, startTimestamp int64, endTimestamp int64, modelName string, username string, tokenName string, channel int, group string) (stat Stat, err error) {
-	return sumUsedQuota(LogFilter{Type: LogTypeConsume, StartTimestamp: startTimestamp, EndTimestamp: endTimestamp, ModelName: modelName, Username: username, TokenName: tokenName, Channel: channel, Group: group}, 0)
+	return SumLogUsage(context.Background(), LogFilter{StartTimestamp: startTimestamp, EndTimestamp: endTimestamp, ModelName: modelName, Username: username, TokenName: tokenName, Channel: channel, Group: group}, 0)
 }
 
-// SumUserUsedQuota scopes historical and live totals to the immutable user ID.
-// A username change must not hide that account's historical usage.
-func SumUserUsedQuota(userID int, startTimestamp, endTimestamp int64, modelName, tokenName string, channel int, group string) (Stat, error) {
-	if userID <= 0 {
+// SumLogUsage aggregates only the selected interval. The caller supplies the
+// immutable actor ID for self queries; zero explicitly selects global usage.
+func SumLogUsage(ctx context.Context, filter LogFilter, userID int) (stat Stat, err error) {
+	if userID < 0 || filter.TokenID < 0 {
 		return Stat{}, errors.New("invalid user ID")
 	}
-	return sumUsedQuota(LogFilter{Type: LogTypeConsume, StartTimestamp: startTimestamp, EndTimestamp: endTimestamp, ModelName: modelName, TokenName: tokenName, Channel: channel, Group: group}, userID)
-}
-
-func sumUsedQuota(filter LogFilter, userID int) (stat Stat, err error) {
+	filter.Type = LogTypeConsume
 	tx, err := buildLogQuery(filter, userID)
 	if err != nil {
 		return stat, err
 	}
-	tx = tx.Select("COALESCE(sum(quota), 0) quota, COALESCE(sum(prompt_tokens), 0) + COALESCE(sum(completion_tokens), 0) tokens, count(*) requests")
+	tx = tx.WithContext(ctx).Select("COALESCE(sum(quota), 0) quota, COALESCE(sum(prompt_tokens), 0) + COALESCE(sum(completion_tokens), 0) tokens, count(*) requests")
 
 	if err := tx.Scan(&stat).Error; err != nil {
 		common.SysError("failed to query log stat: " + err.Error())
 		return stat, errors.New("查询统计数据失败")
 	}
-	// Upstream RPM/TPM cover the last minute independently of the selected date range.
+	return stat, nil
+}
+
+// GetLogRates is requested explicitly by the log page, independently of the
+// interval totals. Dashboard and operations queries do not calculate live rates.
+func GetLogRates(ctx context.Context, filter LogFilter, userID int) (live LogRates, err error) {
+	filter.Type = LogTypeConsume
 	filter.StartTimestamp, filter.EndTimestamp = time.Now().Add(-time.Minute).Unix(), 0
 	rates, err := buildLogQuery(filter, userID)
 	if err != nil {
-		return stat, err
+		return live, err
 	}
-	var live Stat
-	if err := rates.Select("count(*) rpm, COALESCE(sum(prompt_tokens), 0) + COALESCE(sum(completion_tokens), 0) tpm").Scan(&live).Error; err != nil {
+	if err := rates.WithContext(ctx).Select("count(*) rpm, COALESCE(sum(prompt_tokens), 0) + COALESCE(sum(completion_tokens), 0) tpm").Scan(&live).Error; err != nil {
 		common.SysError("failed to query live log stat: " + err.Error())
-		return stat, errors.New("failed to query statistics")
+		return live, errors.New("failed to query statistics")
 	}
-	stat.Rpm, stat.Tpm = live.Rpm, live.Tpm
-	return stat, nil
+	return live, nil
 }
 
 func GetActiveOperationsStat(startTimestamp, endTimestamp int64) (stat ActiveOperationsStat, err error) {

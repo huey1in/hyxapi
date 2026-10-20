@@ -285,6 +285,9 @@ func migrateDB() error {
 	if err != nil {
 		return err
 	}
+	if err := migrateRemovedUserRequestCount(DB); err != nil {
+		return err
+	}
 	// Before this option existed, subscriptions could overflow to the wallet.
 	// Only backfill NULL legacy rows; preserve every explicit administrator choice.
 	if err := DB.Model(&UserSubscription{}).Where("allow_wallet_overflow IS NULL").Update("allow_wallet_overflow", true).Error; err != nil {

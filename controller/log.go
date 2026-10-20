@@ -3,6 +3,7 @@ package controller
 import (
 	"net/http"
 	"strconv"
+	"time"
 
 	"github.com/QuantumNous/new-api/common"
 	"github.com/QuantumNous/new-api/model"
@@ -86,62 +87,97 @@ func GetLogByKey(c *gin.Context) {
 }
 
 func GetLogsStat(c *gin.Context) {
-	logType, _ := strconv.Atoi(c.Query("type"))
-	startTimestamp, _ := strconv.ParseInt(c.Query("start_timestamp"), 10, 64)
-	endTimestamp, _ := strconv.ParseInt(c.Query("end_timestamp"), 10, 64)
-	tokenName := c.Query("token_name")
-	username := c.Query("username")
-	modelName := c.Query("model_name")
-	channel, _ := strconv.Atoi(c.Query("channel"))
-	group := c.Query("group")
-	stat, err := model.SumUsedQuota(logType, startTimestamp, endTimestamp, modelName, username, tokenName, channel, group)
-	if err != nil {
-		common.ApiError(c, err)
-		return
-	}
-	response := gin.H{
-		"success": true,
-		"message": "",
-		"data": gin.H{
-			"quota":    stat.Quota,
-			"tokens":   stat.Tokens,
-			"requests": stat.Requests,
-			"rpm":      stat.Rpm,
-			"tpm":      stat.Tpm,
-		},
-	}
-	c.JSON(http.StatusOK, response)
-	return
+	getLogUsage(c, true)
 }
 
 func GetLogsSelfStat(c *gin.Context) {
-	startTimestamp, _ := strconv.ParseInt(c.Query("start_timestamp"), 10, 64)
-	endTimestamp, _ := strconv.ParseInt(c.Query("end_timestamp"), 10, 64)
-	if !applyLogRange(c, &startTimestamp, &endTimestamp, false) {
+	getLogUsage(c, false)
+}
+
+func GetLogTokenOptions(c *gin.Context) {
+	getLogTokenOptions(c, true)
+}
+
+func GetUserLogTokenOptions(c *gin.Context) {
+	getLogTokenOptions(c, false)
+}
+
+// Key choices and totals share validation and the immutable actor scope.
+func logUsageFilter(c *gin.Context, all bool) (model.LogFilter, int, bool) {
+	filter := model.LogFilter{ModelName: c.Query("model_name"), TokenName: c.Query("token_name"), Group: c.Query("group")}
+	var err error
+	filter.StartTimestamp, err = strconv.ParseInt(c.DefaultQuery("start_timestamp", "0"), 10, 64)
+	if err != nil {
+		common.ApiErrorMsg(c, "invalid start_timestamp")
+		return filter, 0, false
+	}
+	filter.EndTimestamp, err = strconv.ParseInt(c.DefaultQuery("end_timestamp", "0"), 10, 64)
+	if err != nil || filter.StartTimestamp < 0 || filter.EndTimestamp < 0 || (filter.EndTimestamp > 0 && filter.StartTimestamp > filter.EndTimestamp) || filter.StartTimestamp > time.Now().Unix() {
+		common.ApiErrorMsg(c, "invalid time range")
+		return filter, 0, false
+	}
+	filter.EndTimestamp = endOrNow(filter.EndTimestamp)
+	filter.TokenID, err = strconv.Atoi(c.DefaultQuery("token_id", "0"))
+	if err != nil || filter.TokenID < 0 || (c.Query("token_id") != "" && filter.TokenID == 0) {
+		common.ApiErrorMsg(c, "invalid token_id")
+		return filter, 0, false
+	}
+	filter.Channel, _ = strconv.Atoi(c.Query("channel"))
+	userID := c.GetInt("id")
+	if userID <= 0 {
+		c.AbortWithStatus(http.StatusUnauthorized)
+		return filter, 0, false
+	}
+	if all {
+		filter.Username = c.Query("username")
+		userID = 0
+	} else if !applyLogRange(c, &filter.StartTimestamp, &filter.EndTimestamp, false) {
+		return filter, 0, false
+	}
+	return filter, userID, true
+}
+
+func getLogUsage(c *gin.Context, all bool) {
+	filter, userID, ok := logUsageFilter(c, all)
+	if !ok {
 		return
 	}
-	tokenName := c.Query("token_name")
-	modelName := c.Query("model_name")
-	channel, _ := strconv.Atoi(c.Query("channel"))
-	group := c.Query("group")
-	quotaNum, err := model.SumUserUsedQuota(c.GetInt("id"), startTimestamp, endTimestamp, modelName, tokenName, channel, group)
+	includeRates, err := strconv.ParseBool(c.DefaultQuery("include_rates", "false"))
+	if err != nil {
+		common.ApiErrorMsg(c, "invalid include_rates")
+		return
+	}
+	stat, err := model.SumLogUsage(c.Request.Context(), filter, userID)
 	if err != nil {
 		common.ApiError(c, err)
 		return
 	}
-	response := gin.H{
-		"success": true,
-		"message": "",
-		"data": gin.H{
-			"quota":    quotaNum.Quota,
-			"tokens":   quotaNum.Tokens,
-			"requests": quotaNum.Requests,
-			"rpm":      quotaNum.Rpm,
-			"tpm":      quotaNum.Tpm,
-		},
+	if !includeRates {
+		common.ApiSuccess(c, stat)
+		return
 	}
-	c.JSON(200, response)
-	return
+	rates, err := model.GetLogRates(c.Request.Context(), filter, userID)
+	if err != nil {
+		common.ApiError(c, err)
+		return
+	}
+	common.ApiSuccess(c, struct {
+		model.Stat
+		model.LogRates
+	}{stat, rates})
+}
+
+func getLogTokenOptions(c *gin.Context, all bool) {
+	filter, userID, ok := logUsageFilter(c, all)
+	if !ok {
+		return
+	}
+	options, err := model.GetLogTokenOptions(c.Request.Context(), filter, userID)
+	if err != nil {
+		common.ApiError(c, err)
+		return
+	}
+	common.ApiSuccess(c, options)
 }
 
 func DeleteHistoryLogs(c *gin.Context) {

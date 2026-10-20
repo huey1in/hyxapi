@@ -125,11 +125,10 @@ func seedChannel(t *testing.T, id int) {
 	require.NoError(t, model.DB.Create(ch).Error)
 }
 
-func seedChargedAccounting(t *testing.T, userID, channelID, tokenID, quota, requestCount int) {
+func seedChargedAccounting(t *testing.T, userID, channelID, tokenID, quota int) {
 	t.Helper()
 	require.NoError(t, model.DB.Model(&model.User{}).Where("id = ?", userID).Updates(map[string]any{
-		"used_quota":    quota,
-		"request_count": requestCount,
+		"used_quota": quota,
 	}).Error)
 	require.NoError(t, model.DB.Model(&model.Channel{}).Where("id = ?", channelID).
 		Update("used_quota", quota).Error)
@@ -559,11 +558,11 @@ func getUserQuota(t *testing.T, id int) int {
 	return user.Quota
 }
 
-func getUserUsageAccounting(t *testing.T, id int) (int, int) {
+func getUserUsedQuota(t *testing.T, id int) int {
 	t.Helper()
 	var user model.User
-	require.NoError(t, model.DB.Select("used_quota", "request_count").Where("id = ?", id).First(&user).Error)
-	return user.UsedQuota, user.RequestCount
+	require.NoError(t, model.DB.Select("used_quota").Where("id = ?", id).First(&user).Error)
+	return user.UsedQuota
 }
 
 func getChannelUsedQuota(t *testing.T, id int) int64 {
@@ -633,7 +632,7 @@ func TestRefundTaskQuota_Wallet(t *testing.T) {
 	seedUser(t, userID, initQuota)
 	seedToken(t, tokenID, userID, "sk-test-key", tokenRemain)
 	seedChannel(t, channelID)
-	seedChargedAccounting(t, userID, channelID, tokenID, preConsumed, 1)
+	seedChargedAccounting(t, userID, channelID, tokenID, preConsumed)
 
 	task := makeTask(userID, channelID, preConsumed, tokenID, BillingSourceWallet, 0)
 	require.NoError(t, model.DB.Create(task).Error)
@@ -646,9 +645,8 @@ func TestRefundTaskQuota_Wallet(t *testing.T) {
 	// Token remain_quota should increase, used_quota should decrease
 	assert.Equal(t, tokenRemain+preConsumed, getTokenRemainQuota(t, tokenID))
 	assert.Zero(t, getTokenUsedQuota(t, tokenID))
-	usedQuota, requestCount := getUserUsageAccounting(t, userID)
+	usedQuota := getUserUsedQuota(t, userID)
 	assert.Zero(t, usedQuota)
-	assert.Equal(t, 1, requestCount)
 	assert.Zero(t, getChannelUsedQuota(t, channelID))
 
 	// A refund log should be created
@@ -674,7 +672,7 @@ func TestRefundTaskQuota_Subscription(t *testing.T) {
 	seedToken(t, tokenID, userID, "sk-sub-key", tokenRemain)
 	seedChannel(t, channelID)
 	seedSubscription(t, subID, userID, subTotal, subUsed)
-	seedChargedAccounting(t, userID, channelID, tokenID, preConsumed, 1)
+	seedChargedAccounting(t, userID, channelID, tokenID, preConsumed)
 
 	task := makeTask(userID, channelID, preConsumed, tokenID, BillingSourceSubscription, subID)
 	require.NoError(t, model.DB.Create(task).Error)
@@ -687,9 +685,8 @@ func TestRefundTaskQuota_Subscription(t *testing.T) {
 	// Token should also be refunded
 	assert.Equal(t, tokenRemain+preConsumed, getTokenRemainQuota(t, tokenID))
 	assert.Zero(t, getTokenUsedQuota(t, tokenID))
-	usedQuota, requestCount := getUserUsageAccounting(t, userID)
+	usedQuota := getUserUsedQuota(t, userID)
 	assert.Zero(t, usedQuota)
-	assert.Equal(t, 1, requestCount)
 	assert.Zero(t, getChannelUsedQuota(t, channelID))
 
 	log := getLastLog(t)
@@ -725,7 +722,7 @@ func TestRefundTaskQuota_NoToken(t *testing.T) {
 
 	seedUser(t, userID, initQuota)
 	seedChannel(t, channelID)
-	seedChargedAccounting(t, userID, channelID, 0, preConsumed, 1)
+	seedChargedAccounting(t, userID, channelID, 0, preConsumed)
 
 	task := makeTask(userID, channelID, preConsumed, 0, BillingSourceWallet, 0) // TokenId=0
 	require.NoError(t, model.DB.Create(task).Error)
@@ -734,9 +731,8 @@ func TestRefundTaskQuota_NoToken(t *testing.T) {
 
 	// User quota refunded
 	assert.Equal(t, initQuota+preConsumed, getUserQuota(t, userID))
-	usedQuota, requestCount := getUserUsageAccounting(t, userID)
+	usedQuota := getUserUsedQuota(t, userID)
 	assert.Zero(t, usedQuota)
-	assert.Equal(t, 1, requestCount)
 	assert.Zero(t, getChannelUsedQuota(t, channelID))
 
 	// Log created
@@ -753,7 +749,7 @@ func TestRefundTaskQuota_FundingFailureKeepsAccountingAndPendingMarker(t *testin
 	const userID, channelID, preConsumed = 5, 5, 1200
 	seedUser(t, userID, 5000)
 	seedChannel(t, channelID)
-	seedChargedAccounting(t, userID, channelID, 0, preConsumed, 1)
+	seedChargedAccounting(t, userID, channelID, 0, preConsumed)
 	task := makeTask(userID, channelID, preConsumed, 0, BillingSourceSubscription, 9999)
 	task.Status = model.TaskStatusFailure
 	require.NoError(t, model.DB.Create(task).Error)
@@ -762,9 +758,8 @@ func TestRefundTaskQuota_FundingFailureKeepsAccountingAndPendingMarker(t *testin
 	assert.Equal(t, 5000, getUserQuota(t, userID))
 	assert.Equal(t, preConsumed, task.Quota)
 	assert.Equal(t, preConsumed, getTaskQuota(t, task.ID))
-	usedQuota, requestCount := getUserUsageAccounting(t, userID)
+	usedQuota := getUserUsedQuota(t, userID)
 	assert.Equal(t, preConsumed, usedQuota)
-	assert.Equal(t, 1, requestCount)
 	assert.Equal(t, int64(preConsumed), getChannelUsedQuota(t, channelID))
 	assert.Equal(t, int64(0), countLogs(t))
 }
@@ -789,7 +784,7 @@ func TestTaskTokenSettlementPreservesDirectPricingSnapshot(t *testing.T) {
 			seedUser(t, userID, initialQuota)
 			seedToken(t, tokenID, userID, "sk-direct-snapshot", initialQuota)
 			seedChannel(t, channelID)
-			seedChargedAccounting(t, userID, channelID, tokenID, preConsumed, 1)
+			seedChargedAccounting(t, userID, channelID, tokenID, preConsumed)
 			task := makeTask(userID, channelID, preConsumed, tokenID, BillingSourceWallet, 0)
 			task.PrivateData.BillingContext = &model.TaskBillingContext{
 				DirectPricing: true, BillingType: model.ModelPricingBillingToken,
@@ -823,7 +818,7 @@ func TestRecalculate_PositiveDelta(t *testing.T) {
 	seedUser(t, userID, initQuota)
 	seedToken(t, tokenID, userID, "sk-recalc-pos", tokenRemain)
 	seedChannel(t, channelID)
-	seedChargedAccounting(t, userID, channelID, tokenID, preConsumed, 1)
+	seedChargedAccounting(t, userID, channelID, tokenID, preConsumed)
 
 	task := makeTask(userID, channelID, preConsumed, tokenID, BillingSourceWallet, 0)
 
@@ -835,9 +830,8 @@ func TestRecalculate_PositiveDelta(t *testing.T) {
 	// Token should also be charged the delta
 	assert.Equal(t, tokenRemain-(actualQuota-preConsumed), getTokenRemainQuota(t, tokenID))
 	assert.Equal(t, actualQuota, getTokenUsedQuota(t, tokenID))
-	usedQuota, requestCount := getUserUsageAccounting(t, userID)
+	usedQuota := getUserUsedQuota(t, userID)
 	assert.Equal(t, actualQuota, usedQuota)
-	assert.Equal(t, 1, requestCount)
 	assert.Equal(t, int64(actualQuota), getChannelUsedQuota(t, channelID))
 
 	// task.Quota should be updated to actualQuota
@@ -862,7 +856,7 @@ func TestRecalculate_NegativeDelta(t *testing.T) {
 	seedUser(t, userID, initQuota)
 	seedToken(t, tokenID, userID, "sk-recalc-neg", tokenRemain)
 	seedChannel(t, channelID)
-	seedChargedAccounting(t, userID, channelID, tokenID, preConsumed, 1)
+	seedChargedAccounting(t, userID, channelID, tokenID, preConsumed)
 
 	task := makeTask(userID, channelID, preConsumed, tokenID, BillingSourceWallet, 0)
 
@@ -874,9 +868,8 @@ func TestRecalculate_NegativeDelta(t *testing.T) {
 	// Token should be refunded the difference
 	assert.Equal(t, tokenRemain+(preConsumed-actualQuota), getTokenRemainQuota(t, tokenID))
 	assert.Equal(t, actualQuota, getTokenUsedQuota(t, tokenID))
-	usedQuota, requestCount := getUserUsageAccounting(t, userID)
+	usedQuota := getUserUsedQuota(t, userID)
 	assert.Equal(t, actualQuota, usedQuota)
-	assert.Equal(t, 1, requestCount)
 	assert.Equal(t, int64(actualQuota), getChannelUsedQuota(t, channelID))
 
 	// task.Quota updated
@@ -961,7 +954,7 @@ func TestRecalculate_Subscription_NegativeDelta(t *testing.T) {
 	seedToken(t, tokenID, userID, "sk-sub-recalc", tokenRemain)
 	seedChannel(t, channelID)
 	seedSubscription(t, subID, userID, subTotal, subUsed)
-	seedChargedAccounting(t, userID, channelID, tokenID, preConsumed, 1)
+	seedChargedAccounting(t, userID, channelID, tokenID, preConsumed)
 
 	task := makeTask(userID, channelID, preConsumed, tokenID, BillingSourceSubscription, subID)
 
@@ -973,9 +966,8 @@ func TestRecalculate_Subscription_NegativeDelta(t *testing.T) {
 	// Token refunded
 	assert.Equal(t, tokenRemain+(preConsumed-actualQuota), getTokenRemainQuota(t, tokenID))
 	assert.Equal(t, actualQuota, getTokenUsedQuota(t, tokenID))
-	usedQuota, requestCount := getUserUsageAccounting(t, userID)
+	usedQuota := getUserUsedQuota(t, userID)
 	assert.Equal(t, actualQuota, usedQuota)
-	assert.Equal(t, 1, requestCount)
 	assert.Equal(t, int64(actualQuota), getChannelUsedQuota(t, channelID))
 
 	assert.Equal(t, actualQuota, task.Quota)
@@ -1050,7 +1042,7 @@ func TestCASGuardedRefund_Win(t *testing.T) {
 	seedUser(t, userID, initQuota)
 	seedToken(t, tokenID, userID, "sk-cas-refund-win", tokenRemain)
 	seedChannel(t, channelID)
-	seedChargedAccounting(t, userID, channelID, tokenID, preConsumed, 1)
+	seedChargedAccounting(t, userID, channelID, tokenID, preConsumed)
 
 	task := makeTask(userID, channelID, preConsumed, tokenID, BillingSourceWallet, 0)
 	task.Status = model.TaskStatus(model.TaskStatusInProgress)
@@ -1067,9 +1059,8 @@ func TestCASGuardedRefund_Win(t *testing.T) {
 	// Refund should have happened
 	assert.Equal(t, initQuota+preConsumed, getUserQuota(t, userID))
 	assert.Equal(t, tokenRemain+preConsumed, getTokenRemainQuota(t, tokenID))
-	usedQuota, requestCount := getUserUsageAccounting(t, userID)
+	usedQuota := getUserUsedQuota(t, userID)
 	assert.Zero(t, usedQuota)
-	assert.Equal(t, 1, requestCount)
 	assert.Zero(t, getChannelUsedQuota(t, channelID))
 
 	log := getLastLog(t)
@@ -1088,7 +1079,7 @@ func TestCASGuardedRefund_Lose(t *testing.T) {
 	seedUser(t, userID, initQuota)
 	seedToken(t, tokenID, userID, "sk-cas-refund-lose", tokenRemain)
 	seedChannel(t, channelID)
-	seedChargedAccounting(t, userID, channelID, tokenID, preConsumed, 1)
+	seedChargedAccounting(t, userID, channelID, tokenID, preConsumed)
 
 	// Create task with IN_PROGRESS in DB
 	task := makeTask(userID, channelID, preConsumed, tokenID, BillingSourceWallet, 0)
@@ -1105,9 +1096,8 @@ func TestCASGuardedRefund_Lose(t *testing.T) {
 	// CAS lost: user quota should NOT change (no double refund)
 	assert.Equal(t, initQuota, getUserQuota(t, userID))
 	assert.Equal(t, tokenRemain, getTokenRemainQuota(t, tokenID))
-	usedQuota, requestCount := getUserUsageAccounting(t, userID)
+	usedQuota := getUserUsedQuota(t, userID)
 	assert.Equal(t, preConsumed, usedQuota)
-	assert.Equal(t, 1, requestCount)
 	assert.Equal(t, int64(preConsumed), getChannelUsedQuota(t, channelID))
 
 	// No billing log should be created
@@ -1126,7 +1116,7 @@ func TestCASGuardedSettle_Win(t *testing.T) {
 	seedUser(t, userID, initQuota)
 	seedToken(t, tokenID, userID, "sk-cas-settle-win", tokenRemain)
 	seedChannel(t, channelID)
-	seedChargedAccounting(t, userID, channelID, tokenID, preConsumed, 1)
+	seedChargedAccounting(t, userID, channelID, tokenID, preConsumed)
 
 	task := makeTask(userID, channelID, preConsumed, tokenID, BillingSourceWallet, 0)
 	task.Status = model.TaskStatus(model.TaskStatusInProgress)
@@ -1142,9 +1132,8 @@ func TestCASGuardedSettle_Win(t *testing.T) {
 	// Settlement should refund the over-charge (5000 - 3000 = 2000 back to user)
 	assert.Equal(t, initQuota+(preConsumed-actualQuota), getUserQuota(t, userID))
 	assert.Equal(t, tokenRemain+(preConsumed-actualQuota), getTokenRemainQuota(t, tokenID))
-	usedQuota, requestCount := getUserUsageAccounting(t, userID)
+	usedQuota := getUserUsedQuota(t, userID)
 	assert.Equal(t, actualQuota, usedQuota)
-	assert.Equal(t, 1, requestCount)
 	assert.Equal(t, int64(actualQuota), getChannelUsedQuota(t, channelID))
 
 	// task.Quota should be updated to actualQuota
@@ -1639,15 +1628,14 @@ func TestMidjourneyRefundRestoresEveryAccountingElementOnBillingChannel(t *testi
 	assert.Equal(t, tokenID, persisted.TokenId)
 	assert.Equal(t, billingChannelID, persisted.BillingChannelId)
 
-	seedChargedAccounting(t, userID, billingChannelID, tokenID, chargedQuota, 1)
+	seedChargedAccounting(t, userID, billingChannelID, tokenID, chargedQuota)
 
 	assert.True(t, RefundMidjourneyQuota(ctx, task, "Composition failed"))
 	assert.Equal(t, initialUserQuota, getUserQuota(t, userID))
 	assert.Equal(t, initialTokenQuota, getTokenRemainQuota(t, tokenID))
 	assert.Zero(t, getTokenUsedQuota(t, tokenID))
-	usedQuota, requestCount := getUserUsageAccounting(t, userID)
+	usedQuota := getUserUsedQuota(t, userID)
 	assert.Zero(t, usedQuota)
-	assert.Equal(t, 1, requestCount)
 	assert.Zero(t, getChannelUsedQuota(t, billingChannelID))
 	assert.Zero(t, getChannelUsedQuota(t, executionChannelID))
 
@@ -1700,7 +1688,7 @@ func TestRefundMidjourneyQuotaUsesLegacyChannelFallbackWithoutTokenAdjustment(t 
 	seedUser(t, userID, walletAfterCharge)
 	seedToken(t, tokenID, userID, "sk-midjourney-legacy", tokenQuota)
 	seedChannel(t, channelID)
-	seedChargedAccounting(t, userID, channelID, 0, chargedQuota, 1)
+	seedChargedAccounting(t, userID, channelID, 0, chargedQuota)
 	task := &model.Midjourney{
 		UserId:    userID,
 		MjId:      "mj-legacy-fallback",
@@ -1717,9 +1705,8 @@ func TestRefundMidjourneyQuotaUsesLegacyChannelFallbackWithoutTokenAdjustment(t 
 	assert.Equal(t, walletAfterCharge+chargedQuota, getUserQuota(t, userID))
 	assert.Equal(t, tokenQuota, getTokenRemainQuota(t, tokenID))
 	assert.Zero(t, getTokenUsedQuota(t, tokenID))
-	usedQuota, requestCount := getUserUsageAccounting(t, userID)
+	usedQuota := getUserUsedQuota(t, userID)
 	assert.Zero(t, usedQuota)
-	assert.Equal(t, 1, requestCount)
 	assert.Zero(t, getChannelUsedQuota(t, channelID))
 	log := getLastLog(t)
 	require.NotNil(t, log)
@@ -1773,9 +1760,8 @@ func TestSettleMidjourneyTaskBillingFundingFailureClearsMarkers(t *testing.T) {
 	assert.Zero(t, persisted.Quota)
 	assert.Zero(t, persisted.TokenId)
 	assert.Zero(t, persisted.BillingChannelId)
-	usedQuota, requestCount := getUserUsageAccounting(t, userID)
+	usedQuota := getUserUsedQuota(t, userID)
 	assert.Zero(t, usedQuota)
-	assert.Zero(t, requestCount)
 	assert.Zero(t, getChannelUsedQuota(t, channelID))
 	assert.Zero(t, countLogs(t))
 }
@@ -1860,13 +1846,12 @@ func TestSettleMidjourneyTaskBillingTokenFailureKeepsFundingRefundable(t *testin
 	assert.Zero(t, persisted.TokenId)
 	assert.Equal(t, channelID, persisted.BillingChannelId)
 
-	seedChargedAccounting(t, userID, channelID, 0, chargedQuota, 1)
+	seedChargedAccounting(t, userID, channelID, 0, chargedQuota)
 	assert.True(t, RefundMidjourneyQuota(ctx, task, "token settlement failed"))
 	assert.Equal(t, initialUserQuota, getUserQuota(t, userID))
 	assert.Equal(t, initialTokenQuota, getTokenRemainQuota(t, tokenID))
-	usedQuota, requestCount := getUserUsageAccounting(t, userID)
+	usedQuota := getUserUsedQuota(t, userID)
 	assert.Zero(t, usedQuota)
-	assert.Equal(t, 1, requestCount)
 	assert.Zero(t, getChannelUsedQuota(t, channelID))
 	log := getLastLog(t)
 	require.NotNil(t, log)

@@ -289,17 +289,11 @@ func QuerySummaryAll(hours int, groups []string, recentModels ...string) (Summar
 		}
 	}
 
-	all := counters{}
 	models := make([]ModelSummary, 0, len(totals))
 	for name, total := range totals {
 		if total.requestCount == 0 {
 			continue
 		}
-		all.requestCount += total.requestCount
-		all.successCount += total.successCount
-		all.totalLatencyMs += total.totalLatencyMs
-		all.outputTokens += total.outputTokens
-		all.generationMs += total.generationMs
 		avgLatency := total.totalLatencyMs / total.requestCount
 		successRate := float64(total.successCount) / float64(total.requestCount) * 100
 		avgTps := 0.0
@@ -320,7 +314,7 @@ func QuerySummaryAll(hours int, groups []string, recentModels ...string) (Summar
 	})
 
 	return SummaryAllResult{
-		Summary: summarize(all), WindowStart: startTs, WindowEnd: endTs,
+		WindowStart: startTs, WindowEnd: endTs,
 		Models: models, RecentSuccessSeries: recentSeries,
 	}, nil
 }

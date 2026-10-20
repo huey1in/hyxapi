@@ -11,7 +11,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func TestSetApiRouterRegistersDataFlowRoutes(t *testing.T) {
+func TestUsageFlowEndpointsAreRemoved(t *testing.T) {
 	previousMode := gin.Mode()
 	gin.SetMode(gin.TestMode)
 	t.Cleanup(func() { gin.SetMode(previousMode) })
@@ -19,15 +19,14 @@ func TestSetApiRouterRegistersDataFlowRoutes(t *testing.T) {
 	engine := gin.New()
 	SetApiRouter(engine)
 
-	registered := make(map[string]bool)
-	for _, route := range engine.Routes() {
-		if route.Method == http.MethodGet {
-			registered[route.Path] = true
-		}
-	}
 	for _, path := range []string{"/api/data/flow", "/api/data/flow/self"} {
-		if !registered[path] {
-			t.Errorf("missing GET route %s", path)
+		recorder := httptest.NewRecorder()
+		engine.ServeHTTP(recorder, httptest.NewRequest(http.MethodGet, path, nil))
+		if recorder.Code != http.StatusNotFound {
+			t.Errorf("removed endpoint %s returned %d, want 404", path, recorder.Code)
+		}
+		if _, exists := middleware.AccessTokenRouteRule("GET " + path); exists {
+			t.Errorf("removed endpoint %s still declares an access token policy", path)
 		}
 	}
 }

@@ -1,9 +1,8 @@
 import { useState } from 'react';
 import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Link } from 'react-router-dom';
 import { Button, Card, Select, Tag, ContentSkeleton } from '../../components/ui';
-import { useModelPerformance, usePerformanceSummary } from './api';
+import { useModelPerformance } from './api';
 import { formatLatency, formatSuccessRate, formatThroughput, successTone, trendSamples, ttftSamples } from './format';
 import type { ModelSummary, SeriesPoint, SuccessPoint } from './types';
 import Skeleton from '../../components/ui/feedback/Skeleton';
@@ -39,31 +38,6 @@ export function PerformanceBadge({ model, history }: { model?: ModelSummary; his
     {model && <Tag tone={successTone(model.success_rate)}>{formatSuccessRate(model.success_rate, i18n.language)} {' '}{t("Success")}</Tag>}
     {!!history?.length && <SuccessHistory points={history} />}
   </div>;
-}
-
-export function PerformanceOverview() {
-  const { t, i18n } = useTranslation();
-  const metrics = usePerformanceSummary();
-  const summary = metrics.data?.summary;
-  return <Card><section className='space-y-4' aria-label={t("Performance overview")}>
-    <div className='flex flex-wrap items-center justify-between gap-2'>
-      <h2 className='text-sm font-medium text-ui-text'>{t("Performance overview")}</h2><span className='text-xs text-ui-text-3'>{t("Past 24 hours")}</span>
-    </div>
-    {metrics.isLoading ? <MetricsSkeleton /> : metrics.isError ? <MetricsError retry={() => { void metrics.refetch(); }} /> : <>
-      <div className='grid grid-cols-1 sm:grid-cols-3 gap-2'>
-        <Stat label={t("Request success rate")}>{formatSuccessRate(summary?.success_rate, i18n.language)}</Stat>
-        <Stat label={t("Average request latency")}>{formatLatency(summary?.avg_latency_ms, i18n.language)}</Stat>
-        <Stat label={t("Output throughput")}>{formatThroughput(summary?.avg_tps, i18n.language)}</Stat>
-      </div>
-      {!summary && <p className='text-xs text-ui-text-3'>{t("No actual call samples yet")}</p>}
-      <div className='grid gap-2 sm:grid-cols-2'>
-        {metrics.data?.models.slice(0, 6).map((model) => <Link key={model.model_name} className='flex min-w-0 items-center justify-between gap-3 text-xs text-ui-text-2 hover:text-ui-text'
-          to={`/console/pricing/model/${encodeURIComponent(model.model_name)}`}>
-          <span className='truncate'>{model.model_name}</span><span className='shrink-0 tabular-nums'>{formatSuccessRate(model.success_rate, i18n.language)}</span>
-        </Link>)}
-      </div>
-    </>}
-  </section></Card>;
 }
 
 function MetricsError({ retry }: { retry: () => void }) {

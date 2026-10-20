@@ -2,6 +2,7 @@ import { z } from 'zod';
 import { usageSchema } from '../../features/pricing/catalog-data';
 
 const count = z.number().int().nonnegative();
+export const logStatsSchema = z.object({ quota: z.number().finite(), tokens: count, requests: count, rpm: count, tpm: count });
 const number = z.number().finite();
 const record = z.record(z.string(), z.unknown());
 const field = <T extends z.ZodType>(schema: T) => schema.nullish().transform((value) => value ?? undefined).catch(undefined);

@@ -87,17 +87,29 @@ export function StatisticsSkeleton({ system = false }: { system?: boolean }) {
   </div></ContentSkeleton>;
 }
 
+export function DashboardPrimaryStatsSkeleton() {
+  const { t } = useTranslation();
+  return <ContentSkeleton variant='dashboard'><div className='dashboard-primary-stats'>{['Top-up balance', 'Total spending'].map((label, index) => <div key={label} className='dashboard-primary-card'>
+      <div className='min-w-0'><div className='mb-2 text-sm text-ui-text-3'>{t(label)}</div><div className='flex h-[42px] items-center'><Skeleton width={140} height={28} /></div></div>
+      {index === 0 && <Skeleton width={76} height={32} rounded='rounded-full' />}
+    </div>)}</div></ContentSkeleton>;
+}
+
+export function DashboardUsageStatsSkeleton() {
+  const { t } = useTranslation();
+  return <ContentSkeleton variant='dashboard'><div className='dashboard-secondary-stats'>{['Spending amount', 'API requests', 'Tokens'].map((label) => <div className='dashboard-stat-mini' key={label}>
+    <div className='mb-1 text-xs text-ui-text-3'>{label === 'Tokens' ? label : t(label)}</div><div className='flex h-[30px] items-center'><Skeleton width={72} height={20} /></div>
+  </div>)}</div></ContentSkeleton>;
+}
+
 export function DashboardStatsSkeleton() {
   const { t } = useTranslation();
-  return <ContentSkeleton variant='dashboard'><div className='flex flex-col gap-4 min-[769px]:gap-7'>
-    <div className='dashboard-primary-stats'>{['Remaining balance', 'Total requests'].map((label, index) => <div key={label} className='dashboard-primary-card'>
-      <div className='min-w-0'><div className='mb-2 text-sm text-ui-text-3'>{t(label)}</div><div className='flex h-[42px] items-center'><Skeleton width={140} height={28} /></div><div className='mt-1'><Skeleton width={145} height={18} /></div></div>
-      {index === 0 && <Skeleton width={76} height={32} rounded='rounded-full' />}
-    </div>)}</div>
-    <div className='dashboard-secondary-stats'>{['Tokens today', 'Spent today', 'Requests today', 'Current RPM'].map((label, index) => <div className='dashboard-stat-mini' key={label}>
-      <div className='mb-1 text-xs text-ui-text-3'>{t(label)}</div><div className='flex h-[30px] items-center'><Skeleton width={90} height={20} /></div>{index === 3 && <Skeleton width={100} height={18} />}
-    </div>)}</div>
-  </div></ContentSkeleton>;
+  return <div className='flex flex-col gap-4 min-[769px]:gap-7'>
+    <DashboardPrimaryStatsSkeleton />
+    <div className='space-y-3'><ContentSkeleton variant='dashboard'><div className='dashboard-usage-filters'>{['Time range', 'API Key'].map((label, index) => <div key={label} className={`dashboard-filter-field${index ? ' dashboard-key-filter' : ''}`}>
+      <div className='text-xs text-ui-text-3'>{t(label)}</div><Skeleton height={32} rounded='rounded-xl' />
+    </div>)}</div></ContentSkeleton><DashboardUsageStatsSkeleton /></div>
+  </div>;
 }
 
 export function PricingCardsSkeleton({ preview = false }: { preview?: boolean }) {

@@ -7,7 +7,7 @@ const text = z.string().nullish().transform((value) => value ?? '');
 export const managedUserSchema = z.object({
   id: z.number().int().positive(), username: z.string(), display_name: text,
   email: text, role: z.number().int(), status: z.number().int(), group: text,
-  quota: z.number(), used_quota: z.number().default(0), request_count: z.number().default(0),
+  quota: z.number(), used_quota: z.number().default(0),
   aff_count: z.number().default(0), aff_quota: z.number().default(0),
   created_at: z.number().default(0), last_login_at: z.number().default(0), remark: text,
   DeletedAt: z.string().nullish(), github_id: text, discord_id: text, oidc_id: text,

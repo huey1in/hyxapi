@@ -38,7 +38,6 @@ export interface AuthUser {
   group?: string
   quota?: number
   used_quota?: number
-  request_count?: number
   aff_code?: string
   aff_count?: number
   aff_quota?: number

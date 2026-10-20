@@ -1,4 +1,4 @@
-import { DashboardStatsSkeleton } from '../../components/layout/PageSkeletons';
+import { DashboardPrimaryStatsSkeleton, DashboardUsageStatsSkeleton } from '../../components/layout/PageSkeletons';
 import { useEffect, useState } from 'react';
 import type { ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -9,19 +9,18 @@ import { z } from 'zod';
 import { API, renderNumber, renderQuota } from '../../helpers';
 import type { ApiEnvelope } from '../../types/api';
 import { useAuthStore } from '../../stores/auth-store';
-import { Button } from '../../components/ui';
+import { Button, Select } from '../../components/ui';
 import useIsDark from '../../hooks/useIsDark';
-import { advancePreviewState, createPreviewState } from './dashboardPreviewSimulation';
-import { dashboardProfileSchema, dashboardStatsSchema, dashboardTodayRange } from './dashboard-data';
-import { PerformanceOverview } from '../../features/performance-metrics/PerformancePanel';
-import UsageFlow from '../../features/dashboard-flow/UsageFlow';
+import { advancePreviewState, createPreviewState, getPreviewStats, previewKeys } from './dashboardPreviewSimulation';
+import { dashboardKeysSchema, dashboardLocalTime, dashboardPeriods, dashboardProfileSchema, dashboardRange, dashboardStatsSchema } from './dashboard-data';
+import type { DashboardRange } from './dashboard-data';
+import DashboardRangeDialog from './DashboardRangeDialog';
 import ConsoleContent from '../../features/dashboard-content/ConsoleContent';
 
-const StatMini = ({ label, value, caption }: { label: string; value: ReactNode; caption?: ReactNode }) => (
+const StatMini = ({ label, value }: { label: string; value: ReactNode }) => (
   <div className='dashboard-stat-mini'>
     <div style={{ fontSize: 12, color: 'var(--ui-text-3)', marginBottom: 4 }}>{label}</div>
     <div style={{ fontSize: 20, fontWeight: 700, color: 'var(--ui-text)', fontVariantNumeric: 'tabular-nums' }}>{value}</div>
-    {caption && <div className='mt-1 text-xs text-ui-text-3'>{caption}</div>}
   </div>
 );
 
@@ -36,28 +35,32 @@ function DashboardContent({ preview = false }: { preview?: boolean }) {
   const navigate = useNavigate(); const { t } = useTranslation();
   const auth = useAuthStore((state) => state.auth);
   const [previewState, setPreviewState] = useState(createPreviewState);
+  const [range, setRange] = useState<DashboardRange>('today');
+  const [rangeDialogOpen, setRangeDialogOpen] = useState(false);
+  const [selectedKey, setSelectedKey] = useState({ id: 0, name: '' });
   const isDark = useIsDark();
   const role = auth.user?.role ?? 0; const admin = role >= 10;
   const base = admin ? '/api/log' : '/api/log/self';
   const identity = `${auth.user?.id}:${auth.session?.sid}:${role}`;
-  const today = dashboardTodayRange();
+  const day = new Date().toDateString();
   const common = { enabled: !preview && !!auth.user, gcTime: 0, retry: false, refetchOnMount: 'always' as const, refetchInterval: preview ? false as const : 5000 };
   const profile = useQuery({ ...common, queryKey: ['dashboard-profile', identity], queryFn: ({ signal }) => readDashboardData('/api/user/self', dashboardProfileSchema, signal) });
-  const cumulative = useQuery({ ...common, queryKey: ['dashboard-stat', identity], queryFn: ({ signal }) => readDashboardData(`${base}/stat`, dashboardStatsSchema, signal) });
-  const daily = useQuery({ ...common, queryKey: ['dashboard-day-stat', identity, today.start_timestamp], queryFn: ({ signal }) => readDashboardData(`${base}/stat`, dashboardStatsSchema, signal, dashboardTodayRange()) });
+  const usage = useQuery({ ...common, queryKey: ['dashboard-usage', identity, range, day, selectedKey.id], queryFn: ({ signal }) => readDashboardData(`${base}/stat`, dashboardStatsSchema, signal, { ...dashboardRange(range), ...(selectedKey.id ? { token_id: selectedKey.id } : {}) }) });
+  const keys = useQuery({ ...common, refetchInterval: 60000, queryKey: ['dashboard-keys', identity], queryFn: ({ signal }) => readDashboardData(`${base}/keys`, dashboardKeysSchema, signal) });
   useEffect(() => {
     if (!preview) return;
     const timer = setInterval(() => setPreviewState((current) => advancePreviewState(current)), 2400);
     return () => clearInterval(timer);
   }, [preview]);
-  const activeCumStats = preview ? previewState.cumulative : cumulative.error ? undefined : cumulative.data;
-  const activeDayStats = preview ? previewState.today : daily.error ? undefined : daily.data;
-  const activeRpm = preview ? previewState.rpm : cumulative.error ? undefined : cumulative.data?.rpm;
-  const activeTpm = preview ? previewState.logs.reduce((sum, log) => sum + log.prompt_tokens + log.completion_tokens, 0) : cumulative.error ? undefined : cumulative.data?.tpm;
+  const activeStats = preview ? getPreviewStats(previewState, dashboardRange(range), selectedKey.id) : usage.error ? undefined : usage.data;
+  const availableKeys = preview ? previewKeys : keys.data ?? [];
+  const keyChoices = selectedKey.id && !availableKeys.some((key) => key.id === selectedKey.id) ? [selectedKey, ...availableKeys] : availableKeys;
   const u = preview ? previewState.user : profile.error ? undefined : profile.data;
-  const overviewError = !preview && (profile.error || cumulative.error || daily.error);
-  const refresh = () => void Promise.allSettled([profile.refetch(), cumulative.refetch(), daily.refetch()]);
-  const refreshing = profile.isFetching || cumulative.isFetching || daily.isFetching;
+  const overviewError = !preview && (profile.error || usage.error || keys.error);
+  const refresh = () => void Promise.allSettled([profile.refetch(), usage.refetch(), keys.refetch()]);
+  const refreshing = profile.isFetching || usage.isFetching || keys.isFetching;
+  const closeRangeDialog = () => { setRangeDialogOpen(false); document.getElementById('dashboard-period')?.focus(); };
+  const customRangeTitle = typeof range === 'string' ? undefined : `${dashboardLocalTime(range.start_timestamp).replace('T', ' ')} – ${dashboardLocalTime(range.end_timestamp).replace('T', ' ')}`;
 
   return (
     <div className='dashboard-overview'>
@@ -66,14 +69,13 @@ function DashboardContent({ preview = false }: { preview?: boolean }) {
       {overviewError && <div role='alert' className='flex flex-wrap items-center justify-between gap-3 rounded-xl border border-ui-border p-4 text-sm text-ui-text-2'><span>{t('Unable to load overview')}</span><Button variant='toggle' onClick={refresh}>{t('Retry')}</Button></div>}
 
       {/* 统计卡片 */}
-      {!preview && profile.isPending ? <DashboardStatsSkeleton /> : <>
+      {!preview && profile.isPending ? <DashboardPrimaryStatsSkeleton /> :
       <div className='dashboard-primary-stats'>
-        {/* 积分余额 */}
+        {/* 充值余额 */}
         <div className='dashboard-primary-card'>
           <div>
-            <div style={{ fontSize: 14, fontWeight: 400, color: 'var(--ui-text-3)', marginBottom: 8 }}>{t('Remaining balance')}</div>
+            <div style={{ fontSize: 14, fontWeight: 400, color: 'var(--ui-text-3)', marginBottom: 8 }}>{t('Top-up balance')}</div>
             <div style={{ fontSize: 28, fontWeight: 700, color: 'var(--ui-text)' }}>{u ? renderQuota(u.quota) : '—'}</div>
-            <div style={{ fontSize: 12, color: 'var(--ui-text-3)', marginTop: 4 }}>{t('Total spent')}: {u ? renderQuota(u.used_quota) : '—'}</div>
           </div>
           <button
             onClick={preview ? undefined : () => navigate('/console/topup')}
@@ -90,27 +92,38 @@ function DashboardContent({ preview = false }: { preview?: boolean }) {
             }}
           >{t('Top up')}</button>
         </div>
-        {/* 总请求 */}
+        {/* 累计消费金额 */}
         <div className='dashboard-primary-card'>
           <div>
-            <div style={{ fontSize: 14, fontWeight: 400, color: 'var(--ui-text-3)', marginBottom: 8 }}>{t('Total requests')}</div>
-            <div style={{ fontSize: 28, fontWeight: 700, color: 'var(--ui-text)' }}>{u ? renderNumber(u.request_count) : '—'}</div>
-            <div style={{ fontSize: 12, color: 'var(--ui-text-3)', marginTop: 4 }}>{admin ? t('Total tokens') : t('Log range tokens')}: {fmtTokens(activeCumStats?.tokens)}</div>
+            <div style={{ fontSize: 14, fontWeight: 400, color: 'var(--ui-text-3)', marginBottom: 8 }}>{t('Total spending')}</div>
+            <div style={{ fontSize: 28, fontWeight: 700, color: 'var(--ui-text)' }}>{u ? renderQuota(u.used_quota) : '—'}</div>
           </div>
         </div>
       </div>
+      }
 
-      {/* 今日统计 */}
-      <div className='dashboard-secondary-stats'>
-        <StatMini label={t('Tokens today')} value={fmtTokens(activeDayStats?.tokens)} />
-        <StatMini label={t('Spent today')} value={activeDayStats ? renderQuota(activeDayStats.quota) : '—'} />
-        <StatMini label={t('Requests today')} value={activeDayStats ? renderNumber(activeDayStats.requests) : '—'} />
-        <StatMini label={t('Current RPM')} value={activeRpm == null ? '—' : renderNumber(activeRpm)} caption={`${t('Current TPM')}: ${activeTpm == null ? '—' : fmtTokens(activeTpm)}`} />
-      </div>
-      </>}
+      <section className='space-y-3' aria-label={t('Usage statistics')} data-dashboard-usage>
+        <div className='dashboard-usage-filters'>
+          <div className='dashboard-filter-field'>
+            <label htmlFor='dashboard-period' className='text-xs text-ui-text-3'>{t('Time range')}</label>
+            <Select id='dashboard-period' size={32} aria-label={t('Time range')} value={typeof range === 'string' ? range : 'custom'} options={[...dashboardPeriods.map((period) => ({ value: period.value, label: t(period.label) })), { value: 'custom', label: <span title={customRangeTitle}>{t('Custom range')}</span> }]} onChange={(value) => {
+              if (value === 'custom') setRangeDialogOpen(true);
+              else setRange(value);
+            }} />
+          </div>
+          <div className='dashboard-filter-field dashboard-key-filter'>
+            <label htmlFor='dashboard-key' className='text-xs text-ui-text-3'>API Key</label>
+            <Select id='dashboard-key' size={32} aria-label='API Key' value={selectedKey.id} disabled={!preview && keys.isPending} options={[{ value: 0, label: t('All API keys') }, ...keyChoices.map((key) => ({ value: key.id, label: <span title={`${key.name || 'API Key'} (#${key.id})`}>{key.name || 'API Key'} (#{key.id})</span> }))]} onChange={(id) => setSelectedKey(keyChoices.find((key) => key.id === id) ?? { id: 0, name: '' })} />
+          </div>
+        </div>
+        {rangeDialogOpen && <DashboardRangeDialog initialRange={dashboardRange(range)} onClose={closeRangeDialog} onApply={(next) => { setRange(next); closeRangeDialog(); }} />}
+        {!preview && usage.isPending ? <DashboardUsageStatsSkeleton /> : <div className='dashboard-secondary-stats'>
+          <StatMini label={t('Spending amount')} value={activeStats ? renderQuota(activeStats.quota) : '—'} />
+          <StatMini label={t('API requests')} value={activeStats ? renderNumber(activeStats.requests) : '—'} />
+          <StatMini label='Tokens' value={fmtTokens(activeStats?.tokens)} />
+        </div>}
+      </section>
 
-      {!preview && <PerformanceOverview />}
-      {!preview && <UsageFlow />}
       {!preview && <ConsoleContent />}
 
     </div>

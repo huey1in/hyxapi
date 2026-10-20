@@ -17,20 +17,16 @@ type QuotaData struct {
 	Username  string `json:"username" gorm:"index:idx_qdt_model_user_name,priority:2;size:64;default:''"`
 	ModelName string `json:"model_name" gorm:"index:idx_qdt_model_user_name,priority:1;size:64;default:''"`
 	CreatedAt int64  `json:"created_at" gorm:"bigint;index:idx_qdt_created_at,priority:2"`
-	UseGroup  string `json:"use_group" gorm:"index;size:64;default:''"`
-	TokenID   int    `json:"token_id" gorm:"index;default:0"`
-	ChannelID int    `json:"channel_id" gorm:"index;default:0"`
-	NodeName  string `json:"node_name" gorm:"index;size:64;default:''"`
 	TokenUsed int    `json:"token_used" gorm:"default:0"`
 	Count     int    `json:"count" gorm:"default:0"`
 	Quota     int    `json:"quota" gorm:"default:0"`
 }
 
 type QuotaDataLogParams struct {
-	UserID, TokenID, ChannelID              int
-	Username, ModelName, UseGroup, NodeName string
-	Quota, TokenUsed                        int
-	CreatedAt                               int64
+	UserID              int
+	Username, ModelName string
+	Quota, TokenUsed    int
+	CreatedAt           int64
 }
 
 func UpdateQuotaData() {
@@ -48,8 +44,7 @@ var CacheQuotaDataLock = sync.Mutex{}
 var quotaDataFlushLock sync.Mutex
 
 func logQuotaDataCache(quotaData *QuotaData) {
-	key := fmt.Sprintf("%d:%q:%q:%d:%q:%d:%d:%q", quotaData.UserID, quotaData.Username, quotaData.ModelName,
-		quotaData.CreatedAt, quotaData.UseGroup, quotaData.TokenID, quotaData.ChannelID, quotaData.NodeName)
+	key := fmt.Sprintf("%d:%q:%q:%d", quotaData.UserID, quotaData.Username, quotaData.ModelName, quotaData.CreatedAt)
 	cached, ok := CacheQuotaData[key]
 	if ok {
 		cached.Count += quotaData.Count
@@ -62,8 +57,7 @@ func logQuotaDataCache(quotaData *QuotaData) {
 
 func LogQuotaData(params QuotaDataLogParams) {
 	row := &QuotaData{UserID: params.UserID, Username: params.Username, ModelName: params.ModelName,
-		CreatedAt: params.CreatedAt - params.CreatedAt%3600, Count: 1, Quota: params.Quota, TokenUsed: params.TokenUsed,
-		UseGroup: params.UseGroup, TokenID: params.TokenID, ChannelID: params.ChannelID, NodeName: params.NodeName}
+		CreatedAt: params.CreatedAt - params.CreatedAt%3600, Count: 1, Quota: params.Quota, TokenUsed: params.TokenUsed}
 	CacheQuotaDataLock.Lock()
 	defer CacheQuotaDataLock.Unlock()
 	logQuotaDataCache(row)
@@ -103,8 +97,8 @@ func SaveQuotaDataCache() {
 func saveQuotaDataRow(row *QuotaData) error {
 	return DB.Transaction(func(tx *gorm.DB) error {
 		var existing QuotaData
-		err := tx.Where("user_id = ? AND username = ? AND model_name = ? AND created_at = ? AND use_group = ? AND token_id = ? AND channel_id = ? AND node_name = ?",
-			row.UserID, row.Username, row.ModelName, row.CreatedAt, row.UseGroup, row.TokenID, row.ChannelID, row.NodeName).First(&existing).Error
+		err := tx.Where("user_id = ? AND username = ? AND model_name = ? AND created_at = ?",
+			row.UserID, row.Username, row.ModelName, row.CreatedAt).First(&existing).Error
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			copy := *row
 			copy.Id = 0

@@ -211,8 +211,8 @@ func TestPerformanceAggregationAndFlush(t *testing.T) {
 			RecordRelayResult(context.Background(), &relaycommon.RelayInfo{OriginModelName: "test-model", UsingGroup: "b", StartTime: now}, types.InitOpenAIError("unknown", 400))
 			businessRejected, err := QuerySummaryAll(24, groups)
 			require.NoError(t, err)
-			require.NotNil(t, businessRejected.Summary)
-			assert.Equal(t, 100.0, businessRejected.Summary.SuccessRate)
+			require.Len(t, businessRejected.Models, 1)
+			assert.Equal(t, 100.0, businessRejected.Models[0].SuccessRate)
 
 			failure := &atomicBucket{}
 			failure.add(Sample{LatencyMs: 2000})
@@ -229,14 +229,16 @@ func TestPerformanceAggregationAndFlush(t *testing.T) {
 
 			summary, err := QuerySummaryAll(24, groups)
 			require.NoError(t, err)
-			assert.Equal(t, before.Summary, summary.Summary)
 			require.Len(t, summary.Models, 1)
+			assert.Equal(t, before.Summary.AvgLatencyMs, summary.Models[0].AvgLatencyMs)
+			assert.Equal(t, before.Summary.AvgTps, summary.Models[0].AvgTps)
 			assert.Equal(t, 99.01, summary.Models[0].SuccessRate)
 			assert.Equal(t, 99.01, summary.Models[0].RecentSuccessSeries[0].SuccessRate)
 			encoded, err := common.Marshal(summary)
 			require.NoError(t, err)
 			assert.NotContains(t, string(encoded), "request_count")
 			assert.NotContains(t, string(encoded), "success_count")
+			assert.NotContains(t, string(encoded), `"summary"`)
 
 			flushCompletedBuckets()
 			flushCompletedBuckets()
@@ -260,8 +262,9 @@ func TestPerformanceAggregationAndFlush(t *testing.T) {
 			require.NoError(t, model.UpsertPerfMetric(&model.PerfMetric{ModelName: "second-model", Group: "a", BucketTs: hour, RequestCount: 1}))
 			combined, err := QuerySummaryAll(24, groups)
 			require.NoError(t, err)
-			assert.Equal(t, 98.04, combined.Summary.SuccessRate)
+			require.Len(t, combined.Models, 2)
 			assert.Equal(t, 99.01, combined.Models[0].SuccessRate)
+			assert.Equal(t, 0.0, combined.Models[1].SuccessRate)
 
 			t.Run("recent models are summarized over their status sample hours", func(t *testing.T) {
 				for i := range 26 {

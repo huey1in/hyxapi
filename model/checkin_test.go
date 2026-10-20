@@ -21,7 +21,7 @@ func checkinFixture(t *testing.T) User {
 	previous := *setting
 	*setting = operation_setting.CheckinSetting{Enabled: true, MinQuota: 75, MaxQuota: 75}
 	t.Cleanup(func() { *setting = previous })
-	user := User{Username: "checkin-fixture", Quota: 100, UsedQuota: 17, RequestCount: 3, Status: common.UserStatusEnabled}
+	user := User{Username: "checkin-fixture", Quota: 100, UsedQuota: 17, Status: common.UserStatusEnabled}
 	require.NoError(t, DB.Create(&user).Error)
 	t.Cleanup(func() { DB.Unscoped().Delete(&user) })
 	return user
@@ -53,7 +53,6 @@ func checkCheckinConcurrentCredit(t *testing.T) {
 	require.NoError(t, DB.First(&stored, user.Id).Error)
 	require.Equal(t, 175, stored.Quota)
 	require.Equal(t, 17, stored.UsedQuota)
-	require.Equal(t, 3, stored.RequestCount)
 	cached, err := getUserQuotaCache(user.Id)
 	require.NoError(t, err)
 	require.Equal(t, 165, cached)

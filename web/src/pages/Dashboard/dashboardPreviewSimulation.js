@@ -10,10 +10,13 @@ const MODELS = [
 const pick = (items, random) => items[Math.floor(random() * items.length) % items.length];
 const integer = (min, max, random) => Math.floor(min + random() * (max - min + 1));
 
+export const previewKeys = [{ id: 1, name: 'production' }, { id: 2, name: 'development' }];
+
 const createLog = (nowMs, random, id) => {
   const model = pick(MODELS, random);
   return {
     id,
+    token_id: pick(previewKeys, random).id,
     created_at: Math.floor(nowMs / 1000),
     model_name: model.name,
     group: model.group,
@@ -24,23 +27,22 @@ const createLog = (nowMs, random, id) => {
 };
 
 export const createPreviewState = (nowMs = Date.now(), random = Math.random) => ({
-  user: { quota: 862000, used_quota: 1438000, request_count: 24891 },
-  cumulative: { quota: 1438000, tokens: 18400000, requests: 24891 },
-  today: { quota: 64200, tokens: 684200, requests: 1284 },
-  rpm: integer(14, 22, random),
-  logs: Array.from({ length: 6 }, (_, index) =>
-    createLog(nowMs - index * 8000, random, Math.floor(nowMs) - index),
-  ),
+  user: { quota: 862000, used_quota: 1438000 },
+  logs: Array.from({ length: 180 }, (_, index) => {
+    const date = new Date(nowMs); date.setDate(date.getDate() - Math.floor(index / 6));
+    return { ...createLog(date.getTime() - (index % 6) * 8000, random, Math.floor(nowMs) - index), token_id: index % 2 + 1 };
+  }),
 });
 
 export const advancePreviewState = (state, nowMs = Date.now(), random = Math.random) => {
   const log = createLog(nowMs, random, Math.floor(nowMs));
-  const tokens = log.prompt_tokens + log.completion_tokens;
   return {
-    user: { ...state.user, quota: Math.max(0, state.user.quota - log.quota), used_quota: state.user.used_quota + log.quota, request_count: state.user.request_count + 1 },
-    cumulative: { quota: state.cumulative.quota + log.quota, tokens: state.cumulative.tokens + tokens, requests: state.cumulative.requests + 1 },
-    today: { quota: state.today.quota + log.quota, tokens: state.today.tokens + tokens, requests: state.today.requests + 1 },
-    rpm: Math.max(8, Math.min(32, state.rpm + integer(-2, 3, random))),
-    logs: [log, ...state.logs].slice(0, 6),
+    user: { ...state.user, quota: Math.max(0, state.user.quota - log.quota), used_quota: state.user.used_quota + log.quota },
+    logs: [log, ...state.logs].slice(0, 360),
   };
 };
+
+export const getPreviewStats = (state, range, tokenID = 0) => state.logs.reduce((totals, log) => {
+  if (log.created_at < range.start_timestamp || log.created_at > range.end_timestamp || (tokenID && log.token_id !== tokenID)) return totals;
+  return { quota: totals.quota + log.quota, tokens: totals.tokens + log.prompt_tokens + log.completion_tokens, requests: totals.requests + 1 };
+}, { quota: 0, tokens: 0, requests: 0 });

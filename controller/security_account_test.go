@@ -451,6 +451,7 @@ func TestSecurityAccountProfileReadsPasswordStatusInOneQuery(t *testing.T) {
 			assert.NotContains(t, result.Data, "password")
 			assert.NotContains(t, result.Data, "access_token")
 			assert.NotContains(t, result.Data, "remark")
+			assert.NotContains(t, result.Data, "request_count")
 
 			bundle, err := service.CreateLoginSession(user.Id, "profile-test", "127.0.0.1", "profile-test")
 			require.NoError(t, err)

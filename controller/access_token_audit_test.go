@@ -1090,6 +1090,9 @@ func TestAuditDatabaseMatrix(t *testing.T) {
 						closeAuditTestDatabase(t, model.DB)
 						require.NoError(t, model.InitLogDB())
 					}
+					// Read through the application's reopened pool after schema changes;
+					// a separate SQLite pool can retain pre-migration column metadata.
+					db = model.DB
 					if !upgrade {
 						require.NoError(t, db.Create(&model.User{Username: "fresh-owner", Password: "placeholder", AffCode: "fresh-aff"}).Error)
 					}
