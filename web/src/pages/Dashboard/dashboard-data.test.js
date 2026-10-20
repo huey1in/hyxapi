@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { loadTestModules } from '../../../scripts/load-test-modules.mjs';
-const { entry0: { dashboardStatsSchema, dashboardProfileSchema, dashboardKeysSchema, dashboardRange, dashboardCustomRange, dashboardLocalTime } } = await loadTestModules(['./src/pages/Dashboard/dashboard-data.ts']);
+const { entry0: { dashboardStatsSchema, dashboardUsageSchema, dashboardProfileSchema, dashboardKeysSchema, dashboardRange, dashboardCustomRange, dashboardLocalTime } } = await loadTestModules(['./src/pages/Dashboard/dashboard-data.ts']);
 
 test('dashboard accepts only interval metrics and validates key identities and financial payloads', () => {
   const actual = { quota: 0, tokens: 0, requests: 0 };
@@ -12,6 +12,14 @@ test('dashboard accepts only interval metrics and validates key identities and f
   assert.equal(dashboardStatsSchema.safeParse({ ...actual, requests: '1' }).success, false);
   assert.equal(dashboardKeysSchema.safeParse([{ id: 0, name: 'key' }]).success, false);
   assert.deepEqual(dashboardKeysSchema.parse([{ id: 1, name: 'duplicate' }, { id: 2, name: 'duplicate' }]).map((key) => key.id), [1, 2]);
+});
+
+test('dashboard requires a finite bounded spending series and a supported time interval', () => {
+  const actual = { quota: 5, tokens: 10, requests: 1, trend: { interval: 'hour', points: [{ timestamp: 100, quota: 5 }] } };
+  assert.deepEqual(dashboardUsageSchema.parse(actual), actual);
+  for (const trend of [undefined, { interval: 'minute', points: actual.trend.points }, { interval: 'day', points: [] }, { interval: 'day', points: [{ timestamp: 100, quota: Infinity }] }, { interval: 'day', points: Array(129).fill(actual.trend.points[0]) }]) {
+    assert.equal(dashboardUsageSchema.safeParse({ ...actual, trend }).success, false);
+  }
 });
 
 test('dashboard daily totals use local calendar boundaries', () => {

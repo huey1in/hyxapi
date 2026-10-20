@@ -3171,6 +3171,8 @@
     "Spending amount": "消费金额",
     "API requests": "API 请求次数",
     "Usage statistics": "用量统计",
-    "Apply": "应用"
+    "Apply": "应用",
+    "Spending trend": "消费趋势",
+    "Use arrow keys to inspect spending by date": "使用左右方向键查看各日期的消费金额"
   }
 }

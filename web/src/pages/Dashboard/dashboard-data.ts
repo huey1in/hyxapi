@@ -4,6 +4,13 @@ const count = z.number().int().nonnegative();
 export const dashboardStatsSchema = z.object({
   quota: z.number().finite(), tokens: count, requests: count,
 });
+export const dashboardUsageSchema = dashboardStatsSchema.extend({
+  trend: z.object({
+    interval: z.enum(['hour', 'day', 'month', 'year']),
+    points: z.array(z.object({ timestamp: z.number().int(), quota: z.number().finite() })).min(1).max(128),
+  }),
+});
+export type DashboardUsage = z.infer<typeof dashboardUsageSchema>;
 export const dashboardProfileSchema = z.object({ quota: z.number().finite(), used_quota: z.number().finite() });
 export const dashboardKeysSchema = z.array(z.object({ id: z.number().int().positive(), name: z.string() }));
 export const dashboardPeriods = [

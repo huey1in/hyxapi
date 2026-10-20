@@ -1,5 +1,6 @@
 import type { PropsWithChildren, ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
+import { ChevronDown } from 'lucide-react';
 import useIsMobile from '../../hooks/useIsMobile';
 import ContentSkeleton from '../ui/feedback/ContentSkeleton';
 import Skeleton from '../ui/feedback/Skeleton';
@@ -7,6 +8,7 @@ import Card from '../ui/card/Card';
 import Divider from '../ui/display/Divider';
 import Table from '../ui/layout/Table';
 import { SettingGroup, SettingRow } from '../../pages/Personal/ProfileSettingsLayout';
+import SpendingTrendChart from '../../pages/Dashboard/SpendingTrendChart';
 
 // These frames are shared with the corresponding pages so loading uses the same
 // width, padding and mobile breakpoint as the loaded content.
@@ -107,8 +109,8 @@ export function DashboardStatsSkeleton() {
   return <div className='flex flex-col gap-4 min-[769px]:gap-7'>
     <DashboardPrimaryStatsSkeleton />
     <div className='space-y-3'><ContentSkeleton variant='dashboard'><div className='dashboard-usage-filters'>{['Time', 'API Key'].map((label, index) => <div key={label} className={`dashboard-filter-field${index ? ' dashboard-key-filter' : ''}`}>
-      <div className='flex h-8 w-full items-center gap-1.5 rounded-xl border border-ui-border px-[11px]'><span className='shrink-0 text-xs text-ui-text-3'>{index ? label : t(label)}</span><Skeleton width={28} height={14} /></div>
-    </div>)}</div></ContentSkeleton><DashboardUsageStatsSkeleton /></div>
+      <div className='flex h-8 w-full items-center gap-1.5 rounded-xl border border-ui-border px-[11px] text-sm'><span className='shrink-0 text-xs text-ui-text-3'>{index ? label : t(label)}</span><div className='relative min-w-0 flex-1 whitespace-nowrap'><span className='invisible'>{t(index ? 'All' : 'Last 30 days')}</span><div className='absolute inset-x-0 top-1/2 -translate-y-1/2'><Skeleton height={14} /></div></div><ChevronDown size={14} className='shrink-0 text-ui-text-3' /></div>
+    </div>)}</div></ContentSkeleton><DashboardUsageStatsSkeleton /><SpendingTrendChart loading /></div>
   </div>;
 }
 

@@ -3177,6 +3177,8 @@
     "Spending amount": "Spending amount",
     "API requests": "API requests",
     "Usage statistics": "Usage statistics",
-    "Apply": "Apply"
+    "Apply": "Apply",
+    "Spending trend": "Spending trend",
+    "Use arrow keys to inspect spending by date": "Use arrow keys to inspect spending by date"
   }
 }

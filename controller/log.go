@@ -147,13 +147,27 @@ func getLogUsage(c *gin.Context, all bool) {
 		common.ApiErrorMsg(c, "invalid include_rates")
 		return
 	}
-	stat, err := model.SumLogUsage(c.Request.Context(), filter, userID)
+	includeTrend, err := strconv.ParseBool(c.DefaultQuery("include_trend", "false"))
+	if err != nil {
+		common.ApiErrorMsg(c, "invalid include_trend")
+		return
+	}
+	var result struct {
+		model.Stat
+		*model.LogRates
+		Trend *model.LogUsageTrend `json:"trend,omitempty"`
+	}
+	if includeTrend {
+		result.Stat, result.Trend, err = model.SumLogUsageWithTrend(c.Request.Context(), filter, userID, c.DefaultQuery("timezone", "UTC"))
+	} else {
+		result.Stat, err = model.SumLogUsage(c.Request.Context(), filter, userID)
+	}
 	if err != nil {
 		common.ApiError(c, err)
 		return
 	}
 	if !includeRates {
-		common.ApiSuccess(c, stat)
+		common.ApiSuccess(c, result)
 		return
 	}
 	rates, err := model.GetLogRates(c.Request.Context(), filter, userID)
@@ -161,10 +175,8 @@ func getLogUsage(c *gin.Context, all bool) {
 		common.ApiError(c, err)
 		return
 	}
-	common.ApiSuccess(c, struct {
-		model.Stat
-		model.LogRates
-	}{stat, rates})
+	result.LogRates = &rates
+	common.ApiSuccess(c, result)
 }
 
 func getLogTokenOptions(c *gin.Context, all bool) {

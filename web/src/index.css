@@ -635,11 +635,35 @@ input[type='number'] {
 .dashboard-primary-stats { display:grid; grid-template-columns:repeat(2, minmax(0, 1fr)); gap:12px; }
 .dashboard-primary-card { display:flex; align-items:center; justify-content:space-between; min-width:0; padding:26px 20px; border:1px solid var(--ui-border); border-radius:26px; }
 .dashboard-usage-filters { display:flex; flex-wrap:wrap; justify-content:flex-start; align-items:flex-end; gap:8px; }
-.dashboard-filter-field { display:flex; flex:0 1 120px; min-width:0; max-width:100%; }
+.dashboard-filter-field { display:flex; flex:0 1 auto; min-width:0; max-width:100%; }
 .dashboard-key-filter { flex-basis:144px; }
 .dashboard-secondary-stats { display:grid; grid-template-columns:repeat(3, minmax(0, 1fr)); gap:12px; }
 .dashboard-stat-mini { display:flex; flex-direction:column; min-width:0; padding:16px; border:1px solid var(--ui-border); border-radius:16px; }
 .dashboard-stat-mini > :last-child { margin-top:auto; }
+.dashboard-spending-trend { min-width:0; padding:22px 20px 16px; border:1px solid var(--ui-border); border-radius:26px; }
+.dashboard-trend-heading { display:flex; align-items:center; min-height:26px; margin-bottom:20px; }
+.dashboard-trend-heading h2 { font-size:14px; font-weight:500; color:var(--ui-text-2); }
+.dashboard-trend-plot { position:relative; height:240px; min-width:0; border-radius:8px; touch-action:pan-y; }
+.dashboard-trend-plot:focus-visible { outline:2px solid var(--ui-text-3); outline-offset:4px; }
+.dashboard-trend-axis { fill:var(--ui-text-3); font-size:11px; font-family:inherit; font-variant-numeric:tabular-nums; }
+.dashboard-trend-grid { stroke:var(--ui-border); stroke-width:1; stroke-dasharray:3 6; opacity:.65; }
+.dashboard-trend-line { stroke:color-mix(in srgb,var(--ui-text) 78%,var(--page-bg)); }
+.dashboard-trend-plot[data-empty] .dashboard-trend-line { stroke:var(--ui-border); stroke-width:1; }
+.dashboard-trend-plot[data-empty] .dashboard-trend-dot { fill:var(--ui-border); }
+.dashboard-trend-fill-start { stop-color:var(--ui-text); stop-opacity:.07; }
+.dashboard-trend-fill-end { stop-color:var(--ui-text); stop-opacity:0; }
+.dashboard-trend-dot { fill:var(--ui-text); stroke:var(--page-bg); stroke-width:2; }
+.dashboard-trend-halo { fill:var(--ui-text); opacity:.08; }
+.dashboard-trend-crosshair { stroke:var(--ui-text-3); stroke-width:1; stroke-dasharray:3 5; opacity:.6; }
+.dashboard-trend-placeholder { height:240px; padding:16px 2px 10px 8px; }
+.dashboard-trend-placeholder-grid { display:flex; flex-direction:column; justify-content:space-between; height:188px; }
+.dashboard-trend-placeholder-grid > div { display:flex; align-items:center; gap:12px; }
+.dashboard-trend-placeholder-grid > div > span { flex:1; border-top:1px dashed var(--ui-divider); }
+.dashboard-trend-placeholder-dates { display:flex; justify-content:space-between; margin-top:24px; padding-right:42px; }
+.dashboard-trend-message { display:grid; place-items:center; height:240px; color:var(--ui-text-3); font-size:13px; }
+.dashboard-trend-empty { position:absolute; inset:0; display:grid; place-items:center; pointer-events:none; color:var(--ui-text-3); font-size:13px; }
+.dashboard-trend-tooltip { position:absolute; z-index:1; display:flex; flex-direction:column; gap:5px; width:168px; max-width:100%; padding:10px 12px; border:1px solid var(--ui-border); border-radius:12px; background:var(--page-bg); box-shadow:0 2px 8px rgb(0 0 0 / .04); pointer-events:none; font-size:11px; line-height:16px; color:var(--ui-text-3); }
+.dashboard-trend-tooltip strong { color:var(--ui-text); font-size:16px; line-height:20px; font-weight:600; font-variant-numeric:tabular-nums; }
 @media (max-width: 768px) {
   .dashboard-overview { gap:16px; padding:14px 16px 24px; }
   .dashboard-overview > h1 { margin:0; padding:4px 0 8px !important; }
@@ -647,6 +671,7 @@ input[type='number'] {
   .dashboard-primary-card { min-height:112px; padding:18px 20px; border-radius:20px; }
   .dashboard-secondary-stats { gap:8px; }
   .dashboard-stat-mini { padding:13px 14px; border-radius:14px; }
+  .dashboard-spending-trend { padding:18px 16px 12px; border-radius:20px; }
 }
 @media (max-width: 420px) {
   .dashboard-overview { padding-inline:12px; }

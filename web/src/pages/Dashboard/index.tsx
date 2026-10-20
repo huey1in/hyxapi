@@ -11,11 +11,12 @@ import type { ApiEnvelope } from '../../types/api';
 import { useAuthStore } from '../../stores/auth-store';
 import { Button, Select } from '../../components/ui';
 import useIsDark from '../../hooks/useIsDark';
-import { advancePreviewState, createPreviewState, getPreviewStats, previewKeys } from './dashboardPreviewSimulation';
-import { dashboardKeysSchema, dashboardLocalTime, dashboardPeriods, dashboardProfileSchema, dashboardRange, dashboardStatsSchema } from './dashboard-data';
+import { advancePreviewState, createPreviewState, getPreviewUsage, previewKeys } from './dashboardPreviewSimulation';
+import { dashboardKeysSchema, dashboardLocalTime, dashboardPeriods, dashboardProfileSchema, dashboardRange, dashboardUsageSchema } from './dashboard-data';
 import type { DashboardRange } from './dashboard-data';
 import DashboardRangeDialog from './DashboardRangeDialog';
 import ConsoleContent from '../../features/dashboard-content/ConsoleContent';
+import SpendingTrendChart from './SpendingTrendChart';
 
 const StatMini = ({ label, value }: { label: string; value: ReactNode }) => (
   <div className='dashboard-stat-mini'>
@@ -24,7 +25,7 @@ const StatMini = ({ label, value }: { label: string; value: ReactNode }) => (
   </div>
 );
 
-async function readDashboardData<T>(path: string, schema: z.ZodType<T>, signal: AbortSignal, params?: Record<string, number>) {
+async function readDashboardData<T>(path: string, schema: z.ZodType<T>, signal: AbortSignal, params?: Record<string, number | string | boolean>) {
   const { data } = await API.get<ApiEnvelope<unknown>>(path, { timeout: 15000, signal, params, disableDuplicate: true, skipErrorHandler: true });
   signal.throwIfAborted();
   if (!data.success) throw new Error(data.message || 'Unable to load overview');
@@ -35,7 +36,7 @@ function DashboardContent({ preview = false }: { preview?: boolean }) {
   const navigate = useNavigate(); const { t } = useTranslation();
   const auth = useAuthStore((state) => state.auth);
   const [previewState, setPreviewState] = useState(createPreviewState);
-  const [range, setRange] = useState<DashboardRange>('today');
+  const [range, setRange] = useState<DashboardRange>('month');
   const [rangeDialogOpen, setRangeDialogOpen] = useState(false);
   const [selectedKey, setSelectedKey] = useState({ id: 0, name: '' });
   const isDark = useIsDark();
@@ -43,16 +44,17 @@ function DashboardContent({ preview = false }: { preview?: boolean }) {
   const base = admin ? '/api/log' : '/api/log/self';
   const identity = `${auth.user?.id}:${auth.session?.sid}:${role}`;
   const day = new Date().toDateString();
+  const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';
   const common = { enabled: !preview && !!auth.user, gcTime: 0, retry: false, refetchOnMount: 'always' as const, refetchInterval: preview ? false as const : 5000 };
   const profile = useQuery({ ...common, queryKey: ['dashboard-profile', identity], queryFn: ({ signal }) => readDashboardData('/api/user/self', dashboardProfileSchema, signal) });
-  const usage = useQuery({ ...common, queryKey: ['dashboard-usage', identity, range, day, selectedKey.id], queryFn: ({ signal }) => readDashboardData(`${base}/stat`, dashboardStatsSchema, signal, { ...dashboardRange(range), ...(selectedKey.id ? { token_id: selectedKey.id } : {}) }) });
+  const usage = useQuery({ ...common, queryKey: ['dashboard-usage', identity, range, day, selectedKey.id, timezone], queryFn: ({ signal }) => readDashboardData(`${base}/stat`, dashboardUsageSchema, signal, { ...dashboardRange(range), include_trend: true, timezone, ...(selectedKey.id ? { token_id: selectedKey.id } : {}) }) });
   const keys = useQuery({ ...common, refetchInterval: 60000, queryKey: ['dashboard-keys', identity], queryFn: ({ signal }) => readDashboardData(`${base}/keys`, dashboardKeysSchema, signal) });
   useEffect(() => {
     if (!preview) return;
     const timer = setInterval(() => setPreviewState((current) => advancePreviewState(current)), 2400);
     return () => clearInterval(timer);
   }, [preview]);
-  const activeStats = preview ? getPreviewStats(previewState, dashboardRange(range), selectedKey.id) : usage.error ? undefined : usage.data;
+  const activeStats = preview ? getPreviewUsage(previewState, dashboardRange(range), selectedKey.id) : usage.error ? undefined : usage.data;
   const availableKeys = preview ? previewKeys : keys.data ?? [];
   const keyChoices = selectedKey.id && !availableKeys.some((key) => key.id === selectedKey.id) ? [selectedKey, ...availableKeys] : availableKeys;
   const u = preview ? previewState.user : profile.error ? undefined : profile.data;
@@ -120,6 +122,7 @@ function DashboardContent({ preview = false }: { preview?: boolean }) {
           <StatMini label={t('API requests')} value={activeStats ? renderNumber(activeStats.requests) : '—'} />
           <StatMini label='Tokens' value={fmtTokens(activeStats?.tokens)} />
         </div>}
+        <SpendingTrendChart usage={activeStats} loading={!preview && usage.isPending} />
       </section>
 
       {!preview && <ConsoleContent />}

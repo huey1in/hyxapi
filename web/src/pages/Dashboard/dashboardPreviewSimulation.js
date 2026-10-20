@@ -46,3 +46,35 @@ export const getPreviewStats = (state, range, tokenID = 0) => state.logs.reduce(
   if (log.created_at < range.start_timestamp || log.created_at > range.end_timestamp || (tokenID && log.token_id !== tokenID)) return totals;
   return { quota: totals.quota + log.quota, tokens: totals.tokens + log.prompt_tokens + log.completion_tokens, requests: totals.requests + 1 };
 }, { quota: 0, tokens: 0, requests: 0 });
+
+export const getPreviewUsage = (state, range, tokenID = 0) => {
+  const first = new Date(range.start_timestamp * 1000);
+  const last = new Date(range.end_timestamp * 1000);
+  const cursor = new Date(first);
+  const duration = range.end_timestamp - range.start_timestamp;
+  /** @type {'hour' | 'day' | 'month' | 'year'} */
+  let interval = 'day';
+  cursor.setHours(0, 0, 0, 0);
+  if (duration < 2 * 86400) {
+    interval = 'hour';
+    cursor.setTime(first.getTime() - first.getMinutes() * 60000 - first.getSeconds() * 1000);
+  } else if (duration > 120 * 86400) {
+    interval = last.getFullYear() * 12 + last.getMonth() - (first.getFullYear() * 12 + first.getMonth()) >= 120 ? 'year' : 'month';
+    cursor.setDate(1);
+    if (interval === 'year') cursor.setMonth(0);
+  }
+  const points = [];
+  while (cursor <= last && points.length < 128) {
+    points.push({ timestamp: cursor.getTime() / 1000, quota: 0 });
+    if (interval === 'hour') cursor.setTime(cursor.getTime() + 3600000);
+    else if (interval === 'day') cursor.setDate(cursor.getDate() + 1);
+    else if (interval === 'month') cursor.setMonth(cursor.getMonth() + 1);
+    else cursor.setFullYear(cursor.getFullYear() + 1);
+  }
+  for (const log of state.logs) {
+    if (log.created_at < range.start_timestamp || log.created_at > range.end_timestamp || (tokenID && log.token_id !== tokenID)) continue;
+    const index = points.findLastIndex((point) => point.timestamp <= log.created_at);
+    if (index >= 0) points[index].quota += log.quota;
+  }
+  return { ...getPreviewStats(state, range, tokenID), trend: { interval, points } };
+};
