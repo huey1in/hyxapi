@@ -8,7 +8,7 @@ export default function RouteSkeleton() {
   const { pathname } = useLocation();
   const { t } = useTranslation();
   if (pathname === '/console/personal') return <PersonalSkeleton />;
-  if (pathname === '/console') return <div className='dashboard-overview'><h1 className='pb-2 text-lg font-semibold text-ui-text'>{t('Usage overview')}</h1><DashboardStatsSkeleton /></div>;
+  if (pathname === '/console') return <div className='dashboard-overview'><h1 className='pb-2 text-2xl font-semibold text-ui-text'>{t('Usage overview')}</h1><DashboardStatsSkeleton /></div>;
   if (pathname === '/console/token') return <ConsolePage><div className='flex flex-col gap-3'>
     <div className='flex h-8 items-center justify-between gap-3'><span className='text-lg font-semibold text-ui-text'>API keys</span><Skeleton width={140} height={32} rounded='rounded-full' /></div>
     <ContentSkeleton variant='tokens'><div className='space-y-3'>

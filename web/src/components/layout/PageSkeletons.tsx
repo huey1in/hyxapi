@@ -108,6 +108,7 @@ export function DashboardStatsSkeleton() {
   const { t } = useTranslation();
   return <div className='flex flex-col gap-4 min-[769px]:gap-7'>
     <DashboardPrimaryStatsSkeleton />
+    <div aria-hidden='true' className='mx-6 my-3 h-px shrink-0 bg-ui-divider max-[768px]:mx-3' />
     <div className='space-y-3'><ContentSkeleton variant='dashboard'><div className='dashboard-usage-filters'>{['Time', 'API Key'].map((label, index) => <div key={label} className={`dashboard-filter-field${index ? ' dashboard-key-filter' : ''}`}>
       <div className='flex h-8 w-full items-center gap-1.5 rounded-xl border border-ui-border px-[11px] text-sm'><span className='shrink-0 text-xs text-ui-text-3'>{index ? label : t(label)}</span><div className='relative min-w-0 flex-1 whitespace-nowrap'><span className='invisible'>{t(index ? 'All' : 'Last 30 days')}</span><div className='absolute inset-x-0 top-1/2 -translate-y-1/2'><Skeleton height={14} /></div></div><ChevronDown size={14} className='shrink-0 text-ui-text-3' /></div>
     </div>)}</div></ContentSkeleton><DashboardUsageStatsSkeleton /><SpendingTrendChart loading /></div>

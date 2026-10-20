@@ -4,7 +4,6 @@ import type { ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
-import { RefreshCw } from 'lucide-react';
 import { z } from 'zod';
 import { API, renderNumber, renderQuota } from '../../helpers';
 import type { ApiEnvelope } from '../../types/api';
@@ -60,14 +59,13 @@ function DashboardContent({ preview = false }: { preview?: boolean }) {
   const u = preview ? previewState.user : profile.error ? undefined : profile.data;
   const overviewError = !preview && (profile.error || usage.error || keys.error);
   const refresh = () => void Promise.allSettled([profile.refetch(), usage.refetch(), keys.refetch()]);
-  const refreshing = profile.isFetching || usage.isFetching || keys.isFetching;
   const closeRangeDialog = () => { setRangeDialogOpen(false); document.getElementById('dashboard-period')?.focus(); };
   const customRangeTitle = typeof range === 'string' ? undefined : `${dashboardLocalTime(range.start_timestamp).replace('T', ' ')} – ${dashboardLocalTime(range.end_timestamp).replace('T', ' ')}`;
 
   return (
     <div className='dashboard-overview'>
       {/* 页面标题 */}
-      <div className='flex flex-wrap items-center justify-between gap-3'><h1 style={{ fontSize: 18, fontWeight: 600, color: 'var(--ui-text)', paddingBlockEnd: 8 }}>{admin ? t('Global usage') : t('Usage overview')}</h1>{!preview && <Button size='sm' variant='toggle' icon={RefreshCw} loading={refreshing} onClick={refresh}>{t('Refresh')}</Button>}</div>
+      <h1 className='pb-2 text-2xl font-semibold text-ui-text'>{admin ? t('Global usage') : t('Usage overview')}</h1>
       {overviewError && <div role='alert' className='flex flex-wrap items-center justify-between gap-3 rounded-xl border border-ui-border p-4 text-sm text-ui-text-2'><span>{t('Unable to load overview')}</span><Button variant='toggle' onClick={refresh}>{t('Retry')}</Button></div>}
 
       {/* 统计卡片 */}
@@ -103,6 +101,8 @@ function DashboardContent({ preview = false }: { preview?: boolean }) {
         </div>
       </div>
       }
+
+      <div aria-hidden='true' className='mx-6 my-3 h-px shrink-0 bg-ui-divider max-[768px]:mx-3' />
 
       <section className='space-y-3' aria-label={t('Usage statistics')} data-dashboard-usage>
         <div className='dashboard-usage-filters'>
