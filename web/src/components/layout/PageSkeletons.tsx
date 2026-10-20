@@ -1,4 +1,5 @@
 import type { PropsWithChildren, ReactNode } from 'react';
+import { Fragment } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ChevronDown } from 'lucide-react';
 import useIsMobile from '../../hooks/useIsMobile';
@@ -8,6 +9,7 @@ import Card from '../ui/card/Card';
 import Divider from '../ui/display/Divider';
 import Table from '../ui/layout/Table';
 import { SettingGroup, SettingRow } from '../../pages/Personal/ProfileSettingsLayout';
+import { BillingSettingsSkeleton } from '../../pages/Personal/BillingSettings';
 import SpendingTrendChart from '../../pages/Dashboard/SpendingTrendChart';
 
 // These frames are shared with the corresponding pages so loading uses the same
@@ -25,7 +27,10 @@ export function PersonalSkeleton() {
       { title: 'Security', rows: ['Passkey', 'Two-factor authentication'] },
       { title: 'Login devices', rows: ['Manage login sessions'] },
       { title: 'System access tokens', rows: ['Personal tokens for the management API'] },
-    ].map((group) => <SettingGroup key={group.title} title={t(group.title)}>{group.rows.map((label, index) => <SettingRow key={label} title={t(label)} description={<Skeleton width={220} height={18} />} last={index === group.rows.length - 1}><Skeleton width={70} height={32} rounded='rounded-full' /></SettingRow>)}</SettingGroup>)}
+    ].map((group, index) => <Fragment key={group.title}>
+      <SettingGroup title={t(group.title)}>{group.rows.map((label, row) => <SettingRow key={label} title={t(label)} description={<Skeleton width={220} height={18} />} last={row === group.rows.length - 1}><Skeleton width={70} height={32} rounded='rounded-full' /></SettingRow>)}</SettingGroup>
+      {index === 0 && <BillingSettingsSkeleton />}
+    </Fragment>)}
   </div></ContentSkeleton></ConsolePage>;
 }
 
@@ -120,7 +125,6 @@ export function MySubscriptionSkeleton() {
   const { t } = useTranslation();
   const mobile = useIsMobile();
   return <ContentSkeleton variant='cards'><div className={`flex flex-col ${mobile ? 'gap-5' : 'gap-7'}`}>
-    <div className='space-y-2 rounded-[26px] border border-ui-border p-5'><div className='text-sm text-ui-text-2'>{t('Billing priority')}</div><Skeleton height={36} rounded='rounded-full' /></div>
     <div className={mobile ? 'space-y-4' : 'rounded-[26px] border border-ui-border px-6 py-5'}>
       <div className='mb-3.5 flex justify-between gap-2'><Skeleton width={170} height={28} /><Skeleton width={55} height={20} /></div>
       <div className={`grid min-w-0 gap-4 ${mobile ? 'grid-cols-1' : 'grid-cols-2'}`}>{['Validity', 'Source', 'Credit usage', 'Concurrency / RPM limits', 'Next credit reset', 'Wallet fallback after credit is exhausted'].map((label) => <div key={label} className='min-w-0'><div className='mb-1 text-[13px] text-ui-text-3'>{t(label)}</div><Skeleton width='75%' height={23} />{label === 'Credit usage' && <Skeleton height={6} className='mt-1' />}</div>)}</div>

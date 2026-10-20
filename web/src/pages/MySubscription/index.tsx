@@ -1,22 +1,18 @@
 import { MySubscriptionSkeleton } from '../../components/layout/PageSkeletons';
 import { useEffect, useState } from 'react';
 import type { ReactNode } from 'react';
-import { useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { RefreshCw } from 'lucide-react';
-import { z } from 'zod';
-import { API, renderQuota } from '../../helpers';
-import { Button, Tag, IconButton, Select } from '../../components/ui';
-import type { ApiEnvelope } from '../../types/api';
+import { renderQuota } from '../../helpers';
+import { Button, Tag, IconButton } from '../../components/ui';
 import { useAuthStore } from '../../stores/auth-store';
-import { useOwnedOperation } from '../../hooks/useOwnedOperation';
 import { apiErrorMessage } from '../../lib/api-error';
 import useIsMobile from '../../hooks/useIsMobile';
 import SubscriptionOffers from '../../features/payments/SubscriptionOffers';
-import { useWalletSubscriptions, useWalletOffers, walletRequestConfig } from '../../features/payments/wallet-query';
-import { billingPreferenceSchema, isActiveSubscription, subscriptionState, subscriptionUsage } from '../../features/payments/subscription-data';
-import type { SubscriptionSelf, UserSubscription } from '../../features/payments/subscription-data';
+import { useWalletSubscriptions, useWalletOffers } from '../../features/payments/wallet-query';
+import { isActiveSubscription, subscriptionState, subscriptionUsage } from '../../features/payments/subscription-data';
+import type { UserSubscription } from '../../features/payments/subscription-data';
 
 function InfoItem({ label, children }: { label: string; children: ReactNode }) {
   return <div className='min-w-0'><div className='mb-1 text-[13px] text-ui-text-3'>{label}</div><div className='break-words text-[15px] text-ui-text'>{children}</div></div>;
@@ -51,9 +47,9 @@ function SubscriptionCard({ subscription: sub, title, mobile, now }: { subscript
 }
 
 function MySubscription({ identity }: { identity: string }) {
-  const { t } = useTranslation(); const mobile = useIsMobile(); const navigate = useNavigate(); const client = useQueryClient(); const { busy, run } = useOwnedOperation();
-  const [clock, setClock] = useState(() => Date.now() / 1000); const now = Math.max(clock, Date.now() / 1000); const queryKey = ['wallet-subscriptions', identity];
-  const query = useWalletSubscriptions(identity, !busy); const offers = useWalletOffers(identity);
+  const { t } = useTranslation(); const mobile = useIsMobile(); const navigate = useNavigate();
+  const [clock, setClock] = useState(() => Date.now() / 1000); const now = Math.max(clock, Date.now() / 1000);
+  const query = useWalletSubscriptions(identity); const offers = useWalletOffers(identity);
   const planTitles = new Map(offers.isError ? [] : offers.data?.map(({ plan }) => [plan.id, plan.title]));
   const data = query.isError ? undefined : query.data;
   useEffect(() => {
@@ -65,25 +61,9 @@ function MySubscription({ identity }: { identity: string }) {
   }, [data, clock]);
   const active = data?.all_subscriptions.filter(({ subscription }) => isActiveSubscription(subscription, now)) ?? [];
   const inactive = data?.all_subscriptions.filter(({ subscription }) => !isActiveSubscription(subscription, now)) ?? [];
-  const setPreference = (preference: string) => {
-    if (!data || !billingPreferenceSchema.safeParse(preference).success) return;
-    void run(async (signal) => {
-      await client.cancelQueries({ queryKey }); signal.throwIfAborted();
-      const { data: response } = await API.put<ApiEnvelope<unknown>>('/api/subscription/self/preference', { billing_preference: preference }, { ...walletRequestConfig, signal, timeout: 30000 });
-      signal.throwIfAborted(); if (!response.success) throw new Error(response.message || 'Unable to save billing preference');
-      const saved = z.object({ billing_preference: billingPreferenceSchema }).safeParse(response.data);
-      if (!saved.success) { void query.refetch(); throw new Error('Invalid subscription data; reload and try again.'); }
-      await client.cancelQueries({ queryKey }); signal.throwIfAborted();
-      client.setQueryData<SubscriptionSelf>(queryKey, (previous) => previous ? { ...previous, billing_preference: saved.data.billing_preference } : previous);
-    });
-  };
   return <div style={{ display: 'flex', flexDirection: 'column', gap: mobile ? 20 : 28, width: '100%', maxWidth: 960, marginInline: 'auto', padding: mobile ? '16px' : '24px 16px' }}>
-    <div className='flex items-center justify-between gap-2'><h1 className='text-lg font-semibold text-ui-text'>{t('My subscriptions')}</h1><IconButton icon={RefreshCw} title={t('Refresh')} aria-label={t('Refresh subscriptions')} disabled={busy || query.isFetching} onClick={() => void query.refetch()} /></div>
+    <div className='flex items-center justify-between gap-2'><h1 className='text-lg font-semibold text-ui-text'>{t('My subscriptions')}</h1><IconButton icon={RefreshCw} title={t('Refresh')} aria-label={t('Refresh subscriptions')} disabled={query.isFetching} onClick={() => void query.refetch()} /></div>
     {query.isPending ? <MySubscriptionSkeleton /> : query.isError ? <div role='alert' className='space-y-2 text-sm text-ui-danger'><p>{t(apiErrorMessage(query.error, 'Unable to load subscriptions'))}</p><Button onClick={() => void query.refetch()}>{t('Retry')}</Button></div> : data && <>
-      <div className='space-y-2 rounded-[26px] border border-ui-border p-5'><label className='text-sm text-ui-text-2'>{t('Billing priority')}</label><Select width='full' aria-label={t('Billing priority')} value={data.billing_preference} disabled={busy} options={[
-        { value: 'subscription_first', label: t('Subscription first, then balance') }, { value: 'wallet_first', label: t('Balance first, then subscription') }, { value: 'subscription_only', label: t('Subscription only') }, { value: 'wallet_only', label: t('Balance only') },
-      ]} onChange={setPreference} /></div>
-      {!active.length && (data.billing_preference === 'subscription_only' || data.billing_preference === 'subscription_first') && <p className='text-xs text-ui-text-3'>{t(data.billing_preference === 'subscription_only' ? 'No active subscription: requests will be rejected with the current billing priority.' : 'No active subscription: requests will use your balance.')}</p>}
       {!data.all_subscriptions.length ? <div className='py-8 text-center sm:py-12'><p className='mb-4 text-sm text-ui-text-3'>{t('No subscriptions yet. Activate one with a code or buy a plan.')}</p><Button onClick={() => navigate('/console/topup')}>{t('Open top-up page')}</Button></div> : <>
         {active.map(({ subscription }) => <SubscriptionCard key={subscription.id} subscription={subscription} title={planTitles.get(subscription.plan_id)} mobile={mobile} now={now} />)}
         {!active.length && <p className='py-6 text-center text-sm text-ui-text-3'>{t('No active subscriptions')}</p>}

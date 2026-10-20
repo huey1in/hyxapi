@@ -9,6 +9,7 @@ import { authResult } from '../../lib/secure-verification';
 import { apiErrorMessage } from '../../lib/api-error';
 import { ConsolePage, PersonalSkeleton } from '../../components/layout/PageSkeletons';
 import AccountSettings from './AccountSettings';
+import BillingSettings from './BillingSettings';
 import SecuritySettings from './SecuritySettings';
 import NotificationSettings, { PersonalPreferences } from './NotificationSettings';
 import { parsePersonalSettings } from './personal-settings';
@@ -41,6 +42,7 @@ function PersonalProfile({ identity }: { identity: string }) {
   if (!user || !profile.data) return null;
   return <ConsolePage width={720} gap={24} mobileGap={24}>
     <AccountSettings user={user} refresh={refresh} />
+    <BillingSettings />
     <SecuritySettings identity={identity} refresh={refresh} />
     <LoginSessions />
     <AccessTokens />

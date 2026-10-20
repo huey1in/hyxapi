@@ -92,12 +92,17 @@ const SiderBar = ({ preview = false, previewActive = '/console', loading = false
   const adminModules = parseSidebarModules(statusState?.status?.SidebarModulesAdmin);
   const userModules = currentUser?.permissions?.sidebar_settings === false ? {} : parseSidebarModules(currentUser?.sidebar_modules);
   const items = filterSidebarItems(NAV_ITEMS, { preview, admin, root, isVisible: (route) => preview || (canOpenConsolePage(route, currentUser) && isSidebarModuleVisible(route, adminModules, userModules)) });
+  const compact = collapsed && !isMobile;
+  const itemClass = cn(
+    'flex min-w-0 items-center rounded-lg text-base leading-6 whitespace-nowrap',
+    compact ? 'min-h-11 justify-center px-0 py-2.5' : isMobile ? 'min-h-12 gap-3 px-3.5 py-3' : 'min-h-11 gap-3 px-3 py-2.5',
+  );
 
   const navContent = (
-    <nav aria-label={t('Console navigation')} aria-busy={loading} className='console-sidebar-nav flex-1 flex flex-col gap-1 py-2 px-[10px] overflow-y-auto overflow-x-hidden'>
-      {loading ? Array.from({ length: 9 }, (_, index) => <div key={index} className={cn('flex items-center gap-2 px-[10px]', isMobile ? 'h-12' : 'h-9')}>
+    <nav aria-label={t('Console navigation')} aria-busy={loading} className={cn('console-sidebar-nav flex-1 flex flex-col gap-1 py-2 overflow-y-auto overflow-x-hidden', compact ? 'px-1.5' : 'px-[10px]')}>
+      {loading ? Array.from({ length: 9 }, (_, index) => <div key={index} className={itemClass}>
         <Skeleton width={isMobile ? 20 : 22} height={isMobile ? 20 : 22} className='shrink-0' />
-        {(!collapsed || isMobile) && <Skeleton width={index % 3 === 0 ? 90 : 65} height={14} />}
+        {!compact && <Skeleton width={index % 3 === 0 ? 90 : 65} height={16} />}
       </div>) : items.map((item, idx) => {
         if (item.divider) {
           return <div key={`div-${idx}`} className='my-1.5 mx-1 h-px bg-ui-divider' />;
@@ -108,12 +113,12 @@ const SiderBar = ({ preview = false, previewActive = '/console', loading = false
             <div
               key={item.to}
               className={cn(
-                'flex items-center gap-2 h-9 px-[10px] rounded-lg text-sm whitespace-nowrap',
+                itemClass,
                 item.to === previewActive ? 'bg-ui-bg-subtle font-medium text-ui-text' : 'text-ui-text',
               )}
             >
               <span className='relative shrink-0'><Icon size={22} /></span>
-              {(!collapsed || isMobile) && <span>{t(item.label)}</span>}
+              {!compact && <span className='min-w-0 truncate'>{t(item.label)}</span>}
             </div>
           );
         }
@@ -123,12 +128,12 @@ const SiderBar = ({ preview = false, previewActive = '/console', loading = false
             to={item.to}
             end={item.end}
             aria-label={t(item.label)}
-            title={collapsed ? t(item.label) : undefined}
+            title={t(item.label)}
             onClick={() => isMobile && setMobileOpen(false)}
             className={({ isActive }) =>
               cn(
-                'flex items-center rounded-lg transition-all duration-100 whitespace-nowrap',
-                isMobile ? 'gap-2.5 px-[12px] h-12 text-[15px]' : 'gap-2 px-[10px] h-9 text-sm',
+                itemClass,
+                'transition-all duration-100',
                 isActive
                   ? 'bg-ui-bg-subtle font-medium text-ui-text'
                   : 'text-ui-text hover:bg-ui-bg-subtle',
@@ -141,7 +146,7 @@ const SiderBar = ({ preview = false, previewActive = '/console', loading = false
                 <span className='absolute -top-1 -right-1 w-2 h-2 rounded-full bg-red-500' />
               )}
             </span>
-            {(!collapsed || isMobile) && <span>{t(item.label)}</span>}
+            {!compact && <span className='min-w-0 truncate'>{t(item.label)}</span>}
           </NavLink>
         );
       })}
