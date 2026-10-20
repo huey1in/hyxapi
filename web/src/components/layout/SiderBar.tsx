@@ -17,7 +17,7 @@ import { useAuthStore } from '../../stores/auth-store';
 import { isSidebarModuleVisible, parseSidebarModules } from '../../lib/sidebar-modules';
 import { useNotifications } from '../../features/notifications/use-notifications';
 import Skeleton from '../ui/feedback/Skeleton';
-import SidebarUserCard from './SidebarUserCard';
+import SidebarLogoutButton from './SidebarLogoutButton';
 import { getSystemName } from '../../helpers';
 
 const LS_KEY = 'sidebar-collapsed';
@@ -174,7 +174,7 @@ const SiderBar = ({ preview = false, previewActive = '/console', loading = false
             </button>
           </div>
           {navContent}
-          <SidebarUserCard loading={loading} preview={preview} />
+          <SidebarLogoutButton loading={loading} preview={preview} className={itemClass} iconSize={20} />
         </aside>
       </div>}
     </>;
@@ -194,7 +194,7 @@ const SiderBar = ({ preview = false, previewActive = '/console', loading = false
       </div>
 
       {navContent}
-      <SidebarUserCard compact={collapsed} loading={loading} preview={preview} />
+      <SidebarLogoutButton compact={collapsed} loading={loading} preview={preview} className={itemClass} />
 
       {preview && (
         <div
