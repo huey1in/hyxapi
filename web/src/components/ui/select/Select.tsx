@@ -8,15 +8,17 @@
  * prefix:     触发器内部左侧提示
  * size:       sm | md (默认) | lg
  * placement:  bottom-start | bottom-end | top-start | top-end
+ * popover:    使用顶层浮层，避免被弹窗或滚动容器裁剪
  * disabled
  * emptyText:  options 为空时显示
  */
 
-import { useEffect, useRef, useState } from 'react';
+import { useId, useLayoutEffect, useRef } from 'react';
 import type { CSSProperties, ReactNode } from 'react';
 import { ChevronDown, Check } from 'lucide-react';
 import { cn, FOCUS_RING } from '../tokens';
 import { inputStyle, resolveWidth } from '../input/Input';
+import useDropdownState from './useDropdownState';
 
 type SelectValue = string | number;
 export interface SelectOption<V extends SelectValue> { value: V; label: ReactNode; disabled?: boolean }
@@ -28,6 +30,7 @@ export interface SelectProps<V extends SelectValue> {
   prefix?: ReactNode;
   emptyText?: ReactNode;
   placement?: 'bottom-start' | 'bottom-end' | 'top-start' | 'top-end';
+  popover?: boolean;
   disabled?: boolean;
   size?: number;
   width?: CSSProperties['width'] | 'full';
@@ -43,25 +46,61 @@ function Select<V extends SelectValue>({
   prefix,
   emptyText = '无可用选项',
   placement = 'bottom-start',
+  popover = false,
   disabled = false,
   size = 36,
   width,
   id,
   'aria-label': ariaLabel,
 }: SelectProps<V>) {
-  const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
+  const [open, setOpen] = useDropdownState(ref);
   const trigger = useRef<HTMLButtonElement>(null);
+  const menu = useRef<HTMLDivElement>(null);
+  const content = useRef<HTMLDivElement>(null);
+  const menuId = useId();
 
-  useEffect(() => {
-    const onDocClick = (e: MouseEvent) => {
-      if (ref.current && e.target instanceof Node && !ref.current.contains(e.target)) setOpen(false);
+  useLayoutEffect(() => {
+    const panel = menu.current, items = content.current, button = trigger.current;
+    if (!open || !popover || !panel || !items || !button) return;
+    panel.showPopover();
+    const position = () => {
+      const bounds = button.getBoundingClientRect();
+      const viewport = window.visualViewport;
+      const left = (viewport?.offsetLeft ?? 0) + 8;
+      const top = (viewport?.offsetTop ?? 0) + 8;
+      const right = left + (viewport?.width ?? window.innerWidth) - 16;
+      const bottom = top + (viewport?.height ?? window.innerHeight) - 16;
+      const width = Math.min(bounds.width, right - left);
+      panel.style.width = `${width}px`;
+      const height = Math.min(items.scrollHeight, 288) + 2;
+      const above = Math.max(0, bounds.top - top - 6);
+      const below = Math.max(0, bottom - bounds.bottom - 6);
+      const upwards = placement.startsWith('top') ? above >= height || above > below : below < height && above > below;
+      const maxHeight = Math.max(0, Math.min(288, (upwards ? above : below) - 2));
+      items.style.maxHeight = `${maxHeight}px`;
+      panel.style.left = `${Math.max(left, Math.min(placement.endsWith('end') ? bounds.right - width : bounds.left, right - width))}px`;
+      panel.style.top = `${upwards ? bounds.top - 6 - Math.min(items.scrollHeight, maxHeight) - 2 : bounds.bottom + 6}px`;
     };
-    document.addEventListener('mousedown', onDocClick);
+    position();
+    const observer = new ResizeObserver(position);
+    observer.observe(button);
+    observer.observe(items);
+    window.addEventListener('resize', position);
+    window.addEventListener('scroll', position, true);
+    document.addEventListener('animationend', position, true);
+    window.visualViewport?.addEventListener('resize', position);
+    window.visualViewport?.addEventListener('scroll', position);
     return () => {
-      document.removeEventListener('mousedown', onDocClick);
+      observer.disconnect();
+      window.removeEventListener('resize', position);
+      window.removeEventListener('scroll', position, true);
+      document.removeEventListener('animationend', position, true);
+      window.visualViewport?.removeEventListener('resize', position);
+      window.visualViewport?.removeEventListener('scroll', position);
+      if (panel.matches(':popover-open')) panel.hidePopover();
     };
-  }, []);
+  }, [open, popover, placement]);
 
   const list = options.map((o) => (typeof o === 'object' ? o : { value: o, label: o }));
   const current = list.find((o) => o.value === value);
@@ -80,6 +119,8 @@ function Select<V extends SelectValue>({
         id={id}
         aria-label={ariaLabel}
         aria-expanded={open}
+        aria-controls={open ? menuId : undefined}
+        aria-haspopup='true'
         disabled={disabled}
         onClick={() => !disabled && setOpen((o) => !o)}
         style={s.style}
@@ -101,14 +142,16 @@ function Select<V extends SelectValue>({
 
       {open && (
         <div
+          ref={menu}
+          id={menuId}
+          popover={popover ? 'manual' : undefined}
           className={cn(
-            'absolute z-30 min-w-full border border-ui-border rounded-xl shadow-lg overflow-hidden animate-dropdown',
-            isEnd ? 'right-0' : 'left-0',
-            isTop ? 'bottom-full mb-1.5' : 'top-full mt-1.5',
+            'border border-ui-border rounded-xl shadow-lg overflow-hidden animate-dropdown',
+            !popover && ['absolute z-30 min-w-full', isEnd ? 'right-0' : 'left-0', isTop ? 'bottom-full mb-1.5' : 'top-full mt-1.5'],
           )}
-          style={{ backgroundColor: 'var(--page-bg)' }}
+          style={{ backgroundColor: 'var(--page-bg)', ...(popover ? { position: 'fixed', inset: 'auto', margin: 0, padding: 0 } : {}) }}
         >
-          <div className='p-1 flex flex-col gap-0.5 max-h-72 overflow-y-auto ui-scrollbar'>
+          <div ref={content} className='p-1 flex flex-col gap-0.5 max-h-72 overflow-y-auto ui-scrollbar'>
             {list.length === 0 ? (
               <div className='px-3 py-3 text-center text-xs text-ui-text-3'>{emptyText}</div>
             ) : (
@@ -119,7 +162,7 @@ function Select<V extends SelectValue>({
                     key={String(o.value)}
                     type='button'
                     disabled={o.disabled}
-                    onClick={() => { onChange?.(o.value); setOpen(false); }}
+                    onClick={() => { onChange?.(o.value); setOpen(false); trigger.current?.focus({ preventScroll: true }); }}
                     className={cn(
                       'flex items-center justify-between w-full px-2.5 py-1.5 rounded-lg text-sm transition-colors',
                       sel

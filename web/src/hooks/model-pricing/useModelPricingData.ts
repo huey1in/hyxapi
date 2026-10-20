@@ -29,7 +29,7 @@ import type { PricingModel, TokenUnit } from '../../features/pricing/types';
 import { usePricingClock } from '../../features/pricing/DynamicPricingDetails';
 import { applyRechargePrice } from '../../features/pricing/lib/pricing-display';
 
-export type PricingCurrency = 'USD' | 'CNY' | 'CUSTOM';
+type PricingCurrency = 'USD' | 'CNY' | 'CUSTOM';
 export const useModelPricingData = (previewModels: PricingModel[] | null = null) => {
   const { t, i18n } = useTranslation();
   const user = useAuthStore((state) => state.auth.user);
@@ -42,8 +42,6 @@ export const useModelPricingData = (previewModels: PricingModel[] | null = null)
   const [filterGroup, setFilterGroup] = useState('all');
   const [filterQuotaType, setFilterQuotaType] = useState('all');
   const [filterVendor, setFilterVendor] = useState('all');
-  const [filterEndpoint, setFilterEndpoint] = useState('all');
-  const [filterTag, setFilterTag] = useState('all');
   const [sortBy, setSortBy] = useState<PricingSort>('name');
   const [currentPage, setCurrentPage] = useState(1);
   const [currency, setCurrency] = useState<PricingCurrency>('USD');
@@ -65,8 +63,8 @@ export const useModelPricingData = (previewModels: PricingModel[] | null = null)
   const models: PricingModel[] = preview ?? (query.isError ? [] : query.data?.models ?? []);
   const groupRatio: Record<string, number> = preview ? { default: 1, production: 1 } : query.isError ? {} : query.data?.groupRatio ?? {};
   const usableGroup: Record<string, string> = preview ? { default: t('Default group'), production: t('Production group') } : query.isError ? {} : query.data?.usableGroup ?? {};
-  const filteredModels = useMemo(() => sortPricingModels(filterPricingModels(models, { search: searchValue, group: filterGroup, billing: filterQuotaType, vendor: filterVendor, endpoint: filterEndpoint, tag: filterTag }), sortBy, pricingNow), [models, searchValue, filterGroup, filterQuotaType, filterVendor, filterEndpoint, filterTag, sortBy, pricingNow]);
-  useEffect(() => { setCurrentPage(1); }, [filterGroup, filterQuotaType, filterVendor, filterEndpoint, filterTag, searchValue, sortBy]);
+  const filteredModels = useMemo(() => sortPricingModels(filterPricingModels(models, { search: searchValue, group: filterGroup, billing: filterQuotaType, vendor: filterVendor }), sortBy, pricingNow), [models, searchValue, filterGroup, filterQuotaType, filterVendor, sortBy, pricingNow]);
+  useEffect(() => { setCurrentPage(1); }, [filterGroup, filterQuotaType, filterVendor, searchValue, sortBy]);
   useEffect(() => { setCurrentPage((page) => Math.max(1, Math.min(page, Math.ceil(filteredModels.length / 20) || 1))); }, [filteredModels.length]);
   const displayPrice = useCallback((usdPrice: number): string => {
     const rawRate = currency === 'CNY' ? status?.usd_exchange_rate : currency === 'CUSTOM' ? status?.custom_currency_exchange_rate : 1;
@@ -85,7 +83,7 @@ export const useModelPricingData = (previewModels: PricingModel[] | null = null)
   };
   return {
     searchValue, handleChange: setSearchValue, selectedGroup, setSelectedGroup, setFilterGroup, filterQuotaType, setFilterQuotaType, filterVendor, setFilterVendor,
-    filterEndpoint, setFilterEndpoint, filterTag, setFilterTag, sortBy, setSortBy, pageSize: 20, currentPage, setCurrentPage,
+    sortBy, setSortBy, pageSize: 20, currentPage, setCurrentPage,
     currency, setCurrency, siteDisplayType, tokenUnit, setTokenUnit, models, loading: previewModels === null && (query.isPending || query.isFetching),
     error: previewModels === null && query.isError, groupRatio, usableGroup, filteredModels, displayPrice, refresh: () => query.refetch(), copyText,
     showRechargePrice, setShowRechargePrice, supportedEndpoints: query.data?.supportedEndpoints ?? {},

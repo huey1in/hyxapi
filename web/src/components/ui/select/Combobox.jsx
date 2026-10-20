@@ -8,6 +8,7 @@ import { useEffect, useRef, useState } from 'react';
 import { ChevronDown, Check, Search } from 'lucide-react';
 import { cn, FOCUS_RING } from '../tokens';
 import { inputStyle, resolveWidth } from '../input/Input';
+import useDropdownState from './useDropdownState';
 
 const Combobox = ({
   options = [],
@@ -20,20 +21,17 @@ const Combobox = ({
   size = 36,
   width,
 }) => {
-  const [open, setOpen] = useState(false);
   const [keyword, setKeyword] = useState('');
   const ref = useRef(null);
+  const [open, setOpen] = useDropdownState(ref);
 
   useEffect(() => {
-    const onDoc = (e) => { if (ref.current && !ref.current.contains(e.target)) setOpen(false); };
     const onKey = (e) => e.key === 'Escape' && setOpen(false);
-    document.addEventListener('mousedown', onDoc);
     document.addEventListener('keydown', onKey);
     return () => {
-      document.removeEventListener('mousedown', onDoc);
       document.removeEventListener('keydown', onKey);
     };
-  }, []);
+  }, [setOpen]);
 
   const list = options.map((o) => (typeof o === 'string' ? { value: o, label: o } : o));
   const current = list.find((o) => o.value === value);

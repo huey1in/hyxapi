@@ -1,9 +1,9 @@
 import { PricingCardsSkeleton } from '../../components/layout/PageSkeletons';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useLocation, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { Search, RefreshCw, LayoutGrid, List } from 'lucide-react';
-import { PageShell, Card, Input, Select, Table, Pagination, Tag, EmptyState, IconButton, Divider, Button } from '../../components/ui';
+import { Search, LayoutGrid, List, SlidersHorizontal } from 'lucide-react';
+import { PageShell, Card, Input, Table, Pagination, Tag, EmptyState, IconButton, Divider, Button } from '../../components/ui';
 import { useModelPricingData } from '../../hooks/model-pricing/useModelPricingData';
 import { usePageTitle } from '../../hooks/common/usePageTitle';
 import { calculateModelPrice, getModelPriceItems, getLobeHubIcon, getModelIcon } from '../../helpers';
@@ -11,11 +11,12 @@ import { QuotaTag, VendorTag } from './tags';
 import { usePerformanceSummary } from '../../features/performance-metrics/api';
 import { PerformanceBadge } from '../../features/performance-metrics/PerformancePanel';
 import { DynamicPricingSummary } from '../../features/pricing/DynamicPricingDetails';
+import PricingFiltersDialog from './PricingFiltersDialog';
+import type { PricingFilterValues } from './PricingFiltersDialog';
 
 import type { PricingModel } from '../../features/pricing/types';
-import type { PricingCurrency } from '../../hooks/model-pricing/useModelPricingData';
 import type { TableColumn } from '../../components/ui/layout/Table';
-import { parsePricingSort, pricingSorts, pricingTags } from '../../features/pricing/catalog-data';
+import { parsePricingSort } from '../../features/pricing/catalog-data';
 
 const PREVIEW_MODELS: PricingModel[] = [
   { quota_type: 0, model_name: 'gpt-4.1', vendor_name: 'OpenAI', vendor_icon: 'OpenAI', description: "A general model for complex reasoning, coding and long-context tasks.", billing_type: 'tokens', input_price: 2, output_price: 8, cache_read_price: 0.5, enable_groups: ['default', 'production'] },
@@ -43,9 +44,9 @@ const Pricing = ({ preview = false }: { preview?: boolean }) => {
     filterQuotaType, setFilterQuotaType,
     filterVendor, setFilterVendor,
     groupRatio, usableGroup,
-    currency, setCurrency, tokenUnit, displayPrice, siteDisplayType, showRechargePrice, setShowRechargePrice,
+    tokenUnit, displayPrice, showRechargePrice, setShowRechargePrice,
     currentPage, setCurrentPage, pageSize,
-    refresh, filterEndpoint, setFilterEndpoint, filterTag, setFilterTag, sortBy, setSortBy, setTokenUnit, pricingNow,
+    refresh, sortBy, setSortBy, setTokenUnit, pricingNow,
   } = useModelPricingData(preview ? PREVIEW_MODELS : null);
 
   const navigate = useNavigate();
@@ -53,6 +54,9 @@ const Pricing = ({ preview = false }: { preview?: boolean }) => {
   const [searchParams, setSearchParams] = useSearchParams();
   const basePath = location.pathname.startsWith('/console') ? '/console/pricing' : '/pricing';
   const [viewMode, setViewMode] = useState<'card' | 'table'>('card');
+  const [filtersOpen, setFiltersOpen] = useState(false);
+  const filtersButton = useRef<HTMLButtonElement>(null);
+  const activeFilters = [selectedGroup !== 'all', filterQuotaType !== 'all', filterVendor !== 'all', sortBy !== 'name', tokenUnit !== 'M', showRechargePrice].filter(Boolean).length;
   const updateQuery = (key: string, value: string) => {
     if (preview) return;
     const next = new URLSearchParams(searchParams); if (!value || value === 'all') next.delete(key); else next.set(key, value);
@@ -61,18 +65,27 @@ const Pricing = ({ preview = false }: { preview?: boolean }) => {
   useEffect(() => {
     if (preview) return;
     const query = new URLSearchParams(location.search);
+    if (query.has('endpointType') || query.has('currency') || query.has('tag')) {
+      query.delete('endpointType'); query.delete('currency'); query.delete('tag');
+      setSearchParams(query, { replace: true });
+    }
     const vendor = query.get('vendor'); setFilterVendor(vendor === 'Unknown' ? 'unknown' : vendor || 'all');
     const group = query.get('group') || 'all'; setSelectedGroup(group); setFilterGroup(group);
     const billing = query.get('quotaType'); setFilterQuotaType(billing === 'token' ? 'tokens' : ['tokens', 'request', 'task', 'expression'].includes(billing ?? '') ? billing! : 'all');
-    setFilterEndpoint(query.get('endpointType') || 'all'); setFilterTag(query.get('tag') || 'all');
     setSortBy(parsePricingSort(query.get('sort'))); setTokenUnit(query.get('tokenUnit') === 'K' ? 'K' : 'M');
     setShowRechargePrice(query.get('rechargePrice') === 'true');
     handleChange(query.get('search') || ''); setViewMode(query.get('view') === 'table' ? 'table' : 'card');
-    const nextCurrency = query.get('currency'); if (nextCurrency === 'USD' || nextCurrency === 'CNY' || nextCurrency === 'CUSTOM') setCurrency(nextCurrency);
-  }, [location.search, preview, siteDisplayType, setCurrency, setFilterVendor, setSelectedGroup, setFilterGroup, setFilterQuotaType, setFilterEndpoint, setFilterTag, setSortBy, setTokenUnit, setShowRechargePrice, handleChange]);
-  const clearFilters = () => {
-    handleChange(''); setSelectedGroup('all'); setFilterGroup('all'); setFilterQuotaType('all'); setFilterVendor('all'); setFilterEndpoint('all'); setFilterTag('all'); setSortBy('name');
-    if (!preview) { const next = new URLSearchParams(searchParams); for (const key of ['search', 'group', 'quotaType', 'vendor', 'endpointType', 'tag', 'sort']) next.delete(key); setSearchParams(next, { replace: true }); }
+  }, [location.search, preview, setSearchParams, setFilterVendor, setSelectedGroup, setFilterGroup, setFilterQuotaType, setSortBy, setTokenUnit, setShowRechargePrice, handleChange]);
+  const applyFilters = (values: PricingFilterValues) => {
+    setSelectedGroup(values.group); setFilterGroup(values.group); setFilterQuotaType(values.billing); setFilterVendor(values.vendor); setSortBy(values.sort);
+    setTokenUnit(values.tokenUnit); setShowRechargePrice(values.priceBasis === 'recharge'); setCurrentPage(1);
+    if (!preview) {
+      const next = new URLSearchParams(searchParams);
+      const parameters = { group: values.group, quotaType: values.billing, vendor: values.vendor, sort: values.sort === 'name' ? 'all' : values.sort, tokenUnit: values.tokenUnit === 'M' ? 'all' : values.tokenUnit, rechargePrice: values.priceBasis === 'recharge' ? 'true' : 'all' };
+      for (const [key, value] of Object.entries(parameters)) { if (value === 'all') next.delete(key); else next.set(key, value); }
+      setSearchParams(next, { replace: true });
+    }
+    setFiltersOpen(false);
   };
 
   const goDetail = (row: PricingModel) => {
@@ -110,22 +123,6 @@ const Pricing = ({ preview = false }: { preview?: boolean }) => {
     }
     return opts;
   }, [models, t]);
-
-  const endpointOptions = [{ value: 'all', label: t('All protocols') }, ...[...new Set(models.flatMap((model) => model.supported_endpoint_types ?? []))].sort().map((endpoint) => ({ value: endpoint, label: endpoint }))];
-  const tagOptions = [{ value: 'all', label: t('All tags') }, ...[...new Set(models.flatMap((model) => pricingTags(model.tags)))].sort().map((tag) => ({ value: tag, label: tag }))];
-  const quotaOptions = [
-    { value: 'all', label: t("All billing types") },
-    { value: 'tokens', label: t("Pay as you go") },
-    { value: 'request', label: t("Pay per request") },
-    { value: 'expression', label: t("Expression billing") },
-    { value: 'task', label: t('Task billing') },
-  ];
-
-  const currencyOptions: { value: PricingCurrency; label: string }[] = [
-    { value: 'USD', label: 'USD ($)' },
-    { value: 'CNY', label: 'CNY (¥)' },
-    { value: 'CUSTOM', label: t("Custom currency") },
-  ];
 
   const total = filteredModels.length;
   const pagedRows = useMemo(
@@ -261,83 +258,27 @@ const Pricing = ({ preview = false }: { preview?: boolean }) => {
   return (
     <PageShell
       title={<span style={{ fontSize: 18, fontWeight: 600, color: 'var(--ui-text)' }}>{t("Model Marketplace")}</span>}
-      actions={preview ? null :
-        <>
-          <div className='inline-flex items-center gap-0.5 rounded-xl border border-ui-border p-0.5'>
-            <IconButton icon={LayoutGrid} size='sm' shape='square' selected={viewMode === 'card'} title={t("Card view")} onClick={() => { setViewMode('card'); updateQuery('view', 'card'); }} />
-            <IconButton icon={List} size='sm' shape='square' selected={viewMode === 'table'} title={t("Table view")} onClick={() => { setViewMode('table'); updateQuery('view', 'table'); }} />
-          </div>
-          <IconButton icon={RefreshCw} variant='outline' shape='square' title={t("Refresh")} disabled={loading} onClick={() => void refresh()} />
-        </>
-      }
     >
-      {/* 筛选栏（用普通容器而非 Card，避免 overflow-hidden 裁剪下拉菜单） */}
-      <div className='pricing-filter-panel border border-ui-border bg-[var(--page-bg)] rounded-2xl p-4'>
-        <div className='flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:gap-2'>
-          {/* 搜索框：移动端单独占一行 */}
-          <div className='w-full sm:w-[280px]'>
-            <Input
-              value={searchValue}
-              aria-label={t('Search models, vendors or tags')}
-              onChange={(value) => { handleChange(value); updateQuery('search', value); }}
-              placeholder={t("Search models, vendors or tags")}
-              prefix={<Search size={15} />}
-              clearable
-              width='full'
-            />
-          </div>
-          {/* 下拉菜单：移动端两列，sm 及以上回到行内单行 */}
-          <div className='grid grid-cols-2 gap-2 sm:contents'>
-            <div className='sm:w-[200px]'>
-              <Select
-                aria-label={t('Group')}
-                options={groupOptions}
-                value={selectedGroup}
-                onChange={(v) => { setSelectedGroup(v); setFilterGroup(v); updateQuery('group', v); }}
-                width='full'
-              />
-            </div>
-            <div className='sm:w-[160px]'>
-              <Select
-                aria-label={t('Billing type')}
-                options={quotaOptions}
-                value={String(filterQuotaType)}
-                onChange={(v) => { setFilterQuotaType(v || 'all'); updateQuery('quotaType', v); }}
-                width='full'
-              />
-            </div>
-            <div className='sm:w-[170px]'>
-              <Select
-                aria-label={t('Vendor')}
-                options={vendorOptions}
-                value={filterVendor}
-                onChange={(value) => { setFilterVendor(value); updateQuery('vendor', value); }}
-                width='full'
-              />
-            </div>
-            <div className='sm:w-[150px]'>
-              <Select
-                aria-label={t('Currency')}
-                options={currencyOptions}
-                value={currency}
-                onChange={(value) => { setCurrency(value); updateQuery('currency', value); }}
-                width='full'
-              />
-            </div>
-          </div>
-          <div className='grid w-full grid-cols-2 gap-2 sm:contents'>
-            <div className='min-w-0 sm:w-[170px]'><Select aria-label={t('Protocol')} width='full' value={filterEndpoint} options={endpointOptions} onChange={(value) => { setFilterEndpoint(value); updateQuery('endpointType', value); }} /></div>
-            <div className='min-w-0 sm:w-[170px]'><Select aria-label={t('Tag')} width='full' value={filterTag} options={tagOptions} onChange={(value) => { setFilterTag(value); updateQuery('tag', value); }} /></div>
-            <div className='min-w-0 sm:w-[200px]'><Select aria-label={t('Sort models')} width='full' value={sortBy} options={pricingSorts.map((item) => ({ value: item.value, label: t(item.label) }))} onChange={(value) => { setSortBy(value); updateQuery('sort', value); }} /></div>
-            <div className='min-w-0 sm:w-[150px]'><Select aria-label={t('Token price unit')} width='full' value={tokenUnit} options={[{ value: 'M' as const, label: t('Per 1M tokens') }, { value: 'K' as const, label: t('Per 1K tokens') }]} onChange={(value) => { setTokenUnit(value); updateQuery('tokenUnit', value); }} /></div>
-            {!preview && <div className='min-w-0 sm:w-[170px]'><Select aria-label={t('Price basis')} width='full' value={showRechargePrice ? 'recharge' : 'standard'} options={[{ value: 'standard', label: t('Standard price') }, { value: 'recharge', label: t('Recharge price') }]} onChange={(value) => { setShowRechargePrice(value === 'recharge'); updateQuery('rechargePrice', value === 'recharge' ? 'true' : 'all'); }} /></div>}
-          </div>
-          <Button variant='link' onClick={clearFilters}>{t('Reset filters')}</Button>
-          <span className='text-sm text-ui-text-3 tabular-nums sm:ml-auto'>
-            {t("{{count}} models", { count: total })}
-          </span>
+      <div className='pricing-filter-panel flex flex-wrap items-center gap-2 rounded-2xl border border-ui-border bg-[var(--page-bg)] p-4'>
+        <div className='min-w-0 basis-full sm:w-[320px] sm:basis-auto'>
+          <Input value={searchValue} aria-label={t('Search models, vendors or tags')} onChange={(value) => { handleChange(value); updateQuery('search', value); }} placeholder={t('Search models, vendors or tags')} prefix={<Search size={15} />} clearable width='full' />
         </div>
+        <div className='flex shrink-0 items-center gap-3'>
+          <Button ref={filtersButton} variant='toggle' icon={SlidersHorizontal} shrink={false} selected={activeFilters > 0} aria-label={t('Filters')} aria-haspopup='dialog' aria-expanded={filtersOpen} onClick={() => setFiltersOpen(true)}>
+            {t('Filters')}{activeFilters > 0 && <span className='text-xs tabular-nums'>{activeFilters}</span>}
+          </Button>
+          {activeFilters > 0 && <Button variant='link' size='sm' onClick={() => {
+            applyFilters({ group: 'all', billing: 'all', vendor: 'all', sort: 'name', tokenUnit: 'M', priceBasis: 'standard' });
+            filtersButton.current?.focus();
+          }}>{t('Reset filters')}</Button>}
+        </div>
+        {!preview && <div className='ml-auto inline-flex shrink-0 items-center gap-0.5 rounded-xl border border-ui-border p-0.5'>
+          <IconButton icon={LayoutGrid} size='sm' shape='square' selected={viewMode === 'card'} title={t("Card view")} onClick={() => { setViewMode('card'); updateQuery('view', 'card'); }} />
+          <IconButton icon={List} size='sm' shape='square' selected={viewMode === 'table'} title={t("Table view")} onClick={() => { setViewMode('table'); updateQuery('view', 'table'); }} />
+        </div>}
       </div>
+
+      {filtersOpen && <PricingFiltersDialog initialValues={{ group: selectedGroup, billing: filterQuotaType, vendor: filterVendor, sort: sortBy, tokenUnit, priceBasis: showRechargePrice ? 'recharge' : 'standard' }} groupOptions={groupOptions} vendorOptions={vendorOptions} preview={preview} onApply={applyFilters} onClose={() => setFiltersOpen(false)} />}
 
       <div className='pricing-results mt-4' style={{ minHeight: 'calc(100vh - 320px)' }}>
         {loading ? (

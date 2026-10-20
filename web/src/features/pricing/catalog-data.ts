@@ -33,18 +33,15 @@ export const pricingSorts = [
 ] as const;
 export type PricingSort = typeof pricingSorts[number]['value'];
 export const parsePricingSort = (raw: string | null): PricingSort => pricingSorts.find((item) => item.value === raw)?.value ?? 'name';
-export const pricingTags = (raw?: string): string[] => [...new Set((raw ?? '').split(/[,;|]+/).map((tag) => tag.trim()).filter(Boolean))];
 export const hasTaskUsage = (model: PricingModel): boolean => Object.keys(model.billing_usage_schema ?? {}).length > 0 || !!model.billing_plugin_variants?.some((variant) => Object.keys(variant.billing_usage_schema).length > 0);
 export const hasExpressionPricing = (model: PricingModel): boolean => model.billing_type === 'expression' || model.billing_mode === 'tiered_expr' || !!model.billing_plugin_variants?.some((variant) => !!variant.billing_expr);
-export interface PricingFilters { search: string; group: string; billing: string; vendor: string; endpoint: string; tag: string }
+export interface PricingFilters { search: string; group: string; billing: string; vendor: string }
 export function filterPricingModels(models: PricingModel[], filters: PricingFilters): PricingModel[] {
   const search = filters.search.trim().toLowerCase();
   return models.filter((model) => {
     const task = hasTaskUsage(model); const expression = hasExpressionPricing(model);
     return (filters.group === 'all' || model.enable_groups.includes(filters.group)) &&
       (filters.vendor === 'all' || (filters.vendor === 'unknown' ? !model.vendor_name : model.vendor_name === filters.vendor)) &&
-      (filters.endpoint === 'all' || !!model.supported_endpoint_types?.includes(filters.endpoint)) &&
-      (filters.tag === 'all' || pricingTags(model.tags).includes(filters.tag)) &&
       (filters.billing === 'all' || (filters.billing === 'task' ? task : filters.billing === 'expression' ? !task && expression : !task && !expression && model.billing_type === filters.billing)) &&
       (!search || [model.model_name, model.description, model.tags, model.vendor_name].some((value) => value?.toLowerCase().includes(search)));
   });

@@ -14,6 +14,7 @@ import { useTranslation } from 'react-i18next';
 import { ChevronDown, Check, Search, X } from 'lucide-react';
 import { cn, FOCUS_RING } from '../tokens';
 import { inputStyle, resolveWidth } from '../input/Input';
+import useDropdownState from './useDropdownState';
 
 type OptionValue = string | number;
 export type MultiSelectOption<T extends OptionValue = string> = T | { value: T; label: ReactNode };
@@ -48,21 +49,18 @@ function MultiSelect<T extends OptionValue = string>({
   width,
 }: MultiSelectProps<T>) {
   const { t } = useTranslation();
-  const [open, setOpen] = useState(false);
   const [keyword, setKeyword] = useState('');
   const ref = useRef<HTMLDivElement>(null);
+  const [open, setOpen] = useDropdownState(ref);
   const trigger = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
-    const onDoc = (e: MouseEvent) => { if (ref.current && e.target instanceof Node && !ref.current.contains(e.target)) setOpen(false); };
     const onKey = (e: KeyboardEvent) => e.key === 'Escape' && setOpen(false);
-    document.addEventListener('mousedown', onDoc);
     document.addEventListener('keydown', onKey);
     return () => {
-      document.removeEventListener('mousedown', onDoc);
       document.removeEventListener('keydown', onKey);
     };
-  }, []);
+  }, [setOpen]);
 
   const list = options.map(normalizeOption<T>);
   const filtered = list.filter((o) => String(o.label || o.value).toLowerCase().includes(keyword.toLowerCase()));

@@ -4,7 +4,7 @@ import { loadTestModules } from '../../../scripts/load-test-modules.mjs';
 const { entry0: { parsePricingData, pricingModelSchema, filterPricingModels, sortPricingModels } } = await loadTestModules(['./src/features/pricing/catalog-data.ts']);
 
 const row = (model_name, fields = {}) => pricingModelSchema.parse({ model_name, enable_groups: ['default'], configured: true, billing_type: 'tokens', input_price: 1, output_price: 2, ...fields });
-const filters = { search: '', group: 'all', billing: 'all', vendor: 'all', endpoint: 'all', tag: 'all' };
+const filters = { search: '', group: 'all', billing: 'all', vendor: 'all' };
 
 test('public pricing normalizes legacy types and null lists without inventing prices or mutating server data', () => {
   const raw = { success: true, data: [{ model_name: 'free', enable_groups: null, billing_type: 0, input_price: 0, vendor_id: 7 }], vendors: [{ id: 7, name: 'Provider' }], group_ratio: { free: 0 }, usable_group: { free: 'Free group' } };
@@ -17,13 +17,13 @@ test('public pricing normalizes legacy types and null lists without inventing pr
   assert.throws(() => parsePricingData({ ...raw, data: [{ ...raw.data[0], input_price: -1 }] }));
 });
 
-test('protocol and exact tag filters combine with task billing and case-insensitive search', () => {
-  const task = row('video', { billing_type: 'expression', tags: 'media;video| media', supported_endpoint_types: ['openai-video'], billing_usage_schema: { duration: { unit: 'second' } } });
+test('vendor and group filters combine with task billing and case-insensitive search', () => {
+  const task = row('video', { vendor_name: 'Acme', billing_type: 'expression', tags: 'media;video| media', supported_endpoint_types: ['openai-video'], billing_usage_schema: { duration: { unit: 'second' } } });
   const token = row('plain', { tags: 'videography', supported_endpoint_types: ['openai'] });
   const expression = row('tiered', { billing_type: 'expression' });
-  assert.deepEqual(filterPricingModels([task, token, expression], { ...filters, endpoint: 'openai-video', tag: 'video', search: 'VID', billing: 'task' }).map((model) => model.model_name), ['video']);
+  assert.deepEqual(filterPricingModels([task, token, expression], { ...filters, vendor: 'Acme', group: 'default', search: 'VID', billing: 'task' }).map((model) => model.model_name), ['video']);
   assert.deepEqual(filterPricingModels([task, token, expression], { ...filters, billing: 'expression' }).map((model) => model.model_name), ['tiered']);
-  assert.deepEqual(filterPricingModels([task, token], { ...filters, tag: 'video' }).map((model) => model.model_name), ['video']);
+  assert.deepEqual(filterPricingModels([task, token], { ...filters, search: 'MEDIA' }).map((model) => model.model_name), ['video']);
 });
 
 test('price sorting preserves free prices and leaves incompatible or unconfigured prices last in both directions', () => {
