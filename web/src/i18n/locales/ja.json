@@ -1992,6 +1992,7 @@
     "Invalid quote; reload and try again.": "見積もりが無効です。再読み込みして再試行してください。",
     "Invalid wallet data; reload and try again.": "ウォレットデータが無効です。再読み込みして再試行してください。",
     "Invitation link copied": "招待リンクをコピーしました",
+    "Enable invitation rewards": "招待報酬を有効にする",
     "Invitation rewards": "招待報酬",
     "Invited users": "招待人数",
     "Limit {{count}} purchases per user": "1人あたり{{count}}回まで",

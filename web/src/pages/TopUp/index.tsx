@@ -32,7 +32,8 @@ function TopUp({ identity }: { identity: string }) {
   } });
   const user = profile.isError ? undefined : profile.data;
   useEffect(() => { if (profile.data && !profile.isError) useAuthStore.getState().auth.setUser(profile.data); }, [profile.data, profile.isError]);
-  const affiliate = useQuery({ queryKey: ['wallet-affiliate', identity], gcTime: 0, retry: false, queryFn: ({ signal }) => readWalletData('/api/user/aff', z.string().min(1), signal) });
+  const invitationRewardsEnabled = paymentInfo?.enable_invitation_rewards === true;
+  const affiliate = useQuery({ queryKey: ['wallet-affiliate', identity], enabled: invitationRewardsEnabled, gcTime: 0, retry: false, queryFn: ({ signal }) => readWalletData('/api/user/aff', z.string().min(1), signal) });
   const affLink = affiliate.data && !affiliate.isError ? affiliateURL(affiliate.data, window.location.origin) : '';
   const refreshUser = () => { void profile.refetch(); };
   const methods = useMemo(() => paymentMethods(paymentInfo ?? null), [paymentInfo]);
@@ -92,13 +93,13 @@ function TopUp({ identity }: { identity: string }) {
     {!methods.length && canRedeem && <Button variant='link' onClick={() => setRedeemOpen(true)}>{t('Use redemption code')}</Button>}
     {otherLink && <a href={otherLink} target='_blank' rel='noopener noreferrer' className='text-sm text-ui-text-2 underline'>{t('Other top-up methods')}</a>}
     <SubscriptionOffers onPurchased={refreshUser} />
-    <InvitationRewards user={user} pending={profile.isPending} link={affLink} linkPending={affiliate.isPending}
+    {invitationRewardsEnabled && <InvitationRewards user={user} pending={profile.isPending} link={affLink} linkPending={affiliate.isPending}
       transferDisabled={!user || !paymentInfo?.payment_compliance_confirmed || user.aff_quota < Math.ceil(paymentInfo.quota_per_unit)}
       onTransfer={() => setTransferOpen(true)} onCopy={async () => { if (await copy(affLink)) showSuccess(t('Invitation link copied')); }}>
       {affiliate.isError && <div role='alert' className='text-sm text-ui-danger'><p>{t(apiErrorMessage(affiliate.error, 'Unable to load invitation link'))}</p><Button variant='link' onClick={() => void affiliate.refetch()}>{t('Retry')}</Button></div>}
-    </InvitationRewards>
+    </InvitationRewards>}
     {redeemOpen && canRedeem && <RedemptionDialog initialCode={searchParams.get('code') || ''} onClose={() => setRedeemOpen(false)} onSaved={refreshUser} />}
-    {transferOpen && user && paymentInfo && <AffiliateTransferDialog quotaPerUnit={paymentInfo.quota_per_unit} available={user.aff_quota} onClose={() => setTransferOpen(false)} onSaved={refreshUser} />}
+    {transferOpen && invitationRewardsEnabled && user && paymentInfo && <AffiliateTransferDialog quotaPerUnit={paymentInfo.quota_per_unit} available={user.aff_quota} onClose={() => setTransferOpen(false)} onSaved={refreshUser} />}
     {showHistory && <TopUpHistory identity={identity} role={role} onClose={() => setShowHistory(false)} onSaved={refreshUser} />}
   </TopUpPage>;
 }

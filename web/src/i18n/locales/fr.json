@@ -1992,6 +1992,7 @@
     "Invalid quote; reload and try again.": "Prix invalide ; rechargez puis réessayez.",
     "Invalid wallet data; reload and try again.": "Données du portefeuille invalides ; rechargez puis réessayez.",
     "Invitation link copied": "Lien d’invitation copié",
+    "Enable invitation rewards": "Activer les récompenses de parrainage",
     "Invitation rewards": "Récompenses de parrainage",
     "Invited users": "Utilisateurs invités",
     "Limit {{count}} purchases per user": "Limite de {{count}} achats par utilisateur",

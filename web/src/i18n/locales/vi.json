@@ -1992,6 +1992,7 @@
     "Invalid quote; reload and try again.": "Báo giá không hợp lệ; tải lại và thử lại.",
     "Invalid wallet data; reload and try again.": "Dữ liệu ví không hợp lệ; tải lại và thử lại.",
     "Invitation link copied": "Đã sao chép liên kết mời",
+    "Enable invitation rewards": "Bật phần thưởng giới thiệu",
     "Invitation rewards": "Phần thưởng giới thiệu",
     "Invited users": "Người dùng đã mời",
     "Limit {{count}} purchases per user": "Mỗi người được mua tối đa {{count}} lần",

@@ -1992,6 +1992,7 @@
     "Invalid quote; reload and try again.": "報價資料無效，請重新取得。",
     "Invalid wallet data; reload and try again.": "錢包資料無效，請重新載入後重試。",
     "Invitation link copied": "已複製邀請連結",
+    "Enable invitation rewards": "啟用邀請獎勵",
     "Invitation rewards": "邀請獎勵",
     "Invited users": "邀請人數",
     "Limit {{count}} purchases per user": "每人限購 {{count}} 次",

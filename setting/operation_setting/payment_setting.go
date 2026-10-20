@@ -3,8 +3,9 @@ package operation_setting
 import "github.com/QuantumNous/new-api/setting/config"
 
 type PaymentSetting struct {
-	AmountOptions  []int           `json:"amount_options"`
-	AmountDiscount map[int]float64 `json:"amount_discount"` // 充值金额对应的折扣，例如 100 元 0.9 表示 100 元充值享受 9 折优惠
+	AmountOptions            []int           `json:"amount_options"`
+	AmountDiscount           map[int]float64 `json:"amount_discount"` // 充值金额对应的折扣，例如 100 元 0.9 表示 100 元充值享受 9 折优惠
+	InvitationRewardsEnabled bool            `json:"invitation_rewards_enabled"`
 
 	ComplianceConfirmed    bool   `json:"compliance_confirmed"`
 	ComplianceTermsVersion string `json:"compliance_terms_version"`
@@ -33,4 +34,8 @@ func GetPaymentSetting() *PaymentSetting {
 func IsPaymentComplianceConfirmed() bool {
 	return paymentSetting.ComplianceConfirmed &&
 		paymentSetting.ComplianceTermsVersion == CurrentComplianceTermsVersion
+}
+
+func IsInvitationRewardsEnabled() bool {
+	return paymentSetting.InvitationRewardsEnabled && IsPaymentComplianceConfirmed()
 }

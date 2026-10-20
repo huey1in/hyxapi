@@ -1992,6 +1992,7 @@
     "Invalid quote; reload and try again.": "Некорректная цена. Обновите и повторите попытку.",
     "Invalid wallet data; reload and try again.": "Некорректные данные кошелька. Обновите и повторите попытку.",
     "Invitation link copied": "Ссылка приглашения скопирована",
+    "Enable invitation rewards": "Включить награды за приглашения",
     "Invitation rewards": "Награды за приглашения",
     "Invited users": "Приглашённые пользователи",
     "Limit {{count}} purchases per user": "Не более {{count}} покупок на пользователя",

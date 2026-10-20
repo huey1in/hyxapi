@@ -411,8 +411,16 @@ type TransferAffQuotaRequest struct {
 	Quota int `json:"quota" binding:"required"`
 }
 
+func requireInvitationRewards(c *gin.Context) bool {
+	if !operation_setting.IsInvitationRewardsEnabled() {
+		common.ApiErrorT(c, "user.invitation_rewards_disabled")
+		return false
+	}
+	return true
+}
+
 func TransferAffQuota(c *gin.Context) {
-	if !requirePaymentCompliance(c) {
+	if !requireInvitationRewards(c) {
 		return
 	}
 
@@ -441,6 +449,9 @@ func TransferAffQuota(c *gin.Context) {
 }
 
 func GetAffCode(c *gin.Context) {
+	if !requireInvitationRewards(c) {
+		return
+	}
 	id := c.GetInt("id")
 	user, err := model.GetUserById(id, true)
 	if err != nil {

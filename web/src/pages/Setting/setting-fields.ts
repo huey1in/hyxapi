@@ -164,6 +164,7 @@ export const TAB_KEYS: Record<string, string[]> = {
     'AutomaticDisableStatusCodes',
     'AutomaticRetryStatusCodes',
     'QuotaForNewUser',
+    'payment_setting.invitation_rewards_enabled',
     'QuotaForInviter',
     'QuotaForInvitee',
     'PreConsumedQuota',
@@ -408,12 +409,19 @@ export const TAB_SECTIONS: Record<string, SettingSection[]> = {
       title: '额度',
       keys: [
         'QuotaForNewUser',
-        'QuotaForInviter',
-        'QuotaForInvitee',
         'PreConsumedQuota',
         'QuotaRemindEnabled',
         'QuotaRemindThreshold',
         'quota_setting.enable_free_model_pre_consume',
+      ],
+    },
+    {
+      title: 'Invitation rewards',
+      gateKey: 'payment_setting.invitation_rewards_enabled',
+      keys: [
+        'payment_setting.invitation_rewards_enabled',
+        'QuotaForInviter',
+        'QuotaForInvitee',
       ],
     },
     {
@@ -663,6 +671,7 @@ export const LIST_EDITOR_KEYS = new Set([
   'PayMethods',
 ]);
 export const BOOL_KEYS = new Set([
+  'payment_setting.invitation_rewards_enabled',
   'WorkerAllowHttpImageRequestEnabled',
   'DefaultUseAutoGroup',
   'MjNotifyEnabled',
@@ -868,6 +877,7 @@ export const LABELS: Record<string, string> = {
   AutomaticEnableChannelEnabled: '自动启用恢复渠道',
   QuotaForNewUser: '新用户初始额度',
   QuotaForInviter: '邀请人奖励额度',
+  'payment_setting.invitation_rewards_enabled': 'Enable invitation rewards',
   QuotaForInvitee: '被邀请人奖励额度',
   PreConsumedQuota: '预扣费额度',
   QuotaRemindEnabled: '低余额提醒',

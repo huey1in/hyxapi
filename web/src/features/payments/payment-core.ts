@@ -6,6 +6,7 @@ const positiveNumber = z.number().finite().positive();
 const minimum = z.number().finite().nonnegative();
 export const paymentInfoSchema = z.object({
   payment_compliance_confirmed: z.boolean(),
+  enable_invitation_rewards: z.boolean().default(false),
   enable_online_topup: z.boolean().optional(), enable_alipay_topup: z.boolean().optional(),
   enable_stripe_topup: z.boolean().optional(), enable_creem_topup: z.boolean().optional(),
   enable_waffo_topup: z.boolean().optional(), enable_waffo_pancake_topup: z.boolean().optional(),

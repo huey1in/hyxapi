@@ -2032,6 +2032,7 @@
     "Invalid quote; reload and try again.": "报价数据无效，请重新获取。",
     "Invalid wallet data; reload and try again.": "钱包数据无效，请重新加载后重试。",
     "Invitation link copied": "已复制邀请链接",
+    "Enable invitation rewards": "启用邀请奖励",
     "Invitation rewards": "邀请奖励",
     "Invited users": "邀请人数",
     "Limit {{count}} purchases per user": "每人限购 {{count}} 次",

@@ -27,6 +27,10 @@ func validateOptionValue(key, value string) error {
 		return console_setting.ValidateConsoleSettings(value, settingType)
 	}
 	switch key {
+	case "payment_setting.invitation_rewards_enabled":
+		if value != "true" && value != "false" {
+			return fmt.Errorf("invitation rewards enabled must be true or false")
+		}
 	case "claude.default_max_tokens":
 		return model_setting.ValidateClaudeDefaultMaxTokens(value)
 	case "gemini.safety_settings":

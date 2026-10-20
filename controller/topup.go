@@ -112,6 +112,7 @@ func GetTopUpInfo(c *gin.Context) {
 		"enable_waffo_topup":                enableWaffo,
 		"enable_waffo_pancake_topup":        enableWaffoPancake,
 		"enable_redemption":                 complianceConfirmed,
+		"enable_invitation_rewards":         operation_setting.IsInvitationRewardsEnabled(),
 		"payment_compliance_confirmed":      complianceConfirmed,
 		"payment_compliance_terms_version":  operation_setting.CurrentComplianceTermsVersion,
 		"waffo_pay_methods": func() any {

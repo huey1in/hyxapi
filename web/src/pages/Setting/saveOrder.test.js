@@ -32,3 +32,9 @@ test('saves OAuth credentials before enabling the provider', () => {
     'telegram.client_id', 'telegram.client_secret', 'TelegramOAuthEnabled',
   ]);
 });
+
+test('saves both reward amounts before enabling invitation rewards', () => {
+  assert.deepEqual(orderSettingKeysForSave([
+    'payment_setting.invitation_rewards_enabled', 'QuotaForInviter', 'QuotaForInvitee',
+  ]), ['QuotaForInviter', 'QuotaForInvitee', 'payment_setting.invitation_rewards_enabled']);
+});

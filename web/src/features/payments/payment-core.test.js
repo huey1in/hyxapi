@@ -1,8 +1,15 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { paymentMethods, topUpRequest, checkoutDestination, safePaymentURL, subscriptionMethods } from './payment-core.ts';
+import { paymentInfoSchema, paymentMethods, topUpRequest, checkoutDestination, safePaymentURL, subscriptionMethods } from './payment-core.ts';
 
 const info = { payment_compliance_confirmed: true, enable_online_topup: true, pay_methods: [{ type: 'alipay' }, { type: 'stripe' }, { type: 'alipay' }], min_topup: 2, enable_stripe_topup: true, stripe_min_topup: 1 };
+
+test('wallet invitation rewards require an explicit boolean opt-in', () => {
+  const config = { ...info, quota_per_unit: 500000 };
+  assert.equal(paymentInfoSchema.parse(config).enable_invitation_rewards, false);
+  assert.equal(paymentInfoSchema.parse({ ...config, enable_invitation_rewards: true }).enable_invitation_rewards, true);
+  assert.equal(paymentInfoSchema.safeParse({ ...config, enable_invitation_rewards: 'true' }).success, false);
+});
 
 test('only enabled, confirmed providers produce selectable methods', () => {
   assert.deepEqual(paymentMethods({ ...info, payment_compliance_confirmed: false }), []);
