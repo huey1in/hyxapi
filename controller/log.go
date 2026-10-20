@@ -44,7 +44,7 @@ func GetUserLogs(c *gin.Context) {
 	logType, _ := strconv.Atoi(c.Query("type"))
 	startTimestamp, _ := strconv.ParseInt(c.Query("start_timestamp"), 10, 64)
 	endTimestamp, _ := strconv.ParseInt(c.Query("end_timestamp"), 10, 64)
-	if !applyLogRange(c, &startTimestamp, &endTimestamp, false) {
+	if !applyLogRange(c, &startTimestamp, &endTimestamp) {
 		return
 	}
 	tokenName := c.Query("token_name")
@@ -131,8 +131,6 @@ func logUsageFilter(c *gin.Context, all bool) (model.LogFilter, int, bool) {
 	if all {
 		filter.Username = c.Query("username")
 		userID = 0
-	} else if !applyLogRange(c, &filter.StartTimestamp, &filter.EndTimestamp, false) {
-		return filter, 0, false
 	}
 	return filter, userID, true
 }
@@ -142,11 +140,6 @@ func getLogUsage(c *gin.Context, all bool) {
 	if !ok {
 		return
 	}
-	includeRates, err := strconv.ParseBool(c.DefaultQuery("include_rates", "false"))
-	if err != nil {
-		common.ApiErrorMsg(c, "invalid include_rates")
-		return
-	}
 	includeTrend, err := strconv.ParseBool(c.DefaultQuery("include_trend", "false"))
 	if err != nil {
 		common.ApiErrorMsg(c, "invalid include_trend")
@@ -154,7 +147,6 @@ func getLogUsage(c *gin.Context, all bool) {
 	}
 	var result struct {
 		model.Stat
-		*model.LogRates
 		Trend *model.LogUsageTrend `json:"trend,omitempty"`
 	}
 	if includeTrend {
@@ -166,16 +158,6 @@ func getLogUsage(c *gin.Context, all bool) {
 		common.ApiError(c, err)
 		return
 	}
-	if !includeRates {
-		common.ApiSuccess(c, result)
-		return
-	}
-	rates, err := model.GetLogRates(c.Request.Context(), filter, userID)
-	if err != nil {
-		common.ApiError(c, err)
-		return
-	}
-	result.LogRates = &rates
 	common.ApiSuccess(c, result)
 }
 

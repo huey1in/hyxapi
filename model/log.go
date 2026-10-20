@@ -431,11 +431,6 @@ type Stat struct {
 	Requests int   `json:"requests"`
 }
 
-type LogRates struct {
-	Rpm int   `json:"rpm"`
-	Tpm int64 `json:"tpm"`
-}
-
 // LogTokenOption exposes historical key identities without reading key secrets.
 type LogTokenOption struct {
 	ID   int    `json:"id"`
@@ -516,22 +511,6 @@ func SumLogUsage(ctx context.Context, filter LogFilter, userID int) (stat Stat, 
 		return stat, errors.New("查询统计数据失败")
 	}
 	return stat, nil
-}
-
-// GetLogRates is requested explicitly by the log page, independently of the
-// interval totals. Dashboard and operations queries do not calculate live rates.
-func GetLogRates(ctx context.Context, filter LogFilter, userID int) (live LogRates, err error) {
-	filter.Type = LogTypeConsume
-	filter.StartTimestamp, filter.EndTimestamp = time.Now().Add(-time.Minute).Unix(), 0
-	rates, err := buildLogQuery(filter, userID)
-	if err != nil {
-		return live, err
-	}
-	if err := rates.WithContext(ctx).Select("count(*) rpm, COALESCE(sum(prompt_tokens), 0) + COALESCE(sum(completion_tokens), 0) tpm").Scan(&live).Error; err != nil {
-		common.SysError("failed to query live log stat: " + err.Error())
-		return live, errors.New("failed to query statistics")
-	}
-	return live, nil
 }
 
 func GetActiveOperationsStat(startTimestamp, endTimestamp int64) (stat ActiveOperationsStat, err error) {

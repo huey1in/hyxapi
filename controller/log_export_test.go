@@ -9,32 +9,77 @@ import (
 
 	"github.com/QuantumNous/new-api/common"
 	"github.com/QuantumNous/new-api/model"
-	"github.com/QuantumNous/new-api/setting/log_setting"
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/require"
 	"testing"
 	"time"
 )
 
-func TestLogTimeRangeDefaultsBoundsAndInvalidOrder(t *testing.T) {
-	setting := log_setting.GetSetting()
-	old := setting.MaxRangeDays
-	setting.MaxRangeDays = 7
-	t.Cleanup(func() { setting.MaxRangeDays = old })
-	end := time.Now().Unix() - 100
-	start, err := limitLogTimeRange(0, end)
-	require.NoError(t, err)
-	require.Equal(t, end-7*86400, start)
-	_, err = limitLogTimeRange(end-7*86400, end)
-	require.NoError(t, err)
-	_, err = limitLogTimeRange(end-7*86400-1, end)
-	require.Error(t, err)
-	_, err = limitLogTimeRange(end+1, end)
-	require.Error(t, err)
-	_, err = limitLogTimeRange(-1, end)
-	require.Error(t, err)
-	_, err = limitLogTimeRange(time.Now().Unix()+86400, time.Now().Unix()+2*86400)
-	require.Error(t, err)
+func TestLogTimeRangeHasNoMaximumSpanAndRejectsInvalidDates(t *testing.T) {
+	now := time.Now().Unix()
+	for _, test := range []struct {
+		name       string
+		start, end int64
+		valid      bool
+	}{
+		{"all history", 0, now - 100, true},
+		{"open end", 0, 0, true},
+		{"multiple years", now - 3*365*86400, now - 100, true},
+		{"reversed", now, now - 100, false},
+		{"negative start", -1, now, false},
+		{"negative end", 0, -1, false},
+		{"future start", now + 86400, now + 2*86400, false},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			response := httptest.NewRecorder()
+			c, _ := gin.CreateTestContext(response)
+			start, end := test.start, test.end
+			require.Equal(t, test.valid, applyLogRange(c, &start, &end))
+			require.Equal(t, test.start, start, "the query must not truncate historical records")
+			if test.valid {
+				require.Positive(t, end)
+				if test.end > 0 {
+					require.Equal(t, test.end, end)
+				}
+			}
+		})
+	}
+}
+
+func TestLogQueriesAndExportsKeepHistoricalRecordsAndUserScope(t *testing.T) {
+	user, _ := setupAccessTokenAudit(t)
+	old := time.Now().AddDate(-3, 0, 0).Unix()
+	require.NoError(t, model.LOG_DB.Create(&[]model.Log{
+		{UserId: user.Id, CreatedAt: old, Type: model.LogTypeConsume, RequestId: "own-historical"},
+		{UserId: user.Id + 100, CreatedAt: old, Type: model.LogTypeConsume, RequestId: "foreign-historical"},
+	}).Error)
+	for _, span := range []string{"", fmt.Sprintf("?start_timestamp=%d&end_timestamp=%d", old-1, time.Now().Unix())} {
+		response := httptest.NewRecorder()
+		c, _ := gin.CreateTestContext(response)
+		c.Set("id", user.Id)
+		c.Set("role", common.RoleCommonUser)
+		c.Request = httptest.NewRequest(http.MethodGet, "/api/log/self"+span, nil)
+		GetUserLogs(c)
+		require.Contains(t, response.Body.String(), "own-historical")
+		require.NotContains(t, response.Body.String(), "foreign-historical")
+		for _, all := range []bool{false, true} {
+			response = httptest.NewRecorder()
+			c, _ = gin.CreateTestContext(response)
+			c.Set("id", user.Id)
+			c.Request = httptest.NewRequest(http.MethodGet, "/api/log/export"+span, nil)
+			if all {
+				c.Set("role", common.RoleAdminUser)
+				ExportAllLogs(c)
+			} else {
+				c.Set("role", common.RoleCommonUser)
+				ExportUserLogs(c)
+			}
+			require.Equal(t, http.StatusOK, response.Code)
+			require.Contains(t, response.Body.String(), "own-historical")
+			require.Equal(t, all, strings.Contains(response.Body.String(), "foreign-historical"))
+			require.Contains(t, response.Body.String(), `"success":true`)
+		}
+	}
 }
 
 func TestLogExportProjectsAdministratorAndRootDiagnostics(t *testing.T) {
@@ -61,7 +106,7 @@ func TestLogExportProjectsAdministratorAndRootDiagnostics(t *testing.T) {
 	}
 }
 
-func TestLogStatPublishesLiveRatesAndKeepsRenamedUserHistoryPrivate(t *testing.T) {
+func TestDashboardUsageOmitsLiveRatesAndKeepsRenamedUserHistoryPrivate(t *testing.T) {
 	user, _ := setupAccessTokenAudit(t)
 	now := time.Now().Unix()
 	require.NoError(t, model.LOG_DB.Create(&[]model.Log{
@@ -85,7 +130,6 @@ func TestLogStatPublishesLiveRatesAndKeepsRenamedUserHistoryPrivate(t *testing.T
 			Success bool `json:"success"`
 			Data    struct {
 				model.Stat
-				model.LogRates
 			} `json:"data"`
 		}
 		require.NoError(t, json.Unmarshal(response.Body.Bytes(), &result))
@@ -94,13 +138,8 @@ func TestLogStatPublishesLiveRatesAndKeepsRenamedUserHistoryPrivate(t *testing.T
 		require.Equal(t, 9, result.Data.Quota)
 		require.EqualValues(t, 300, result.Data.Tokens)
 		require.Equal(t, 1, result.Data.Requests)
-		if self {
-			require.Equal(t, 1, result.Data.Rpm)
-			require.EqualValues(t, 10, result.Data.Tpm)
-		} else {
-			require.Equal(t, 2, result.Data.Rpm)
-			require.EqualValues(t, 1009, result.Data.Tpm)
-		}
+		require.NotContains(t, response.Body.String(), `"rpm"`)
+		require.NotContains(t, response.Body.String(), `"tpm"`)
 	}
 }
 

@@ -10,7 +10,6 @@ import type { ApiEnvelope } from '../../types/api';
 import { logQuery } from './export';
 import { emptyLogFilters, enrichLog, getBillingPriceFields, logPageSchema, logSchema, validateLogFilters } from './log-data';
 import type { EnrichedLog, LogFilters } from './log-data';
-import { logStatsSchema } from './log-data';
 import LogExportButton from './LogExportButton';
 import type { TableColumn } from '../../components/ui/layout/Table';
 import { Button, IconButton, Input, Select, Pagination, Table, showError } from '../../components/ui';
@@ -142,15 +141,9 @@ const LogContent = ({ preview = false }: { preview?: boolean }) => {
     if (!data.success) throw new Error(data.message || 'Unable to load logs');
     return logPageSchema.parse(data.data);
   } });
-  const stats = useQuery({ ...common, queryKey: ['consumption-log-stat', identity, queryString], queryFn: async ({ signal }) => {
-    const { data } = await API.get<ApiEnvelope<unknown>>(`${base}/stat?${queryString}`, { params: { include_rates: true }, signal, timeout: 15000, disableDuplicate: true, skipErrorHandler: true });
-    signal.throwIfAborted();
-    if (!data.success) throw new Error(data.message || 'Unable to load log statistics');
-    return logStatsSchema.parse(data.data);
-  } });
-  const refresh = () => void Promise.allSettled([logs.refetch(), stats.refetch()]);
+  const refresh = () => void logs.refetch();
   const load = (p = 1, fl = query.filters) => {
-    const error = validateLogFilters(fl, isAdmin, statusState.status?.log_max_range_days);
+    const error = validateLogFilters(fl, isAdmin);
     if (error) { showError(t(error)); return; }
     setExpanded(null);
     if (p === page && logQuery(fl, isAdmin, isRoot).toString() === queryString) refresh();
@@ -223,25 +216,14 @@ const LogContent = ({ preview = false }: { preview?: boolean }) => {
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: preview ? 'space-between' : 'flex-end', flexWrap: 'wrap', gap: 8 }}>
         {preview && <h1 style={{ fontSize: 18, fontWeight: 600, color: 'var(--ui-text)' }}>{t('Usage logs')}</h1>}
         {!preview && <div style={{ display: 'flex', gap: 6 }}>
-          {(isAdmin || statusState.status?.log_export_enabled !== false) && <LogExportButton key={identity + queryString} filters={query.filters} role={role} maxDays={statusState.status?.log_max_range_days} />}
+          {(isAdmin || statusState.status?.log_export_enabled !== false) && <LogExportButton key={identity + queryString} filters={query.filters} role={role} />}
           <IconButton icon={Filter} title={t('Filters')} selected={showFilters} onClick={() => setShowFilters((s) => !s)} />
-          <IconButton icon={RefreshCw} title={t('Refresh')} disabled={logs.isFetching || stats.isFetching} onClick={refresh} />
+          <IconButton icon={RefreshCw} title={t('Refresh')} disabled={logs.isFetching} onClick={refresh} />
         </div>}
       </div>
 
-      {!preview && <div className='flex flex-col gap-2 text-xs text-ui-text-3'>
-        <div className='flex flex-wrap gap-x-5 gap-y-2' aria-label={t('Consumption totals')}>
-          <span>{t('Consumption')}: <strong className='font-medium text-ui-text'>{stats.data && !stats.error ? renderQuota(stats.data.quota, 4) : '—'}</strong></span>
-          <span>{t('Tokens')}: <strong className='font-medium text-ui-text'>{stats.data && !stats.error ? renderNumber(stats.data.tokens) : '—'}</strong></span>
-          <span>{t('Requests')}: <strong className='font-medium text-ui-text'>{stats.data && !stats.error ? renderNumber(stats.data.requests) : '—'}</strong></span>
-          <span>{t('Current RPM')}: <strong className='font-medium text-ui-text'>{stats.data && !stats.error ? renderNumber(stats.data.rpm) : '—'}</strong></span>
-          <span>{t('Current TPM')}: <strong className='font-medium text-ui-text'>{stats.data && !stats.error ? renderNumber(stats.data.tpm) : '—'}</strong></span>
-        </div>
-        {(query.filters.request_id || query.filters.upstream_request_id || query.filters.type !== 0) && <p>{t('Request ID and log type filters apply to the table and export only.')}</p>}
-        {typeof statusState.status?.log_max_range_days === 'number' && <p>{t(isAdmin ? 'Maximum export range: {{days}} days' : 'Maximum query/export range: {{days}} days', { days: statusState.status.log_max_range_days })}</p>}
-      </div>}
-      {!preview && (logs.error || stats.error) && <div role='alert' className='flex flex-wrap items-center justify-between gap-3 rounded-xl border border-ui-border p-4 text-sm text-ui-text-2'>
-        <span>{t(logs.error ? 'Unable to load logs' : 'Unable to load log statistics')}</span><Button variant='toggle' onClick={refresh}>{t('Retry')}</Button>
+      {!preview && logs.error && <div role='alert' className='flex flex-wrap items-center justify-between gap-3 rounded-xl border border-ui-border p-4 text-sm text-ui-text-2'>
+        <span>{t('Unable to load logs')}</span><Button variant='toggle' onClick={refresh}>{t('Retry')}</Button>
       </div>}
 
       {/* 筛选面板 */}

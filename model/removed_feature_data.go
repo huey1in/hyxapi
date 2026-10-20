@@ -14,7 +14,7 @@ var ErrRemovedFeatureOption = errors.New("this feature setting has been removed"
 
 // IsRemovedFeatureOption prevents obsolete settings from being restored by old clients.
 func IsRemovedFeatureOption(key string) bool {
-	return key == "Chats" || key == "ChatLink" || key == "ChatLink2" || strings.HasPrefix(key, "model_deployment.")
+	return key == "Chats" || key == "ChatLink" || key == "ChatLink2" || key == "log_setting.max_range_days" || strings.HasPrefix(key, "model_deployment.")
 }
 
 func purgeRemovedFeatureOptions(db *gorm.DB) error {

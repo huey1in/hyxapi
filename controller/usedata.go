@@ -48,7 +48,7 @@ func GetUserQuotaDates(c *gin.Context) {
 	userId := c.GetInt("id")
 	startTimestamp, _ := strconv.ParseInt(c.Query("start_timestamp"), 10, 64)
 	endTimestamp, _ := strconv.ParseInt(c.Query("end_timestamp"), 10, 64)
-	if !applyLogRange(c, &startTimestamp, &endTimestamp, false) {
+	if !applyLogRange(c, &startTimestamp, &endTimestamp) {
 		return
 	}
 	model.SaveQuotaDataCache()

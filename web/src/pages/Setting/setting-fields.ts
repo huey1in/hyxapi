@@ -234,7 +234,6 @@ export const TAB_KEYS: Record<string, string[]> = {
     'log_setting.log_response_body',
     'log_setting.max_body_log_bytes',
     'log_setting.user_export_enabled',
-    'log_setting.max_range_days',
   ],
   performance: [
     'StreamCacheQueueLength',
@@ -532,7 +531,7 @@ export const TAB_SECTIONS: Record<string, SettingSection[]> = {
     },
     {
       title: '日志查询与导出',
-      keys: ['log_setting.user_export_enabled', 'log_setting.max_range_days'],
+      keys: ['log_setting.user_export_enabled'],
     },
     {
       title: '日志内容记录',
@@ -772,7 +771,6 @@ export const NUMBER_KEYS = new Set([
   'Price',
   'MinTopUp',
   'log_setting.max_body_log_bytes',
-  'log_setting.max_range_days',
 ]);
 
 export const LABELS: Record<string, string> = {
@@ -966,7 +964,6 @@ export const LABELS: Record<string, string> = {
   'log_setting.log_request_body': '记录请求内容',
   'log_setting.log_response_body': '记录响应内容',
   'log_setting.user_export_enabled': '允许普通用户导出日志',
-  'log_setting.max_range_days': '日志最大时间跨度（天）',
   'log_setting.max_body_log_bytes': '内容截断字节数',
 };
 

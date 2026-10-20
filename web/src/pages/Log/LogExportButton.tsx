@@ -6,12 +6,12 @@ import { logsToCSV, logQuery } from './export';
 import { validateLogFilters, type LogFilters } from './log-data';
 
 // The parent keys this control by session and applied filters, cancelling old exports.
-export default function LogExportButton({ filters, role, maxDays }: { filters: LogFilters; role: number; maxDays: unknown }) {
+export default function LogExportButton({ filters, role }: { filters: LogFilters; role: number }) {
   const { t, i18n } = useTranslation();
   const { busy, run } = useOwnedOperation();
   const admin = role >= 10; const root = role >= 100;
   const exportLogs = () => {
-    const error = validateLogFilters(filters, admin, maxDays, true);
+    const error = validateLogFilters(filters, admin);
     if (error) { showError(t(error)); return; }
     void run(async (signal) => {
       const { data } = await API.get<string>(`${admin ? '/api/log' : '/api/log/self'}/export?${logQuery(filters, admin, root)}`, {

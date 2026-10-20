@@ -1,7 +1,6 @@
 package controller
 
 import (
-	"fmt"
 	"net/http"
 	"strconv"
 	"time"
@@ -13,24 +12,6 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func limitLogTimeRange(start, end int64) (int64, error) {
-	if start < 0 || end < 0 || (end > 0 && start > end) {
-		return 0, fmt.Errorf("invalid time range")
-	}
-	end = min(time.Now().Unix(), endOrNow(end))
-	if start > end {
-		return 0, fmt.Errorf("invalid time range")
-	}
-	seconds := log_setting.GetSetting().MaxRangeSeconds()
-	if start == 0 {
-		return end - seconds, nil
-	}
-	if end-start > seconds {
-		return 0, fmt.Errorf("时间跨度不能超过 %d 天 / time range cannot exceed %d days", seconds/86400, seconds/86400)
-	}
-	return start, nil
-}
-
 func endOrNow(end int64) int64 {
 	if end == 0 {
 		return time.Now().Unix()
@@ -38,17 +19,13 @@ func endOrNow(end int64) int64 {
 	return min(end, time.Now().Unix())
 }
 
-func applyLogRange(c *gin.Context, start, end *int64, export bool) bool {
-	if !export && c.GetInt("role") >= common.RoleAdminUser {
-		return true
-	}
-	value, err := limitLogTimeRange(*start, *end)
-	if err != nil {
-		common.ApiError(c, err)
+func applyLogRange(c *gin.Context, start, end *int64) bool {
+	normalizedEnd := endOrNow(*end)
+	if *start < 0 || *end < 0 || *start > normalizedEnd {
+		common.ApiErrorMsg(c, "invalid time range")
 		return false
 	}
-	*start = value
-	*end = endOrNow(*end)
+	*end = normalizedEnd
 	return true
 }
 
@@ -71,7 +48,7 @@ func exportLogs(c *gin.Context, all bool) {
 		common.ApiErrorMsg(c, "invalid end_timestamp")
 		return
 	}
-	if !applyLogRange(c, &start, &end, true) {
+	if !applyLogRange(c, &start, &end) {
 		return
 	}
 	filter := model.LogFilter{StartTimestamp: start, EndTimestamp: endOrNow(end), ModelName: c.Query("model_name"), TokenName: c.Query("token_name"), Group: c.Query("group"), RequestId: c.Query("request_id")}

@@ -93,7 +93,6 @@ func GetStatus(c *gin.Context) {
 		"custom_currency_exchange_rate": operation_setting.GetGeneralSetting().CustomCurrencyExchangeRate,
 		"enable_batch_update":           common.BatchUpdateEnabled,
 		"log_export_enabled":            log_setting.GetSetting().UserExportEnabled,
-		"log_max_range_days":            log_setting.GetSetting().MaxRangeDays,
 		"enable_data_export":            common.DataExportEnabled,
 		"data_export_default_time":      common.DataExportDefaultTime,
 		"usd_exchange_rate":             operation_setting.USDExchangeRate,

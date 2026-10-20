@@ -2,7 +2,6 @@ import { z } from 'zod';
 import { usageSchema } from '../../features/pricing/catalog-data';
 
 const count = z.number().int().nonnegative();
-export const logStatsSchema = z.object({ quota: z.number().finite(), tokens: count, requests: count, rpm: count, tpm: count });
 const number = z.number().finite();
 const record = z.record(z.string(), z.unknown());
 const field = <T extends z.ZodType>(schema: T) => schema.nullish().transform((value) => value ?? undefined).catch(undefined);
@@ -82,11 +81,10 @@ export const emptyLogFilters = () => ({
   start_timestamp: '', end_timestamp: '',
 });
 export type LogFilters = ReturnType<typeof emptyLogFilters>;
-export function validateLogFilters(filters: LogFilters, admin: boolean, maxDays: unknown, exporting = false, now = Date.now()) {
+export function validateLogFilters(filters: LogFilters, admin: boolean, now = Date.now()) {
   const start = filters.start_timestamp ? new Date(filters.start_timestamp).getTime() : 0;
   const end = filters.end_timestamp ? Math.min(new Date(filters.end_timestamp).getTime(), now) : now;
   if (!Number.isFinite(start) || !Number.isFinite(end) || start < 0 || end < 0 || (start && start > end)) return 'Invalid time range';
-  if ((!admin || exporting) && typeof maxDays === 'number' && maxDays > 0 && start && end - start > maxDays * 86400000) return 'Time range exceeds the configured limit';
   if (admin && filters.channel && !/^[1-9]\d*$/.test(filters.channel)) return 'Channel ID must be a positive integer';
   return '';
 }

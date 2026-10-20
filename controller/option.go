@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-	"strconv"
 	"strings"
 
 	"github.com/QuantumNous/new-api/common"
@@ -104,13 +103,6 @@ func UpdateOption(c *gin.Context) {
 		return
 	}
 	switch option.Key {
-	case "log_setting.max_range_days":
-		days, parseErr := strconv.Atoi(option.Value.(string))
-		if parseErr != nil || days < 1 || days > 36500 {
-			common.ApiErrorMsg(c, "Log range must be between 1 and 36500 days")
-			return
-		}
-
 	case "GitHubOAuthEnabled":
 		if option.Value == "true" && common.GitHubClientId == "" {
 			c.JSON(http.StatusOK, gin.H{

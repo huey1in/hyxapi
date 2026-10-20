@@ -7,7 +7,6 @@ type LogSetting struct {
 	LogResponseBody   bool `json:"log_response_body"`
 	MaxBodyLogBytes   int  `json:"max_body_log_bytes"`
 	UserExportEnabled bool `json:"user_export_enabled"`
-	MaxRangeDays      int  `json:"max_range_days"`
 }
 
 var logSetting = LogSetting{
@@ -15,7 +14,6 @@ var logSetting = LogSetting{
 	LogResponseBody:   false,
 	MaxBodyLogBytes:   4096,
 	UserExportEnabled: true,
-	MaxRangeDays:      365,
 }
 
 func init() {
@@ -24,8 +22,4 @@ func init() {
 
 func GetSetting() *LogSetting {
 	return &logSetting
-}
-
-func (s *LogSetting) MaxRangeSeconds() int64 {
-	return int64(max(1, min(s.MaxRangeDays, 36500))) * 86400
 }
