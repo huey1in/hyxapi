@@ -222,9 +222,14 @@ func (c *CachedFileData) Close() error {
 	c.diskClosed = true
 	if c.diskPath != "" {
 		err := os.Remove(c.diskPath)
-		if err == nil && !c.statDecremented && c.OnClose != nil {
+		// The owner has ended its lifetime even if a prior cleanup already
+		// removed the file or the OS leaves an orphan for later maintenance.
+		if !c.statDecremented && c.OnClose != nil {
 			c.OnClose(c.DiskSize)
 			c.statDecremented = true
+		}
+		if os.IsNotExist(err) {
+			return nil
 		}
 		return err
 	}

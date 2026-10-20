@@ -19,7 +19,7 @@ const (
 	RelayModeMidjourneyDescribe
 	RelayModeMidjourneyBlend
 	RelayModeMidjourneyChange
-	_ // Reserved legacy mode; preserve subsequent numeric values.
+	RelayModeMidjourneySimpleChange
 	RelayModeMidjourneyNotify
 	RelayModeMidjourneyTaskFetch
 	RelayModeMidjourneyTaskImageSeed

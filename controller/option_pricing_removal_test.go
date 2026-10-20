@@ -12,13 +12,14 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestGetOptionsDoesNotExposeRemovedModelPricingOptions(t *testing.T) {
+func TestGetOptionsExposesPricingInputsButOmitsDerivedMetadata(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 	common.OptionMapRWMutex.Lock()
 	originalOptionMap := common.OptionMap
 	common.OptionMap = map[string]string{
-		"ModelRatio": `{"gpt-test":1}`,
-		"GroupRatio": `{"default":1}`,
+		"ModelRatio":          `{"gpt-test":1}`,
+		"CompletionRatioMeta": `{"gpt-test": {"source":"default"}}`,
+		"GroupRatio":          `{"default":1}`,
 	}
 	common.OptionMapRWMutex.Unlock()
 	t.Cleanup(func() {
@@ -41,7 +42,8 @@ func TestGetOptionsDoesNotExposeRemovedModelPricingOptions(t *testing.T) {
 	for _, option := range response.Data {
 		values[option.Key] = option.Value
 	}
-	assert.NotContains(t, values, "ModelRatio")
+	assert.Equal(t, `{"gpt-test":1}`, values["ModelRatio"])
+	assert.NotContains(t, values, "CompletionRatioMeta")
 	assert.Equal(t, `{"default":1}`, values["GroupRatio"])
 }
 

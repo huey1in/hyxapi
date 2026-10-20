@@ -17,7 +17,17 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 
-export const supportedLanguages = ['zh-CN', 'en'];
+export const interfaceLanguages = [
+  { value: 'zh-CN', label: '简体中文' },
+  { value: 'en', label: 'English' },
+  { value: 'fr', label: 'Français' },
+  { value: 'ru', label: 'Русский' },
+  { value: 'ja', label: '日本語' },
+  { value: 'vi', label: 'Tiếng Việt' },
+  { value: 'zh-TW', label: '繁體中文' },
+] as const;
+
+export const supportedLanguages = interfaceLanguages.map(({ value }) => value);
 
 export const normalizeLanguage = (language: string | null | undefined) => {
   if (!language) {
@@ -27,12 +37,15 @@ export const normalizeLanguage = (language: string | null | undefined) => {
   const normalized = language.trim().replace(/_/g, '-');
   const lower = normalized.toLowerCase();
 
+  if (/^zh(?:tw|-(?:tw|hk|mo|hant)(?:-|$))/.test(lower)) {
+    return 'zh-TW';
+  }
   if (lower.startsWith('zh')) {
     return 'zh-CN';
   }
 
   const matchedLanguage = supportedLanguages.find(
-    (supportedLanguage) => supportedLanguage.toLowerCase() === lower,
+    (supportedLanguage) => supportedLanguage.toLowerCase() === lower || supportedLanguage === lower.split('-')[0],
   );
 
   return matchedLanguage || 'en';

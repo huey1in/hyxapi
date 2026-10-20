@@ -6,17 +6,18 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/QuantumNous/new-api/common"
 	"github.com/QuantumNous/new-api/relaykit/dto"
 	"github.com/QuantumNous/new-api/setting/operation_setting"
 )
 
+const GoogleSearchGroundedPromptTool = "google_search_grounded_prompt"
+
+const MaxBillableToolCallCount = 10_000
+
 var reservedBillableToolNames = map[string]struct{}{
-	dto.BuildInToolWebSearchPreview: {},
-	dto.BuildInToolWebSearch:        {},
-	dto.BuildInToolFileSearch:       {},
-	dto.BuildInToolGoogleSearch:     {},
-	dto.BuildInToolImageGeneration:  {},
+	"web_fetch":      {},
+	"code_execution": {},
+	"tool_search":    {},
 }
 
 // CountBillableToolCall is the single entry point for per-call tool billing counts.
@@ -47,10 +48,10 @@ func (info *RelayInfo) CountBillableToolCall(itemType string, functionName strin
 		if functionName == "" {
 			return
 		}
-		if _, reserved := reservedBillableToolNames[functionName]; reserved {
+		if _, reserved := reservedBillableToolNames[functionName]; reserved || operation_setting.IsBuiltInToolPriceKey(functionName) {
 			return
 		}
-		if operation_setting.GetToolPriceForModel(functionName, info.OriginModelName) <= 0 {
+		if operation_setting.GetToolPriceForModel(functionName, info.GetBillingModelName()) <= 0 {
 			return
 		}
 		info.incrementBillableToolCall(functionName)
@@ -179,26 +180,8 @@ func (c *ImageGenerationCallCounter) Commit(info *RelayInfo) {
 	}
 }
 
-// IsNonBillableResponsesStatus reports terminal response statuses that must not
-// bill pending image_generation observations.
-func IsNonBillableResponsesStatus(status []byte) bool {
-	if len(status) == 0 {
-		return false
-	}
-	var s string
-	if err := common.Unmarshal(status, &s); err != nil {
-		return false
-	}
-	switch strings.ToLower(strings.TrimSpace(s)) {
-	case "failed", "cancelled", "canceled", "incomplete":
-		return true
-	default:
-		return false
-	}
-}
-
 func (info *RelayInfo) SetBillableToolCount(name string, count int) {
-	if info == nil || count < 0 {
+	if info == nil || name == "" || count < 0 {
 		return
 	}
 	if info.ResponsesUsageInfo == nil {
@@ -207,8 +190,23 @@ func (info *RelayInfo) SetBillableToolCount(name string, count int) {
 	if info.ResponsesUsageInfo.BuiltInTools == nil {
 		info.ResponsesUsageInfo.BuiltInTools = map[string]*BuildInToolInfo{}
 	}
+	if existing := info.ResponsesUsageInfo.BuiltInTools[name]; existing != nil {
+		existing.CallCount = count
+		return
+	}
 	info.ResponsesUsageInfo.BuiltInTools[name] = &BuildInToolInfo{ToolName: name, CallCount: count}
 }
+
+// RecordRequestInferredToolCall records a forced search when the vendor has no
+// response usage evidence. Channel initialization removes it before a retry.
+func (info *RelayInfo) RecordRequestInferredToolCall(key string) {
+	if info == nil || key == "" {
+		return
+	}
+	info.SetBillableToolCount(key, 1)
+	info.requestInferredToolKey = key
+}
+
 func (info *RelayInfo) RecordVendorToolUsage(raw []byte) {
 	if info == nil || info.VendorToolUsage == nil {
 		return

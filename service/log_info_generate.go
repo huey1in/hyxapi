@@ -33,6 +33,7 @@ func appendRequestPath(ctx *gin.Context, relayInfo *relaycommon.RelayInfo, other
 
 func GenerateTextOtherInfo(ctx *gin.Context, relayInfo *relaycommon.RelayInfo, inputPrice, groupRatio, outputPrice float64,
 	cacheTokens int, cacheReadPrice float64, requestPrice float64) map[string]interface{} {
+	MarkRequestPolicySuccess(ctx, relayInfo.StreamStatus)
 	other := make(map[string]interface{})
 	other["input_price"] = inputPrice
 	other["group_ratio"] = groupRatio
@@ -42,6 +43,9 @@ func GenerateTextOtherInfo(ctx *gin.Context, relayInfo *relaycommon.RelayInfo, i
 	other["request_price"] = requestPrice
 	other["billing_type"] = relayInfo.PriceData.BillingType
 	other["frt"] = float64(relayInfo.FirstResponseTime.UnixMilli() - relayInfo.StartTime.UnixMilli())
+	if relayInfo.ResponseModel != nil {
+		other["response_model"] = relayInfo.ResponseModel
+	}
 	if relayInfo.ReasoningEffort != "" {
 		other["reasoning_effort"] = relayInfo.ReasoningEffort
 	}
@@ -56,6 +60,15 @@ func GenerateTextOtherInfo(ctx *gin.Context, relayInfo *relaycommon.RelayInfo, i
 	}
 
 	adminInfo := make(map[string]interface{})
+	if relayInfo.QuotaClamp != nil {
+		adminInfo["quota_saturation"] = relayInfo.QuotaClamp.AuditMap()
+	}
+	if diagnostics := relayInfo.ConversionDiagnostics(); len(diagnostics) > 0 {
+		adminInfo["conversion_diagnostics"] = diagnostics
+	}
+	if relayInfo.ConversionDiagnosticsTruncated() {
+		adminInfo["conversion_diagnostics_truncated"] = true
+	}
 	adminInfo["use_channel"] = ctx.GetStringSlice("use_channel")
 	isMultiKey := common.GetContextKeyBool(ctx, constant.ContextKeyChannelIsMultiKey)
 	if isMultiKey {
@@ -69,6 +82,9 @@ func GenerateTextOtherInfo(ctx *gin.Context, relayInfo *relaycommon.RelayInfo, i
 	}
 
 	AppendChannelAffinityAdminInfo(ctx, adminInfo)
+	if events := RequestPolicy(ctx).Events(); len(events) > 0 {
+		adminInfo["request_policy"] = events
+	}
 
 	other["admin_info"] = adminInfo
 	appendRequestPath(ctx, relayInfo, other)

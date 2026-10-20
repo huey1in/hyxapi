@@ -151,6 +151,7 @@ body {
 .console-home-nav .home-nav-links a:hover { color:var(--ui-text-1,#24231f); }
 .console-home-nav .home-nav-start { height:34px; padding:0 14px; border-radius:17px; background:var(--ui-text-1,#24231f); color:var(--page-bg,#fff) !important; }
 .console-menu-button { display:grid; place-items:center; width:34px; height:34px; color:var(--ui-text-1,#24231f); }
+@media (min-width:768px) { .console-menu-button { display:none; } }
 .console-layout-body { padding-top:70px; }
 .cursor-home .home-brand,.cursor-auth-header .home-brand { font-size:21px; font-weight:600; }.cursor-home .home-nav-links { gap:30px; font-size:13px; }.cursor-home .home-nav-start { height:34px; padding:0 14px; border-radius:17px; }
 .cursor-home .studio-hero { display:block; width:min(1210px,calc(100% - 40px)); min-height:0; padding:175px 0 55px; }
@@ -673,4 +674,12 @@ html.dark .token-usage-cell.level-4 { background:#45c976; }
   .dashboard-overview { padding-inline:12px; }
   .dashboard-token-usage__header { align-items:flex-start; flex-direction:column; }
   .dashboard-token-usage__header > div { align-self:stretch; }
+}
+
+/* Public navigation includes all enabled modules. Keep console controls compact. */
+@media (max-width:1100px) {
+  .cursor-home .home-menu-button,.console-home-nav .home-menu-button { display:flex; }
+  .cursor-home .home-nav-links.public-site-navigation,.console-home-nav .home-nav-links.public-site-navigation { display:none; position:absolute; z-index:10; top:100%; right:14px; left:14px; flex-direction:column; align-items:stretch; gap:0; padding:8px; border:1px solid var(--ui-border,#bbb); border-radius:13px; background:var(--page-bg,#f7f7f5); }
+  .cursor-home .home-nav-links.public-site-navigation.is-open,.console-home-nav .home-nav-links.public-site-navigation.is-open { display:flex; }
+  .home-nav-links.public-site-navigation>a:not(.home-nav-start) { padding:13px 10px; }
 }

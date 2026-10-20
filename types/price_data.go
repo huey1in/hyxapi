@@ -2,15 +2,21 @@ package types
 
 import (
 	"fmt"
+	"github.com/shopspring/decimal"
 	"math"
 )
 
 type GroupRatioInfo struct {
-	GroupRatio float64
+	GroupRatio        float64
+	GroupSpecialRatio float64
+	HasSpecialRatio   bool
 }
 
 type PriceData struct {
-	FreeModel bool
+	BillingMode       string
+	CacheWrite5mPrice float64
+	CacheWrite1hPrice float64
+	FreeModel         bool
 	// BillingType identifies the direct model price schedule: 0 bills by
 	// token and 1 bills once per request. Token prices below are USD per
 	// million tokens; RequestPrice is USD per request. GroupRatioInfo is
@@ -101,4 +107,13 @@ func (p *PriceData) OtherRatios() map[string]float64 {
 
 func (p *PriceData) ToSetting() string {
 	return fmt.Sprintf("BillingType: %d, InputPrice: %f, OutputPrice: %f, CacheReadPrice: %f, CacheWritePrice: %f, ImagePrice: %f, AudioInputPrice: %f, AudioOutputPrice: %f, RequestPrice: %f, GroupRatio: %f, QuotaToPreConsume: %d", p.BillingType, p.InputPrice, p.OutputPrice, p.CacheReadPrice, p.CacheWritePrice, p.ImagePrice, p.AudioInputPrice, p.AudioOutputPrice, p.RequestPrice, p.GroupRatioInfo.GroupRatio, p.QuotaToPreConsume)
+}
+
+func (p *PriceData) ApplyOtherRatiosToDecimal(value decimal.Decimal) decimal.Decimal {
+	for _, ratio := range p.otherRatios {
+		if ratio > 0 && !math.IsInf(ratio, 1) && ratio != 1 {
+			value = value.Mul(decimal.NewFromFloat(ratio))
+		}
+	}
+	return value
 }

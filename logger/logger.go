@@ -34,6 +34,54 @@ var setupLogWorking bool
 var currentLogPathMu sync.RWMutex
 var currentLogFile *os.File
 
+func GetCurrentLogPath() string {
+	currentLogPathMu.RLock()
+	defer currentLogPathMu.RUnlock()
+	if currentLogFile == nil {
+		return ""
+	}
+	return currentLogFile.Name()
+}
+
+func isCurrentLogFile(path string) bool {
+	if currentLogFile == nil {
+		return false
+	}
+	active, err := currentLogFile.Stat()
+	if err != nil {
+		return false
+	}
+	candidate, err := os.Stat(path)
+	return err == nil && os.SameFile(active, candidate)
+}
+
+func IsCurrentLogFile(path string) bool {
+	currentLogPathMu.RLock()
+	defer currentLogPathMu.RUnlock()
+	return isCurrentLogFile(path)
+}
+
+// RemoveInactiveLogFile rechecks the active writer while holding the same lock
+// as logger rotation. Directory entries and symlinks are never removed here.
+func RemoveInactiveLogFile(path string) (bool, error) {
+	currentLogPathMu.RLock()
+	defer currentLogPathMu.RUnlock()
+	info, err := os.Lstat(path)
+	if os.IsNotExist(err) {
+		return false, nil
+	}
+	if err != nil {
+		return false, err
+	}
+	if !info.Mode().IsRegular() || isCurrentLogFile(path) {
+		return false, nil
+	}
+	if err := os.Remove(path); err != nil {
+		return false, err
+	}
+	return true, nil
+}
+
 func SetupLogger() {
 	defer func() {
 		setupLogWorking = false

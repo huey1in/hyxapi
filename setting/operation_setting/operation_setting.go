@@ -2,6 +2,9 @@ package operation_setting
 
 import "strings"
 
+var DemoSiteEnabled = false
+var SelfUseModeEnabled = false
+
 var AutomaticDisableKeywords = []string{
 	"Your credit balance is too low",
 	"This organization has been disabled.",

@@ -28,3 +28,14 @@ func UpdateTopupGroupRatioByJSONString(jsonStr string) error {
 	topupGroupRatio = make(map[string]float64)
 	return json.Unmarshal([]byte(jsonStr), &topupGroupRatio)
 }
+
+func GetTopupGroupRatio(name string) float64 {
+	topupGroupRatioMutex.RLock()
+	defer topupGroupRatioMutex.RUnlock()
+	ratio, ok := topupGroupRatio[name]
+	if !ok {
+		SysError(LogText("topup group ratio not found: %s", name))
+		return 1
+	}
+	return ratio
+}

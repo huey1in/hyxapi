@@ -7,6 +7,7 @@ import (
 
 	"github.com/QuantumNous/new-api/common"
 	"github.com/QuantumNous/new-api/i18n"
+	"github.com/QuantumNous/new-api/middleware"
 	"github.com/QuantumNous/new-api/model"
 	"github.com/QuantumNous/new-api/service/authz"
 
@@ -14,16 +15,18 @@ import (
 )
 
 type MultiKeyManageRequest struct {
-	ChannelId int    `json:"channel_id"`
-	Action    string `json:"action"`              // "disable_key", "enable_key", "delete_key", "delete_disabled_keys", "get_key_status"
-	KeyIndex  *int   `json:"key_index,omitempty"` // for disable_key, enable_key, and delete_key actions
-	Page      int    `json:"page,omitempty"`      // for get_key_status pagination
-	PageSize  int    `json:"page_size,omitempty"` // for get_key_status pagination
-	Status    *int   `json:"status,omitempty"`    // for get_key_status filtering: 1=enabled, 2=manual_disabled, 3=auto_disabled, nil=all
+	ChannelId        int    `json:"channel_id"`
+	Action           string `json:"action"`              // "disable_key", "enable_key", "delete_key", "delete_disabled_keys", "get_key_status"
+	KeyIndex         *int   `json:"key_index,omitempty"` // for disable_key, enable_key, and delete_key actions
+	Page             int    `json:"page,omitempty"`      // for get_key_status pagination
+	PageSize         int    `json:"page_size,omitempty"` // for get_key_status pagination
+	ExpectedRevision string `json:"expected_revision,omitempty"`
+	Status           *int   `json:"status,omitempty"` // for get_key_status filtering: 1=enabled, 2=manual_disabled, 3=auto_disabled, nil=all
 }
 
 // MultiKeyStatusResponse represents the response for key status query
 type MultiKeyStatusResponse struct {
+	Revision   string      `json:"revision"`
 	Keys       []KeyStatus `json:"keys"`
 	Total      int         `json:"total"`
 	Page       int         `json:"page"`
@@ -56,6 +59,20 @@ func ManageMultiKeys(c *gin.Context) {
 		return
 	}
 
+	if request.ChannelId <= 0 || (request.Status != nil && (*request.Status < 1 || *request.Status > 3)) {
+		common.ApiError(c, fmt.Errorf("invalid multi-key request"))
+		return
+	}
+	switch request.Action {
+	case "get_key_status", "disable_key", "enable_key", "delete_key", "delete_disabled_keys", "enable_all_keys", "disable_all_keys":
+	default:
+		common.ApiError(c, fmt.Errorf("unsupported multi-key action"))
+		return
+	}
+	lock := model.GetChannelPollingLock(request.ChannelId)
+	lock.Lock()
+	defer lock.Unlock()
+
 	channel, err := model.GetChannelById(request.ChannelId, true)
 	if err != nil {
 		c.JSON(http.StatusOK, gin.H{
@@ -73,19 +90,24 @@ func ManageMultiKeys(c *gin.Context) {
 		return
 	}
 	if multiKeyActionRequiresSensitiveWrite(request.Action) &&
-		!authz.Can(c.GetInt("id"), c.GetInt("role"), authz.ChannelSensitiveWrite) {
+		!middleware.HasPermission(c, authz.ChannelSensitiveWrite) {
 		common.ApiErrorI18n(c, i18n.MsgAuthInsufficientPrivilege)
 		return
 	}
 
-	// get_key_status 为只读查询，不记录审计；其余为修改操作。
-	if request.Action != "get_key_status" {
-		model.RecordAuditLog(c, model.AuditUpdate, "channel", channel.Id, "多密钥管理操作: "+request.Action)
+	revision := model.ChannelMultiKeyRevision(channel)
+	if request.Action != "get_key_status" && request.ExpectedRevision != "" && request.ExpectedRevision != revision {
+		common.ApiError(c, fmt.Errorf("Channel keys changed. Refresh and try again."))
+		return
 	}
-
-	lock := model.GetChannelPollingLock(channel.Id)
-	lock.Lock()
-	defer lock.Unlock()
+	channel.ChannelInfo.MultiKeySize = len(channel.GetKeys())
+	persist := func() error {
+		if err := model.CommitChannelMultiKeyEdit(channel, revision); err != nil {
+			return err
+		}
+		model.RecordLegacyAuditLog(c, model.AuditUpdate, "channel", channel.Id, "多密钥管理操作: "+request.Action)
+		return nil
+	}
 
 	switch request.Action {
 	case "get_key_status":
@@ -96,6 +118,9 @@ func ManageMultiKeys(c *gin.Context) {
 		pageSize := request.PageSize
 		if page <= 0 {
 			page = 1
+		}
+		if pageSize > 200 {
+			pageSize = 200
 		}
 		if pageSize <= 0 {
 			pageSize = 50 // Default page size
@@ -136,11 +161,7 @@ func ManageMultiKeys(c *gin.Context) {
 				}
 			}
 
-			// Create key preview (first 10 chars)
-			keyPreview := key
-			if len(key) > 10 {
-				keyPreview = key[:10] + "..."
-			}
+			keyPreview := multiKeyPreview(key)
 
 			allKeyStatusList = append(allKeyStatusList, KeyStatus{
 				Index:        i,
@@ -190,6 +211,7 @@ func ManageMultiKeys(c *gin.Context) {
 			"success": true,
 			"message": "",
 			"data": MultiKeyStatusResponse{
+				Revision:            revision,
 				Keys:                pageKeyStatusList,
 				Total:               filteredTotal, // Total of filtered results
 				Page:                page,
@@ -231,8 +253,10 @@ func ManageMultiKeys(c *gin.Context) {
 		}
 
 		channel.ChannelInfo.MultiKeyStatusList[keyIndex] = 2 // disabled
+		channel.ChannelInfo.MultiKeyDisabledTime[keyIndex] = common.GetTimestamp()
+		channel.ChannelInfo.MultiKeyDisabledReason[keyIndex] = "Manually disabled"
 
-		err = channel.Update()
+		err = persist()
 		if err != nil {
 			common.ApiError(c, err)
 			return
@@ -274,7 +298,7 @@ func ManageMultiKeys(c *gin.Context) {
 			delete(channel.ChannelInfo.MultiKeyDisabledReason, keyIndex)
 		}
 
-		err = channel.Update()
+		err = persist()
 		if err != nil {
 			common.ApiError(c, err)
 			return
@@ -298,7 +322,7 @@ func ManageMultiKeys(c *gin.Context) {
 		channel.ChannelInfo.MultiKeyDisabledTime = make(map[int]int64)
 		channel.ChannelInfo.MultiKeyDisabledReason = make(map[int]string)
 
-		err = channel.Update()
+		err = persist()
 		if err != nil {
 			common.ApiError(c, err)
 			return
@@ -333,6 +357,8 @@ func ManageMultiKeys(c *gin.Context) {
 			// 只禁用当前启用的密钥
 			if status == 1 {
 				channel.ChannelInfo.MultiKeyStatusList[i] = 2 // disabled
+				channel.ChannelInfo.MultiKeyDisabledTime[i] = common.GetTimestamp()
+				channel.ChannelInfo.MultiKeyDisabledReason[i] = "Manually disabled"
 				disabledCount++
 			}
 		}
@@ -345,7 +371,7 @@ func ManageMultiKeys(c *gin.Context) {
 			return
 		}
 
-		err = channel.Update()
+		err = persist()
 		if err != nil {
 			common.ApiError(c, err)
 			return
@@ -421,11 +447,12 @@ func ManageMultiKeys(c *gin.Context) {
 		// Update channel with remaining keys
 		channel.Key = strings.Join(remainingKeys, "\n")
 		channel.ChannelInfo.MultiKeySize = len(remainingKeys)
+		channel.ChannelInfo.MultiKeyPollingIndex = 0
 		channel.ChannelInfo.MultiKeyStatusList = newStatusList
 		channel.ChannelInfo.MultiKeyDisabledTime = newDisabledTime
 		channel.ChannelInfo.MultiKeyDisabledReason = newDisabledReason
 
-		err = channel.Update()
+		err = persist()
 		if err != nil {
 			common.ApiError(c, err)
 			return
@@ -478,6 +505,10 @@ func ManageMultiKeys(c *gin.Context) {
 			}
 		}
 
+		if len(remainingKeys) == 0 {
+			common.ApiError(c, fmt.Errorf("Cannot delete the last key"))
+			return
+		}
 		if deletedCount == 0 {
 			c.JSON(http.StatusOK, gin.H{
 				"success": false,
@@ -489,11 +520,12 @@ func ManageMultiKeys(c *gin.Context) {
 		// Update channel with remaining keys
 		channel.Key = strings.Join(remainingKeys, "\n")
 		channel.ChannelInfo.MultiKeySize = len(remainingKeys)
+		channel.ChannelInfo.MultiKeyPollingIndex = 0
 		channel.ChannelInfo.MultiKeyStatusList = newStatusList
 		channel.ChannelInfo.MultiKeyDisabledTime = newDisabledTime
 		channel.ChannelInfo.MultiKeyDisabledReason = newDisabledReason
 
-		err = channel.Update()
+		err = persist()
 		if err != nil {
 			common.ApiError(c, err)
 			return
@@ -514,4 +546,14 @@ func ManageMultiKeys(c *gin.Context) {
 		})
 		return
 	}
+}
+
+// Even a short key is never returned in full to an operator.
+func multiKeyPreview(key string) string {
+	runes := []rune(key)
+	length := 10
+	if len(runes) <= length {
+		length = len(runes) / 2
+	}
+	return string(runes[:length]) + "…"
 }

@@ -16,9 +16,9 @@ before(async () => {
   globalThis.localStorage = globalThis.window.localStorage;
 
   const modules = await loadTestModules([
-    './src/pages/Setting/ModelPricingEditor.jsx',
+    './src/pages/Setting/pricing-editor.ts',
     './src/helpers/utils.jsx',
-    './src/pages/Log/index.jsx',
+    './src/pages/Log/log-data.ts',
   ]);
   editor = modules.entry0;
   helpers = modules.entry1;
@@ -141,7 +141,7 @@ test('admin pricing rows preserve an imported invalid billing type for repair', 
   assert.equal(row.billing_type, 99);
   assert.deepEqual(editor.getBillingTypeOptions(row.billing_type)[0], {
     value: 99,
-    label: '无效类型 (99)',
+    label: 'Invalid type (99)',
   });
 });
 
@@ -224,4 +224,30 @@ test('model price items hide zero-valued optional prices', () => {
   }, (key) => key);
 
   assert.deepEqual(items.map(({ key }) => key), ['input', 'completion']);
+});
+
+test('configured free prices remain visible while missing prices stay absent', () => {
+  const price = helpers.calculateModelPrice({
+    record: { billing_type: 'tokens', configured: true, input_price: 0, output_price: 0 },
+    selectedGroup: 'default', groupRatio: { default: 2 },
+  });
+  assert.deepEqual(helpers.getModelPriceItems(price, (key) => key).map(({ key, configuredValue }) => [key, configuredValue]), [['input', 0], ['completion', 0]]);
+  assert.deepEqual(helpers.getModelPriceItems({ ...price, configured: false }, (key) => key), []);
+  const request = helpers.calculateModelPrice({ record: { billing_type: 'request', request_price: 0 }, selectedGroup: 'default' });
+  assert.deepEqual(helpers.getModelPriceItems(request, (key) => key).map(({ configuredValue }) => configuredValue), [0]);
+  const missing = helpers.calculateModelPrice({ record: { billing_type: 'tokens', configured: true }, selectedGroup: 'default' });
+  assert.deepEqual(helpers.getModelPriceItems(missing, (key) => key), []);
+});
+
+
+test('expression pricing keeps its active rule instead of presenting inactive zero prices', () => {
+  const expression = 'tier("base", p * 2 + c * 8)';
+  const price = helpers.calculateModelPrice({ record: {
+    billing_mode: 'tiered_expr', billing_expr: expression,
+    input_price: 0, output_price: 0, request_price: 0,
+  }, selectedGroup: 'default' });
+  assert.equal(price.isExpression, true);
+  assert.equal(price.expression, expression);
+  assert.match(price.price, /表达式|expression/i);
+  assert.equal(price.inputPrice, undefined);
 });

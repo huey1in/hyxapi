@@ -21,7 +21,7 @@ func GetResponsesWebSocketChannel(group, modelName string, excluded []int) (*Cha
 		return nil, err
 	}
 	if len(ids) == 0 {
-		if normalized := ratio_setting.FormatMatchingModelName(modelName); normalized != modelName {
+		if normalized := ratio_setting.RoutingMatchModelName(modelName); normalized != modelName {
 			if err := findIDs(normalized); err != nil {
 				return nil, err
 			}
@@ -83,7 +83,7 @@ func SupportsResponsesWebSocket(channel *Channel, modelName string) bool {
 	switch channel.Type {
 	case constant.ChannelTypeOpenAI, constant.ChannelTypeNewAPI, constant.ChannelTypeSub2API:
 		return true
-	case constant.ChannelTypeAdvancedCustom:
+	case constant.ChannelTypeAdvancedCustom, constant.ChannelTypeVLLM, constant.ChannelTypeSGLang:
 		route, ok := channel.GetOtherSettings().AdvancedCustom.MatchPathForModel("/v1/responses", modelName)
 		return ok && route.IsNative()
 	}

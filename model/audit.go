@@ -14,11 +14,12 @@ const (
 	AuditDisable = "disable"
 )
 
-func RecordAuditLog(c *gin.Context, action, resourceType string, resourceId int, detail string) {
+func RecordLegacyAuditLog(c *gin.Context, action, resourceType string, resourceId int, detail string) {
 	userId := c.GetInt("id")
 	username := c.GetString("username")
 	ip := c.ClientIP()
 	ts := common.GetTimestamp()
+	requestID := c.GetString(common.RequestIdKey)
 
 	other := map[string]interface{}{
 		"action":        action,
@@ -35,12 +36,15 @@ func RecordAuditLog(c *gin.Context, action, resourceType string, resourceId int,
 			Content:   detail,
 			Ip:        ip,
 			Other:     common.MapToJsonStr(other),
+			RequestId: requestID,
 		}
-		LOG_DB.Create(log)
+		if err := createLog(log); err != nil {
+			common.SysError(common.LogText("failed to record legacy audit log: %s", err.Error()))
+		}
 	})
 }
 
-func GetAuditLogs(startTimestamp, endTimestamp int64, username, keyword string, startIdx, num int) (logs []*Log, total int64, err error) {
+func GetLegacyAuditLogs(startTimestamp, endTimestamp int64, username, keyword string, startIdx, num int) (logs []*Log, total int64, err error) {
 	tx := LOG_DB.Where("type = ?", LogTypeManage)
 
 	if username != "" {
@@ -62,9 +66,16 @@ func GetAuditLogs(startTimestamp, endTimestamp int64, username, keyword string, 
 	}
 
 	var result []*Log
-	err = tx.Order("id desc").Limit(num).Offset(startIdx).Find(&result).Error
+	order := "id desc"
+	if common.UsingLogDatabase(common.DatabaseTypeClickHouse) {
+		order = clickHouseLogOrder("")
+	}
+	err = tx.Order(order).Limit(num).Offset(startIdx).Find(&result).Error
 	if err != nil {
 		return nil, 0, err
+	}
+	if common.UsingLogDatabase(common.DatabaseTypeClickHouse) {
+		assignDisplayLogIds(result, startIdx)
 	}
 
 	backfillChannelNames(result)
@@ -99,11 +110,14 @@ func backfillChannelNames(logs []*Log) {
 }
 
 func jsonIntExtract(field, key string) string {
-	if common.UsingPostgreSQL {
+	if common.UsingLogDatabase(common.DatabaseTypePostgreSQL) {
 		return "COALESCE(NULLIF((NULLIF(" + field + ", '')::jsonb->>'" + key + "'), '')::bigint, 0)"
 	}
-	if common.UsingSQLite {
+	if common.UsingLogDatabase(common.DatabaseTypeSQLite) {
 		return "CAST(COALESCE(NULLIF(json_extract(NULLIF(" + field + ", ''), '$." + key + "'), ''), '0') AS INTEGER)"
+	}
+	if common.UsingLogDatabase(common.DatabaseTypeClickHouse) {
+		return "toInt64OrZero(JSON_VALUE(" + field + ", '$." + key + "'))"
 	}
 	return "CAST(COALESCE(NULLIF(JSON_UNQUOTE(JSON_EXTRACT(NULLIF(" + field + ", ''), '$." + key + "')), ''), '0') AS SIGNED)"
 }

@@ -37,7 +37,7 @@ func TestResponsesImageDetailPreserved(t *testing.T) {
 	for _, detail := range []string{"", "auto", "low", "high", "original", "bogus"} {
 		t.Run(detail, func(t *testing.T) {
 			req := &dto.GeneralOpenAIRequest{Model: "image", Messages: []dto.Message{{Role: "user", Content: []any{map[string]any{"type": "image_url", "image_url": map[string]any{"url": "https://example.test/a.png", "detail": detail}}}}}}
-			got, err := ChatCompletionsRequestToResponsesRequest(req)
+			got, err := ChatCompletionsRequestToResponsesRequest(context.Background(), req)
 			require.NoError(t, err)
 			want := detail
 			if detail == "" || detail == "bogus" {

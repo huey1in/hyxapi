@@ -45,6 +45,15 @@ func EpaySign(params map[string]string, key string) string {
 
 // EpayVerify 校验回调签名。
 func EpayVerify(params map[string]string, key string) bool {
+	// Unsigned separators can reinterpret an authenticated field as another key.
+	if key == "" {
+		return false
+	}
+	for k, v := range params {
+		if strings.ContainsAny(k, "&=") || strings.Contains(v, "&") {
+			return false
+		}
+	}
 	got := params["sign"]
 	if got == "" {
 		return false

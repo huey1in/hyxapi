@@ -45,12 +45,12 @@ func checkSubscriptionRPMRedis(c *gin.Context, subId int, rpm int) bool {
 		return false
 	}
 	if length < int64(rpm) {
-		rdb.LPush(ctx, key, time.Now().Format(timeFormat))
+		rdb.LPush(ctx, key, time.Now().UTC().Format(modelRateLimitTimeFormat))
 		rdb.Expire(ctx, key, 2*time.Minute)
 		return true
 	}
 	oldStr, _ := rdb.LIndex(ctx, key, -1).Result()
-	oldT, err := time.Parse(timeFormat, oldStr)
+	oldT, err := time.Parse(modelRateLimitTimeFormat, oldStr)
 	if err != nil {
 		c.AbortWithStatus(http.StatusInternalServerError)
 		return false
@@ -59,7 +59,7 @@ func checkSubscriptionRPMRedis(c *gin.Context, subId int, rpm int) bool {
 		c.AbortWithStatus(http.StatusTooManyRequests)
 		return false
 	}
-	rdb.LPush(ctx, key, time.Now().Format(timeFormat))
+	rdb.LPush(ctx, key, time.Now().UTC().Format(modelRateLimitTimeFormat))
 	rdb.LTrim(ctx, key, 0, int64(rpm-1))
 	rdb.Expire(ctx, key, 2*time.Minute)
 	return true

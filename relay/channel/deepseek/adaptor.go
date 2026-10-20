@@ -14,8 +14,10 @@ import (
 	relaycommon "github.com/QuantumNous/new-api/relay/common"
 	"github.com/QuantumNous/new-api/relay/constant"
 	"github.com/QuantumNous/new-api/relaykit/dto"
-	"github.com/QuantumNous/new-api/relaykit/relayconvert/reasoning"
+	kitreasoning "github.com/QuantumNous/new-api/relaykit/relayconvert/reasoning"
 	"github.com/QuantumNous/new-api/relaykit/types"
+	"github.com/QuantumNous/new-api/setting/model_setting"
+	"github.com/QuantumNous/new-api/setting/reasoning"
 	"github.com/gin-gonic/gin"
 )
 
@@ -29,7 +31,13 @@ func (a *Adaptor) ConvertGeminiRequest(*gin.Context, *relaycommon.RelayInfo, *dt
 
 func (a *Adaptor) ConvertClaudeRequest(c *gin.Context, info *relaycommon.RelayInfo, req *dto.ClaudeRequest) (any, error) {
 	adaptor := claude.Adaptor{}
+	// A model modifier is rendered into DeepSeek's own thinking and effort
+	// fields below; Anthropic's model rules (budgets, adaptive thinking,
+	// max_tokens and sampling changes) must not see it.
+	state := info.ReasoningConversion
+	info.ReasoningConversion = nil
 	convertedRequest, err := adaptor.ConvertClaudeRequest(c, info, req)
+	info.ReasoningConversion = state
 	if err != nil {
 		return nil, err
 	}
@@ -54,9 +62,14 @@ func (a *Adaptor) ConvertImageRequest(c *gin.Context, info *relaycommon.RelayInf
 }
 
 func (a *Adaptor) Init(info *relaycommon.RelayInfo) {
+	// DeepSeek runs Claude Code and Codex searches and page fetches
+	// server-side and bills them through its Search and Fetch APIs, whatever
+	// model name the client sent.
 	info.WebSearchBillingKey = SearchToolPriceKey
 	info.WebFetchBillingKey = FetchToolPriceKey
-	info.VendorToolUsage = responsesToolUsage
+	if info.RelayMode == constant.RelayModeResponses {
+		info.VendorToolUsage = responsesToolUsage
+	}
 }
 
 func (a *Adaptor) GetRequestURL(info *relaycommon.RelayInfo) (string, error) {
@@ -71,12 +84,12 @@ func (a *Adaptor) GetRequestURL(info *relaycommon.RelayInfo) (string, error) {
 		switch info.RelayMode {
 		case constant.RelayModeCompletions:
 			return fmt.Sprintf("%s/completions", fimBaseUrl), nil
+		case constant.RelayModeResponses:
+			return fmt.Sprintf("%s/responses", info.ChannelBaseUrl), nil
 		case constant.RelayModeToolsSearch:
 			return fmt.Sprintf("%s/v1/tools/search", info.ChannelBaseUrl), nil
 		case constant.RelayModeToolsFetch:
 			return fmt.Sprintf("%s/v1/tools/fetch", info.ChannelBaseUrl), nil
-		case constant.RelayModeResponses:
-			return fmt.Sprintf("%s/responses", info.ChannelBaseUrl), nil
 		default:
 			return fmt.Sprintf("%s/v1/chat/completions", info.ChannelBaseUrl), nil
 		}
@@ -105,10 +118,7 @@ func applyDeepSeekV4OpenAIThinkingSuffix(info *relaycommon.RelayInfo, request *d
 	if info != nil && info.ChannelMeta != nil && info.UpstreamModelName != "" {
 		modelName = info.UpstreamModelName
 	}
-	baseModel, thinkingType, effort, ok, parseErr := reasoning.ParseDeepSeekModel(modelName)
-	if parseErr != nil {
-		return parseErr
-	}
+	baseModel, thinkingType, effort, ok := deepSeekThinking(info, modelName)
 	if !ok {
 		return nil
 	}
@@ -121,11 +131,15 @@ func applyDeepSeekV4OpenAIThinkingSuffix(info *relaycommon.RelayInfo, request *d
 	request.Model = baseModel
 	request.THINKING = thinking
 	request.ReasoningEffort = effort
+	if info.ReasoningState() != nil {
+		// DeepSeek Chat has no reasoning object; a budget modifier adds one.
+		request.Reasoning = nil
+	}
 	if info != nil {
 		if info.ChannelMeta != nil {
 			info.UpstreamModelName = baseModel
 		}
-		info.ReasoningEffort = effort
+		info.SetReasoningEffort(deepSeekRunEffort(thinkingType, effort))
 	}
 	return nil
 }
@@ -135,30 +149,28 @@ func applyDeepSeekV4ClaudeThinkingSuffix(info *relaycommon.RelayInfo, request *d
 	if info != nil && info.ChannelMeta != nil && info.UpstreamModelName != "" {
 		modelName = info.UpstreamModelName
 	}
-	baseModel, thinkingType, effort, ok, parseErr := reasoning.ParseDeepSeekModel(modelName)
-	if parseErr != nil {
-		return parseErr
-	}
+	baseModel, thinkingType, effort, ok := deepSeekThinking(info, modelName)
 	if !ok {
 		return nil
 	}
 	request.Model = baseModel
 	request.Thinking = &dto.Thinking{Type: thinkingType}
-	output := map[string]any{}
-	if len(request.OutputConfig) > 0 {
-		if err := common.Unmarshal(request.OutputConfig, &output); err != nil {
+	// Only effort is set or removed; other output_config members stay.
+	outputConfig := make(map[string]any)
+	if len(request.OutputConfig) > 0 && common.GetJsonType(request.OutputConfig) == "object" {
+		if err := common.Unmarshal(request.OutputConfig, &outputConfig); err != nil {
 			return fmt.Errorf("invalid output_config: %w", err)
 		}
 	}
-	delete(output, "effort")
+	delete(outputConfig, "effort")
 	if effort != "" {
-		output["effort"] = effort
+		outputConfig["effort"] = effort
 	}
 	request.OutputConfig = nil
-	if len(output) > 0 {
-		encoded, err := common.Marshal(output)
+	if len(outputConfig) > 0 {
+		encoded, err := common.Marshal(outputConfig)
 		if err != nil {
-			return err
+			return fmt.Errorf("error marshalling output_config: %w", err)
 		}
 		request.OutputConfig = encoded
 	}
@@ -166,7 +178,7 @@ func applyDeepSeekV4ClaudeThinkingSuffix(info *relaycommon.RelayInfo, request *d
 		if info.ChannelMeta != nil {
 			info.UpstreamModelName = baseModel
 		}
-		info.ReasoningEffort = effort
+		info.SetReasoningEffort(deepSeekRunEffort(thinkingType, effort))
 	}
 	return nil
 }
@@ -181,36 +193,81 @@ func (a *Adaptor) ConvertEmbeddingRequest(c *gin.Context, info *relaycommon.Rela
 }
 
 func (a *Adaptor) ConvertOpenAIResponsesRequest(_ *gin.Context, info *relaycommon.RelayInfo, request dto.OpenAIResponsesRequest) (any, error) {
-	err := applyDeepSeekV4ResponsesThinkingSuffix(info, &request)
-	return request, err
+	applyDeepSeekV4ResponsesThinkingSuffix(info, &request)
+	return request, nil
 }
 
-func applyDeepSeekV4ResponsesThinkingSuffix(info *relaycommon.RelayInfo, request *dto.OpenAIResponsesRequest) error {
+func applyDeepSeekV4ResponsesThinkingSuffix(info *relaycommon.RelayInfo, request *dto.OpenAIResponsesRequest) {
 	modelName := request.Model
 	if info != nil && info.ChannelMeta != nil && info.UpstreamModelName != "" {
 		modelName = info.UpstreamModelName
 	}
-	baseModel, thinkingType, effort, ok, err := reasoning.ParseDeepSeekModel(modelName)
-	if err != nil {
-		return err
+	baseModel, thinkingType, effort, ok := deepSeekThinking(info, modelName)
+	if !ok {
+		if info != nil && request.Reasoning != nil {
+			info.SetReasoningEffort(request.Reasoning.Effort)
+		}
+		return
 	}
-	if ok {
-		if thinkingType == "disabled" {
-			effort = "none"
-		}
-		request.Model = baseModel
-		if request.Reasoning == nil {
-			request.Reasoning = &dto.Reasoning{}
-		}
+	if thinkingType == "disabled" {
+		effort = "none"
+	}
+	request.Model = baseModel
+	if request.Reasoning == nil && effort != "" {
+		request.Reasoning = &dto.Reasoning{}
+	}
+	if request.Reasoning != nil {
 		request.Reasoning.Effort = effort
-		if info != nil && info.ChannelMeta != nil {
+	}
+	if info != nil {
+		if info.ChannelMeta != nil {
 			info.UpstreamModelName = baseModel
 		}
+		info.SetReasoningEffort(deepSeekRunEffort(thinkingType, effort))
 	}
-	if info != nil && request.Reasoning != nil {
-		info.ReasoningEffort = request.Reasoning.Effort
+}
+
+// deepSeekThinking returns the model name to send with DeepSeek's thinking
+// switch and effort. An explicit @ modifier (the reasoning state) wins over a
+// -none/-low/-max tail, which is still stripped from the name. A budget maps
+// to an effort as on other effort-only targets; thinking on or adaptive leaves
+// the effort to DeepSeek's default.
+func deepSeekThinking(info *relaycommon.RelayInfo, modelName string) (baseModel string, thinkingType string, effort string, ok bool) {
+	baseModel = modelName
+	if !model_setting.ShouldPreserveThinkingSuffix(modelName) && (info == nil || !model_setting.ShouldPreserveThinkingSuffix(info.OriginModelName)) {
+		baseModel, thinkingType, effort, ok = reasoning.ParseDeepSeekV4ThinkingSuffix(modelName)
 	}
-	return nil
+	state := info.ReasoningState()
+	if state == nil {
+		return baseModel, thinkingType, effort, ok
+	}
+	intent := kitreasoning.IntentFromState(state)
+	switch runs := kitreasoning.EffectiveEffort(intent); {
+	case runs == "":
+		return baseModel, thinkingType, effort, ok
+	case runs == kitreasoning.EffortNone:
+		return baseModel, "disabled", "", true
+	case intent.Effort == "" && intent.BudgetTokens == nil:
+		return baseModel, "enabled", "", true
+	default:
+		return baseModel, "enabled", string(runs), true
+	}
+}
+
+// deepSeekRunEffort is the effort DeepSeek runs: none with thinking off, its
+// default high when no effort is sent, and the levels it does not implement
+// mapped as DeepSeek maps them (minimal to low, medium and xhigh to high).
+func deepSeekRunEffort(thinkingType string, effort string) string {
+	switch {
+	case thinkingType == "disabled":
+		return string(kitreasoning.EffortNone)
+	case effort == "" || effort == "medium" || effort == "xhigh":
+		return "high"
+	case effort == "minimal":
+		return "low"
+	default:
+		return effort
+	}
 }
 
 func (a *Adaptor) DoRequest(c *gin.Context, info *relaycommon.RelayInfo, requestBody io.Reader) (any, error) {

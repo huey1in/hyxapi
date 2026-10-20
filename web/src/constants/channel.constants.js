@@ -20,4 +20,5 @@ For commercial licensing, please contact support@quantumnous.com
 // Channel types that support upstream model list fetching in UI.
 export const MODEL_FETCHABLE_CHANNEL_TYPES = new Set([
   1, 14, 34, 17, 26, 27, 24, 47, 25, 20, 23, 31, 40, 42, 48, 43,
+  4, 45, 57, 58, 59, 60, 61, 62, 63,
 ]);

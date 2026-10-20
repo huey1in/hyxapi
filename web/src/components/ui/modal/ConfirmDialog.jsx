@@ -20,6 +20,7 @@ const ConfirmDialog = ({
   confirmText = '确定',
   cancelText = '取消',
   loading = false,
+  closeOnConfirm = true,
 }) => (
   <ModalShell open={open} onClose={onClose} maxWidth={400}>
     <div className='p-6 space-y-3'>
@@ -36,7 +37,7 @@ const ConfirmDialog = ({
       <Button onClick={onClose}>{cancelText}</Button>
       <Button
         loading={loading}
-        onClick={() => { onConfirm?.(); onClose?.(); }}
+        onClick={() => { onConfirm?.(); if (closeOnConfirm) onClose?.(); }}
       >
         {confirmText}
       </Button>

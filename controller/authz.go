@@ -1,10 +1,13 @@
 package controller
 
 import (
+	"bytes"
+	"io"
 	"net/http"
 	"strconv"
 
 	"github.com/QuantumNous/new-api/common"
+	"github.com/QuantumNous/new-api/model"
 	"github.com/QuantumNous/new-api/service/authz"
 
 	"github.com/gin-gonic/gin"
@@ -56,10 +59,25 @@ func UpdateUserPermissions(c *gin.Context) {
 		common.ApiErrorMsg(c, "invalid request")
 		return
 	}
-	if err := authz.SetUserPermissions(id, req.Permissions); err != nil {
+	user, err := model.GetUserById(id, false)
+	if err != nil {
 		common.ApiError(c, err)
 		return
 	}
-	common.ApiSuccess(c, nil)
+	if req.Permissions == nil {
+		req.Permissions = map[string]map[string]bool{}
+	}
+	// Keep the existing client endpoint on the same proof, transaction and audit
+	// path as the official user editor. Preserve all unrelated profile fields.
+	payload, err := common.Marshal(map[string]any{
+		"id": user.Id, "username": user.Username, "display_name": user.DisplayName,
+		"group": user.Group, "remark": user.Remark, "role": user.Role,
+		"admin_permissions": req.Permissions,
+	})
+	if err != nil {
+		common.ApiError(c, err)
+		return
+	}
+	c.Request.Body = io.NopCloser(bytes.NewReader(payload))
+	UpdateUser(c)
 }
-

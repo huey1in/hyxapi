@@ -119,7 +119,7 @@ func getOrCreateVendor(vendorName string, vendorMap map[int]*Vendor) int {
 		Icon:   getDefaultVendorIcon(vendorName),
 	}
 
-	if err := newVendor.Insert(); err != nil {
+	if err := newVendor.insertRecord(); err != nil {
 		return 0
 	}
 

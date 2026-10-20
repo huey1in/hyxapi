@@ -2,6 +2,7 @@ package middleware
 
 import (
 	"fmt"
+	"html"
 	"net/http"
 	"strings"
 	"time"
@@ -128,7 +129,7 @@ func regionDisplay(code string, zhFirst bool) string {
 // renderGeoBlockedPage 渲染封锁页：按浏览器 Accept-Language 选择语言（中文优先显示中文）。
 // 页面展示检测到的 IP、地区、Cloudflare Ray ID 与时间，便于用户联系支持时提供凭据。
 func renderGeoBlockedPage(c *gin.Context) []byte {
-	ip := getClientIP(c)
+	ip := c.ClientIP()
 	country := strings.ToUpper(c.GetHeader("CF-IPCountry"))
 	rayID := c.GetHeader("CF-Ray")
 	if rayID == "" {
@@ -166,40 +167,13 @@ func renderGeoBlockedPage(c *gin.Context) []byte {
 
 	page := fmt.Sprintf(geoBlockedPageTemplate,
 		lang, title, lead, leadAlt,
-		ipLabel, ip,
-		regionLabel, regionDisplay(country, zhFirst),
+		ipLabel, html.EscapeString(ip),
+		regionLabel, html.EscapeString(regionDisplay(country, zhFirst)),
 		supportLabel,
-		refLabel, rayID,
+		refLabel, html.EscapeString(rayID),
 		timeLabel, now,
 	)
 	return []byte(page)
-}
-
-func getClientIP(c *gin.Context) string {
-	// 优先从 X-Forwarded-For 获取
-	xff := c.GetHeader("X-Forwarded-For")
-	if xff != "" {
-		ips := strings.Split(xff, ",")
-		if len(ips) > 0 {
-			return strings.TrimSpace(ips[0])
-		}
-	}
-
-	// 其次从 X-Real-IP 获取
-	xri := c.GetHeader("X-Real-IP")
-	if xri != "" {
-		return strings.TrimSpace(xri)
-	}
-
-	// 其次从 CF-Connecting-IP 获取（Cloudflare）
-	cfIP := c.GetHeader("CF-Connecting-IP")
-	if cfIP != "" {
-		return strings.TrimSpace(cfIP)
-	}
-
-	// 最后使用 RemoteAddr
-	ip := c.ClientIP()
-	return ip
 }
 
 func isChineseRequest(c *gin.Context) bool {

@@ -1,7 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { filterSidebarItems } from './sidebarItems.js';
+import { loadTestModules } from '../../../scripts/load-test-modules.mjs';
+const { entry0: { filterSidebarItems } } = await loadTestModules(['./src/components/layout/sidebarItems.ts']);
 
 const items = [
   { to: '/console' },

@@ -3,16 +3,16 @@ package controller
 import (
 	"context"
 	"encoding/json"
+	"github.com/QuantumNous/new-api/service"
 	"net/http"
 	"net/http/httptest"
 	"testing"
+	"time"
 
 	"github.com/QuantumNous/new-api/common"
 	"github.com/QuantumNous/new-api/i18n"
 	"github.com/QuantumNous/new-api/model"
 	"github.com/QuantumNous/new-api/oauth"
-	"github.com/gin-contrib/sessions"
-	"github.com/gin-contrib/sessions/cookie"
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/require"
 )
@@ -24,7 +24,9 @@ type sessionOAuthProvider struct {
 	exchangeCalls int
 }
 
-func (p *sessionOAuthProvider) IsEnabled() bool { return true }
+func (p *sessionOAuthProvider) IsEnabled() bool              { return true }
+func (p *sessionOAuthProvider) GetName() string              { return "GitHub" }
+func (p *sessionOAuthProvider) ProviderUserIDColumn() string { return "github_id" }
 
 func (p *sessionOAuthProvider) ExchangeToken(context.Context, string, *gin.Context) (*oauth.OAuthToken, error) {
 	p.exchangeCalls++
@@ -59,83 +61,73 @@ func TestHandleOAuthBrowserCallbackUsesCurrentSite(t *testing.T) {
 
 func TestHandleOAuthUsesSameOriginSession(t *testing.T) {
 	require.NoError(t, i18n.Init())
-	previousMode := gin.Mode()
-	gin.SetMode(gin.TestMode)
-	t.Cleanup(func() { gin.SetMode(previousMode) })
 	originalProvider := oauth.GetProvider("github")
 	t.Cleanup(func() { oauth.Register("github", originalProvider) })
-
 	for _, tc := range []struct {
-		name          string
-		state         string
-		userStatus    int
-		responseCode  int
-		wantLogin     bool
-		exchangeCalls int
+		name      string
+		invalid   bool
+		status    int
+		success   bool
+		exchanges int
 	}{
-		{"login", "valid-state", common.UserStatusEnabled, http.StatusOK, true, 1},
-		{"invalid state", "wrong-state", common.UserStatusEnabled, http.StatusForbidden, false, 0},
-		{"disabled user", "valid-state", common.UserStatusDisabled, http.StatusOK, false, 1},
+		{"login", false, common.UserStatusEnabled, true, 1},
+		{"invalid state", true, common.UserStatusEnabled, false, 0},
+		{"disabled user", false, common.UserStatusDisabled, false, 1},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
-			provider := &sessionOAuthProvider{user: model.User{
-				Id: 42, Username: "oauth-user", DisplayName: "OAuth User",
-				Role: common.RoleCommonUser, Status: tc.userStatus,
-			}}
+			user, _ := setupSecurityEnrollmentTest(t)
+			require.NoError(t, model.DB.Model(user).Updates(map[string]any{"status": tc.status, "github_id": "existing-account"}).Error)
+			user.Status = tc.status
+			user.GitHubId = "existing-account"
+			provider := &sessionOAuthProvider{user: *user}
 			oauth.Register("github", provider)
-			engine := gin.New()
-			engine.Use(sessions.Sessions("session", cookie.NewStore([]byte("same-origin-session-test-key"))))
-			engine.GET("/prepare", func(c *gin.Context) {
-				session := sessions.Default(c)
-				session.Set("oauth_state", "valid-state")
-				require.NoError(t, session.Save())
-				c.Status(http.StatusNoContent)
-			})
-			engine.GET("/api/oauth/:provider", HandleOAuth)
-			engine.GET("/session", func(c *gin.Context) {
-				session := sessions.Default(c)
-				c.JSON(http.StatusOK, gin.H{
-					"id": session.Get("id"), "username": session.Get("username"),
-					"role": session.Get("role"), "status": session.Get("status"),
-				})
-			})
-
-			prepare := httptest.NewRecorder()
-			engine.ServeHTTP(prepare, httptest.NewRequest(http.MethodGet, "/prepare", nil))
-			req := httptest.NewRequest(http.MethodGet, "/api/oauth/github?code=provider-code&state="+tc.state, nil)
-			for _, value := range prepare.Result().Cookies() {
-				req.AddCookie(value)
+			state, _, err := model.CreateAuthFlow(model.AuthFlowCreate{Purpose: model.AuthFlowPurposeOAuth, Provider: "github", Intent: model.AuthFlowIntentLogin, Payload: "{}", ExpiresAt: time.Now().Add(time.Minute)})
+			require.NoError(t, err)
+			if tc.invalid {
+				state = "wrong-state"
 			}
+			engine := gin.New()
+			engine.GET("/api/oauth/:provider", HandleOAuth)
+			req := httptest.NewRequest(http.MethodGet, "/api/oauth/github?code=provider-code&state="+state, nil)
 			recorder := httptest.NewRecorder()
 			engine.ServeHTTP(recorder, req)
-			require.Equal(t, tc.responseCode, recorder.Code)
 			require.Empty(t, recorder.Header().Get("Location"))
-			require.Equal(t, tc.exchangeCalls, provider.exchangeCalls)
+			require.Equal(t, tc.exchanges, provider.exchangeCalls)
 			var response struct {
-				Success bool           `json:"success"`
-				Data    map[string]any `json:"data"`
+				Success bool `json:"success"`
+				Data    struct {
+					AccessToken string `json:"access_token"`
+					User        struct {
+						ID int `json:"id"`
+					} `json:"user"`
+				} `json:"data"`
 			}
 			require.NoError(t, json.Unmarshal(recorder.Body.Bytes(), &response))
-			require.Equal(t, tc.wantLogin, response.Success)
-			if !tc.wantLogin {
-				require.Empty(t, recorder.Result().Cookies())
+			require.Equal(t, tc.success, response.Success, recorder.Body.String())
+			if !tc.success {
 				return
 			}
-			require.Equal(t, map[string]any{
-				"id": float64(42), "username": "oauth-user", "display_name": "OAuth User",
-				"role": float64(common.RoleCommonUser), "status": float64(common.UserStatusEnabled),
-			}, response.Data)
-
-			sessionRequest := httptest.NewRequest(http.MethodGet, "/session", nil)
-			values := recorder.Result().Cookies()
-			require.NotEmpty(t, values)
-			for _, value := range values {
-				require.Empty(t, value.Domain)
-				sessionRequest.AddCookie(value)
+			require.Equal(t, user.Id, response.Data.User.ID)
+			identity, err := service.ParseAccessToken(response.Data.AccessToken)
+			require.NoError(t, err)
+			require.Equal(t, user.Id, identity.UserID)
+			cookies := recorder.Result().Cookies()
+			require.NotEmpty(t, cookies)
+			hasRefresh := false
+			for _, cookie := range cookies {
+				require.Empty(t, cookie.Domain)
+				if cookie.Name == service.RefreshCookieName {
+					hasRefresh = true
+					require.True(t, cookie.HttpOnly)
+					require.Equal(t, "/api/user/auth", cookie.Path)
+				}
 			}
-			sessionRecorder := httptest.NewRecorder()
-			engine.ServeHTTP(sessionRecorder, sessionRequest)
-			require.JSONEq(t, `{"id":42,"username":"oauth-user","role":1,"status":1}`, sessionRecorder.Body.String())
+			require.True(t, hasRefresh)
+			// OAuth state is one-use even when the browser repeats the callback.
+			retry := httptest.NewRecorder()
+			engine.ServeHTTP(retry, httptest.NewRequest(http.MethodGet, req.URL.String(), nil))
+			require.Equal(t, http.StatusForbidden, retry.Code)
+			require.Equal(t, 1, provider.exchangeCalls)
 		})
 	}
 }

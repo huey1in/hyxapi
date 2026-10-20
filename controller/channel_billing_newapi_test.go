@@ -1,8 +1,10 @@
 package controller
 
 import (
+	"context"
 	"fmt"
 	"github.com/QuantumNous/new-api/constant"
+	"github.com/QuantumNous/new-api/model"
 	"github.com/stretchr/testify/require"
 	"net/http"
 	"net/http/httptest"
@@ -32,7 +34,8 @@ func TestNewAPIBalanceUsesSmallerOwnerQuotaAndUpstreamUnits(t *testing.T) {
 			defer server.Close()
 			channel := newSub2APITestChannel(t, server.URL)
 			channel.Type = constant.ChannelTypeNewAPI
-			balance, err := updateChannelNewAPIBalance(channel)
+			require.NoError(t, model.DB.Model(channel).Update("type", channel.Type).Error)
+			balance, err := updateChannelNewAPIBalance(context.Background(), channel)
 			if tc.wantError {
 				require.Error(t, err)
 			} else {

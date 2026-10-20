@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/QuantumNous/new-api/relaykit/dto"
+	"github.com/QuantumNous/new-api/relaykit/relayconvert/internal/convdiag"
 	relaymedia "github.com/QuantumNous/new-api/relaykit/relayconvert/internal/media"
 	"github.com/QuantumNous/new-api/relaykit/types"
 	"github.com/stretchr/testify/require"
@@ -26,8 +27,7 @@ func TestGeminiResponsesToolMediaPlacement(t *testing.T) {
 				{"type": "function_call_output", "call_id": "c2", "output": "done"},
 			})
 			require.NoError(t, err)
-			prepared, err := PrepareOpenAIResponsesRequest(dto.OpenAIResponsesRequest{Model: model, Input: input})
-			require.NoError(t, err)
+			prepared := dto.OpenAIResponsesRequest{Model: model, Input: input}
 			got, err := OpenAIResponsesRequestToGeminiChat(context.Background(), &prepared, nil)
 			require.NoError(t, err)
 			require.Len(t, got.Contents, 2)
@@ -53,7 +53,7 @@ func TestGeminiResponsesToolMediaPlacement(t *testing.T) {
 	}
 }
 
-func TestGeminiResponsesToolMediaRejectsUnsupportedOrFailedLoads(t *testing.T) {
+func TestGeminiResponsesToolMediaReportsUnsupportedOrFailedLoads(t *testing.T) {
 	t.Cleanup(func() { relaymedia.SetMediaResolver(relaymedia.MediaResolver{}) })
 	for _, tc := range []struct {
 		name, mime string
@@ -71,13 +71,15 @@ func TestGeminiResponsesToolMediaRejectsUnsupportedOrFailedLoads(t *testing.T) {
 			relaymedia.SetMediaResolver(relaymedia.MediaResolver{GetBase64Data: func(context.Context, types.FileSource, ...string) (string, string, error) {
 				return "cG5n", tc.mime, tc.loadErr
 			}})
-			output, media, err := responsesToolOutputToGemini(context.Background(), []any{map[string]any{"type": "input_file", "file_data": "data:application/octet-stream;base64,cG5n"}}, tc.inParts)
+			ctx, collector := convdiag.WithCollector(context.Background())
+			output, media := responsesToolOutputToGemini(ctx, []any{map[string]any{"type": "input_file", "file_data": "data:application/octet-stream;base64,cG5n"}}, tc.inParts)
 			if tc.wantError {
-				require.Error(t, err)
-				require.Nil(t, output)
+				require.NotEmpty(t, collector.Diagnostics())
+				require.Equal(t, "unsupported_media_type", collector.Diagnostics()[0].Code)
+				require.NotEmpty(t, output)
 				require.Empty(t, media)
 			} else {
-				require.NoError(t, err)
+				require.Empty(t, collector.Diagnostics())
 				require.Empty(t, output)
 				require.Len(t, media, 1)
 			}

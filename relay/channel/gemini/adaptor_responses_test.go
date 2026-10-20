@@ -53,6 +53,8 @@ func TestConvertOpenAIResponsesRequestToGeminiFunctionToolAndChoice(t *testing.T
 
 	tools := got.GetTools()
 	require.Len(t, tools, 1)
+	assert.Equal(t, int64(2), gjson.GetBytes(got.Tools, "0.functionDeclarations.#").Int())
+	assert.Equal(t, "freeform", gjson.GetBytes(got.Tools, "0.functionDeclarations.1.name").String())
 	assert.Equal(t, "lookup", gjson.GetBytes(got.Tools, "0.functionDeclarations.0.name").String())
 	assert.Equal(t, "Lookup data", gjson.GetBytes(got.Tools, "0.functionDeclarations.0.description").String())
 	require.NotNil(t, got.ToolConfig)
@@ -140,7 +142,9 @@ func TestConvertOpenAIResponsesRequestToGeminiPreservesCustomToolHistory(t *test
 		}),
 	})
 
-	assert.Empty(t, got.GetTools())
+	require.Len(t, got.GetTools(), 1)
+	assert.Equal(t, "apply_patch", gjson.GetBytes(got.Tools, "0.functionDeclarations.0.name").String())
+	assert.Equal(t, "STRING", gjson.GetBytes(got.Tools, "0.functionDeclarations.0.parameters.properties.input.type").String())
 	require.Len(t, got.Contents, 3)
 	assert.Equal(t, "model", got.Contents[0].Role)
 	require.Len(t, got.Contents[0].Parts, 2)

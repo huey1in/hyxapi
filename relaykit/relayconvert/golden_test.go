@@ -471,3 +471,5 @@ func mustUnmarshalFixture(raw string, out any) {
 		panic(fmt.Sprintf("bad fixture JSON: %v", err))
 	}
 }
+
+func rawJSON(s string) json.RawMessage { return json.RawMessage(s) }

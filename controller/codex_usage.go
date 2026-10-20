@@ -152,25 +152,16 @@ func fetchCodexChannelWhamData(
 		refreshCtx, refreshCancel := context.WithTimeout(c.Request.Context(), 10*time.Second)
 		defer refreshCancel()
 
-		res, refreshErr := service.RefreshCodexOAuthTokenWithProxy(refreshCtx, oauthKey.RefreshToken, ch.GetSetting().Proxy)
+		refreshedKey, refreshedChannel, refreshErr := service.RefreshCodexChannelCredential(refreshCtx, ch.Id, service.CodexCredentialRefreshOptions{ResetCaches: true})
 		if refreshErr == nil {
-			oauthKey.AccessToken = res.AccessToken
-			oauthKey.RefreshToken = res.RefreshToken
-			oauthKey.LastRefresh = time.Now().Format(time.RFC3339)
-			oauthKey.Expired = res.ExpiresAt.Format(time.RFC3339)
-			if strings.TrimSpace(oauthKey.Type) == "" {
-				oauthKey.Type = "codex"
+			refreshedClient, clientErr := service.GetHttpClientWithProxy(refreshedChannel.GetSetting().Proxy)
+			if clientErr != nil {
+				common.ApiError(c, clientErr)
+				return
 			}
-
-			encoded, encErr := common.Marshal(oauthKey)
-			if encErr == nil {
-				_ = model.DB.Model(&model.Channel{}).Where("id = ?", ch.Id).Update("key", string(encoded)).Error
-				model.InitChannelCache()
-			}
-
 			ctx2, cancel2 := context.WithTimeout(c.Request.Context(), 15*time.Second)
 			defer cancel2()
-			statusCode, body, err = fetch(ctx2, client, ch.GetBaseURL(), oauthKey.AccessToken, accountID)
+			statusCode, body, err = fetch(ctx2, refreshedClient, refreshedChannel.GetBaseURL(), refreshedKey.AccessToken, refreshedKey.AccountID)
 			if err != nil {
 				common.SysError(logPrefix + " after refresh: " + err.Error())
 				c.JSON(http.StatusOK, gin.H{"success": false, "message": userMessage})

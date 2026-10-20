@@ -21,6 +21,18 @@ const (
 	StreamEndReasonPingFail    StreamEndReason = "ping_fail"
 )
 
+// ResponseOutcome is the protocol-level result of one response, independent of
+// how the transport ended. Adaptors mark it from the events they already parse.
+type ResponseOutcome string
+
+const (
+	ResponseOutcomeUnknown    ResponseOutcome = ""
+	ResponseOutcomeCompleted  ResponseOutcome = "completed"
+	ResponseOutcomeFailed     ResponseOutcome = "failed"
+	ResponseOutcomeIncomplete ResponseOutcome = "incomplete"
+	ResponseOutcomeCancelled  ResponseOutcome = "cancelled"
+)
+
 const maxStreamErrorEntries = 20
 
 type StreamErrorEntry struct {
@@ -33,11 +45,29 @@ type StreamStatus struct {
 	EndError  error
 	endOnce   sync.Once
 
-	mu              sync.Mutex
-	Errors          []StreamErrorEntry
-	ErrorCount      int
-	requireTerminal bool
-	outcome         string
+	mu         sync.Mutex
+	Errors     []StreamErrorEntry
+	ErrorCount int
+
+	response         ResponseOutcome
+	errorCode        string
+	errorType        string
+	errorStatus      int
+	incompleteReason string
+	expectsTerminal  bool
+}
+
+// StreamOutcome holds classification facts only; upstream messages never
+// enter it because they may contain credentials or request content.
+type StreamOutcome struct {
+	EndReason        StreamEndReason
+	HasErrors        bool
+	ExpectsTerminal  bool
+	Response         ResponseOutcome
+	ErrorCode        string
+	ErrorType        string
+	ErrorStatus      int
+	IncompleteReason string
 }
 
 func NewStreamStatus() *StreamStatus {
@@ -69,6 +99,95 @@ func (s *StreamStatus) RecordError(msg string) {
 	}
 }
 
+// RequireTerminal declares that the protocol always ends with an explicit
+// terminal event, so a stream that ends without one was cut short.
+func (s *StreamStatus) RequireTerminal() {
+	if s == nil {
+		return
+	}
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.expectsTerminal = true
+}
+
+// MarkCompleted, MarkIncomplete and MarkCancelled keep the first terminal seen;
+// MarkFailed always wins because an error after completion is still a failure.
+func (s *StreamStatus) MarkCompleted() {
+	s.markTerminal(ResponseOutcomeCompleted, "")
+}
+
+func (s *StreamStatus) MarkIncomplete(reason string) {
+	s.markTerminal(ResponseOutcomeIncomplete, reason)
+}
+
+func (s *StreamStatus) MarkCancelled() {
+	s.markTerminal(ResponseOutcomeCancelled, "")
+}
+
+func (s *StreamStatus) markTerminal(outcome ResponseOutcome, incompleteReason string) {
+	if s == nil {
+		return
+	}
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if s.response != ResponseOutcomeUnknown {
+		return
+	}
+	s.response = outcome
+	s.incompleteReason = incompleteReason
+}
+
+// MarkFailed records a protocol failure. Empty details never erase details
+// recorded earlier, so a bare error envelope keeps the structured error.
+func (s *StreamStatus) MarkFailed(code, errorType string, status int) {
+	if s == nil {
+		return
+	}
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.response = ResponseOutcomeFailed
+	if code != "" {
+		s.errorCode = code
+	}
+	if errorType != "" {
+		s.errorType = errorType
+	}
+	if status != 0 {
+		s.errorStatus = status
+	}
+}
+
+func (s *StreamStatus) ResponseOutcome() string {
+	if s == nil {
+		return ""
+	}
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return string(s.response)
+}
+
+func (s *StreamStatus) ResponseFailed() bool {
+	return s.ResponseOutcome() == string(ResponseOutcomeFailed)
+}
+
+func (s *StreamStatus) OutcomeSnapshot() StreamOutcome {
+	if s == nil {
+		return StreamOutcome{}
+	}
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return StreamOutcome{
+		EndReason:        s.EndReason,
+		HasErrors:        s.ErrorCount > 0,
+		ExpectsTerminal:  s.expectsTerminal,
+		Response:         s.response,
+		ErrorCode:        s.errorCode,
+		ErrorType:        s.errorType,
+		ErrorStatus:      s.errorStatus,
+		IncompleteReason: s.incompleteReason,
+	}
+}
+
 func (s *StreamStatus) HasErrors() bool {
 	if s == nil {
 		return false
@@ -91,41 +210,9 @@ func (s *StreamStatus) IsNormalEnd() bool {
 	if s == nil {
 		return true
 	}
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	if s.requireTerminal && s.outcome != "completed" {
-		return false
-	}
 	return s.EndReason == StreamEndReasonDone ||
 		s.EndReason == StreamEndReasonEOF ||
 		s.EndReason == StreamEndReasonHandlerStop
-}
-
-func (s *StreamStatus) RequireTerminal() {
-	if s != nil {
-		s.mu.Lock()
-		s.requireTerminal = true
-		s.mu.Unlock()
-	}
-}
-func (s *StreamStatus) setOutcome(value string) {
-	if s != nil {
-		s.mu.Lock()
-		s.outcome = value
-		s.mu.Unlock()
-	}
-}
-func (s *StreamStatus) MarkCompleted()                           { s.setOutcome("completed") }
-func (s *StreamStatus) MarkFailed(code, kind string, status int) { s.setOutcome("failed") }
-func (s *StreamStatus) MarkIncomplete(reason string)             { s.setOutcome("incomplete") }
-func (s *StreamStatus) MarkCancelled()                           { s.setOutcome("cancelled") }
-func (s *StreamStatus) ResponseFailed() bool {
-	if s == nil {
-		return false
-	}
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	return s.outcome == "failed"
 }
 
 func (s *StreamStatus) Summary() string {

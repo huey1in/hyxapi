@@ -27,6 +27,16 @@ func GetUserOAuthBindingsByUserId(userId int) ([]*UserOAuthBinding, error) {
 	return bindings, err
 }
 
+// GetUserOAuthBinding returns a specific binding for a user and provider
+func GetUserOAuthBinding(userId, providerId int) (*UserOAuthBinding, error) {
+	var binding UserOAuthBinding
+	err := DB.Where("user_id = ? AND provider_id = ?", userId, providerId).First(&binding).Error
+	if err != nil {
+		return nil, err
+	}
+	return &binding, nil
+}
+
 // GetUserByOAuthBinding finds a user by provider ID and provider user ID
 func GetUserByOAuthBinding(providerId int, providerUserId string) (*User, error) {
 	var binding UserOAuthBinding
@@ -122,4 +132,15 @@ func UpdateUserOAuthBinding(userId, providerId int, newProviderUserId string) er
 // DeleteUserOAuthBinding deletes an OAuth binding
 func DeleteUserOAuthBinding(userId, providerId int) error {
 	return DB.Where("user_id = ? AND provider_id = ?", userId, providerId).Delete(&UserOAuthBinding{}).Error
+}
+
+func deleteUserOAuthBindingsByUserId(tx *gorm.DB, userId int) error {
+	return tx.Where("user_id = ?", userId).Delete(&UserOAuthBinding{}).Error
+}
+
+// GetBindingCountByProviderId returns the number of bindings for a provider
+func GetBindingCountByProviderId(providerId int) (int64, error) {
+	var count int64
+	err := DB.Model(&UserOAuthBinding{}).Where("provider_id = ?", providerId).Count(&count).Error
+	return count, err
 }

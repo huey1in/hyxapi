@@ -1,21 +1,30 @@
 package controller
 
 import (
+	"context"
+	"errors"
 	"fmt"
+	"io"
 	"net/http"
+	"net/url"
 	"regexp"
 	"slices"
+	"strconv"
 	"strings"
 	"sync"
-	"sync/atomic"
 	"time"
 
 	"github.com/QuantumNous/new-api/common"
 	"github.com/QuantumNous/new-api/constant"
 	"github.com/QuantumNous/new-api/model"
+	"github.com/QuantumNous/new-api/pkg/jsplugin"
+	"github.com/QuantumNous/new-api/relay/channel/advancedcustom"
 	"github.com/QuantumNous/new-api/relay/channel/gemini"
 	"github.com/QuantumNous/new-api/relay/channel/ollama"
+	relaycommon "github.com/QuantumNous/new-api/relay/common"
+	relayconstant "github.com/QuantumNous/new-api/relay/constant"
 	"github.com/QuantumNous/new-api/relaykit/dto"
+	"github.com/QuantumNous/new-api/relaykit/types"
 	"github.com/QuantumNous/new-api/service"
 
 	"github.com/gin-gonic/gin"
@@ -50,11 +59,10 @@ var channelUpstreamModelUpdateSelectFields = []string{
 	"tag",
 	"channel_info",
 	"header_override",
+	"open_ai_organization",
 }
 
 var (
-	channelUpstreamModelUpdateTaskOnce    sync.Once
-	channelUpstreamModelUpdateTaskRunning atomic.Bool
 	channelUpstreamModelUpdateNotifyState = struct {
 		sync.Mutex
 		lastNotifiedAt      int64
@@ -209,8 +217,8 @@ func collectPendingUpstreamModelChangesFromModels(
 	return normalizeModelNames(pendingAdd), normalizeModelNames(pendingRemove)
 }
 
-func collectPendingUpstreamModelChanges(channel *model.Channel, settings dto.ChannelOtherSettings) (pendingAddModels []string, pendingRemoveModels []string, err error) {
-	upstreamModels, err := fetchChannelUpstreamModelIDs(channel)
+func collectPendingUpstreamModelChanges(ctx context.Context, channel *model.Channel, settings dto.ChannelOtherSettings) (pendingAddModels []string, pendingRemoveModels []string, err error) {
+	upstreamModels, err := fetchChannelUpstreamModelIDsWithValidation(ctx, channel, true)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -235,14 +243,35 @@ func getUpstreamModelUpdateMinCheckIntervalSeconds() int64 {
 }
 
 func fetchChannelUpstreamModelIDs(channel *model.Channel) ([]string, error) {
-	baseURL := constant.ChannelBaseURLs[channel.Type]
+	return fetchChannelUpstreamModelIDsWithContext(context.Background(), channel)
+}
+
+func fetchChannelUpstreamModelIDsWithContext(ctx context.Context, channel *model.Channel) ([]string, error) {
+	return fetchChannelUpstreamModelIDsWithValidation(ctx, channel, false)
+}
+
+func fetchChannelUpstreamModelIDsWithValidation(ctx context.Context, channel *model.Channel, requireData bool) ([]string, error) {
+	if err := ctx.Err(); err != nil {
+		return nil, err
+	}
+	if channel.Type == constant.ChannelTypeTaskPlugin {
+		plugin, ok := jsplugin.DefaultRegistry.Get(channel.GetSetting().TaskPluginKey)
+		if !ok {
+			return nil, fmt.Errorf("task plugin %q is not registered", channel.GetSetting().TaskPluginKey)
+		}
+		return normalizeModelNames(plugin.Meta.Models), nil
+	}
+	baseURL := constant.GetChannelBaseURL(channel.Type)
 	if channel.GetBaseURL() != "" {
 		baseURL = channel.GetBaseURL()
 	}
 
 	if channel.Type == constant.ChannelTypeOllama {
-		key := strings.TrimSpace(strings.Split(channel.Key, "\n")[0])
-		models, err := ollama.FetchOllamaModels(baseURL, key)
+		client, err := getOllamaManagementClient(channel)
+		if err != nil {
+			return nil, err
+		}
+		models, err := client.Models(ctx)
 		if err != nil {
 			return nil, err
 		}
@@ -254,18 +283,22 @@ func fetchChannelUpstreamModelIDs(channel *model.Channel) ([]string, error) {
 	if channel.Type == constant.ChannelTypeGemini {
 		key, _, apiErr := channel.GetNextEnabledKey()
 		if apiErr != nil {
-			return nil, fmt.Errorf("获取渠道密钥失败: %w", apiErr)
+			return nil, fmt.Errorf("failed to get channel key: %w", apiErr)
 		}
 		key = strings.TrimSpace(key)
-		models, err := gemini.FetchGeminiModels(baseURL, key, channel.GetSetting().Proxy)
+		models, err := gemini.FetchGeminiModelsWithContext(ctx, baseURL, key, channel.GetSetting())
 		if err != nil {
-			return nil, err
+			return nil, sanitizeFetchModelsError(err, key)
 		}
 		return normalizeModelNames(models), nil
 	}
 
+	if constant.IsAdvancedCustomChannel(channel.Type) {
+		return fetchAdvancedCustomUpstreamModelIDs(ctx, channel, baseURL)
+	}
+
 	if channel.Type == constant.ChannelTypeCodex {
-		return service.FetchCodexChannelModels(channel)
+		return service.FetchCodexChannelModelsWithContext(ctx, channel)
 	}
 
 	var url string
@@ -279,10 +312,13 @@ func fetchChannelUpstreamModelIDs(channel *model.Channel) ([]string, error) {
 			url = fmt.Sprintf("%s/api/paas/v4/models", baseURL)
 		}
 	case constant.ChannelTypeVolcEngine:
+		// 火山方舟 OpenAI 兼容 API 根路径是 /api/v3（chat/embeddings 均为
+		// {base}/api/v3/...，见 relay/channel/volcengine 的 GetRequestURL），
+		// 不存在 /v1/models 端点。原拼接会导致「获取模型列表」固定 404 失败。
 		if plan, ok := constant.ChannelSpecialBases[baseURL]; ok && plan.OpenAIBaseURL != "" {
 			url = fmt.Sprintf("%s/v1/models", plan.OpenAIBaseURL)
 		} else {
-			url = fmt.Sprintf("%s/v1/models", baseURL)
+			url = fmt.Sprintf("%s/api/v3/models", baseURL)
 		}
 	case constant.ChannelTypeMoonshot:
 		if plan, ok := constant.ChannelSpecialBases[baseURL]; ok && plan.OpenAIBaseURL != "" {
@@ -296,44 +332,50 @@ func fetchChannelUpstreamModelIDs(channel *model.Channel) ([]string, error) {
 
 	key, _, apiErr := channel.GetNextEnabledKey()
 	if apiErr != nil {
-		return nil, fmt.Errorf("获取渠道密钥失败: %w", apiErr)
+		return nil, fmt.Errorf("failed to get channel key: %w", apiErr)
 	}
 	key = strings.TrimSpace(key)
 
 	headers, err := buildFetchModelsHeaders(channel, key)
 	if err != nil {
-		return nil, err
+		return nil, sanitizeFetchModelsError(err, key)
 	}
 
-	body, err := GetResponseBody(http.MethodGet, url, channel, headers)
+	body, err := getFetchModelsResponseBody(ctx, http.MethodGet, url, channel, headers)
 	if err != nil {
-		return nil, err
+		return nil, sanitizeAdvancedCustomRequestError(err, key, url)
 	}
 
-	var result OpenAIModelsResponse
+	var result struct {
+		Data *[]OpenAIModel `json:"data"`
+	}
 	if err := common.Unmarshal(body, &result); err != nil {
 		return nil, err
 	}
-
-	ids := lo.Map(result.Data, func(item OpenAIModel, _ int) string {
+	if result.Data == nil {
+		if requireData {
+			return nil, fmt.Errorf("invalid OpenAI Models response: data is required")
+		}
+		// Keep the legacy discovery API's empty-list behavior. A detector must
+		// validate the field before proposing removal of existing models.
+		return []string{}, nil
+	}
+	ids := lo.Map(*result.Data, func(item OpenAIModel, _ int) string {
 		if channel.Type == constant.ChannelTypeGemini {
 			return strings.TrimPrefix(item.ID, "models/")
 		}
 		return item.ID
 	})
-
 	return normalizeModelNames(ids), nil
 }
 
-func updateChannelUpstreamModelSettings(channel *model.Channel, settings dto.ChannelOtherSettings, updateModels bool) error {
+func updateChannelUpstreamModelSettings(ctx context.Context, channel *model.Channel, expectedRevision string, settings dto.ChannelOtherSettings, updateModels bool) error {
 	channel.SetOtherSettings(settings)
-	updates := map[string]interface{}{
-		"settings": channel.OtherSettings,
-	}
+	var nextModels *string
 	if updateModels {
-		updates["models"] = channel.Models
+		nextModels = &channel.Models
 	}
-	return model.DB.Model(&model.Channel{}).Where("id = ?", channel.Id).Updates(updates).Error
+	return model.CommitChannelModelState(ctx, channel, expectedRevision, channel.OtherSettings, nextModels)
 }
 
 func checkAndPersistChannelUpstreamModelUpdates(
@@ -342,6 +384,17 @@ func checkAndPersistChannelUpstreamModelUpdates(
 	force bool,
 	allowAutoApply bool,
 ) (modelsChanged bool, autoAdded int, err error) {
+	return checkAndPersistChannelUpstreamModelUpdatesWithContext(context.Background(), channel, settings, force, allowAutoApply)
+}
+
+func checkAndPersistChannelUpstreamModelUpdatesWithContext(ctx context.Context, channel *model.Channel, settings *dto.ChannelOtherSettings, force, allowAutoApply bool) (modelsChanged bool, autoAdded int, err error) {
+	if ctx == nil {
+		ctx = context.Background()
+	}
+	if err := ctx.Err(); err != nil {
+		return false, 0, err
+	}
+	expectedRevision := model.ChannelModelStateRevision(channel)
 	now := common.GetTimestamp()
 	if !force {
 		minInterval := getUpstreamModelUpdateMinCheckIntervalSeconds()
@@ -351,10 +404,10 @@ func checkAndPersistChannelUpstreamModelUpdates(
 		}
 	}
 
-	pendingAddModels, pendingRemoveModels, fetchErr := collectPendingUpstreamModelChanges(channel, *settings)
+	pendingAddModels, pendingRemoveModels, fetchErr := collectPendingUpstreamModelChanges(ctx, channel, *settings)
 	settings.UpstreamModelUpdateLastCheckTime = now
 	if fetchErr != nil {
-		if err = updateChannelUpstreamModelSettings(channel, *settings, false); err != nil {
+		if err = updateChannelUpstreamModelSettings(ctx, channel, expectedRevision, *settings, false); err != nil {
 			return false, 0, err
 		}
 		return false, 0, fetchErr
@@ -374,13 +427,8 @@ func checkAndPersistChannelUpstreamModelUpdates(
 	}
 	settings.UpstreamModelUpdateLastRemovedModels = pendingRemoveModels
 
-	if err = updateChannelUpstreamModelSettings(channel, *settings, modelsChanged); err != nil {
+	if err = updateChannelUpstreamModelSettings(ctx, channel, expectedRevision, *settings, modelsChanged); err != nil {
 		return false, autoAdded, err
-	}
-	if modelsChanged {
-		if err = channel.UpdateAbilities(nil); err != nil {
-			return true, autoAdded, err
-		}
 	}
 	return modelsChanged, autoAdded, nil
 }
@@ -498,12 +546,24 @@ func buildUpstreamModelUpdateTaskNotificationContent(
 	return builder.String()
 }
 
-func runChannelUpstreamModelUpdateTaskOnce() {
-	if !channelUpstreamModelUpdateTaskRunning.CompareAndSwap(false, true) {
-		return
-	}
-	defer channelUpstreamModelUpdateTaskRunning.Store(false)
+type upstreamModelUpdateSummary struct {
+	CheckedChannels      int `json:"checked_channels"`
+	ChangedChannels      int `json:"changed_channels"`
+	DetectedAddModels    int `json:"detected_add_models"`
+	DetectedRemoveModels int `json:"detected_remove_models"`
+	FailedChannels       int `json:"failed_channels"`
+	AutoAddedModels      int `json:"auto_added_models"`
+}
 
+// runChannelUpstreamModelUpdateTaskOnce runs one synchronous upstream model
+// detection cycle and returns a summary for system task history. It honors ctx
+// cancellation between batches so a runner that loses its lease stops promptly.
+// force bypasses the per-channel minimum check interval and allowAutoApply lets
+// channels with auto-sync enabled adopt detected models automatically. The
+// scheduled job calls (force=false, allowAutoApply=true); the manual "detect
+// all" trigger calls (force=true, allowAutoApply=false) so it always re-checks
+// and only stages changes for explicit review.
+func runChannelUpstreamModelUpdateTaskOnce(ctx context.Context, force bool, allowAutoApply bool, report func(processed, total int)) upstreamModelUpdateSummary {
 	checkedChannels := 0
 	failedChannels := 0
 	failedChannelIDs := make([]int, 0)
@@ -516,8 +576,20 @@ func runChannelUpstreamModelUpdateTaskOnce() {
 	removeModelSamples := make([]string, 0)
 	refreshNeeded := false
 
+	// Count the enabled channels up front so progress can be reported as a
+	// percentage; a count error is non-fatal (progress just won't show a %).
+	var totalChannels int64
+	if err := model.DB.Model(&model.Channel{}).Where("status = ?", common.ChannelStatusEnabled).Count(&totalChannels).Error; err != nil {
+		totalChannels = 0
+	}
+	processed := 0
+
 	lastID := 0
+scanLoop:
 	for {
+		if ctx != nil && ctx.Err() != nil {
+			break
+		}
 		var channels []*model.Channel
 		query := model.DB.
 			Select(channelUpstreamModelUpdateSelectFields).
@@ -529,7 +601,7 @@ func runChannelUpstreamModelUpdateTaskOnce() {
 		}
 		err := query.Find(&channels).Error
 		if err != nil {
-			common.SysLog(fmt.Sprintf("upstream model update task query failed: %v", err))
+			common.SysLog(common.LogText("upstream model update task query failed: %v", err))
 			break
 		}
 		if len(channels) == 0 {
@@ -541,6 +613,14 @@ func runChannelUpstreamModelUpdateTaskOnce() {
 			if channel == nil {
 				continue
 			}
+			if ctx != nil && ctx.Err() != nil {
+				break scanLoop
+			}
+
+			processed++
+			if report != nil {
+				report(processed, int(totalChannels))
+			}
 
 			settings := channel.GetOtherSettings()
 			if !settings.UpstreamModelUpdateCheckEnabled {
@@ -548,11 +628,11 @@ func runChannelUpstreamModelUpdateTaskOnce() {
 			}
 
 			checkedChannels++
-			modelsChanged, autoAdded, err := checkAndPersistChannelUpstreamModelUpdates(channel, &settings, false, true)
+			modelsChanged, autoAdded, err := checkAndPersistChannelUpstreamModelUpdatesWithContext(ctx, channel, &settings, force, allowAutoApply)
 			if err != nil {
 				failedChannels++
 				failedChannelIDs = append(failedChannelIDs, channel.Id)
-				common.SysLog(fmt.Sprintf("upstream model update check failed: channel_id=%d channel_name=%s err=%v", channel.Id, channel.Name, err))
+				common.SysLog(common.LogText("upstream model update check failed: channel_id=%d channel_name=%s err=%v", channel.Id, channel.Name, err))
 				continue
 			}
 			currentAddModels := normalizeModelNames(settings.UpstreamModelUpdateLastDetectedModels)
@@ -577,7 +657,15 @@ func runChannelUpstreamModelUpdateTaskOnce() {
 			autoAddedModels += autoAdded
 
 			if common.RequestInterval > 0 {
-				time.Sleep(common.RequestInterval)
+				if ctx == nil {
+					time.Sleep(common.RequestInterval)
+				} else {
+					select {
+					case <-ctx.Done():
+						break scanLoop
+					case <-time.After(common.RequestInterval):
+					}
+				}
 			}
 		}
 
@@ -586,12 +674,25 @@ func runChannelUpstreamModelUpdateTaskOnce() {
 		}
 	}
 
+	if report != nil && (ctx == nil || ctx.Err() == nil) {
+		report(int(totalChannels), int(totalChannels)) // mark complete only when the full scan finished
+	}
+
 	if refreshNeeded {
 		refreshChannelRuntimeCache()
 	}
 
+	summary := upstreamModelUpdateSummary{
+		CheckedChannels:      checkedChannels,
+		ChangedChannels:      changedChannels,
+		DetectedAddModels:    detectedAddModels,
+		DetectedRemoveModels: detectedRemoveModels,
+		FailedChannels:       failedChannels,
+		AutoAddedModels:      autoAddedModels,
+	}
+
 	if checkedChannels > 0 || common.DebugEnabled {
-		common.SysLog(fmt.Sprintf(
+		common.SysLog(common.LogText(
 			"upstream model update task done: checked_channels=%d changed_channels=%d detected_add_models=%d detected_remove_models=%d failed_channels=%d auto_added_models=%d",
 			checkedChannels,
 			changedChannels,
@@ -604,12 +705,12 @@ func runChannelUpstreamModelUpdateTaskOnce() {
 	if changedChannels > 0 || failedChannels > 0 {
 		now := common.GetTimestamp()
 		if !shouldSendUpstreamModelUpdateNotification(now, changedChannels, failedChannels) {
-			common.SysLog(fmt.Sprintf(
+			common.SysLog(common.LogText(
 				"upstream model update notification skipped in 24h window: changed_channels=%d failed_channels=%d",
 				changedChannels,
 				failedChannels,
 			))
-			return
+			return summary
 		}
 		service.NotifyUpstreamModelUpdateWatchers(
 			"上游模型巡检通知",
@@ -626,44 +727,15 @@ func runChannelUpstreamModelUpdateTaskOnce() {
 			),
 		)
 	}
-}
-
-func StartChannelUpstreamModelUpdateTask() {
-	channelUpstreamModelUpdateTaskOnce.Do(func() {
-		if !common.IsMasterNode {
-			return
-		}
-		if !common.GetEnvOrDefaultBool("CHANNEL_UPSTREAM_MODEL_UPDATE_TASK_ENABLED", true) {
-			common.SysLog("upstream model update task disabled by CHANNEL_UPSTREAM_MODEL_UPDATE_TASK_ENABLED")
-			return
-		}
-
-		intervalMinutes := common.GetEnvOrDefault(
-			"CHANNEL_UPSTREAM_MODEL_UPDATE_TASK_INTERVAL_MINUTES",
-			channelUpstreamModelUpdateTaskDefaultIntervalMinutes,
-		)
-		if intervalMinutes < 1 {
-			intervalMinutes = channelUpstreamModelUpdateTaskDefaultIntervalMinutes
-		}
-		interval := time.Duration(intervalMinutes) * time.Minute
-
-		go func() {
-			common.SysLog(fmt.Sprintf("upstream model update task started: interval=%s", interval))
-			runChannelUpstreamModelUpdateTaskOnce()
-			ticker := time.NewTicker(interval)
-			defer ticker.Stop()
-			for range ticker.C {
-				runChannelUpstreamModelUpdateTaskOnce()
-			}
-		}()
-	})
+	return summary
 }
 
 type applyChannelUpstreamModelUpdatesRequest struct {
-	ID           int      `json:"id"`
-	AddModels    []string `json:"add_models"`
-	RemoveModels []string `json:"remove_models"`
-	IgnoreModels []string `json:"ignore_models"`
+	ID               int      `json:"id"`
+	AddModels        []string `json:"add_models"`
+	RemoveModels     []string `json:"remove_models"`
+	IgnoreModels     []string `json:"ignore_models"`
+	ExpectedRevision string   `json:"expected_revision"`
 }
 
 type applyAllChannelUpstreamModelUpdatesResult struct {
@@ -682,6 +754,7 @@ type detectChannelUpstreamModelUpdatesResult struct {
 	RemoveModels    []string `json:"remove_models"`
 	LastCheckTime   int64    `json:"last_check_time"`
 	AutoAddedModels int      `json:"auto_added_models"`
+	Revision        string   `json:"revision"`
 }
 
 // applyChannelUpstreamModelUpdates applies a caller-selected subset of the
@@ -689,6 +762,7 @@ type detectChannelUpstreamModelUpdatesResult struct {
 // the staged lists so a stale client can never inject a model the detector did
 // not actually find; "add" wins when a model appears in both lists.
 func applyChannelUpstreamModelUpdates(
+	ctx context.Context,
 	channel *model.Channel,
 	addModelsInput []string,
 	ignoreModelsInput []string,
@@ -701,6 +775,7 @@ func applyChannelUpstreamModelUpdates(
 	modelsChanged bool,
 	err error,
 ) {
+	expectedRevision := model.ChannelModelStateRevision(channel)
 	settings := channel.GetOtherSettings()
 	pendingAddModels := normalizeModelNames(settings.UpstreamModelUpdateLastDetectedModels)
 	pendingRemoveModels := normalizeModelNames(settings.UpstreamModelUpdateLastRemovedModels)
@@ -726,13 +801,8 @@ func applyChannelUpstreamModelUpdates(
 	settings.UpstreamModelUpdateLastRemovedModels = remainingRemoveModels
 	settings.UpstreamModelUpdateLastCheckTime = common.GetTimestamp()
 
-	if err := updateChannelUpstreamModelSettings(channel, settings, modelsChanged); err != nil {
+	if err := updateChannelUpstreamModelSettings(ctx, channel, expectedRevision, settings, modelsChanged); err != nil {
 		return nil, nil, nil, nil, false, err
-	}
-	if modelsChanged {
-		if err := channel.UpdateAbilities(nil); err != nil {
-			return addModels, removeModels, remainingModels, remainingRemoveModels, true, err
-		}
 	}
 	return addModels, removeModels, remainingModels, remainingRemoveModels, modelsChanged, nil
 }
@@ -767,6 +837,10 @@ func ApplyChannelUpstreamModelUpdates(c *gin.Context) {
 		})
 		return
 	}
+	if len(req.AddModels)+len(req.RemoveModels)+len(req.IgnoreModels) > 1000 {
+		common.ApiErrorMsg(c, "Select at most 1000 models")
+		return
+	}
 
 	channel, err := model.GetChannelById(req.ID, true)
 	if err != nil {
@@ -774,9 +848,14 @@ func ApplyChannelUpstreamModelUpdates(c *gin.Context) {
 		return
 	}
 	beforeSettings := channel.GetOtherSettings()
+	if req.ExpectedRevision != "" && req.ExpectedRevision != model.ChannelModelStateRevision(channel) {
+		common.ApiError(c, model.ErrChannelModelStateChanged)
+		return
+	}
 	ignoredModels := intersectModelNames(req.IgnoreModels, beforeSettings.UpstreamModelUpdateLastDetectedModels)
 
 	addedModels, removedModels, remainingModels, remainingRemoveModels, modelsChanged, err := applyChannelUpstreamModelUpdates(
+		c.Request.Context(),
 		channel,
 		req.AddModels,
 		req.IgnoreModels,
@@ -790,6 +869,7 @@ func ApplyChannelUpstreamModelUpdates(c *gin.Context) {
 	if modelsChanged {
 		refreshChannelRuntimeCache()
 	}
+	model.RecordLegacyAuditLog(c, model.AuditUpdate, "channel", channel.Id, "Applied selected upstream model changes")
 
 	c.JSON(http.StatusOK, gin.H{
 		"success": true,
@@ -804,6 +884,27 @@ func ApplyChannelUpstreamModelUpdates(c *gin.Context) {
 			"models":                  channel.Models,
 			"settings":                channel.OtherSettings,
 		},
+	})
+}
+
+func GetChannelUpstreamModelUpdates(c *gin.Context) {
+	id, err := strconv.Atoi(c.Param("id"))
+	if err != nil || id <= 0 {
+		common.ApiErrorMsg(c, "Invalid channel ID")
+		return
+	}
+	channel, err := model.GetChannelById(id, true)
+	if err != nil {
+		common.ApiError(c, err)
+		return
+	}
+	settings := channel.GetOtherSettings()
+	common.ApiSuccess(c, detectChannelUpstreamModelUpdatesResult{
+		ChannelID: channel.Id, ChannelName: channel.Name,
+		AddModels:     normalizeModelNames(settings.UpstreamModelUpdateLastDetectedModels),
+		RemoveModels:  normalizeModelNames(settings.UpstreamModelUpdateLastRemovedModels),
+		LastCheckTime: settings.UpstreamModelUpdateLastCheckTime,
+		Revision:      model.ChannelModelStateRevision(channel),
 	})
 }
 
@@ -828,7 +929,7 @@ func DetectChannelUpstreamModelUpdates(c *gin.Context) {
 	}
 
 	settings := channel.GetOtherSettings()
-	modelsChanged, autoAdded, err := checkAndPersistChannelUpstreamModelUpdates(channel, &settings, true, false)
+	modelsChanged, autoAdded, err := checkAndPersistChannelUpstreamModelUpdatesWithContext(c.Request.Context(), channel, &settings, true, false)
 	if err != nil {
 		common.ApiError(c, err)
 		return
@@ -847,6 +948,7 @@ func DetectChannelUpstreamModelUpdates(c *gin.Context) {
 			RemoveModels:    normalizeModelNames(settings.UpstreamModelUpdateLastRemovedModels),
 			LastCheckTime:   settings.UpstreamModelUpdateLastCheckTime,
 			AutoAddedModels: autoAdded,
+			Revision:        model.ChannelModelStateRevision(channel),
 		},
 	})
 }
@@ -860,6 +962,9 @@ func ApplyAllChannelUpstreamModelUpdates(c *gin.Context) {
 
 	lastID := 0
 	for {
+		if err := c.Request.Context().Err(); err != nil {
+			return
+		}
 		channels, err := findEnabledChannelsAfterID(lastID, channelUpstreamModelUpdateTaskBatchSize)
 		if err != nil {
 			common.ApiError(c, err)
@@ -886,6 +991,7 @@ func ApplyAllChannelUpstreamModelUpdates(c *gin.Context) {
 			}
 
 			addedModels, removedModels, remainingModels, remainingRemoveModels, modelsChanged, err := applyChannelUpstreamModelUpdates(
+				c.Request.Context(),
 				channel,
 				pendingAddModels,
 				nil,
@@ -918,6 +1024,7 @@ func ApplyAllChannelUpstreamModelUpdates(c *gin.Context) {
 	if refreshNeeded {
 		refreshChannelRuntimeCache()
 	}
+	model.RecordLegacyAuditLog(c, model.AuditUpdate, "channel", 0, fmt.Sprintf("Applied staged upstream models: channels=%d added=%d removed=%d failed=%v", len(results), addedModelCount, removedModelCount, failed))
 
 	c.JSON(http.StatusOK, gin.H{
 		"success": true,
@@ -932,70 +1039,180 @@ func ApplyAllChannelUpstreamModelUpdates(c *gin.Context) {
 	})
 }
 
-// DetectAllChannelUpstreamModelUpdates forces a fresh detection pass across all
-// enabled channels without auto-applying, staging pending add/remove models for
-// explicit review. Unlike upstream this runs inline rather than through the
-// system-task framework (excluded from this fork); it still respects the same
-// force=true / allowAutoApply=false semantics as the manual trigger.
+// DetectAllChannelUpstreamModelUpdates queues a forced scan that stages model
+// changes for review. The shared task lease prevents overlapping manual and
+// scheduled scans across instances.
 func DetectAllChannelUpstreamModelUpdates(c *gin.Context) {
-	results := make([]detectChannelUpstreamModelUpdatesResult, 0)
-	failed := make([]int, 0)
-	refreshNeeded := false
-
-	lastID := 0
-	for {
-		channels, err := findEnabledChannelsAfterID(lastID, channelUpstreamModelUpdateTaskBatchSize)
-		if err != nil {
-			common.ApiError(c, err)
-			return
-		}
-		if len(channels) == 0 {
-			break
-		}
-		lastID = channels[len(channels)-1].Id
-
-		for _, channel := range channels {
-			if channel == nil {
-				continue
-			}
-			settings := channel.GetOtherSettings()
-			if !settings.UpstreamModelUpdateCheckEnabled {
-				continue
-			}
-			modelsChanged, autoAdded, err := checkAndPersistChannelUpstreamModelUpdates(channel, &settings, true, false)
-			if err != nil {
-				failed = append(failed, channel.Id)
-				continue
-			}
-			if modelsChanged {
-				refreshNeeded = true
-			}
-			results = append(results, detectChannelUpstreamModelUpdatesResult{
-				ChannelID:       channel.Id,
-				ChannelName:     channel.Name,
-				AddModels:       normalizeModelNames(settings.UpstreamModelUpdateLastDetectedModels),
-				RemoveModels:    normalizeModelNames(settings.UpstreamModelUpdateLastRemovedModels),
-				LastCheckTime:   settings.UpstreamModelUpdateLastCheckTime,
-				AutoAddedModels: autoAdded,
-			})
-		}
-
-		if len(channels) < channelUpstreamModelUpdateTaskBatchSize {
-			break
-		}
+	task, created, err := service.EnqueueSystemTask(model.SystemTaskTypeModelUpdate, modelUpdateTaskPayload{Manual: true})
+	if err != nil {
+		common.ApiError(c, err)
+		return
+	}
+	if !created {
+		msg := common.NewMessage("A model update task is already running or queued. Cannot start this manual task")
+		common.ApiErrorStatus(c, http.StatusConflict, msg, gin.H{"data": gin.H{
+			"task_id": task.TaskID,
+			"status":  task.Status,
+			"type":    task.Type,
+		}})
+		return
 	}
 
-	if refreshNeeded {
-		refreshChannelRuntimeCache()
-	}
-
+	recordManageAudit(c, "channel.upstream_detect_all", map[string]any{
+		"task_id": task.TaskID,
+	})
 	c.JSON(http.StatusOK, gin.H{
 		"success": true,
 		"message": "",
 		"data": gin.H{
-			"processed_channels": len(results),
-			"failed_channel_ids": failed,
-			"results":            results,
+			"task_id": task.TaskID,
+			"status":  task.Status,
 		},
 	})
+}
+
+func fetchAdvancedCustomUpstreamModelIDs(ctx context.Context, channel *model.Channel, baseURL string) ([]string, error) {
+	key, _, apiErr := channel.GetNextEnabledKey()
+	if apiErr != nil {
+		return nil, fmt.Errorf("failed to get channel key: %w", apiErr)
+	}
+	key = strings.TrimSpace(key)
+
+	info := &relaycommon.RelayInfo{
+		RelayFormat:    types.RelayFormatOpenAI,
+		RelayMode:      relayconstant.RelayModeUnknown,
+		RequestURLPath: dto.AdvancedCustomModelListPath,
+		ChannelMeta: &relaycommon.ChannelMeta{
+			ChannelType:          channel.Type,
+			ChannelBaseUrl:       baseURL,
+			ApiKey:               key,
+			ChannelOtherSettings: channel.GetOtherSettings(),
+		},
+	}
+
+	adaptor := &advancedcustom.Adaptor{}
+	url, headers, err := adaptor.BuildModelListRequest(info)
+	if err != nil {
+		return nil, sanitizeFetchModelsError(err, key)
+	}
+	if err := applyFetchModelsHeaderOverrides(channel, key, headers); err != nil {
+		return nil, sanitizeFetchModelsError(err, key)
+	}
+
+	body, err := getFetchModelsResponseBody(ctx, http.MethodGet, url, channel, headers)
+	if err != nil {
+		return nil, sanitizeFetchModelsError(err, key)
+	}
+	return parseOpenAIModelIDs(body)
+}
+
+func getFetchModelsResponseBody(ctx context.Context, method string, requestURL string, channel *model.Channel, headers http.Header) ([]byte, error) {
+	return getChannelManagementResponseBody(ctx, method, requestURL, channel, headers, 2<<20)
+}
+
+func getChannelManagementResponseBody(ctx context.Context, method string, requestURL string, channel *model.Channel, headers http.Header, maximum int64) ([]byte, error) {
+	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
+	defer cancel()
+	request, err := http.NewRequestWithContext(ctx, method, requestURL, nil)
+	if err != nil {
+		return nil, err
+	}
+	for name, values := range headers {
+		for _, value := range values {
+			request.Header.Add(name, value)
+		}
+		if strings.EqualFold(name, "Host") {
+			request.Host = headers.Get(name)
+		}
+	}
+	setting := channel.GetSetting()
+	client, err := service.GetHttpClientWithProxySettings(setting.Proxy, setting)
+	if err != nil {
+		return nil, err
+	}
+	localClient := *client
+	localClient.CheckRedirect = func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse }
+	response, err := localClient.Do(request)
+	if err != nil {
+		return nil, err
+	}
+	defer response.Body.Close()
+	if response.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("status code: %d", response.StatusCode)
+	}
+	body, err := io.ReadAll(io.LimitReader(response.Body, maximum+1))
+	if err == nil && int64(len(body)) > maximum {
+		return nil, fmt.Errorf("upstream response exceeds size limit")
+	}
+	return body, err
+}
+
+func parseOpenAIModelIDs(body []byte) ([]string, error) {
+	var result struct {
+		Data *[]OpenAIModel `json:"data"`
+	}
+	if err := common.Unmarshal(body, &result); err != nil {
+		return nil, fmt.Errorf("invalid OpenAI Models response: %w", err)
+	}
+	if result.Data == nil {
+		return nil, fmt.Errorf("invalid OpenAI Models response: data is required")
+	}
+	ids := normalizeModelNames(lo.Map(*result.Data, func(item OpenAIModel, _ int) string {
+		return item.ID
+	}))
+	if len(ids) == 0 {
+		return nil, fmt.Errorf("OpenAI Models response contains no valid model IDs")
+	}
+	return ids, nil
+}
+
+func sanitizeAdvancedCustomRequestError(err error, key string, requestURL string) error {
+	err = sanitizeFetchModelsError(err, key)
+	if err == nil {
+		return nil
+	}
+	parsedURL, parseErr := url.Parse(requestURL)
+	if parseErr != nil {
+		return err
+	}
+	message := err.Error()
+	for _, value := range parsedURL.Query() {
+		for _, secret := range value {
+			if secret == "" {
+				continue
+			}
+			message = strings.ReplaceAll(message, secret, "[REDACTED]")
+			message = strings.ReplaceAll(message, url.QueryEscape(secret), "[REDACTED]")
+			message = strings.ReplaceAll(message, url.PathEscape(secret), "[REDACTED]")
+		}
+	}
+	if key != "" {
+		message = strings.ReplaceAll(message, key, "[REDACTED]")
+		message = strings.ReplaceAll(message, url.QueryEscape(key), "[REDACTED]")
+		message = strings.ReplaceAll(message, url.PathEscape(key), "[REDACTED]")
+	}
+	return errors.New(message)
+}
+
+func sanitizeFetchModelsError(err error, key string) error {
+	if err == nil {
+		return nil
+	}
+
+	// net/http includes the complete request URL in url.Error. Discovery routes
+	// may put the API key in a custom query name or value, so never return that
+	// wrapper to an API client.
+	var urlErr *url.Error
+	if errors.As(err, &urlErr) && urlErr.Err != nil {
+		err = urlErr.Err
+	}
+
+	message := err.Error()
+	key = strings.TrimSpace(key)
+	if key != "" {
+		message = strings.ReplaceAll(message, key, "[REDACTED]")
+		message = strings.ReplaceAll(message, url.QueryEscape(key), "[REDACTED]")
+		message = strings.ReplaceAll(message, url.PathEscape(key), "[REDACTED]")
+	}
+	return errors.New(message)
 }

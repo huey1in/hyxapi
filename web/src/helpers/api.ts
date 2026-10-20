@@ -23,11 +23,18 @@ import {
 } from './utils';
 import axios from 'axios';
 import type { AxiosError, AxiosInstance, AxiosRequestConfig, AxiosResponse } from 'axios';
+import { applyAuthRotation, clearAuthentication, getFreshAuthHeaders, refreshAuthentication } from '../lib/auth-session';
+import { operationForRequest } from '../lib/verification-operation';
+import { requestVerification } from '../lib/verification-request';
+import { useAuthStore } from '../stores/auth-store';
 import type { ApiEnvelope, OAuthProvider } from '../types/api';
+import { normalizeLanguage } from '../i18n/language';
 
 interface OAuthOptions {
   openInNewTab?: boolean;
   shouldLogout?: boolean;
+  intent?: 'login' | 'bind';
+  proofToken?: string;
 }
 
 const apiBaseURL = import.meta.env.PUBLIC_API_BASE_URL || '';
@@ -67,7 +74,7 @@ function patchAPIInstance(instance: AxiosInstance) {
       return originalGet<T, R, D>(url, config);
     }
 
-    const key = genKey(url, config);
+    const key = `${useAuthStore.getState().auth.session?.sid || 'anonymous'}:${genKey(url, config)}`;
     if (inFlightGetRequests.has(key)) {
       return inFlightGetRequests.get(key) as Promise<R>;
     }
@@ -82,12 +89,23 @@ function patchAPIInstance(instance: AxiosInstance) {
 
   // Forward the active UI language to the backend so its i18n responses
   // (toast messages, error strings) come back in the user's language.
-  instance.interceptors.request.use((config) => {
+  instance.interceptors.request.use(async (config) => {
+    const initial = useAuthStore.getState().auth;
+    const identity = `${initial.user?.id}:${initial.session?.sid}`;
+    if (config.verificationOwner === undefined) config.verificationOwner = identity;
+    if (config.singleUseAuthorization || config.headers.has('X-Security-Proof')) {
+      config.skipAuthRefresh = true;
+      const headers = await getFreshAuthHeaders();
+      const current = useAuthStore.getState().auth;
+      if (config.verificationOwner !== `${current.user?.id}:${current.session?.sid}`) throw new axios.CanceledError('Security verification owner changed');
+      Object.entries(headers).forEach(([key, value]) => config.headers.set(key, value));
+    } else {
+      const token = useAuthStore.getState().auth.accessToken;
+      if (token) config.headers.Authorization = `Bearer ${token}`;
+    }
     try {
       const lang = localStorage.getItem('i18nextLng') || navigator.language || 'en';
-      const normalised = String(lang || '').toLowerCase().startsWith('zh')
-        ? 'zh-CN'
-        : 'en';
+      const normalised = normalizeLanguage(String(lang)) || 'en';
       config.headers = config.headers || {};
       config.headers['Accept-Language'] = normalised;
     } catch {}
@@ -95,16 +113,42 @@ function patchAPIInstance(instance: AxiosInstance) {
   });
 
   instance.interceptors.response.use(
-    (response) => response,
-    (error) => {
-      const status = error?.response?.status;
-      if (status === 401 || status === 403) {
-        handleUnauthorized(error);
+    (response) => {
+      if (response.config.acceptAuthRotation && response.data?.success) applyAuthRotation(response.data.data);
+      return response;
+    },
+    async (error) => {
+      const config = error.config;
+      if (error.response?.status === 403 && error.response?.data?.code === 'SECURITY_PROOF_REQUIRED' && config && !config.headers?.['X-Security-Proof']) {
+        const operation = operationForRequest(config, useAuthStore.getState().auth.user?.has_password !== false);
+        if (operation) {
+          const auth = useAuthStore.getState().auth;
+          const owner = `${auth.user?.id}:${auth.session?.sid}`;
+          if (config.verificationOwner !== owner) throw new axios.CanceledError('Security verification owner changed');
+          const proof = await requestVerification(operation, config.signal);
+          const current = useAuthStore.getState().auth;
+          if (config.signal?.aborted || owner !== `${current.user?.id}:${current.session?.sid}`) throw new axios.CanceledError('Security verification owner changed');
+          config.headers['X-Security-Proof'] = proof.proof_token;
+          config.singleUseAuthorization = true;
+          config.skipAuthRefresh = true;
+          return instance.request(config);
+        }
       }
-      if (error.config && error.config.skipErrorHandler) {
-        return Promise.reject(error);
+      if (error.response?.status === 401 && config && !AUTH_BYPASS_RE.test(config.url || '')) {
+        if (!config.skipAuthRefresh && !config.authRetry) {
+          config.authRetry = true;
+          const outcome = await refreshAuthentication();
+          if (outcome.kind === 'authenticated') {
+            config.headers.Authorization = `Bearer ${outcome.bundle.access_token}`;
+            return instance.request(config);
+          }
+          if (outcome.kind === 'anonymous' || outcome.kind === 'out_of_sync') handleUnauthorized(error);
+        } else if (config.authRetry) {
+          clearAuthentication(false);
+          handleUnauthorized(error);
+        }
       }
-      showError(error);
+      if (!config?.skipErrorHandler) showError(error);
       return Promise.reject(error);
     },
   );
@@ -128,7 +172,7 @@ export function updateAPI() {
 // Path-prefixes whose 401/403 should NOT trigger a global redirect
 // to /auth — these are part of the auth flow itself or always-public.
 const AUTH_BYPASS_RE =
-  /\/api\/(oauth|status|notice|verification|reset_password|user\/(login|register|logout|passkey\/login|password_reset))/;
+  /\/api\/(oauth|status|notice|verification|reset_password|user\/(auth|login|register|passkey\/login|password_reset))/;
 
 const handleUnauthorized = (error: AxiosError) => {
   const url = error?.config?.url || '';
@@ -152,42 +196,42 @@ const handleUnauthorized = (error: AxiosError) => {
 
 // 原来components中的utils.js
 
-async function getOAuthState() {
-  let path = '/api/oauth/state';
-  let affCode = localStorage.getItem('aff');
-  if (affCode && affCode.length > 0) {
-    path += `?aff=${affCode}`;
-  }
-  const res = await API.get<ApiEnvelope<string>>(path);
+export async function getOAuthState(provider: string, options: OAuthOptions = {}) {
+  const aff = localStorage.getItem('aff') || '';
+  const res = await API.post<ApiEnvelope<{ flow_token: string; authorization_url?: string }>>('/api/oauth/state', {
+    provider, intent: options.intent || (options.openInNewTab ? 'bind' : 'login'),
+    ...((options.intent || (options.openInNewTab ? 'bind' : 'login')) === 'login' && aff ? { aff } : {}),
+  }, options.proofToken ? { headers: { 'X-Security-Proof': options.proofToken }, singleUseAuthorization: true } : undefined);
   const { success, message, data } = res.data;
   if (success) {
     return data;
   } else {
     showError(message);
-    return '';
+    return null;
   }
 }
 
-async function prepareOAuthState(options: OAuthOptions = {}) {
+async function prepareOAuthState(provider: string, options: OAuthOptions = {}) {
   const { shouldLogout = false } = options;
   if (shouldLogout) {
     try {
-      await API.get('/api/user/logout', { skipErrorHandler: true });
+      await logoutAuthentication();
     } catch (err) {}
     localStorage.removeItem('user');
     updateAPI();
   }
-  return await getOAuthState();
+  const result = await getOAuthState(provider, options);
+  return result?.flow_token;
 }
 
 export async function onDiscordOAuthClicked(client_id: string, options: OAuthOptions = {}) {
-  const state = await prepareOAuthState(options);
+  const state = await prepareOAuthState('discord', options);
   if (!state) return;
   const redirect_uri = `${window.location.origin}/oauth/discord`;
   const response_type = 'code';
   const scope = 'identify+openid';
   redirectToOAuthUrl(
-    `https://discord.com/oauth2/authorize?client_id=${client_id}&redirect_uri=${redirect_uri}&response_type=${response_type}&scope=${scope}&state=${state}`,
+    `https://discord.com/oauth2/authorize?client_id=${client_id}&redirect_uri=${redirect_uri}&response_type=${response_type}&scope=${scope}&state=${state}`, options,
   );
 }
 
@@ -197,7 +241,7 @@ export async function onOIDCClicked(
   openInNewTab = false,
   options: OAuthOptions = {},
 ) {
-  const state = await prepareOAuthState(options);
+  const state = await prepareOAuthState('oidc', options);
   if (!state) return;
   const url = new URL(auth_url);
   url.searchParams.set('client_id', client_id);
@@ -209,10 +253,10 @@ export async function onOIDCClicked(
 }
 
 export async function onGitHubOAuthClicked(github_client_id: string, options: OAuthOptions = {}) {
-  const state = await prepareOAuthState(options);
+  const state = await prepareOAuthState('github', options);
   if (!state) return;
   redirectToOAuthUrl(
-    `https://github.com/login/oauth/authorize?client_id=${github_client_id}&state=${state}&scope=user:email`,
+    `https://github.com/login/oauth/authorize?client_id=${github_client_id}&state=${state}&scope=user:email`, options,
   );
 }
 
@@ -220,10 +264,10 @@ export async function onLinuxDOOAuthClicked(
   linuxdo_client_id: string,
   options: OAuthOptions = { shouldLogout: false },
 ) {
-  const state = await prepareOAuthState(options);
+  const state = await prepareOAuthState('linuxdo', options);
   if (!state) return;
   redirectToOAuthUrl(
-    `https://connect.linux.do/oauth2/authorize?response_type=code&client_id=${linuxdo_client_id}&state=${state}`,
+    `https://connect.linux.do/oauth2/authorize?response_type=code&client_id=${linuxdo_client_id}&state=${state}`, options,
   );
 }
 
@@ -238,7 +282,7 @@ export async function onLinuxDOOAuthClicked(
  * @param {boolean} options.shouldLogout - Whether to logout first
  */
 export async function onCustomOAuthClicked(provider: OAuthProvider, options: OAuthOptions = {}) {
-  const state = await prepareOAuthState(options);
+  const state = await prepareOAuthState(provider.slug, options);
   if (!state) return;
 
   try {
@@ -272,7 +316,7 @@ export async function onCustomOAuthClicked(provider: OAuthProvider, options: OAu
     );
     authUrl.searchParams.set('state', state);
 
-    redirectToOAuthUrl(authUrl);
+    redirectToOAuthUrl(authUrl, options);
   } catch (error) {
     console.error('Failed to initiate custom OAuth:', error);
     showError('OAuth 登录失败：' + (error instanceof Error ? error.message : '未知错误'));
@@ -297,4 +341,25 @@ export function getChannelModels(type: string | number): string[] {
     return channelModels[type];
   }
   return [];
+}
+
+export async function onTelegramOAuthClicked() {
+  const result = await getOAuthState('telegram');
+  if (result?.authorization_url) redirectToOAuthUrl(result.authorization_url);
+}
+
+export async function logoutAuthentication(signal?: AbortSignal) {
+  const { accessToken, session } = useAuthStore.getState().auth;
+  const response = await API.post<ApiEnvelope<unknown>>('/api/user/auth/logout', undefined, {
+    signal,
+    headers: { ...(session ? { 'X-Auth-Session': session.sid } : {}), ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}) },
+    skipAuthRefresh: true, skipErrorHandler: true,
+  });
+  signal?.throwIfAborted();
+  if (!response.data.success) throw new Error(response.data.message || 'Unable to complete operation');
+  const current = useAuthStore.getState().auth;
+  if (current.session?.sid !== session?.sid) return false;
+  clearAuthentication();
+  localStorage.removeItem('user');
+  return true;
 }

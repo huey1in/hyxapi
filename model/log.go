@@ -16,26 +16,27 @@ import (
 )
 
 type Log struct {
-	Id               int    `json:"id" gorm:"index:idx_created_at_id,priority:1;index:idx_user_id_id,priority:2"`
-	UserId           int    `json:"user_id" gorm:"index;index:idx_user_id_id,priority:1;index:idx_logs_user_type_created,priority:1"`
-	CreatedAt        int64  `json:"created_at" gorm:"bigint;index:idx_created_at_id,priority:2;index:idx_created_at_type;index:idx_logs_type_created,priority:2;index:idx_logs_user_type_created,priority:3"`
-	Type             int    `json:"type" gorm:"index:idx_created_at_type;index:idx_logs_type_created,priority:1;index:idx_logs_user_type_created,priority:2"`
-	Content          string `json:"content"`
-	Username         string `json:"username" gorm:"index;index:index_username_model_name,priority:2;default:''"`
-	TokenName        string `json:"token_name" gorm:"index;default:''"`
-	ModelName        string `json:"model_name" gorm:"index;index:index_username_model_name,priority:1;default:''"`
-	Quota            int    `json:"quota" gorm:"default:0"`
-	PromptTokens     int    `json:"prompt_tokens" gorm:"default:0"`
-	CompletionTokens int    `json:"completion_tokens" gorm:"default:0"`
-	UseTime          int    `json:"use_time" gorm:"default:0"`
-	IsStream         bool   `json:"is_stream"`
-	ChannelId        int    `json:"channel" gorm:"index"`
-	ChannelName      string `json:"channel_name" gorm:"->"`
-	TokenId          int    `json:"token_id" gorm:"default:0;index"`
-	Group            string `json:"group" gorm:"index"`
-	Ip               string `json:"ip" gorm:"index;default:''"`
-	RequestId        string `json:"request_id,omitempty" gorm:"type:varchar(64);index:idx_logs_request_id;default:''"`
-	Other            string `json:"other"`
+	Id                int    `json:"id" gorm:"index:idx_created_at_id,priority:1;index:idx_user_id_id,priority:2"`
+	UserId            int    `json:"user_id" gorm:"index;index:idx_user_id_id,priority:1;index:idx_logs_user_type_created,priority:1"`
+	CreatedAt         int64  `json:"created_at" gorm:"bigint;index:idx_created_at_id,priority:2;index:idx_created_at_type;index:idx_logs_type_created,priority:2;index:idx_logs_user_type_created,priority:3"`
+	Type              int    `json:"type" gorm:"index:idx_created_at_type;index:idx_logs_type_created,priority:1;index:idx_logs_user_type_created,priority:2"`
+	Content           string `json:"content"`
+	Username          string `json:"username" gorm:"index;index:index_username_model_name,priority:2;default:''"`
+	TokenName         string `json:"token_name" gorm:"index;default:''"`
+	ModelName         string `json:"model_name" gorm:"index;index:index_username_model_name,priority:1;default:''"`
+	Quota             int    `json:"quota" gorm:"default:0"`
+	PromptTokens      int    `json:"prompt_tokens" gorm:"default:0"`
+	CompletionTokens  int    `json:"completion_tokens" gorm:"default:0"`
+	UseTime           int    `json:"use_time" gorm:"default:0"`
+	IsStream          bool   `json:"is_stream"`
+	ChannelId         int    `json:"channel" gorm:"index"`
+	ChannelName       string `json:"channel_name" gorm:"->"`
+	TokenId           int    `json:"token_id" gorm:"default:0;index"`
+	Group             string `json:"group" gorm:"index"`
+	Ip                string `json:"ip" gorm:"index;default:''"`
+	RequestId         string `json:"request_id,omitempty" gorm:"type:varchar(64);index:idx_logs_request_id;default:''"`
+	UpstreamRequestId string `json:"upstream_request_id,omitempty" gorm:"type:varchar(128);index:idx_logs_upstream_request_id;default:''"`
+	Other             string `json:"other"`
 }
 
 // don't use iota, avoid change log type value
@@ -47,9 +48,11 @@ const (
 	LogTypeSystem  = 4
 	LogTypeError   = 5
 	LogTypeRefund  = 6
+	LogTypeLogin   = 7
 )
 
 func formatUserLogs(logs []*Log, startIdx int) {
+	ProjectLogsForRole(logs, common.RoleCommonUser)
 	for i := range logs {
 		logs[i].ChannelName = ""
 		var otherMap map[string]interface{}
@@ -59,6 +62,7 @@ func formatUserLogs(logs []*Log, startIdx int) {
 			delete(otherMap, "admin_info")
 			// Remove operation-audit details (operator/route info), admin-only.
 			delete(otherMap, "audit_info")
+			delete(otherMap, "root_info")
 			// delete(otherMap, "reject_reason")
 			delete(otherMap, "stream_status")
 		}
@@ -68,12 +72,16 @@ func formatUserLogs(logs []*Log, startIdx int) {
 }
 
 func GetLogByTokenId(tokenId int) (logs []*Log, err error) {
-	err = LOG_DB.Model(&Log{}).Where("token_id = ?", tokenId).Order("id desc").Limit(common.MaxRecentItems).Find(&logs).Error
+	order := "id desc"
+	if common.UsingLogDatabase(common.DatabaseTypeClickHouse) {
+		order = clickHouseLogOrder("")
+	}
+	err = LOG_DB.Model(&Log{}).Where("token_id = ?", tokenId).Order(order).Limit(common.MaxRecentItems).Find(&logs).Error
 	formatUserLogs(logs, 0)
 	return logs, err
 }
 
-func RecordLog(userId int, logType int, content string) {
+func RecordLog(userId int, logType int, content any) {
 	if logType == LogTypeConsume && !common.LogConsumeEnabled {
 		return
 	}
@@ -83,16 +91,19 @@ func RecordLog(userId int, logType int, content string) {
 		Username:  username,
 		CreatedAt: common.GetTimestamp(),
 		Type:      logType,
-		Content:   content,
+		Content:   fmt.Sprint(content),
 	}
-	err := LOG_DB.Create(log).Error
+	if message, ok := content.(*common.Message); ok {
+		log.Other = common.MapToJsonStr(message.Fields())
+	}
+	err := createLog(log)
 	if err != nil {
 		common.SysLog("failed to record log: " + err.Error())
 	}
 }
 
 // RecordLogWithAdminInfo 记录操作日志，并将管理员相关信息存入 Other.admin_info，
-func RecordLogWithAdminInfo(userId int, logType int, content string, adminInfo map[string]interface{}) {
+func RecordLogWithAdminInfo(userId int, logType int, content string, adminInfo *AuditAdminInfo, operation *AuditOperation, request ...*gin.Context) {
 	if logType == LogTypeConsume && !common.LogConsumeEnabled {
 		return
 	}
@@ -104,14 +115,31 @@ func RecordLogWithAdminInfo(userId int, logType int, content string, adminInfo m
 		Type:      logType,
 		Content:   content,
 	}
-	if len(adminInfo) > 0 {
-		other := map[string]interface{}{
-			"admin_info": adminInfo,
+	if logType == LogTypeManage {
+		var c *gin.Context
+		if len(request) > 0 {
+			c = request[0]
 		}
-		log.Other = common.MapToJsonStr(other)
+		actorRole := 0
+		if c != nil {
+			actorRole = c.GetInt("role")
+		}
+		RecordAuditLog(c, AuditLog{UserId: userId, Username: username, ActorRole: actorRole, Category: AuditCategoryOperation, Content: content, Other: AuditOther{AdminInfo: adminInfo, Op: operation}, Success: true})
+		return
 	}
-	if err := LOG_DB.Create(log).Error; err != nil {
-		common.SysLog("failed to record log: " + err.Error())
+	if len(request) > 0 && request[0] != nil {
+		log.RequestId = request[0].GetString(common.RequestIdKey)
+	}
+	if adminInfo != nil || operation != nil {
+		data, err := common.Marshal(AuditOther{AdminInfo: adminInfo, Op: operation})
+		if err != nil {
+			common.SysError(common.LogText("failed to encode log admin info: %s", err.Error()))
+			return
+		}
+		log.Other = string(data)
+	}
+	if err := createLog(log); err != nil {
+		common.SysLog(common.LogText("failed to record log: %s", err.Error()))
 	}
 }
 
@@ -133,32 +161,30 @@ func buildOpField(action string, params map[string]interface{}) map[string]inter
 // （供导出使用）；action+params 写入 Other.op 供前端本地化渲染（普通用户可见）。
 // adminInfo 存放操作者身份（写入 Other.admin_info，普通用户查询时剥离）；
 // auditInfo 存放路由/方法/结果等中间件兜底信息（写入 Other.audit_info，剥离）。
-func RecordOperationAuditLog(logUserId int, content string, ip string, action string, params map[string]interface{}, adminInfo map[string]interface{}, auditInfo map[string]interface{}) {
+func RecordOperationAuditLog(logUserId, actorRole int, content string, ip string, action string, params map[string]any, adminInfo *AuditAdminInfo, auditInfo *AuditRequestInfo, request ...*gin.Context) {
 	username, _ := GetUsernameById(logUserId, false)
-	other := map[string]interface{}{
-		"op": buildOpField(action, params),
+	other := AuditOther{
+		Op:        &AuditOperation{Action: action, Params: params},
+		AdminInfo: adminInfo,
+		AuditInfo: auditInfo,
 	}
-	if len(adminInfo) > 0 {
-		other["admin_info"] = adminInfo
+	var c *gin.Context
+	if len(request) > 0 {
+		c = request[0]
 	}
-	if len(auditInfo) > 0 {
-		other["audit_info"] = auditInfo
+	category := AuditCategoryOperation
+	if adminInfo == nil {
+		category = AuditCategorySecurity
 	}
-	log := &Log{
-		UserId:    logUserId,
-		Username:  username,
-		CreatedAt: common.GetTimestamp(),
-		Type:      LogTypeManage,
-		Content:   content,
-		Ip:        ip,
-		Other:     common.MapToJsonStr(other),
+	status, success := 200, true
+	if auditInfo != nil {
+		status = auditInfo.Status
+		success = auditInfo.Success
 	}
-	if err := LOG_DB.Create(log).Error; err != nil {
-		common.SysLog("failed to record operation audit log: " + err.Error())
-	}
+	RecordAuditLog(c, AuditLog{UserId: logUserId, Username: username, ActorRole: actorRole, Category: category, Action: action, Content: content, Ip: ip, Status: status, Success: success, Other: other})
 }
 
-func RecordTopupLog(userId int, content string, callerIp string, paymentMethod string, callbackPaymentMethod string) {
+func RecordTopupLog(userId int, content any, callerIp string, paymentMethod string, callbackPaymentMethod string) {
 	username, _ := GetUsernameById(userId, false)
 	adminInfo := map[string]interface{}{
 		"server_ip":               common.GetIp(),
@@ -171,16 +197,21 @@ func RecordTopupLog(userId int, content string, callerIp string, paymentMethod s
 	other := map[string]interface{}{
 		"admin_info": adminInfo,
 	}
+	if message, ok := content.(*common.Message); ok {
+		for key, value := range message.Fields() {
+			other[key] = value
+		}
+	}
 	log := &Log{
 		UserId:    userId,
 		Username:  username,
 		CreatedAt: common.GetTimestamp(),
 		Type:      LogTypeTopup,
-		Content:   content,
+		Content:   fmt.Sprint(content),
 		Ip:        callerIp,
 		Other:     common.MapToJsonStr(other),
 	}
-	err := LOG_DB.Create(log).Error
+	err := createLog(log)
 	if err != nil {
 		common.SysLog("failed to record topup log: " + err.Error())
 	}
@@ -221,28 +252,29 @@ func RecordErrorLog(c *gin.Context, userId int, channelId int, modelName string,
 			}
 			return ""
 		}(),
-		RequestId: requestId,
-		Other:     otherStr,
+		RequestId:         requestId,
+		UpstreamRequestId: c.GetString(common.UpstreamRequestIdKey),
+		Other:             otherStr,
 	}
-	err := LOG_DB.Create(log).Error
+	err := createLog(log)
 	if err != nil {
 		logger.LogError(c, "failed to record log: "+err.Error())
 	}
 }
 
 type RecordConsumeLogParams struct {
-	ChannelId        int                    `json:"channel_id"`
-	PromptTokens     int                    `json:"prompt_tokens"`
-	CompletionTokens int                    `json:"completion_tokens"`
-	ModelName        string                 `json:"model_name"`
-	TokenName        string                 `json:"token_name"`
-	Quota            int                    `json:"quota"`
-	Content          string                 `json:"content"`
-	TokenId          int                    `json:"token_id"`
-	UseTimeSeconds   int                    `json:"use_time_seconds"`
-	IsStream         bool                   `json:"is_stream"`
-	Group            string                 `json:"group"`
-	Other            map[string]interface{} `json:"other"`
+	ChannelId        int    `json:"channel_id"`
+	PromptTokens     int    `json:"prompt_tokens"`
+	CompletionTokens int    `json:"completion_tokens"`
+	ModelName        string `json:"model_name"`
+	TokenName        string `json:"token_name"`
+	Quota            int    `json:"quota"`
+	Content          any    `json:"content"`
+	TokenId          int    `json:"token_id"`
+	UseTimeSeconds   int    `json:"use_time_seconds"`
+	IsStream         bool   `json:"is_stream"`
+	Group            string `json:"group"`
+	Other            any    `json:"other"`
 }
 
 func RecordConsumeLog(c *gin.Context, userId int, params RecordConsumeLogParams) {
@@ -252,7 +284,7 @@ func RecordConsumeLog(c *gin.Context, userId int, params RecordConsumeLogParams)
 	logger.LogInfo(c, fmt.Sprintf("record consume log: userId=%d, params=%s", userId, common.GetJsonString(params)))
 	username := c.GetString("username")
 	requestId := c.GetString(common.RequestIdKey)
-	otherStr := common.MapToJsonStr(params.Other)
+	content, otherStr := normalizeConsumeLog(params.Content, params.Other)
 	// 判断是否需要记录 IP
 	needRecordIp := false
 	if settingMap, err := GetUserSetting(userId, false); err == nil {
@@ -265,7 +297,7 @@ func RecordConsumeLog(c *gin.Context, userId int, params RecordConsumeLogParams)
 		Username:         username,
 		CreatedAt:        common.GetTimestamp(),
 		Type:             LogTypeConsume,
-		Content:          params.Content,
+		Content:          content,
 		PromptTokens:     params.PromptTokens,
 		CompletionTokens: params.CompletionTokens,
 		TokenName:        params.TokenName,
@@ -282,22 +314,29 @@ func RecordConsumeLog(c *gin.Context, userId int, params RecordConsumeLogParams)
 			}
 			return ""
 		}(),
-		RequestId: requestId,
-		Other:     otherStr,
+		RequestId:         requestId,
+		UpstreamRequestId: c.GetString(common.UpstreamRequestIdKey),
+		Other:             otherStr,
 	}
-	err := LOG_DB.Create(log).Error
+	err := createLog(log)
 	if err != nil {
 		logger.LogError(c, "failed to record log: "+err.Error())
 	}
 	if common.DataExportEnabled {
 		gopool.Go(func() {
-			LogQuotaData(userId, username, params.ModelName, params.Quota, common.GetTimestamp(), params.PromptTokens+params.CompletionTokens)
+			LogQuotaData(QuotaDataLogParams{UserID: userId, Username: username, ModelName: params.ModelName,
+				Quota: params.Quota, CreatedAt: log.CreatedAt, TokenUsed: params.PromptTokens + params.CompletionTokens,
+				UseGroup: params.Group, TokenID: params.TokenId, ChannelID: params.ChannelId, NodeName: common.NodeName})
 		})
 	}
 }
 
-func GetAllLogs(logType int, startTimestamp int64, endTimestamp int64, modelName string, username string, tokenName string, startIdx int, num int, channel int, group string, requestId string) (logs []*Log, total int64, err error) {
-	tx, err := buildLogQuery(LogFilter{Type: logType, StartTimestamp: startTimestamp, EndTimestamp: endTimestamp, ModelName: modelName, Username: username, TokenName: tokenName, Channel: channel, Group: group, RequestId: requestId}, 0)
+func GetAllLogs(logType int, startTimestamp int64, endTimestamp int64, modelName string, username string, tokenName string, startIdx int, num int, channel int, group string, requestId string, upstreamRequestIds ...string) (logs []*Log, total int64, err error) {
+	filter := LogFilter{Type: logType, StartTimestamp: startTimestamp, EndTimestamp: endTimestamp, ModelName: modelName, Username: username, TokenName: tokenName, Channel: channel, Group: group, RequestId: requestId}
+	if len(upstreamRequestIds) > 0 {
+		filter.UpstreamRequestId = upstreamRequestIds[0]
+	}
+	tx, err := buildLogQuery(filter, 0)
 	if err != nil {
 		return nil, 0, err
 	}
@@ -305,9 +344,16 @@ func GetAllLogs(logType int, startTimestamp int64, endTimestamp int64, modelName
 	if err != nil {
 		return nil, 0, err
 	}
-	err = tx.Order("logs.id desc").Limit(num).Offset(startIdx).Find(&logs).Error
+	order := "logs.id desc"
+	if common.UsingLogDatabase(common.DatabaseTypeClickHouse) {
+		order = clickHouseLogOrder("logs.")
+	}
+	err = tx.Order(order).Limit(num).Offset(startIdx).Find(&logs).Error
 	if err != nil {
 		return nil, 0, err
+	}
+	if common.UsingLogDatabase(common.DatabaseTypeClickHouse) {
+		assignDisplayLogIds(logs, startIdx)
 	}
 
 	channelIds := types.NewSet[int]()
@@ -365,7 +411,11 @@ func GetUserLogs(userId int, logType int, startTimestamp int64, endTimestamp int
 		common.SysError("failed to count user logs: " + err.Error())
 		return nil, 0, errors.New("查询日志失败")
 	}
-	err = tx.Order("logs.id desc").Limit(num).Offset(startIdx).Find(&logs).Error
+	order := "logs.id desc"
+	if common.UsingLogDatabase(common.DatabaseTypeClickHouse) {
+		order = clickHouseLogOrder("logs.")
+	}
+	err = tx.Order(order).Limit(num).Offset(startIdx).Find(&logs).Error
 	if err != nil {
 		common.SysError("failed to search user logs: " + err.Error())
 		return nil, 0, errors.New("查询日志失败")
@@ -379,6 +429,8 @@ type Stat struct {
 	Quota    int   `json:"quota"`
 	Tokens   int64 `json:"tokens"`
 	Requests int   `json:"requests"`
+	Rpm      int   `json:"rpm"`
+	Tpm      int64 `json:"tpm"`
 }
 
 type ActiveOperationsStat struct {
@@ -397,42 +449,41 @@ type RequestHealthStat struct {
 }
 
 func SumUsedQuota(logType int, startTimestamp int64, endTimestamp int64, modelName string, username string, tokenName string, channel int, group string) (stat Stat, err error) {
-	// 统计指定筛选条件与时间范围内的消费额度、token 总量、请求数
-	tx := LOG_DB.Table("logs").Select("sum(quota) quota, sum(prompt_tokens) + sum(completion_tokens) tokens, count(*) requests")
+	return sumUsedQuota(LogFilter{Type: LogTypeConsume, StartTimestamp: startTimestamp, EndTimestamp: endTimestamp, ModelName: modelName, Username: username, TokenName: tokenName, Channel: channel, Group: group}, 0)
+}
 
-	if username != "" {
-		tx = tx.Where("username = ?", username)
+// SumUserUsedQuota scopes historical and live totals to the immutable user ID.
+// A username change must not hide that account's historical usage.
+func SumUserUsedQuota(userID int, startTimestamp, endTimestamp int64, modelName, tokenName string, channel int, group string) (Stat, error) {
+	if userID <= 0 {
+		return Stat{}, errors.New("invalid user ID")
 	}
-	if tokenName != "" {
-		tx = tx.Where("token_name = ?", tokenName)
-	}
-	if startTimestamp != 0 {
-		tx = tx.Where("created_at >= ?", startTimestamp)
-	}
-	if endTimestamp != 0 {
-		tx = tx.Where("created_at <= ?", endTimestamp)
-	}
-	if modelName != "" {
-		modelNamePattern, err := sanitizeLikePattern(modelName)
-		if err != nil {
-			return stat, err
-		}
-		tx = tx.Where("model_name LIKE ? ESCAPE '!'", modelNamePattern)
-	}
-	if channel != 0 {
-		tx = tx.Where("channel_id = ?", channel)
-	}
-	if group != "" {
-		tx = tx.Where(logGroupCol+" = ?", group)
-	}
+	return sumUsedQuota(LogFilter{Type: LogTypeConsume, StartTimestamp: startTimestamp, EndTimestamp: endTimestamp, ModelName: modelName, TokenName: tokenName, Channel: channel, Group: group}, userID)
+}
 
-	tx = tx.Where("type = ?", LogTypeConsume)
+func sumUsedQuota(filter LogFilter, userID int) (stat Stat, err error) {
+	tx, err := buildLogQuery(filter, userID)
+	if err != nil {
+		return stat, err
+	}
+	tx = tx.Select("COALESCE(sum(quota), 0) quota, COALESCE(sum(prompt_tokens), 0) + COALESCE(sum(completion_tokens), 0) tokens, count(*) requests")
 
 	if err := tx.Scan(&stat).Error; err != nil {
 		common.SysError("failed to query log stat: " + err.Error())
 		return stat, errors.New("查询统计数据失败")
 	}
-
+	// Upstream RPM/TPM cover the last minute independently of the selected date range.
+	filter.StartTimestamp, filter.EndTimestamp = time.Now().Add(-time.Minute).Unix(), 0
+	rates, err := buildLogQuery(filter, userID)
+	if err != nil {
+		return stat, err
+	}
+	var live Stat
+	if err := rates.Select("count(*) rpm, COALESCE(sum(prompt_tokens), 0) + COALESCE(sum(completion_tokens), 0) tpm").Scan(&live).Error; err != nil {
+		common.SysError("failed to query live log stat: " + err.Error())
+		return stat, errors.New("failed to query statistics")
+	}
+	stat.Rpm, stat.Tpm = live.Rpm, live.Tpm
 	return stat, nil
 }
 
@@ -483,6 +534,9 @@ func GetRequestHealthStat(startTimestamp, endTimestamp int64) (stat RequestHealt
 }
 
 func DeleteOldLog(ctx context.Context, targetTimestamp int64, limit int) (int64, error) {
+	if limit <= 0 {
+		limit = 100
+	}
 	var total int64 = 0
 
 	for {
@@ -490,14 +544,14 @@ func DeleteOldLog(ctx context.Context, targetTimestamp int64, limit int) (int64,
 			return total, ctx.Err()
 		}
 
-		result := LOG_DB.Where("created_at < ?", targetTimestamp).Limit(limit).Delete(&Log{})
-		if nil != result.Error {
-			return total, result.Error
+		deleted, err := DeleteOldLogBatch(ctx, targetTimestamp, limit)
+		if err != nil {
+			return total, err
 		}
 
-		total += result.RowsAffected
+		total += deleted
 
-		if result.RowsAffected < int64(limit) {
+		if deleted < int64(limit) {
 			break
 		}
 	}
@@ -527,7 +581,7 @@ func GetModelGroupLogStatRange(modelName, group string, since, until int64) (*Mo
 	var totalRow struct{ Cnt int64 }
 	err := LOG_DB.Model(&Log{}).
 		Select("count(*) as cnt").
-		Where("model_name = ? AND \"group\" = ? AND created_at >= ? AND created_at < ? AND type IN (?, ?)", modelName, group, since, until, LogTypeConsume, LogTypeError).
+		Where("model_name = ? AND "+logGroupCol+" = ? AND created_at >= ? AND created_at < ? AND type IN (?, ?)", modelName, group, since, until, LogTypeConsume, LogTypeError).
 		Scan(&totalRow).Error
 	if err != nil {
 		return nil, err
@@ -540,28 +594,34 @@ func GetModelGroupLogStatRange(modelName, group string, since, until int64) (*Mo
 
 	// Count errors
 	var errRow struct{ Cnt int64 }
-	LOG_DB.Model(&Log{}).
+	if err := LOG_DB.Model(&Log{}).
 		Select("count(*) as cnt").
-		Where("model_name = ? AND \"group\" = ? AND created_at >= ? AND created_at < ? AND type = ?", modelName, group, since, until, LogTypeError).
-		Scan(&errRow)
+		Where("model_name = ? AND "+logGroupCol+" = ? AND created_at >= ? AND created_at < ? AND type = ?", modelName, group, since, until, LogTypeError).
+		Scan(&errRow).Error; err != nil {
+		return nil, err
+	}
 	stat.Errors = errRow.Cnt
 
 	// Average latency from successful requests (use_time is in seconds)
 	var latRow struct{ Avg float64 }
-	LOG_DB.Model(&Log{}).
+	if err := LOG_DB.Model(&Log{}).
 		Select("COALESCE(AVG(use_time), 0) as avg").
-		Where("model_name = ? AND \"group\" = ? AND created_at >= ? AND created_at < ? AND type = ? AND use_time > 0", modelName, group, since, until, LogTypeConsume).
-		Scan(&latRow)
+		Where("model_name = ? AND "+logGroupCol+" = ? AND created_at >= ? AND created_at < ? AND type = ? AND use_time > 0", modelName, group, since, until, LogTypeConsume).
+		Scan(&latRow).Error; err != nil {
+		return nil, err
+	}
 	stat.AvgLatencyMs = int64(latRow.Avg * 1000)
 
 	var cacheRow struct {
 		PromptTokens int64
 		CacheTokens  int64
 	}
-	LOG_DB.Model(&Log{}).
+	if err := LOG_DB.Model(&Log{}).
 		Select(fmt.Sprintf("COALESCE(SUM(prompt_tokens), 0) as prompt_tokens, COALESCE(SUM(%s), 0) as cache_tokens", jsonIntExtract("other", "cache_tokens"))).
-		Where("model_name = ? AND \"group\" = ? AND created_at >= ? AND created_at < ? AND type = ?", modelName, group, since, until, LogTypeConsume).
-		Scan(&cacheRow)
+		Where("model_name = ? AND "+logGroupCol+" = ? AND created_at >= ? AND created_at < ? AND type = ?", modelName, group, since, until, LogTypeConsume).
+		Scan(&cacheRow).Error; err != nil {
+		return nil, err
+	}
 	stat.PromptTokens = cacheRow.PromptTokens
 	stat.CacheTokens = cacheRow.CacheTokens
 
@@ -630,6 +690,8 @@ func tokenUsageBucketExpression(startTimestamp, bucketSeconds int64) string {
 		return fmt.Sprintf("%d + FLOOR((created_at - %d)::numeric / %d)::bigint * %d", startTimestamp, startTimestamp, bucketSeconds, bucketSeconds)
 	case common.DatabaseTypeMySQL:
 		return fmt.Sprintf("%d + FLOOR((created_at - %d) / %d) * %d", startTimestamp, startTimestamp, bucketSeconds, bucketSeconds)
+	case common.DatabaseTypeClickHouse:
+		return fmt.Sprintf("%d + intDiv(created_at - %d, %d) * %d", startTimestamp, startTimestamp, bucketSeconds, bucketSeconds)
 	default:
 		return fmt.Sprintf("%d + CAST((created_at - %d) / %d AS INTEGER) * %d", startTimestamp, startTimestamp, bucketSeconds, bucketSeconds)
 	}
@@ -641,6 +703,8 @@ func dailyLogDateExpression() string {
 		return "TO_CHAR(TO_TIMESTAMP(created_at), 'YYYY-MM-DD')"
 	case common.DatabaseTypeMySQL:
 		return "DATE(FROM_UNIXTIME(created_at))"
+	case common.DatabaseTypeClickHouse:
+		return "formatDateTime(toDateTime(created_at), '%Y-%m-%d')"
 	default:
 		return "DATE(created_at, 'unixepoch')"
 	}
@@ -815,4 +879,57 @@ func GetTopRiskModels(startTimestamp, endTimestamp int64, limit int) ([]ModelRis
 		}
 	}
 	return results, nil
+}
+
+func RecordLoginLog(userId, actorRole int, username string, content string, ip string, action string, params map[string]any, other AuditOther, request ...*gin.Context) {
+	other.Op = &AuditOperation{Action: action, Params: params}
+	var c *gin.Context
+	if len(request) > 0 {
+		c = request[0]
+	}
+	RecordAuditLog(c, AuditLog{UserId: userId, Username: username, ActorRole: actorRole, Category: AuditCategoryLogin, Action: action, Content: content, Ip: ip, Other: other, Success: true})
+}
+
+func CountOldLog(ctx context.Context, targetTimestamp int64) (int64, error) {
+	var total int64
+	if err := LOG_DB.WithContext(ctx).Model(&Log{}).Where("created_at < ?", targetTimestamp).Count(&total).Error; err != nil {
+		return 0, err
+	}
+	return total, nil
+}
+
+func DeleteOldLogBatch(ctx context.Context, targetTimestamp int64, limit int) (int64, error) {
+	if limit <= 0 {
+		limit = 100
+	}
+	if nil != ctx.Err() {
+		return 0, ctx.Err()
+	}
+
+	if common.UsingLogDatabase(common.DatabaseTypeClickHouse) {
+		// ClickHouse DELETE is a heavy mutation that rewrites data parts, so
+		// per-batch mutations would be pathologically slow. Remove all matching
+		// rows in a single synchronous mutation regardless of limit; the reported
+		// count lets the caller's progress loop complete in one pass.
+		total, err := CountOldLog(ctx, targetTimestamp)
+		if err != nil {
+			return 0, err
+		}
+		if total == 0 {
+			return 0, nil
+		}
+		if err := LOG_DB.WithContext(ctx).Exec(
+			"ALTER TABLE logs DELETE WHERE created_at < ? SETTINGS mutations_sync = 1",
+			targetTimestamp,
+		).Error; err != nil {
+			return 0, err
+		}
+		return total, nil
+	}
+
+	result := LOG_DB.WithContext(ctx).Where("created_at < ?", targetTimestamp).Limit(limit).Delete(&Log{})
+	if nil != result.Error {
+		return 0, result.Error
+	}
+	return result.RowsAffected, nil
 }

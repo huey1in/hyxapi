@@ -136,6 +136,7 @@ func newDiskStorage(data []byte, cachePath string) (*diskStorage, error) {
 	if err != nil {
 		file.Close()
 		os.Remove(filePath)
+		ReleaseDiskCacheFile(filePath)
 		return nil, fmt.Errorf("failed to write to temp file: %w", err)
 	}
 
@@ -143,6 +144,7 @@ func newDiskStorage(data []byte, cachePath string) (*diskStorage, error) {
 	if _, err := file.Seek(0, io.SeekStart); err != nil {
 		file.Close()
 		os.Remove(filePath)
+		ReleaseDiskCacheFile(filePath)
 		return nil, fmt.Errorf("failed to seek temp file: %w", err)
 	}
 
@@ -168,12 +170,14 @@ func newDiskStorageFromReader(reader io.Reader, maxBytes int64, cachePath string
 	if err != nil {
 		file.Close()
 		os.Remove(filePath)
+		ReleaseDiskCacheFile(filePath)
 		return nil, fmt.Errorf("failed to write to temp file: %w", err)
 	}
 
 	if written > maxBytes {
 		file.Close()
 		os.Remove(filePath)
+		ReleaseDiskCacheFile(filePath)
 		return nil, ErrRequestBodyTooLarge
 	}
 
@@ -181,6 +185,7 @@ func newDiskStorageFromReader(reader io.Reader, maxBytes int64, cachePath string
 	if _, err := file.Seek(0, io.SeekStart); err != nil {
 		file.Close()
 		os.Remove(filePath)
+		ReleaseDiskCacheFile(filePath)
 		return nil, fmt.Errorf("failed to seek temp file: %w", err)
 	}
 
@@ -217,6 +222,7 @@ func (d *diskStorage) Close() error {
 	if atomic.CompareAndSwapInt32(&d.closed, 0, 1) {
 		d.file.Close()
 		os.Remove(d.filePath)
+		ReleaseDiskCacheFile(d.filePath)
 		DecrementDiskFiles(d.size)
 	}
 	return nil

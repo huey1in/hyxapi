@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"math"
 	"strings"
 	"time"
 
@@ -40,24 +41,29 @@ func GenerateSubscriptionCodes(planId int, count int, expiredTime int64) ([]*Sub
 	if count <= 0 || count > 200 {
 		return nil, errors.New("count must be between 1 and 200")
 	}
+	if expiredTime < 0 || (expiredTime > 0 && expiredTime <= common.GetTimestamp()) {
+		return nil, common.NewMessage("Expiry must be in the future")
+	}
 	plan, err := GetSubscriptionPlanById(planId)
 	if err != nil || plan == nil {
 		return nil, errors.New("plan not found")
 	}
 	codes := make([]*SubscriptionRedemption, 0, count)
-	for i := 0; i < count; i++ {
-		key := common.GenerateRedeemCode()
-		c := &SubscriptionRedemption{
-			PlanId:      planId,
-			Key:         key,
-			Status:      SubscriptionRedemptionStatusEnabled,
-			CreatedTime: common.GetTimestamp(),
-			ExpiredTime: expiredTime,
+	err = DB.Transaction(func(tx *gorm.DB) error {
+		for i := 0; i < count; i++ {
+			code := &SubscriptionRedemption{
+				PlanId: planId, Key: common.GenerateRedeemCode(), Status: SubscriptionRedemptionStatusEnabled,
+				CreatedTime: common.GetTimestamp(), ExpiredTime: expiredTime,
+			}
+			if err := tx.Create(code).Error; err != nil {
+				return err
+			}
+			codes = append(codes, code)
 		}
-		if err := DB.Create(c).Error; err != nil {
-			return nil, err
-		}
-		codes = append(codes, c)
+		return nil
+	})
+	if err != nil {
+		return nil, err
 	}
 	return codes, nil
 }
@@ -122,9 +128,17 @@ func RedeemSubscriptionCode(key string, userId int) (string, error) {
 		action    string // new | renew | upgrade
 	)
 	err := DB.Transaction(func(tx *gorm.DB) error {
+		var user User
+		if err := lockForUpdate(tx).Select("id").Where("id = ?", userId).First(&user).Error; err != nil {
+			return err
+		}
 		code := &SubscriptionRedemption{}
-		if err := tx.Set("gorm:query_option", "FOR UPDATE").Where(keyCol+" = ?", key).First(code).Error; err != nil {
-			return errors.New("无效的兑换码")
+		if err := lockForUpdate(tx).Where(keyCol+" = ?", key).First(code).Error; err != nil {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				return errors.New("无效的兑换码")
+			}
+			common.SysError(fmt.Sprintf("failed to query subscription redemption: %v", err))
+			return errors.New("Unable to redeem subscription code")
 		}
 		if code.Status != SubscriptionRedemptionStatusEnabled {
 			return errors.New("该兑换码已被使用")
@@ -132,7 +146,7 @@ func RedeemSubscriptionCode(key string, userId int) (string, error) {
 		if code.ExpiredTime != 0 && code.ExpiredTime < common.GetTimestamp() {
 			return errors.New("该兑换码已过期")
 		}
-		plan, err := GetSubscriptionPlanById(code.PlanId)
+		plan, err := getSubscriptionPlanByIdTx(tx, code.PlanId)
 		if err != nil || plan == nil {
 			return errors.New("订阅套餐不存在或已下架")
 		}
@@ -142,9 +156,12 @@ func RedeemSubscriptionCode(key string, userId int) (string, error) {
 
 		// 查用户当前 active 订阅
 		var existing UserSubscription
-		findErr := tx.Set("gorm:query_option", "FOR UPDATE").
-			Where("user_id = ? AND status = ?", userId, "active").
-			First(&existing).Error
+		findErr := lockForUpdate(tx).
+			Where("user_id = ? AND status = ? AND source IN ?", userId, "active", []string{"redemption", "admin"}).
+			Order("end_time desc, id desc").First(&existing).Error
+		if findErr != nil && !errors.Is(findErr, gorm.ErrRecordNotFound) {
+			return findErr
+		}
 		hasActive := findErr == nil
 
 		switch {
@@ -185,6 +202,7 @@ func RedeemSubscriptionCode(key string, userId int) (string, error) {
 		common.SysError(fmt.Sprintf("subscription redemption failed: %v", err))
 		return "", err
 	}
+	refreshSubscriptionUserGroupCache(userId, "subscription redemption")
 	logger.LogInfo(context.Background(), fmt.Sprintf("user %d redeemed subscription code (plan: %s, action: %s)", userId, planTitle, action))
 	return planTitle, nil
 }
@@ -194,7 +212,10 @@ func RedeemSubscriptionCode(key string, userId int) (string, error) {
 //   - amount_total += plan.TotalAmount（不重置 amount_used，让 reset task 按周期处理）
 //   - 限制快照覆盖为最新 plan 的值
 func renewUserSubscriptionTx(tx *gorm.DB, sub *UserSubscription, plan *SubscriptionPlan) error {
-	now := time.Unix(GetDBTimestamp(), 0)
+	now := time.Unix(getDBTimestampTx(tx), 0)
+	if plan.TotalAmount > 0 && sub.AmountTotal > math.MaxInt64-plan.TotalAmount {
+		return errors.New("subscription quota overflow")
+	}
 	var base time.Time
 	if sub.EndTime > now.Unix() {
 		base = time.Unix(sub.EndTime, 0)
@@ -206,13 +227,15 @@ func renewUserSubscriptionTx(tx *gorm.DB, sub *UserSubscription, plan *Subscript
 		return err
 	}
 	updates := map[string]interface{}{
-		"end_time":         newEnd,
-		"amount_total":     sub.AmountTotal + plan.TotalAmount,
-		"allowed_groups":   plan.AllowedGroups,
-		"allowed_models":   plan.AllowedModels,
-		"concurrent_limit": plan.ConcurrentLimit,
-		"rpm_limit":        plan.RPMLimit,
-		"updated_at":       common.GetTimestamp(),
+		"end_time":              newEnd,
+		"amount_total":          sub.AmountTotal + plan.TotalAmount,
+		"allowed_groups":        plan.AllowedGroups,
+		"allowed_models":        plan.AllowedModels,
+		"concurrent_limit":      plan.ConcurrentLimit,
+		"rpm_limit":             plan.RPMLimit,
+		"updated_at":            common.GetTimestamp(),
+		"allow_wallet_overflow": plan.AllowWalletOverflow == nil || *plan.AllowWalletOverflow,
+		"downgrade_group":       plan.DowngradeGroup,
 	}
 	// 如果套餐有 reset 周期，重新计算下次重置时间
 	nextReset := calcNextResetTime(now, plan, newEnd)
@@ -228,7 +251,11 @@ func cancelUserSubscriptionTx(tx *gorm.DB, sub *UserSubscription) error {
 		"status":     "cancelled",
 		"updated_at": common.GetTimestamp(),
 	}
-	return tx.Model(&UserSubscription{}).Where("id = ?", sub.Id).Updates(updates).Error
+	if err := tx.Model(&UserSubscription{}).Where("id = ?", sub.Id).Updates(updates).Error; err != nil {
+		return err
+	}
+	_, err := downgradeUserGroupForSubscriptionTx(tx, sub, common.GetTimestamp())
+	return err
 }
 
 // DeleteInvalidSubscriptionCodes removes used or expired codes for a given plan.

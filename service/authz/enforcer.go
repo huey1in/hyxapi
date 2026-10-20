@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/QuantumNous/new-api/common"
-	"github.com/QuantumNous/new-api/model"
 	"github.com/casbin/casbin/v2"
 	casbinmodel "github.com/casbin/casbin/v2/model"
 	"gorm.io/gorm"
@@ -32,15 +31,6 @@ m = r.sub == p.sub && r.obj == p.obj && r.act == p.act && p.eft == "allow"
 `
 
 func Init(db *gorm.DB) error {
-	// Ensure the authorization tables exist before the enforcer loads policy.
-	// Schema migration in model.InitDB is gated on the master node, but a slave
-	// (e.g. the canary instance in a canary-first rollout) reaches Init before
-	// the master has been upgraded. AutoMigrate is idempotent, so this is a
-	// no-op on the master and only creates the tables on nodes that lack them.
-	if err := db.AutoMigrate(&model.CasbinRule{}, &model.AuthzRole{}); err != nil {
-		return err
-	}
-
 	if common.IsMasterNode {
 		if err := seedBuiltInRoles(db); err != nil {
 			return err
@@ -86,9 +76,9 @@ func ReloadPolicy() error {
 }
 
 // StartPolicySync periodically reloads the authorization policy from the database.
-// The enforcer keeps an in-memory snapshot. Permission changes are persisted
-// locally, and this loop keeps other instances synchronized with the shared
-// policy database. Without it other instances in a
+// The enforcer keeps an in-memory snapshot, and permission changes are written
+// straight to the DB (see SetUserPermissionsInTx) with only the local node's
+// snapshot refreshed afterwards. Without this loop other instances in a
 // multi-node deployment would keep serving stale permissions (including not
 // honoring a revoked grant) until restart. Mirrors model.SyncOptions polling.
 func StartPolicySync(frequency int) {
@@ -98,7 +88,7 @@ func StartPolicySync(frequency int) {
 	for {
 		time.Sleep(time.Duration(frequency) * time.Second)
 		if err := ReloadPolicy(); err != nil {
-			common.SysError("failed to reload authz policy: " + err.Error())
+			common.SysError(common.LogText("failed to reload authz policy: %s", err.Error()))
 		}
 	}
 }

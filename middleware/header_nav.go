@@ -121,3 +121,16 @@ func HeaderNavModuleAuth(module string) gin.HandlerFunc {
 		TryUserAuth()(c)
 	}
 }
+
+// HeaderNavModulePublicOrUserAuth keeps metrics available to signed-in console
+// users when the corresponding public navigation module is hidden or private.
+func HeaderNavModulePublicOrUserAuth(module string) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		access := getHeaderNavAccess(module)
+		if !access.Enabled || access.RequireAuth {
+			UserAuth()(c)
+			return
+		}
+		TryUserAuth()(c)
+	}
+}

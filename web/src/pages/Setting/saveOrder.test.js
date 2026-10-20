@@ -26,3 +26,9 @@ test('preserves the order of unrelated settings', () => {
     'ServerAddress',
   ]);
 });
+
+test('saves OAuth credentials before enabling the provider', () => {
+  assert.deepEqual(orderSettingKeysForSave(['TelegramOAuthEnabled', 'telegram.client_id', 'telegram.client_secret']), [
+    'telegram.client_id', 'telegram.client_secret', 'TelegramOAuthEnabled',
+  ]);
+});

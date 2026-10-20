@@ -1,31 +1,47 @@
 package controller
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
 	"strconv"
 	"strings"
 
 	"github.com/QuantumNous/new-api/common"
+	"github.com/QuantumNous/new-api/constant"
 	"github.com/QuantumNous/new-api/i18n"
 	"github.com/QuantumNous/new-api/model"
+	"github.com/QuantumNous/new-api/service"
+	"github.com/QuantumNous/new-api/setting"
 	"github.com/QuantumNous/new-api/setting/operation_setting"
 
 	"github.com/gin-gonic/gin"
 )
 
-func buildMaskedTokenResponse(token *model.Token) *model.Token {
+type tokenResponse struct {
+	*model.Token
+	AutoGroups []string `json:"auto_groups"`
+}
+
+func buildMaskedTokenResponse(token *model.Token) *tokenResponse {
 	if token == nil {
 		return nil
 	}
 	maskedToken := *token
 	maskedToken.NormalizeGroupPolicy()
 	maskedToken.Key = token.GetMaskedKey()
-	return &maskedToken
+	groups, err := token.GetAutoGroups()
+	if err != nil {
+		common.SysError(common.LogText("failed to parse auto groups for token %d: %v", token.Id, err))
+	}
+	if len(groups) == 0 {
+		groups = nil
+	}
+	return &tokenResponse{Token: &maskedToken, AutoGroups: groups}
 }
 
-func buildMaskedTokenResponses(tokens []*model.Token) []*model.Token {
-	maskedTokens := make([]*model.Token, 0, len(tokens))
+func buildMaskedTokenResponses(tokens []*model.Token) []*tokenResponse {
+	maskedTokens := make([]*tokenResponse, 0, len(tokens))
 	for _, token := range tokens {
 		maskedTokens = append(maskedTokens, buildMaskedTokenResponse(token))
 	}
@@ -163,9 +179,73 @@ func GetTokenUsage(c *gin.Context) {
 	})
 }
 
+type tokenAutoGroupsInput struct {
+	Set    bool
+	Groups []string
+}
+
+func (input *tokenAutoGroupsInput) UnmarshalJSON(data []byte) error {
+	input.Set = true
+	return common.Unmarshal(data, &input.Groups)
+}
+
 type tokenQuotaRequest struct {
 	model.Token
-	AllowUserQuotaQuery *bool `json:"allow_user_quota_query"`
+	AutoGroups          tokenAutoGroupsInput `json:"auto_groups"`
+	AllowUserQuotaQuery *bool                `json:"allow_user_quota_query"`
+}
+
+func getTokenRequestUserGroup(c *gin.Context) (string, error) {
+	if group := common.GetContextKeyString(c, constant.ContextKeyUserGroup); group != "" {
+		return group, nil
+	}
+	if group := c.GetString("group"); group != "" {
+		return group, nil
+	}
+	return model.GetUserGroup(c.GetInt("id"), false)
+}
+
+func GetTokenAutoGroups(c *gin.Context) {
+	group, err := getTokenRequestUserGroup(c)
+	if err != nil {
+		common.ApiError(c, err)
+		return
+	}
+	common.ApiSuccess(c, gin.H{
+		"groups":    service.GetUserAutoGroup(group),
+		"max_count": setting.GetMaxTokenAutoGroups(),
+	})
+}
+
+func setTokenAutoGroups(c *gin.Context, token *model.Token, groups []string) bool {
+	if len(groups) > setting.GetMaxTokenAutoGroups() {
+		common.ApiErrorT(c, "A token can select at most {{max}} Auto groups", map[string]any{"max": setting.GetMaxTokenAutoGroups()})
+		return false
+	}
+	if len(groups) > 0 {
+		userGroup, err := getTokenRequestUserGroup(c)
+		if err != nil {
+			common.ApiError(c, err)
+			return false
+		}
+		seen := make(map[string]struct{}, len(groups))
+		for _, group := range groups {
+			if _, ok := seen[group]; ok {
+				common.ApiErrorT(c, "Auto group {{group}} is duplicated", map[string]any{"group": group})
+				return false
+			}
+			seen[group] = struct{}{}
+			if !service.IsUserSelectableGroup(userGroup, group) {
+				common.ApiErrorT(c, "Auto group {{group}} is unavailable or unauthorized", map[string]any{"group": group})
+				return false
+			}
+		}
+	}
+	if err := token.SetAutoGroups(groups); err != nil {
+		common.ApiError(c, err)
+		return false
+	}
+	return true
 }
 
 func AddToken(c *gin.Context) {
@@ -232,6 +312,9 @@ func AddToken(c *gin.Context) {
 	}
 	cleanToken.AllowUserQuotaQuery = request.AllowUserQuotaQuery == nil || *request.AllowUserQuotaQuery
 	cleanToken.NormalizeGroupPolicy()
+	if cleanToken.UsesAutoGroups() && !setTokenAutoGroups(c, &cleanToken, request.AutoGroups.Groups) {
+		return
+	}
 	err = cleanToken.Insert()
 	if err != nil {
 		common.ApiError(c, err)
@@ -267,6 +350,20 @@ func UpdateToken(c *gin.Context) {
 		common.ApiError(c, err)
 		return
 	}
+	if statusOnly != "" {
+		updated, err := model.SetUserTokenStatus(c.Request.Context(), userId, token.Id, token.Status)
+		switch {
+		case errors.Is(err, model.ErrTokenStatusExpired):
+			common.ApiErrorI18n(c, i18n.MsgTokenExpiredCannotEnable)
+		case errors.Is(err, model.ErrTokenStatusExhausted):
+			common.ApiErrorI18n(c, i18n.MsgTokenExhaustedCannotEable)
+		case err != nil:
+			common.ApiError(c, err)
+		default:
+			common.ApiSuccess(c, buildMaskedTokenResponse(updated))
+		}
+		return
+	}
 	if len(token.Name) > 50 {
 		common.ApiErrorI18n(c, i18n.MsgTokenNameTooLong)
 		return
@@ -297,26 +394,27 @@ func UpdateToken(c *gin.Context) {
 			return
 		}
 	}
-	if statusOnly != "" {
-		cleanToken.Status = token.Status
-	} else {
-		// If you add more fields, please also update token.Update()
-		cleanToken.Name = token.Name
-		cleanToken.ExpiredTime = token.ExpiredTime
-		cleanToken.RemainQuota = token.RemainQuota
-		cleanToken.UnlimitedQuota = token.UnlimitedQuota
-		cleanToken.ModelLimitsEnabled = token.ModelLimitsEnabled
-		cleanToken.ModelLimits = token.ModelLimits
-		cleanToken.AllowIps = token.AllowIps
-		if request.AllowUserQuotaQuery != nil {
-			cleanToken.AllowUserQuotaQuery = *request.AllowUserQuotaQuery
-		}
-		cleanToken.Group = token.Group
-		cleanToken.CrossGroupRetry = token.CrossGroupRetry
-		cleanToken.Groups = token.Groups
-		cleanToken.GroupSwitchCodes = token.GroupSwitchCodes
-		cleanToken.GroupSwitchRetryCount = token.GroupSwitchRetryCount
-		cleanToken.NormalizeGroupPolicy()
+	// If you add more fields, please also update token.Update()
+	cleanToken.Name = token.Name
+	cleanToken.ExpiredTime = token.ExpiredTime
+	cleanToken.RemainQuota = token.RemainQuota
+	cleanToken.UnlimitedQuota = token.UnlimitedQuota
+	cleanToken.ModelLimitsEnabled = token.ModelLimitsEnabled
+	cleanToken.ModelLimits = token.ModelLimits
+	cleanToken.AllowIps = token.AllowIps
+	if request.AllowUserQuotaQuery != nil {
+		cleanToken.AllowUserQuotaQuery = *request.AllowUserQuotaQuery
+	}
+	cleanToken.Group = token.Group
+	cleanToken.CrossGroupRetry = token.CrossGroupRetry
+	cleanToken.Groups = token.Groups
+	cleanToken.GroupSwitchCodes = token.GroupSwitchCodes
+	cleanToken.GroupSwitchRetryCount = token.GroupSwitchRetryCount
+	cleanToken.NormalizeGroupPolicy()
+	if !cleanToken.UsesAutoGroups() {
+		_ = cleanToken.SetAutoGroups(nil)
+	} else if request.AutoGroups.Set && !setTokenAutoGroups(c, cleanToken, request.AutoGroups.Groups) {
+		return
 	}
 	err = cleanToken.Update()
 	if err != nil {
@@ -339,6 +437,16 @@ func DeleteTokenBatch(c *gin.Context) {
 	if err := c.ShouldBindJSON(&tokenBatch); err != nil || len(tokenBatch.Ids) == 0 {
 		common.ApiErrorI18n(c, i18n.MsgInvalidParams)
 		return
+	}
+	if len(tokenBatch.Ids) > 1000 {
+		common.ApiErrorI18n(c, i18n.MsgBatchTooMany, map[string]any{"Max": 1000})
+		return
+	}
+	for _, id := range tokenBatch.Ids {
+		if id <= 0 {
+			common.ApiErrorI18n(c, i18n.MsgInvalidParams)
+			return
+		}
 	}
 	userId := c.GetInt("id")
 	count, err := model.BatchDeleteTokens(tokenBatch.Ids, userId)

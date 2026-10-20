@@ -40,6 +40,10 @@ func parseCodexOAuthKey(raw string) (*CodexOAuthKey, error) {
 }
 
 func RefreshCodexChannelCredential(ctx context.Context, channelID int, opts CodexCredentialRefreshOptions) (*CodexOAuthKey, *model.Channel, error) {
+	return refreshCodexChannelCredential(ctx, channelID, opts, RefreshCodexOAuthTokenWithProxy)
+}
+
+func refreshCodexChannelCredential(ctx context.Context, channelID int, opts CodexCredentialRefreshOptions, refresh func(context.Context, string, string) (*CodexOAuthTokenResult, error)) (*CodexOAuthKey, *model.Channel, error) {
 	ch, err := model.GetChannelById(channelID, true)
 	if err != nil {
 		return nil, nil, err
@@ -49,6 +53,9 @@ func RefreshCodexChannelCredential(ctx context.Context, channelID int, opts Code
 	}
 	if ch.Type != constant.ChannelTypeCodex {
 		return nil, nil, fmt.Errorf("channel type is not Codex")
+	}
+	if ch.ChannelInfo.IsMultiKey {
+		return nil, nil, fmt.Errorf("multi-key channel is not supported")
 	}
 
 	oauthKey, err := parseCodexOAuthKey(strings.TrimSpace(ch.Key))
@@ -62,7 +69,7 @@ func RefreshCodexChannelCredential(ctx context.Context, channelID int, opts Code
 	refreshCtx, cancel := context.WithTimeout(ctx, 10*time.Second)
 	defer cancel()
 
-	res, err := RefreshCodexOAuthTokenWithProxy(refreshCtx, oauthKey.RefreshToken, ch.GetSetting().Proxy)
+	res, err := refresh(refreshCtx, oauthKey.RefreshToken, ch.GetSetting().Proxy)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -91,8 +98,12 @@ func RefreshCodexChannelCredential(ctx context.Context, channelID int, opts Code
 		return nil, nil, err
 	}
 
-	if err := model.DB.Model(&model.Channel{}).Where("id = ?", ch.Id).Update("key", string(encoded)).Error; err != nil {
-		return nil, nil, err
+	result := model.DB.Model(&model.Channel{}).Where("id = ? AND type = ? AND key = ?", ch.Id, constant.ChannelTypeCodex, ch.Key).Update("key", string(encoded))
+	if result.Error != nil {
+		return nil, nil, result.Error
+	}
+	if result.RowsAffected != 1 {
+		return nil, nil, fmt.Errorf("Codex channel credential changed during refresh; reload and retry")
 	}
 
 	if opts.ResetCaches {

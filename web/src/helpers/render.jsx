@@ -98,7 +98,7 @@ export function renderNumber(num) {
 
 /**
  * 获取当前货币配置信息
- * @returns {Object} - { symbol, rate, type }
+ * @returns {{ symbol: string, rate: number, type: string }}
  */
 export function getCurrencyConfig() {
   const quotaDisplayType = localStorage.getItem('quota_display_type') || 'USD';

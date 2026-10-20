@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	"github.com/QuantumNous/new-api/common"
+	"github.com/QuantumNous/new-api/constant"
 	"github.com/QuantumNous/new-api/logger"
 	relaycommon "github.com/QuantumNous/new-api/relay/common"
 	"github.com/QuantumNous/new-api/relay/helper"
@@ -14,6 +15,8 @@ import (
 	"github.com/QuantumNous/new-api/service"
 
 	"github.com/gin-gonic/gin"
+	"github.com/tidwall/gjson"
+	"github.com/tidwall/sjson"
 )
 
 func OaiResponsesHandler(c *gin.Context, info *relaycommon.RelayInfo, resp *http.Response) (*dto.Usage, *types.NewAPIError) {
@@ -33,6 +36,9 @@ func OaiResponsesHandler(c *gin.Context, info *relaycommon.RelayInfo, resp *http
 		return nil, types.WithOpenAIError(*oaiError, resp.StatusCode)
 	}
 
+	info.ObserveResponseModel(responsesResponse.Model)
+	responseBody = rewriteSGLangResponsesCreatedAt(info, responseBody, "created_at", responsesResponse.CreatedAt)
+
 	// 写入新的 response body
 	service.IOCopyBytesGracefully(c, resp, responseBody)
 
@@ -43,9 +49,7 @@ func OaiResponsesHandler(c *gin.Context, info *relaycommon.RelayInfo, resp *http
 	for _, output := range responsesResponse.Output {
 		switch output.Type {
 		case dto.BuildInCallWebSearchCall:
-			if info.WebSearchBillingKey == "" {
-				info.CountBillableToolCall(dto.BuildInCallWebSearchCall, "")
-			}
+			info.CountBillableToolCall(dto.BuildInCallWebSearchCall, "")
 		case dto.BuildInCallFileSearchCall:
 			info.CountBillableToolCall(dto.BuildInCallFileSearchCall, "")
 		case dto.BuildInCallFunctionCall:
@@ -55,11 +59,8 @@ func OaiResponsesHandler(c *gin.Context, info *relaycommon.RelayInfo, resp *http
 
 	info.RecordVendorToolUsage(responseBody)
 	imageCounter := &relaycommon.ImageGenerationCallCounter{}
-	if !relaycommon.IsNonBillableResponsesStatus(responsesResponse.Status) {
-		for i := range responsesResponse.Output {
-			idx := i
-			imageCounter.Observe(&responsesResponse.Output[i], &idx)
-		}
+	for i := range responsesResponse.Output {
+		imageCounter.Observe(&responsesResponse.Output[i], &i)
 	}
 	imageCounter.Commit(info)
 
@@ -82,8 +83,27 @@ func OaiResponsesStreamHandler(c *gin.Context, info *relaycommon.RelayInfo, resp
 			sr.Error(err)
 			return
 		}
+		if event.Response != nil {
+			data = string(rewriteSGLangResponsesCreatedAt(info, []byte(data), "response.created_at", event.Response.CreatedAt))
+		}
 		sendResponsesStreamData(c, event, data)
 		accumulator.Observe(&event, []byte(data))
 	})
+	info.StreamStatus.RequireTerminal()
+	common.SetContextKey(c, constant.ContextKeyResponseStreamStatus, info.StreamStatus)
 	return accumulator.Finish(), nil
+}
+
+func rewriteSGLangResponsesCreatedAt(info *relaycommon.RelayInfo, payload []byte, path string, createdAt dto.IntValue) []byte {
+	if info.GetChannelType() != constant.ChannelTypeSGLang {
+		return payload
+	}
+	if !gjson.GetBytes(payload, path).Exists() {
+		return payload
+	}
+	patched, err := sjson.SetBytes(payload, path, int(createdAt))
+	if err != nil {
+		return payload
+	}
+	return patched
 }

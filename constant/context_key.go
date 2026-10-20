@@ -2,9 +2,18 @@ package constant
 
 type ContextKey string
 
+const ContextKeyTokenAuditParams ContextKey = "token_audit_params"
+const ContextKeyTokenAuditSucceeded ContextKey = "token_audit_succeeded"
+const ContextKeyTokenAutoGroups ContextKey = "token_auto_groups"
+
 const (
-	ContextKeyPromptTokens    ContextKey = "prompt_tokens"
-	ContextKeyEstimatedTokens ContextKey = "estimated_tokens"
+	ContextKeyAutoGroup           ContextKey = "auto_group"
+	ContextKeyAutoGroupIndex      ContextKey = "auto_group_index"
+	ContextKeyAutoGroupRetryIndex ContextKey = "auto_group_retry_index"
+	ContextKeyOriginTasks         ContextKey = "origin_tasks"
+	ContextKeyChannelConstraints  ContextKey = "channel_constraints"
+	ContextKeyPromptTokens        ContextKey = "prompt_tokens"
+	ContextKeyEstimatedTokens     ContextKey = "estimated_tokens"
 
 	ContextKeyOriginalModel    ContextKey = "original_model"
 	ContextKeyRequestStartTime ContextKey = "request_start_time"
@@ -55,7 +64,8 @@ const (
 	ContextKeyUsingGroup  ContextKey = "group"
 	ContextKeyUserName    ContextKey = "username"
 
-	ContextKeyLocalCountTokens ContextKey = "local_count_tokens"
+	ContextKeyLocalCountTokens     ContextKey = "local_count_tokens"
+	ContextKeyResponseStreamStatus ContextKey = "response_stream_status"
 
 	ContextKeySystemPromptOverride ContextKey = "system_prompt_override"
 

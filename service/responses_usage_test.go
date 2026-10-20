@@ -6,13 +6,14 @@ import (
 	"github.com/QuantumNous/new-api/common"
 	"github.com/QuantumNous/new-api/relay/channel/deepseek"
 	relaycommon "github.com/QuantumNous/new-api/relay/common"
+	relayconstant "github.com/QuantumNous/new-api/relay/constant"
 	"github.com/QuantumNous/new-api/relaykit/dto"
 	"github.com/QuantumNous/new-api/service"
 	"github.com/stretchr/testify/require"
 )
 
 func TestResponsesUsageDeduplicatesToolsAndPreservesCacheDetails(t *testing.T) {
-	info := &relaycommon.RelayInfo{ChannelMeta: &relaycommon.ChannelMeta{UpstreamModelName: "deepseek-flash"}, StreamStatus: relaycommon.NewStreamStatus()}
+	info := &relaycommon.RelayInfo{RelayMode: relayconstant.RelayModeResponses, ChannelMeta: &relaycommon.ChannelMeta{UpstreamModelName: "deepseek-flash"}, StreamStatus: relaycommon.NewStreamStatus()}
 	(&deepseek.Adaptor{}).Init(info)
 	accumulator := service.NewResponsesUsageAccumulator(info)
 	search := `{"type":"web_search_call","id":"search-1","status":"completed","action":{"type":"search"}}`

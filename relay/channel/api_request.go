@@ -407,11 +407,14 @@ func DoWssRequest(a Adaptor, c *gin.Context, info *common.RelayInfo, requestBody
 	common2.SetContextKey(c, appconstant.ContextKeyUpstreamRequestOrigin, targetURL.Scheme+"://"+targetURL.Host)
 	dialer := *websocket.DefaultDialer
 	if info.ChannelSetting.Proxy != "" {
-		proxyURL, err := url.Parse(info.ChannelSetting.Proxy)
+		proxyURL, _, err := common2.ParseProxyURLRuntime(info.ChannelSetting.Proxy)
 		if err != nil {
 			return nil, err
 		}
 		dialer.Proxy = http.ProxyURL(proxyURL)
+	}
+	if info.ChannelSetting.TLSInsecureSkipVerify {
+		dialer.TLSClientConfig = common2.InsecureTLSConfig
 	}
 	// The handshake owns these fields; never forward the downstream key or protocols.
 	for _, name := range []string{"Connection", "Upgrade", "Sec-WebSocket-Key", "Sec-WebSocket-Version", "Sec-WebSocket-Extensions"} {
@@ -425,7 +428,11 @@ func DoWssRequest(a Adaptor, c *gin.Context, info *common.RelayInfo, requestBody
 		response.Body.Close()
 	}
 	if err != nil {
-		return nil, fmt.Errorf("dial failed to %s: %w", common.SanitizeURLForLog(fullRequestURL), err)
+		statusCode := http.StatusInternalServerError
+		if response != nil {
+			statusCode = response.StatusCode
+		}
+		return nil, types.NewErrorWithStatusCode(fmt.Errorf("dial failed to %s: %w", common.SanitizeURLForLog(fullRequestURL), err), types.ErrorCodeDoRequestFailed, statusCode)
 	}
 	// send request body
 	//all, err := io.ReadAll(requestBody)
@@ -591,11 +598,14 @@ func doRequest(c *gin.Context, req *http.Request, info *common.RelayInfo) (*http
 }
 
 func DoTaskApiRequest(a TaskAdaptor, c *gin.Context, info *common.RelayInfo, requestBody io.Reader) (*http.Response, error) {
+	if c == nil || c.Request == nil {
+		return nil, errors.New("task client request is missing")
+	}
 	fullRequestURL, err := a.BuildRequestURL(info)
 	if err != nil {
 		return nil, err
 	}
-	req, err := http.NewRequest(c.Request.Method, fullRequestURL, requestBody)
+	req, err := http.NewRequestWithContext(c.Request.Context(), c.Request.Method, fullRequestURL, requestBody)
 	if err != nil {
 		return nil, fmt.Errorf("new request failed: %w", err)
 	}

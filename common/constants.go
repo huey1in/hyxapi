@@ -71,6 +71,8 @@ var InsecureTLSConfig = &tls.Config{InsecureSkipVerify: true}
 var SMTPServer = ""
 var SMTPPort = 587
 var SMTPSSLEnabled = false
+var SMTPStartTLSEnabled = false
+var SMTPInsecureSkipVerify = false
 var SMTPForceAuthLogin = false
 var SMTPAccount = ""
 var SMTPFrom = ""
@@ -110,7 +112,14 @@ var IsMasterNode bool
 
 // NodeName 节点名称，优先从 NODE_NAME 环境变量读取，未配置时回退主机名。
 // 用于审计日志和后台任务中标识节点身份；多实例部署时建议显式配置稳定 NODE_NAME。
+const (
+	NodeNameSourceManual   = "manual"
+	NodeNameSourceHostname = "hostname"
+)
+
 var NodeName = ""
+var NodeNameSource = NodeNameSourceHostname
+var NodeNameManuallyConfigured bool
 
 var requestInterval int
 var RequestInterval time.Duration
@@ -121,6 +130,9 @@ var BatchUpdateEnabled = false
 var BatchUpdateInterval int
 
 var RelayTimeout int // unit is second
+// RelayResponseHeaderTimeout bounds header wait without cutting off streaming bodies.
+// Zero disables the transport deadline.
+var RelayResponseHeaderTimeout int
 var RelayIdleConnTimeout int
 var RelayMaxIdleConns int
 var RelayMaxIdleConnsPerHost int
@@ -185,6 +197,7 @@ const (
 
 const (
 	TokenStatusEnabled   = 1 // don't use 0, 0 is the default value!
+	TokenStatusDisabled  = 2
 	TokenStatusExpired   = 3
 	TokenStatusExhausted = 4
 )
@@ -205,4 +218,8 @@ const (
 	TopUpStatusPending = "pending"
 	TopUpStatusSuccess = "success"
 	TopUpStatusFailed  = "failed"
+	TopUpStatusExpired = "expired"
 )
+
+// TopUpLink optionally links to an operator-provided recharge page.
+var TopUpLink = ""

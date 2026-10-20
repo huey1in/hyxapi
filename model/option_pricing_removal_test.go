@@ -9,19 +9,7 @@ import (
 )
 
 func TestRemovedModelPricingOptionsAreRejectedAndNotLoaded(t *testing.T) {
-	removedKeys := []string{
-		"ModelPrice",
-		"ModelRatio",
-		"CompletionRatio",
-		"CompletionRatioMeta",
-		"CacheRatio",
-		"CreateCacheRatio",
-		"ImageRatio",
-		"AudioRatio",
-		"AudioCompletionRatio",
-		"GroupGroupRatio",
-		"ExposeRatioEnabled",
-	}
+	removedKeys := []string{"CompletionRatioMeta"}
 
 	common.OptionMapRWMutex.Lock()
 	originalOptionMap := common.OptionMap

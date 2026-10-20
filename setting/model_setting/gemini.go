@@ -1,10 +1,21 @@
 package model_setting
 
 import (
+	"fmt"
+	"github.com/QuantumNous/new-api/common"
 	"github.com/QuantumNous/new-api/setting/config"
 )
 
 const defaultGeminiSafetySetting = "OFF"
+
+var validGeminiSafetySettings = map[string]struct{}{
+	"OFF":                              {},
+	"BLOCK_NONE":                       {},
+	"BLOCK_ONLY_HIGH":                  {},
+	"BLOCK_MEDIUM_AND_ABOVE":           {},
+	"BLOCK_LOW_AND_ABOVE":              {},
+	"HARM_BLOCK_THRESHOLD_UNSPECIFIED": {},
+}
 
 // GeminiSettings defines Gemini model configuration. 注意bool要以enabled结尾才可以生效编辑
 type GeminiSettings struct {
@@ -81,4 +92,25 @@ func IsGeminiModelSupportImagine(model string) bool {
 		}
 	}
 	return false
+}
+
+// ValidateGeminiSafetySettings validates the JSON persisted by the option API.
+// Empty values remain valid because read-time fallback returns the default.
+func ValidateGeminiSafetySettings(value string) error {
+	var settings map[string]string
+	if err := common.UnmarshalJsonStr(value, &settings); err != nil {
+		return fmt.Errorf("Gemini safety settings must be a JSON string map: %w", err)
+	}
+	if settings == nil {
+		return fmt.Errorf("Gemini safety settings must be a JSON string map")
+	}
+	for category, threshold := range settings {
+		if threshold == "" {
+			continue
+		}
+		if _, ok := validGeminiSafetySettings[threshold]; !ok {
+			return fmt.Errorf("invalid Gemini safety threshold %q for %q", threshold, category)
+		}
+	}
+	return nil
 }

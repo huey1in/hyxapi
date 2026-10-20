@@ -9,6 +9,15 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+func ResetModelRatio(c *gin.Context) {
+	if err := model.UpdateOption("ModelRatio", ratio_setting.DefaultModelRatio2JSONString()); err != nil {
+		common.ApiError(c, err)
+		return
+	}
+	recordManageAudit(c, "model.pricing.reset_input_ratios", nil)
+	common.ApiSuccessT(c, "Model ratios reset", nil)
+}
+
 func filterPricingByUsableGroups(pricing []model.Pricing, usableGroup map[string]string) []model.Pricing {
 	if len(pricing) == 0 {
 		return pricing
@@ -41,7 +50,21 @@ func GetPricing(c *gin.Context) {
 		groupRatio[s] = f
 	}
 
-	usableGroup = service.GetUserUsableGroups("")
+	userGroup := ""
+	if userID := c.GetInt("id"); userID > 0 {
+		user, err := model.GetUserCache(userID)
+		if err != nil {
+			common.ApiError(c, err)
+			return
+		}
+		userGroup = user.Group
+		for group := range groupRatio {
+			if ratio, ok := ratio_setting.GetGroupGroupRatio(userGroup, group); ok {
+				groupRatio[group] = ratio
+			}
+		}
+	}
+	usableGroup = service.GetUserUsableGroups(userGroup)
 	pricing = filterPricingByUsableGroups(pricing, usableGroup)
 	// check groupRatio contains usableGroup
 	for group := range ratio_setting.GetGroupRatioCopy() {
@@ -57,5 +80,6 @@ func GetPricing(c *gin.Context) {
 		"group_ratio":        groupRatio,
 		"usable_group":       usableGroup,
 		"supported_endpoint": model.GetSupportedEndpointMap(),
+		"auto_groups":        service.GetUserAutoGroup(userGroup),
 	})
 }

@@ -46,25 +46,26 @@ func TestHandleClaudeResponseDataCountsToolUse(t *testing.T) {
 	assert.NotContains(t, info.ResponsesUsageInfo.BuiltInTools, "web_search")
 }
 
-func TestCountClaudeStreamBillableToolsSetsWebSearchRequests(t *testing.T) {
+func TestCountClaudeStreamBillableToolsRecordsWebSearchRequests(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 	w := httptest.NewRecorder()
 	c, _ := gin.CreateTestContext(w)
 	info := &relaycommon.RelayInfo{OriginModelName: "claude-3-7-sonnet"}
 
-	countClaudeStreamBillableTools(c, info, &dto.ClaudeResponse{
+	countClaudeStreamBillableTools(info, &dto.ClaudeResponse{
 		Type: "message_delta",
 		Usage: &dto.ClaudeUsage{
 			ServerToolUse: &dto.ClaudeServerToolUse{WebSearchRequests: 3},
 		},
 	})
-	assert.Equal(t, 3, c.GetInt("claude_web_search_requests"))
+	assert.Equal(t, 3, info.ResponsesUsageInfo.BuiltInTools["web_search"].CallCount)
+	assert.Zero(t, c.GetInt("claude_web_search_requests"), "search is billed through the tool table once")
 
 	operation_setting.SetToolPriceForTest("stream_fn", 2.0)
 	t.Cleanup(func() {
 		operation_setting.DeleteToolPriceForTest("stream_fn")
 	})
-	countClaudeStreamBillableTools(c, info, &dto.ClaudeResponse{
+	countClaudeStreamBillableTools(info, &dto.ClaudeResponse{
 		Type: "content_block_start",
 		ContentBlock: &dto.ClaudeMediaMessage{
 			Type: "tool_use",

@@ -9,13 +9,13 @@ const (
 	RelayFormatOpenAIResponses                       = "openai_responses"
 	RelayFormatOpenAIResponsesCompaction             = "openai_responses_compaction"
 	RelayFormatOpenAIAlphaSearch                     = "openai_alpha_search"
+	RelayFormatDeepSeekTools                         = "deepseek_tools"
 	RelayFormatOpenAIAudio                           = "openai_audio"
 	RelayFormatOpenAIImage                           = "openai_image"
 	RelayFormatOpenAIRealtime                        = "openai_realtime"
 	RelayFormatRerank                                = "rerank"
 	RelayFormatEmbedding                             = "embedding"
 
-	RelayFormatDeepSeekTools RelayFormat = "deepseek_tools"
-	RelayFormatTask                      = "task"
-	RelayFormatMjProxy                   = "mj_proxy"
+	RelayFormatTask    = "task"
+	RelayFormatMjProxy = "mj_proxy"
 )

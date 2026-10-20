@@ -1,0 +1,43 @@
+{
+  "name": "hyxware-desktop",
+  "version": "1.0.0",
+  "description": "Hyxware desktop gateway",
+  "author": "Hyxware contributors",
+  "private": true,
+  "main": "main.cjs",
+  "scripts": {
+    "start": "electron .",
+    "dev": "electron . --development",
+    "test": "node --test runtime.test.cjs",
+    "prepare-server": "node build-server.cjs",
+    "build": "node build-server.cjs && electron-builder",
+    "build:win": "node build-server.cjs && electron-builder --win",
+    "build:mac": "node build-server.cjs && electron-builder --mac",
+    "build:linux": "node build-server.cjs && electron-builder --linux"
+  },
+  "devDependencies": {
+    "electron": "41.10.6",
+    "electron-builder": "26.15.3"
+  },
+  "trustedDependencies": ["electron"],
+  "build": {
+    "appId": "com.hyxware.desktop",
+    "productName": "Hyxware",
+    "electronDist": "node_modules/electron/dist",
+    "publish": null,
+    "directories": { "output": "dist" },
+    "files": ["main.cjs", "runtime.cjs", "preload.cjs", "icon.png"],
+    "extraResources": [
+      { "from": "../.desktop-build/", "to": "bin", "filter": ["hyxware", "hyxware.exe"] },
+      { "from": "../LICENSE", "to": "licenses/LICENSE" },
+      { "from": "../NOTICE", "to": "licenses/NOTICE" },
+      { "from": "../THIRD-PARTY-LICENSES.md", "to": "licenses/THIRD-PARTY-LICENSES.md" },
+      { "from": "node_modules/electron/dist/LICENSE", "to": "licenses/electron/LICENSE" },
+      { "from": "node_modules/electron/dist/LICENSES.chromium.html", "to": "licenses/electron/LICENSES.chromium.html" }
+    ],
+    "mac": { "category": "public.app-category.developer-tools", "icon": "icon.png", "target": ["dmg", "zip"] },
+    "win": { "icon": "icon.ico", "target": ["nsis", "portable"] },
+    "linux": { "icon": "icon.png", "category": "Development", "target": ["AppImage", "deb"] },
+    "nsis": { "oneClick": false, "allowToChangeInstallationDirectory": true }
+  }
+}

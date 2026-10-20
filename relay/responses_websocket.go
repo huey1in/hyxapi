@@ -238,6 +238,14 @@ func (s *responsesWSSession) runRequest(state *responsesWSCallState, message []b
 }
 
 func (s *responsesWSSession) runCall(c *gin.Context, state *responsesWSCallState, create responsesWSCreateRequest) (apiErr *types.NewAPIError) {
+	policy := service.RequestPolicy(c)
+	defer func() {
+		if apiErr != nil {
+			service.RecordPolicyFailure(c, c.GetInt("channel_id"), apiErr, service.PolicyDecision{Action: "stop", Reason: "pinned_channel", Source: "channel_constraint"})
+			service.RecordRequestPolicyTermination(c, apiErr)
+		}
+	}()
+
 	modelName := create.Request.Model
 	if modelName == "" {
 		return newResponsesWSInvalidRequestError(errors.New("model is required"))
@@ -258,6 +266,8 @@ func (s *responsesWSSession) runCall(c *gin.Context, state *responsesWSCallState
 		}
 	}
 	info := relaycommon.GenRelayInfoResponses(c, &create.Request)
+	policy.BeginAttempt(channel, info.UsingGroup)
+	policy.AddEvent(service.PolicyEvent{ChannelID: channel.Id, Decision: service.PolicyDecision{Action: "select", Reason: "pinned_channel", Source: "channel_constraint"}})
 	info.IsStream = true
 	common.SetContextKey(c, appconstant.ContextKeyIsStream, true)
 	if apiErr = PrepareRequestBilling(c, info); apiErr != nil {
@@ -303,6 +313,7 @@ func (s *responsesWSSession) runCall(c *gin.Context, state *responsesWSCallState
 	accumulator := service.NewResponsesUsageAccumulator(info)
 	info.StreamStatus = relaycommon.NewStreamStatus()
 	info.StreamStatus.RequireTerminal()
+	common.SetContextKey(c, appconstant.ContextKeyResponseStreamStatus, info.StreamStatus)
 	timeout := time.Duration(appconstant.StreamingTimeout) * time.Second
 	if timeout <= 0 {
 		timeout = 300 * time.Second
@@ -820,7 +831,7 @@ func checkResponsesWSModelAccess(c *gin.Context, modelName string) *types.NewAPI
 	if !ok {
 		tokenModelLimit = map[string]bool{}
 	}
-	if !tokenModelLimit[modelName] && !tokenModelLimit[ratio_setting.FormatMatchingModelName(modelName)] {
+	if !tokenModelLimit[modelName] && !tokenModelLimit[ratio_setting.RoutingMatchModelName(modelName)] {
 		return types.NewErrorWithStatusCode(fmt.Errorf("token is not allowed to use model %s", modelName), types.ErrorCodeAccessDenied, http.StatusForbidden, types.ErrOptionWithSkipRetry())
 	}
 	return nil

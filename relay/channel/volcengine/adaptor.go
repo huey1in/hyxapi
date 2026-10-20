@@ -121,7 +121,7 @@ func (a *Adaptor) Init(info *relaycommon.RelayInfo) {
 func (a *Adaptor) GetRequestURL(info *relaycommon.RelayInfo) (string, error) {
 	baseUrl := info.ChannelBaseUrl
 	if baseUrl == "" {
-		baseUrl = channelconstant.ChannelBaseURLs[channelconstant.ChannelTypeVolcEngine]
+		baseUrl = channelconstant.GetChannelBaseURL(channelconstant.ChannelTypeVolcEngine)
 	}
 	specialPlan, hasSpecialPlan := channelconstant.ChannelSpecialBases[baseUrl]
 
@@ -156,7 +156,7 @@ func (a *Adaptor) GetRequestURL(info *relaycommon.RelayInfo) (string, error) {
 		case constant.RelayModeResponses:
 			return fmt.Sprintf("%s/api/v3/responses", baseUrl), nil
 		case constant.RelayModeAudioSpeech:
-			if baseUrl == channelconstant.ChannelBaseURLs[channelconstant.ChannelTypeVolcEngine] {
+			if baseUrl == channelconstant.GetChannelBaseURL(channelconstant.ChannelTypeVolcEngine) {
 				return "wss://openspeech.bytedance.com/api/v1/tts/ws_binary", nil
 			}
 			return fmt.Sprintf("%s/v1/audio/speech", baseUrl), nil
@@ -190,6 +190,7 @@ func (a *Adaptor) ConvertOpenAIRequest(c *gin.Context, info *relaycommon.RelayIn
 	}
 
 	if !model_setting.ShouldPreserveThinkingSuffix(info.OriginModelName) &&
+		!model_setting.ShouldPreserveThinkingSuffix(info.UpstreamModelName) &&
 		strings.HasSuffix(info.UpstreamModelName, "-thinking") &&
 		strings.HasPrefix(info.UpstreamModelName, "deepseek") {
 		info.UpstreamModelName = strings.TrimSuffix(info.UpstreamModelName, "-thinking")
@@ -215,10 +216,10 @@ func (a *Adaptor) DoRequest(c *gin.Context, info *relaycommon.RelayInfo, request
 	if info.RelayMode == constant.RelayModeAudioSpeech {
 		baseUrl := info.ChannelBaseUrl
 		if baseUrl == "" {
-			baseUrl = channelconstant.ChannelBaseURLs[channelconstant.ChannelTypeVolcEngine]
+			baseUrl = channelconstant.GetChannelBaseURL(channelconstant.ChannelTypeVolcEngine)
 		}
 
-		if baseUrl == channelconstant.ChannelBaseURLs[channelconstant.ChannelTypeVolcEngine] {
+		if baseUrl == channelconstant.GetChannelBaseURL(channelconstant.ChannelTypeVolcEngine) {
 			if info.IsStream {
 				return nil, nil
 			}

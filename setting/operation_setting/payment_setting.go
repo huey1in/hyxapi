@@ -1,52 +1,36 @@
 package operation_setting
 
-import (
-	"github.com/QuantumNous/new-api/common"
-)
+import "github.com/QuantumNous/new-api/setting/config"
 
-var PayAddress = ""
-var CustomCallbackAddress = ""
-var EpayId = ""
-var EpayKey = ""
-var EpayEnabled = false
-var AlipayEnabled = false
-var AlipayAppId = ""
-var AlipayPrivateKey = ""
-var AlipayPublicKey = ""
-var AlipayGateway = "https://openapi.alipay.com/gateway.do"
-var Price = 7.3
-var MinTopUp = 1
-var USDExchangeRate = 7.3
-var TopUpPresetAmounts = "1,20,100" // 充值页预设金额选项，逗号分隔
+type PaymentSetting struct {
+	AmountOptions  []int           `json:"amount_options"`
+	AmountDiscount map[int]float64 `json:"amount_discount"` // 充值金额对应的折扣，例如 100 元 0.9 表示 100 元充值享受 9 折优惠
 
-var PayMethods = []map[string]string{
-	{
-		"name":  "支付宝",
-		"color": "rgba(var(--semi-blue-5), 1)",
-		"type":  "alipay",
-	},
-	{
-		"name":  "微信",
-		"color": "rgba(var(--semi-green-5), 1)",
-		"type":  "wxpay",
-	},
-	{
-		"name":      "自定义1",
-		"color":     "black",
-		"type":      "custom1",
-		"min_topup": "50",
-	},
+	ComplianceConfirmed    bool   `json:"compliance_confirmed"`
+	ComplianceTermsVersion string `json:"compliance_terms_version"`
+	ComplianceConfirmedAt  int64  `json:"compliance_confirmed_at"`
+	ComplianceConfirmedBy  int    `json:"compliance_confirmed_by"`
+	ComplianceConfirmedIP  string `json:"compliance_confirmed_ip"`
 }
 
-func UpdatePayMethodsByJsonString(jsonString string) error {
-	PayMethods = make([]map[string]string, 0)
-	return common.Unmarshal([]byte(jsonString), &PayMethods)
+const CurrentComplianceTermsVersion = "v1"
+
+// 默认配置
+var paymentSetting = PaymentSetting{
+	AmountOptions:  []int{10, 20, 50, 100, 200, 500},
+	AmountDiscount: map[int]float64{},
 }
 
-func PayMethods2JsonString() string {
-	jsonBytes, err := common.Marshal(PayMethods)
-	if err != nil {
-		return "[]"
-	}
-	return string(jsonBytes)
+func init() {
+	// 注册到全局配置管理器
+	config.GlobalConfig.Register("payment_setting", &paymentSetting)
+}
+
+func GetPaymentSetting() *PaymentSetting {
+	return &paymentSetting
+}
+
+func IsPaymentComplianceConfirmed() bool {
+	return paymentSetting.ComplianceConfirmed &&
+		paymentSetting.ComplianceTermsVersion == CurrentComplianceTermsVersion
 }

@@ -2,8 +2,10 @@ package controller
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
+	"net/url"
 	"strconv"
 	"strings"
 
@@ -54,6 +56,13 @@ func GetStatus(c *gin.Context) {
 		"version":                     common.Version,
 		"start_time":                  common.StartTime,
 		"email_verification":          common.EmailVerificationEnabled,
+		"register_enabled":            common.RegisterEnabled,
+		"password_login_enabled":      common.PasswordLoginEnabled,
+		"password_register_enabled":   common.PasswordRegisterEnabled,
+		"self_use_mode_enabled":       operation_setting.SelfUseModeEnabled,
+		"docs_link":                   operation_setting.GetGeneralSetting().DocsLink,
+		"demo_site_enabled":           operation_setting.DemoSiteEnabled,
+		"default_use_auto_group":      setting.DefaultUseAutoGroup,
 		"github_oauth":                common.GitHubOAuthEnabled,
 		"github_client_id":            common.GitHubClientId,
 		"discord_oauth":               system_setting.GetDiscordSettings().Enabled,
@@ -61,8 +70,8 @@ func GetStatus(c *gin.Context) {
 		"linuxdo_oauth":               common.LinuxDOOAuthEnabled,
 		"linuxdo_client_id":           common.LinuxDOClientId,
 		"linuxdo_minimum_trust_level": common.LinuxDOMinimumTrustLevel,
-		"telegram_oauth":              common.TelegramOAuthEnabled,
-		"telegram_bot_name":           common.TelegramBotName,
+		"telegram_oauth_configured":   system_setting.GetTelegramSettings().IsConfigured(),
+		"telegram_oauth":              common.TelegramOAuthEnabled && system_setting.GetTelegramSettings().IsConfigured(),
 		"wechat_qrcode":               common.WeChatAccountQRCodeImageURL,
 		"wechat_login":                common.WeChatAuthEnabled,
 		"server_address":              system_setting.ServerAddress,
@@ -92,29 +101,38 @@ func GetStatus(c *gin.Context) {
 
 		// 面板启用开关
 		"uptime_kuma_enabled":   cs.UptimeKumaEnabled,
+		"api_info_enabled":      cs.ApiInfoEnabled,
+		"faq_enabled":           cs.FAQEnabled,
 		"announcements_enabled": cs.AnnouncementsEnabled,
 		// 模块管理配置
 		"HeaderNavModules":    common.OptionMap["HeaderNavModules"],
 		"SidebarModulesAdmin": common.OptionMap["SidebarModulesAdmin"],
 
-		"oidc_enabled":                system_setting.GetOIDCSettings().Enabled,
-		"oidc_client_id":              system_setting.GetOIDCSettings().ClientId,
-		"oidc_authorization_endpoint": system_setting.GetOIDCSettings().AuthorizationEndpoint,
-		"passkey_login":               passkeySetting.Enabled,
-		"passkey_display_name":        passkeySetting.RPDisplayName,
-		"passkey_rp_id":               passkeySetting.RPID,
-		"passkey_origins":             passkeySetting.Origins,
-		"passkey_allow_insecure":      passkeySetting.AllowInsecureOrigin,
-		"passkey_user_verification":   passkeySetting.UserVerification,
-		"passkey_attachment":          passkeySetting.AttachmentPreference,
-		"setup":                       constant.Setup,
-		"user_agreement_enabled":      legalSetting.UserAgreement != "",
-		"privacy_policy_enabled":      legalSetting.PrivacyPolicy != "",
-		"checkin_enabled":             operation_setting.GetCheckinSetting().Enabled,
-		"chats":                       setting.Chats,
+		"oidc_display_name":                 system_setting.GetOIDCSettings().DisplayName,
+		"oidc_enabled":                      system_setting.GetOIDCSettings().Enabled,
+		"oidc_client_id":                    system_setting.GetOIDCSettings().ClientId,
+		"oidc_authorization_endpoint":       system_setting.GetOIDCSettings().AuthorizationEndpoint,
+		"password_login_encryption_enabled": common.PasswordLoginEncryptionEnabled,
+		"passkey_login":                     passkeySetting.Enabled,
+		"passkey_display_name":              passkeySetting.RPDisplayName,
+		"passkey_rp_id":                     passkeySetting.RPID,
+		"passkey_allow_insecure":            passkeySetting.AllowInsecureOrigin,
+		"passkey_user_verification":         passkeySetting.UserVerification,
+		"passkey_attachment":                passkeySetting.AttachmentPreference,
+		"setup":                             constant.Setup,
+		"user_agreement_enabled":            legalSetting.UserAgreement != "",
+		"privacy_policy_enabled":            legalSetting.PrivacyPolicy != "",
+		"checkin_enabled":                   operation_setting.GetCheckinSetting().Enabled,
+		"chats":                             setting.GetChats(),
 	}
 
 	// 根据启用状态注入可选内容
+	if cs.ApiInfoEnabled {
+		data["api_info"] = console_setting.GetApiInfo()
+	}
+	if cs.FAQEnabled {
+		data["faq"] = console_setting.GetFAQ()
+	}
 	if cs.AnnouncementsEnabled {
 		data["announcements"] = console_setting.GetAnnouncements()
 	}
@@ -154,37 +172,30 @@ func GetStatus(c *gin.Context) {
 	return
 }
 
+func GetNotice(c *gin.Context) {
+	common.OptionMapRWMutex.RLock()
+	content := common.OptionMap["Notice"]
+	common.OptionMapRWMutex.RUnlock()
+	serveRevalidatedJSON(c, content)
+}
+
 func GetAbout(c *gin.Context) {
 	common.OptionMapRWMutex.RLock()
-	defer common.OptionMapRWMutex.RUnlock()
-	c.JSON(http.StatusOK, gin.H{
-		"success": true,
-		"message": "",
-		"data":    common.OptionMap["About"],
-	})
-	return
+	content := common.OptionMap["About"]
+	common.OptionMapRWMutex.RUnlock()
+	serveRevalidatedJSON(c, content)
 }
 
 func GetUserAgreement(c *gin.Context) {
-	c.JSON(http.StatusOK, gin.H{
-		"success": true,
-		"message": "",
-		"data":    system_setting.GetLegalSettings().UserAgreement,
-	})
-	return
+	serveRevalidatedJSON(c, system_setting.GetLegalSettings().UserAgreement)
 }
 
 func GetPrivacyPolicy(c *gin.Context) {
-	c.JSON(http.StatusOK, gin.H{
-		"success": true,
-		"message": "",
-		"data":    system_setting.GetLegalSettings().PrivacyPolicy,
-	})
-	return
+	serveRevalidatedJSON(c, system_setting.GetLegalSettings().PrivacyPolicy)
 }
 
 func SendEmailVerification(c *gin.Context) {
-	email := c.Query("email")
+	email := model.NormalizeEmail(c.Query("email"))
 	if err := common.Validate.Var(email, "required,email"); err != nil {
 		c.JSON(http.StatusOK, gin.H{
 			"success": false,
@@ -258,7 +269,7 @@ func SendEmailVerification(c *gin.Context) {
 }
 
 func SendPasswordResetEmail(c *gin.Context) {
-	email := c.Query("email")
+	email := model.NormalizeEmail(c.Query("email"))
 	if err := common.Validate.Var(email, "required,email"); err != nil {
 		c.JSON(http.StatusOK, gin.H{
 			"success": false,
@@ -266,10 +277,10 @@ func SendPasswordResetEmail(c *gin.Context) {
 		})
 		return
 	}
-	if model.IsEmailAlreadyTaken(email) {
+	if _, err := model.GetUniqueUserByEmail(email); err == nil {
 		code := common.GenerateVerificationCode(0)
 		common.RegisterVerificationCodeWithKey(email, code, common.PasswordResetPurpose)
-		link := fmt.Sprintf("%s/user/reset?email=%s&token=%s", system_setting.ServerAddress, email, code)
+		link := fmt.Sprintf("%s/user/reset?%s", strings.TrimRight(system_setting.ServerAddress, "/"), url.Values{"email": {email}, "token": {code}}.Encode())
 		subject := fmt.Sprintf("%s密码重置", common.SystemName)
 		tmpl := common.GetEmailTemplate(common.EmailTemplatePasswordResetKey)
 		content := common.RenderTemplate(tmpl, map[string]string{
@@ -296,6 +307,11 @@ type PasswordResetRequest struct {
 func ResetPassword(c *gin.Context) {
 	var req PasswordResetRequest
 	err := json.NewDecoder(c.Request.Body).Decode(&req)
+	if err != nil {
+		common.ApiErrorT(c, "Invalid parameters")
+		return
+	}
+	req.Email = model.NormalizeEmail(req.Email)
 	if req.Email == "" || req.Token == "" {
 		c.JSON(http.StatusOK, gin.H{
 			"success": false,
@@ -313,6 +329,10 @@ func ResetPassword(c *gin.Context) {
 	password := common.GenerateVerificationCode(12)
 	err = model.ResetUserPasswordByEmail(req.Email, password)
 	if err != nil {
+		if errors.Is(err, model.ErrEmailNotFound) || errors.Is(err, model.ErrEmailAmbiguous) {
+			common.ApiErrorT(c, "Password reset link is invalid or has expired")
+			return
+		}
 		common.ApiError(c, err)
 		return
 	}

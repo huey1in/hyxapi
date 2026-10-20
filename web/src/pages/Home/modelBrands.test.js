@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { extractSupportedModelBrands } from './modelBrands.js';
+import { loadTestModules } from '../../../scripts/load-test-modules.mjs';
+const { entry0: { extractSupportedModelBrands } } = await loadTestModules(['./src/pages/Home/modelBrands.ts']);
 
 test('returns only configured vendors referenced by supported models', () => {
   const models = [
@@ -32,4 +33,10 @@ test('infers and deduplicates brands for models without vendor metadata', () => 
     { name: 'Google', icon: 'Gemini.Color' },
     { name: 'DeepSeek', icon: 'DeepSeek.Color' },
   ]);
+});
+
+// Pricing metadata can include legacy or incomplete vendor records.
+test('malformed pricing metadata cannot break public brand discovery', () => {
+  assert.deepEqual(extractSupportedModelBrands(null, {}), []);
+  assert.deepEqual(extractSupportedModelBrands([null, {}, { model_name: 1 }, { model_name: 'gpt-4', vendor_id: 1 }], [null, { id: 1, name: 'Custom', icon: {} }]), [{ name: 'Custom', icon: 'OpenAI' }]);
 });

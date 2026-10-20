@@ -15,8 +15,7 @@
         {
           "type": "image_url",
           "image_url": {
-            "url": "data:image/png;base64,aGVsbG8=",
-            "MimeType": ""
+            "url": "data:image/png;base64,aGVsbG8="
           }
         }
       ]
@@ -44,6 +43,7 @@
   ],
   "stream": true,
   "max_tokens": 1024,
+  "reasoning_effort": "low",
   "tools": [
     {
       "type": "function",

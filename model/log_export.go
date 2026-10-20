@@ -3,14 +3,15 @@ package model
 import (
 	"context"
 
+	"github.com/QuantumNous/new-api/common"
 	"gorm.io/gorm"
 )
 
 // LogFilter is shared by paginated searches and keyset exports.
 type LogFilter struct {
-	Type, Channel                                    int
-	StartTimestamp, EndTimestamp                     int64
-	ModelName, Username, TokenName, Group, RequestId string
+	Type, Channel                                                       int
+	StartTimestamp, EndTimestamp                                        int64
+	ModelName, Username, TokenName, Group, RequestId, UpstreamRequestId string
 }
 
 func buildLogQuery(f LogFilter, userID int) (*gorm.DB, error) {
@@ -22,17 +23,23 @@ func buildLogQuery(f LogFilter, userID int) (*gorm.DB, error) {
 		q = q.Where("logs.type = ?", f.Type)
 	}
 	if f.ModelName != "" {
-		if userID > 0 {
-			pattern, err := sanitizeLikePattern(f.ModelName)
-			if err != nil {
-				return nil, err
-			}
-			q = q.Where("logs.model_name LIKE ? ESCAPE '!'", pattern)
-		} else {
-			q = q.Where("logs.model_name LIKE ?", f.ModelName)
+		var err error
+		q, err = applyExplicitLogTextFilter(q, "logs.model_name", f.ModelName)
+		if err != nil {
+			return nil, err
 		}
 	}
-	for _, v := range []struct{ column, value string }{{"username", f.Username}, {"token_name", f.TokenName}, {"request_id", f.RequestId}} {
+	if f.UpstreamRequestId != "" {
+		q = q.Where("logs.upstream_request_id = ?", f.UpstreamRequestId)
+	}
+	if f.Username != "" {
+		var err error
+		q, err = applyExplicitLogTextFilter(q, "logs.username", f.Username)
+		if err != nil {
+			return nil, err
+		}
+	}
+	for _, v := range []struct{ column, value string }{{"token_name", f.TokenName}, {"request_id", f.RequestId}} {
 		if v.value != "" {
 			q = q.Where("logs."+v.column+" = ?", v.value)
 		}
@@ -58,6 +65,9 @@ func StreamLogs(ctx context.Context, f LogFilter, userID int, write func(*Log) e
 	q, err := buildLogQuery(f, userID)
 	if err != nil {
 		return err
+	}
+	if common.UsingLogDatabase(common.DatabaseTypeClickHouse) {
+		return streamClickHouseLogs(ctx, q, userID, write)
 	}
 	var ceiling int
 	if err = q.WithContext(ctx).Select("COALESCE(MAX(logs.id), 0)").Scan(&ceiling).Error; err != nil {
@@ -87,4 +97,33 @@ func StreamLogs(ctx context.Context, f LogFilter, userID int, write func(*Log) e
 		}
 	}
 	return nil
+}
+
+// MergeTree log IDs are not generated sequentially. One streaming query keeps
+// duplicate request IDs and equal timestamps without inventing an ID cursor.
+func streamClickHouseLogs(ctx context.Context, q *gorm.DB, userID int, write func(*Log) error) error {
+	rows, err := q.WithContext(ctx).Order(clickHouseLogOrder("logs.")).Rows()
+	if err != nil {
+		return err
+	}
+	defer rows.Close()
+	count := 0
+	for rows.Next() {
+		if err := ctx.Err(); err != nil {
+			return err
+		}
+		var entry Log
+		if err := q.ScanRows(rows, &entry); err != nil {
+			return err
+		}
+		entry.Id = count + 1
+		if userID > 0 {
+			formatUserLogs([]*Log{&entry}, count)
+		}
+		if err := write(&entry); err != nil {
+			return err
+		}
+		count++
+	}
+	return rows.Err()
 }

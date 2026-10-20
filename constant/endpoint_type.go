@@ -1,21 +1,29 @@
 package constant
 
-import relaytypes "github.com/QuantumNous/new-api/relaykit/types"
+import "github.com/QuantumNous/new-api/relaykit/types"
 
-type EndpointType = relaytypes.EndpointType
+// EndpointType moved to types with the conversion kit; aliases keep host
+// code compiling unchanged.
+type EndpointType = types.EndpointType
 
 const (
-	EndpointTypeOpenAI                = relaytypes.EndpointTypeOpenAI
-	EndpointTypeOpenAIResponse        = relaytypes.EndpointTypeOpenAIResponse
-	EndpointTypeOpenAIResponseCompact = relaytypes.EndpointTypeOpenAIResponseCompact
-	EndpointTypeAnthropic             = relaytypes.EndpointTypeAnthropic
-	EndpointTypeGemini                = relaytypes.EndpointTypeGemini
-	EndpointTypeJinaRerank            = relaytypes.EndpointTypeJinaRerank
-	EndpointTypeImageGeneration       = relaytypes.EndpointTypeImageGeneration
-	EndpointTypeEmbeddings            = relaytypes.EndpointTypeEmbeddings
-	EndpointTypeOpenAIVideo           = relaytypes.EndpointTypeOpenAIVideo
-	//EndpointTypeMidjourney     EndpointType = "midjourney-proxy"
-	//EndpointTypeSuno           EndpointType = "suno-proxy"
-	//EndpointTypeKling          EndpointType = "kling"
-	//EndpointTypeJimeng         EndpointType = "jimeng"
+	EndpointTypeOpenAI                = types.EndpointTypeOpenAI
+	EndpointTypeOpenAIResponse        = types.EndpointTypeOpenAIResponse
+	EndpointTypeOpenAIResponseCompact = types.EndpointTypeOpenAIResponseCompact
+	EndpointTypeOpenAIAlphaSearch     = types.EndpointTypeOpenAIAlphaSearch
+	EndpointTypeDeepSeekToolsSearch   = types.EndpointTypeDeepSeekToolsSearch
+	EndpointTypeDeepSeekToolsFetch    = types.EndpointTypeDeepSeekToolsFetch
+	EndpointTypeAnthropic             = types.EndpointTypeAnthropic
+	EndpointTypeGemini                = types.EndpointTypeGemini
+	EndpointTypeJinaRerank            = types.EndpointTypeJinaRerank
+	EndpointTypeImageGeneration       = types.EndpointTypeImageGeneration
+	EndpointTypeEmbeddings            = types.EndpointTypeEmbeddings
+	EndpointTypeOpenAIVideo           = types.EndpointTypeOpenAIVideo
+)
+
+// Model names the distributor assigns to /v1/tools/search and /v1/tools/fetch,
+// whose bodies carry no model. Channels serve the endpoints by listing them.
+const (
+	DeepSeekSearchModel = "deepseek-search"
+	DeepSeekFetchModel  = "deepseek-fetch"
 )

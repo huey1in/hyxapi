@@ -66,6 +66,21 @@ func TestCountBillableToolCallFunctionCallSkipsReservedNames(t *testing.T) {
 	}
 }
 
+func TestCustomToolCannotImpersonateVendorBillingAndUsesResolvedPricingModel(t *testing.T) {
+	for _, name := range []string{"search_std", "web_fetch", "code_execution", "tool_search"} {
+		operation_setting.SetToolPriceForTest(name, 5)
+		t.Cleanup(func() { operation_setting.DeleteToolPriceForTest(name) })
+		info := &RelayInfo{OriginModelName: "origin"}
+		info.CountBillableToolCall(dto.BuildInCallFunctionCall, name)
+		require.NotContains(t, info.ResponsesUsageInfo.BuiltInTools, name)
+	}
+	operation_setting.SetToolPriceForTest("resolved_custom:priced-model*", 3)
+	t.Cleanup(func() { operation_setting.DeleteToolPriceForTest("resolved_custom:priced-model*") })
+	info := &RelayInfo{OriginModelName: "public-alias", PricingModelName: "priced-model-v1"}
+	info.CountBillableToolCall(dto.BuildInCallFunctionCall, "resolved_custom")
+	require.Equal(t, 1, info.ResponsesUsageInfo.BuiltInTools["resolved_custom"].CallCount)
+}
+
 func TestImageGenerationCallCounterCompletedOutputs(t *testing.T) {
 	t.Parallel()
 
@@ -334,15 +349,4 @@ func TestImageGenerationCallCounterCommitDoesNotBillDeclarationsAlone(t *testing
 	}
 	(&ImageGenerationCallCounter{}).Commit(info)
 	assert.Equal(t, 0, info.ResponsesUsageInfo.BuiltInTools[dto.BuildInToolImageGeneration].CallCount)
-}
-
-func TestIsNonBillableResponsesStatus(t *testing.T) {
-	t.Parallel()
-
-	assert.True(t, IsNonBillableResponsesStatus([]byte(`"failed"`)))
-	assert.True(t, IsNonBillableResponsesStatus([]byte(`"incomplete"`)))
-	assert.True(t, IsNonBillableResponsesStatus([]byte(`"cancelled"`)))
-	assert.True(t, IsNonBillableResponsesStatus([]byte(`"canceled"`)))
-	assert.False(t, IsNonBillableResponsesStatus([]byte(`"completed"`)))
-	assert.False(t, IsNonBillableResponsesStatus(nil))
 }

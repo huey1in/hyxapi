@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"context"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -57,7 +58,7 @@ func TestUpdateChannelSub2APIBalanceRemainingPreferred(t *testing.T) {
 	defer server.Close()
 
 	channel := newSub2APITestChannel(t, server.URL)
-	balance, err := updateChannelSub2APIBalance(channel)
+	balance, err := updateChannelSub2APIBalance(context.Background(), channel)
 	require.NoError(t, err)
 	assert.InDelta(t, 986.17194888, balance, 1e-9)
 	assert.InDelta(t, 986.17194888, channel.Balance, 1e-9)
@@ -72,7 +73,7 @@ func TestUpdateChannelSub2APIBalanceWalletFallback(t *testing.T) {
 	defer server.Close()
 
 	channel := newSub2APITestChannel(t, server.URL)
-	balance, err := updateChannelSub2APIBalance(channel)
+	balance, err := updateChannelSub2APIBalance(context.Background(), channel)
 	require.NoError(t, err)
 	assert.InDelta(t, 42.5, balance, 1e-9)
 }
@@ -86,7 +87,7 @@ func TestUpdateChannelSub2APIBalanceSubscriptionKeyMissingFields(t *testing.T) {
 	defer server.Close()
 
 	channel := newSub2APITestChannel(t, server.URL)
-	_, err := updateChannelSub2APIBalance(channel)
+	_, err := updateChannelSub2APIBalance(context.Background(), channel)
 	require.Error(t, err)
 }
 
@@ -99,7 +100,7 @@ func TestUpdateChannelSub2APIBalanceInvalidKey(t *testing.T) {
 	defer server.Close()
 
 	channel := newSub2APITestChannel(t, server.URL)
-	_, err := updateChannelSub2APIBalance(channel)
+	_, err := updateChannelSub2APIBalance(context.Background(), channel)
 	require.EqualError(t, err, "Sub2API key is invalid (isValid=false)")
 }
 
@@ -114,7 +115,7 @@ func TestUpdateChannelSub2APIBalanceUnlimitedSubscription(t *testing.T) {
 	channel := newSub2APITestChannel(t, server.URL)
 	require.NoError(t, model.DB.Model(channel).Update("balance", 12.5).Error)
 
-	_, err := updateChannelSub2APIBalance(channel)
+	_, err := updateChannelSub2APIBalance(context.Background(), channel)
 	require.EqualError(t, err, "Sub2API /v1/usage reports an unlimited subscription without a finite balance")
 
 	stored := model.Channel{}
@@ -131,7 +132,7 @@ func TestUpdateChannelSub2APIBalanceNegativeWalletBalance(t *testing.T) {
 	defer server.Close()
 
 	channel := newSub2APITestChannel(t, server.URL)
-	balance, err := updateChannelSub2APIBalance(channel)
+	balance, err := updateChannelSub2APIBalance(context.Background(), channel)
 	require.NoError(t, err)
 	assert.InDelta(t, -1, balance, 1e-9)
 }
@@ -140,7 +141,7 @@ func TestUpdateChannelSub2APIBalanceMissingBaseURL(t *testing.T) {
 	setupSub2APIBalanceTest(t)
 	empty := ""
 	channel := &model.Channel{BaseURL: &empty, Key: "sk-test"}
-	_, err := updateChannelSub2APIBalance(channel)
+	_, err := updateChannelSub2APIBalance(context.Background(), channel)
 	require.Error(t, err)
 }
 
@@ -153,7 +154,7 @@ func TestUpdateStandardChannelBalanceRoutesSub2API(t *testing.T) {
 	defer server.Close()
 
 	channel := newSub2APITestChannel(t, server.URL)
-	result, err := updateChannelBalance(channel)
+	result, err := updateStandardChannelBalance(context.Background(), channel)
 	require.NoError(t, err)
 	assert.InDelta(t, 77.7, result, 1e-9)
 }

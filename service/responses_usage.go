@@ -104,7 +104,7 @@ func (a *ResponsesUsageAccumulator) observeTool(item *dto.ResponsesOutput, index
 	if item.Type == dto.BuildInCallWebSearchCall && a.info.VendorToolUsage != nil {
 		raw, _ := common.Marshal(map[string]any{"output": []any{item}})
 		for name, count := range a.info.VendorToolUsage(raw) {
-			for range count {
+			for range min(count, relaycommon.MaxBillableToolCallCount) {
 				a.info.CountBillableNamedTool(name)
 			}
 		}

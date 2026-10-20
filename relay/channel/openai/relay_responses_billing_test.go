@@ -109,89 +109,54 @@ func TestOaiResponsesHandlerDeclaredToolsWithoutOutputCountZero(t *testing.T) {
 	assert.Equal(t, 0, info.ResponsesUsageInfo.BuiltInTools[dto.BuildInToolFileSearch].CallCount)
 }
 
-func TestOaiResponsesHandlerCountsCompletedImageGenerationOutputs(t *testing.T) {
-	gin.SetMode(gin.TestMode)
+func TestOaiResponsesHandlerCountsDeliveredImagesRegardlessOfResponseStatus(t *testing.T) {
+	for _, status := range []string{"completed", "incomplete", "failed", "cancelled"} {
+		t.Run(status, func(t *testing.T) {
+			gin.SetMode(gin.TestMode)
 
-	body, err := common.Marshal(dto.OpenAIResponsesResponse{
-		Status: []byte(`"completed"`),
-		Output: []dto.ResponsesOutput{
-			{
-				Type:   dto.ResponsesOutputTypeImageGenerationCall,
-				ID:     "img_1",
-				Status: "completed",
-				Result: "base64-a",
-			},
-			{
-				Type:   dto.ResponsesOutputTypeImageGenerationCall,
-				ID:     "img_2",
-				Status: "completed",
-				Result: "base64-b",
-			},
-			{
-				Type:   dto.ResponsesOutputTypeImageGenerationCall,
-				ID:     "img_empty",
-				Status: "completed",
-				Result: "",
-			},
-		},
-		Usage: &dto.Usage{InputTokens: 1, OutputTokens: 1, TotalTokens: 2},
-	})
-	require.NoError(t, err)
+			body, err := common.Marshal(dto.OpenAIResponsesResponse{
+				Status: []byte(`"` + status + `"`),
+				Output: []dto.ResponsesOutput{
+					{
+						Type:   dto.ResponsesOutputTypeImageGenerationCall,
+						ID:     "img_1",
+						Status: "completed",
+						Result: "base64-a",
+					},
+					{
+						Type:   dto.ResponsesOutputTypeImageGenerationCall,
+						ID:     "img_2",
+						Status: "completed",
+						Result: "base64-b",
+					},
+					{
+						Type:   dto.ResponsesOutputTypeImageGenerationCall,
+						ID:     "img_empty",
+						Status: "completed",
+						Result: "",
+					},
+				},
+				Usage: &dto.Usage{InputTokens: 1, OutputTokens: 1, TotalTokens: 2},
+			})
+			require.NoError(t, err)
 
-	w := httptest.NewRecorder()
-	c, _ := gin.CreateTestContext(w)
-	c.Request = httptest.NewRequest(http.MethodPost, "/v1/responses", nil)
-	info := &relaycommon.RelayInfo{OriginModelName: "gpt-5.1"}
-	resp := &http.Response{
-		StatusCode: http.StatusOK,
-		Body:       io.NopCloser(bytes.NewReader(body)),
-		Header:     http.Header{"Content-Type": []string{"application/json"}},
+			w := httptest.NewRecorder()
+			c, _ := gin.CreateTestContext(w)
+			c.Request = httptest.NewRequest(http.MethodPost, "/v1/responses", nil)
+			info := &relaycommon.RelayInfo{OriginModelName: "gpt-5.1"}
+			resp := &http.Response{
+				StatusCode: http.StatusOK,
+				Body:       io.NopCloser(bytes.NewReader(body)),
+				Header:     http.Header{"Content-Type": []string{"application/json"}},
+			}
+
+			_, apiErr := OaiResponsesHandler(c, info, resp)
+			require.Nil(t, apiErr)
+			require.Contains(t, info.ResponsesUsageInfo.BuiltInTools, dto.BuildInToolImageGeneration)
+			assert.Equal(t, 2, info.ResponsesUsageInfo.BuiltInTools[dto.BuildInToolImageGeneration].CallCount)
+			assert.False(t, c.GetBool("image_generation_call"))
+		})
 	}
-
-	_, apiErr := OaiResponsesHandler(c, info, resp)
-	require.Nil(t, apiErr)
-	require.Contains(t, info.ResponsesUsageInfo.BuiltInTools, dto.BuildInToolImageGeneration)
-	assert.Equal(t, 2, info.ResponsesUsageInfo.BuiltInTools[dto.BuildInToolImageGeneration].CallCount)
-	assert.False(t, c.GetBool("image_generation_call"))
-}
-
-func TestOaiResponsesHandlerIncompleteStatusCommitsZeroImageGeneration(t *testing.T) {
-	gin.SetMode(gin.TestMode)
-
-	body, err := common.Marshal(dto.OpenAIResponsesResponse{
-		Status: []byte(`"incomplete"`),
-		Output: []dto.ResponsesOutput{
-			{
-				Type:   dto.ResponsesOutputTypeImageGenerationCall,
-				ID:     "img_1",
-				Status: "completed",
-				Result: "base64-a",
-			},
-		},
-		Usage: &dto.Usage{InputTokens: 1, OutputTokens: 1, TotalTokens: 2},
-	})
-	require.NoError(t, err)
-
-	w := httptest.NewRecorder()
-	c, _ := gin.CreateTestContext(w)
-	c.Request = httptest.NewRequest(http.MethodPost, "/v1/responses", nil)
-	info := &relaycommon.RelayInfo{
-		OriginModelName: "gpt-5.1",
-		ResponsesUsageInfo: &relaycommon.ResponsesUsageInfo{
-			BuiltInTools: map[string]*relaycommon.BuildInToolInfo{
-				dto.BuildInToolImageGeneration: {ToolName: dto.BuildInToolImageGeneration, CallCount: 0},
-			},
-		},
-	}
-	resp := &http.Response{
-		StatusCode: http.StatusOK,
-		Body:       io.NopCloser(bytes.NewReader(body)),
-		Header:     http.Header{"Content-Type": []string{"application/json"}},
-	}
-
-	_, apiErr := OaiResponsesHandler(c, info, resp)
-	require.Nil(t, apiErr)
-	assert.Equal(t, 0, info.ResponsesUsageInfo.BuiltInTools[dto.BuildInToolImageGeneration].CallCount)
 }
 
 func runResponsesImageBillingStream(t *testing.T, events ...string) *relaycommon.RelayInfo {
@@ -265,4 +230,15 @@ func TestOaiResponsesStreamHandlerDoesNotCountPartialImageEvent(t *testing.T) {
 	)
 
 	assert.Equal(t, 0, info.ResponsesUsageInfo.BuiltInTools[dto.BuildInToolImageGeneration].CallCount)
+}
+
+func TestOaiResponsesHandlerCountsVendorKeyWithoutUsageHook(t *testing.T) {
+	c, _ := gin.CreateTestContext(httptest.NewRecorder())
+	c.Request = httptest.NewRequest(http.MethodPost, "/v1/responses", nil)
+	info := &relaycommon.RelayInfo{WebSearchBillingKey: "vendor_search"}
+	resp := &http.Response{StatusCode: http.StatusOK, Header: http.Header{}, Body: io.NopCloser(strings.NewReader(`{"output":[{"type":"web_search_call","id":"call_1"}]}`))}
+	_, apiErr := OaiResponsesHandler(c, info, resp)
+	require.Nil(t, apiErr)
+	require.NotNil(t, info.ResponsesUsageInfo)
+	assert.Equal(t, 1, info.ResponsesUsageInfo.BuiltInTools["vendor_search"].CallCount)
 }

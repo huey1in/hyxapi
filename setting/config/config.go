@@ -2,8 +2,10 @@ package config
 
 import (
 	"encoding/json"
+	"github.com/QuantumNous/new-api/common"
 	"reflect"
 	"strconv"
+	"strings"
 	"sync"
 )
 
@@ -198,7 +200,15 @@ func updateConfigFromMap(config interface{}, configMap map[string]string) error 
 					continue
 				}
 			}
-		case reflect.Map, reflect.Slice, reflect.Struct:
+		case reflect.Map, reflect.Slice:
+			// Decode replacements into fresh values: maps retain removed keys,
+			// and reused slice elements retain omitted fields from previous rules.
+			fresh := reflect.New(field.Type())
+			if err := json.Unmarshal([]byte(strValue), fresh.Interface()); err != nil {
+				continue
+			}
+			field.Set(fresh.Elem())
+		case reflect.Struct:
 			// 复杂类型使用JSON反序列化
 			err := json.Unmarshal([]byte(strValue), field.Addr().Interface())
 			if err != nil {
@@ -240,4 +250,53 @@ func (cm *ConfigManager) ExportAllConfigs() map[string]string {
 	}
 
 	return result
+}
+
+func (cm *ConfigManager) LoadFromDB(options map[string]string) error {
+	cm.mutex.Lock()
+	defer cm.mutex.Unlock()
+
+	for name, config := range cm.configs {
+		prefix := name + "."
+		configMap := make(map[string]string)
+
+		// 收集属于此配置的所有选项
+		for key, value := range options {
+			if after, ok := strings.CutPrefix(key, prefix); ok {
+				configKey := after
+				configMap[configKey] = value
+			}
+		}
+
+		// 如果找到配置项，则更新配置
+		if len(configMap) > 0 {
+			if err := updateConfigFromMap(config, configMap); err != nil {
+				common.SysError(common.LogText("failed to update config %s: %s", name, err.Error()))
+				continue
+			}
+		}
+	}
+
+	return nil
+}
+
+func (cm *ConfigManager) SaveToDB(updateFunc func(key, value string) error) error {
+	cm.mutex.RLock()
+	defer cm.mutex.RUnlock()
+
+	for name, config := range cm.configs {
+		configMap, err := configToMap(config)
+		if err != nil {
+			return err
+		}
+
+		for key, value := range configMap {
+			dbKey := name + "." + key
+			if err := updateFunc(dbKey, value); err != nil {
+				return err
+			}
+		}
+	}
+
+	return nil
 }

@@ -18,8 +18,13 @@ func GetModelEnableGroups(modelName string) []string {
 }
 
 // GetModelQuotaTypes 返回指定模型的计费类型集合（来自缓存）。
-// 本地二开将上游「比例计费配额类型(int)」改为「直价计费 BillingType(string)」，
-// 无等价的整数配额类型可映射，故恒返回空集合。
 func GetModelQuotaTypes(modelName string) []int {
+	GetPricing()
+	modelEnableGroupsLock.RLock()
+	quotaType, ok := modelQuotaTypeMap[modelName]
+	modelEnableGroupsLock.RUnlock()
+	if ok {
+		return []int{quotaType}
+	}
 	return []int{}
 }

@@ -4,7 +4,8 @@ import (
 	"github.com/QuantumNous/new-api/constant"
 	"github.com/QuantumNous/new-api/controller"
 	"github.com/QuantumNous/new-api/middleware"
-	"github.com/QuantumNous/new-api/types"
+	"github.com/QuantumNous/new-api/relay"
+	"github.com/QuantumNous/new-api/relaykit/types"
 
 	"github.com/gin-gonic/gin"
 )
@@ -24,7 +25,7 @@ func SetRelayRouter(router *gin.Engine) {
 			case c.GetHeader("x-api-key") != "" && c.GetHeader("anthropic-version") != "":
 				controller.ListModels(c, constant.ChannelTypeAnthropic)
 			case c.GetHeader("x-goog-api-key") != "" || c.Query("key") != "": // 单独的适配
-				controller.RetrieveModel(c, constant.ChannelTypeGemini)
+				controller.ListModels(c, constant.ChannelTypeGemini)
 			default:
 				controller.ListModels(c, constant.ChannelTypeOpenAI)
 			}
@@ -106,23 +107,17 @@ func SetRelayRouter(router *gin.Engine) {
 		})
 
 		// response related routes
-		httpRouter.POST("/responses", func(c *gin.Context) {
-			controller.Relay(c, types.RelayFormatOpenAIResponses)
-		})
 		httpRouter.POST("/responses/compact", func(c *gin.Context) {
 			controller.Relay(c, types.RelayFormatOpenAIResponsesCompaction)
+		})
+		httpRouter.POST("/alpha/search", func(c *gin.Context) {
+			controller.Relay(c, types.RelayFormatOpenAIAlphaSearch)
 		})
 
 		httpRouter.POST("/tools/search", func(c *gin.Context) { controller.Relay(c, types.RelayFormatDeepSeekTools) })
 		httpRouter.POST("/tools/fetch", func(c *gin.Context) { controller.Relay(c, types.RelayFormatDeepSeekTools) })
 		// image related routes
 		httpRouter.POST("/edits", func(c *gin.Context) {
-			controller.Relay(c, types.RelayFormatOpenAIImage)
-		})
-		httpRouter.POST("/images/generations", func(c *gin.Context) {
-			controller.Relay(c, types.RelayFormatOpenAIImage)
-		})
-		httpRouter.POST("/images/edits", func(c *gin.Context) {
 			controller.Relay(c, types.RelayFormatOpenAIImage)
 		})
 
@@ -175,6 +170,17 @@ func SetRelayRouter(router *gin.Engine) {
 		httpRouter.DELETE("/models/:model", controller.RelayNotImplemented)
 	}
 
+	relayMjRouter := router.Group("/mj")
+	relayMjRouter.Use(middleware.RouteTag("relay"))
+	relayMjRouter.Use(middleware.SystemPerformanceCheck())
+	registerMjRouterGroup(relayMjRouter)
+
+	relayMjModeRouter := router.Group("/:mode/mj")
+	relayMjModeRouter.Use(middleware.RouteTag("relay"))
+	relayMjModeRouter.Use(middleware.SystemPerformanceCheck())
+	registerMjRouterGroup(relayMjModeRouter)
+	//relayMjRouter.Use()
+
 	relayGeminiRouter := router.Group("/v1beta")
 	relayGeminiRouter.Use(middleware.RouteTag("relay"))
 	relayGeminiRouter.Use(middleware.SystemPerformanceCheck())
@@ -186,5 +192,28 @@ func SetRelayRouter(router *gin.Engine) {
 		relayGeminiRouter.POST("/models/*path", func(c *gin.Context) {
 			controller.Relay(c, types.RelayFormatGemini)
 		})
+	}
+}
+
+func registerMjRouterGroup(relayMjRouter *gin.RouterGroup) {
+	relayMjRouter.GET("/image/:id", relay.RelayMidjourneyImage)
+	relayMjRouter.Use(middleware.TokenAuth(), middleware.Distribute())
+	{
+		relayMjRouter.POST("/submit/action", controller.RelayMidjourney)
+		relayMjRouter.POST("/submit/shorten", controller.RelayMidjourney)
+		relayMjRouter.POST("/submit/modal", controller.RelayMidjourney)
+		relayMjRouter.POST("/submit/imagine", controller.RelayMidjourney)
+		relayMjRouter.POST("/submit/change", controller.RelayMidjourney)
+		relayMjRouter.POST("/submit/simple-change", controller.RelayMidjourney)
+		relayMjRouter.POST("/submit/describe", controller.RelayMidjourney)
+		relayMjRouter.POST("/submit/blend", controller.RelayMidjourney)
+		relayMjRouter.POST("/submit/edits", controller.RelayMidjourney)
+		relayMjRouter.POST("/submit/video", controller.RelayMidjourney)
+		//relayMjRouter.POST("/notify", controller.RelayMidjourney)
+		relayMjRouter.GET("/task/:id/fetch", controller.RelayMidjourney)
+		relayMjRouter.GET("/task/:id/image-seed", controller.RelayMidjourney)
+		relayMjRouter.POST("/task/list-by-condition", controller.RelayMidjourney)
+		relayMjRouter.POST("/insight-face/swap", controller.RelayMidjourney)
+		relayMjRouter.POST("/submit/upload-discord-images", controller.RelayMidjourney)
 	}
 }

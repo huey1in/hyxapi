@@ -1,6 +1,7 @@
 package model
 
 import (
+	"errors"
 	"fmt"
 	"sync"
 	"time"
@@ -16,9 +17,20 @@ type QuotaData struct {
 	Username  string `json:"username" gorm:"index:idx_qdt_model_user_name,priority:2;size:64;default:''"`
 	ModelName string `json:"model_name" gorm:"index:idx_qdt_model_user_name,priority:1;size:64;default:''"`
 	CreatedAt int64  `json:"created_at" gorm:"bigint;index:idx_qdt_created_at,priority:2"`
+	UseGroup  string `json:"use_group" gorm:"index;size:64;default:''"`
+	TokenID   int    `json:"token_id" gorm:"index;default:0"`
+	ChannelID int    `json:"channel_id" gorm:"index;default:0"`
+	NodeName  string `json:"node_name" gorm:"index;size:64;default:''"`
 	TokenUsed int    `json:"token_used" gorm:"default:0"`
 	Count     int    `json:"count" gorm:"default:0"`
 	Quota     int    `json:"quota" gorm:"default:0"`
+}
+
+type QuotaDataLogParams struct {
+	UserID, TokenID, ChannelID              int
+	Username, ModelName, UseGroup, NodeName string
+	Quota, TokenUsed                        int
+	CreatedAt                               int64
 }
 
 func UpdateQuotaData() {
@@ -33,38 +45,34 @@ func UpdateQuotaData() {
 
 var CacheQuotaData = make(map[string]*QuotaData)
 var CacheQuotaDataLock = sync.Mutex{}
+var quotaDataFlushLock sync.Mutex
 
-func logQuotaDataCache(userId int, username string, modelName string, quota int, createdAt int64, tokenUsed int) {
-	key := fmt.Sprintf("%d-%s-%s-%d", userId, username, modelName, createdAt)
-	quotaData, ok := CacheQuotaData[key]
+func logQuotaDataCache(quotaData *QuotaData) {
+	key := fmt.Sprintf("%d:%q:%q:%d:%q:%d:%d:%q", quotaData.UserID, quotaData.Username, quotaData.ModelName,
+		quotaData.CreatedAt, quotaData.UseGroup, quotaData.TokenID, quotaData.ChannelID, quotaData.NodeName)
+	cached, ok := CacheQuotaData[key]
 	if ok {
-		quotaData.Count += 1
-		quotaData.Quota += quota
-		quotaData.TokenUsed += tokenUsed
-	} else {
-		quotaData = &QuotaData{
-			UserID:    userId,
-			Username:  username,
-			ModelName: modelName,
-			CreatedAt: createdAt,
-			Count:     1,
-			Quota:     quota,
-			TokenUsed: tokenUsed,
-		}
+		cached.Count += quotaData.Count
+		cached.Quota += quotaData.Quota
+		cached.TokenUsed += quotaData.TokenUsed
+		return
 	}
 	CacheQuotaData[key] = quotaData
 }
 
-func LogQuotaData(userId int, username string, modelName string, quota int, createdAt int64, tokenUsed int) {
-	// 只精确到小时
-	createdAt = createdAt - (createdAt % 3600)
-
+func LogQuotaData(params QuotaDataLogParams) {
+	row := &QuotaData{UserID: params.UserID, Username: params.Username, ModelName: params.ModelName,
+		CreatedAt: params.CreatedAt - params.CreatedAt%3600, Count: 1, Quota: params.Quota, TokenUsed: params.TokenUsed,
+		UseGroup: params.UseGroup, TokenID: params.TokenID, ChannelID: params.ChannelID, NodeName: params.NodeName}
 	CacheQuotaDataLock.Lock()
 	defer CacheQuotaDataLock.Unlock()
-	logQuotaDataCache(userId, username, modelName, quota, createdAt, tokenUsed)
+	logQuotaDataCache(row)
 }
 
 func SaveQuotaDataCache() {
+	// Serialize flushers while allowing request collectors to use the fresh cache.
+	quotaDataFlushLock.Lock()
+	defer quotaDataFlushLock.Unlock()
 	// 1) Snapshot the current cache under the lock and immediately install
 	//    a fresh map so concurrent LogQuotaData calls aren't blocked while
 	//    we flush to the database.
@@ -78,43 +86,51 @@ func SaveQuotaDataCache() {
 	CacheQuotaDataLock.Unlock()
 
 	// 2) Flush the snapshot — DB work happens with no lock held.
-	size := len(snapshot)
+	size := 0
 	for _, quotaData := range snapshot {
-		quotaDataDB := &QuotaData{}
-		DB.Table("quota_data").Where("user_id = ? and username = ? and model_name = ? and created_at = ?",
-			quotaData.UserID, quotaData.Username, quotaData.ModelName, quotaData.CreatedAt).First(quotaDataDB)
-		if quotaDataDB.Id > 0 {
-			increaseQuotaData(quotaData.UserID, quotaData.Username, quotaData.ModelName, quotaData.Count, quotaData.Quota, quotaData.CreatedAt, quotaData.TokenUsed)
-		} else {
-			DB.Table("quota_data").Create(quotaData)
+		if err := saveQuotaDataRow(quotaData); err != nil {
+			common.SysError(fmt.Sprintf("save dashboard data: %s", err))
+			CacheQuotaDataLock.Lock()
+			logQuotaDataCache(quotaData)
+			CacheQuotaDataLock.Unlock()
+			continue
 		}
+		size++
 	}
 	common.SysLog(fmt.Sprintf("保存数据看板数据成功，共保存%d条数据", size))
 }
 
-func increaseQuotaData(userId int, username string, modelName string, count int, quota int, createdAt int64, tokenUsed int) {
-	err := DB.Table("quota_data").Where("user_id = ? and username = ? and model_name = ? and created_at = ?",
-		userId, username, modelName, createdAt).Updates(map[string]interface{}{
-		"count":      gorm.Expr("count + ?", count),
-		"quota":      gorm.Expr("quota + ?", quota),
-		"token_used": gorm.Expr("token_used + ?", tokenUsed),
-	}).Error
-	if err != nil {
-		common.SysLog(fmt.Sprintf("increaseQuotaData error: %s", err))
-	}
+func saveQuotaDataRow(row *QuotaData) error {
+	return DB.Transaction(func(tx *gorm.DB) error {
+		var existing QuotaData
+		err := tx.Where("user_id = ? AND username = ? AND model_name = ? AND created_at = ? AND use_group = ? AND token_id = ? AND channel_id = ? AND node_name = ?",
+			row.UserID, row.Username, row.ModelName, row.CreatedAt, row.UseGroup, row.TokenID, row.ChannelID, row.NodeName).First(&existing).Error
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			copy := *row
+			copy.Id = 0
+			return tx.Create(&copy).Error
+		}
+		if err != nil {
+			return err
+		}
+		return tx.Model(&QuotaData{}).Where("id = ?", existing.Id).Updates(map[string]any{
+			"count": gorm.Expr("count + ?", row.Count), "quota": gorm.Expr("quota + ?", row.Quota),
+			"token_used": gorm.Expr("token_used + ?", row.TokenUsed),
+		}).Error
+	})
 }
 
 func GetQuotaDataByUsername(username string, startTime int64, endTime int64) (quotaData []*QuotaData, err error) {
 	var quotaDatas []*QuotaData
 	// 从quota_data表中查询数据
-	err = DB.Table("quota_data").Where("username = ? and created_at >= ? and created_at <= ?", username, startTime, endTime).Find(&quotaDatas).Error
+	err = DB.Table("quota_data").Select("user_id, username, model_name, created_at, sum(count) as count, sum(quota) as quota, sum(token_used) as token_used").Where("username = ? and created_at >= ? and created_at <= ?", username, startTime, endTime).Group("user_id, username, model_name, created_at").Find(&quotaDatas).Error
 	return quotaDatas, err
 }
 
 func GetQuotaDataByUserId(userId int, startTime int64, endTime int64) (quotaData []*QuotaData, err error) {
 	var quotaDatas []*QuotaData
 	// 从quota_data表中查询数据
-	err = DB.Table("quota_data").Where("user_id = ? and created_at >= ? and created_at <= ?", userId, startTime, endTime).Find(&quotaDatas).Error
+	err = DB.Table("quota_data").Select("user_id, username, model_name, created_at, sum(count) as count, sum(quota) as quota, sum(token_used) as token_used").Where("user_id = ? and created_at >= ? and created_at <= ?", userId, startTime, endTime).Group("user_id, username, model_name, created_at").Find(&quotaDatas).Error
 	return quotaDatas, err
 }
 

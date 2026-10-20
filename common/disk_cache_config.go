@@ -143,6 +143,14 @@ func IncrementMemoryCacheHits() {
 	atomic.AddInt64(&diskCacheStats.MemoryCacheHits, 1)
 }
 
+// ResetDiskCacheStats clears cumulative hits while preserving live capacity.
+// Zeroing usage would let new requests exceed the configured cache limit and
+// cause existing owners to subtract their allocations a second time on Close.
+func ResetDiskCacheStats() {
+	atomic.StoreInt64(&diskCacheStats.DiskCacheHits, 0)
+	atomic.StoreInt64(&diskCacheStats.MemoryCacheHits, 0)
+}
+
 // IsDiskCacheAvailable 检查是否可以创建新的磁盘缓存
 func IsDiskCacheAvailable(requestSize int64) bool {
 	if !IsDiskCacheEnabled() {

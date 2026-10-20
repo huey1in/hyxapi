@@ -13,6 +13,7 @@ import { X } from 'lucide-react';
 import { cn } from '../tokens';
 import { resolveWidth } from './Input';
 
+/** @param {{ value?: string[], onChange?: (value: string[]) => void, placeholder?: string, disabled?: boolean, width?: import('react').CSSProperties['width'] | 'full' }} props */
 const TagInput = ({ value = [], onChange, placeholder, disabled, width }) => {
   const [draft, setDraft] = useState('');
 

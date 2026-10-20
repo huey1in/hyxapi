@@ -157,8 +157,8 @@ func transformLegacyFAQ(value string) (string, error) {
 		}
 		items = append(items, map[string]any{"question": question, "answer": answer})
 	}
-	if len(items) > 50 {
-		items = items[:50]
+	if len(items) > 100 {
+		items = items[:100]
 	}
 	encoded, err := common.Marshal(items)
 	if err != nil {

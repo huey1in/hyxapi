@@ -6,6 +6,7 @@ import (
 	"embed"
 	"fmt"
 	"log"
+	"net"
 	"net/http"
 	"os"
 	"strconv"
@@ -13,21 +14,24 @@ import (
 	"time"
 
 	"github.com/QuantumNous/new-api/common"
+	"github.com/QuantumNous/new-api/constant"
 	"github.com/QuantumNous/new-api/controller"
 	"github.com/QuantumNous/new-api/i18n"
 	"github.com/QuantumNous/new-api/logger"
 	"github.com/QuantumNous/new-api/middleware"
 	"github.com/QuantumNous/new-api/model"
 	"github.com/QuantumNous/new-api/oauth"
+	"github.com/QuantumNous/new-api/pkg/jsplugin"
+	perfmetrics "github.com/QuantumNous/new-api/pkg/perf_metrics"
 	"github.com/QuantumNous/new-api/pkg/wsmanager"
+	"github.com/QuantumNous/new-api/relay"
 	"github.com/QuantumNous/new-api/router"
 	"github.com/QuantumNous/new-api/service"
 	"github.com/QuantumNous/new-api/service/authz"
 	_ "github.com/QuantumNous/new-api/setting/performance_setting"
+	"github.com/QuantumNous/new-api/setting/ratio_setting"
 
 	"github.com/bytedance/gopkg/util/gopool"
-	"github.com/gin-contrib/sessions"
-	"github.com/gin-contrib/sessions/cookie"
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
 
@@ -41,6 +45,9 @@ var buildFS embed.FS
 var indexPage []byte
 
 func main() {
+	if len(os.Args) > 1 && os.Args[1] == "plugin" {
+		os.Exit(jsplugin.RunCLI(os.Args[2:], os.Stdout, os.Stderr))
+	}
 	startTime := time.Now()
 
 	err := InitResources()
@@ -93,6 +100,12 @@ func main() {
 
 	// 热更新配置
 	go model.SyncOptions(common.SyncFrequency)
+	go controller.SyncTaskPlugins()
+	service.GetTaskAdaptorFunc = func(platform constant.TaskPlatform) service.TaskPollingAdaptor { return relay.GetTaskAdaptor(platform) }
+	controller.RegisterScheduledSystemTasks()
+	service.StartSystemTaskRunner()
+	service.StartSystemInstanceReporter()
+	perfmetrics.Init()
 
 	// 周期性重载授权策略，保证多节点部署下权限变更能传播到每个实例
 	go authz.StartPolicySync(common.SyncFrequency)
@@ -108,16 +121,11 @@ func main() {
 		go controller.AutomaticallyUpdateChannels(frequency)
 	}
 
-	go controller.AutomaticallyTestChannels()
-
 	// Codex credential auto-refresh check every 10 minutes, refresh when expires within 1 day
 	service.StartCodexCredentialAutoRefreshTask()
 
 	// Subscription quota reset task (daily/weekly/monthly/custom)
 	service.StartSubscriptionQuotaResetTask()
-
-	// Channel upstream model update check task
-	controller.StartChannelUpstreamModelUpdateTask()
 
 	// Start model health aggregation task (passive, log-based)
 	service.StartModelHealthTask()
@@ -172,16 +180,6 @@ func main() {
 	}
 
 	middleware.SetUpLogger(server)
-	// Initialize session store
-	store := cookie.NewStore([]byte(common.SessionSecret))
-	store.Options(sessions.Options{
-		Path:     "/",
-		MaxAge:   2592000, // 30 days
-		HttpOnly: true,
-		Secure:   common.GetEnvOrDefaultBool("SESSION_COOKIE_SECURE", true),
-		SameSite: http.SameSiteLaxMode,
-	})
-	server.Use(sessions.Sessions("session", store))
 
 	InjectUmamiAnalytics()
 	InjectGoogleAnalytics()
@@ -196,7 +194,7 @@ func main() {
 	// Log startup success message
 	common.LogStartupSuccess(startTime, port)
 
-	err = server.Run(":" + port)
+	err = server.Run(net.JoinHostPort(os.Getenv("BIND_ADDRESS"), port))
 	if err != nil {
 		common.FatalLog("failed to start HTTP server: " + err.Error())
 	}
@@ -259,10 +257,9 @@ func InitResources() error {
 	logger.SetupLogger()
 
 	// Initialize model settings
+	ratio_setting.InitRatioSettings()
 
 	service.InitHttpClient()
-
-	service.InitTokenEncoders()
 
 	// Initialize SQL Database
 	err = model.InitDB()
@@ -284,6 +281,12 @@ func InitResources() error {
 		}
 	}
 	model.InitOptionMap()
+	controller.SyncTaskPluginsOnce()
+	if common.PasswordLoginEncryptionEnabled {
+		if err := model.InitPasswordEncryption(); err != nil {
+			return err
+		}
+	}
 
 	// 清理旧的磁盘缓存文件
 	common.CleanupOldCacheFiles()
@@ -302,6 +305,8 @@ func InitResources() error {
 	if err != nil {
 		return err
 	}
+
+	service.StartAuthArtifactCleanup()
 
 	// 启动系统监控
 	common.StartSystemMonitor()

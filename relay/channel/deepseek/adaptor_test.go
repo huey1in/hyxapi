@@ -5,6 +5,7 @@ import (
 
 	relaycommon "github.com/QuantumNous/new-api/relay/common"
 	"github.com/QuantumNous/new-api/relay/constant"
+	"github.com/QuantumNous/new-api/relay/helper"
 	"github.com/QuantumNous/new-api/relaykit/dto"
 	"github.com/QuantumNous/new-api/types"
 	"github.com/stretchr/testify/require"
@@ -30,7 +31,8 @@ func TestGetRequestURL(t *testing.T) {
 
 func TestDeepSeekClaudeModifierPreservesOutputConfig(t *testing.T) {
 	request := &dto.ClaudeRequest{Model: "deepseek-flash-max@thinking:off", OutputConfig: []byte(`{"effort":"max","format":{"type":"json"}}`)}
-	info := &relaycommon.RelayInfo{ChannelMeta: &relaycommon.ChannelMeta{UpstreamModelName: request.Model}}
+	info := &relaycommon.RelayInfo{OriginModelName: request.Model, Request: request, ChannelMeta: &relaycommon.ChannelMeta{UpstreamModelName: request.Model}}
+	require.NoError(t, helper.ApplyReasoningModelSuffix(nil, info, request))
 	require.NoError(t, applyDeepSeekV4ClaudeThinkingSuffix(info, request))
 	require.Equal(t, "deepseek-flash", request.Model)
 	require.Equal(t, "disabled", request.Thinking.Type)

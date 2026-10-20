@@ -10,6 +10,7 @@ import (
 
 	"github.com/QuantumNous/new-api/common"
 	"github.com/QuantumNous/new-api/constant"
+	"github.com/QuantumNous/new-api/pkg/billingexpr"
 	relayconstant "github.com/QuantumNous/new-api/relay/constant"
 	"github.com/QuantumNous/new-api/relaykit/dto"
 	"github.com/QuantumNous/new-api/relaykit/relayconvert/convmeta"
@@ -77,16 +78,18 @@ type TokenCountMeta struct {
 }
 
 type RelayInfo struct {
-	TokenId           int
-	TokenKey          string
-	TokenGroup        string
-	UserId            int
-	UsingGroup        string // 使用的分组，当auto跨分组重试时，会变动
-	UserGroup         string // 用户所在分组
-	TokenUnlimited    bool
-	StartTime         time.Time
-	FirstResponseTime time.Time
-	isFirstResponse   bool
+	PerformanceOutputTokens      int64
+	PerformanceBusinessRejection bool
+	TokenId                      int
+	TokenKey                     string
+	TokenGroup                   string
+	UserId                       int
+	UsingGroup                   string // 使用的分组，当auto跨分组重试时，会变动
+	UserGroup                    string // 用户所在分组
+	TokenUnlimited               bool
+	StartTime                    time.Time
+	FirstResponseTime            time.Time
+	isFirstResponse              bool
 	//SendLastReasoningResponse bool
 	IsStream               bool
 	IsGeminiBatchEmbedding bool
@@ -95,6 +98,7 @@ type RelayInfo struct {
 	RelayMode              int
 	OriginModelName        string
 	PricingModelName       string
+	ResponseModel          *ResponseModel
 	RequestURLPath         string
 	RequestHeaders         map[string]string
 	ShouldIncludeUsage     bool
@@ -108,6 +112,7 @@ type RelayInfo struct {
 	AudioUsage             bool
 	RealtimeConsumedQuota  int
 	ReasoningEffort        string
+	ReasoningConversion    *dto.ReasoningConversionState
 	UserSetting            dto.UserSetting
 	UserEmail              string
 	UserQuota              int
@@ -154,12 +159,18 @@ type RelayInfo struct {
 	// QuotaClamp is set (non-nil) when a quota conversion saturated at the
 	// int32 bound (or NaN fallback) while computing this request's charge.
 	// It is surfaced onto the consume/task log's admin_info for auditing.
-	QuotaClamp *common.QuotaClamp
+	QuotaClamp            *common.QuotaClamp
+	TieredBillingSnapshot *billingexpr.BillingSnapshot
+	BillingRequestInput   *billingexpr.RequestInput
+	BillingImageCount     *int
+	ImageRequestCount     int
+	ImageQuotaBeforeGroup float64
 
-	WebSearchBillingKey string
-	WebFetchBillingKey  string
-	VendorToolUsage     func([]byte) map[string]int `json:"-"`
-	Request             dto.Request
+	WebSearchBillingKey    string
+	WebFetchBillingKey     string
+	VendorToolUsage        func([]byte) map[string]int `json:"-"`
+	requestInferredToolKey string
+	Request                dto.Request
 
 	// RequestConversionChain records request format conversions in order, e.g.
 	// ["openai", "openai_responses"] or ["openai", "claude"].
@@ -171,7 +182,13 @@ type RelayInfo struct {
 	StreamStatus *StreamStatus
 
 	// convOptions caches the converter settings snapshot (see ConvOptions).
-	convOptions *convmeta.Options
+	convOptions                    *convmeta.Options
+	responsesToolState             *convmeta.ResponsesToolState
+	ChatToGeminiStreamState        any `json:"-"`
+	ClaudeToChatStreamState        any `json:"-"`
+	conversionDiagnostics          []types.ConversionDiagnostic
+	conversionDiagnosticKeys       map[conversionDiagnosticKey]struct{}
+	conversionDiagnosticsTruncated bool
 
 	ThinkingContentInfo
 	TokenCountMeta
@@ -180,6 +197,39 @@ type RelayInfo struct {
 	*ResponsesUsageInfo
 	*ChannelMeta
 	*TaskRelayInfo
+}
+
+func (info *RelayInfo) GetBillingModelName() string {
+	if info.PricingModelName != "" {
+		return info.PricingModelName
+	}
+	return info.OriginModelName
+}
+
+func (info *RelayInfo) UpdateImageCount(count int64) {
+	if info == nil || count <= 0 || count > int64(dto.MaxImageN) {
+		return
+	}
+	if info.PriceData.UsePrice {
+		info.PriceData.AddOtherRatio("n", float64(count))
+	}
+	if info.TieredBillingSnapshot != nil && info.TieredBillingSnapshot.EstimatedImageCount != nil {
+		n := int(count)
+		info.BillingImageCount = &n
+	}
+}
+
+func (info *RelayInfo) RequestedImageCount() int {
+	if info.ImageRequestCount > 0 {
+		return info.ImageRequestCount
+	}
+	if info.TieredBillingSnapshot != nil && info.TieredBillingSnapshot.EstimatedImageCount != nil {
+		return *info.TieredBillingSnapshot.EstimatedImageCount
+	}
+	if count, ok := info.PriceData.OtherRatios()["n"]; ok && count >= 1 && count <= dto.MaxImageN {
+		return int(count)
+	}
+	return 1
 }
 
 func (info *RelayInfo) InitChannelMeta(c *gin.Context) {
@@ -231,9 +281,19 @@ func (info *RelayInfo) InitChannelMeta(c *gin.Context) {
 	// Channel identity feeds the converter options snapshot (e.g.
 	// OpenRouterDialect); drop the cache so a cross-channel retry rebuilds it.
 	info.convOptions = nil
+	info.ReasoningConversion = nil
+	info.responsesToolState = nil
+	info.ChatToGeminiStreamState = nil
+	info.ClaudeToChatStreamState = nil
+	info.ResponseModel = nil
 	info.WebSearchBillingKey = ""
 	info.WebFetchBillingKey = ""
 	info.VendorToolUsage = nil
+	// Forced-search evidence belongs to this attempt, not a retry on a new channel.
+	if info.requestInferredToolKey != "" && info.ResponsesUsageInfo != nil {
+		delete(info.ResponsesUsageInfo.BuiltInTools, info.requestInferredToolKey)
+	}
+	info.requestInferredToolKey = ""
 
 	// reset some fields based on channel meta
 	// 重置某些字段，例如模型名称等
@@ -338,6 +398,8 @@ var streamSupportedChannels = map[int]bool{
 	constant.ChannelTypeMiniMax:        true,
 	constant.ChannelTypeSiliconFlow:    true,
 	constant.ChannelTypeAdvancedCustom: true,
+	constant.ChannelTypeVLLM:           true,
+	constant.ChannelTypeSGLang:         true,
 	constant.ChannelTypeSub2API:        true,
 	constant.ChannelTypeNewAPI:         true,
 	constant.ChannelTypeTencent:        true,
@@ -747,6 +809,26 @@ func (info *RelayInfo) SetReasoningEffort(effort string) {
 	info.ReasoningEffort = effort
 }
 
+func (info *RelayInfo) ReasoningState() *dto.ReasoningConversionState {
+	if info == nil {
+		return nil
+	}
+	return info.ReasoningConversion
+}
+
+func (info *RelayInfo) ResponsesToolState() *convmeta.ResponsesToolState {
+	if info == nil {
+		return nil
+	}
+	return info.responsesToolState
+}
+
+func (info *RelayInfo) SetResponsesToolState(state *convmeta.ResponsesToolState) {
+	if info != nil {
+		info.responsesToolState = state
+	}
+}
+
 func (info *RelayInfo) EnsureClaudeConvertInfo() *convmeta.ClaudeConvertInfo {
 	if info == nil {
 		return &convmeta.ClaudeConvertInfo{
@@ -802,8 +884,12 @@ func (info *RelayInfo) ConvOptions() *convmeta.Options {
 		},
 		OpenRouterDialect:      info != nil && info.GetChannelType() == constant.ChannelTypeOpenRouter,
 		PreserveThinkingSuffix: model_setting.ShouldPreserveThinkingSuffix,
+		PreserveEffortTail:     model_setting.ShouldPreserveEffortTail,
 	}
 	if info != nil {
+		if info.ChannelMeta != nil {
+			options.ToolLossPolicy = types.ConversionLossPolicy(info.ChannelOtherSettings.ToolLossPolicy)
+		}
 		info.convOptions = options
 	}
 	return options
@@ -828,6 +914,10 @@ type TaskRelayInfo struct {
 	PublicTaskID string
 
 	ConsumeQuota bool
+
+	// OriginTasks are plugin-declared public-task dependencies resolved by the
+	// host. Driver hooks receive these as ctx.originTasks; presenters do not.
+	OriginTasks []OriginTaskRef
 
 	// LockedChannel holds the full channel object when the request is bound to
 	// a specific channel (e.g., remix on origin task's channel). Stored as any
@@ -914,15 +1004,17 @@ func (t *TaskSubmitReq) UnmarshalMetadata(v any) error {
 }
 
 type TaskInfo struct {
-	Code             int    `json:"code"`
-	TaskID           string `json:"task_id"`
-	Status           string `json:"status"`
-	Reason           string `json:"reason,omitempty"`
-	Url              string `json:"url,omitempty"`
-	RemoteUrl        string `json:"remote_url,omitempty"`
-	Progress         string `json:"progress,omitempty"`
-	CompletionTokens int    `json:"completion_tokens,omitempty"` // 用于按倍率计费
-	TotalTokens      int    `json:"total_tokens,omitempty"`      // 用于按倍率计费
+	Code             int             `json:"code"`
+	TaskID           string          `json:"task_id"`
+	Status           string          `json:"status"`
+	Reason           string          `json:"reason,omitempty"`
+	Url              string          `json:"url,omitempty"`
+	RemoteUrl        string          `json:"remote_url,omitempty"`
+	Progress         string          `json:"progress,omitempty"`
+	CompletionTokens int             `json:"completion_tokens,omitempty"` // 用于按倍率计费
+	TotalTokens      int             `json:"total_tokens,omitempty"`      // 用于按倍率计费
+	UsageFacts       map[string]any  `json:"usage_facts,omitempty"`
+	PluginState      json.RawMessage `json:"plugin_state,omitempty"`
 }
 
 // RemoveDisabledFields 从请求 JSON 数据中移除渠道设置中禁用的字段
@@ -1022,4 +1114,12 @@ func hasRemovableDisabledField(jsonData []byte, channelOtherSettings dto.Channel
 		(channelOtherSettings.DisableStore && values[3].Exists()) ||
 		(!channelOtherSettings.AllowSafetyIdentifier && values[4].Exists()) ||
 		(!channelOtherSettings.AllowIncludeObfuscation && values[5].Exists())
+}
+
+type OriginTaskRef struct {
+	TaskID         string
+	UpstreamTaskID string
+	Action         string
+	Status         string
+	Data           []byte
 }

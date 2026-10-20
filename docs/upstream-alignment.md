@@ -2,6 +2,8 @@
 
 本轮按 New API `v1.0.0-rc.45`（`6cf0d90b`）补齐功能，保留 Hyxware 页面、同域登录和直接价格配置。
 
+固定版本的本地对齐和最终回归已完成；保留差异及实环境验收边界见 [最终语义复核与验收](newapi-semantic-audit.md)。
+
 ## 前端开发
 
 在 `web/` 执行：
@@ -14,7 +16,7 @@ bun run build
 bun run build-storybook
 ```
 
-技术栈为 React 19、TypeScript、Rsbuild 和 Tailwind 4。TypeScript 已覆盖入口、API、认证、状态和基础按钮；其余页面继续支持 JavaScript，迁移约定见 [web/README.md](../web/README.md)。开发代理仍连接本机 `3000` 端口。先构建前端，再从仓库根目录执行 `go run .`；无需 Docker。
+技术栈为 React 19、TypeScript、Rsbuild 和 Tailwind 4。入口、API、认证、状态及业务路由页面已迁移至 TypeScript；部分共享组件和工具仍支持 JavaScript，约定见 [web/README.md](../web/README.md)。开发代理仍连接本机 `3000` 端口。先构建前端，再从仓库根目录执行 `go run .`；无需 Docker。
 
 ## 渠道与模型
 
@@ -39,8 +41,16 @@ Gemini 支持完整 JSON Schema，并按累计快照合并流式用量，保留�
 
 Claude 转发保留 `thinking.block_binding` 和多值 beta 请求头；明确的零输出、缓存用量不会被估算值覆盖。跨协议转换保留图片 detail、工具调用与文本、reasoning summary，并统一 HTTP 与 WebSocket 的 Responses 用量及工具计费。
 
+## 下载与连接配置
+
+系统设置的安全页提供 `WorkerUrl`、`WorkerValidKey` 和 `WorkerAllowHttpImageRequestEnabled`。填写 Worker 地址后下载通过该端点执行；清空地址恢复直接下载。密钥保存后不会通过配置读取接口返回，HTTP 目标需要显式开启，下载继续遵循 SSRF 设置。携带密钥的 Worker 请求不跟随重定向。
+
+环境变量 `RELAY_RESPONSE_HEADER_TIMEOUT` 默认 `1800` 秒，设为 `0` 关闭。它限制等待上游响应头的时间，收到响应头后不会因此截断仍在读取的流；总请求超时仍由既有配置控制。变更代理地址或删除渠道会关闭对应的闲置连接池。
+
+SQLite 启动迁移会使套餐 ID 保持递增，并将序列提高至历史订阅、订单和兑换码引用以上，防止删除后创建的套餐继承旧历史。现有数据、未知列、索引和触发器在事务内保留；带自定义套餐外键的数据库会返回明确错误，需要按其约束另行迁移。
+
 ## 验证
 
-根目录与 `relaykit/` 分别执行 `go test ./...`。Redis 集成测试需要专用测试实例：设置 `REDIS_TEST_ADDR=127.0.0.1:16389` 后，运行分组限流和日志导出锁测试。测试使用数据库 13、14；不要指向业务实例。完整令牌桶限流依赖支持 Lua `TIME` 后写入的现代 Redis。
+根目录、`relaykit/` 与 `tokenkit/` 分别执行 `go test ./...`。Redis 集成测试需要专用测试实例：设置 `REDIS_TEST_ADDR=127.0.0.1:16389` 后，运行分组限流和日志导出锁测试。测试使用数据库 13、14；不要指向业务实例。完整令牌桶限流依赖支持 Lua `TIME` 后写入的现代 Redis。
 
 真实供应商连通性需要对应渠道凭据；本轮协议、认证和扣费验证使用本地模拟上游，未消耗供应商额度。

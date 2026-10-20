@@ -169,3 +169,30 @@ func TestModelPriceHelperUsesGeminiNoThinkingPriceBeforeRelay(t *testing.T) {
 	require.Equal(t, 9.0, priceData.InputPrice)
 	require.Equal(t, "gemini-priced", info.OriginModelName)
 }
+
+func TestPricingModelModifiersUseSpecificPriceBeforeBase(t *testing.T) {
+	originalDB := model.DB
+	db, err := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{})
+	require.NoError(t, err)
+	require.NoError(t, db.AutoMigrate(&model.ModelPricing{}))
+	model.DB = db
+	model.InvalidateModelPricingCache()
+	t.Cleanup(func() {
+		model.DB = originalDB
+		model.InvalidateModelPricingCache()
+	})
+	for _, name := range []string{"gpt-5.4", "gpt-5.4@effort:high@thinking:on", "gpt-5.4@effort:low"} {
+		require.NoError(t, model.SaveModelPricing(&model.ModelPricing{
+			ModelName: name, InputPrice: 1, Enabled: true,
+		}))
+	}
+	for _, test := range []struct{ requested, priced string }{
+		{"gpt-5.4@temperature:0.2", "gpt-5.4"},
+		{"gpt-5.4@effort:high@temperature:0.2", "gpt-5.4@effort:high@thinking:on"},
+		{"gpt-5.4@effort:low", "gpt-5.4@effort:low"},
+	} {
+		info := &relaycommon.RelayInfo{OriginModelName: test.requested}
+		require.Equal(t, test.priced, ResolvePricingModelName(info))
+		require.Equal(t, test.requested, info.OriginModelName)
+	}
+}

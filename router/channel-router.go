@@ -2,6 +2,7 @@ package router
 
 import (
 	"net/http"
+	"path"
 
 	"github.com/QuantumNous/new-api/controller"
 	"github.com/QuantumNous/new-api/middleware"
@@ -14,6 +15,26 @@ type permissionRoute struct {
 	path       string
 	permission authz.Permission
 	handler    gin.HandlerFunc
+}
+
+// handlePermissionRoute registers a Casbin-guarded route and declares the same
+// permission as the access token scope that route requires.
+func handlePermissionRoute(group *gin.RouterGroup, method, relativePath string, permission authz.Permission, handlers ...gin.HandlerFunc) {
+	middleware.DeclareAccessTokenPermissionRoute(method, joinPaths(group.BasePath(), relativePath), permission)
+	group.Handle(method, relativePath, append([]gin.HandlerFunc{middleware.RequirePermission(permission)}, handlers...)...)
+}
+
+// joinPaths matches gin's route path joining, which keeps a trailing slash
+// from the relative path, so declared keys equal c.FullPath().
+func joinPaths(absolutePath, relativePath string) string {
+	if relativePath == "" {
+		return absolutePath
+	}
+	finalPath := path.Join(absolutePath, relativePath)
+	if relativePath[len(relativePath)-1] == '/' && finalPath[len(finalPath)-1] != '/' {
+		return finalPath + "/"
+	}
+	return finalPath
 }
 
 func registerChannelRoutes(apiRouter *gin.RouterGroup) {
@@ -29,16 +50,16 @@ func registerChannelRoutes(apiRouter *gin.RouterGroup) {
 	)
 
 	for _, route := range channelPermissionRoutes {
-		channelRoute.Handle(route.method, route.path,
-			middleware.RequirePermission(route.permission),
-			route.handler,
-		)
+		handlePermissionRoute(channelRoute, route.method, route.path, route.permission, route.handler)
 	}
 }
 
 // channelPermissionRoutes 表驱动地声明渠道接口与所需权限。新增渠道接口时，
 // 在 controller 补齐 handler 后向此表追加一行即可，无需改动中间件逻辑。
 var channelPermissionRoutes = []permissionRoute{
+	{method: http.MethodGet, path: "/priority/order", permission: authz.ChannelRead, handler: controller.GetChannelPriorityOrder},
+	{method: http.MethodPost, path: "/priority/reorder", permission: authz.ChannelWrite, handler: controller.ReorderChannelPriority},
+	{method: http.MethodGet, path: "/default_base_urls", permission: authz.ChannelRead, handler: controller.GetChannelDefaultBaseURLs},
 	{method: http.MethodPut, path: "/priority", permission: authz.ChannelWrite, handler: controller.UpdateChannelPriorities},
 	{method: http.MethodPut, path: "/priority/move", permission: authz.ChannelWrite, handler: controller.MoveChannelPriority},
 	{method: http.MethodGet, path: "/", permission: authz.ChannelRead, handler: controller.GetAllChannels},
@@ -63,6 +84,8 @@ var channelPermissionRoutes = []permissionRoute{
 	{method: http.MethodPost, path: "/batch", permission: authz.ChannelSensitiveWrite, handler: controller.DeleteChannelBatch},
 	{method: http.MethodPost, path: "/fix", permission: authz.ChannelOperate, handler: controller.FixChannelsAbilities},
 	{method: http.MethodGet, path: "/fetch_models/:id", permission: authz.ChannelOperate, handler: controller.FetchUpstreamModels},
+	{method: http.MethodGet, path: "/:id/vllm/status", permission: authz.ChannelRead, handler: controller.GetVLLMChannelStatus},
+	{method: http.MethodGet, path: "/:id/sglang/status", permission: authz.ChannelRead, handler: controller.GetSGLangChannelStatus},
 	{method: http.MethodPost, path: "/fetch_models", permission: authz.ChannelSensitiveWrite, handler: controller.FetchModels},
 	{method: http.MethodPost, path: "/:id/codex/refresh", permission: authz.ChannelSensitiveWrite, handler: controller.RefreshCodexChannelCredential},
 	{method: http.MethodGet, path: "/:id/codex/usage", permission: authz.ChannelRead, handler: controller.GetCodexChannelUsage},
@@ -75,7 +98,10 @@ var channelPermissionRoutes = []permissionRoute{
 	{method: http.MethodPost, path: "/ollama/pull/stream", permission: authz.ChannelSensitiveWrite, handler: controller.OllamaPullModelStream},
 	{method: http.MethodDelete, path: "/ollama/delete", permission: authz.ChannelSensitiveWrite, handler: controller.OllamaDeleteModel},
 	{method: http.MethodGet, path: "/ollama/version/:id", permission: authz.ChannelSensitiveWrite, handler: controller.OllamaVersion},
+	{method: http.MethodGet, path: "/:id/ollama/models", permission: authz.ChannelSensitiveWrite, handler: controller.GetOllamaChannelModels},
+	{method: http.MethodPost, path: "/:id/ollama/models", permission: authz.ChannelWrite, handler: controller.UpdateOllamaChannelModels},
 	{method: http.MethodPost, path: "/multi_key/manage", permission: authz.ChannelOperate, handler: controller.ManageMultiKeys},
+	{method: http.MethodGet, path: "/:id/upstream_updates", permission: authz.ChannelRead, handler: controller.GetChannelUpstreamModelUpdates},
 	{method: http.MethodPost, path: "/upstream_updates/apply", permission: authz.ChannelWrite, handler: controller.ApplyChannelUpstreamModelUpdates},
 	{method: http.MethodPost, path: "/upstream_updates/apply_all", permission: authz.ChannelWrite, handler: controller.ApplyAllChannelUpstreamModelUpdates},
 	{method: http.MethodPost, path: "/upstream_updates/detect", permission: authz.ChannelOperate, handler: controller.DetectChannelUpstreamModelUpdates},

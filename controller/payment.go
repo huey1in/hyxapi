@@ -25,6 +25,9 @@ type alipayCheckoutRequest struct {
 }
 
 func RequestAlipayCheckout(c *gin.Context) {
+	if !requirePaymentCompliance(c) {
+		return
+	}
 	if !operation_setting.AlipayEnabled {
 		common.ApiErrorMsg(c, "支付宝电脑网站支付未启用")
 		return
@@ -34,9 +37,12 @@ func RequestAlipayCheckout(c *gin.Context) {
 		common.ApiErrorMsg(c, fmt.Sprintf("充值数量不能低于 %d", operation_setting.MinTopUp))
 		return
 	}
+	if rejectInvalidCreditedQuota(c, c.GetInt("id"), decimal.NewFromInt(int64(req.Amount)).Mul(decimal.NewFromFloat(common.QuotaPerUnit))) {
+		return
+	}
 	money := decimal.NewFromInt(int64(req.Amount)).Mul(decimal.NewFromFloat(operation_setting.Price))
 	tradeNo := common.GetUUID()
-	topUp := &model.TopUp{UserId: c.GetInt("id"), Amount: int64(req.Amount), Money: money.InexactFloat64(), TradeNo: tradeNo, PaymentMethod: model.PaymentMethodAlipay, CreateTime: common.GetTimestamp(), Status: common.TopUpStatusPending}
+	topUp := &model.TopUp{UserId: c.GetInt("id"), Amount: int64(req.Amount), Money: money.InexactFloat64(), TradeNo: tradeNo, PaymentMethod: model.PaymentMethodAlipay, PaymentProvider: model.PaymentProviderAlipay, CreateTime: common.GetTimestamp(), Status: common.TopUpStatusPending}
 	if err := topUp.Insert(); err != nil {
 		common.ApiError(c, err)
 		return
@@ -129,6 +135,9 @@ func epayMethodMinTopUp(payType string) (int, bool) {
 
 // RequestEpayCheckout 创建易支付订单并返回站内支付入口链接。
 func RequestEpayCheckout(c *gin.Context) {
+	if !requirePaymentCompliance(c) {
+		return
+	}
 	if !operation_setting.EpayEnabled {
 		common.ApiErrorMsg(c, "易支付未启用")
 		return
@@ -152,6 +161,9 @@ func RequestEpayCheckout(c *gin.Context) {
 
 	userId := c.GetInt("id")
 
+	if rejectInvalidCreditedQuota(c, c.GetInt("id"), decimal.NewFromInt(int64(req.Amount)).Mul(decimal.NewFromFloat(common.QuotaPerUnit))) {
+		return
+	}
 	money := decimal.NewFromInt(int64(req.Amount)).Mul(decimal.NewFromFloat(operation_setting.Price))
 	outTradeNo := common.GetUUID()
 
@@ -160,9 +172,9 @@ func RequestEpayCheckout(c *gin.Context) {
 		Amount:        int64(req.Amount),
 		Money:         money.InexactFloat64(),
 		TradeNo:       outTradeNo,
-		PaymentMethod: model.PaymentMethodEpay,
-		CreateTime:    common.GetTimestamp(),
-		Status:        common.TopUpStatusPending,
+		PaymentMethod: model.PaymentMethodEpay, PaymentProvider: model.PaymentProviderEpay,
+		CreateTime: common.GetTimestamp(),
+		Status:     common.TopUpStatusPending,
 	}
 	if err := topUp.Insert(); err != nil {
 		common.ApiError(c, err)
@@ -223,9 +235,13 @@ func EpayRedirect(c *gin.Context) {
 
 // EpayNotify 接收易支付异步通知（公开路由），校验签名后完成订单充值。
 // 易支付要求成功时返回纯文本 "success"，失败返回 "fail"。
-func EpayNotify(c *gin.Context) {
+func LegacyEpayNotify(c *gin.Context) {
 	params := make(map[string]string)
-	for k, v := range c.Request.URL.Query() {
+	if err := c.Request.ParseForm(); err != nil {
+		c.String(http.StatusOK, "fail")
+		return
+	}
+	for k, v := range c.Request.Form {
 		if len(v) > 0 {
 			params[k] = v[0]
 		}
@@ -248,6 +264,12 @@ func EpayNotify(c *gin.Context) {
 		return
 	}
 
+	topUp := model.GetTopUpByTradeNo(tradeNo)
+	paid, err := decimal.NewFromString(params["money"])
+	if topUp == nil || topUp.PaymentProvider != model.PaymentProviderEpay || err != nil || !paid.Equal(decimal.NewFromFloat(topUp.Money).Round(2)) || params["pid"] != strings.TrimSpace(operation_setting.EpayId) {
+		c.String(http.StatusOK, "fail")
+		return
+	}
 	LockOrder(tradeNo)
 	defer UnlockOrder(tradeNo)
 
@@ -258,4 +280,17 @@ func EpayNotify(c *gin.Context) {
 	}
 
 	c.String(http.StatusOK, "success")
+}
+
+// RequestAlipayAmount quotes the legacy USD-unit purchase contract.
+func RequestAlipayAmount(c *gin.Context) {
+	var req alipayCheckoutRequest
+	if err := c.ShouldBindJSON(&req); err != nil || req.Amount < operation_setting.MinTopUp {
+		common.ApiErrorMsg(c, fmt.Sprintf("充值数量不能低于 %d", operation_setting.MinTopUp))
+		return
+	}
+	if rejectInvalidCreditedQuota(c, c.GetInt("id"), decimal.NewFromInt(int64(req.Amount)).Mul(decimal.NewFromFloat(common.QuotaPerUnit))) {
+		return
+	}
+	common.ApiSuccess(c, decimal.NewFromInt(int64(req.Amount)).Mul(decimal.NewFromFloat(operation_setting.Price)).StringFixed(2))
 }

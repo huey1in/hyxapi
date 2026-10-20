@@ -75,6 +75,9 @@ func exportLogs(c *gin.Context, all bool) {
 		return
 	}
 	filter := model.LogFilter{StartTimestamp: start, EndTimestamp: endOrNow(end), ModelName: c.Query("model_name"), TokenName: c.Query("token_name"), Group: c.Query("group"), RequestId: c.Query("request_id")}
+	if c.GetInt("role") >= common.RoleRootUser {
+		filter.UpstreamRequestId = c.Query("upstream_request_id")
+	}
 	filter.Type, _ = strconv.Atoi(c.Query("type"))
 	userID := c.GetInt("id")
 	if userID <= 0 {
@@ -102,6 +105,7 @@ func exportLogs(c *gin.Context, all bool) {
 	c.Header("X-Accel-Buffering", "no")
 	count := 0
 	err = model.StreamLogs(exportCtx, filter, queryUserID, func(entry *model.Log) error {
+		model.ProjectLogsForRole([]*model.Log{entry}, c.GetInt("role"))
 		data, err := common.Marshal(entry)
 		if err != nil {
 			return err

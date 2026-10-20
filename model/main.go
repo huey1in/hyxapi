@@ -3,6 +3,7 @@ package model
 import (
 	"fmt"
 	"log"
+	"net/url"
 	"os"
 	"strings"
 	"sync"
@@ -12,9 +13,11 @@ import (
 	"github.com/QuantumNous/new-api/constant"
 
 	"github.com/glebarez/sqlite"
+	"gorm.io/driver/clickhouse"
 	"gorm.io/driver/mysql"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 var commonGroupCol string
@@ -35,7 +38,7 @@ func initCol() {
 		case common.DatabaseTypePostgreSQL:
 			logGroupCol = `"group"`
 		default:
-			logGroupCol = commonGroupCol
+			logGroupCol = "`group`"
 		}
 	} else {
 		// LOG_SQL_DSN 为空时，日志数据库与主数据库相同
@@ -80,60 +83,64 @@ func CheckSetup() {
 	}
 }
 
-func chooseDB(envName string, isLog bool) (*gorm.DB, error) {
-	defer func() {
-		initCol()
-	}()
+func chooseDB(envName string, isLog bool) (*gorm.DB, common.DatabaseType, error) {
 	dsn := os.Getenv(envName)
-	if dsn != "" {
-		if strings.HasPrefix(dsn, "postgres://") || strings.HasPrefix(dsn, "postgresql://") {
-			// Use PostgreSQL
-			common.SysLog("using PostgreSQL as database")
-			if !isLog {
-				common.UsingPostgreSQL = true
-			} else {
-				common.LogSqlType = common.DatabaseTypePostgreSQL
-			}
-			return gorm.Open(postgres.New(postgres.Config{
-				DSN:                  dsn,
-				PreferSimpleProtocol: true, // disables implicit prepared statement usage
-			}), newGormConfig(true))
-		}
-		if strings.HasPrefix(dsn, "local") {
-			common.SysLog("SQL_DSN not set, using SQLite as database")
-			if !isLog {
-				common.UsingSQLite = true
-			} else {
-				common.LogSqlType = common.DatabaseTypeSQLite
-			}
-			return gorm.Open(sqlite.Open(common.SQLitePath), newGormConfig(true))
-		}
-		// Use MySQL
-		common.SysLog("using MySQL as database")
-		// check parseTime
-		if !strings.Contains(dsn, "parseTime") {
-			if strings.Contains(dsn, "?") {
-				dsn += "&parseTime=true"
-			} else {
-				dsn += "?parseTime=true"
-			}
-		}
+	if isClickHouseDSN(dsn) {
 		if !isLog {
-			common.UsingMySQL = true
-		} else {
-			common.LogSqlType = common.DatabaseTypeMySQL
+			return nil, "", fmt.Errorf("%s does not support ClickHouse; use SQLite, MySQL, or PostgreSQL for the primary database and LOG_SQL_DSN for ClickHouse logs", envName)
 		}
-		return gorm.Open(mysql.Open(dsn), newGormConfig(true))
+		common.SysLog(common.LogText("using ClickHouse as log database"))
+		db, err := gorm.Open(clickhouse.Open(normalizeClickHouseDSN(dsn)), newGormConfig(false))
+		return db, common.DatabaseTypeClickHouse, err
 	}
-	// Use SQLite
-	common.SysLog("SQL_DSN not set, using SQLite as database")
-	common.UsingSQLite = true
-	return gorm.Open(sqlite.Open(common.SQLitePath), newGormConfig(true))
+	open := func(dialector gorm.Dialector, databaseType common.DatabaseType) (*gorm.DB, common.DatabaseType, error) {
+		db, err := gorm.Open(dialector, newGormConfig(databaseType != common.DatabaseTypePostgreSQL))
+		return db, databaseType, err
+	}
+	if strings.HasPrefix(dsn, "postgres://") || strings.HasPrefix(dsn, "postgresql://") {
+		common.SysLog("using PostgreSQL as database")
+		return open(postgresMigrationDialector{postgres.Dialector{Config: &postgres.Config{DSN: dsn, PreferSimpleProtocol: true}}}, common.DatabaseTypePostgreSQL)
+	}
+	if dsn == "" || strings.HasPrefix(dsn, "local") {
+		common.SysLog("using SQLite as database")
+		return open(sqlite.Open(common.SQLiteDSN(common.SQLitePath)), common.DatabaseTypeSQLite)
+	}
+	common.SysLog("using MySQL as database")
+	if !strings.Contains(dsn, "parseTime") {
+		if strings.Contains(dsn, "?") {
+			dsn += "&parseTime=true"
+		} else {
+			dsn += "?parseTime=true"
+		}
+	}
+	return open(mysqlMigrationDialector{mysql.Dialector{Config: &mysql.Config{DSN: dsn}}}, common.DatabaseTypeMySQL)
+}
+
+func isClickHouseDSN(dsn string) bool {
+	return strings.HasPrefix(dsn, "clickhouse://") || strings.HasPrefix(dsn, "tcp://") || strings.HasPrefix(dsn, "http://") || strings.HasPrefix(dsn, "https://")
+}
+
+func normalizeClickHouseDSN(dsn string) string {
+	parsed, err := url.Parse(dsn)
+	if err != nil || parsed.Scheme != "https" {
+		return dsn
+	}
+	query := parsed.Query()
+	if _, ok := query["secure"]; !ok {
+		query.Set("secure", "true")
+		parsed.RawQuery = query.Encode()
+	}
+	return parsed.String()
 }
 
 func InitDB() (err error) {
-	db, err := chooseDB("SQL_DSN", false)
+	db, databaseType, err := chooseDB("SQL_DSN", false)
 	if err == nil {
+		common.SetMainDatabaseType(databaseType)
+		if os.Getenv("LOG_SQL_DSN") == "" {
+			common.SetLogDatabaseType(databaseType)
+		}
+		initCol()
 		if common.DebugEnabled {
 			db = db.Debug()
 		}
@@ -144,6 +151,9 @@ func InitDB() (err error) {
 				panic(err)
 			}
 		}
+		if err := ensureUserQuotaColumns(DB, databaseType); err != nil {
+			return err
+		}
 		sqlDB, err := DB.DB()
 		if err != nil {
 			return err
@@ -153,6 +163,9 @@ func InitDB() (err error) {
 		sqlDB.SetConnMaxLifetime(time.Second * time.Duration(common.GetEnvOrDefault("SQL_MAX_LIFETIME", 60)))
 
 		if !common.IsMasterNode {
+			if err := EnsureLegacyAccessTokenRetireAt(common.GetTimestamp()); err != nil {
+				common.SysError(err.Error())
+			}
 			return nil
 		}
 		if common.UsingMySQL {
@@ -170,18 +183,17 @@ func InitDB() (err error) {
 func InitLogDB() (err error) {
 	if os.Getenv("LOG_SQL_DSN") == "" {
 		LOG_DB = DB
-		// Inherit main DB type when LOG_SQL_DSN is not set
-		if common.UsingPostgreSQL {
-			common.LogSqlType = common.DatabaseTypePostgreSQL
-		} else if common.UsingMySQL {
-			common.LogSqlType = common.DatabaseTypeMySQL
-		} else {
-			common.LogSqlType = common.DatabaseTypeSQLite
+		common.SetLogDatabaseType(common.MainDatabaseType())
+		initCol()
+		if common.IsMasterNode {
+			return MigrateAuditLogs()
 		}
 		return
 	}
-	db, err := chooseDB("LOG_SQL_DSN", true)
+	db, databaseType, err := chooseDB("LOG_SQL_DSN", true)
 	if err == nil {
+		common.SetLogDatabaseType(databaseType)
+		initCol()
 		if common.DebugEnabled {
 			db = db.Debug()
 		}
@@ -213,16 +225,22 @@ func InitLogDB() (err error) {
 }
 
 func migrateDB() error {
+	if err := migrateTokenKeyUniqueness(DB); err != nil {
+		return err
+	}
+	if err := migratePrefillGroupUniqueness(DB); err != nil {
+		return err
+	}
+	if err := migrateOptionPrimaryKey(DB); err != nil {
+		return err
+	}
+
 	// Migrate price_amount column from float/double to decimal for existing tables
 	migrateSubscriptionPlanPriceAmount()
 	// Migrate model_limits column from varchar to text for existing tables
 	if err := migrateTokenModelLimitsToText(); err != nil {
 		return err
 	}
-	// Drop legacy user group columns (用户分组概念已删除)
-	dropLegacyUserGroupColumns()
-	// Drop legacy redemption display-name columns; codes do not need names/batch names.
-	dropLegacyRedemptionNameColumns()
 
 	err := DB.AutoMigrate(
 		&Channel{},
@@ -232,11 +250,18 @@ func migrateDB() error {
 		&Option{},
 		&Redemption{},
 		&SubscriptionRedemption{},
+		&SubscriptionOrder{},
 		&Ability{},
 		&Log{},
 		&TopUp{},
 		&QuotaData{},
 		&Task{},
+		&Midjourney{},
+		&TaskPlugin{},
+		&SystemTask{},
+		&SystemTaskLock{},
+		&SystemInstance{},
+		&PerfMetric{},
 		&Model{},
 		&ModelPricing{},
 		&Vendor{},
@@ -249,6 +274,9 @@ func migrateDB() error {
 		&UserOAuthBinding{},
 		&CasbinRule{},
 		&AuthzRole{},
+		&LoginEncryptionKey{},
+		&UserAccessToken{},
+		&ExternalIdentityClaim{},
 		&UserSession{},
 		&AuthFlow{},
 		&Checkin{},
@@ -257,12 +285,31 @@ func migrateDB() error {
 	if err != nil {
 		return err
 	}
+	// Before this option existed, subscriptions could overflow to the wallet.
+	// Only backfill NULL legacy rows; preserve every explicit administrator choice.
+	if err := DB.Model(&UserSubscription{}).Where("allow_wallet_overflow IS NULL").Update("allow_wallet_overflow", true).Error; err != nil {
+		return err
+	}
 	if err := InitializeUserAuthVersions(); err != nil {
+		return err
+	}
+	if err := EnsureLegacyAccessTokenRetireAt(common.GetTimestamp()); err != nil {
+		return err
+	}
+	if err := InitializeExternalIdentityClaims(); err != nil {
+		return err
+	}
+	if err := DB.Model(&TopUp{}).Where("payment_provider = '' OR payment_provider IS NULL").
+		Where("payment_method IN ?", []string{PaymentMethodEpay, PaymentMethodAlipay}).
+		Update("payment_provider", gorm.Expr("payment_method")).Error; err != nil {
 		return err
 	}
 	dropLegacyBrandingOptions()
 	if common.UsingSQLite {
 		if err := ensureSubscriptionPlanTableSQLite(); err != nil {
+			return err
+		}
+		if err := migrateSubscriptionPlanIDsSQLite(DB); err != nil {
 			return err
 		}
 	} else {
@@ -277,22 +324,8 @@ func migrateDB() error {
 }
 
 func dropLegacyBrandingOptions() {
-	if err := DB.Where("key IN ?", []string{"SystemName", "Logo", "general_setting.docs_link", "DefaultCollapseSidebar", "SelfUseModeEnabled"}).Delete(&Option{}).Error; err != nil {
+	if err := DB.Where(clause.IN{Column: clause.Column{Name: "key"}, Values: []interface{}{"SystemName", "Logo", "DefaultCollapseSidebar"}}).Delete(&Option{}).Error; err != nil {
 		common.SysError(fmt.Sprintf("failed to delete legacy branding options: %v", err))
-	}
-}
-
-func dropLegacyRedemptionNameColumns() {
-	for _, tableName := range []string{"redemptions", "subscription_redemptions"} {
-		if DB.Migrator().HasColumn(tableName, "name") {
-			sql := fmt.Sprintf("ALTER TABLE %s DROP COLUMN %s", quoteMigrationIdentifier(tableName), quoteMigrationIdentifier("name"))
-			if common.UsingPostgreSQL {
-				sql = fmt.Sprintf("ALTER TABLE %s DROP COLUMN IF EXISTS %s", quoteMigrationIdentifier(tableName), quoteMigrationIdentifier("name"))
-			}
-			if err := DB.Exec(sql).Error; err != nil {
-				common.SysError(fmt.Sprintf("failed to drop legacy %s.name column: %v", tableName, err))
-			}
-		}
 	}
 }
 
@@ -304,6 +337,12 @@ func quoteMigrationIdentifier(identifier string) string {
 }
 
 func migrateLOGDB() error {
+	if err := MigrateAuditLogs(); err != nil {
+		return err
+	}
+	if common.UsingLogDatabase(common.DatabaseTypeClickHouse) {
+		return migrateClickHouseLogDB()
+	}
 	var err error
 	if err = LOG_DB.AutoMigrate(&Log{}); err != nil {
 		return err
@@ -323,7 +362,7 @@ func ensureSubscriptionPlanTableSQLite() error {
 	tableName := "subscription_plans"
 	if !DB.Migrator().HasTable(tableName) {
 		createSQL := `CREATE TABLE ` + "`" + tableName + "`" + ` (
-` + "`id`" + ` integer,
+` + "`id`" + ` INTEGER PRIMARY KEY AUTOINCREMENT,
 ` + "`title`" + ` varchar(128) NOT NULL,
 ` + "`subtitle`" + ` varchar(255) DEFAULT '',
 ` + "`price_amount`" + ` decimal(10,6) NOT NULL DEFAULT 0,
@@ -337,6 +376,10 @@ func ensureSubscriptionPlanTableSQLite() error {
 ` + "`creem_product_id`" + ` varchar(128) DEFAULT '',
 ` + "`max_purchase_per_user`" + ` integer DEFAULT 0,
 ` + "`upgrade_group`" + ` varchar(64) DEFAULT '',
+` + "`allow_balance_pay`" + ` numeric DEFAULT 1,
+` + "`waffo_pancake_product_id`" + ` varchar(128) DEFAULT '',
+` + "`downgrade_group`" + ` varchar(64) DEFAULT '',
+` + "`allow_wallet_overflow`" + ` numeric DEFAULT 1,
 ` + "`total_amount`" + ` bigint NOT NULL DEFAULT 0,
 ` + "`quota_reset_period`" + ` varchar(16) DEFAULT 'never',
 ` + "`quota_reset_custom_seconds`" + ` bigint DEFAULT 0,
@@ -345,8 +388,7 @@ func ensureSubscriptionPlanTableSQLite() error {
 ` + "`concurrent_limit`" + ` integer DEFAULT 0,
 ` + "`rpm_limit`" + ` integer DEFAULT 0,
 ` + "`created_at`" + ` bigint,
-` + "`updated_at`" + ` bigint,
-PRIMARY KEY (` + "`id`" + `)
+` + "`updated_at`" + ` bigint
 )`
 		return DB.Exec(createSQL).Error
 	}
@@ -374,6 +416,10 @@ PRIMARY KEY (` + "`id`" + `)
 		{Name: "creem_product_id", DDL: "`creem_product_id` varchar(128) DEFAULT ''"},
 		{Name: "max_purchase_per_user", DDL: "`max_purchase_per_user` integer DEFAULT 0"},
 		{Name: "upgrade_group", DDL: "`upgrade_group` varchar(64) DEFAULT ''"},
+		{Name: "allow_balance_pay", DDL: "`allow_balance_pay` numeric DEFAULT 1"},
+		{Name: "waffo_pancake_product_id", DDL: "`waffo_pancake_product_id` varchar(128) DEFAULT ''"},
+		{Name: "downgrade_group", DDL: "`downgrade_group` varchar(64) DEFAULT ''"},
+		{Name: "allow_wallet_overflow", DDL: "`allow_wallet_overflow` numeric DEFAULT 1"},
 		{Name: "total_amount", DDL: "`total_amount` bigint NOT NULL DEFAULT 0"},
 		{Name: "quota_reset_period", DDL: "`quota_reset_period` varchar(16) DEFAULT 'never'"},
 		{Name: "quota_reset_custom_seconds", DDL: "`quota_reset_custom_seconds` bigint DEFAULT 0"},
@@ -695,5 +741,16 @@ func dropLegacyUserGroupColumns() {
 		} else {
 			common.SysLog(fmt.Sprintf("dropLegacyUserGroupColumns: dropped %s.%s", s.table, s.column))
 		}
+	}
+}
+
+func jsonScanBytes(value any) []byte {
+	switch v := value.(type) {
+	case []byte:
+		return v
+	case string:
+		return []byte(v)
+	default:
+		return nil
 	}
 }

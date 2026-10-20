@@ -1,11 +1,141 @@
 package controller
 
 import (
+	"context"
+	"net/http"
+	"net/http/httptest"
+	"strings"
 	"testing"
+	"time"
 
 	"github.com/QuantumNous/new-api/model"
 	"github.com/stretchr/testify/require"
 )
+
+func TestUpstreamSelectionRollsBackModelsSettingsAndAbilitiesTogether(t *testing.T) {
+	db := setupModelListControllerTestDB(t)
+	channel := &model.Channel{Type: 1, Name: "atomic preview", Models: "keep,remove", Group: "default", Status: 1}
+	settings := channel.GetOtherSettings()
+	settings.UpstreamModelUpdateLastDetectedModels = []string{"add", "later"}
+	settings.UpstreamModelUpdateLastRemovedModels = []string{"remove"}
+	channel.SetOtherSettings(settings)
+	require.NoError(t, channel.Insert())
+	// Exercise the same projection used by scheduled scans and bulk apply.
+	batch, err := findEnabledChannelsAfterID(0, 100)
+	require.NoError(t, err)
+	require.Len(t, batch, 1)
+	require.Equal(t, model.ChannelModelStateRevision(channel), model.ChannelModelStateRevision(batch[0]))
+	original := *channel
+	require.NoError(t, db.Exec("CREATE TEMP TRIGGER upstream_fail_abilities BEFORE INSERT ON abilities BEGIN SELECT RAISE(ABORT, 'fixture routing failure'); END").Error)
+	_, _, _, _, _, err = applyChannelUpstreamModelUpdates(context.Background(), channel, []string{"add"}, nil, []string{"remove"})
+	require.ErrorContains(t, err, "fixture routing failure")
+	stored, err := model.GetChannelById(channel.Id, true)
+	require.NoError(t, err)
+	require.Equal(t, original.Models, stored.Models)
+	require.Equal(t, original.OtherSettings, stored.OtherSettings)
+	var count int64
+	require.NoError(t, db.Table("abilities").Where("channel_id = ?", channel.Id).Count(&count).Error)
+	require.EqualValues(t, 2, count)
+	require.NoError(t, db.Exec("DROP TRIGGER upstream_fail_abilities").Error)
+	added, removed, pending, pendingRemove, changed, err := applyChannelUpstreamModelUpdates(context.Background(), stored, []string{"add", "injected"}, nil, []string{"remove"})
+	require.NoError(t, err)
+	require.True(t, changed)
+	require.Equal(t, []string{"add"}, added)
+	require.Equal(t, []string{"remove"}, removed)
+	require.Equal(t, []string{"later"}, pending)
+	require.Empty(t, pendingRemove)
+	require.Equal(t, "keep,add", stored.Models)
+}
+
+func TestUpstreamDetectionRejectsConcurrentConfigurationButPreservesCounters(t *testing.T) {
+	for _, routingChange := range []bool{true, false} {
+		t.Run(map[bool]string{true: "configuration conflict", false: "live counters"}[routingChange], func(t *testing.T) {
+			db := setupModelListControllerTestDB(t)
+			channel := &model.Channel{Type: 1, Key: "fixture", Name: "original", Models: "keep", Group: "default", Status: 1}
+			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+				updates := map[string]any{"name": "new name", "used_quota": 7654}
+				if routingChange {
+					updates["models"] = "keep,concurrent"
+				}
+				if err := db.Model(&model.Channel{}).Where("id = ?", channel.Id).Updates(updates).Error; err != nil {
+					t.Error(err)
+				}
+				_, _ = w.Write([]byte(`{"data":[{"id":"keep"},{"id":"add"}]}`))
+			}))
+			defer server.Close()
+			channel.BaseURL = &server.URL
+			require.NoError(t, channel.Insert())
+			settings := channel.GetOtherSettings()
+			_, _, err := checkAndPersistChannelUpstreamModelUpdates(channel, &settings, true, false)
+			if routingChange {
+				require.ErrorIs(t, err, model.ErrChannelModelStateChanged)
+			} else {
+				require.NoError(t, err)
+			}
+			stored, err := model.GetChannelById(channel.Id, true)
+			require.NoError(t, err)
+			require.Equal(t, "new name", stored.Name)
+			require.EqualValues(t, 7654, stored.UsedQuota)
+			if routingChange {
+				require.Equal(t, "keep,concurrent", stored.Models)
+				require.Empty(t, stored.GetOtherSettings().UpstreamModelUpdateLastDetectedModels)
+			} else {
+				require.Equal(t, []string{"add"}, stored.GetOtherSettings().UpstreamModelUpdateLastDetectedModels)
+			}
+		})
+	}
+}
+
+func TestUpstreamDiscoveryCancelsBoundsAndRejectsMissingData(t *testing.T) {
+	started := make(chan struct{})
+	closed := make(chan struct{})
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		close(started)
+		<-r.Context().Done()
+		close(closed)
+	}))
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	done := make(chan error, 1)
+	go func() {
+		_, err := fetchChannelUpstreamModelIDsWithContext(ctx, &model.Channel{Type: 1, Key: "fixture", BaseURL: &server.URL})
+		done <- err
+	}()
+	select {
+	case <-started:
+	case <-time.After(3 * time.Second):
+		t.Fatal("discovery did not start")
+	}
+	cancel()
+	select {
+	case err := <-done:
+		require.Error(t, err)
+	case <-time.After(3 * time.Second):
+		t.Fatal("discovery did not cancel")
+	}
+	select {
+	case <-closed:
+	case <-time.After(3 * time.Second):
+		t.Fatal("upstream connection stayed open")
+	}
+	server.Close()
+	for _, body := range []string{`{"error":"not models"}`, strings.Repeat("x", (2<<20)+1)} {
+		fixture := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) { _, _ = w.Write([]byte(body)) }))
+		_, err := fetchChannelUpstreamModelIDsWithValidation(context.Background(), &model.Channel{Type: 1, Key: "fixture", BaseURL: &fixture.URL}, true)
+		require.Error(t, err)
+		fixture.Close()
+	}
+	redirected := false
+	destination := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) { redirected = true }))
+	defer destination.Close()
+	origin := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		http.Redirect(w, r, destination.URL, http.StatusTemporaryRedirect)
+	}))
+	defer origin.Close()
+	_, err := fetchChannelUpstreamModelIDs(&model.Channel{Type: 1, Key: "fixture", BaseURL: &origin.URL})
+	require.Error(t, err)
+	require.False(t, redirected)
+}
 
 func TestNormalizeModelNames(t *testing.T) {
 	result := normalizeModelNames([]string{

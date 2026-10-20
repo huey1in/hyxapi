@@ -2,18 +2,21 @@ package helper
 
 import (
 	"fmt"
-	"math"
 	"strings"
 
 	"github.com/QuantumNous/new-api/common"
+	"github.com/QuantumNous/new-api/logger"
 	"github.com/QuantumNous/new-api/model"
+	"github.com/QuantumNous/new-api/pkg/jsplugin"
 	relaycommon "github.com/QuantumNous/new-api/relay/common"
 	relayconstant "github.com/QuantumNous/new-api/relay/constant"
 	"github.com/QuantumNous/new-api/relaykit/dto"
 	relaytypes "github.com/QuantumNous/new-api/relaykit/types"
+	"github.com/QuantumNous/new-api/setting/billing_setting"
 	"github.com/QuantumNous/new-api/setting/model_setting"
 	"github.com/QuantumNous/new-api/setting/operation_setting"
 	"github.com/QuantumNous/new-api/setting/ratio_setting"
+	hostreasoning "github.com/QuantumNous/new-api/setting/reasoning"
 	"github.com/QuantumNous/new-api/types"
 
 	"github.com/gin-gonic/gin"
@@ -48,7 +51,17 @@ func ResolvePricingModelName(info *relaycommon.RelayInfo) string {
 	}
 
 	pricingModelName := info.OriginModelName
-	if normalized := ratio_setting.FormatMatchingModelName(pricingModelName); normalized != pricingModelName && !ContainsModelPricing(pricingModelName) {
+	if !HasPriceOrRatioEntry(pricingModelName) {
+		candidates := hostreasoning.CanonicalBillingModelNames(pricingModelName)
+		candidates = append(candidates, hostreasoning.BaseModelName(pricingModelName))
+		for _, candidate := range candidates {
+			if HasPriceOrRatioEntry(candidate) {
+				pricingModelName = candidate
+				break
+			}
+		}
+	}
+	if normalized := ratio_setting.FormatMatchingModelName(pricingModelName); normalized != pricingModelName && !HasPriceOrRatioEntry(pricingModelName) {
 		pricingModelName = normalized
 	}
 	geminiRequest, isGeminiRequest := info.Request.(*dto.GeminiChatRequest)
@@ -59,22 +72,46 @@ func ResolvePricingModelName(info *relaycommon.RelayInfo) string {
 		geminiRequest.GenerationConfig.ThinkingConfig.ThinkingBudget != nil &&
 		*geminiRequest.GenerationConfig.ThinkingConfig.ThinkingBudget == 0 {
 		candidate := pricingModelName + "-nothinking"
-		if ContainsModelPricing(candidate) {
+		if HasPriceOrRatioEntry(candidate) {
 			pricingModelName = candidate
 		}
 	}
 
+	pricingModelName = model.ResolveModelPricingBillingName(pricingModelName)
 	info.PricingModelName = pricingModelName
 	return pricingModelName
 }
 
-// HandleGroupRatio returns the group multiplier. Group pricing remains a
-// separate setting; model pricing rows contain only the provider's original
-// USD prices.
-func HandleGroupRatio(_ *gin.Context, relayInfo *relaycommon.RelayInfo) types.GroupRatioInfo {
-	return types.GroupRatioInfo{
-		GroupRatio: ratio_setting.GetGroupRatio(relayInfo.UsingGroup),
+// HandleGroupRatio checks for "auto_group" in the context and updates the group ratio and relayInfo.UsingGroup if present
+func HandleGroupRatio(ctx *gin.Context, relayInfo *relaycommon.RelayInfo) types.GroupRatioInfo {
+	groupRatioInfo := types.GroupRatioInfo{
+		GroupRatio:        1.0, // default ratio
+		GroupSpecialRatio: -1,
 	}
+
+	// check auto group
+	if ctx != nil {
+		if autoGroup, exists := ctx.Get("auto_group"); exists {
+			if group, ok := autoGroup.(string); ok {
+				logger.LogDebug(ctx, "final group: %s", group)
+				relayInfo.UsingGroup = group
+			}
+		}
+	}
+
+	// check user group special ratio
+	userGroupRatio, ok := ratio_setting.GetGroupGroupRatio(relayInfo.UserGroup, relayInfo.UsingGroup)
+	if ok {
+		// user group special ratio
+		groupRatioInfo.GroupSpecialRatio = userGroupRatio
+		groupRatioInfo.GroupRatio = userGroupRatio
+		groupRatioInfo.HasSpecialRatio = true
+	} else {
+		// normal group ratio
+		groupRatioInfo.GroupRatio = ratio_setting.GetGroupRatio(relayInfo.UsingGroup)
+	}
+
+	return groupRatioInfo
 }
 
 func directTokenQuota(inputPrice, outputPrice float64, inputTokens, outputTokens int, groupRatio float64) int {
@@ -89,7 +126,7 @@ func directTokenQuota(inputPrice, outputPrice float64, inputTokens, outputTokens
 	if quota > 0 && quota < 1 {
 		return 1
 	}
-	return int(math.Round(quota))
+	return common.QuotaRound(quota)
 }
 
 func maxPrice(prices ...float64) float64 {
@@ -205,7 +242,7 @@ func directRequestQuota(requestPrice, groupRatio float64) int {
 	if quota > 0 && quota < 1 {
 		return 1
 	}
-	return int(math.Round(quota))
+	return common.QuotaRound(quota)
 }
 
 func applyDirectSchedule(price *model.ModelPricing, groupRatioInfo types.GroupRatioInfo) types.PriceData {
@@ -218,6 +255,8 @@ func applyDirectSchedule(price *model.ModelPricing, groupRatioInfo types.GroupRa
 		return pd
 	}
 	pd.BillingType = price.BillingType
+	pd.UsePrice = price.BillingType == model.ModelPricingBillingRequest
+	pd.ModelPrice = price.RequestPrice
 	pd.InputPrice = price.InputPrice
 	pd.OutputPrice = price.OutputPrice
 	pd.CacheReadPrice = price.CacheReadPrice
@@ -232,7 +271,7 @@ func applyDirectSchedule(price *model.ModelPricing, groupRatioInfo types.GroupRa
 // ModelPriceHelper computes the request pre-consumption amount from the
 // direct model schedule. Token prices are USD per million tokens and request
 // prices are USD per request; the selected group multiplier is applied once.
-func ModelPriceHelper(c *gin.Context, info *relaycommon.RelayInfo, promptTokens int, meta *relaytypes.TokenCountMeta) (types.PriceData, error) {
+func modelPriceHelperDirect(c *gin.Context, info *relaycommon.RelayInfo, promptTokens int, meta *relaytypes.TokenCountMeta) (types.PriceData, error) {
 	pricingModelName := ResolvePricingModelName(info)
 	modelPricing, configured := model.GetModelPricing(pricingModelName)
 	if !configured {
@@ -253,10 +292,28 @@ func ModelPriceHelper(c *gin.Context, info *relaycommon.RelayInfo, promptTokens 
 			requestPrice *= meta.ImagePriceRatio
 		}
 		pd.RequestPrice = requestPrice
+		pd.ModelPrice = requestPrice
 		pd.QuotaToPreConsume = directRequestQuota(requestPrice, groupRatioInfo.GroupRatio)
 		pd.Quota = pd.QuotaToPreConsume
 	} else {
 		pd.QuotaToPreConsume = conservativeTokenPreConsumeQuota(modelPricing, info, promptTokens, meta, groupRatioInfo.GroupRatio)
+	}
+	if request, image := info.Request.(*dto.ImageRequest); image {
+		count, err := request.ImageCount(false)
+		if err != nil {
+			return types.PriceData{}, err
+		}
+		if pd.UsePrice {
+			pd.AddOtherRatio("n", float64(count))
+			info.ImageQuotaBeforeGroup = pd.RequestPrice * common.QuotaPerUnit
+		} else {
+			info.ImageQuotaBeforeGroup = float64(conservativeTokenPreConsumeQuota(modelPricing, info, promptTokens, meta, 1))
+		}
+		quota, err := common.QuotaFromFloatStrict(pd.ApplyOtherRatiosToFloat(info.ImageQuotaBeforeGroup * groupRatioInfo.GroupRatio))
+		if err != nil {
+			return types.PriceData{}, err
+		}
+		pd.QuotaToPreConsume = quota
 	}
 	pd.FreeModel = shouldSkipDirectFreeModelPreConsume(modelPricing, groupRatioInfo.GroupRatio)
 	if pd.FreeModel {
@@ -275,7 +332,7 @@ func ModelPriceHelper(c *gin.Context, info *relaycommon.RelayInfo, promptTokens 
 // image endpoints that bill once at submission time. Token schedules use a
 // conservative input-token reservation and are reconciled later when usage is
 // available; request schedules use their fixed request price.
-func ModelPriceHelperPerCall(c *gin.Context, info *relaycommon.RelayInfo) (types.PriceData, error) {
+func modelPriceHelperPerCallDirect(c *gin.Context, info *relaycommon.RelayInfo) (types.PriceData, error) {
 	pricingModelName := ResolvePricingModelName(info)
 	modelPricing, configured := model.GetModelPricing(pricingModelName)
 	if !configured {
@@ -305,6 +362,61 @@ func ContainsModelPricing(modelName string) bool {
 	return ok
 }
 
+// HasPriceOrRatioEntry is entry detection for billing-name resolution. An
+// explicit mode remains authoritative even if its expression is incomplete.
+func HasPriceOrRatioEntry(modelName string) bool {
+	if ContainsModelPricing(modelName) {
+		return true
+	}
+	if ratio_setting.HasConfiguredModelRatio(modelName) {
+		return true
+	}
+	if _, ok := ratio_setting.GetModelPrice(modelName, false); ok {
+		return true
+	}
+	return billing_setting.GetBillingMode(modelName) == billing_setting.BillingModeTieredExpr
+}
+
+// HasModelBillingConfig reports whether discovery can advertise a usable
+// configured price. Self-use permission is checked by the caller separately.
 func HasModelBillingConfig(modelName string) bool {
-	return ContainsModelPricing(modelName)
+	billingName := model.ResolveModelPricingBillingName(modelName)
+	if ContainsModelPricing(modelName) {
+		if _, explicit := billing_setting.GetConfiguredBillingMode(billingName); !explicit {
+			return true
+		}
+	}
+	generation := jsplugin.DefaultRegistry.Generation()
+	providers := generation.PluginsByModel(modelName)
+	usageModel := modelName
+	if len(providers) == 0 {
+		if target, ok := model.ResolveTaskModelAlias(generation, modelName); ok {
+			if plugin, exists := generation.Get(target.PluginKey); exists {
+				providers = []*jsplugin.LoadedPlugin{plugin}
+				usageModel = target.Declared
+			}
+		}
+	}
+	if len(providers) > 0 {
+		for _, plugin := range providers {
+			if expression, ok := billing_setting.ResolveTaskBillingExpr(plugin.Meta.Key, modelName, usageModel, billingName); ok {
+				schema, _ := plugin.Meta.UsageForModel(usageModel)
+				if billing_setting.TaskExprCompatible(expression, schema) {
+					return true
+				}
+			}
+		}
+		// Ratio providers can still use an explicitly configured per-call price.
+		if billing_setting.GetBillingMode(billingName) == billing_setting.BillingModeTieredExpr {
+			return false
+		}
+	}
+	if billing_setting.GetBillingMode(billingName) == billing_setting.BillingModeTieredExpr {
+		expression, configured := billing_setting.GetBillingExpr(billingName)
+		return configured && strings.TrimSpace(expression) != ""
+	}
+	if _, configured := ratio_setting.GetModelPrice(billingName, false); configured {
+		return true
+	}
+	return ratio_setting.HasConfiguredModelRatio(billingName)
 }

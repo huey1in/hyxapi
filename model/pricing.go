@@ -10,28 +10,45 @@ import (
 
 	"github.com/QuantumNous/new-api/common"
 	"github.com/QuantumNous/new-api/constant"
+	"github.com/QuantumNous/new-api/pkg/jsplugin"
 	"github.com/QuantumNous/new-api/types"
 )
 
+type PricingPluginVariant struct {
+	PluginKey            string                               `json:"plugin_key"`
+	PluginName           string                               `json:"plugin_name"`
+	Icon                 string                               `json:"icon,omitempty"`
+	BillingExpr          string                               `json:"billing_expr"`
+	BillingMode          string                               `json:"billing_mode"`
+	BillingUsageSchema   map[string]jsplugin.UsageFieldSchema `json:"billing_usage_schema"`
+	BillingUsageExamples []jsplugin.UsageExample              `json:"billing_usage_examples,omitempty"`
+}
+
 type Pricing struct {
-	ModelName              string                  `json:"model_name"`
-	Description            string                  `json:"description,omitempty"`
-	Icon                   string                  `json:"icon,omitempty"`
-	Tags                   string                  `json:"tags,omitempty"`
-	VendorID               int                     `json:"vendor_id,omitempty"`
-	OwnerBy                string                  `json:"owner_by,omitempty"`
-	BillingType            string                  `json:"billing_type"`
-	Configured             bool                    `json:"configured"`
-	InputPrice             float64                 `json:"input_price"`
-	OutputPrice            float64                 `json:"output_price"`
-	CacheReadPrice         float64                 `json:"cache_read_price"`
-	CacheWritePrice        float64                 `json:"cache_write_price"`
-	ImagePrice             float64                 `json:"image_price"`
-	AudioInputPrice        float64                 `json:"audio_input_price"`
-	AudioOutputPrice       float64                 `json:"audio_output_price"`
-	RequestPrice           float64                 `json:"request_price"`
-	EnableGroup            []string                `json:"enable_groups"`
-	SupportedEndpointTypes []constant.EndpointType `json:"supported_endpoint_types"`
+	BillingPluginVariants  []PricingPluginVariant               `json:"billing_plugin_variants,omitempty"`
+	BillingUsageSchema     map[string]jsplugin.UsageFieldSchema `json:"billing_usage_schema,omitempty"`
+	BillingUsageExamples   []jsplugin.UsageExample              `json:"billing_usage_examples,omitempty"`
+	BillingMode            string                               `json:"billing_mode,omitempty"`
+	BillingExpr            string                               `json:"billing_expr,omitempty"`
+	ModelName              string                               `json:"model_name"`
+	Description            string                               `json:"description,omitempty"`
+	Icon                   string                               `json:"icon,omitempty"`
+	Tags                   string                               `json:"tags,omitempty"`
+	VendorID               int                                  `json:"vendor_id,omitempty"`
+	OwnerBy                string                               `json:"owner_by,omitempty"`
+	BillingType            string                               `json:"billing_type"`
+	QuotaType              int                                  `json:"quota_type"`
+	Configured             bool                                 `json:"configured"`
+	InputPrice             float64                              `json:"input_price"`
+	OutputPrice            float64                              `json:"output_price"`
+	CacheReadPrice         float64                              `json:"cache_read_price"`
+	CacheWritePrice        float64                              `json:"cache_write_price"`
+	ImagePrice             float64                              `json:"image_price"`
+	AudioInputPrice        float64                              `json:"audio_input_price"`
+	AudioOutputPrice       float64                              `json:"audio_output_price"`
+	RequestPrice           float64                              `json:"request_price"`
+	EnableGroup            []string                             `json:"enable_groups"`
+	SupportedEndpointTypes []constant.EndpointType              `json:"supported_endpoint_types"`
 }
 
 type PricingVendor struct {
@@ -46,10 +63,12 @@ var (
 	vendorsList          []PricingVendor
 	supportedEndpointMap map[string]common.EndpointInfo
 	lastGetPricingTime   time.Time
+	pricingGeneration    *jsplugin.RoutingGeneration
 	updatePricingLock    sync.Mutex
 
 	// 缓存映射：模型名 -> 启用分组 / 计费类型
 	modelEnableGroups     = make(map[string][]string)
+	modelQuotaTypeMap     = make(map[string]int)
 	modelEnableGroupsLock = sync.RWMutex{}
 )
 
@@ -59,17 +78,19 @@ var (
 )
 
 func GetPricing() []Pricing {
-	if time.Since(lastGetPricingTime) > time.Minute*1 || len(pricingMap) == 0 {
-		updatePricingLock.Lock()
-		defer updatePricingLock.Unlock()
-		// Double check after acquiring the lock
-		if time.Since(lastGetPricingTime) > time.Minute*1 || len(pricingMap) == 0 {
-			modelSupportEndpointsLock.Lock()
-			defer modelSupportEndpointsLock.Unlock()
-			updatePricing()
-		}
-	}
+	updatePricingLock.Lock()
+	defer updatePricingLock.Unlock()
+	ensurePricingLocked()
 	return pricingMap
+}
+
+func ensurePricingLocked() {
+	generation := jsplugin.DefaultRegistry.Generation()
+	if time.Since(lastGetPricingTime) > time.Minute || len(pricingMap) == 0 || pricingGeneration != generation {
+		modelSupportEndpointsLock.Lock()
+		defer modelSupportEndpointsLock.Unlock()
+		updatePricing()
+	}
 }
 
 // InvalidatePricingCache forces model metadata, enabled groups, endpoints,
@@ -83,10 +104,9 @@ func InvalidatePricingCache() {
 
 // GetVendors 返回当前定价接口使用到的供应商信息
 func GetVendors() []PricingVendor {
-	if time.Since(lastGetPricingTime) > time.Minute*1 || len(pricingMap) == 0 {
-		// 保证先刷新一次
-		GetPricing()
-	}
+	updatePricingLock.Lock()
+	defer updatePricingLock.Unlock()
+	ensurePricingLocked()
 	return vendorsList
 }
 
@@ -279,6 +299,7 @@ func updatePricing() {
 		}
 	}
 
+	pluginGeneration := jsplugin.DefaultRegistry.Generation()
 	pricingMap = make([]Pricing, 0)
 	for model, groups := range modelGroupsMap {
 		pricing := Pricing{
@@ -298,10 +319,6 @@ func updatePricing() {
 			pricing.Tags = meta.Tags
 			pricing.VendorID = meta.VendorID
 		}
-		// The public pricing response is sourced exclusively from the model
-		// pricing table. Missing rows remain visible as unconfigured models so
-		// administrators can identify them; the relay rejects them at billing
-		// time until a price schedule is created.
 		if modelPricing, ok := GetModelPricing(model); ok {
 			pricing.Configured = true
 			pricing.BillingType = modelPricing.BillingTypeName()
@@ -314,21 +331,29 @@ func updatePricing() {
 			pricing.AudioOutputPrice = modelPricing.AudioOutputPrice
 			pricing.RequestPrice = modelPricing.RequestPrice
 		}
+		populateAdvancedPricing(&pricing)
+		populatePluginPricing(&pricing, pluginGeneration)
 		pricingMap = append(pricingMap, pricing)
 	}
 
 	// 刷新缓存映射，供高并发快速查询
 	modelEnableGroupsLock.Lock()
 	modelEnableGroups = make(map[string][]string)
+	modelQuotaTypeMap = make(map[string]int)
 	for _, p := range pricingMap {
 		modelEnableGroups[p.ModelName] = p.EnableGroup
+		modelQuotaTypeMap[p.ModelName] = p.QuotaType
 	}
 	modelEnableGroupsLock.Unlock()
 
 	lastGetPricingTime = time.Now()
+	pricingGeneration = pluginGeneration
 }
 
 // GetSupportedEndpointMap 返回全局端点到路径的映射
 func GetSupportedEndpointMap() map[string]common.EndpointInfo {
+	updatePricingLock.Lock()
+	defer updatePricingLock.Unlock()
+	ensurePricingLocked()
 	return supportedEndpointMap
 }

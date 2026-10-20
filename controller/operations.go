@@ -5,6 +5,7 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/QuantumNous/new-api/common"
 	"github.com/QuantumNous/new-api/model"
 
 	"github.com/gin-gonic/gin"
@@ -101,12 +102,38 @@ func GetEnhancedOperations(c *gin.Context) {
 	startTimestamp, _ := strconv.ParseInt(c.Query("start_timestamp"), 10, 64)
 	endTimestamp, _ := strconv.ParseInt(c.Query("end_timestamp"), 10, 64)
 
-	rangeRevenue, _ := model.GetTopUpRevenueSummary(startTimestamp, endTimestamp)
-	rangeConsumption, _ := model.SumUsedQuota(model.LogTypeConsume, startTimestamp, endTimestamp, "", "", "", 0, "")
-	activeStat, _ := model.GetActiveOperationsStat(startTimestamp, endTimestamp)
-	newUsers, _ := model.CountNewUsers(startTimestamp, endTimestamp)
-	channelCharges, _ := model.GetChannelConsumption(startTimestamp, endTimestamp, 50)
-	groupCharges, _ := model.GetGroupConsumption(startTimestamp, endTimestamp, 50)
+	fail := func(err error) bool {
+		if err == nil {
+			return false
+		}
+		common.SysError("failed to query operations report: " + err.Error())
+		common.ApiErrorMsg(c, "Unable to load operations data")
+		return true
+	}
+	rangeRevenue, err := model.GetTopUpRevenueSummary(startTimestamp, endTimestamp)
+	if fail(err) {
+		return
+	}
+	rangeConsumption, err := model.SumUsedQuota(model.LogTypeConsume, startTimestamp, endTimestamp, "", "", "", 0, "")
+	if fail(err) {
+		return
+	}
+	activeStat, err := model.GetActiveOperationsStat(startTimestamp, endTimestamp)
+	if fail(err) {
+		return
+	}
+	newUsers, err := model.CountNewUsers(startTimestamp, endTimestamp)
+	if fail(err) {
+		return
+	}
+	channelCharges, err := model.GetChannelConsumption(startTimestamp, endTimestamp, 50)
+	if fail(err) {
+		return
+	}
+	groupCharges, err := model.GetGroupConsumption(startTimestamp, endTimestamp, 50)
+	if fail(err) {
+		return
+	}
 	averageRPM := 0.0
 	if startTimestamp != 0 && endTimestamp > startTimestamp {
 		minutes := float64(endTimestamp-startTimestamp) / 60

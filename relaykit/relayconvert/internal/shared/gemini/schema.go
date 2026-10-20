@@ -9,7 +9,9 @@ import (
 	"strings"
 
 	"github.com/QuantumNous/new-api/relaykit/dto"
+	"github.com/QuantumNous/new-api/relaykit/relayconvert/internal/convdiag"
 	kitutil "github.com/QuantumNous/new-api/relaykit/relayconvert/kitutil"
+	"github.com/QuantumNous/new-api/relaykit/types"
 )
 
 var geminiOpenAPISchemaAllowedFields = map[string]struct{}{
@@ -265,7 +267,14 @@ func ApplyResponseSchema(ctx context.Context, config *dto.GeminiChatGenerationCo
 		}
 	}
 	config.ResponseSchema = RemoveAdditionalProperties(format.Schema, 0)
-
+	if len(misfits) > 0 {
+		convdiag.Add(ctx, types.ConversionDiagnostic{
+			Code:     "gemini_schema_keyword_dropped",
+			Path:     path,
+			Message:  fmt.Sprintf("Gemini response schema cannot carry %s", strings.Join(misfits, ", ")),
+			Severity: types.ConversionDiagnosticWarning,
+		})
+	}
 }
 
 // schemaMisfits lists what Gemini's typed Schema cannot hold of a JSON Schema

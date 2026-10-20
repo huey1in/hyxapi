@@ -22,6 +22,9 @@ import type { Dispatch, PropsWithChildren } from 'react';
 import { useTranslation } from 'react-i18next';
 import { reducer, initialState } from './reducer';
 import type { UserAction, UserState } from './reducer';
+import { subscribeAuthSessionEvents } from '../../lib/auth-session-sync';
+import { clearAuthentication, refreshAuthentication } from '../../lib/auth-session';
+import { useAuthStore } from '../../stores/auth-store';
 import { normalizeLanguage } from '../../i18n/language';
 
 export const UserContext = React.createContext<[UserState, Dispatch<UserAction>]>([
@@ -32,12 +35,26 @@ export const UserContext = React.createContext<[UserState, Dispatch<UserAction>]
 export const UserProvider = ({ children }: PropsWithChildren) => {
   const [state, dispatch] = React.useReducer(reducer, initialState);
   const { i18n } = useTranslation();
+  useEffect(() => useAuthStore.subscribe((next, previous) => {
+    if (next.auth.user !== previous.auth.user) {
+      dispatch(next.auth.user ? { type: 'login', payload: next.auth.user } : { type: 'logout' });
+    }
+  }), []);
+
+  useEffect(() => subscribeAuthSessionEvents((event) => {
+    const sid = useAuthStore.getState().auth.session?.sid;
+    if (event.kind === 'signed_out' && sid === event.sid) clearAuthentication(false);
+    else if (event.kind === 'authenticated' && sid !== event.sid) {
+      clearAuthentication(false, 'idle');
+      void refreshAuthentication();
+    }
+  }), []);
 
   // Sync language preference when user data is loaded
   useEffect(() => {
     if (state.user?.setting) {
       try {
-        const settings = JSON.parse(state.user.setting);
+        const settings = typeof state.user.setting === 'string' ? JSON.parse(state.user.setting) : state.user.setting;
         const normalizedLanguage = normalizeLanguage(settings.language);
         if (normalizedLanguage && normalizedLanguage !== i18n.language) {
           i18n.changeLanguage(normalizedLanguage);

@@ -37,3 +37,23 @@ func TestTokenNormalizeGroupPolicyPreservesExplicitAutoGroup(t *testing.T) {
 	require.Empty(t, token.Groups)
 	require.Equal(t, "[]", token.Group)
 }
+
+func TestTokenAutoGroupRetryCoexistsWithManualPriorityPolicy(t *testing.T) {
+	for _, group := range []string{"auto", "[]"} {
+		token := &Token{Group: group, CrossGroupRetry: true}
+		token.NormalizeGroupPolicy()
+		require.True(t, token.UsesAutoGroups())
+		require.True(t, token.CrossGroupRetry)
+		token.NormalizeGroupPolicy()
+		require.True(t, token.CrossGroupRetry, "repeated reads must preserve the Auto retry setting")
+	}
+	manual := &Token{Groups: []string{"vip", "default"}, CrossGroupRetry: false}
+	manual.NormalizeGroupPolicy()
+	falseAuto := &Token{Group: "auto", Groups: []string{}}
+	falseAuto.NormalizeGroupPolicy()
+	falseAuto.NormalizeGroupPolicy()
+	require.Equal(t, "auto", falseAuto.Group)
+	require.False(t, falseAuto.CrossGroupRetry)
+	require.True(t, manual.CrossGroupRetry)
+	require.False(t, manual.UsesAutoGroups())
+}

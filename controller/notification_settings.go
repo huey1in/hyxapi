@@ -29,6 +29,8 @@ func applyNotificationSettings(current dto.UserSetting, value any, role int) (dt
 		GotifyURL      *string  `json:"gotify_url"`
 		GotifyToken    *string  `json:"gotify_token"`
 		GotifyPriority *int     `json:"gotify_priority"`
+		AcceptUnset    *bool    `json:"accept_unset_model_ratio_model"`
+		RecordIP       *bool    `json:"record_ip_log"`
 	}
 	encoded, err := json.Marshal(value)
 	if err != nil {
@@ -53,6 +55,12 @@ func applyNotificationSettings(current dto.UserSetting, value any, role int) (dt
 	}
 	if patch.QuotaEnabled != nil {
 		current.QuotaWarningEnabled = patch.QuotaEnabled
+	}
+	if patch.AcceptUnset != nil {
+		current.AcceptUnsetRatioModel = *patch.AcceptUnset
+	}
+	if patch.RecordIP != nil {
+		current.RecordIpLog = *patch.RecordIP
 	}
 	if role >= common.RoleAdminUser {
 		if patch.ChannelEnabled != nil {
@@ -93,6 +101,27 @@ func applyNotificationSettings(current dto.UserSetting, value any, role int) (dt
 			return current, errors.New("Gotify priority must be between 0 and 10")
 		}
 		current.GotifyPriority = *patch.GotifyPriority
+	}
+	if current.NotifyType == "" {
+		current.NotifyType = dto.NotifyTypeEmail
+	}
+	var target string
+	switch current.NotifyType {
+	case dto.NotifyTypeWebhook:
+		target = current.WebhookUrl
+	case dto.NotifyTypeBark:
+		target = current.BarkUrl
+	case dto.NotifyTypeGotify:
+		target = current.GotifyUrl
+		if current.GotifyToken == "" {
+			return current, errors.New("Gotify token cannot be empty")
+		}
+	}
+	if current.NotifyType != dto.NotifyTypeEmail {
+		parsed, err := url.Parse(target)
+		if err != nil || parsed.Host == "" || (parsed.Scheme != "https" && parsed.Scheme != "http") {
+			return current, errors.New("notification URL must use http or https")
+		}
 	}
 	return current, nil
 }

@@ -2,6 +2,7 @@ package controller
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -9,10 +10,8 @@ import (
 	"math"
 	"net/http"
 	"net/http/httptest"
-	"net/url"
 	"strconv"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/QuantumNous/new-api/common"
@@ -20,6 +19,7 @@ import (
 	"github.com/QuantumNous/new-api/i18n"
 	"github.com/QuantumNous/new-api/middleware"
 	"github.com/QuantumNous/new-api/model"
+	"github.com/QuantumNous/new-api/pkg/billingexpr"
 	"github.com/QuantumNous/new-api/relay"
 	relaycommon "github.com/QuantumNous/new-api/relay/common"
 	relayconstant "github.com/QuantumNous/new-api/relay/constant"
@@ -31,7 +31,6 @@ import (
 	"github.com/QuantumNous/new-api/setting/ratio_setting"
 	hosttypes "github.com/QuantumNous/new-api/types"
 
-	"github.com/bytedance/gopkg/util/gopool"
 	"github.com/samber/lo"
 	"github.com/tidwall/gjson"
 
@@ -58,7 +57,27 @@ func normalizeChannelTestEndpoint(channel *model.Channel, modelName, endpointTyp
 	return normalized
 }
 
-func testChannel(channel *model.Channel, testModel string, endpointType string, isStream bool) testResult {
+func resolveChannelTestUserID(c *gin.Context) (int, error) {
+	if c != nil {
+		if userID := c.GetInt("id"); userID > 0 {
+			return userID, nil
+		}
+	}
+
+	var rootUser model.User
+	if err := model.DB.Select("id").Where("role = ?", common.RoleRootUser).First(&rootUser).Error; err != nil {
+		return 0, fmt.Errorf("failed to resolve channel test user: %w", err)
+	}
+	if rootUser.Id == 0 {
+		return 0, errors.New("failed to resolve channel test user")
+	}
+	return rootUser.Id, nil
+}
+
+func testChannel(ctx context.Context, channel *model.Channel, testUserID int, testModel, endpointType string, isStream bool) testResult {
+	if ctx == nil {
+		ctx = context.Background()
+	}
 	tik := time.Now()
 	var unsupportedTestChannelTypes = []int{
 		constant.ChannelTypeMidjourney,
@@ -68,6 +87,7 @@ func testChannel(channel *model.Channel, testModel string, endpointType string, 
 		constant.ChannelTypeJimeng,
 		constant.ChannelTypeDoubaoVideo,
 		constant.ChannelTypeVidu,
+		constant.ChannelTypeTaskPlugin,
 	}
 	if lo.Contains(unsupportedTestChannelTypes, channel.Type) {
 		channelTypeName := constant.GetChannelTypeName(channel.Type)
@@ -137,14 +157,12 @@ func testChannel(channel *model.Channel, testModel string, endpointType string, 
 		testModel = ratio_setting.WithCompactModelSuffix(testModel)
 	}
 
-	c.Request = &http.Request{
-		Method: "POST",
-		URL:    &url.URL{Path: requestPath}, // 使用动态路径
-		Body:   nil,
-		Header: make(http.Header),
+	if isStream && constant.EndpointType(endpointType) == constant.EndpointTypeGemini {
+		requestPath = strings.Replace(requestPath, ":generateContent", ":streamGenerateContent", 1)
 	}
+	c.Request = httptest.NewRequestWithContext(ctx, http.MethodPost, requestPath, nil)
 
-	cache, err := model.GetUserCache(1)
+	cache, err := model.GetUserCache(testUserID)
 	if err != nil {
 		return testResult{
 			localErr:    err,
@@ -152,13 +170,13 @@ func testChannel(channel *model.Channel, testModel string, endpointType string, 
 		}
 	}
 	cache.WriteContext(c)
-	c.Set("id", 1)
+	c.Set("id", testUserID)
 
 	//c.Request.Header.Set("Authorization", "Bearer "+channel.Key)
 	c.Request.Header.Set("Content-Type", "application/json")
 	c.Set("channel", channel.Type)
 	c.Set("base_url", channel.GetBaseURL())
-	group, _ := model.GetUserGroup(1, false)
+	group, _ := model.GetUserGroup(testUserID, false)
 	c.Set("group", group)
 
 	newAPIError := middleware.SetupContextForSelectedChannel(c, channel, testModel)
@@ -220,6 +238,7 @@ func testChannel(channel *model.Channel, testModel string, endpointType string, 
 		}
 	}
 
+	c.Request = c.Request.WithContext(ctx)
 	request := buildTestRequest(testModel, endpointType, channel, isStream)
 
 	info, err := relaycommon.GenRelayInfo(c, relayFormat, request, nil)
@@ -235,6 +254,9 @@ func testChannel(channel *model.Channel, testModel string, endpointType string, 
 	info.IsChannelTest = true
 	info.InitChannelMeta(c)
 
+	if err := attachTestBillingRequestInput(info, request); err != nil {
+		return testResult{context: c, localErr: err, newAPIError: types.NewError(err, types.ErrorCodeJsonMarshalFailed)}
+	}
 	err = helper.ModelMappedHelper(c, info, request)
 	if err != nil {
 		return testResult{
@@ -244,14 +266,16 @@ func testChannel(channel *model.Channel, testModel string, endpointType string, 
 		}
 	}
 
+	if err := helper.ApplyReasoningModelSuffix(c, info, request); err != nil {
+		return testResult{context: c, localErr: err, newAPIError: types.NewErrorWithStatusCode(err, types.ErrorCodeConvertRequestFailed, http.StatusBadRequest, types.ErrOptionWithSkipRetry())}
+	}
 	testModel = info.UpstreamModelName
 	// 更新请求中的模型名称
 	request.SetModelName(testModel)
 
 	apiType, _ := common.ChannelType2APIType(channel.Type)
 	if info.RelayMode == relayconstant.RelayModeResponsesCompact &&
-		apiType != constant.APITypeOpenAI &&
-		apiType != constant.APITypeCodex {
+		!common.SupportsResponsesCompact(channel.Type, apiType) {
 		return testResult{
 			context:     c,
 			localErr:    fmt.Errorf("responses compaction test only supports openai/codex channels, got api type %d", apiType),
@@ -350,14 +374,18 @@ func testChannel(channel *model.Channel, testModel string, endpointType string, 
 			}
 		}
 	default:
-		// Chat/Completion 等其他请求类型
-		if generalReq, ok := request.(*dto.GeneralOpenAIRequest); ok {
-			convertedRequest, err = adaptor.ConvertOpenAIRequest(c, info, generalReq)
-		} else {
+		switch req := request.(type) {
+		case *dto.GeneralOpenAIRequest:
+			convertedRequest, err = adaptor.ConvertOpenAIRequest(c, info, req)
+		case *dto.ClaudeRequest:
+			convertedRequest, err = adaptor.ConvertClaudeRequest(c, info, req)
+		case *dto.GeminiChatRequest:
+			convertedRequest, err = adaptor.ConvertGeminiRequest(c, info, req)
+		default:
 			return testResult{
 				context:     c,
-				localErr:    errors.New("invalid general request type"),
-				newAPIError: types.NewError(errors.New("invalid general request type"), types.ErrorCodeConvertRequestFailed),
+				localErr:    errors.New("invalid chat request type"),
+				newAPIError: types.NewError(errors.New("invalid chat request type"), types.ErrorCodeConvertRequestFailed),
 			}
 		}
 	}
@@ -475,6 +503,14 @@ func testChannel(channel *model.Channel, testModel string, endpointType string, 
 	anthropicUsage := usage.UsageSemantic == "anthropic" ||
 		(usage.UsageSemantic == "" && info.GetFinalRequestRelayFormat() == types.RelayFormatClaude)
 	quota, cacheWriteTokens := calculateChannelTestQuota(usage, &priceData, anthropicUsage)
+	var tieredResult *billingexpr.TieredResult
+	if info.TieredBillingSnapshot != nil {
+		used := billingexpr.UsedVars(info.TieredBillingSnapshot.ExprString)
+		if ok, settledQuota, result := service.TryTieredSettle(info, service.BuildTieredTokenParams(usage, anthropicUsage, used)); ok {
+			quota = settledQuota
+			tieredResult = result
+		}
+	}
 	tok := time.Now()
 	milliseconds := tok.Sub(tik).Milliseconds()
 	consumedTime := float64(milliseconds) / 1000.0
@@ -505,7 +541,10 @@ func testChannel(channel *model.Channel, testModel string, endpointType string, 
 		other["cache_creation_tokens_1h"] = usage.ClaudeCacheCreation1hTokens
 		other["cache_write_price_1h"] = priceData.CacheWritePrice
 	}
-	model.RecordConsumeLog(c, 1, model.RecordConsumeLogParams{
+	if tieredResult != nil {
+		service.InjectTieredBillingInfo(other, info, tieredResult)
+	}
+	model.RecordConsumeLog(c, testUserID, model.RecordConsumeLogParams{
 		ChannelId:        channel.Id,
 		PromptTokens:     usage.PromptTokens,
 		CompletionTokens: usage.CompletionTokens,
@@ -754,12 +793,31 @@ func buildTestRequest(model string, endpointType string, channel *model.Channel,
 				Model: model,
 				Input: testResponsesInput,
 			}
-		case constant.EndpointTypeAnthropic, constant.EndpointTypeGemini, constant.EndpointTypeOpenAI:
-			// 返回 GeneralOpenAIRequest
-			maxTokens := uint(16)
-			if constant.EndpointType(endpointType) == constant.EndpointTypeGemini {
-				maxTokens = 3000
+		case constant.EndpointTypeAnthropic:
+			return &dto.ClaudeRequest{
+				Model:     model,
+				Stream:    lo.ToPtr(isStream),
+				MaxTokens: lo.ToPtr(uint(16)),
+				Messages: []dto.ClaudeMessage{
+					{
+						Role:    "user",
+						Content: "hi",
+					},
+				},
 			}
+		case constant.EndpointTypeGemini:
+			return &dto.GeminiChatRequest{
+				Contents: []dto.GeminiChatContent{
+					{
+						Role:  "user",
+						Parts: []dto.GeminiPart{{Text: "hi"}},
+					},
+				},
+				GenerationConfig: dto.GeminiChatGenerationConfig{
+					MaxOutputTokens: lo.ToPtr(uint(3000)),
+				},
+			}
+		case constant.EndpointTypeOpenAI:
 			req := &dto.GeneralOpenAIRequest{
 				Model:  model,
 				Stream: lo.ToPtr(isStream),
@@ -769,7 +827,7 @@ func buildTestRequest(model string, endpointType string, channel *model.Channel,
 						Content: "hi",
 					},
 				},
-				MaxTokens: lo.ToPtr(maxTokens),
+				MaxTokens: lo.ToPtr(uint(16)),
 			}
 			if isStream {
 				req.StreamOptions = &dto.StreamOptions{IncludeUsage: true}
@@ -831,7 +889,7 @@ func buildTestRequest(model string, endpointType string, channel *model.Channel,
 		testRequest.StreamOptions = &dto.StreamOptions{IncludeUsage: true}
 	}
 
-	if strings.HasPrefix(model, "o") {
+	if dto.IsOpenAIReasoningOModel(model) {
 		testRequest.MaxCompletionTokens = lo.ToPtr(uint(16))
 	} else if strings.Contains(model, "thinking") {
 		if !strings.Contains(model, "claude") {
@@ -868,8 +926,17 @@ func TestChannel(c *gin.Context) {
 	testModel := c.Query("model")
 	endpointType := c.Query("endpoint_type")
 	isStream, _ := strconv.ParseBool(c.Query("stream"))
+	testUserID, err := resolveChannelTestUserID(c)
+	if err != nil {
+		common.ApiError(c, err)
+		return
+	}
 	tik := time.Now()
-	result := testChannel(channel, testModel, endpointType, isStream)
+	requestCtx := context.Background()
+	if c.Request != nil {
+		requestCtx = c.Request.Context()
+	}
+	result := testChannel(requestCtx, channel, testUserID, testModel, endpointType, isStream)
 	if result.localErr != nil {
 		resp := gin.H{
 			"success": false,
@@ -902,119 +969,137 @@ func TestChannel(c *gin.Context) {
 	})
 }
 
-var testAllChannelsLock sync.Mutex
-var testAllChannelsRunning bool = false
-
-func testAllChannels(notify bool) error {
-
-	testAllChannelsLock.Lock()
-	if testAllChannelsRunning {
-		testAllChannelsLock.Unlock()
-		return errors.New("测试已在运行中")
+func testChannelForHealthCheck(ctx context.Context, channel *model.Channel, testUserID int, allowDisable bool, disableThreshold int64) channelTestSummary {
+	summary := channelTestSummary{}
+	isChannelEnabled := channel.Status == common.ChannelStatusEnabled
+	tik := time.Now()
+	result := testChannel(ctx, channel, testUserID, "", "", shouldUseStreamForAutomaticChannelTest(channel))
+	milliseconds := time.Since(tik).Milliseconds()
+	if ctx.Err() != nil {
+		return summary
 	}
-	testAllChannelsRunning = true
-	testAllChannelsLock.Unlock()
-	channels, getChannelErr := model.GetAllChannels(0, 0, true, false)
-	if getChannelErr != nil {
-		return getChannelErr
+
+	summary.Tested++
+
+	shouldBanChannel := false
+	newAPIError := result.newAPIError
+	if newAPIError != nil {
+		shouldBanChannel = service.ShouldDisableChannel(result.newAPIError)
 	}
-	var disableThreshold = int64(common.ChannelDisableThreshold * 1000)
+
+	if common.AutomaticDisableChannelEnabled && !shouldBanChannel {
+		if milliseconds > disableThreshold {
+			// The reason is stored with the channel and sent in the disable
+			// notice; no request states a language here.
+			err := errors.New(i18n.Translate("", i18n.MsgChannelResponseTimeExceeded, map[string]any{
+				"Seconds":   fmt.Sprintf("%.2f", float64(milliseconds)/1000.0),
+				"Threshold": fmt.Sprintf("%.2f", float64(disableThreshold)/1000.0),
+			}))
+			newAPIError = types.NewOpenAIError(err, types.ErrorCodeChannelResponseTimeExceeded, http.StatusRequestTimeout)
+			shouldBanChannel = true
+		}
+	}
+
+	if newAPIError == nil && result.localErr == nil {
+		summary.Succeeded++
+	} else {
+		summary.Failed++
+	}
+
+	if allowDisable && isChannelEnabled && shouldBanChannel && channel.GetAutoBan() {
+		processChannelError(result.context, *types.NewChannelError(channel.Id, channel.Type, channel.Name, channel.ChannelInfo.IsMultiKey, common.GetContextKeyString(result.context, constant.ContextKeyChannelKey), channel.GetAutoBan()), newAPIError)
+		summary.Disabled++
+	}
+
+	if result.localErr == nil && !isChannelEnabled && service.ShouldEnableChannel(newAPIError, channel.Status) {
+		service.EnableChannel(channel.Id, common.GetContextKeyString(result.context, constant.ContextKeyChannelKey), channel.Name)
+		summary.Enabled++
+	}
+
+	channel.UpdateResponseTime(milliseconds)
+	return summary
+}
+
+func performChannelTests(ctx context.Context, channels []*model.Channel, testUserID int, allowDisable bool, concurrency int, report func(processed, total int)) channelTestSummary {
+	if ctx == nil {
+		ctx = context.Background()
+	}
+	disableThreshold := int64(common.ChannelDisableThreshold * 1000)
 	if disableThreshold == 0 {
-		disableThreshold = 10000000 // a impossible value
+		disableThreshold = 10000000 // an impossible value
 	}
-	gopool.Go(func() {
-		// 使用 defer 确保无论如何都会重置运行状态，防止死锁
-		defer func() {
-			testAllChannelsLock.Lock()
-			testAllChannelsRunning = false
-			testAllChannelsLock.Unlock()
-		}()
+	return runChannelTestWorkers(
+		ctx,
+		channels,
+		concurrency,
+		func(ctx context.Context, channel *model.Channel) channelTestSummary {
+			return testChannelForHealthCheck(ctx, channel, testUserID, allowDisable, disableThreshold)
+		},
+		report,
+	)
+}
 
-		for _, channel := range channels {
-			if channel.Status == common.ChannelStatusManuallyDisabled {
-				continue
-			}
-			isChannelEnabled := channel.Status == common.ChannelStatusEnabled
-			tik := time.Now()
-			result := testChannel(channel, "", "", shouldUseStreamForAutomaticChannelTest(channel))
-			tok := time.Now()
-			milliseconds := tok.Sub(tik).Milliseconds()
-
-			shouldBanChannel := false
-			newAPIError := result.newAPIError
-			// request error disables the channel
-			if newAPIError != nil {
-				shouldBanChannel = service.ShouldDisableChannel(result.newAPIError)
-			}
-
-			// 当错误检查通过，才检查响应时间
-			if common.AutomaticDisableChannelEnabled && !shouldBanChannel {
-				if milliseconds > disableThreshold {
-					err := fmt.Errorf("响应时间 %.2fs 超过阈值 %.2fs", float64(milliseconds)/1000.0, float64(disableThreshold)/1000.0)
-					newAPIError = types.NewOpenAIError(err, types.ErrorCodeChannelResponseTimeExceeded, http.StatusRequestTimeout)
-					shouldBanChannel = true
-				}
-			}
-
-			// disable channel
-			if isChannelEnabled && shouldBanChannel && channel.GetAutoBan() {
-				processChannelError(result.context, *types.NewChannelError(channel.Id, channel.Type, channel.Name, channel.ChannelInfo.IsMultiKey, common.GetContextKeyString(result.context, constant.ContextKeyChannelKey), channel.GetAutoBan()), newAPIError)
-			}
-
-			// enable channel
-			if !isChannelEnabled && service.ShouldEnableChannel(newAPIError, channel.Status) {
-				service.EnableChannel(channel.Id, common.GetContextKeyString(result.context, constant.ContextKeyChannelKey), channel.Name)
-			}
-
-			channel.UpdateResponseTime(milliseconds)
-			time.Sleep(common.RequestInterval)
-		}
-
-		if notify {
-			service.NotifyChannelWatchers(dto.NotifyTypeChannelTest, func(lang string) (string, string) {
-				return i18n.Translate(lang, i18n.MsgChannelTestCompletedSubject), i18n.Translate(lang, i18n.MsgChannelTestCompletedContent)
-			})
-		}
-	})
-	return nil
+func runChannelTestTask(ctx context.Context, mode string, notify bool, report func(processed, total int)) (channelTestSummary, error) {
+	testUserID, err := resolveChannelTestUserID(nil)
+	if err != nil {
+		return channelTestSummary{}, err
+	}
+	channels, err := model.GetAllChannels(0, 0, true, false)
+	if err != nil {
+		return channelTestSummary{}, err
+	}
+	if strings.TrimSpace(mode) == "" {
+		mode = operation_setting.GetMonitorSetting().ChannelTestMode
+	}
+	selected := selectChannelsForAutomaticTest(channels, mode)
+	allowDisable := mode != operation_setting.ChannelTestModePassiveRecovery
+	concurrency := operation_setting.GetMonitorSetting().ChannelTestConcurrency
+	summary := performChannelTests(ctx, selected, testUserID, allowDisable, concurrency, report)
+	if notify && (ctx == nil || ctx.Err() == nil) {
+		service.NotifyChannelWatchers(dto.NotifyTypeChannelTest, func(lang string) (string, string) {
+			return i18n.Translate(lang, i18n.MsgChannelTestCompletedSubject), i18n.Translate(lang, i18n.MsgChannelTestCompletedContent)
+		})
+	}
+	return summary, nil
 }
 
 func TestAllChannels(c *gin.Context) {
-	err := testAllChannels(true)
+	task, created, err := service.EnqueueSystemTask(model.SystemTaskTypeChannelTest, channelTestTaskPayload{
+		Mode:   operation_setting.ChannelTestModeScheduledAll,
+		Notify: true,
+	})
 	if err != nil {
 		common.ApiError(c, err)
+		return
+	}
+	if !created {
+		msg := common.NewMessage("A channel test task is already running or queued. Cannot start this manual task")
+		common.ApiErrorStatus(c, http.StatusConflict, msg, gin.H{"data": gin.H{
+			"task_id": task.TaskID,
+			"status":  task.Status,
+			"type":    task.Type,
+		}})
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{
 		"success": true,
 		"message": "",
+		"data": gin.H{
+			"task_id": task.TaskID,
+			"status":  task.Status,
+		},
 	})
 }
 
-var autoTestChannelsOnce sync.Once
-
-func AutomaticallyTestChannels() {
-	// 只在Master节点定时测试渠道
-	if !common.IsMasterNode {
-		return
+func attachTestBillingRequestInput(info *relaycommon.RelayInfo, request dto.Request) error {
+	if info == nil {
+		return nil
 	}
-	autoTestChannelsOnce.Do(func() {
-		for {
-			if !operation_setting.GetMonitorSetting().AutoTestChannelEnabled {
-				time.Sleep(1 * time.Minute)
-				continue
-			}
-			for {
-				frequency := operation_setting.GetMonitorSetting().AutoTestChannelMinutes
-				time.Sleep(time.Duration(int(math.Round(frequency))) * time.Minute)
-				common.SysLog(fmt.Sprintf("automatically test channels with interval %f minutes", frequency))
-				common.SysLog("automatically testing all channels")
-				_ = testAllChannels(false)
-				common.SysLog("automatically channel test finished")
-				if !operation_setting.GetMonitorSetting().AutoTestChannelEnabled {
-					break
-				}
-			}
-		}
-	})
+
+	input, err := helper.BuildBillingExprRequestInputFromRequest(request, info.RequestHeaders)
+	if err != nil {
+		return err
+	}
+	info.BillingRequestInput = &input
+	return nil
 }

@@ -2,6 +2,9 @@ web/node_modules/
 web/dist/
 web/.vite/
 web/storybook-static/
+electron/node_modules/
+electron/dist/
+.desktop-build/
 web-backup/
 web.zip
 .DS_Store

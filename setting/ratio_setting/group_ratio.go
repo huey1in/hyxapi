@@ -17,16 +17,20 @@ var defaultGroupRatio = map[string]float64{
 
 var groupRatioMap = types.NewRWMap[string, float64]()
 
-var defaultGroupSpecialUsableGroup = map[string]map[string]string{
+var defaultGroupGroupRatio = map[string]map[string]float64{
 	"vip": {
-		"append_1":   "vip_special_group_1",
-		"-:remove_1": "vip_removed_group_1",
+		"edit_this": 0.9,
 	},
 }
 
+var groupGroupRatioMap = types.NewRWMap[string, map[string]float64]()
+
+var defaultGroupSpecialUsableGroup = map[string]map[string]string{}
+
 type GroupRatioSetting struct {
-	GroupRatio              *types.RWMap[string, float64]           `json:"group_ratio"`
-	GroupSpecialUsableGroup *types.RWMap[string, map[string]string] `json:"group_special_usable_group"`
+	GroupRatio              *types.RWMap[string, float64]            `json:"group_ratio"`
+	GroupGroupRatio         *types.RWMap[string, map[string]float64] `json:"group_group_ratio"`
+	GroupSpecialUsableGroup *types.RWMap[string, map[string]string]  `json:"group_special_usable_group"`
 }
 
 var groupRatioSetting GroupRatioSetting
@@ -36,13 +40,23 @@ func init() {
 	groupSpecialUsableGroup.AddAll(defaultGroupSpecialUsableGroup)
 
 	groupRatioMap.AddAll(defaultGroupRatio)
+	groupGroupRatioMap.AddAll(defaultGroupGroupRatio)
 
 	groupRatioSetting = GroupRatioSetting{
 		GroupSpecialUsableGroup: groupSpecialUsableGroup,
 		GroupRatio:              groupRatioMap,
+		GroupGroupRatio:         groupGroupRatioMap,
 	}
 
 	config.GlobalConfig.Register("group_ratio_setting", &groupRatioSetting)
+}
+
+func GetGroupRatioSetting() *GroupRatioSetting {
+	if groupRatioSetting.GroupSpecialUsableGroup == nil {
+		groupRatioSetting.GroupSpecialUsableGroup = types.NewRWMap[string, map[string]string]()
+		groupRatioSetting.GroupSpecialUsableGroup.AddAll(defaultGroupSpecialUsableGroup)
+	}
+	return &groupRatioSetting
 }
 
 func GetGroupRatioCopy() map[string]float64 {
@@ -65,10 +79,30 @@ func UpdateGroupRatioByJSONString(jsonStr string) error {
 func GetGroupRatio(name string) float64 {
 	ratio, ok := groupRatioMap.Get(name)
 	if !ok {
-		common.SysLog("group ratio not found: " + name)
+		common.SysLog(common.LogText("group ratio not found: %s", name))
 		return 1
 	}
 	return ratio
+}
+
+func GetGroupGroupRatio(userGroup, usingGroup string) (float64, bool) {
+	gp, ok := groupGroupRatioMap.Get(userGroup)
+	if !ok {
+		return -1, false
+	}
+	ratio, ok := gp[usingGroup]
+	if !ok {
+		return -1, false
+	}
+	return ratio, true
+}
+
+func GroupGroupRatio2JSONString() string {
+	return groupGroupRatioMap.MarshalJSONString()
+}
+
+func UpdateGroupGroupRatioByJSONString(jsonStr string) error {
+	return types.LoadFromJsonString(groupGroupRatioMap, jsonStr)
 }
 
 func CheckGroupRatio(jsonStr string) error {

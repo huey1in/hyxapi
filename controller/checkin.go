@@ -38,6 +38,7 @@ func GetCheckinStatus(c *gin.Context) {
 			"enabled":   setting.Enabled,
 			"min_quota": setting.MinQuota,
 			"max_quota": setting.MaxQuota,
+			"today":     time.Now().Format("2006-01-02"),
 			"stats":     stats,
 		},
 	})
@@ -53,7 +54,7 @@ func DoCheckin(c *gin.Context) {
 
 	userId := c.GetInt("id")
 
-	checkin, err := model.UserCheckin(userId)
+	checkin, err := model.UserCheckinContext(c.Request.Context(), userId)
 	if err != nil {
 		c.JSON(http.StatusOK, gin.H{
 			"success": false,

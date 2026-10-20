@@ -199,11 +199,11 @@ func ParseAcceptLanguage(header string) string {
 
 // normalizeLang normalizes language code to supported format
 func normalizeLang(lang string) string {
-	lang = strings.ToLower(strings.TrimSpace(lang))
+	lang = strings.ReplaceAll(strings.ToLower(strings.TrimSpace(lang)), "_", "-")
 
 	// Handle common variations
 	switch {
-	case strings.HasPrefix(lang, "zh-tw"):
+	case lang == "zhtw", strings.HasPrefix(lang, "zh-tw"), strings.HasPrefix(lang, "zh-hk"), strings.HasPrefix(lang, "zh-mo"), strings.HasPrefix(lang, "zh-hant"):
 		return LangZhTW
 	case strings.HasPrefix(lang, "zh"):
 		return LangZhCN
@@ -228,4 +228,47 @@ func IsSupported(lang string) bool {
 		}
 	}
 	return false
+}
+
+func StatedLang(c *gin.Context) string {
+	if c == nil {
+		return ""
+	}
+
+	// 1. Try to get language from user settings (if already loaded by TokenAuth or other middleware)
+	userSetting, settingLoaded := common.GetContextKeyType[dto.UserSetting](c, constant.ContextKeyUserSetting)
+	if settingLoaded && userSetting.Language != "" {
+		normalized := normalizeLang(userSetting.Language)
+		if IsSupported(normalized) {
+			return normalized
+		}
+	}
+
+	// 2. Lazy load user language using user ID (for session-based auth where full settings aren't loaded).
+	// Loaded settings without a language mean the user saved none; loading the user again would cost
+	// a cache or database read on every relay request.
+	if !settingLoaded && userLangLoaderFunc != nil {
+		if userId, exists := c.Get("id"); exists {
+			if uid, ok := userId.(int); ok && uid > 0 {
+				lang := userLangLoaderFunc(uid)
+				if lang != "" {
+					normalized := normalizeLang(lang)
+					if IsSupported(normalized) {
+						return normalized
+					}
+				}
+			}
+		}
+	}
+
+	// 3. Try to get language from context (set by I18n middleware from Accept-Language)
+	if lang := c.GetString(string(constant.ContextKeyLanguage)); lang != "" {
+		normalized := normalizeLang(lang)
+		if IsSupported(normalized) {
+			return normalized
+		}
+	}
+
+	// 4. Try Accept-Language header directly (fallback if middleware didn't run)
+	return ParseAcceptLanguage(c.GetHeader("Accept-Language"))
 }

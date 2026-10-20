@@ -41,13 +41,13 @@ func FetchCodexWhamUsage(
 	}
 	setCodexWhamRequestHeaders(req, at, aid)
 
-	resp, err := client.Do(req)
+	resp, err := codexWhamClient(client).Do(req)
 	if err != nil {
 		return 0, nil, err
 	}
 	defer resp.Body.Close()
 
-	body, err = io.ReadAll(resp.Body)
+	body, err = readCodexWhamBody(resp.Body)
 	if err != nil {
 		return resp.StatusCode, nil, err
 	}
@@ -83,13 +83,13 @@ func FetchCodexWhamRateLimitResetCredits(
 	}
 	setCodexWhamRequestHeaders(req, at, aid)
 
-	resp, err := client.Do(req)
+	resp, err := codexWhamClient(client).Do(req)
 	if err != nil {
 		return 0, nil, err
 	}
 	defer resp.Body.Close()
 
-	body, err = io.ReadAll(resp.Body)
+	body, err = readCodexWhamBody(resp.Body)
 	if err != nil {
 		return resp.StatusCode, nil, err
 	}
@@ -138,13 +138,13 @@ func ConsumeCodexWhamRateLimitResetCredit(
 	setCodexWhamRequestHeaders(req, at, aid)
 	req.Header.Set("Content-Type", "application/json")
 
-	resp, err := client.Do(req)
+	resp, err := codexWhamClient(client).Do(req)
 	if err != nil {
 		return 0, nil, err
 	}
 	defer resp.Body.Close()
 
-	body, err = io.ReadAll(resp.Body)
+	body, err = readCodexWhamBody(resp.Body)
 	if err != nil {
 		return resp.StatusCode, nil, err
 	}
@@ -158,4 +158,22 @@ func setCodexWhamRequestHeaders(req *http.Request, accessToken string, accountID
 	if req.Header.Get("originator") == "" {
 		req.Header.Set("originator", "codex_cli_rs")
 	}
+}
+
+func codexWhamClient(client *http.Client) *http.Client {
+	copy := *client
+	copy.CheckRedirect = func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse }
+	return &copy
+}
+
+func readCodexWhamBody(reader io.Reader) ([]byte, error) {
+	const limit = 2 << 20
+	body, err := io.ReadAll(io.LimitReader(reader, limit+1))
+	if err != nil {
+		return nil, err
+	}
+	if len(body) > limit {
+		return nil, fmt.Errorf("Codex usage response exceeds size limit")
+	}
+	return body, nil
 }

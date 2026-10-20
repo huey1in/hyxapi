@@ -46,11 +46,6 @@ export function getUserIdFromLocalStorage() {
   return user.id;
 }
 
-export function getFooterHTML() {
-  // Use the built-in footer for the Hyxware build.
-  return null;
-}
-
 export async function copy(text) {
   // 优先使用异步剪贴板 API（需安全上下文 https/localhost）
   try {
@@ -268,6 +263,14 @@ export const calculateModelPrice = ({
   const unitLabel = tokenUnit === 'K' ? 'K' : 'M';
   const unitDivisor = tokenUnit === 'K' ? 1000 : 1;
 
+  if (record?.billing_mode === 'tiered_expr' || billingType === 'expression' || record?.billing_plugin_variants?.length) {
+    return {
+      price: '表达式计费', isPerToken: false, isExpression: true,
+      expression: record.billing_expr || '', usedGroup, usedGroupRatio,
+      configured: record?.configured !== false,
+    };
+  }
+
   if (isPerToken) {
     const input = scaled(record.input_price);
     const output = scaled(record.output_price);
@@ -322,10 +325,11 @@ export const calculateModelPrice = ({
 };
 
 export const getModelPriceItems = (priceData, t) => {
-  const hasConfiguredPrice = (value) => {
+  if (priceData.configured === false) return [];
+  const hasConfiguredPrice = (value, allowFree = false) => {
     if (value === null || value === undefined || value === '') return false;
     const numeric = Number(value);
-    return Number.isFinite(numeric) && numeric > 0;
+    return Number.isFinite(numeric) && (allowFree ? numeric >= 0 : numeric > 0);
   };
   if (priceData.isPerToken) {
 
@@ -380,7 +384,7 @@ export const getModelPriceItems = (priceData, t) => {
         configuredValue: priceData.audioOutputPriceUSD,
         suffix: unitSuffix,
       },
-    ].filter((item) => hasConfiguredPrice(item.configuredValue));
+    ].filter((item) => hasConfiguredPrice(item.configuredValue, item.key === 'input' || item.key === 'completion'));
   }
 
   return [
@@ -391,5 +395,5 @@ export const getModelPriceItems = (priceData, t) => {
       configuredValue: priceData.priceUSD,
       suffix: ` / ${t('次')}`,
     },
-  ].filter((item) => hasConfiguredPrice(item.configuredValue));
+  ].filter((item) => hasConfiguredPrice(item.configuredValue, true));
 };

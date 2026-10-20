@@ -3,7 +3,6 @@ package model
 import (
 	"encoding/json"
 	"os"
-	"reflect"
 	"sync"
 	"testing"
 	"time"
@@ -24,6 +23,7 @@ func TestMain(m *testing.M) {
 	LOG_DB = db
 
 	common.UsingSQLite = true
+	initCol()
 	common.RedisEnabled = false
 	common.BatchUpdateEnabled = false
 	common.LogConsumeEnabled = true
@@ -36,13 +36,29 @@ func TestMain(m *testing.M) {
 
 	if err := db.AutoMigrate(
 		&Task{},
+		&SystemTask{},
+		&SystemTaskLock{},
 		&ModelPricing{},
 		&User{},
+		&UserSession{},
+		&UserAccessToken{},
+		&AuditLog{},
+		&LoginEncryptionKey{},
+		&AuthFlow{},
+		&Option{},
+		&PasskeyCredential{},
+		&TwoFA{},
+		&TwoFABackupCode{},
+		&ExternalIdentityClaim{},
+		&UserOAuthBinding{},
 		&Token{},
 		&Log{},
 		&Channel{},
 		&TopUp{},
 		&SubscriptionPlan{},
+		&SubscriptionOrder{},
+		&SubscriptionRedemption{},
+		&SubscriptionPreConsumeRecord{},
 		&UserSubscription{},
 	); err != nil {
 		panic("failed to migrate: " + err.Error())
@@ -55,15 +71,25 @@ func truncateTables(t *testing.T) {
 	t.Helper()
 	t.Cleanup(func() {
 		DB.Exec("DELETE FROM tasks")
+		DB.Exec("DELETE FROM system_task_locks")
+		DB.Exec("DELETE FROM system_tasks")
 		DB.Exec("DELETE FROM model_pricing")
 		InvalidateModelPricingCache()
 		DB.Exec("DELETE FROM users")
+		for _, record := range []any{&UserSession{}, &UserAccessToken{}, &AuthFlow{}, &Option{}, &PasskeyCredential{}, &TwoFA{}, &TwoFABackupCode{}, &ExternalIdentityClaim{}, &UserOAuthBinding{}} {
+			DB.Session(&gorm.Session{AllowGlobalUpdate: true}).Unscoped().Delete(record)
+		}
 		DB.Exec("DELETE FROM tokens")
 		DB.Exec("DELETE FROM logs")
 		DB.Exec("DELETE FROM channels")
 		DB.Exec("DELETE FROM top_ups")
 		DB.Exec("DELETE FROM subscription_plans")
 		DB.Exec("DELETE FROM user_subscriptions")
+		DB.Exec("DELETE FROM subscription_orders")
+		DB.Exec("DELETE FROM subscription_redemptions")
+		DB.Exec("DELETE FROM subscription_pre_consume_records")
+		_ = getSubscriptionPlanCache().Purge()
+		_ = getSubscriptionPlanInfoCache().Purge()
 	})
 }
 
@@ -91,29 +117,13 @@ func TestSnapshotEqual_Same(t *testing.T) {
 	assert.True(t, s.Equal(s))
 }
 
-func TestTaskBillingContextUsesDirectPriceFieldsOnly(t *testing.T) {
-	contextType := reflect.TypeOf(TaskBillingContext{})
-	for _, legacyField := range []string{
-		"ModelPrice",
-		"ModelRatio",
-		"PerCallBilling",
-	} {
-		_, exists := contextType.FieldByName(legacyField)
-		require.Falsef(t, exists, "legacy billing field %s must not be persisted", legacyField)
-	}
-	for _, directField := range []string{
-		"InputPrice",
-		"OutputPrice",
-		"CacheReadPrice",
-		"CacheWritePrice",
-		"ImagePrice",
-		"AudioInputPrice",
-		"AudioOutputPrice",
-		"RequestPrice",
-	} {
-		_, exists := contextType.FieldByName(directField)
-		require.Truef(t, exists, "direct billing field %s must be persisted", directField)
-	}
+func TestTaskBillingContextPreservesPricingSnapshots(t *testing.T) {
+	original := TaskPrivateData{BillingContext: &TaskBillingContext{InputPrice: 1.25, OutputPrice: 7.5, RequestPrice: 0.25, ModelRatio: 2, GroupRatio: 0.5, OriginModelName: "model-v1", OtherRatios: map[string]float64{"seconds": 6}}}
+	encoded, err := original.Value()
+	require.NoError(t, err)
+	var decoded TaskPrivateData
+	require.NoError(t, decoded.Scan(encoded))
+	require.Equal(t, original, decoded)
 }
 
 func TestSnapshotEqual_DifferentStatus(t *testing.T) {

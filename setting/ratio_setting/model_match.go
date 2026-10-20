@@ -2,8 +2,13 @@ package ratio_setting
 
 import (
 	"github.com/QuantumNous/new-api/relaykit/relayconvert/reasoning"
+	hostreasoning "github.com/QuantumNous/new-api/setting/reasoning"
 	"strings"
 )
+
+func RoutingMatchModelName(name string) string {
+	return FormatMatchingModelName(hostreasoning.BaseModelName(name))
+}
 
 func normalizeThinkingBudgetModel(name, prefix, wildcard string) string {
 	if strings.HasPrefix(name, prefix) && strings.Contains(name, "-thinking-") {

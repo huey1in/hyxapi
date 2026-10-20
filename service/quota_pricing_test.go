@@ -94,6 +94,56 @@ func TestQuotaInputTokenDetailsUsesUpstreamAggregateCacheFields(t *testing.T) {
 	require.Zero(t, details.CachedImageTokens)
 }
 
+func TestAudioQuotaPreservesCachedModalityPrices(t *testing.T) {
+	previous := common.QuotaPerUnit
+	common.QuotaPerUnit = 100
+	t.Cleanup(func() { common.QuotaPerUnit = previous })
+	details := dto.InputTokenDetails{
+		TextTokens: 600_000, AudioTokens: 400_000, CachedTokens: 300_000,
+		CachedTokensDetails: &dto.CachedTokenDetails{
+			TextTokens: common.GetPointer(100_000), AudioTokens: common.GetPointer(200_000),
+		},
+	}
+	quota := calculateAudioQuota(QuotaInfo{
+		InputDetails: quotaInputTokenDetails(details), InputPrice: 2,
+		AudioInputPrice: 8, CacheReadPrice: 0.5, GroupRatio: 1,
+	})
+	// Cached audio must not be reassigned to the cheaper text lane.
+	require.Equal(t, 275, quota)
+}
+
+func TestAudioQuotaSaturatesWithoutIntegerWraparound(t *testing.T) {
+	for _, input := range []QuotaInfo{
+		{BillingType: model.ModelPricingBillingRequest, RequestPrice: 1e30, GroupRatio: 1},
+		{InputDetails: TokenDetails{AudioTokens: 1_000_000}, AudioInputPrice: 1e30, GroupRatio: 1},
+	} {
+		quota, clamp := calculateAudioQuotaChecked(input)
+		require.Equal(t, common.MaxQuota, quota)
+		require.NotNil(t, clamp)
+		require.Equal(t, common.QuotaClampOverflow, clamp.Kind)
+	}
+}
+
+func TestRealtimeExpressionChargesEachResponseAtItsOwnTier(t *testing.T) {
+	info := makeRelayInfo(`len <= 100 ? tier("short", p * 2 + c * 4 + ai * 8 + ao * 16) : tier("long", p * 4 + c * 8 + ai * 16 + ao * 32)`, 1, 0, 0)
+	first := &dto.RealtimeUsage{InputTokens: 100, OutputTokens: 20,
+		InputTokenDetails:  dto.InputTokenDetails{AudioTokens: 40},
+		OutputTokenDetails: dto.OutputTokenDetails{AudioTokens: 10}}
+	quota, tier := calculateRealtimeUsageQuota(info, first, QuotaInfo{})
+	require.Equal(t, 320, quota)
+	require.Equal(t, "short", tier.MatchedTier)
+	info.RealtimeConsumedQuota += quota
+	second := &dto.RealtimeUsage{InputTokens: 200, OutputTokens: 20,
+		InputTokenDetails:  dto.InputTokenDetails{AudioTokens: 40},
+		OutputTokenDetails: dto.OutputTokenDetails{AudioTokens: 10}}
+	quota, tier = calculateRealtimeUsageQuota(info, second, QuotaInfo{})
+	require.Equal(t, 840, quota)
+	require.Equal(t, "long", tier.MatchedTier)
+	info.RealtimeConsumedQuota += quota
+	// Re-evaluating aggregate usage would choose a different tier for response 1.
+	require.Equal(t, 1160, finalRealtimeQuota(info, 9999))
+}
+
 func TestCalculateAudioQuotaUsesCacheWriteAndImagePrices(t *testing.T) {
 	originalQuotaPerUnit := common.QuotaPerUnit
 	common.QuotaPerUnit = 100

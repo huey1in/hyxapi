@@ -8,6 +8,7 @@ import (
 	"os"
 	"path/filepath"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/QuantumNous/new-api/constant"
@@ -28,6 +29,14 @@ func printHelp() {
 }
 
 func InitEnv() {
+	constant.UpdateTask = GetEnvOrDefaultBool("UPDATE_TASK", true)
+	constant.TaskPluginProtocolTimeoutSeconds = GetEnvOrDefault("TASK_PLUGIN_PROTOCOL_TIMEOUT_SECONDS", 600)
+	constant.TaskPluginProtocolTickMilliseconds = GetEnvOrDefault("TASK_PLUGIN_PROTOCOL_TICK_MILLISECONDS", 2000)
+	constant.TaskPluginProtocolTickJitterMilliseconds = GetEnvOrDefault("TASK_PLUGIN_PROTOCOL_TICK_JITTER_MILLISECONDS", 500)
+	constant.TaskPluginProtocolHeartbeatSeconds = GetEnvOrDefault("TASK_PLUGIN_PROTOCOL_HEARTBEAT_SECONDS", 15)
+
+	SMTPStartTLSEnabled = GetEnvOrDefaultBool("SMTP_STARTTLS_ENABLE", GetEnvOrDefaultBool("SMTP_STARTTLS_ENABLED", false))
+	SMTPInsecureSkipVerify = GetEnvOrDefaultBool("SMTP_INSECURE_SKIP_VERIFY", false)
 	flag.Parse()
 
 	envVersion := os.Getenv("VERSION")
@@ -60,6 +69,10 @@ func InitEnv() {
 	} else {
 		CryptoSecret = SessionSecret
 	}
+	if err := InitSessionCookieSettings(); err != nil {
+		log.Fatal(err)
+	}
+	initUserSessionSettings()
 	if os.Getenv("SQLITE_PATH") != "" {
 		SQLitePath = os.Getenv("SQLITE_PATH")
 	}
@@ -101,6 +114,7 @@ func InitEnv() {
 	SyncFrequency = GetEnvOrDefault("SYNC_FREQUENCY", 60)
 	BatchUpdateInterval = GetEnvOrDefault("BATCH_UPDATE_INTERVAL", 5)
 	RelayTimeout = GetEnvOrDefault("RELAY_TIMEOUT", 0)
+	RelayResponseHeaderTimeout = GetEnvOrDefault("RELAY_RESPONSE_HEADER_TIMEOUT", 1800)
 	RelayIdleConnTimeout = GetEnvOrDefault("RELAY_IDLE_CONN_TIMEOUT", 90)
 	RelayMaxIdleConns = GetEnvOrDefault("RELAY_MAX_IDLE_CONNS", 500)
 	RelayMaxIdleConnsPerHost = GetEnvOrDefault("RELAY_MAX_IDLE_CONNS_PER_HOST", 100)
@@ -129,10 +143,20 @@ func InitEnv() {
 	SearchRateLimitNum = GetEnvOrDefault("SEARCH_RATE_LIMIT", 10)
 	SearchRateLimitDuration = int64(GetEnvOrDefault("SEARCH_RATE_LIMIT_DURATION", 60))
 	initConstantEnv()
+	constant.TrustedRedirectDomains = nil
+	for domain := range strings.SplitSeq(GetEnvOrDefaultString("TRUSTED_REDIRECT_DOMAINS", ""), ",") {
+		if domain = strings.ToLower(strings.TrimSpace(domain)); domain != "" {
+			constant.TrustedRedirectDomains = append(constant.TrustedRedirectDomains, domain)
+		}
+	}
 }
 
 func initConstantEnv() {
 	constant.StreamingTimeout = GetEnvOrDefault("STREAMING_TIMEOUT", 300)
+	constant.TaskPluginEnabled = GetEnvOrDefaultBool("TASK_PLUGIN_ENABLED", true)
+	constant.TaskTimeoutMinutes = GetEnvOrDefault("TASK_TIMEOUT_MINUTES", 1440)
+	constant.TaskQueryLimit = GetEnvOrDefault("TASK_QUERY_LIMIT", 1000)
+	constant.TaskPollMaxFailures = GetEnvOrDefault("TASK_POLL_MAX_FAILURES", 20)
 	constant.DifyDebug = GetEnvOrDefaultBool("DIFY_DEBUG", true)
 	constant.MaxFileDownloadMB = GetEnvOrDefault("MAX_FILE_DOWNLOAD_MB", 64)
 	constant.StreamScannerMaxBufferMB = GetEnvOrDefault("STREAM_SCANNER_MAX_BUFFER_MB", 128)

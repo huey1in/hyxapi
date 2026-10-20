@@ -362,7 +362,19 @@ func runResetOnFirstStreamServer(ln net.Listener, expectRetry bool) <-chan h2Ser
 			res.err = err
 			return
 		}
-		defer conn.Close()
+		defer func() {
+			// Preserve RST_STREAM/final DATA when Windows has unread peer frames.
+			// The client may retain the connection until test cleanup, so drain
+			// asynchronously instead of blocking result delivery on its close.
+			if tcp, ok := conn.(*net.TCPConn); ok {
+				_ = tcp.CloseWrite()
+			}
+			go func() {
+				defer conn.Close()
+				_ = conn.SetReadDeadline(time.Now().Add(5 * time.Second))
+				_, _ = io.Copy(io.Discard, conn)
+			}()
+		}()
 
 	attempts:
 		for attempt := 0; ; attempt++ {
@@ -417,18 +429,38 @@ func runGoAwayAfterFirstRequestServer(ln net.Listener) <-chan h2ServerResult {
 
 			if attempt == 0 {
 				err = framer.WriteGoAway(0, http2.ErrCodeNo, nil)
-				conn.Close()
 				if err != nil {
+					conn.Close()
 					res.err = err
 					return
 				}
+				// Drain the peer's outstanding SETTINGS/WINDOW_UPDATE frames before
+				// closing. Closing with unread TCP data can send RST on Windows and
+				// discard the GOAWAY this fixture is supposed to exercise.
+				if tcp, ok := conn.(*net.TCPConn); ok {
+					_ = tcp.CloseWrite()
+				}
+				_ = conn.SetReadDeadline(time.Now().Add(5 * time.Second))
+				_, _ = io.Copy(io.Discard, conn)
+				conn.Close()
 				continue
 			}
 
 			err = writeH2TestResponse(framer, streamID)
-			conn.Close()
 			if err != nil {
+				conn.Close()
 				res.err = err
+			} else {
+				// Allow the final DATA frame to reach the peer before closing,
+				// just as for the GOAWAY connection above.
+				go func() {
+					defer conn.Close()
+					if tcp, ok := conn.(*net.TCPConn); ok {
+						_ = tcp.CloseWrite()
+					}
+					_ = conn.SetReadDeadline(time.Now().Add(5 * time.Second))
+					_, _ = io.Copy(io.Discard, conn)
+				}()
 			}
 			return
 		}
@@ -591,4 +623,58 @@ func TestUpstreamGetBody_HTTP2CannotRetryWithoutGetBody(t *testing.T) {
 	assert.Equal(t, 1, srv.streamCount)
 	require.Len(t, srv.attemptBodies, 1)
 	assert.Equal(t, payload, srv.attemptBodies[0])
+}
+
+func TestDoTaskApiRequestPropagatesClientCancellation(t *testing.T) {
+	service.InitHttpClient()
+	started := make(chan struct{})
+	upstreamCancelled := make(chan struct{})
+	release := make(chan struct{})
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		_, _ = io.Copy(io.Discard, r.Body)
+		close(started)
+		select {
+		case <-r.Context().Done():
+			close(upstreamCancelled)
+		case <-release:
+		}
+	}))
+	defer server.Close()
+	defer close(release)
+	reqCtx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	c, _ := gin.CreateTestContext(httptest.NewRecorder())
+	c.Request = httptest.NewRequest(http.MethodPost, "/v1/videos", strings.NewReader("{}")).WithContext(reqCtx)
+	result := make(chan error, 1)
+	go func() {
+		resp, err := DoTaskApiRequest(&stubTaskAdaptor{baseURL: server.URL}, c, &relaycommon.RelayInfo{ChannelMeta: &relaycommon.ChannelMeta{}}, strings.NewReader("{}"))
+		if resp != nil {
+			resp.Body.Close()
+		}
+		result <- err
+	}()
+	select {
+	case <-started:
+	case <-time.After(3 * time.Second):
+		t.Fatal("task did not reach upstream")
+	}
+	cancel()
+	select {
+	case err := <-result:
+		require.Error(t, err)
+	case <-time.After(3 * time.Second):
+		t.Fatal("task ignored client cancellation")
+	}
+	select {
+	case <-upstreamCancelled:
+	case <-time.After(3 * time.Second):
+		t.Fatal("upstream request was not cancelled")
+	}
+}
+
+func TestDoTaskApiRequestRejectsMissingRequest(t *testing.T) {
+	for _, c := range []*gin.Context{nil, {}} {
+		_, err := DoTaskApiRequest(nil, c, nil, nil)
+		require.ErrorContains(t, err, "client request is missing")
+	}
 }
