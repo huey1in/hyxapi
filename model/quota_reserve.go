@@ -50,7 +50,6 @@ if remain == nil or remain < tonumber(ARGV[1]) then
 end
 redis.call('HINCRBY', KEYS[1], 'RemainQuota', -tonumber(ARGV[1]))
 redis.call('HINCRBY', KEYS[1], 'UsedQuota', tonumber(ARGV[1]))
-redis.call('HSET', KEYS[1], 'AccessedTime', ARGV[3])
 return 1`
 
 const tokenQuotaDeltaScript = `
@@ -61,7 +60,6 @@ if tonumber(redis.call('HGET', KEYS[1], 'Id') or '0') ~= tonumber(ARGV[2])
 end
 redis.call('HINCRBY', KEYS[1], 'RemainQuota', tonumber(ARGV[1]))
 redis.call('HINCRBY', KEYS[1], 'UsedQuota', -tonumber(ARGV[1]))
-redis.call('HSET', KEYS[1], 'AccessedTime', ARGV[3])
 return 1`
 
 func quotaResultFromLua(result int, err error) (cacheQuotaResult, error) {
@@ -92,13 +90,13 @@ func cacheApplyUserQuotaDelta(userID int, delta int64) (cacheQuotaResult, error)
 
 func cacheTryReserveTokenQuota(id int, key string, amount int64) (cacheQuotaResult, error) {
 	result, err := common.RDB.Eval(context.Background(), tokenQuotaReserveScript,
-		[]string{getTokenCacheKey(key)}, amount, id, common.GetTimestamp()).Int()
+		[]string{getTokenCacheKey(key)}, amount, id).Int()
 	return quotaResultFromLua(result, err)
 }
 
 func cacheApplyTokenQuotaDelta(id int, key string, delta int64) (cacheQuotaResult, error) {
 	result, err := common.RDB.Eval(context.Background(), tokenQuotaDeltaScript,
-		[]string{getTokenCacheKey(key)}, delta, id, common.GetTimestamp()).Int()
+		[]string{getTokenCacheKey(key)}, delta, id).Int()
 	return quotaResultFromLua(result, err)
 }
 
@@ -126,9 +124,8 @@ func persistTokenQuotaDelta(id int, delta int) error {
 	}
 	result := DB.Model(&Token{}).Where("id = ?", id).Updates(
 		map[string]any{
-			"remain_quota":  gorm.Expr("remain_quota + ?", delta),
-			"used_quota":    gorm.Expr("used_quota - ?", delta),
-			"accessed_time": common.GetTimestamp(),
+			"remain_quota": gorm.Expr("remain_quota + ?", delta),
+			"used_quota":   gorm.Expr("used_quota - ?", delta),
 		},
 	)
 	if result.Error != nil {
@@ -151,9 +148,8 @@ func reserveTokenQuotaDB(id int, quota int) (bool, error) {
 	result := DB.Model(&Token{}).
 		Where("id = ? AND remain_quota >= ?", id, quota).
 		Updates(map[string]any{
-			"remain_quota":  gorm.Expr("remain_quota - ?", quota),
-			"used_quota":    gorm.Expr("used_quota + ?", quota),
-			"accessed_time": common.GetTimestamp(),
+			"remain_quota": gorm.Expr("remain_quota - ?", quota),
+			"used_quota":   gorm.Expr("used_quota + ?", quota),
 		})
 	return result.RowsAffected == 1, result.Error
 }

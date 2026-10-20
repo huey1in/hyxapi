@@ -100,7 +100,7 @@ export default function PageLayout() {
         {isConsoleRoute && <SiderBar loading={!ready || !user || !statusState.status} />}
         <main ref={mainRef} className='app-layout-main'>
           {statusError && <div role='alert' className='flex items-center justify-center gap-3 px-4 py-3 text-sm text-ui-text-2'>{t(statusError)}<Button variant='link' onClick={() => setStatusAttempt((value) => value + 1)}>{t('Retry')}</Button></div>}
-          <div className='flex-1'>{content}</div>
+          <div className={cn('flex-1', location.pathname === '/console/token' && 'token-page-content')}>{content}</div>
           {!hideFooter && <FooterBar />}
         </main>
       </div>

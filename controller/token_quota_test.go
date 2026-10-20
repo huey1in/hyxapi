@@ -20,6 +20,8 @@ func TestTokenQuotaDefaultAndPartialUpdate(t *testing.T) {
 	var token model.Token
 	require.NoError(t, db.Where("user_id = ?", 731).First(&token).Error)
 	require.True(t, token.AllowUserQuotaQuery)
+	require.Positive(t, token.CreatedTime)
+	require.Zero(t, token.AccessedTime, "creating a key must not mark it as used")
 	body := map[string]any{"id": token.Id, "name": token.Name, "unlimited_quota": true, "expired_time": -1, "allow_user_quota_query": false}
 	ctx, recorder = newAuthenticatedContext(t, http.MethodPut, "/api/token/", body, 731)
 	UpdateToken(ctx)

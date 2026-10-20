@@ -16,6 +16,7 @@ import type { DashboardRange } from './dashboard-data';
 import DashboardRangeDialog from './DashboardRangeDialog';
 import ConsoleContent from '../../features/dashboard-content/ConsoleContent';
 import SpendingTrendChart from './SpendingTrendChart';
+import ConsolePageHeader from '../../components/layout/ConsolePageHeader';
 
 const StatMini = ({ label, value }: { label: string; value: ReactNode }) => (
   <div className='dashboard-stat-mini'>
@@ -63,9 +64,9 @@ function DashboardContent({ preview = false }: { preview?: boolean }) {
   const customRangeTitle = typeof range === 'string' ? undefined : `${dashboardLocalTime(range.start_timestamp).replace('T', ' ')} – ${dashboardLocalTime(range.end_timestamp).replace('T', ' ')}`;
 
   return (
-    <div className='dashboard-overview'>
+    <div className='console-content-page dashboard-overview'>
       {/* 页面标题 */}
-      <h1 className='pb-2 text-2xl font-semibold text-ui-text'>{admin ? t('Global usage') : t('Usage overview')}</h1>
+      <ConsolePageHeader title={admin ? t('Global usage') : t('Usage overview')} />
       {overviewError && <div role='alert' className='flex flex-wrap items-center justify-between gap-3 rounded-xl border border-ui-border p-4 text-sm text-ui-text-2'><span>{t('Unable to load overview')}</span><Button variant='toggle' onClick={refresh}>{t('Retry')}</Button></div>}
 
       {/* 统计卡片 */}

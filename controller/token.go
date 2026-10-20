@@ -51,14 +51,18 @@ func buildMaskedTokenResponses(tokens []*model.Token) []*tokenResponse {
 func GetAllTokens(c *gin.Context) {
 	userId := c.GetInt("id")
 	pageInfo := common.GetPageQuery(c)
-	tokens, err := model.GetAllUserTokens(userId, pageInfo.GetStartIdx(), pageInfo.GetPageSize())
+	tokens, err := model.GetUserTokenList(userId, pageInfo.GetStartIdx(), pageInfo.GetPageSize())
 	if err != nil {
 		common.ApiError(c, err)
 		return
 	}
-	total, _ := model.CountUserTokens(userId)
+	total, err := model.CountUserTokens(userId)
+	if err != nil {
+		common.ApiError(c, err)
+		return
+	}
 	pageInfo.SetTotal(int(total))
-	pageInfo.SetItems(buildMaskedTokenResponses(tokens))
+	pageInfo.SetItems(tokens)
 	common.ApiSuccess(c, pageInfo)
 }
 
@@ -297,7 +301,6 @@ func AddToken(c *gin.Context) {
 		Name:                  token.Name,
 		Key:                   key,
 		CreatedTime:           common.GetTimestamp(),
-		AccessedTime:          common.GetTimestamp(),
 		ExpiredTime:           token.ExpiredTime,
 		RemainQuota:           token.RemainQuota,
 		UnlimitedQuota:        token.UnlimitedQuota,

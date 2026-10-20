@@ -218,10 +218,23 @@ func (token *Token) GetIpLimits() []string {
 	return ipLimits
 }
 
-func GetAllUserTokens(userId int, startIdx int, num int) ([]*Token, error) {
-	var tokens []*Token
-	var err error
-	err = DB.Where("user_id = ?", userId).Order("id desc").Limit(num).Offset(startIdx).Find(&tokens).Error
+// TokenListItem is a projection of tokens, not a separate persisted model.
+type TokenListItem struct {
+	Id           int    `json:"id"`
+	Name         string `json:"name"`
+	Key          string `json:"key"`
+	Status       int    `json:"status"`
+	CreatedTime  int64  `json:"created_time"`
+	AccessedTime int64  `json:"accessed_time"`
+}
+
+func GetUserTokenList(userId int, startIdx int, num int) ([]TokenListItem, error) {
+	tokens := make([]TokenListItem, 0)
+	err := DB.Model(&Token{}).Select("id", "name", "key", "status", "created_time", "accessed_time").
+		Where("user_id = ?", userId).Order("id desc").Limit(num).Offset(startIdx).Find(&tokens).Error
+	for index := range tokens {
+		tokens[index].Key = MaskTokenKey(tokens[index].Key)
+	}
 	return tokens, err
 }
 
@@ -448,7 +461,24 @@ func (token *Token) SelectUpdate() error {
 	if err := token.fenceMetadataMutation(); err != nil {
 		return err
 	}
-	return DB.Model(token).Select("accessed_time", "status").Updates(token).Error
+	return DB.Model(token).Select("status").Updates(token).Error
+}
+
+// RecordTokenUsage records an authenticated API request independently of quota
+// settlement, refunds and management operations. Concurrent requests cannot
+// overwrite a newer timestamp with an older one.
+func RecordTokenUsage(token *Token) error {
+	now := common.GetTimestamp()
+	if err := DB.Model(&Token{}).Where("id = ? AND (accessed_time IS NULL OR accessed_time < ?)", token.Id, now).
+		UpdateColumn("accessed_time", now).Error; err != nil {
+		return err
+	}
+	if common.RedisEnabled {
+		if err := cacheRecordTokenUsage(token.Id, token.Key, now); err != nil {
+			common.SysLog(common.LogText("failed to cache token usage time: %s", err.Error()))
+		}
+	}
+	return nil
 }
 
 func (token *Token) Delete() error {
@@ -510,9 +540,8 @@ func IncreaseTokenQuota(tokenId int, key string, quota int) (err error) {
 func increaseTokenQuota(id int, quota int) (err error) {
 	err = DB.Model(&Token{}).Where("id = ?", id).Updates(
 		map[string]interface{}{
-			"remain_quota":  gorm.Expr("remain_quota + ?", quota),
-			"used_quota":    gorm.Expr("used_quota - ?", quota),
-			"accessed_time": common.GetTimestamp(),
+			"remain_quota": gorm.Expr("remain_quota + ?", quota),
+			"used_quota":   gorm.Expr("used_quota - ?", quota),
 		},
 	).Error
 	return err
@@ -539,9 +568,8 @@ func DecreaseTokenQuota(id int, key string, quota int) (err error) {
 func decreaseTokenQuota(id int, quota int) (err error) {
 	err = DB.Model(&Token{}).Where("id = ?", id).Updates(
 		map[string]interface{}{
-			"remain_quota":  gorm.Expr("remain_quota - ?", quota),
-			"used_quota":    gorm.Expr("used_quota + ?", quota),
-			"accessed_time": common.GetTimestamp(),
+			"remain_quota": gorm.Expr("remain_quota - ?", quota),
+			"used_quota":   gorm.Expr("used_quota + ?", quota),
 		},
 	).Error
 	return err

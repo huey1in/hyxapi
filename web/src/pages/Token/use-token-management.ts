@@ -5,10 +5,10 @@ import { API, copy, showSuccess } from '../../helpers';
 import { showError } from '../../components/ui';
 import type { ApiEnvelope } from '../../types/api';
 import { useAuthStore } from '../../stores/auth-store';
-import { tokenErrorMessage, tokenPageSchema, tokenSchema } from './token-management';
-import type { ManagedToken, TokenSearch, TokenSelection } from './token-management';
+import { tokenErrorMessage, tokenListItemSchema, tokenPageSchema, tokenSchema } from './token-management';
+import type { ManagedToken, TokenListItem, TokenSelection } from './token-management';
 
-const emptySearch: TokenSearch = { keyword: '', token: '' };
+const pageSize = 20;
 
 export function useTokenManagement(preview: boolean, previewRows: unknown[]) {
   const { t } = useTranslation();
@@ -16,44 +16,32 @@ export function useTokenManagement(preview: boolean, previewRows: unknown[]) {
   const sessionID = useAuthStore((state) => state.auth.session?.sid);
   const identity = preview ? 'preview' : `${userID ?? ''}:${sessionID ?? ''}`;
   const client = useQueryClient();
-  const [criteriaOwner, setCriteriaOwner] = useState(identity);
+  const [pageOwner, setPageOwner] = useState(identity);
   const [storedPage, setPage] = useState(1);
-  const [storedPageSize, setPageSize] = useState(20);
-  const [storedSearch, setSearch] = useState<TokenSearch>(emptySearch);
-  const [storedStatus, setStatus] = useState('all');
   // Render safe defaults immediately when ownership changes, before effects run
-  // or a new user's query and search input can inherit the previous session.
-  const page = criteriaOwner === identity ? storedPage : 1;
-  const pageSize = criteriaOwner === identity ? storedPageSize : 20;
-  const search = criteriaOwner === identity ? storedSearch : emptySearch;
-  const status = criteriaOwner === identity ? storedStatus : 'all';
+  // so a new user's query cannot inherit the previous session's page.
+  const page = pageOwner === identity ? storedPage : 1;
   const [selection, setSelection] = useState<{ owner: string; values: TokenSelection }>({ owner: identity, values: {} });
-  const [secrets, setSecrets] = useState<{ owner: string; values: Record<string, string> }>({ owner: identity, values: {} });
-  const secretValues = useRef(secrets);
-  const [keyError, setKeyError] = useState('');
+  const secretValues = useRef<{ owner: string; values: Record<string, string> }>({ owner: identity, values: {} });
   const [pendingOwner, setPendingOwner] = useState('');
   const lifetime = useRef<AbortController | null>(null);
   const actionLock = useRef(false);
   const selected = selection.owner === identity ? selection.values : {};
-  const keys = secrets.owner === identity ? secrets.values : {};
   useEffect(() => {
     const owner = new AbortController(); lifetime.current = owner; actionLock.current = false;
-    setCriteriaOwner(identity);
-    setPage(1); setSearch(emptySearch); setStatus('all'); setPendingOwner(''); setKeyError('');
+    setPageOwner(identity);
+    setPage(1); setPendingOwner('');
     setSelection({ owner: identity, values: {} });
-    const next = { owner: identity, values: {} }; secretValues.current = next; setSecrets(next);
+    secretValues.current = { owner: identity, values: {} };
     return () => { owner.abort(); if (lifetime.current === owner) lifetime.current = null; };
   }, [identity]);
 
   const list = useQuery({
-    queryKey: ['managed-tokens', identity, page, pageSize, search],
+    queryKey: ['managed-tokens', identity, page],
     enabled: !preview && !!userID,
     queryFn: async ({ signal }) => {
       const params = new URLSearchParams({ p: String(page), size: String(pageSize) });
-      const searching = !!(search.keyword || search.token);
-      if (search.keyword) params.set('keyword', search.keyword);
-      if (search.token) params.set('token', search.token);
-      const { data } = await API.get<ApiEnvelope<unknown>>(`/api/token/${searching ? 'search' : ''}?${params}`, { signal, skipErrorHandler: true });
+      const { data } = await API.get<ApiEnvelope<unknown>>(`/api/token/?${params}`, { signal, skipErrorHandler: true });
       signal.throwIfAborted();
       if (!data.success) throw new Error(data.message || 'Unable to load API keys');
       const parsed = tokenPageSchema.safeParse(data.data);
@@ -62,7 +50,7 @@ export function useTokenManagement(preview: boolean, previewRows: unknown[]) {
     },
     retry: false, refetchOnWindowFocus: false, gcTime: 0,
   });
-  const rows = preview ? previewRows.map((row) => tokenSchema.parse(row)) : list.data?.items ?? [];
+  const rows = preview ? previewRows.map((row) => tokenListItemSchema.parse(row)) : list.data?.items ?? [];
   const total = preview ? rows.length : list.data?.total ?? 0;
   useEffect(() => {
     if (list.data && page > Math.max(1, Math.ceil(total / pageSize))) setPage(Math.max(1, Math.ceil(total / pageSize)));
@@ -83,22 +71,13 @@ export function useTokenManagement(preview: boolean, previewRows: unknown[]) {
     }
     signal.throwIfAborted();
     const next = { owner: identity, values: { ...(secretValues.current.owner === identity ? secretValues.current.values : {}), ...values } };
-    secretValues.current = next; setSecrets(next);
+    secretValues.current = next;
     return values;
   }, [identity]);
 
-  const rowIDs = rows.map((row) => row.id).join(',');
-  useEffect(() => {
-    if (preview || !rowIDs) return;
-    const owner = new AbortController(); setKeyError('');
-    void resolveKeys(rowIDs.split(',').map((id) => ({ id: Number(id) })), owner.signal)
-      .catch((error) => { if (!owner.signal.aborted) setKeyError(tokenErrorMessage(error)); });
-    return () => owner.abort();
-  }, [preview, rowIDs, resolveKeys]);
-
   const refresh = () => client.invalidateQueries({ queryKey: ['managed-tokens', identity] });
   const clearSelection = () => setSelection({ owner: identity, values: {} });
-  const toggleSelection = (tokens: ManagedToken[], checked: boolean) => {
+  const toggleSelection = (tokens: TokenListItem[], checked: boolean) => {
     const next = { ...selected };
     for (const token of tokens) { if (checked) next[token.id] = { id: token.id, name: token.name }; else delete next[token.id]; }
     if (Object.keys(next).length > 1000) { showError(t('Select at most 1000 API keys')); return; }
@@ -119,11 +98,23 @@ export function useTokenManagement(preview: boolean, previewRows: unknown[]) {
     if (!data.success || !Number.isInteger(data.data) || data.data < 0 || data.data > ids.length) throw new Error(data.message || 'Invalid API key deletion response');
     setSelection((current) => ({ owner: current.owner, values: Object.fromEntries(Object.entries(current.values).filter(([id]) => !ids.includes(Number(id)))) }));
     const retained = Object.fromEntries(Object.entries(secretValues.current.values).filter(([id]) => !ids.includes(Number(id))));
-    const next = { owner: identity, values: retained }; secretValues.current = next; setSecrets(next);
+    secretValues.current = { owner: identity, values: retained };
     showSuccess(t('Deleted {{count}} of {{requested}} API keys', { count: data.data, requested: ids.length }));
     await refresh();
   });
-  const changeStatus = (token: ManagedToken) => runAction(async (owner) => {
+  const loadToken = async (token: TokenListItem) => {
+    let detail: ManagedToken | undefined;
+    const success = await runAction(async (owner) => {
+      const { data } = await API.get<ApiEnvelope<unknown>>(`/api/token/${token.id}`, { signal: owner.signal, skipErrorHandler: true });
+      owner.signal.throwIfAborted();
+      if (!data.success) throw new Error(data.message || 'Unable to load API keys');
+      const parsed = tokenSchema.safeParse(data.data);
+      if (!parsed.success || parsed.data.id !== token.id) throw new Error('Invalid API key response');
+      detail = parsed.data;
+    });
+    return success ? detail : undefined;
+  };
+  const changeStatus = (token: TokenListItem) => runAction(async (owner) => {
     const { data } = await API.put<ApiEnvelope<ManagedToken>>('/api/token/?status_only=true', { id: token.id, status: token.status === 1 ? 2 : 1 }, { signal: owner.signal, skipErrorHandler: true });
     owner.signal.throwIfAborted();
     if (!data.success) throw new Error(data.message || 'Unable to update API key status');
@@ -139,11 +130,10 @@ export function useTokenManagement(preview: boolean, previewRows: unknown[]) {
   });
 
   return {
-    identity, rows, keys, total, page, pageSize, status, selected, search, keyError,
+    identity, rows, total, page, pageSize, selected,
     loading: !preview && list.isPending, fetching: list.isFetching, busy: pendingOwner === identity,
     error: list.isError ? t(tokenErrorMessage(list.error)) : '',
-    setPage, setStatus, setPageSize: (value: number) => { setPage(1); setPageSize(value); },
-    applySearch: (value: TokenSearch) => { setPage(1); setSearch({ keyword: value.keyword.trim(), token: value.token.trim() }); },
-    refresh, resolveKeys, clearSelection, toggleSelection, deleteTokens, changeStatus, copyTokens,
+    setPage,
+    refresh, clearSelection, toggleSelection, deleteTokens, loadToken, changeStatus, copyTokens,
   };
 }

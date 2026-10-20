@@ -108,6 +108,16 @@ func cacheGetTokenByKey(key string) (*Token, error) {
 	return &token, nil
 }
 
+func cacheRecordTokenUsage(id int, key string, timestamp int64) error {
+	const script = `
+if tonumber(redis.call('HGET', KEYS[1], 'Id') or '0') == tonumber(ARGV[1])
+  and tonumber(redis.call('HGET', KEYS[1], 'AccessedTime') or '0') < tonumber(ARGV[2]) then
+  redis.call('HSET', KEYS[1], 'AccessedTime', ARGV[2])
+end
+return 1`
+	return common.RDB.Eval(context.Background(), script, []string{getTokenCacheKey(key)}, id, timestamp).Err()
+}
+
 // Compatibility entry points for existing token handlers. Metadata mutations
 // raise the fence before database writes; cold reads never overwrite quotas.
 func cacheSetToken(token Token) error   { _, err := cacheInitToken(token); return err }

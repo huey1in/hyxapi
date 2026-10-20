@@ -17,25 +17,6 @@ export function ConsolePage({ children, width = 960, gap = 28, mobileGap = 20 }:
   return <div style={{ display: 'flex', flexDirection: 'column', gap: mobile ? mobileGap : gap, width: '100%', minWidth: 0, maxWidth: width, marginInline: 'auto', padding: mobile ? '16px' : '24px 16px' }}>{children}</div>;
 }
 
-export function TokenCardFrame({ children, ...props }: PropsWithChildren<{ 'data-token-id'?: number; 'data-token-placeholder'?: boolean }>) {
-  const mobile = useIsMobile();
-  return <div {...props} className='group' style={{ position: 'relative', display: 'flex', flexDirection: 'column', gap: 10, paddingBlock: mobile ? 14 : 12, paddingInline: mobile ? 14 : 18, border: '1px solid var(--ui-border)', borderRadius: 26, background: 'var(--page-bg)' }}>{children}</div>;
-}
-
-export function TokenCardsSkeleton() {
-  const mobile = useIsMobile();
-  return <ContentSkeleton variant='tokens'><div className='flex flex-col gap-3'>
-    {[0, 1, 2].map((index) => <TokenCardFrame key={index} data-token-placeholder>
-      <div style={{ display: 'flex', flexDirection: mobile ? 'column' : 'row', alignItems: mobile ? 'stretch' : 'center', justifyContent: 'space-between', gap: 8 }}>
-        <div className='flex min-h-[21px] items-center gap-1.5'><Skeleton width={13} height={13} rounded='rounded-sm' /><Skeleton width={110} height={14} /><Skeleton width={60} height={20} /></div>
-        <div className={`flex h-9 items-center gap-1 ${mobile ? 'self-end' : ''}`}>{Array.from({ length: 4 }, (_, action) => <Skeleton key={action} width={36} height={36} rounded='rounded-xl' />)}</div>
-      </div>
-      <div className='flex flex-wrap items-center gap-2'><Skeleton width={126} height={18} /><Skeleton width={90} height={20} /><Skeleton width={56} height={20} /><Skeleton width={90} height={16} className='ml-auto' /></div>
-      <Skeleton width={145} height={16} />
-    </TokenCardFrame>)}
-  </div></ContentSkeleton>;
-}
-
 export function PersonalSkeleton() {
   const { t } = useTranslation();
   return <ConsolePage width={720} gap={24} mobileGap={24}><ContentSkeleton variant='form'><div className='flex flex-col gap-6'>
@@ -116,7 +97,7 @@ export function DashboardStatsSkeleton() {
 }
 
 export function PricingCardsSkeleton({ preview = false }: { preview?: boolean }) {
-  return <ContentSkeleton variant='cards'><div className='grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 mb-4'>
+  return <ContentSkeleton variant='cards'><div className='pricing-model-grid grid'>
     {Array.from({ length: 8 }, (_, index) => <Card key={index} data-pricing-placeholder>
       <div className='flex flex-col'>
         <div className='flex items-start justify-between gap-2'><div className='flex min-w-0 items-center gap-2'><Skeleton width={22} height={22} /><Skeleton width={100} height={21} /></div><Skeleton width={45} height={22} /></div>

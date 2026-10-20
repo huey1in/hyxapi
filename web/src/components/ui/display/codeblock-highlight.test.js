@@ -12,13 +12,3 @@ test('untrusted code remains text with absent, unsupported and supported grammar
     assert.ok(result.includes('&amp;'), String(language));
   }
 });
-
-test('sensitive code masking escapes markup and preserves explicit reveal', () => {
-  const secret = 'sk-123456<secret>7890';
-  const hidden = highlightCode(`TOKEN=${secret}`, 'unknown-language', secret);
-  assert.match(hidden, /blur-\[4px\]/);
-  assert.ok(!hidden.includes('<secret>'));
-  const revealed = highlightCode(`TOKEN=${secret}`, 'unknown-language', secret, true);
-  assert.ok(!revealed.includes('blur-'));
-  assert.match(revealed, /&lt;secret&gt;/);
-});

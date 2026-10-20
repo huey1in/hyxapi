@@ -12,7 +12,7 @@
  */
 
 import { useState, useMemo } from 'react';
-import type { CSSProperties, MouseEventHandler, PropsWithChildren } from 'react';
+import type { CSSProperties, PropsWithChildren } from 'react';
 import { Copy, Check } from 'lucide-react';
 import { cn } from '../tokens';
 import { copy as copyText } from '../../../helpers';
@@ -50,14 +50,10 @@ const Inline = ({ children }: PropsWithChildren) => (
   </code>
 );
 
-export type CodeBlockProps = PropsWithChildren<{ code?: string; copyText?: string; onContentClick?: MouseEventHandler<HTMLPreElement>; sensitiveText?: string; revealSensitive?: boolean; language?: string; title?: string; showLineNumbers?: boolean; maxHeight?: CSSProperties['maxHeight']; inline?: boolean }>;
+export type CodeBlockProps = PropsWithChildren<{ code?: string; language?: string; title?: string; showLineNumbers?: boolean; maxHeight?: CSSProperties['maxHeight']; inline?: boolean }>;
 
 const CodeBlock = ({
   code = '',
-  copyText: copyContent,
-  onContentClick,
-  sensitiveText,
-  revealSensitive = false,
   language,
   title,
   showLineNumbers = false,
@@ -68,12 +64,12 @@ const CodeBlock = ({
   const content = String(code || children || '');
   const [copied, setCopied] = useState(false);
 
-  const html = useMemo(() => highlightCode(content, language, sensitiveText, revealSensitive), [content, language, revealSensitive, sensitiveText]);
+  const html = useMemo(() => highlightCode(content, language), [content, language]);
 
   if (inline) return <Inline>{content}</Inline>;
 
   const copy = async () => {
-    const ok = await copyText(copyContent ?? content);
+    const ok = await copyText(content);
     if (ok) {
       setCopied(true);
       setTimeout(() => setCopied(false), 1500);
@@ -98,18 +94,16 @@ const CodeBlock = ({
         </button>
       </div>
       <pre
-        onClick={onContentClick}
         className={cn(
           'px-4 py-3 overflow-auto text-[12.5px] leading-relaxed font-mono text-ui-text',
           `language-${language || 'text'}`,
-          onContentClick && 'cursor-pointer select-none',
         )}
         style={maxHeight ? { maxHeight } : undefined}
       >
         {showLineNumbers ? (
           <code className={cn('block', `language-${language || 'text'}`)}>
             {lines.map((ln, i) => {
-              const renderedLine = highlightCode(ln || ' ', language, sensitiveText, revealSensitive);
+              const renderedLine = highlightCode(ln || ' ', language);
               return (
                 <span key={i} className='flex'>
                   <span className='select-none mr-4 w-6 text-right text-ui-text-3 tabular-nums shrink-0'>{i + 1}</span>

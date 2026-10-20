@@ -1,9 +1,10 @@
 import { PricingCardsSkeleton } from '../../components/layout/PageSkeletons';
+import ConsolePageHeader from '../../components/layout/ConsolePageHeader';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useLocation, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { Search, LayoutGrid, List, SlidersHorizontal } from 'lucide-react';
-import { PageShell, Card, Input, Table, Pagination, Tag, EmptyState, IconButton, Divider, Button } from '../../components/ui';
+import { Card, Input, Table, Pagination, Tag, EmptyState, IconButton, Divider, Button } from '../../components/ui';
 import { useModelPricingData } from '../../hooks/model-pricing/useModelPricingData';
 import { usePageTitle } from '../../hooks/common/usePageTitle';
 import { calculateModelPrice, getModelPriceItems, getLobeHubIcon, getModelIcon } from '../../helpers';
@@ -256,65 +257,66 @@ const Pricing = ({ preview = false }: { preview?: boolean }) => {
   ];
 
   return (
-    <PageShell
-      title={<span style={{ fontSize: 18, fontWeight: 600, color: 'var(--ui-text)' }}>{t("Model Marketplace")}</span>}
-    >
-      <div className='pricing-filter-panel flex flex-wrap items-center gap-2 rounded-2xl border border-ui-border bg-[var(--page-bg)] p-4'>
-        <div className='min-w-0 basis-full sm:w-[320px] sm:basis-auto'>
-          <Input value={searchValue} aria-label={t('Search models, vendors or tags')} onChange={(value) => { handleChange(value); updateQuery('search', value); }} placeholder={t('Search models, vendors or tags')} prefix={<Search size={15} />} clearable width='full' />
-        </div>
-        <div className='flex shrink-0 items-center gap-3'>
-          <Button ref={filtersButton} variant='toggle' icon={SlidersHorizontal} shrink={false} selected={activeFilters > 0} aria-label={t('Filters')} aria-haspopup='dialog' aria-expanded={filtersOpen} onClick={() => setFiltersOpen(true)}>
-            {t('Filters')}{activeFilters > 0 && <span className='text-xs tabular-nums'>{activeFilters}</span>}
-          </Button>
-          {activeFilters > 0 && <Button variant='link' size='sm' onClick={() => {
-            applyFilters({ group: 'all', billing: 'all', vendor: 'all', sort: 'name', tokenUnit: 'M', priceBasis: 'standard' });
-            filtersButton.current?.focus();
-          }}>{t('Reset filters')}</Button>}
-        </div>
-        {!preview && <div className='ml-auto inline-flex shrink-0 items-center gap-0.5 rounded-xl border border-ui-border p-0.5'>
-          <IconButton icon={LayoutGrid} size='sm' shape='square' selected={viewMode === 'card'} title={t("Card view")} onClick={() => { setViewMode('card'); updateQuery('view', 'card'); }} />
-          <IconButton icon={List} size='sm' shape='square' selected={viewMode === 'table'} title={t("Table view")} onClick={() => { setViewMode('table'); updateQuery('view', 'table'); }} />
-        </div>}
-      </div>
-
-      {filtersOpen && <PricingFiltersDialog initialValues={{ group: selectedGroup, billing: filterQuotaType, vendor: filterVendor, sort: sortBy, tokenUnit, priceBasis: showRechargePrice ? 'recharge' : 'standard' }} groupOptions={groupOptions} vendorOptions={vendorOptions} preview={preview} onApply={applyFilters} onClose={() => setFiltersOpen(false)} />}
-
-      <div className='pricing-results mt-4' style={{ minHeight: 'calc(100vh - 320px)' }}>
-        {loading ? (
-          viewMode === 'card' ? <PricingCardsSkeleton preview={preview} /> : <Table loading columns={columns} rows={[]} />
-        ) : error ? (<Card><div role='alert' className='space-y-3'><p>{t('Unable to load model pricing')}</p><Button onClick={() => void refresh()}>{t('Retry')}</Button></div></Card>) : total === 0 ? (
-          <Card>
-            <EmptyState
-              icon={null}
-              title={t("No models")}
-              description={t("No models match the current filters")}
-            />
-          </Card>
-        ) : (
-          <div>
-            {viewMode === 'card' ? (
-              <div className='grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 mb-4'>
-                {pagedRows.map((row: PricingModel) => renderModelCard(row))}
-              </div>
-            ) : (
-              <Table
-                columns={columns}
-                rows={pagedRows}
-                rowKey={(row: PricingModel) => row.model_name}
-                onRowClick={(row: PricingModel) => goDetail(row)}
-              />
-            )}
-            <Pagination
-              page={currentPage}
-              pageSize={pageSize}
-              total={total}
-              onChange={setCurrentPage}
-            />
+    <div className='console-content-page'>
+      <ConsolePageHeader title={t('Model Marketplace')} />
+      <div>
+        <div className='pricing-filter-panel flex flex-wrap items-center gap-2 rounded-2xl border border-ui-border bg-[var(--page-bg)] p-4'>
+          <div className='min-w-0 basis-full sm:w-[320px] sm:basis-auto'>
+            <Input value={searchValue} aria-label={t('Search models, vendors or tags')} onChange={(value) => { handleChange(value); updateQuery('search', value); }} placeholder={t('Search models, vendors or tags')} prefix={<Search size={15} />} clearable width='full' />
           </div>
-        )}
+          <div className='flex shrink-0 items-center gap-3'>
+            <Button ref={filtersButton} variant='toggle' icon={SlidersHorizontal} shrink={false} selected={activeFilters > 0} aria-label={t('Filters')} aria-haspopup='dialog' aria-expanded={filtersOpen} onClick={() => setFiltersOpen(true)}>
+              {t('Filters')}{activeFilters > 0 && <span className='text-xs tabular-nums'>{activeFilters}</span>}
+            </Button>
+            {activeFilters > 0 && <Button variant='link' size='sm' onClick={() => {
+              applyFilters({ group: 'all', billing: 'all', vendor: 'all', sort: 'name', tokenUnit: 'M', priceBasis: 'standard' });
+              filtersButton.current?.focus();
+            }}>{t('Reset filters')}</Button>}
+          </div>
+          {!preview && <div className='ml-auto inline-flex shrink-0 items-center gap-0.5 rounded-xl border border-ui-border p-0.5'>
+            <IconButton icon={LayoutGrid} size='sm' shape='square' selected={viewMode === 'card'} title={t("Card view")} onClick={() => { setViewMode('card'); updateQuery('view', 'card'); }} />
+            <IconButton icon={List} size='sm' shape='square' selected={viewMode === 'table'} title={t("Table view")} onClick={() => { setViewMode('table'); updateQuery('view', 'table'); }} />
+          </div>}
+        </div>
+
+        {filtersOpen && <PricingFiltersDialog initialValues={{ group: selectedGroup, billing: filterQuotaType, vendor: filterVendor, sort: sortBy, tokenUnit, priceBasis: showRechargePrice ? 'recharge' : 'standard' }} groupOptions={groupOptions} vendorOptions={vendorOptions} preview={preview} onApply={applyFilters} onClose={() => setFiltersOpen(false)} />}
+
+        <div className='pricing-results mt-4' style={{ minHeight: 'calc(100vh - 320px)' }}>
+          {loading ? (
+            viewMode === 'card' ? <PricingCardsSkeleton preview={preview} /> : <Table loading columns={columns} rows={[]} />
+          ) : error ? (<Card><div role='alert' className='space-y-3'><p>{t('Unable to load model pricing')}</p><Button onClick={() => void refresh()}>{t('Retry')}</Button></div></Card>) : total === 0 ? (
+            <Card>
+              <EmptyState
+                icon={null}
+                title={t("No models")}
+                description={t("No models match the current filters")}
+              />
+            </Card>
+          ) : (
+            <div>
+              {viewMode === 'card' ? (
+                <div className='pricing-model-grid grid'>
+                  {pagedRows.map((row: PricingModel) => renderModelCard(row))}
+                </div>
+              ) : (
+                <Table
+                  columns={columns}
+                  rows={pagedRows}
+                  rowKey={(row: PricingModel) => row.model_name}
+                  onRowClick={(row: PricingModel) => goDetail(row)}
+                />
+              )}
+              <Pagination
+                page={currentPage}
+                pageSize={pageSize}
+                total={total}
+                onChange={setCurrentPage}
+              />
+            </div>
+          )}
+        </div>
       </div>
-    </PageShell>
+    </div>
   );
 };
 

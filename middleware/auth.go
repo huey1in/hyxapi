@@ -661,6 +661,9 @@ func TokenAuth() func(c *gin.Context) {
 		if err != nil {
 			return
 		}
+		if err := model.RecordTokenUsage(token); err != nil {
+			common.SysLog(common.LogText("failed to record token usage time: %s", err.Error()))
+		}
 		c.Next()
 	}
 }

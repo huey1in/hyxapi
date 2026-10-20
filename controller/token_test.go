@@ -25,6 +25,7 @@ type tokenAPIResponse struct {
 
 type tokenPageResponse struct {
 	Items []tokenResponseItem `json:"items"`
+	Total int                 `json:"total"`
 }
 
 type tokenResponseItem struct {
@@ -128,6 +129,10 @@ func TestGetAllTokensMasksKeyInResponse(t *testing.T) {
 	db := setupTokenControllerTestDB(t)
 	token := seedToken(t, db, 1, "list-token", "abcd1234efgh5678")
 	seedToken(t, db, 2, "other-user-token", "zzzz1234yyyy5678")
+	deleted := seedToken(t, db, 1, "deleted-token", "dddd1234eeee5678")
+	if err := db.Delete(deleted).Error; err != nil {
+		t.Fatal(err)
+	}
 
 	ctx, recorder := newAuthenticatedContext(t, http.MethodGet, "/api/token/?p=1&size=10", nil, 1)
 	GetAllTokens(ctx)
@@ -144,11 +149,29 @@ func TestGetAllTokensMasksKeyInResponse(t *testing.T) {
 	if len(page.Items) != 1 {
 		t.Fatalf("expected exactly one token, got %d", len(page.Items))
 	}
+	if page.Total != 1 {
+		t.Fatalf("list total must exclude other owners and deleted tokens, got %d", page.Total)
+	}
 	if page.Items[0].Key != token.GetMaskedKey() {
 		t.Fatalf("expected masked key %q, got %q", token.GetMaskedKey(), page.Items[0].Key)
 	}
 	if strings.Contains(recorder.Body.String(), token.Key) {
 		t.Fatalf("list response leaked raw token key: %s", recorder.Body.String())
+	}
+	var fields struct {
+		Items []map[string]json.RawMessage `json:"items"`
+	}
+	if err := common.Unmarshal(response.Data, &fields); err != nil {
+		t.Fatal(err)
+	}
+	wantFields := []string{"id", "name", "key", "status", "created_time", "accessed_time"}
+	if len(fields.Items[0]) != len(wantFields) {
+		t.Fatalf("list includes fields outside the table and action metadata: %v", fields.Items[0])
+	}
+	for _, field := range wantFields {
+		if _, ok := fields.Items[0][field]; !ok {
+			t.Fatalf("list is missing %s", field)
+		}
 	}
 }
 

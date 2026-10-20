@@ -3296,7 +3296,7 @@
       "get": {
         "summary": "获取所有令牌",
         "deprecated": false,
-        "description": "🔐 需要登录（User权限）",
+        "description": "🔐 需要登录（User权限）。分页列表仅返回 name、脱敏 key、created_time、accessed_time，以及操作所需的 id 和 status。额度、分组、模型与 IP 限制等配置通过 GET /api/token/{id} 按需读取。accessed_time 为最近一次通过鉴权的 API 请求时间，免费调用及上游失败也会记录；创建、查看、复制、编辑、只读用量查询和额度结算不更新。为 0 表示尚未使用。",
         "tags": [
           "令牌管理"
         ],
