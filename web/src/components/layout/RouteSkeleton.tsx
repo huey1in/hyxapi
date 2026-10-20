@@ -6,11 +6,13 @@ import TokenTable from '../../pages/Token/TokenTable';
 import { TOKEN_PAGE_SIZE } from '../../pages/Token/token-management';
 import Pagination from '../ui/layout/Pagination';
 import Skeleton from '../ui/feedback/Skeleton';
+import { TopUpSkeleton } from '../../features/payments/TopUpLayout';
 
 export default function RouteSkeleton() {
   const { pathname } = useLocation();
   const { t } = useTranslation();
   if (pathname === '/console/personal') return <PersonalSkeleton />;
+  if (pathname === '/console/topup') return <TopUpSkeleton />;
   if (['/console/log', '/console/task', '/console/midjourney'].includes(pathname)) return <div className='console-content-page'>
     <ConsolePageHeader title={t('日志')} />
     <div className='flex gap-4 border-b border-ui-border pb-3'>{[0, 1, 2].map((tab) => <Skeleton key={tab} width={80} height={20} />)}</div>
@@ -24,7 +26,7 @@ export default function RouteSkeleton() {
     <div className='token-page-pagination'><Pagination page={1} pageSize={TOKEN_PAGE_SIZE} total={0} onChange={() => {}} /></div>
   </div>;
   if (pathname === '/console/pricing' || pathname === '/pricing') return <div className='console-content-page'>
-    <ConsolePageHeader title={t('Model Marketplace')} />
+    <ConsolePageHeader title={t('Models')} />
     <div><div className='mb-4 flex flex-wrap items-center gap-2 rounded-2xl border border-ui-border p-4'>
       <div className='min-w-0 basis-full sm:w-[320px] sm:basis-auto'><Skeleton width='100%' height={36} rounded='rounded-full' /></div><Skeleton width={90} height={32} />
       <Skeleton width={64} height={32} className='ml-auto' />

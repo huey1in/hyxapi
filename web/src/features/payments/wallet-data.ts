@@ -6,6 +6,7 @@ export const walletProfileSchema = z.object({
   quota: z.number().int().safe(), used_quota: count,
   aff_count: count, aff_quota: count, aff_history_quota: count,
 }).passthrough();
+export type WalletProfile = z.infer<typeof walletProfileSchema>;
 export const topUpPageSchema = z.object({
   total: count, page: count.positive(), page_size: count.positive(),
   items: z.array(z.object({

@@ -27,7 +27,7 @@ export default function SiteSettings({ value, onChange, disabled = false }: { va
     const next = auth || key === 'pricing' || key === 'rankings' ? { ...(record(before) ? before : {}), ...(key === 'pricing' || key === 'rankings' ? config[key] : {}), [auth ? 'requireAuth' : 'enabled']: enabled } : enabled;
     onChange('HeaderNavModules', JSON.stringify({ ...parsed, [key]: next }));
   };
-  const modules: { key: keyof typeof config; label: string }[] = [{ key: 'home', label: 'Home' }, { key: 'console', label: 'Console' }, { key: 'pricing', label: 'Model marketplace' }, { key: 'rankings', label: 'Rankings' }, { key: 'docs', label: 'Docs' }, { key: 'about', label: 'About' }];
+  const modules: { key: keyof typeof config; label: string }[] = [{ key: 'home', label: 'Home' }, { key: 'console', label: 'Console' }, { key: 'pricing', label: 'Models' }, { key: 'rankings', label: 'Rankings' }, { key: 'docs', label: 'Docs' }, { key: 'about', label: 'About' }];
   const documents = [{ key: 'About', title: 'About content' }, { key: 'legal.user_agreement', title: 'Terms of Service' }, { key: 'legal.privacy_policy', title: 'Privacy Policy' }];
   const docs = value('general_setting.docs_link');
   const invalidDocs = !validDocsUrl(docs);

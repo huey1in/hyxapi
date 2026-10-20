@@ -36,7 +36,7 @@ const PREVIEW_MODELS: PricingModel[] = [
 
 const Pricing = ({ preview = false }: { preview?: boolean }) => {
   const { t } = useTranslation();
-  usePageTitle(preview ? '' : t("Model Marketplace"));
+  usePageTitle(preview ? '' : t('Models'));
 
   const {
     loading, error, filteredModels, models,
@@ -258,7 +258,7 @@ const Pricing = ({ preview = false }: { preview?: boolean }) => {
 
   return (
     <div className='console-content-page'>
-      <ConsolePageHeader title={t('Model Marketplace')} />
+      <ConsolePageHeader title={t('Models')} />
       <div>
         <div className='pricing-filter-panel flex flex-wrap items-center gap-2 rounded-2xl border border-ui-border bg-[var(--page-bg)] p-4'>
           <div className='min-w-0 basis-full sm:w-[320px] sm:basis-auto'>

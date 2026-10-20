@@ -131,7 +131,7 @@ const PricingDetail = () => {
     <PageShell maxWidth='960px'>
       <div style={{ minHeight: 'calc(100vh - 220px)' }}>
         <div className='mb-4 flex flex-wrap items-center justify-between gap-3'>
-          <Button variant='link' icon={ArrowLeft} onClick={back}>{t("Back to model marketplace")}</Button>
+          <Button variant='link' icon={ArrowLeft} onClick={back}>{t('Back to models')}</Button>
           <div className='flex flex-wrap gap-2'>
             <Select aria-label={t('Currency')} value={currency} options={[{ value: 'USD' as const, label: 'USD ($)' }, { value: 'CNY' as const, label: 'CNY (¥)' }, { value: 'CUSTOM' as const, label: t('Custom currency') }]} onChange={setCurrency} />
             <Select aria-label={t('Token price unit')} value={tokenUnit} options={[{ value: 'M' as const, label: t('Per 1M tokens') }, { value: 'K' as const, label: t('Per 1K tokens') }]} onChange={setTokenUnit} />
@@ -146,7 +146,7 @@ const PricingDetail = () => {
               icon={null}
               title={t("Model not found")}
               description={modelName}
-              action={<Button variant='secondary' onClick={back}>{t("Back to model marketplace")}</Button>}
+              action={<Button variant='secondary' onClick={back}>{t('Back to models')}</Button>}
             />
           </Card>
         ) : (

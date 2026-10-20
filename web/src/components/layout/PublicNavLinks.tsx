@@ -10,7 +10,7 @@ export default function PublicNavLinks({ status, includeHome = true, onNavigate 
   return <>
     {includeHome && modules.home && <Link to='/' onClick={onNavigate}>{t('Home')}</Link>}
     {modules.console && <Link to='/console' onClick={onNavigate}>{t('Console')}</Link>}
-    {modules.pricing.enabled && <Link to='/pricing' onClick={onNavigate}>{t('Model marketplace')}</Link>}
+    {modules.pricing.enabled && <Link to='/pricing' onClick={onNavigate}>{t('Models')}</Link>}
     {modules.rankings.enabled && <Link to='/rankings' onClick={onNavigate}>{t('Rankings')}</Link>}
     {modules.docs && <a href={docsLink} target='_blank' rel='noopener noreferrer' onClick={onNavigate}>{t('Docs')}</a>}
     {modules.about && <Link to='/about' onClick={onNavigate}>{t('About')}</Link>}

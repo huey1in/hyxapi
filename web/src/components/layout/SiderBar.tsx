@@ -27,7 +27,7 @@ const COLLAPSED = 57;
 type NavItem = { to: string; label: string; icon: LucideIcon; end?: boolean; admin?: boolean; root?: boolean; divider?: false } | { divider: true; admin?: boolean; root?: boolean; to?: never; label?: never; icon?: never; end?: never };
 const NAV_ITEMS: NavItem[] = [
   { to: '/console',            label: '概览',     icon: BarChart3, end: true },
-  { to: '/console/pricing',    label: '模型广场', icon: Store },
+  { to: '/console/pricing',    label: 'Models',   icon: Store },
   { to: '/console/token',      label: 'API',      icon: Key },
   { to: '/console/topup',      label: '充值',     icon: Wallet },
   { to: '/console/my-subscription', label: '订阅',   icon: CreditCard },

@@ -1,4 +1,3 @@
-import { OffersSkeleton } from '../../components/layout/PageSkeletons';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { API, renderQuota } from '../../helpers';
@@ -48,12 +47,14 @@ function Offers({ onPurchased, identity }: Props & { identity: string }) {
   const { t, i18n } = useTranslation(); const [selected, setSelected] = useState<SubscriptionPlan | null>(null);
   const info = useWalletPaymentInfo(identity);
   const offers = useWalletOffers(identity); const subscriptions = useWalletSubscriptions(identity);
-  if (offers.isPending || info.isPending || subscriptions.isPending) return <OffersSkeleton />;
+  if (offers.isPending) return null;
+  if (!offers.isError && !offers.data?.length) return null;
   if (offers.isError || info.isError || subscriptions.isError) return <div role='alert' className='space-y-2 text-sm text-ui-danger'><p>{t(apiErrorMessage(offers.error || info.error || subscriptions.error, 'Unable to load subscription plans'))}</p><Button onClick={() => { void offers.refetch(); void info.refetch(); void subscriptions.refetch(); }}>{t('Retry')}</Button></div>;
-  if (!offers.data?.length || !info.data) return null;
+  if (!offers.data?.length) return null;
+  const pending = info.isPending || subscriptions.isPending;
   const unitLabels: Record<string, string> = { hour: 'Hours', day: 'Days', week: 'Weeks', month: 'Months', year: 'Years', custom: 'Seconds' };
   const purchases = (planId: number) => subscriptions.data?.all_subscriptions.filter(({ subscription }) => subscription.plan_id === planId).length ?? 0;
-  return <section className='space-y-4'>
+  return <section aria-busy={pending || undefined} className='space-y-4'>
     <h2 className='text-lg font-semibold text-ui-text'>{t('Subscription plans')}</h2>
     <div className='grid grid-cols-1 gap-3 sm:grid-cols-2'>
       {offers.data.map(({ plan }) => <div key={plan.id} className='min-w-0 space-y-3 rounded-[26px] border border-ui-border p-5'>
@@ -61,10 +62,10 @@ function Offers({ onPurchased, identity }: Props & { identity: string }) {
         {plan.subtitle && <p className='break-words text-sm text-ui-text-3'>{plan.subtitle}</p>}
         <p className='text-sm text-ui-text-2'>{plan.duration_unit === 'custom' ? plan.custom_seconds : plan.duration_value} {t(unitLabels[plan.duration_unit])} · {plan.total_amount ? renderQuota(plan.total_amount) : t('Unlimited credit')}</p>
         <div className='flex flex-wrap gap-2'>{plan.max_purchase_per_user > 0 && <Tag>{t('Limit {{count}} purchases per user', { count: plan.max_purchase_per_user })}</Tag>}{plan.upgrade_group && <Tag>{t('Group {{group}}', { group: plan.upgrade_group })}</Tag>}</div>
-        <Button disabled={!subscriptionMethods(plan, info.data).length || (plan.max_purchase_per_user > 0 && purchases(plan.id) >= plan.max_purchase_per_user)} onClick={() => setSelected(plan)}>{t(plan.max_purchase_per_user > 0 && purchases(plan.id) >= plan.max_purchase_per_user ? 'Purchase limit reached' : 'Buy plan')}</Button>
+        <Button disabled={pending || !info.data || !subscriptionMethods(plan, info.data).length || (plan.max_purchase_per_user > 0 && purchases(plan.id) >= plan.max_purchase_per_user)} onClick={() => setSelected(plan)}>{t(!pending && plan.max_purchase_per_user > 0 && purchases(plan.id) >= plan.max_purchase_per_user ? 'Purchase limit reached' : 'Buy plan')}</Button>
       </div>)}
     </div>
-    {selected && <PurchaseDialog key={selected.id} plan={selected} info={info.data} onClose={() => setSelected(null)} onPurchased={() => { void subscriptions.refetch(); onPurchased(); }} />}
+    {selected && info.data && <PurchaseDialog key={selected.id} plan={selected} info={info.data} onClose={() => setSelected(null)} onPurchased={() => { void subscriptions.refetch(); onPurchased(); }} />}
   </section>;
 }
 export default function SubscriptionOffers(props: Props) {

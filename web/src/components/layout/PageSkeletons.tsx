@@ -116,13 +116,6 @@ export function PricingDetailSkeleton() {
   </div></ContentSkeleton>;
 }
 
-export function OffersSkeleton() {
-  const { t } = useTranslation();
-  return <ContentSkeleton variant='cards'><section className='space-y-4'><h2 className='text-lg font-semibold text-ui-text'>{t('Subscription plans')}</h2><div className='grid grid-cols-1 gap-3 sm:grid-cols-2'>
-    {[0, 1].map((index) => <div key={index} className='min-w-0 space-y-3 rounded-[26px] border border-ui-border p-5'><div className='flex justify-between gap-2'><Skeleton width='45%' height={24} /><Skeleton width={60} height={24} /></div><Skeleton height={20} /><Skeleton width='75%' height={20} /><div className='flex gap-2'><Skeleton width={90} height={20} /></div><Skeleton width={88} height={36} rounded='rounded-full' /></div>)}
-  </div></section></ContentSkeleton>;
-}
-
 export function MySubscriptionSkeleton() {
   const { t } = useTranslation();
   const mobile = useIsMobile();

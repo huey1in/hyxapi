@@ -45,7 +45,7 @@ export default function MetadataEditor({ model, vendor, vendors, onClose, onSave
         <Field label='匹配规则'><Select width='full' value={String(draft.name_rule)} options={ruleOptions} onChange={(value) => update('name_rule', Number(value))} /></Field>
         <Field label='端点配置'><Textarea width='full' rows={5} aria-label='端点配置' value={draft.endpoints} placeholder='["openai", "anthropic"]' onChange={(value) => update('endpoints', value)} /></Field>
         <p className='text-xs text-ui-text-3'>留空时根据已接入的渠道推导协议；支持协议名称数组或自定义路径对象。</p>
-        <Checkbox label='在模型广场显示' checked={draft.status === 1} onChange={(value) => update('status', value ? 1 : 0)} />
+        <Checkbox label='在模型列表显示' checked={draft.status === 1} onChange={(value) => update('status', value ? 1 : 0)} />
         <Checkbox label='允许同步上游元数据' checked={draft.sync_official === 1} onChange={(value) => update('sync_official', value ? 1 : 0)} />
         {!!model?.bound_channels?.length && <p className='text-xs text-ui-text-3'>已接入渠道：{model.bound_channels.map((item) => item.name).join('、')}</p>}
         {!!model?.supported_endpoints?.length && <p className='text-xs text-ui-text-3'>支持协议：{model.supported_endpoints.join('、')}</p>}

@@ -236,7 +236,7 @@ const HomeContent = () => {
             <p>{t('Compare every provider for the same model. Choose lower-cost routes with prices below official rates.')}</p>
             <Link to='/console/pricing'>{t('View model pricing')} <ArrowRight size={15} /></Link>
           </div>
-          <div className='marketplace-stage' aria-label={t('Hyxware model marketplace preview')}>
+          <div className='marketplace-stage' aria-label={t('Hyxware models preview')}>
             <div className='marketplace-preview-mat'>
               <div className='product-frame marketplace-frame'>
                 <div className='product-frame-bar'>
@@ -346,7 +346,7 @@ const HomeContent = () => {
 
       <footer className='site-footer'>
         <div className='site-footer-links'>
-          <div><span>{t('Product')}</span><Link to='/pricing'>{t('Model marketplace')}</Link><Link to='/console'>{t('Console')}</Link><Link to='/console/token'>{t('API keys')}</Link><Link to='/console/log'>{t('Request logs')}</Link></div>
+          <div><span>{t('Product')}</span><Link to='/pricing'>{t('Models')}</Link><Link to='/console'>{t('Console')}</Link><Link to='/console/token'>{t('API keys')}</Link><Link to='/console/log'>{t('Request logs')}</Link></div>
           <div><span>{t('Contact')}</span><a href='https://github.com/huey1in' target='_blank' rel='noopener noreferrer'>GitHub</a><a href='mailto:1in@yxh.me'>{t('Email')}</a></div>
           <div><span>{t('Legal')}</span>{agreementEnabled ? <button type='button' onClick={() => setLegal('terms')}>{t('Terms of Service')}</button> : <span className='footer-link-disabled'>{t('Terms of Service')}</span>}{privacyEnabled ? <button type='button' onClick={() => setLegal('privacy')}>{t('Privacy Policy')}</button> : <span className='footer-link-disabled'>{t('Privacy Policy')}</span>}</div>
         </div>
