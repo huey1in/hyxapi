@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom';
+import { NavLink } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import type { SiteStatus } from '../../types/api';
 import { parseHeaderNavModules } from '../../lib/nav-modules';
@@ -7,8 +7,8 @@ export default function PublicNavLinks({ status, includeHome = true, includePric
   const { t } = useTranslation();
   const modules = parseHeaderNavModules(status?.HeaderNavModules);
   return <>
-    {includeHome && modules.home && <Link to='/' onClick={onNavigate}>{t('Home')}</Link>}
-    {modules.console && <Link to='/console' onClick={onNavigate}>{t('Console')}</Link>}
-    {includePricing && modules.pricing.enabled && <Link to='/pricing' onClick={onNavigate}>{t('Models')}</Link>}
+    {includeHome && modules.home && <NavLink to='/' onClick={onNavigate}>{t('Home')}</NavLink>}
+    {modules.console && <NavLink to='/console' onClick={onNavigate}>{t('Console')}</NavLink>}
+    {includePricing && modules.pricing.enabled && <NavLink to='/pricing' onClick={onNavigate}>{t('Models')}</NavLink>}
   </>;
 }

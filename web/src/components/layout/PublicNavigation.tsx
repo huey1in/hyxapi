@@ -1,10 +1,11 @@
 import { useLayoutEffect, useRef } from 'react';
 import type { ReactNode, SyntheticEvent } from 'react';
+import { useLocation } from 'react-router-dom';
 
-export default function HomeNavigation({ children }: { children: ReactNode }) {
+export default function PublicNavigation({ children }: { children: ReactNode }) {
+  const { pathname } = useLocation();
   const trackRef = useRef<HTMLDivElement>(null);
   const selectedRef = useRef<HTMLElement | null>(null);
-  const previewRef = useRef<HTMLElement | null>(null);
 
   const moveIndicator = (item: HTMLElement | null) => {
     const track = trackRef.current;
@@ -25,36 +26,20 @@ export default function HomeNavigation({ children }: { children: ReactNode }) {
     const track = trackRef.current;
     if (!track) return;
     const links = [...track.querySelectorAll<HTMLElement>(':scope > a,:scope > button')];
-    if (!selectedRef.current || !links.includes(selectedRef.current)) selectedRef.current = links[0] ?? null;
-    if (previewRef.current && !links.includes(previewRef.current)) previewRef.current = null;
-    const update = () => moveIndicator(previewRef.current ?? selectedRef.current);
+    const current = links.find((link) => link.getAttribute('aria-current') === 'page');
+    if (current) selectedRef.current = current;
+    else if (!selectedRef.current || !links.includes(selectedRef.current)) selectedRef.current = links[0] ?? null;
+    const update = () => moveIndicator(selectedRef.current);
     update();
     const observer = new ResizeObserver(update);
     observer.observe(track);
     links.forEach((link) => observer.observe(link));
     return () => observer.disconnect();
-  }, [children]);
-
-  const preview = (event: SyntheticEvent) => {
-    const item = eventLink(event);
-    if (!item) return;
-    previewRef.current = item;
-    moveIndicator(item);
-  };
-
-  const dock = () => {
-    const focused = document.activeElement;
-    previewRef.current = focused instanceof HTMLElement && focused.parentElement === trackRef.current ? focused : null;
-    moveIndicator(previewRef.current ?? selectedRef.current);
-  };
+  }, [children, pathname]);
 
   return <div
     ref={trackRef}
     className='home-nav-track'
-    onPointerOver={preview}
-    onPointerLeave={dock}
-    onFocusCapture={preview}
-    onBlurCapture={(event) => { if (!event.currentTarget.contains(event.relatedTarget)) dock(); }}
     onClickCapture={(event) => {
       const item = eventLink(event);
       if (item) { selectedRef.current = item; moveIndicator(item); }

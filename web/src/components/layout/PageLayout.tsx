@@ -8,7 +8,6 @@ import { canOpenConsolePage, isConsolePath } from '../../lib/console-routes';
 import SecurityVerification from '../auth/SecurityVerification';
 import HeaderBar from './HeaderBar';
 import SiderBar from './SiderBar';
-import FooterBar from './FooterBar';
 import RouteSkeleton from './RouteSkeleton';
 import RouteLoadBoundary from './RouteLoadBoundary';
 import Forbidden from '../../pages/Forbidden';
@@ -51,7 +50,6 @@ export default function PageLayout() {
   const ready = authReady && resolvedAuthMode === needsAuthentication;
   const isStandaloneRoute = ['/', '/auth', '/setup', '/user/reset'].includes(location.pathname) || location.pathname.startsWith('/oauth/');
   const showHeader = !isStandaloneRoute && !isConsoleLayout;
-  const hideFooter = isConsoleLayout || isStandaloneRoute;
 
   useEffect(() => { if (mainRef.current) mainRef.current.scrollTop = 0; }, [location.pathname]);
   useEffect(() => {
@@ -109,7 +107,6 @@ export default function PageLayout() {
         <main ref={mainRef} className='app-layout-main'>
           {statusError && <div role='alert' className='flex items-center justify-center gap-3 px-4 py-3 text-sm text-ui-text-2'>{t(statusError)}<Button variant='link' onClick={() => setStatusAttempt((value) => value + 1)}>{t('Retry')}</Button></div>}
           <div className={cn('flex-1', location.pathname === '/token' && 'token-page-content')}>{content}</div>
-          {!hideFooter && <FooterBar />}
         </main>
       </div>
     </div>

@@ -1,21 +1,19 @@
 import { useContext, useEffect, useRef, useState } from 'react';
 import type { PointerEvent, ReactNode } from 'react';
-import { ArrowRight, ChevronDown, Globe2, LockKeyhole, Menu, Monitor, Moon, RotateCw, Sun, X } from 'lucide-react';
-import { Link, useNavigate } from 'react-router-dom';
+import { ArrowRight, ChevronDown, Globe2, LockKeyhole, Monitor, Moon, RotateCw, Sun } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { Trans, useTranslation } from 'react-i18next';
 import { interfaceLanguages, normalizeLanguage } from '../../i18n/language';
 import Dashboard from '../Dashboard';
 import SiderBar from '../../components/layout/SiderBar';
 import { useSetTheme, useTheme } from '../../context/Theme';
 import { StatusContext } from '../../context/Status';
-import PublicNavLinks from '../../components/layout/PublicNavLinks';
-import HomeNavigation from './HomeNavigation';
+import HeaderBar from '../../components/layout/HeaderBar';
 import LegalDocumentDialog from '../../components/layout/LegalDocumentDialog';
-import { API, updateAPI, logoutAuthentication } from '../../helpers';
+import { API } from '../../helpers';
 import { extractSupportedModelBrands } from './modelBrands';
 import type { ModelBrand } from './modelBrands';
 import { useAuthStore } from '../../stores/auth-store';
-import { useOwnedOperation } from '../../hooks/useOwnedOperation';
 import { parseHeaderNavModules, publicModuleAccess } from '../../lib/nav-modules';
 
 const MODEL_ICON_CDN = 'https://registry.npmmirror.com/@lobehub/icons-static-png/latest/files/light';
@@ -86,19 +84,14 @@ const hideModelSpotlight = (event: PointerEvent<HTMLDivElement>) => {
 };
 
 const HomeContent = () => {
-  const navigate = useNavigate();
   const [statusState] = useContext(StatusContext);
-  const [menuOpen, setMenuOpen] = useState(false);
   const [supportedBrands, setSupportedBrands] = useState<ModelBrand[]>(modelProviders);
   const [languageOpen, setLanguageOpen] = useState(false);
   const [legal, setLegal] = useState<'terms' | 'privacy' | null>(null);
-  const navigationRef = useRef<HTMLElement>(null);
   const brandSectionRef = useRef<HTMLElement>(null);
   const languageRef = useRef<HTMLDivElement>(null);
-  const menuButton = useRef<HTMLButtonElement>(null);
   const languageButton = useRef<HTMLButtonElement>(null);
   const { t, i18n } = useTranslation();
-  const { busy, run } = useOwnedOperation();
   const user = useAuthStore((state) => state.auth.user);
   const theme = useTheme();
   const setTheme = useSetTheme();
@@ -113,37 +106,11 @@ const HomeContent = () => {
   const agreementEnabled = Boolean(status.user_agreement_enabled);
   const privacyEnabled = Boolean(status.privacy_policy_enabled);
 
-  const logout = () => void run(async (signal) => {
-    if (!await logoutAuthentication(signal)) return;
-    updateAPI(); setMenuOpen(false); navigate('/');
-  });
-
   const switchLanguage = (language: string) => {
     i18n.changeLanguage(language);
     try { localStorage.setItem('i18nextLng', language); } catch {}
     setLanguageOpen(false); languageButton.current?.focus();
   };
-
-  useEffect(() => {
-    const navigation = navigationRef.current;
-    if (!navigation) return;
-    // PageLayout owns the scroll container; the document itself does not scroll.
-    const container = navigation.closest<HTMLElement>('.app-layout-main');
-    const target = container ?? window;
-    let frame = 0;
-    const update = () => {
-      frame = 0;
-      const progress = Math.min(1, Math.max(0, (container?.scrollTop ?? window.scrollY) / 160));
-      navigation.style.setProperty('--home-nav-progress', String(progress));
-    };
-    const onScroll = () => { if (!frame) frame = requestAnimationFrame(update); };
-    update();
-    target.addEventListener('scroll', onScroll, { passive: true });
-    return () => {
-      target.removeEventListener('scroll', onScroll);
-      cancelAnimationFrame(frame);
-    };
-  }, []);
 
   useEffect(() => {
     if (pricingAccess !== 'allowed') return;
@@ -166,9 +133,6 @@ const HomeContent = () => {
   }, []);
 
   useEffect(() => {
-    if (menuOpen) document.getElementById('home-navigation')?.querySelector<HTMLElement>('a,button')?.focus();
-  }, [menuOpen]);
-  useEffect(() => {
     if (languageOpen) (languageRef.current?.querySelector<HTMLButtonElement>('[role=menuitem].is-active') ?? languageRef.current?.querySelector<HTMLButtonElement>('[role=menuitem]'))?.focus();
   }, [languageOpen]);
 
@@ -188,27 +152,7 @@ const HomeContent = () => {
 
   return (
     <div className='home-page studio-home cursor-home'>
-      <header ref={navigationRef} className='home-nav'>
-        <Link to='/' className='home-brand'>HyxAPI</Link>
-        <nav id='home-navigation' aria-label={t('Main navigation')} className={`home-nav-links public-site-navigation${menuOpen ? ' is-open' : ''}`} onKeyDown={(event) => { if (event.key === 'Escape') { setMenuOpen(false); menuButton.current?.focus(); } }}>
-          <HomeNavigation>
-            <PublicNavLinks status={statusState.status} includeHome={false} includePricing={showPublicModels} onNavigate={() => setMenuOpen(false)} />
-            {isLoggedIn ? (
-              <button type='button' onClick={logout} disabled={busy}>
-                {t('Sign out')}
-              </button>
-            ) : (
-              <>
-                <Link to='/auth?mode=login'>{t('Sign in')}</Link>
-                {registerEnabled && <Link to='/auth?mode=register'>{t('Create account')}</Link>}
-              </>
-            )}
-          </HomeNavigation>
-        </nav>
-        <button ref={menuButton} type='button' className='home-menu-button' onClick={() => setMenuOpen(!menuOpen)} aria-label={t('Toggle navigation menu')} aria-expanded={menuOpen} aria-controls='home-navigation'>
-          {menuOpen ? <X size={19} /> : <Menu size={19} />}
-        </button>
-      </header>
+      <HeaderBar />
 
       <main>
         <section className='studio-hero'>
