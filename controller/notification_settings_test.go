@@ -31,7 +31,7 @@ func TestNotificationSettingsPreservePreferencesAndEnforceAdminCategories(t *tes
 
 func TestUserSettingsHTTPPartialPatchPreservesOtherPreferences(t *testing.T) {
 	user, identity := setupSecurityEnrollmentTest(t)
-	initial := dto.UserSetting{NotifyType: "email", Language: "fr", BillingPreference: "wallet_only", RecordIpLog: true, AcceptUnsetRatioModel: true}
+	initial := dto.UserSetting{NotifyType: "email", Language: "fr", BillingPreference: "wallet_only", RecordIpLog: true, AcceptUnsetRatioModel: true, NotificationEmail: "notice@example.com", NotificationEmailVerified: true}
 	require.NoError(t, model.UpdateUserSetting(user.Id, initial))
 	for _, body := range []string{`{"quota_warning_threshold":123}`, `{"notify_type":"email","notification_email":"notice@example.com"}`} {
 		response := securityEnrollmentRequest("PUT", "/api/user/setting", body, "", identity, UpdateUserSetting)
@@ -55,6 +55,7 @@ func TestUserSettingsHTTPPartialPatchPreservesOtherPreferences(t *testing.T) {
 	require.False(t, current.RecordIpLog)
 	require.False(t, current.AcceptUnsetRatioModel)
 	require.Equal(t, "notice@example.com", current.NotificationEmail)
+	require.True(t, current.NotificationEmailVerified)
 	response = securityEnrollmentRequest("PUT", "/api/user/setting", `{"notify_type":"webhook","quota_warning_threshold":999}`, "", identity, UpdateUserSetting)
 	require.Contains(t, response.Body.String(), `"success":false`)
 	current, err = model.GetUserSetting(user.Id, true)

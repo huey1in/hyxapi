@@ -55,7 +55,7 @@ function PersonalSettings({ identity, user, refresh, tab, onChange }: { identity
       {tab === 'account' && <><AccountSettings user={user} refresh={refresh} /><AccountBindings /><LanguagePreference refresh={refresh} /><AccountActions user={user} /></>}
       {tab === 'security' && <><SecuritySettings identity={identity} user={user} refresh={refresh} /><LoginSessions /><AccessTokens /></>}
       {tab === 'usage' && <><BillingSettings /><UsagePreferences preferences={preferences} /></>}
-      {tab === 'notifications' && <NotificationSettings user={user} preferences={preferences} />}
+      {tab === 'notifications' && <NotificationSettings user={user} preferences={preferences} refresh={refresh} />}
     </div>
   </ConsolePage>;
 }

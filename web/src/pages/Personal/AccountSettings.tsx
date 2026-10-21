@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
-import { useTranslation } from 'react-i18next';
-import { API, showSuccess } from '../../helpers';
+import { Trans, useTranslation } from 'react-i18next';
+import { API, copy, showSuccess } from '../../helpers';
 import { Button, Input, Modal } from '../../components/ui';
 import { useOwnedOperation } from '../../hooks/useOwnedOperation';
 import { clearAuthentication } from '../../lib/auth-session';
@@ -60,8 +60,8 @@ function EmailDialog({ user, refresh, close }: { user: AuthUser; refresh: Refres
     await authResult(API.post('/api/oauth/email/bind', { flow_token: flow.flow_token, new_code: code.trim(), old_code: oldCode.trim() }, { signal, skipErrorHandler: true, singleUseAuthorization: true }));
     signal.throwIfAborted(); await refresh(signal); showSuccess(t('Email linked')); close();
   });
-  return <Modal open title={t(user.email ? 'Change email' : 'Link email')} onClose={close} onConfirm={bind} loading={busy} confirmText={t('Confirm')} cancelText={t('Cancel')}>
-    <FieldGroup label={t('Email address')}><div className='flex items-center gap-2'>
+  return <Modal open width={380} title={t(user.email ? 'Change email' : 'Link email')} onClose={close} onConfirm={bind} loading={busy} confirmText={t('Confirm')} cancelText={t('Cancel')}>
+    <FieldGroup label={t('Email address')}><div className='grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2'>
       <Input aria-label={t('Email address')} type='email' value={email} onChange={(value) => { setEmail(value); setFlow(null); setCode(''); setOldCode(''); }} disabled={busy} width='full' />
       <Button onClick={send} loading={busy} disabled={countdown > 0} shrink={false}>{countdown > 0 ? `${countdown}s` : t('Send code')}</Button>
     </div></FieldGroup>
@@ -80,9 +80,9 @@ function DeleteAccountDialog({ user, close }: { user: AuthUser; close: () => voi
     await authResult(API.delete('/api/user/self', { signal, skipErrorHandler: true }));
     signal.throwIfAborted(); clearAuthentication();
   });
-  return <Modal open title={t('Delete account')} onClose={close} footer={<><Button onClick={close}>{t('Cancel')}</Button><Button onClick={remove} loading={busy} disabled={confirmation !== user.username}>{t('Delete account')}</Button></>}>
+  return <Modal open width={380} title={t('Delete account')} onClose={close} footer={<><Button onClick={close}>{t('Cancel')}</Button><Button onClick={remove} loading={busy} disabled={confirmation !== user.username}>{t('Delete account')}</Button></>}>
     <p className='text-sm text-ui-text-2'>{t('Deleting your account revokes its API tokens and signs out every device.')}</p>
-    <FieldGroup label={t('Enter {{username}} to confirm', { username: user.username })}><Input aria-label={t('Confirm account username')} value={confirmation} onChange={setConfirmation} disabled={busy} width='full' autoComplete='off' /></FieldGroup>
+    <FieldGroup label={<Trans i18nKey='Enter <username>{{username}}</username> to confirm' values={{ username: user.username }} components={{ username: <button type='button' className='break-all text-base font-bold text-black no-underline hover:no-underline focus:no-underline focus-visible:outline-2' aria-label={t('Copy username')} onClick={() => void copy(user.username).then((success) => { if (success) showSuccess(t('Copied')); })} /> }} />}><Input aria-label={t('Confirm account username')} value={confirmation} onChange={setConfirmation} disabled={busy} width='full' autoComplete='off' /></FieldGroup>
   </Modal>;
 }
 

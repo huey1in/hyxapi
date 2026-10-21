@@ -168,3 +168,5 @@ channel.upstream_update_removed_models: "Removed model examples (showing {{.Show
 channel.upstream_update_failed_channels: "Failed channel IDs (showing {{.Shown}}/{{.Total}}): {{.Ids}}"
 channel.upstream_update_more_omitted: " ({{.Count}} more omitted)"
 user.invitation_rewards_disabled: "Invitation rewards are disabled"
+email.notification.subject: "{{.SystemName}} notification email verification"
+email.notification.intro: "Confirm this mailbox to receive account notifications. Do not share this code."

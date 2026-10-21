@@ -80,7 +80,7 @@ function Tokens({ identity }: { identity: string }) {
         <AuditViewer key={records.tokenRef ?? 'all'} identity={identity} scope='self' accessOnly currentTokenRef={records.tokenRef} defaultTokenScope={records.tokenRef ? 'current' : 'all'} />
       </div>
     </SlideOver>}
-    {editing && <Modal open title={t(editing.original ? 'Edit access token' : 'Create access token')} onClose={() => { if (!busy) setEditing(null); }} onConfirm={save} loading={busy} confirmText={t('Save')} cancelText={t('Cancel')}>
+    {editing && <Modal open width={380} title={t(editing.original ? 'Edit access token' : 'Create access token')} onClose={() => { if (!busy) setEditing(null); }} onConfirm={save} loading={busy} confirmText={t('Save')} cancelText={t('Cancel')}>
       <fieldset disabled={busy} className='m-0 min-w-0 space-y-4 border-0 p-0'>
         <div className='flex items-center justify-between gap-3'>
           <label htmlFor='personal-access-token-name' className='min-w-0 flex-1 text-sm text-ui-text'>{t('Name')}</label>

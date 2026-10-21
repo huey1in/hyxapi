@@ -162,6 +162,8 @@ const (
 	MsgEmailPasswordResetLinkFallback          = "email.password_reset.link_fallback"
 	MsgEmailPasswordResetValidity              = "email.password_reset.validity"
 	MsgEmailBindingSubject                     = "email.binding.subject"
+	MsgNotificationEmailSubject                = "email.notification.subject"
+	MsgNotificationEmailIntro                  = "email.notification.intro"
 	MsgEmailBindingNewIntro                    = "email.binding.new_intro"
 	MsgEmailBindingOldIntro                    = "email.binding.old_intro"
 	MsgEmailBindingCode                        = "email.binding.code"

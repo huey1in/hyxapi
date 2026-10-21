@@ -41,8 +41,8 @@ export function PersonalSkeleton({ tab = 'account', onChange }: { tab?: Personal
   const group = (title: string, rows: string[], switches = false) => <SettingGroup title={t(title)}>{rows.map((label, row) => {
     const toggle = switches || ['Quota warning', 'Channel notifications', 'Upstream model updates'].includes(label);
     const input = ['Language', 'Reminder threshold', 'Notification Method', 'Notification Email', 'Webhook URL', 'Webhook Secret', 'Bark URL', 'Gotify URL', 'Gotify Token', 'Message Priority'].includes(label);
-    const textInput = ['Notification Email', 'Webhook URL', 'Webhook Secret', 'Bark URL', 'Gotify URL', 'Gotify Token'].includes(label);
-    const width = textInput ? 'min(220px,48vw)' : toggle ? 44 : label === 'Reminder threshold' ? 128 : label === 'Message Priority' ? 96 : input ? 160 : 70;
+    const textInput = ['Webhook URL', 'Webhook Secret', 'Bark URL', 'Gotify URL', 'Gotify Token'].includes(label);
+    const width = label === 'Notification Email' ? 145 : textInput ? 'min(220px,48vw)' : toggle ? 44 : label === 'Reminder threshold' ? 128 : label === 'Message Priority' ? 96 : input ? 160 : 70;
     return <SettingRow key={`${label}:${row}`} title={t(label)} description={textInput ? undefined : <Skeleton width={220} height={18} />} last={row === rows.length - 1}><Skeleton width={width} height={toggle ? 24 : 36} rounded={input ? 'rounded-xl' : 'rounded-full'} /></SettingRow>;
   })}</SettingGroup>;
   return <ConsolePage width={720} gap={24} mobileGap={24}>
@@ -51,7 +51,7 @@ export function PersonalSkeleton({ tab = 'account', onChange }: { tab?: Personal
       {tab === 'account' && <>{group('Account', ['Email'])}{bindings.length > 0 && group('Linked accounts', bindings)}{group('Preferences', ['Language'])}{role < 100 && group('Account actions', ['Delete account'])}</>}
       {tab === 'security' && <>{group('Security', ['Password', ...(status?.passkey_login === true ? ['Passkey'] : []), ...(status?.two_factor_enabled === true ? ['Two-factor authentication'] : [])])}{group('Login devices', ['Manage login sessions'])}{group('System access tokens', ['Personal tokens for the management API'])}</>}
       {tab === 'usage' && <><BillingSettingsSkeleton />{group('Usage preferences', ['Record IP Address', 'Allow models without a configured price'], true)}</>}
-      {tab === 'notifications' && <div className='space-y-2'>{group('Notifications', notificationRows)}<p className='px-0.5 text-xs text-ui-text-3'>{t('Verification and password reset emails are always sent')}</p></div>}
+      {tab === 'notifications' && group('Notifications', notificationRows)}
     </div></ContentSkeleton>
   </ConsolePage>;
 }

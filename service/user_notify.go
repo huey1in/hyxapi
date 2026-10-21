@@ -38,7 +38,7 @@ func NotifyUpstreamModelUpdateWatchers(subject string, content string) {
 func notifyAdmins(notifyType string, receives func(int, dto.UserSetting) bool, render func(string) (string, string)) int {
 	var users []model.User
 	if err := model.DB.
-		Select("id", "email", "role", "status", "setting").
+		Select("id", "role", "status", "setting").
 		Where("status = ? AND role >= ?", common.UserStatusEnabled, common.RoleAdminUser).
 		Find(&users).Error; err != nil {
 		common.SysLog(fmt.Sprintf("failed to query upstream update notification users: %s", err.Error()))
@@ -52,7 +52,7 @@ func notifyAdmins(notifyType string, receives func(int, dto.UserSetting) bool, r
 			continue
 		}
 		subject, content := render(userSetting.Language)
-		if err := NotifyUser(user.Id, user.Email, userSetting, dto.NewNotify(notifyType, subject, content, nil)); err != nil {
+		if err := NotifyUser(user.Id, userSetting, dto.NewNotify(notifyType, subject, content, nil)); err != nil {
 			common.SysLog(fmt.Sprintf("failed to notify user %d for upstream model update: %s", user.Id, err.Error()))
 			continue
 		}
@@ -61,13 +61,16 @@ func notifyAdmins(notifyType string, receives func(int, dto.UserSetting) bool, r
 	return sentCount
 }
 
-func NotifyUser(userId int, userEmail string, userSetting dto.UserSetting, data dto.Notify) error {
+func NotifyUser(userId int, userSetting dto.UserSetting, data dto.Notify) error {
 	if data.Type == dto.NotifyTypeQuotaExceed && (!common.QuotaRemindEnabled || userSetting.QuotaWarningEnabled != nil && !*userSetting.QuotaWarningEnabled) {
 		return nil
 	}
 	notifyType := userSetting.NotifyType
 	if notifyType == "" {
 		notifyType = dto.NotifyTypeEmail
+	}
+	if notifyType == dto.NotifyTypeEmail && (!userSetting.NotificationEmailVerified || userSetting.NotificationEmail == "") {
+		return model.ErrNotificationEmailUnverified
 	}
 
 	// Check notification limit
@@ -82,16 +85,7 @@ func NotifyUser(userId int, userEmail string, userSetting dto.UserSetting, data 
 
 	switch notifyType {
 	case dto.NotifyTypeEmail:
-		// 优先使用设置中的通知邮箱，如果为空则使用用户的默认邮箱
-		emailToUse := userSetting.NotificationEmail
-		if emailToUse == "" {
-			emailToUse = userEmail
-		}
-		if emailToUse == "" {
-			common.SysLog(fmt.Sprintf("user %d has no email, skip sending email", userId))
-			return nil
-		}
-		return sendEmailNotify(emailToUse, data)
+		return sendEmailNotify(userSetting.NotificationEmail, data)
 	case dto.NotifyTypeWebhook:
 		webhookURLStr := userSetting.WebhookUrl
 		if webhookURLStr == "" {

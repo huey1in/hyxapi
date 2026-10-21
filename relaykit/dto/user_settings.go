@@ -7,6 +7,7 @@ type UserSetting struct {
 	WebhookUrl                       string  `json:"webhook_url,omitempty"`                          // WebhookUrl webhook地址
 	WebhookSecret                    string  `json:"webhook_secret,omitempty"`                       // WebhookSecret webhook密钥
 	NotificationEmail                string  `json:"notification_email,omitempty"`                   // NotificationEmail 通知邮箱地址
+	NotificationEmailVerified        bool    `json:"notification_email_verified,omitempty"`          // Set only after mailbox ownership verification
 	BarkUrl                          string  `json:"bark_url,omitempty"`                             // BarkUrl Bark推送URL
 	GotifyUrl                        string  `json:"gotify_url,omitempty"`                           // GotifyUrl Gotify服务器地址
 	GotifyToken                      string  `json:"gotify_token,omitempty"`                         // GotifyToken Gotify应用令牌

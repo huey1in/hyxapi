@@ -14,7 +14,7 @@ export function passwordPayload(hasPassword: boolean, form: { original: string; 
 const settingsSchema = z.object({
   notify_type: z.enum(['email', 'webhook', 'bark', 'gotify']).catch('email'),
   quota_warning_enabled: z.boolean().catch(true), quota_warning_threshold: z.number().catch(0),
-  notification_email: z.string().catch(''), webhook_url: z.string().catch(''), webhook_secret: z.string().catch(''),
+  notification_email: z.string().catch(''), notification_email_verified: z.boolean().catch(false), webhook_url: z.string().catch(''), webhook_secret: z.string().catch(''),
   bark_url: z.string().catch(''), gotify_url: z.string().catch(''), gotify_token: z.string().catch(''), gotify_priority: z.number().int().min(0).max(10).catch(5),
   channel_notify_enabled: z.boolean().optional(), upstream_model_update_notify_enabled: z.boolean().catch(false),
   record_ip_log: z.boolean().catch(false), accept_unset_model_ratio_model: z.boolean().catch(false),
@@ -46,7 +46,7 @@ export function personalSettingsChanges(form: NotificationForm, saved: Notificat
     if (String(form.quota_warning_threshold).trim() === '' || !Number.isFinite(value) || value < 0) errors.quota_warning_threshold = 'Reminder threshold cannot be negative';
     else patch.quota_warning_threshold = displayAmountToQuota(value);
   }
-  const delivery: PreferenceField[] = form.notify_type === 'email' ? ['notification_email']
+  const delivery: PreferenceField[] = form.notify_type === 'email' ? []
     : form.notify_type === 'webhook' ? ['webhook_url', 'webhook_secret']
       : form.notify_type === 'bark' ? ['bark_url'] : ['gotify_url', 'gotify_token', 'gotify_priority'];
   const methodChanged = changed('notify_type');
@@ -54,8 +54,7 @@ export function personalSettingsChanges(form: NotificationForm, saved: Notificat
   for (const key of delivery) {
     if (!methodChanged && !changed(key)) continue;
     const value = form[key];
-    if (key === 'notification_email' && value !== '' && !z.email().safeParse(value).success) errors[key] = 'Invalid notification email';
-    else if (key.endsWith('_url')) {
+    if (key.endsWith('_url')) {
       try { const url = new URL(String(value)); if (!['http:', 'https:'].includes(url.protocol) || !url.hostname) throw new Error(); }
       catch { errors[key] = 'Notification URL must use http or https'; }
     } else if (key === 'gotify_token' && !String(value).trim()) errors[key] = 'Gotify token cannot be empty';

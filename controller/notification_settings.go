@@ -3,10 +3,10 @@ package controller
 import (
 	"encoding/json"
 	"errors"
-	"net/mail"
 	"net/url"
 
 	"github.com/QuantumNous/new-api/common"
+	"github.com/QuantumNous/new-api/model"
 	"github.com/QuantumNous/new-api/relaykit/dto"
 )
 
@@ -70,9 +70,12 @@ func applyNotificationSettings(current dto.UserSetting, value any, role int) (dt
 			current.UpstreamModelUpdateNotifyEnabled = *patch.ModelEnabled
 		}
 	}
-	if patch.Email != nil && *patch.Email != "" {
-		if _, err := mail.ParseAddress(*patch.Email); err != nil {
-			return current, errors.New("invalid notification email")
+	if patch.Email != nil {
+		if *patch.Email != "" && (*patch.Email != current.NotificationEmail || !current.NotificationEmailVerified) {
+			return current, model.ErrNotificationEmailUnverified
+		}
+		if *patch.Email == "" {
+			current.NotificationEmailVerified = false
 		}
 	}
 	for _, address := range []*string{patch.WebhookURL, patch.BarkURL, patch.GotifyURL} {

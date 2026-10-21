@@ -134,6 +134,8 @@ func SetApiRouter(router *gin.Engine) {
 				selfRoute.POST("/topup", middleware.CriticalRateLimit(), controller.TopUp)
 				selfRoute.POST("/aff_transfer", middleware.UserCriticalRateLimit("aff-transfer"), controller.TransferAffQuota)
 				selfRoute.PUT("/setting", controller.UpdateUserSetting)
+				selfRoute.POST("/notification_email/start", middleware.CriticalRateLimit(), middleware.UserCriticalRateLimit("notification-email"), middleware.EmailVerificationRateLimit(), middleware.DisableCache(), controller.NotificationEmailStart)
+				selfRoute.POST("/notification_email/confirm", middleware.UserCriticalRateLimit("notification-email"), middleware.DisableCache(), controller.NotificationEmailConfirm)
 
 				selfRoute.POST("/payment/epay/checkout", middleware.CriticalRateLimit(), controller.RequestEpayCheckout)
 				selfRoute.POST("/payment/alipay/checkout", middleware.CriticalRateLimit(), controller.RequestAlipayCheckout)

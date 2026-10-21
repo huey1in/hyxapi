@@ -168,3 +168,5 @@ channel.upstream_update_removed_models: "删除模型示例（展示 {{.Shown}}/
 channel.upstream_update_failed_channels: "失败渠道 ID（展示 {{.Shown}}/{{.Total}}）：{{.Ids}}"
 channel.upstream_update_more_omitted: "（其余 {{.Count}} 个已省略）"
 user.invitation_rewards_disabled: "邀请奖励未启用"
+email.notification.subject: "{{.SystemName}} 通知邮箱验证"
+email.notification.intro: "请验证此邮箱以接收账户通知。请勿将验证码提供给他人。"

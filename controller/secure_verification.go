@@ -49,6 +49,8 @@ func writeSecurityOperationError(c *gin.Context, err error) {
 		code, message = "EMAIL_ALREADY_TAKEN", "This email address is already in use."
 	case errors.Is(err, service.ErrEmailBindingDelivery):
 		code, message = "EMAIL_BINDING_DELIVERY_FAILED", err.Error()
+	case errors.Is(err, model.ErrNotificationEmailUnverified):
+		code, message = "NOTIFICATION_EMAIL_UNVERIFIED", model.ErrNotificationEmailUnverified.Error()
 	case errors.Is(err, model.ErrEmailBindingCodeInvalid):
 		code, message = "EMAIL_BINDING_CODE_INVALID", err.Error()
 	case errors.Is(err, model.ErrEmailBindingLocked):

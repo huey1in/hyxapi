@@ -168,3 +168,5 @@ channel.upstream_update_removed_models: "刪除模型範例（顯示 {{.Shown}}/
 channel.upstream_update_failed_channels: "失敗管道 ID（顯示 {{.Shown}}/{{.Total}}）：{{.Ids}}"
 channel.upstream_update_more_omitted: "（其餘 {{.Count}} 個已省略）"
 user.invitation_rewards_disabled: "邀請獎勵未啟用"
+email.notification.subject: "{{.SystemName}} 通知信箱驗證"
+email.notification.intro: "請驗證此信箱以接收帳戶通知。請勿將驗證碼提供給他人。"
