@@ -4,26 +4,21 @@ import { loadTestModules } from '../../../scripts/load-test-modules.mjs';
 
 const { entry0: logs, entry1: sidebar } = await loadTestModules(['./src/pages/Log/log-navigation.ts', './src/lib/sidebar-modules.ts']);
 
-test('log links select a canonical tab and preserve query parameters and fragments', () => {
-  assert.equal(logs.logTabFromSearch(''), 'usage');
-  assert.equal(logs.logTabFromSearch('?tab=tasks'), 'tasks');
-  assert.equal(logs.logTabFromSearch('?tab=midjourney'), 'midjourney');
-  assert.equal(logs.logTabFromSearch('?tab=invalid'), 'usage');
-  assert.equal(logs.logTabLocation('tasks', '?request_id=test&tab=usage', '#results'), '/console/log?request_id=test&tab=tasks#results');
-  assert.equal(logs.logTabLocation('midjourney', '?tab=tasks'), '/console/log?tab=midjourney');
-  assert.equal(logs.logTabLocation('usage', '?request_id=test&tab=midjourney'), '/console/log?request_id=test');
-  assert.equal(logs.logTabLocation('usage'), '/console/log');
+test('legacy log links reach the combined table without tab parameters', () => {
+  assert.equal(logs.logLocation('?request_id=test&tab=tasks', '#results'), '/console/log?request_id=test#results');
+  assert.equal(logs.logLocation('?tab=midjourney'), '/console/log');
+  assert.equal(logs.logLocation(), '/console/log');
 });
 
 test('merged log navigation follows administrator module configuration', () => {
   const hidden = { console: { log: false, task: false, midjourney: false } };
-  assert.deepEqual(logs.visibleLogTabs({}).map((tab) => tab.value), ['usage', 'tasks', 'midjourney']);
-  for (const tab of logs.LOG_TABS) {
+  assert.deepEqual(logs.visibleLogSources({}).map((tab) => tab.value), ['usage', 'tasks', 'midjourney']);
+  for (const tab of logs.LOG_SOURCES) {
     const enabled = { console: { ...hidden.console, [tab.module]: true } };
-    assert.deepEqual(logs.visibleLogTabs(enabled).map((item) => item.value), [tab.value]);
+    assert.deepEqual(logs.visibleLogSources(enabled).map((item) => item.value), [tab.value]);
     assert.equal(sidebar.isSidebarModuleVisible('/console/log', enabled), true);
   }
-  assert.deepEqual(logs.visibleLogTabs(hidden), []);
+  assert.deepEqual(logs.visibleLogSources(hidden), []);
   assert.equal(sidebar.isSidebarModuleVisible('/console/log', hidden), false);
-  assert.deepEqual(logs.visibleLogTabs({ console: { enabled: false } }), []);
+  assert.deepEqual(logs.visibleLogSources({ console: { enabled: false } }), []);
 });

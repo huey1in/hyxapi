@@ -1,0 +1,77 @@
+import { useTranslation } from 'react-i18next';
+import { renderNumber, renderQuota, timestamp2string } from '../../helpers';
+import { ExpressionBillingLog } from '../../features/pricing/ExpressionBillingLog';
+import ToolSurcharges from '../../features/pricing/ToolSurcharges';
+import { getBillingPriceFields } from './log-data';
+import type { EnrichedLog } from './log-data';
+import { Quota, TypeBadge } from './LogCells';
+import { DetailCode, DetailContent, DetailField, DetailFields, DetailSection, DetailText } from './LogDetailLayout';
+
+export default function RequestLogDetail({ row, isAdmin, isRoot }: { row: EnrichedLog; isAdmin: boolean; isRoot: boolean }) {
+  const { t } = useTranslation();
+  const other = row._other;
+  const source = other.billing_source || other.wallet;
+  const conversion = other.request_conversion?.join(' → ') || other.request_convert;
+  const formatUnitPrice = (value: number, unit: string) => `${value.toLocaleString('en-US', { maximumFractionDigits: 10 })} USD / ${t(unit)}`;
+
+  return <DetailContent>
+    <DetailSection title={t('Basic information')}>
+      {row._metadataInvalid && <p role='alert' className='text-sm text-ui-text-3'>{t('Some legacy log details could not be read.')}</p>}
+      <DetailFields>
+        <DetailField label={t('Model')} value={row.model_name || t('System operation')} />
+        <DetailField label={t('Type')} value={<TypeBadge type={row.type} />} />
+        <DetailField label={t('Time')} value={timestamp2string(row.created_at)} />
+        <DetailField label={t('Token name')} value={row.token_name || '—'} />
+        <DetailField label={t('Group')} value={row.group || '—'} />
+        {row.use_time > 0 && <DetailField label={t('Duration (s)')} value={`${row.use_time}s`} />}
+        {other.frt != null && other.frt > 0 && <DetailField label={t('First response time')} value={`${other.frt}ms`} />}
+        <DetailField label={t('Request ID')} value={row.request_id || '—'} mono />
+        {isRoot && row.upstream_request_id && <DetailField label={t('Upstream Request ID')} value={row.upstream_request_id} mono />}
+        <DetailField label='IP' value={row.ip || '—'} mono />
+        {isAdmin && <DetailField label={t('User')} value={row.username || '—'} />}
+        {isAdmin && <DetailField label={t('Channel ID')} value={row.channel || other.channel_id || '—'} />}
+        {other.request_path && <DetailField label={t('Request path')} value={other.request_path} mono />}
+        {conversion && <DetailField label={t('Request conversion')} value={conversion} />}
+        {other.usage_semantic && <DetailField label={t('Usage semantics')} value={other.usage_semantic} />}
+        {other.stream_status && <DetailField label={t('Stream status')} value={`${other.stream_status.status || ''}${other.stream_status.end_reason ? ` (${other.stream_status.end_reason})` : ''}`} />}
+      </DetailFields>
+    </DetailSection>
+    <DetailSection title={t('Billing & usage')}>
+      <DetailFields>
+        <DetailField label={t('Cost')} value={<Quota row={row} />} />
+        {source && <DetailField label={t('Billing source')} value={source === 'wallet' ? t('Wallet') : source === 'subscription' ? t('Subscription') : source} />}
+        <DetailField label={t('Input tokens')} value={renderNumber(row.prompt_tokens)} />
+        <DetailField label={t('Output tokens')} value={renderNumber(row.completion_tokens)} />
+        {row._cacheHit > 0 && <DetailField label={t('Cache read tokens')} value={renderNumber(row._cacheHit)} />}
+        {row._cacheWrite > 0 && <DetailField label={t('Cache write tokens')} value={renderNumber(row._cacheWrite)} />}
+        {other.cache_creation_tokens_5m != null && <DetailField label={t('Cache write tokens (5m)')} value={renderNumber(other.cache_creation_tokens_5m)} />}
+        {other.cache_creation_tokens_1h != null && <DetailField label={t('Cache write tokens (1h)')} value={renderNumber(other.cache_creation_tokens_1h)} />}
+        {other.input_tokens_total != null && <DetailField label={t('Normalized input tokens')} value={renderNumber(other.input_tokens_total)} />}
+        {getBillingPriceFields(other).map(({ key, label, unit, value }) => <DetailField key={key} label={t(label)} value={formatUnitPrice(value, unit)} />)}
+        {other.billing_mode === 'tiered_expr' && <>
+          <DetailField label={t('Billing mode')} value={t('Expression billing')} />
+          <DetailField label={t('Matched tier')} value={other.matched_tier || '—'} />
+          <DetailField label={t('Billing unit')} value={other.billing_unit || '—'} />
+          {other.fixed_price != null && <DetailField label={t('Request price')} value={`${other.fixed_price} USD`} />}
+          {other.image_count != null && <DetailField label={t('Billed images')} value={other.image_count} />}
+        </>}
+        {other.group_ratio != null && <DetailField label={t('Group multiplier')} value={other.group_ratio} />}
+        {other.subscription_id != null && <DetailField label={t('Subscription ID')} value={other.subscription_id} />}
+        {other.subscription_plan_title && <DetailField label={t('Subscription plan')} value={other.subscription_plan_title} />}
+        {other.subscription_consumed != null && <DetailField label={t('Subscription charged')} value={renderQuota(other.subscription_consumed, 4)} />}
+        {other.subscription_used != null && <DetailField label={t('Subscription used')} value={renderQuota(other.subscription_used, 4)} />}
+        {other.subscription_total != null && <DetailField label={t('Subscription allowance')} value={renderQuota(other.subscription_total, 4)} />}
+        {other.subscription_remain != null && <DetailField label={t('Subscription remaining')} value={renderQuota(other.subscription_remain, 4)} />}
+        {other.wallet_quota_deducted != null && <DetailField label={t('Wallet charged')} value={renderQuota(other.wallet_quota_deducted, 4)} />}
+      </DetailFields>
+      {other.tool_surcharges != null && <ToolSurcharges value={other.tool_surcharges} />}
+      {other.billing_mode === 'tiered_expr' && <ExpressionBillingLog other={other} modelName={row.model_name} />}
+    </DetailSection>
+    {other.billing_mode === 'tiered_expr' && other.billing_tokens != null && <DetailCode title={t('Billing token details')} value={JSON.stringify(other.billing_tokens)} />}
+    {row.content && <DetailSection title={t('Content')}><DetailText>{row.content}</DetailText></DetailSection>}
+    {isAdmin && Array.isArray(other.admin_info?.request_policy) && <DetailCode title={t('Request policy decisions')} value={JSON.stringify(other.admin_info.request_policy)} />}
+    {other.request_body && <DetailCode title={t('Request body')} value={other.request_body} />}
+    {other.response_body && <DetailCode title={t('Response body')} value={other.response_body} />}
+    {Object.keys(row._rawOther).length > 0 && <DetailCode title={t('Additional details')} value={JSON.stringify(row._rawOther)} />}
+  </DetailContent>;
+}

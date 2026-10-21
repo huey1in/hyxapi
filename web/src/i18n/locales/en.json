@@ -3081,6 +3081,15 @@
     "Use arrow keys to inspect spending by date": "Use arrow keys to inspect spending by date",
     "Creation date": "Creation date",
     "Last used date": "Last used date",
-    "Invalid API key response": "Invalid API key response"
+    "Invalid API key response": "Invalid API key response",
+    "Model / task": "Model / task",
+    "Log scope": "Log scope",
+    "All logs": "All logs",
+    "My logs": "My logs",
+    "Log source": "Log source",
+    "All types": "All types",
+    "Request details": "Request details",
+    "Basic information": "Basic information",
+    "Task results": "Task results"
   }
 }

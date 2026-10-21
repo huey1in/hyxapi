@@ -3076,6 +3076,15 @@
     "Use arrow keys to inspect spending by date": "使用左右方向键查看各日期的消费金额",
     "Creation date": "创建日期",
     "Last used date": "最新使用日期",
-    "Invalid API key response": "API 密钥详情响应无效"
+    "Invalid API key response": "API 密钥详情响应无效",
+    "Model / task": "模型 / 任务",
+    "Log scope": "日志范围",
+    "All logs": "全部日志",
+    "My logs": "我的日志",
+    "Log source": "日志来源",
+    "All types": "全部类型",
+    "Request details": "请求详情",
+    "Basic information": "基本信息",
+    "Task results": "任务结果"
   }
 }

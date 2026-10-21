@@ -3032,6 +3032,15 @@
     "Apply": "Appliquer",
     "Creation date": "Date de création",
     "Last used date": "Dernière utilisation",
-    "Invalid API key response": "Réponse de clé API invalide"
+    "Invalid API key response": "Réponse de clé API invalide",
+    "Model / task": "Modèle / tâche",
+    "Log scope": "Portée des journaux",
+    "All logs": "Tous les journaux",
+    "My logs": "Mes journaux",
+    "Log source": "Source du journal",
+    "All types": "Tous les types",
+    "Request details": "Détails de la requête",
+    "Basic information": "Informations générales",
+    "Task results": "Résultats de la tâche"
   }
 }

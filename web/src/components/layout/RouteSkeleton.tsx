@@ -8,6 +8,7 @@ import Pagination from '../ui/layout/Pagination';
 import Skeleton from '../ui/feedback/Skeleton';
 import { TopUpSkeleton } from '../../features/payments/TopUpLayout';
 import { personalSettingsTab } from '../../pages/Personal/personal-navigation';
+import LogsLoading from '../../pages/Log/LogsLoading';
 
 export default function RouteSkeleton() {
   const { pathname, search } = useLocation();
@@ -16,8 +17,7 @@ export default function RouteSkeleton() {
   if (pathname === '/console/topup') return <TopUpSkeleton />;
   if (['/console/log', '/console/task', '/console/midjourney'].includes(pathname)) return <div className='console-content-page'>
     <ConsolePageHeader title={t('日志')} />
-    <div className='flex gap-4 border-b border-ui-border pb-3'>{[0, 1, 2].map((tab) => <Skeleton key={tab} width={80} height={20} />)}</div>
-    <div role='status' aria-label={t('Loading...')}><Skeleton height={3} rounded='rounded-full' /><span className='sr-only'>{t('Loading...')}</span></div>
+    <LogsLoading />
   </div>;
   if (pathname === '/console') return <div className='console-content-page dashboard-overview'><ConsolePageHeader title={t('Usage overview')} /><DashboardStatsSkeleton /></div>;
   if (pathname === '/console/token') return <div className='console-content-page token-management-page'>

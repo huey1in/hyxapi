@@ -23,7 +23,7 @@ test('legacy metadata failures do not hide usage or expose privileged diagnostic
   assert.equal(data.enrichLog(row, 10)._rawOther.root_info, undefined);
   assert.equal(data.enrichLog(row, 100).upstream_request_id, 'provider-private');
   assert.equal(data.enrichLog({ ...row, other: '{broken' }, 1)._metadataInvalid, true);
-  assert.equal(data.logPageSchema.safeParse({ page: 1, total: 1, items: [{ ...row, quota: 'free' }] }).success, false);
+  assert.equal(data.logSchema.safeParse({ ...row, quota: 'free' }).success, false);
 });
 
 test('cache creation durations do not double count legacy totals and explicit zeros remain authoritative', () => {

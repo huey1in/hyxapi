@@ -51,8 +51,8 @@ const App = () => (
       <Route path='/console/vendors'          element={<Metadata kind='vendors' />} />
       <Route path='/console/token'            element={<Token />} />
       <Route path='/console/log'              element={<Log />} />
-      <Route path='/console/task'             element={<LegacyLogRedirect tab='tasks' />} />
-      <Route path='/console/midjourney'       element={<LegacyLogRedirect tab='midjourney' />} />
+      <Route path='/console/task'             element={<LegacyLogRedirect />} />
+      <Route path='/console/midjourney'       element={<LegacyLogRedirect />} />
       <Route path='/console/user'             element={<User />} />
       <Route path='/console/operations'       element={<Operations />} />
       <Route path='/console/audit'            element={<AuditLog />} />

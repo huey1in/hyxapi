@@ -3032,6 +3032,15 @@
     "Apply": "Применить",
     "Creation date": "Дата создания",
     "Last used date": "Последнее использование",
-    "Invalid API key response": "Некорректный ответ API-ключа"
+    "Invalid API key response": "Некорректный ответ API-ключа",
+    "Model / task": "Модель / задача",
+    "Log scope": "Область журналов",
+    "All logs": "Все журналы",
+    "My logs": "Мои журналы",
+    "Log source": "Источник журнала",
+    "All types": "Все типы",
+    "Request details": "Сведения о запросе",
+    "Basic information": "Основная информация",
+    "Task results": "Результаты задачи"
   }
 }

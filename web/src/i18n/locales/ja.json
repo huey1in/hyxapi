@@ -3032,6 +3032,15 @@
     "Apply": "適用",
     "Creation date": "作成日時",
     "Last used date": "最終使用日時",
-    "Invalid API key response": "API キーの応答が無効です"
+    "Invalid API key response": "API キーの応答が無効です",
+    "Model / task": "モデル / タスク",
+    "Log scope": "ログの範囲",
+    "All logs": "すべてのログ",
+    "My logs": "自分のログ",
+    "Log source": "ログの種類",
+    "All types": "すべての種類",
+    "Request details": "リクエスト詳細",
+    "Basic information": "基本情報",
+    "Task results": "タスク結果"
   }
 }

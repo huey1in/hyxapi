@@ -17,13 +17,11 @@ export const taskSchema = z.object({
 export type TaskRow = z.infer<typeof taskSchema>;
 export const midjourneySchema = z.object({
   id: count, mj_id: z.string(), action: z.string(), status: z.string(), progress: z.string(), quota: count,
-  submit_time: milliseconds, start_time: milliseconds, finish_time: milliseconds, channel_id: count,
+  submit_time: milliseconds, start_time: milliseconds, finish_time: milliseconds, channel_id: count, user_id: count.default(0),
   prompt: z.string(), prompt_en: z.string(), description: z.string(), fail_reason: z.string(),
   image_url: z.string(), video_url: z.string(), video_urls: z.string(), buttons: z.string(), properties: z.string(),
 });
 export type MidjourneyRow = z.infer<typeof midjourneySchema>;
-export const taskPageSchema = z.object({ items: z.array(taskSchema).nullable().transform((rows) => rows ?? []), total: count, page: count.positive() });
-export const midjourneyPageSchema = z.object({ items: z.array(midjourneySchema).nullable().transform((rows) => rows ?? []), total: count, page: count.positive() });
 
 export function safeTaskMediaURL(value: string, origin: string) {
   if (!value.trim()) return '';
@@ -45,18 +43,3 @@ export function midjourneyVideos(row: MidjourneyRow, origin: string) {
   return [...new Set([row.video_url, ...(Array.isArray(items) ? items.map((item: unknown) => typeof item === 'string' ? item : item && typeof item === 'object' && 'url' in item && typeof item.url === 'string' ? item.url : '') : [])].map((value) => safeTaskMediaURL(value, origin)).filter(Boolean))];
 }
 export function parseTaskMetadata(value: string): unknown { try { return JSON.parse(value); } catch { return value; } }
-export const emptyTaskFilters = () => ({ task_id: '', platform: '', status: '', action: '', channel_id: '', start: '', end: '' });
-export type TaskFilters = ReturnType<typeof emptyTaskFilters>;
-export function taskFilterError(filters: Pick<TaskFilters, 'channel_id' | 'start' | 'end'>, admin: boolean) {
-  if (admin && filters.channel_id && (!/^[1-9]\d*$/.test(filters.channel_id.trim()) || !Number.isSafeInteger(Number(filters.channel_id)))) return 'Channel ID must be a positive integer';
-  const start = filters.start ? new Date(filters.start).getTime() : 0; const end = filters.end ? new Date(filters.end).getTime() : 0;
-  if (!Number.isFinite(start) || !Number.isFinite(end) || start < 0 || end < 0 || (start && end && start > end)) return 'Invalid time range';
-  return '';
-}
-export function taskQueryParams(filters: TaskFilters, page: number, admin: boolean, millis = false) {
-  const params: Record<string, string | number> = { p: page, page_size: 20 };
-  for (const key of ['task_id', 'platform', 'status', 'action'] as const) if (filters[key].trim()) params[key] = filters[key].trim();
-  if (admin && filters.channel_id.trim()) params.channel_id = filters.channel_id.trim();
-  for (const [key, field] of [['start_timestamp', 'start'], ['end_timestamp', 'end']] as const) if (filters[field]) params[key] = Math.floor(new Date(filters[field]).getTime() / (millis ? 1 : 1000));
-  return params;
-}

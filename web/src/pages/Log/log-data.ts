@@ -32,7 +32,6 @@ export const logSchema = z.object({
   group: z.string().default(''), ip: z.string().default(''), request_id: z.string().default(''), upstream_request_id: z.string().default(''),
   other: z.union([z.string(), record]).nullish().transform((value) => value ?? ''),
 });
-export const logPageSchema = z.object({ items: z.array(logSchema).nullable().transform((rows) => rows ?? []), total: count, page: count.min(1) });
 export type LogRow = z.infer<typeof logSchema>;
 
 export function enrichLog(row: LogRow, role: number) {

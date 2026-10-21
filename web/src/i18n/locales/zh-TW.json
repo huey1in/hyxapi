@@ -3032,6 +3032,15 @@
     "Apply": "套用",
     "Creation date": "建立日期",
     "Last used date": "最新使用日期",
-    "Invalid API key response": "API 金鑰詳情回應無效"
+    "Invalid API key response": "API 金鑰詳情回應無效",
+    "Model / task": "模型 / 任務",
+    "Log scope": "日誌範圍",
+    "All logs": "全部日誌",
+    "My logs": "我的日誌",
+    "Log source": "日誌來源",
+    "All types": "全部類型",
+    "Request details": "請求詳情",
+    "Basic information": "基本資訊",
+    "Task results": "任務結果"
   }
 }

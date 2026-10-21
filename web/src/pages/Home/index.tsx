@@ -7,7 +7,7 @@ import { interfaceLanguages, normalizeLanguage } from '../../i18n/language';
 import Dashboard from '../Dashboard';
 import Pricing from '../Pricing';
 import Token from '../Token';
-import Log from '../Log/UsageLogs';
+import Log from '../Log/LogPreview';
 import SiderBar from '../../components/layout/SiderBar';
 import { useSetTheme, useTheme } from '../../context/Theme';
 import { StatusContext } from '../../context/Status';
@@ -293,7 +293,7 @@ const HomeContent = () => {
                 </div>
                 <div className='product-shell'>
                   <SiderBar preview previewActive='/console/log' />
-                  <div className='console-feature-content'><Log preview /></div>
+                  <div className='console-feature-content'><Log /></div>
                 </div>
               </div>
             </div>

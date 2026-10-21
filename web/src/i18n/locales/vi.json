@@ -3032,6 +3032,15 @@
     "Apply": "Áp dụng",
     "Creation date": "Ngày tạo",
     "Last used date": "Lần sử dụng gần nhất",
-    "Invalid API key response": "Phản hồi khóa API không hợp lệ"
+    "Invalid API key response": "Phản hồi khóa API không hợp lệ",
+    "Model / task": "Mô hình / tác vụ",
+    "Log scope": "Phạm vi nhật ký",
+    "All logs": "Tất cả nhật ký",
+    "My logs": "Nhật ký của tôi",
+    "Log source": "Nguồn nhật ký",
+    "All types": "Tất cả loại",
+    "Request details": "Chi tiết yêu cầu",
+    "Basic information": "Thông tin cơ bản",
+    "Task results": "Kết quả tác vụ"
   }
 }

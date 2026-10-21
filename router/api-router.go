@@ -312,6 +312,10 @@ func SetApiRouter(router *gin.Engine) {
 			redemptionRoute.DELETE("/:id", controller.DeleteRedemption)
 		}
 		logRoute := apiRouter.Group("/log")
+		logRoute.GET("/feed", middleware.AdminAuth(), controller.GetLogFeed)
+		logRoute.GET("/feed/export", middleware.AdminAuth(), controller.ExportLogFeed)
+		logRoute.GET("/self/feed", middleware.UserAuth(), controller.GetUserLogFeed)
+		logRoute.GET("/self/feed/export", middleware.UserAuth(), controller.ExportUserLogFeed)
 		logRoute.GET("/", middleware.AdminAuth(), controller.GetAllLogs)
 		logRoute.GET("/export", middleware.AdminAuth(), controller.ExportAllLogs)
 		logRoute.GET("/self/export", middleware.UserAuth(), controller.ExportUserLogs)
