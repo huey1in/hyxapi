@@ -24,11 +24,11 @@ export default function SiteSettings({ value, onChange, disabled = false }: { va
   const setModule = (key: keyof typeof config, enabled: boolean, auth = false) => {
     if (!parsed) return;
     const before = parsed[key];
-    const next = auth || key === 'pricing' || key === 'rankings' ? { ...(record(before) ? before : {}), ...(key === 'pricing' || key === 'rankings' ? config[key] : {}), [auth ? 'requireAuth' : 'enabled']: enabled } : enabled;
+    const next = auth || key === 'pricing' ? { ...(record(before) ? before : {}), ...(key === 'pricing' ? config[key] : {}), [auth ? 'requireAuth' : 'enabled']: enabled } : enabled;
     onChange('HeaderNavModules', JSON.stringify({ ...parsed, [key]: next }));
   };
-  const modules: { key: keyof typeof config; label: string }[] = [{ key: 'home', label: 'Home' }, { key: 'console', label: 'Console' }, { key: 'pricing', label: 'Models' }, { key: 'rankings', label: 'Rankings' }, { key: 'docs', label: 'Docs' }, { key: 'about', label: 'About' }];
-  const documents = [{ key: 'About', title: 'About content' }, { key: 'legal.user_agreement', title: 'Terms of Service' }, { key: 'legal.privacy_policy', title: 'Privacy Policy' }];
+  const modules: { key: keyof typeof config; label: string }[] = [{ key: 'home', label: 'Home' }, { key: 'console', label: 'Console' }, { key: 'pricing', label: 'Models' }, { key: 'docs', label: 'Docs' }];
+  const documents = [{ key: 'legal.user_agreement', title: 'Terms of Service' }, { key: 'legal.privacy_policy', title: 'Privacy Policy' }];
   const docs = value('general_setting.docs_link');
   const invalidDocs = !validDocsUrl(docs);
   return <section className='rounded-[26px] border border-ui-border px-[22px] py-5 space-y-6'>
@@ -36,7 +36,7 @@ export default function SiteSettings({ value, onChange, disabled = false }: { va
     <fieldset disabled={disabled} className='space-y-6'>
       <div className='grid gap-3 sm:grid-cols-2'>{modules.map(({ key, label }) => <div key={key} className='rounded-xl border border-ui-border p-3 space-y-3'>
         <label className='flex items-center justify-between gap-3 text-sm'><span>{t(label)}</span><Switch aria-label={t('{{module}} navigation', { module: t(label) })} checked={typeof config[key] === 'boolean' ? config[key] as boolean : config[key].enabled} disabled={!parsed} onChange={(enabled) => setModule(key, enabled)} /></label>
-        {(key === 'pricing' || key === 'rankings') && <label className='flex items-center justify-between gap-3 text-xs text-ui-text-3'><span>{t('Require sign-in')}</span><Switch aria-label={t('Require sign-in for {{module}}', { module: t(label) })} checked={config[key].requireAuth} disabled={!parsed || !config[key].enabled} onChange={(enabled) => setModule(key, enabled, true)} /></label>}
+        {key === 'pricing' && <label className='flex items-center justify-between gap-3 text-xs text-ui-text-3'><span>{t('Require sign-in')}</span><Switch aria-label={t('Require sign-in for {{module}}', { module: t(label) })} checked={config[key].requireAuth} disabled={!parsed || !config[key].enabled} onChange={(enabled) => setModule(key, enabled, true)} /></label>}
       </div>)}</div>
       <label className='block text-xs text-ui-text-3'><span className='mb-2 block'>{t('Documentation URL')}</span><Input aria-label={t('Documentation URL')} width='full' value={docs} onChange={(next) => onChange('general_setting.docs_link', next)} placeholder='https://docs.example.com/' invalid={invalidDocs} data-setting-invalid={invalidDocs ? 'true' : undefined} /><span className='mt-2 block'>{t('Leave empty to use the New API documentation.')}</span>{invalidDocs && <span role='alert' className='mt-2 block'>{t('Documentation URL must be an HTTP or HTTPS URL without credentials')}</span>}</label>
       <details className='rounded-xl border border-ui-border p-3'><summary className='text-xs text-ui-text-2'>{t('Navigation JSON')}</summary><div className='mt-3 space-y-3'><Textarea aria-label={t('Navigation JSON')} width='full' rows={6} value={raw} onChange={(next) => onChange('HeaderNavModules', next)} invalid={!parsed} data-setting-invalid={!parsed ? 'true' : undefined} />{!parsed && <p role='alert' className='text-xs text-ui-text-2'>{t('Navigation configuration must be a JSON object')}</p>}<Button variant='link' onClick={() => onChange('HeaderNavModules', JSON.stringify(parseHeaderNavModules(null)))}>{t('Reset navigation defaults')}</Button></div></details>

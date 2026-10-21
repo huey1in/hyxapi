@@ -95,7 +95,6 @@ func InitOptionMap() {
 	common.OptionMap["SMTPStartTLSEnabled"] = strconv.FormatBool(common.SMTPStartTLSEnabled)
 	common.OptionMap["SMTPInsecureSkipVerify"] = strconv.FormatBool(common.SMTPInsecureSkipVerify)
 	common.OptionMap["SMTPForceAuthLogin"] = strconv.FormatBool(common.SMTPForceAuthLogin)
-	common.OptionMap["About"] = ""
 	common.OptionMap["ServerAddress"] = ""
 	common.OptionMap["PayAddress"] = ""
 	common.OptionMap["CustomCallbackAddress"] = ""
@@ -259,6 +258,8 @@ func SyncOptions(frequency int) {
 func UpdateOption(key string, value string) error {
 	if key == "SidebarModulesAdmin" {
 		value = CleanSidebarModules(value)
+	} else if key == "HeaderNavModules" {
+		value = CleanHeaderNavModules(value)
 	}
 	if groupRatioOptionAlias(canonicalGroupRatioOption(key)) != "" {
 		return UpdateOptionsBulk(map[string]string{key: value})
@@ -329,6 +330,8 @@ func updateOptionMap(key string, value string) (err error) {
 	}
 	if key == "SidebarModulesAdmin" {
 		value = CleanSidebarModules(value)
+	} else if key == "HeaderNavModules" {
+		value = CleanHeaderNavModules(value)
 	}
 	key = canonicalGroupRatioOption(key)
 	if groupRatioOptionAlias(key) != "" {
@@ -726,6 +729,10 @@ func UpdateOptionsBulk(values map[string]string) error {
 	if value, exists := values["SidebarModulesAdmin"]; exists {
 		values = maps.Clone(values)
 		values["SidebarModulesAdmin"] = CleanSidebarModules(value)
+	}
+	if value, exists := values["HeaderNavModules"]; exists {
+		values = maps.Clone(values)
+		values["HeaderNavModules"] = CleanHeaderNavModules(value)
 	}
 	values, err := normalizedGroupRatioOptions(values)
 	if err != nil {

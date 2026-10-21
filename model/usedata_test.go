@@ -63,10 +63,6 @@ func TestQuotaDataCollectionPreservesExistingHourlyTotals(t *testing.T) {
 				require.Equal(t, 8, rows[0].Count)
 				require.Equal(t, 24, rows[0].TokenUsed)
 			}
-			rankings, err := GetRankingQuotaTotals(3600, 7200)
-			require.NoError(t, err)
-			require.Len(t, rankings, 1)
-			require.EqualValues(t, 24, rankings[0].TotalTokens)
 		})
 	}
 }

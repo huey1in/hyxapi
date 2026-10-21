@@ -274,31 +274,6 @@
         ]
       }
     },
-    "/api/about": {
-      "get": {
-        "summary": "获取关于信息",
-        "deprecated": false,
-        "description": "🔓 无需鉴权",
-        "tags": [
-          "系统"
-        ],
-        "parameters": [],
-        "responses": {
-          "200": {
-            "description": "成功",
-            "headers": {}
-          }
-        },
-        "security": [
-          {
-            "Combination343": []
-          },
-          {
-            "Combination1243": []
-          }
-        ]
-      }
-    },
     "/api/home_page_content": {
       "get": {
         "summary": "获取首页内容",

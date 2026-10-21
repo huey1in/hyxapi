@@ -3,9 +3,7 @@ export type HeaderNavModules = {
   home: boolean;
   console: boolean;
   pricing: ModuleAccess;
-  rankings: ModuleAccess;
   docs: boolean;
-  about: boolean;
 };
 
 const flag = (raw: unknown, fallback: boolean): boolean => {
@@ -28,20 +26,19 @@ export function parseHeaderNavModules(raw: unknown): HeaderNavModules {
   let value: unknown = raw;
   if (typeof value === 'string') { try { value = JSON.parse(value); } catch { value = null; } }
   const config = record(value) ?? {};
-  const access = (key: 'pricing' | 'rankings'): ModuleAccess => {
+  const access = (key: 'pricing'): ModuleAccess => {
     const entry = record(config[key]);
     return entry ? { enabled: flag(entry.enabled, true), requireAuth: flag(entry.requireAuth, false) } : { enabled: flag(config[key], true), requireAuth: false };
   };
-  return { home: flag(config.home, true), console: flag(config.console, true), pricing: access('pricing'), rankings: access('rankings'), docs: flag(config.docs, true), about: flag(config.about, true) };
+  return { home: flag(config.home, true), console: flag(config.console, true), pricing: access('pricing'), docs: flag(config.docs, true) };
 }
 
-export function publicModuleAccess(config: HeaderNavModules, module: 'pricing' | 'rankings', authenticated: boolean): 'allowed' | 'disabled' | 'sign-in' {
+export function publicModuleAccess(config: HeaderNavModules, module: 'pricing', authenticated: boolean): 'allowed' | 'disabled' | 'sign-in' {
   const access = config[module];
   return !access.enabled ? 'disabled' : access.requireAuth && !authenticated ? 'sign-in' : 'allowed';
 }
 
-export function publicRouteModule(path: string): 'pricing' | 'rankings' | null {
+export function publicRouteModule(path: string): 'pricing' | null {
   if (path === '/pricing' || path.startsWith('/pricing/')) return 'pricing';
-  if (path === '/rankings' || path.startsWith('/rankings/')) return 'rankings';
   return null;
 }

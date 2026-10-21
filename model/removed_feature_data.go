@@ -14,7 +14,7 @@ var ErrRemovedFeatureOption = errors.New("this feature setting has been removed"
 
 // IsRemovedFeatureOption prevents obsolete settings from being restored by old clients.
 func IsRemovedFeatureOption(key string) bool {
-	return key == "Chats" || key == "ChatLink" || key == "ChatLink2" || key == "log_setting.max_range_days" || strings.HasPrefix(key, "model_deployment.")
+	return key == "About" || key == "Chats" || key == "ChatLink" || key == "ChatLink2" || key == "log_setting.max_range_days" || strings.HasPrefix(key, "model_deployment.")
 }
 
 func purgeRemovedFeatureOptions(db *gorm.DB) error {
@@ -26,8 +26,13 @@ func purgeRemovedFeatureOptions(db *gorm.DB) error {
 	for _, option := range options {
 		if IsRemovedFeatureOption(option.Key) {
 			keys = append(keys, option.Key)
-		} else if option.Key == "SidebarModulesAdmin" {
-			cleaned := CleanSidebarModules(option.Value)
+		} else if option.Key == "SidebarModulesAdmin" || option.Key == "HeaderNavModules" {
+			cleaned := option.Value
+			if option.Key == "SidebarModulesAdmin" {
+				cleaned = CleanSidebarModules(option.Value)
+			} else {
+				cleaned = CleanHeaderNavModules(option.Value)
+			}
 			if cleaned != option.Value {
 				if err := db.Model(&Option{}).Where(clause.Eq{Column: clause.Column{Name: "key"}, Value: option.Key}).
 					Where("value = ?", option.Value).Update("value", cleaned).Error; err != nil {
@@ -40,6 +45,29 @@ func purgeRemovedFeatureOptions(db *gorm.DB) error {
 		return nil
 	}
 	return db.Where(clause.IN{Column: clause.Column{Name: "key"}, Values: keys}).Delete(&Option{}).Error
+}
+
+// CleanHeaderNavModules removes retired public navigation without changing other settings.
+func CleanHeaderNavModules(raw string) string {
+	var modules map[string]json.RawMessage
+	if common.UnmarshalJsonStr(raw, &modules) != nil || modules == nil {
+		return raw
+	}
+	changed := false
+	for _, key := range []string{"rankings", "about"} {
+		if _, exists := modules[key]; exists {
+			delete(modules, key)
+			changed = true
+		}
+	}
+	if !changed {
+		return raw
+	}
+	encoded, err := common.Marshal(modules)
+	if err != nil {
+		return raw
+	}
+	return string(encoded)
 }
 
 // CleanSidebarModules drops retired sections while preserving unrelated preferences.

@@ -44,7 +44,6 @@ export const TAB_KEYS: Record<string, string[]> = {
     'ServerAddress',
     'HeaderNavModules',
     'general_setting.docs_link',
-    'About',
     'legal.user_agreement',
     'legal.privacy_policy',
     'RetryTimes',
@@ -266,7 +265,6 @@ export const TAB_SECTIONS: Record<string, SettingSection[]> = {
       keys: [
         'HeaderNavModules',
         'general_setting.docs_link',
-        'About',
         'legal.user_agreement',
         'legal.privacy_policy',
       ],

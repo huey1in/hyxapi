@@ -21,7 +21,7 @@ func TestRemovedFeatureSettingsArePurgedAndCannotBeRestored(t *testing.T) {
 	DB, common.OptionMap = db, map[string]string{}
 	t.Cleanup(func() { DB, common.OptionMap = previousDB, previousMap })
 	require.NoError(t, db.AutoMigrate(&Option{}))
-	keys := []string{"model_deployment.ionet.enabled", "model_deployment.ionet.api_key", "Chats", "ChatLink", "ChatLink2", "log_setting.max_range_days"}
+	keys := []string{"model_deployment.ionet.enabled", "model_deployment.ionet.api_key", "Chats", "ChatLink", "ChatLink2", "log_setting.max_range_days", "About"}
 	for _, key := range keys {
 		require.NoError(t, db.Create(&Option{Key: key, Value: "legacy-value"}).Error)
 	}
@@ -44,6 +44,46 @@ func TestRemovedFeatureSettingsArePurgedAndCannotBeRestored(t *testing.T) {
 	require.NoError(t, db.Find(&options).Error)
 	require.Equal(t, []Option{active}, options)
 	require.Empty(t, common.OptionMap)
+}
+
+func TestRetiredPublicNavigationIsPurgedAndCannotBeRestored(t *testing.T) {
+	db, err := gorm.Open(sqlite.Open(filepath.Join(t.TempDir(), "navigation.db")), &gorm.Config{})
+	require.NoError(t, err)
+	sqlDB, err := db.DB()
+	require.NoError(t, err)
+	t.Cleanup(func() { _ = sqlDB.Close() })
+	previousDB, previousMap := DB, common.OptionMap
+	DB, common.OptionMap = db, map[string]string{}
+	t.Cleanup(func() { DB, common.OptionMap = previousDB, previousMap })
+	require.NoError(t, db.AutoMigrate(&Option{}))
+	const original = `{"rankings":{"enabled":true,"requireAuth":true},"about":true,"pricing":{"enabled":false,"requireAuth":true},"custom":{"large":9007199254740993}}`
+	const expected = `{"pricing":{"enabled":false,"requireAuth":true},"custom":{"large":9007199254740993}}`
+	require.NoError(t, db.Create(&Option{Key: "HeaderNavModules", Value: original}).Error)
+	for range 2 {
+		require.NoError(t, purgeRemovedFeatureOptions(db))
+		var stored Option
+		require.NoError(t, db.First(&stored, "key = ?", "HeaderNavModules").Error)
+		require.JSONEq(t, expected, stored.Value)
+		require.Contains(t, stored.Value, "9007199254740993")
+	}
+	for _, save := range []func() error{
+		func() error { return UpdateOption("HeaderNavModules", original) },
+		func() error { return UpdateOptionsBulk(map[string]string{"HeaderNavModules": original}) },
+	} {
+		require.NoError(t, save())
+		var stored Option
+		require.NoError(t, db.First(&stored, "key = ?", "HeaderNavModules").Error)
+		require.JSONEq(t, expected, stored.Value)
+		require.JSONEq(t, expected, common.OptionMap["HeaderNavModules"])
+	}
+	require.NoError(t, updateOptionMap("HeaderNavModules", original))
+	require.JSONEq(t, expected, common.OptionMap["HeaderNavModules"])
+	for _, value := range []string{"", "invalid legacy value", "null", "[]", expected} {
+		require.Equal(t, value, CleanHeaderNavModules(value))
+	}
+	for _, value := range []string{`{"about":false,"home":false}`, `{"rankings":false,"home":false}`} {
+		require.JSONEq(t, `{"home":false}`, CleanHeaderNavModules(value))
+	}
 }
 
 func TestRemovedFeatureTokenScopesPreserveOtherPermissionsAndCredentials(t *testing.T) {

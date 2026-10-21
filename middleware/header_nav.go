@@ -1,8 +1,6 @@
 package middleware
 
 import (
-	"fmt"
-	"net/http"
 	"strings"
 
 	"github.com/QuantumNous/new-api/common"
@@ -98,27 +96,6 @@ func parseHeaderNavBool(value any, fallback bool) bool {
 		return fallback
 	default:
 		return fallback
-	}
-}
-
-func HeaderNavModuleAuth(module string) gin.HandlerFunc {
-	return func(c *gin.Context) {
-		access := getHeaderNavAccess(module)
-		if !access.Enabled {
-			c.JSON(http.StatusForbidden, gin.H{
-				"success": false,
-				"message": fmt.Sprintf("%s is disabled", module),
-			})
-			c.Abort()
-			return
-		}
-
-		if access.RequireAuth {
-			UserAuth()(c)
-			return
-		}
-
-		TryUserAuth()(c)
 	}
 }
 

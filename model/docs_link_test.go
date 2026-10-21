@@ -38,9 +38,9 @@ func TestDocumentationOptionPersistsAndRejectsUnsafeReplacement(t *testing.T) {
 	var saved Option
 	require.NoError(t, db.First(&saved, "key = ?", "general_setting.docs_link").Error)
 	require.Equal(t, "https://example.test/docs", saved.Value)
-	require.Error(t, UpdateOptionsBulk(map[string]string{"general_setting.docs_link": "javascript:alert(1)", "About": "must not be saved"}))
+	require.Error(t, UpdateOptionsBulk(map[string]string{"general_setting.docs_link": "javascript:alert(1)", "Notice": "must not be saved"}))
 	var count int64
-	require.NoError(t, db.Model(&Option{}).Where("key = ?", "About").Count(&count).Error)
+	require.NoError(t, db.Model(&Option{}).Where("key = ?", "Notice").Count(&count).Error)
 	require.Zero(t, count)
 	require.NoError(t, UpdateOptionsBulk(map[string]string{"general_setting.docs_link": " https://example.test/help "}))
 	require.Equal(t, "https://example.test/help", operation_setting.GetGeneralSetting().DocsLink)

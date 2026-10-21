@@ -26,7 +26,6 @@ const Pricing = lazy(() => import('./pages/Pricing'));
 const PricingDetail = lazy(() => import('./pages/Pricing/Detail'));
 const Home = lazy(() => import('./pages/Home'));
 const Auth = lazy(() => import('./pages/Auth'));
-const Rankings = lazy(() => import('./features/public-pages/Rankings'));
 const PublicDocument = lazy(() => import('./features/public-pages/PublicDocument'));
 const OAuthCallback = lazy(() => import('./pages/OAuthCallback'));
 
@@ -39,8 +38,6 @@ const App = () => (
       <Route path='/setup'              element={<Setup />} />
       <Route path='/user/reset'         element={<PasswordReset />} />
       <Route path='/forbidden'          element={<Forbidden />} />
-      <Route path='/rankings' element={<Rankings />} />
-      <Route path='/about' element={<PublicDocument kind='about' />} />
       <Route path='/user-agreement' element={<PublicDocument kind='terms' />} />
       <Route path='/privacy-policy' element={<PublicDocument kind='privacy' />} />
       <Route path='/pricing'            element={<Pricing />} />
