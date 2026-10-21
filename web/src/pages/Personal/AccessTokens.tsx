@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { API, copy, showSuccess } from '../../helpers';
-import { Button, Input, Select, Modal, ConfirmDialog, Tag, SlideOver } from '../../components/ui';
+import { Button, Checkbox, Input, Select, Modal, ConfirmDialog, Tag, SlideOver } from '../../components/ui';
 import AuditViewer from '../../features/audit/AuditViewer';
 import { useAuthStore } from '../../stores/auth-store';
 import { useOwnedOperation } from '../../hooks/useOwnedOperation';
@@ -82,22 +82,30 @@ function Tokens({ identity }: { identity: string }) {
     </SlideOver>}
     {editing && <Modal open title={t(editing.original ? 'Edit access token' : 'Create access token')} onClose={() => { if (!busy) setEditing(null); }} onConfirm={save} loading={busy} confirmText={t('Save')} cancelText={t('Cancel')}>
       <fieldset disabled={busy} className='m-0 min-w-0 space-y-4 border-0 p-0'>
-        <FieldGroup label={t('Name')}><Input aria-label={t('Access token name')} value={editing.form.name} onChange={(value) => set('name', value)} maxLength={128} width='full' /></FieldGroup>
-        {!editing.original && <FieldGroup label={t('Validity')}>
-          <Select aria-label={t('Access token validity')} width='full' value={editing.form.expiry} onChange={(value) => set('expiry', value)} options={[
-            ...[7, 30, 90, 180, 365].map((days) => ({ value: String(days), label: t('{{days}} days', { days }) })),
-            { value: 'custom', label: t('Custom') }, { value: 'never', label: t('Never expires') },
-          ]} />
-          {editing.form.expiry === 'custom' && <div className='mt-2'><Input aria-label={t('Access token expiry date')} type='datetime-local' value={editing.form.customExpiry} onChange={(value) => set('customExpiry', value)} width='full' /><p className='mt-1 text-xs text-ui-text-3'>{t('Choose an expiry at least one hour from now')}</p></div>}
-        </FieldGroup>}
+        <div className='flex items-center justify-between gap-3'>
+          <label htmlFor='personal-access-token-name' className='min-w-0 flex-1 text-sm text-ui-text'>{t('Name')}</label>
+          <div className='w-[min(220px,calc(100%_-_88px))] min-w-0 shrink-0'>
+            <Input id='personal-access-token-name' aria-label={t('Access token name')} value={editing.form.name} onChange={(value) => set('name', value)} maxLength={128} width='full' />
+          </div>
+        </div>
+        {!editing.original && <div className='flex items-start justify-between gap-3'>
+          <label htmlFor='personal-access-token-validity' className='min-w-0 flex-1 pt-2 text-sm text-ui-text'>{t('Validity')}</label>
+          <div className='w-[min(220px,calc(100%_-_88px))] min-w-0 shrink-0'>
+            <Select id='personal-access-token-validity' aria-label={t('Access token validity')} popover width='full' value={editing.form.expiry} onChange={(value) => set('expiry', value)} options={[
+              ...[7, 30, 90, 180, 365].map((days) => ({ value: String(days), label: t('{{days}} days', { days }) })),
+              { value: 'custom', label: t('Custom') }, { value: 'never', label: t('Never expires') },
+            ]} />
+            {editing.form.expiry === 'custom' && <div className='mt-2'><Input aria-label={t('Access token expiry date')} type='datetime-local' value={editing.form.customExpiry} onChange={(value) => set('customExpiry', value)} width='full' /><p className='mt-1 text-xs text-ui-text-3'>{t('Choose an expiry at least one hour from now')}</p></div>}
+          </div>
+        </div>}
         {(catalog?.groups ?? []).flatMap((group) => group.resources).map((resource) => <FieldGroup key={resource.resource} label={t(resource.label_key)}>
           <div className='flex flex-wrap gap-x-3.5 gap-y-2'>{resource.actions.map((action) => {
             const scope = `${resource.resource}:${action.action}`;
-            return <label key={scope} title={t(action.description_key)} className='inline-flex items-center gap-1.5 text-[13px]'><input type='checkbox' aria-label={`${t(resource.label_key)}: ${t(action.label_key)}`} checked={editing.form.scopes.includes(scope)} onChange={(event) => toggleScope(scope, event.target.checked)} />{t(action.label_key)}</label>;
+            return <Checkbox key={scope} label={t(action.label_key)} title={t(action.description_key)} aria-label={`${t(resource.label_key)}: ${t(action.label_key)}`} checked={editing.form.scopes.includes(scope)} disabled={busy} onChange={(checked) => toggleScope(scope, checked)} />;
           })}</div>
         </FieldGroup>)}
         {unavailable.length > 0 && <FieldGroup label={t('Permissions no longer available')} hint={t('Renaming preserves the current grant; remove unavailable permissions before changing it.')}>
-          <div className='space-y-2'>{unavailable.map((scope) => <label key={scope} className='flex items-center gap-2 break-all text-xs'><input type='checkbox' checked onChange={() => toggleScope(scope, false)} />{scope}</label>)}</div>
+          <div className='space-y-2'>{unavailable.map((scope) => <Checkbox key={scope} label={<span className='break-all'>{scope}</span>} aria-label={scope} checked disabled={busy} onChange={() => toggleScope(scope, false)} />)}</div>
         </FieldGroup>}
       </fieldset>
     </Modal>}
