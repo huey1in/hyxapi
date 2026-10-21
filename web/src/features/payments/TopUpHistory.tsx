@@ -31,11 +31,11 @@ export default function TopUpHistory({ identity, role, onClose, onSaved }: { ide
     queryFn: ({ signal }) => readWalletData(admin ? '/api/user/topup' : '/api/user/topup/self', topUpPageSchema, signal, { p: page, page_size: pageSize, keyword }) });
   const data = query.isError ? undefined : query.data;
   const statusLabels: Record<string, string> = { pending: 'Pending payment', success: 'Completed', expired: 'Expired', failed: 'Failed' };
-  return <Modal open title={t('Top-up history')} onClose={onClose} width={admin ? 780 : 660} hideFooter>
-    <form className={`grid min-w-0 grid-cols-[1fr_auto_auto] gap-2 ${role >= 10 ? 'sm:grid-cols-[150px_1fr_auto_auto]' : ''}`} onSubmit={(event) => { event.preventDefault(); setKeyword(search.trim()); setPage(1); if (keyword === search.trim() && page === 1) void query.refetch(); }}>
-      {role >= 10 && <div className='col-span-3 min-w-0 sm:col-span-1'><Select width='full' aria-label={t('Order scope')} value={scope} options={[{ value: 'self', label: t('My orders') }, { value: 'all', label: t('All orders') }]} onChange={(value) => { setScope(value); setPage(1); setComplete(null); }} /></div>}
-      <div className='min-w-0 flex-1'><Input aria-label={t('Search trade number')} placeholder={t('Search trade number')} value={search} onChange={setSearch} /></div>
-      <Button type='submit' variant='secondary'>{t('Search')}</Button><Button variant='link' onClick={() => void query.refetch()}>{t('Refresh')}</Button>
+  return <Modal open title={t('Top-up history')} onClose={onClose} width={admin ? 640 : 520} hideFooter>
+    <form className={`grid min-w-0 grid-cols-[minmax(0,240px)_max-content] justify-start gap-2 ${role >= 10 ? 'sm:grid-cols-[150px_minmax(0,240px)_max-content]' : ''}`} onSubmit={(event) => { event.preventDefault(); setKeyword(search.trim()); setPage(1); if (keyword === search.trim() && page === 1) void query.refetch(); }}>
+      {role >= 10 && <div className='col-span-2 min-w-0 sm:col-span-1'><Select width='full' aria-label={t('Order scope')} value={scope} options={[{ value: 'self', label: t('My orders') }, { value: 'all', label: t('All orders') }]} onChange={(value) => { setScope(value); setPage(1); setComplete(null); }} /></div>}
+      <div className='min-w-0'><Input aria-label={t('Search trade number')} placeholder={t('Search trade number')} value={search} onChange={setSearch} /></div>
+      <Button type='submit' variant='secondary'>{t('Search')}</Button>
     </form>
     {query.isError ? <div role='alert' className='space-y-2 text-sm text-ui-danger'><p>{t(apiErrorMessage(query.error, 'Unable to load wallet data'))}</p><Button onClick={() => void query.refetch()}>{t('Retry')}</Button></div> : <>
       <div className='max-h-[400px] overflow-auto' role={query.isPending ? 'status' : undefined} aria-label={query.isPending ? t('Loading...') : undefined} aria-busy={query.isPending || undefined} data-loading-skeleton={query.isPending ? 'table' : undefined}><table className='w-full border-collapse text-sm'>

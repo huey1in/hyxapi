@@ -27,7 +27,7 @@ export function WalletBalanceCard({ user, pending = false, onHistory }: { user?:
       <div className='flex h-[42px] items-center text-[28px] font-bold text-ui-text'>{pending ? <Skeleton width={140} height={28} /> : user ? renderQuota(user.quota) : '—'}</div>
       <div className='mt-1 flex h-4 items-center text-xs text-ui-text-3'>{pending ? <Skeleton width={140} height={12} /> : t('Total used: {{amount}}', { amount: user ? renderQuota(user.used_quota) : '—' })}</div>
     </div>
-    <Button size='sm' variant='secondary' disabled={!onHistory} onClick={onHistory}>{t('Top-up history')}</Button>
+    <Button size='md' variant='secondary' disabled={!onHistory} onClick={onHistory}>{t('Top-up history')}</Button>
   </div>;
 }
 
