@@ -138,15 +138,6 @@ function OperationsCards({ data, isMobile, selectedRangeLabel }: { data: Operati
         <Table columns={channelRankCols} rows={channelRanking} rowKey='channel_id' size='sm' emptyText={t('No channel charges in this period')} />
       </Section>
 
-      {/* S4: 经营口径 */}
-      <Section title={t('Reporting basis')}>
-        <div style={{ padding: 14, border: '1px solid var(--ui-border)', borderRadius: 8, color: 'var(--ui-text-2)', fontSize: 13, lineHeight: 1.7 }}>
-          {t('Recorded payments: {{payments}}; usage charges: {{charges}}. The tables break down charges by group and channel.', { payments: fmtMoney(rangeRev.total_money, i18n.language), charges: renderQuota(rangeCon.quota) })}
-          <p className='mt-2 text-xs text-ui-text-3'>{t('Payment records do not include a currency, so recorded totals have no currency symbol.')}</p>
-          {!data.period.start_timestamp && <p className='mt-2 text-xs text-ui-text-3'>{t('Average RPM is available for bounded periods.')}</p>}
-        </div>
-      </Section>
-
     </div>
   );
  }
