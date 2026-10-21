@@ -262,19 +262,21 @@ const Pricing = ({ preview = false }: { preview?: boolean }) => {
           <div className='min-w-0 basis-full sm:w-[320px] sm:basis-auto'>
             <Input value={searchValue} aria-label={t('Search models, vendors or tags')} onChange={(value) => { handleChange(value); updateQuery('search', value); }} placeholder={t('Search models, vendors or tags')} prefix={<Search size={15} />} clearable width='full' />
           </div>
-          <div className='flex shrink-0 items-center gap-3'>
-            <Button ref={filtersButton} variant='toggle' icon={SlidersHorizontal} shrink={false} selected={activeFilters > 0} aria-label={t('Filters')} aria-haspopup='dialog' aria-expanded={filtersOpen} onClick={() => setFiltersOpen(true)}>
-              {t('Filters')}{activeFilters > 0 && <span className='text-xs tabular-nums'>{activeFilters}</span>}
-            </Button>
-            {activeFilters > 0 && <Button variant='link' size='sm' onClick={() => {
-              applyFilters({ group: 'all', billing: 'all', vendor: 'all', sort: 'name', tokenUnit: 'M', priceBasis: 'standard' });
-              filtersButton.current?.focus();
-            }}>{t('Reset filters')}</Button>}
+          <div className='ml-auto flex shrink-0 items-center gap-1 sm:gap-2'>
+            <div className='flex shrink-0 items-center gap-1 sm:gap-3'>
+              <Button ref={filtersButton} variant='toggle' icon={SlidersHorizontal} shrink={false} selected={activeFilters > 0} aria-label={t('Filters')} aria-haspopup='dialog' aria-expanded={filtersOpen} onClick={() => setFiltersOpen(true)}>
+                {t('Filters')}{activeFilters > 0 && <span className='text-xs tabular-nums'>{activeFilters}</span>}
+              </Button>
+              {activeFilters > 0 && <Button variant='link' size='sm' onClick={() => {
+                applyFilters({ group: 'all', billing: 'all', vendor: 'all', sort: 'name', tokenUnit: 'M', priceBasis: 'standard' });
+                filtersButton.current?.focus();
+              }}>{t('Reset filters')}</Button>}
+            </div>
+            {!preview && <div className='inline-flex shrink-0 items-center gap-0.5 rounded-xl border border-ui-border p-0.5'>
+              <IconButton icon={LayoutGrid} size='sm' shape='square' selected={viewMode === 'card'} title={t("Card view")} onClick={() => { setViewMode('card'); updateQuery('view', 'card'); }} />
+              <IconButton icon={List} size='sm' shape='square' selected={viewMode === 'table'} title={t("Table view")} onClick={() => { setViewMode('table'); updateQuery('view', 'table'); }} />
+            </div>}
           </div>
-          {!preview && <div className='ml-auto inline-flex shrink-0 items-center gap-0.5 rounded-xl border border-ui-border p-0.5'>
-            <IconButton icon={LayoutGrid} size='sm' shape='square' selected={viewMode === 'card'} title={t("Card view")} onClick={() => { setViewMode('card'); updateQuery('view', 'card'); }} />
-            <IconButton icon={List} size='sm' shape='square' selected={viewMode === 'table'} title={t("Table view")} onClick={() => { setViewMode('table'); updateQuery('view', 'table'); }} />
-          </div>}
         </div>
 
         {filtersOpen && <PricingFiltersDialog initialValues={{ group: selectedGroup, billing: filterQuotaType, vendor: filterVendor, sort: sortBy, tokenUnit, priceBasis: showRechargePrice ? 'recharge' : 'standard' }} groupOptions={groupOptions} vendorOptions={vendorOptions} preview={preview} onApply={applyFilters} onClose={() => setFiltersOpen(false)} />}

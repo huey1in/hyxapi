@@ -192,11 +192,15 @@ const TokenEditModal = ({ open, token, onClose, onSaved, onChanged }: Props) => 
 
         {form.automatic && (
           <div className='space-y-3'>
-            <label className='block text-sm text-[#666]'>{t('Auto group configuration')}</label>
-            {groupsLoading ? <p className='text-xs text-ui-text-3'>{t('Loading group configuration…')}</p> : groupsError ? <p role='alert' className='text-xs text-ui-danger'>{groupsError}</p> : <>
-              <Select value={form.auto_groups_mode || 'inherit'} options={[
-                { value: 'inherit', label: t('Inherit global Auto groups') }, { value: 'custom', label: t('Custom Auto groups') },
-              ]} onChange={u('auto_groups_mode')} width='100%' />
+            <div className='flex items-center justify-between gap-3'>
+              <label htmlFor='token-auto-group-config' className='min-w-0 flex-1 text-sm text-ui-text'>{t('Auto group configuration')}</label>
+              <div className='w-[min(220px,calc(100%_-_88px))] min-w-0 shrink-0'>
+                {groupsLoading ? <p className='text-xs text-ui-text-3'>{t('Loading group configuration…')}</p> : groupsError ? <p role='alert' className='text-xs text-ui-danger'>{groupsError}</p> : <Select id='token-auto-group-config' popover value={form.auto_groups_mode || 'inherit'} options={[
+                  { value: 'inherit', label: t('Inherit global Auto groups') }, { value: 'custom', label: t('Custom Auto groups') },
+                ]} onChange={u('auto_groups_mode')} width='full' />}
+              </div>
+            </div>
+            {!groupsLoading && !groupsError && <>
               {autoNotice && <p role='status' className='text-xs text-amber-600'>{t('Unavailable or excess groups were removed. Review before saving. An empty custom list requires a new selection or explicit inheritance.')}</p>}
               {form.auto_groups_mode === 'custom' ? <>
                 <div className='flex items-center justify-between gap-3'>
