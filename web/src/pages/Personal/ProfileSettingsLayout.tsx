@@ -1,4 +1,39 @@
 import type { PropsWithChildren, ReactNode } from 'react';
+import { useEffect, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
+import ConsolePageHeader from '../../components/layout/ConsolePageHeader';
+import { PERSONAL_SETTINGS_TABS } from './personal-navigation';
+import type { PersonalSettingsTab } from './personal-navigation';
+
+export function PersonalSettingsHeader({ tab, onChange }: { tab: PersonalSettingsTab; onChange?: (tab: PersonalSettingsTab) => void }) {
+  const { t, i18n } = useTranslation();
+  const navigation = useRef<HTMLElement>(null);
+  useEffect(() => {
+    const nav = navigation.current;
+    if (!nav) return;
+    const reveal = () => {
+      const active = nav.querySelector<HTMLElement>('[aria-current="page"]');
+      if (!active) return;
+      const bounds = nav.getBoundingClientRect();
+      const item = active.getBoundingClientRect();
+      if (item.left < bounds.left) nav.scrollLeft += item.left - bounds.left;
+      else if (item.right > bounds.right) nav.scrollLeft += item.right - bounds.right;
+    };
+    reveal();
+    const resize = new ResizeObserver(reveal);
+    resize.observe(nav);
+    return () => resize.disconnect();
+  }, [tab, i18n.language]);
+  return <div className='min-w-0 space-y-4'>
+    <ConsolePageHeader title={t('设置')} />
+    <nav ref={navigation} aria-label={t('Settings categories')} className='flex gap-4 overflow-x-auto border-b border-ui-border'>
+      {PERSONAL_SETTINGS_TABS.map((item) => <button key={item.value} type='button' aria-current={tab === item.value ? 'page' : undefined} disabled={!onChange}
+        onClick={() => onChange?.(item.value)} className={`shrink-0 whitespace-nowrap border-b-2 px-1 py-2.5 text-sm transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 ${tab === item.value ? 'border-ui-text text-ui-text' : 'border-transparent text-ui-text-3 hover:text-ui-text'}`}>
+        {t(item.label)}
+      </button>)}
+    </nav>
+  </div>;
+}
 
 export const SettingGroup = ({ title, children }: PropsWithChildren<{ title: ReactNode }>) => (
   <div data-setting-group={typeof title === 'string' ? title : undefined} style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>

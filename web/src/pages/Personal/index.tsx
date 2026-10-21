@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { API } from '../../helpers';
 import { Button } from '../../components/ui';
@@ -8,17 +9,21 @@ import type { AuthUser } from '../../stores/auth-store';
 import { authResult } from '../../lib/secure-verification';
 import { apiErrorMessage } from '../../lib/api-error';
 import { ConsolePage, PersonalSkeleton } from '../../components/layout/PageSkeletons';
-import AccountSettings from './AccountSettings';
+import AccountSettings, { AccountActions } from './AccountSettings';
 import BillingSettings from './BillingSettings';
 import SecuritySettings from './SecuritySettings';
-import NotificationSettings, { PersonalPreferences } from './NotificationSettings';
+import NotificationSettings from './NotificationSettings';
+import UsagePreferences, { LanguagePreference } from './PreferencesSettings';
 import { parsePersonalSettings } from './personal-settings';
 import type { RefreshProfile } from './personal-settings';
 import LoginSessions from './LoginSessions';
 import AccessTokens from './AccessTokens';
 import AccountBindings from './AccountBindings';
+import { PersonalSettingsHeader } from './ProfileSettingsLayout';
+import { personalSettingsTab } from './personal-navigation';
+import type { PersonalSettingsTab } from './personal-navigation';
 
-function PersonalProfile({ identity }: { identity: string }) {
+function PersonalProfile({ identity, tab, onChange }: { identity: string; tab: PersonalSettingsTab; onChange: (tab: PersonalSettingsTab) => void }) {
   const { t } = useTranslation();
   const user = useAuthStore((state) => state.auth.user);
   const [ready, setReady] = useState(false);
@@ -34,23 +39,31 @@ function PersonalProfile({ identity }: { identity: string }) {
     const result = await authResult<AuthUser>(API.get('/api/user/self', { signal, disableDuplicate: true, skipErrorHandler: true }));
     signal.throwIfAborted(); useAuthStore.getState().auth.setUser(result);
   };
-  if (profile.isPending) return <PersonalSkeleton />;
-  if (profile.error) return <div role='alert' className='p-6 text-sm'>{t(apiErrorMessage(profile.error, 'Unable to load profile'))} <Button onClick={() => void profile.refetch()} loading={profile.isFetching}>{t('Retry')}</Button></div>;
-  if (!ready) return <PersonalSkeleton />;
+  if (profile.isPending) return <PersonalSkeleton tab={tab} onChange={onChange} />;
+  if (profile.error) return <ConsolePage width={720} gap={24} mobileGap={24}><PersonalSettingsHeader tab={tab} onChange={onChange} /><div role='alert' className='text-sm'>{t(apiErrorMessage(profile.error, 'Unable to load profile'))} <Button onClick={() => void profile.refetch()} loading={profile.isFetching}>{t('Retry')}</Button></div></ConsolePage>;
+  if (!ready) return <PersonalSkeleton tab={tab} onChange={onChange} />;
   if (!user || !profile.data) return null;
   return <ConsolePage width={720} gap={24} mobileGap={24}>
-    <AccountSettings user={user} refresh={refresh} />
-    <BillingSettings />
-    <SecuritySettings identity={identity} refresh={refresh} />
-    <LoginSessions />
-    <AccessTokens />
-    <AccountBindings />
-    <NotificationSettings user={user} refresh={refresh} />
-    <PersonalPreferences user={user} refresh={refresh} />
+    <PersonalSettingsHeader tab={tab} onChange={onChange} />
+    <div key={tab} data-settings-panel={tab} className='flex min-w-0 flex-col gap-6'>
+      {tab === 'account' && <><AccountSettings user={user} refresh={refresh} /><AccountBindings /><LanguagePreference refresh={refresh} /><AccountActions user={user} /></>}
+      {tab === 'security' && <><SecuritySettings identity={identity} user={user} refresh={refresh} /><LoginSessions /><AccessTokens /></>}
+      {tab === 'usage' && <><BillingSettings /><UsagePreferences user={user} refresh={refresh} /></>}
+      {tab === 'notifications' && <NotificationSettings user={user} refresh={refresh} />}
+    </div>
   </ConsolePage>;
 }
 
 export default function Personal() {
   const identity = useAuthStore((state) => `${state.auth.user?.id}:${state.auth.session?.sid}`);
-  return <PersonalProfile key={identity} identity={identity} />;
+  const location = useLocation();
+  const navigate = useNavigate();
+  const tab = personalSettingsTab(location.search);
+  const changeTab = (value: PersonalSettingsTab) => {
+    const params = new URLSearchParams(location.search);
+    if (value === 'account') params.delete('tab');
+    else params.set('tab', value);
+    void navigate({ pathname: location.pathname, search: params.toString(), hash: location.hash });
+  };
+  return <PersonalProfile key={identity} identity={identity} tab={tab} onChange={changeTab} />;
 }

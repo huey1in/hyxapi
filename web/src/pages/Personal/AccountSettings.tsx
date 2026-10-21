@@ -88,15 +88,30 @@ function DeleteAccountDialog({ user, close }: { user: AuthUser; close: () => voi
 
 export default function AccountSettings({ user, refresh }: { user: AuthUser; refresh: RefreshProfile }) {
   const { t } = useTranslation();
-  const [dialog, setDialog] = useState<'email' | 'password' | 'delete' | null>(null);
+  const [editing, setEditing] = useState(false);
   return <>
     <SettingGroup title={t('Account')}>
-      <SettingRow title={t('Email')} description={user.email || t('No email linked')}><Button variant='toggle' onClick={() => setDialog('email')}>{t(user.email ? 'Change' : 'Link account')}</Button></SettingRow>
-      <SettingRow title={t('Password')} description={t(user.has_password === false ? 'Set a login password' : 'Change your login password')} last><Button variant='toggle' onClick={() => setDialog('password')}>{t(user.has_password === false ? 'Set password' : 'Change')}</Button></SettingRow>
+      <SettingRow title={t('Email')} description={user.email || t('No email linked')} last><Button variant='toggle' onClick={() => setEditing(true)}>{t(user.email ? 'Change' : 'Link account')}</Button></SettingRow>
     </SettingGroup>
-    {dialog === 'password' && <PasswordDialog user={user} refresh={refresh} close={() => setDialog(null)} />}
-    {dialog === 'email' && <EmailDialog user={user} refresh={refresh} close={() => setDialog(null)} />}
-    {dialog === 'delete' && <DeleteAccountDialog user={user} close={() => setDialog(null)} />}
-    {user.role < 100 && <SettingGroup title={t('Account actions')}><SettingRow title={t('Delete account')} description={t('Permanently close this account and revoke its access')} last><Button variant='toggle' onClick={() => setDialog('delete')}>{t('Delete account')}</Button></SettingRow></SettingGroup>}
+    {editing && <EmailDialog user={user} refresh={refresh} close={() => setEditing(false)} />}
+  </>;
+}
+
+export function PasswordSettings({ user, refresh }: { user: AuthUser; refresh: RefreshProfile }) {
+  const { t } = useTranslation();
+  const [editing, setEditing] = useState(false);
+  return <>
+    <SettingRow title={t('Password')} description={t(user.has_password === false ? 'Set a login password' : 'Change your login password')}><Button variant='toggle' onClick={() => setEditing(true)}>{t(user.has_password === false ? 'Set password' : 'Change')}</Button></SettingRow>
+    {editing && <PasswordDialog user={user} refresh={refresh} close={() => setEditing(false)} />}
+  </>;
+}
+
+export function AccountActions({ user }: { user: AuthUser }) {
+  const { t } = useTranslation();
+  const [deleting, setDeleting] = useState(false);
+  if (user.role >= 100) return null;
+  return <>
+    <SettingGroup title={t('Account actions')}><SettingRow title={t('Delete account')} description={t('Permanently close this account and revoke its access')} last><Button variant='toggle' onClick={() => setDeleting(true)}>{t('Delete account')}</Button></SettingRow></SettingGroup>
+    {deleting && <DeleteAccountDialog user={user} close={() => setDeleting(false)} />}
   </>;
 }

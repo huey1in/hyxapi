@@ -1,5 +1,5 @@
 import type { PropsWithChildren, ReactNode } from 'react';
-import { Fragment } from 'react';
+import { useContext } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ChevronDown } from 'lucide-react';
 import useIsMobile from '../../hooks/useIsMobile';
@@ -8,8 +8,12 @@ import Skeleton from '../ui/feedback/Skeleton';
 import Card from '../ui/card/Card';
 import Divider from '../ui/display/Divider';
 import Table from '../ui/layout/Table';
-import { SettingGroup, SettingRow } from '../../pages/Personal/ProfileSettingsLayout';
+import { PersonalSettingsHeader, SettingGroup, SettingRow } from '../../pages/Personal/ProfileSettingsLayout';
+import type { PersonalSettingsTab } from '../../pages/Personal/personal-navigation';
 import { BillingSettingsSkeleton } from '../../pages/Personal/BillingSettings';
+import { useAuthStore } from '../../stores/auth-store';
+import { StatusContext } from '../../context/Status';
+import { parsePersonalSettings } from '../../pages/Personal/personal-settings';
 import SpendingTrendChart from '../../pages/Dashboard/SpendingTrendChart';
 
 // These frames are shared with the corresponding pages so loading uses the same
@@ -19,19 +23,35 @@ export function ConsolePage({ children, width = 960, gap = 28, mobileGap = 20 }:
   return <div style={{ display: 'flex', flexDirection: 'column', gap: mobile ? mobileGap : gap, width: '100%', minWidth: 0, maxWidth: width, marginInline: 'auto', padding: mobile ? '16px' : '24px 16px' }}>{children}</div>;
 }
 
-export function PersonalSkeleton() {
+export function PersonalSkeleton({ tab = 'account', onChange }: { tab?: PersonalSettingsTab; onChange?: (tab: PersonalSettingsTab) => void }) {
   const { t } = useTranslation();
-  return <ConsolePage width={720} gap={24} mobileGap={24}><ContentSkeleton variant='form'><div className='flex flex-col gap-6'>
-    {[
-      { title: 'Account', rows: ['Email', 'Password'] },
-      { title: 'Security', rows: ['Passkey', 'Two-factor authentication'] },
-      { title: 'Login devices', rows: ['Manage login sessions'] },
-      { title: 'System access tokens', rows: ['Personal tokens for the management API'] },
-    ].map((group, index) => <Fragment key={group.title}>
-      <SettingGroup title={t(group.title)}>{group.rows.map((label, row) => <SettingRow key={label} title={t(label)} description={<Skeleton width={220} height={18} />} last={row === group.rows.length - 1}><Skeleton width={70} height={32} rounded='rounded-full' /></SettingRow>)}</SettingGroup>
-      {index === 0 && <BillingSettingsSkeleton />}
-    </Fragment>)}
-  </div></ContentSkeleton></ConsolePage>;
+  const user = useAuthStore((state) => state.auth.user);
+  const role = user?.role ?? 0;
+  const [statusState] = useContext(StatusContext);
+  const status = statusState.status;
+  const bindings = [
+    (status?.github_oauth || user?.github_id) && 'GitHub', (status?.discord_oauth || user?.discord_id) && 'Discord',
+    (status?.oidc_enabled || user?.oidc_id) && (status?.oidc_display_name || 'OIDC'), (status?.linuxdo_oauth || user?.linux_do_id) && 'Linux DO',
+    (status?.telegram_oauth || user?.telegram_id) && 'Telegram', (status?.wechat_login || user?.wechat_id) && 'WeChat',
+    ...(status?.custom_oauth_providers ?? []).map((provider) => provider.name || provider.slug),
+  ].filter((label): label is string => typeof label === 'string');
+  let settings;
+  try { settings = parsePersonalSettings(user?.setting); } catch { settings = parsePersonalSettings(undefined); }
+  const group = (title: string, rows: string[], switches = false) => <SettingGroup title={t(title)}>{rows.map((label, row) => {
+    const save = label.startsWith('Save ');
+    const toggle = switches && !save || ['Quota warning', 'Channel notifications', 'Upstream model updates'].includes(label);
+    const input = ['Language', 'Reminder threshold', 'Notification Method', 'Notification Email', 'Webhook URL', 'Webhook Secret', 'Bark URL', 'Gotify URL', 'Gotify Token', 'Message Priority'].includes(label);
+    return <SettingRow key={`${label}:${row}`} title={t(label)} description={save && label !== 'Save notification settings' || ['Notification Email', 'Webhook URL', 'Webhook Secret', 'Bark URL', 'Gotify URL', 'Gotify Token'].includes(label) ? undefined : <Skeleton width={220} height={18} />} last={row === rows.length - 1}><Skeleton width={toggle ? 36 : input ? 160 : 70} height={toggle ? 20 : 36} rounded='rounded-full' /></SettingRow>;
+  })}</SettingGroup>;
+  return <ConsolePage width={720} gap={24} mobileGap={24}>
+    <PersonalSettingsHeader tab={tab} onChange={onChange} />
+    <ContentSkeleton variant='form'><div data-settings-panel={tab} className='flex min-w-0 flex-col gap-6'>
+      {tab === 'account' && <>{group('Account', ['Email'])}{bindings.length > 0 && group('Linked accounts', bindings)}{group('Preferences', ['Language'])}{role < 100 && group('Account actions', ['Delete account'])}</>}
+      {tab === 'security' && <>{group('Security', ['Password', 'Passkey', 'Two-factor authentication'])}{group('Login devices', ['Manage login sessions'])}{group('System access tokens', ['Personal tokens for the management API'])}</>}
+      {tab === 'usage' && <><BillingSettingsSkeleton />{group('Usage preferences', ['Record IP Address', 'Allow models without a configured price', 'Save preferences'], true)}</>}
+      {tab === 'notifications' && group('Notifications', ['Quota warning', ...(settings.quota_warning_enabled ? ['Reminder threshold'] : []), ...(role >= 10 ? ['Channel notifications', 'Upstream model updates'] : []), 'Notification Method', ...(settings.notify_type === 'webhook' ? ['Webhook URL', 'Webhook Secret'] : settings.notify_type === 'bark' ? ['Bark URL'] : settings.notify_type === 'gotify' ? ['Gotify URL', 'Gotify Token', 'Message Priority'] : ['Notification Email']), 'Save notification settings'])}
+    </div></ContentSkeleton>
+  </ConsolePage>;
 }
 
 export function ProfileRowsSkeleton({ rows = 1, lines = 1, switches = false }: { rows?: number; lines?: number; switches?: boolean }) {

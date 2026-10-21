@@ -10,6 +10,8 @@ import { authResult } from '../../lib/secure-verification';
 import { apiErrorMessage } from '../../lib/api-error';
 import { isPasskeySupported, prepareCredentialCreationOptions, buildRegistrationResult } from '../../lib/passkey';
 import type { RefreshProfile } from './personal-settings';
+import type { AuthUser } from '../../stores/auth-store';
+import { PasswordSettings } from './AccountSettings';
 import { FieldGroup, SettingGroup, SettingRow } from './ProfileSettingsLayout';
 
 type TwoFAStatus = { enabled: boolean; backup_codes_remaining?: number };
@@ -40,7 +42,7 @@ function SetupDialog({ setup, close, changed }: { setup: TwoFASetup; close: () =
   </Modal>;
 }
 
-export default function SecuritySettings({ identity, refresh }: { identity: string; refresh: RefreshProfile }) {
+export default function SecuritySettings({ identity, user, refresh }: { identity: string; user: AuthUser; refresh: RefreshProfile }) {
   const { t, i18n } = useTranslation();
   const [supported, setSupported] = useState(false);
   const [setup, setSetup] = useState<TwoFASetup | null>(null);
@@ -85,6 +87,7 @@ export default function SecuritySettings({ identity, refresh }: { identity: stri
   const disabled = busy || !data || !!query.error;
   return <>
     <SettingGroup title={t('Security')}>
+      <PasswordSettings user={user} refresh={refresh} />
       {message && <div role='alert' className='p-4 text-sm'>{t(message)} <Button onClick={() => void query.refetch()} loading={query.isFetching}>{t('Retry')}</Button></div>}
       <SettingRow title={<span className='inline-flex items-center gap-2'><Fingerprint size={15} />Passkey <Tag color={data?.passkey.enabled ? 'green' : 'grey'}>{t(data?.passkey.enabled ? 'Enabled' : 'Not enabled')}</Tag></span>}
         description={t(supported ? 'Sign in with a fingerprint or face recognition' : 'This browser does not support Passkey')}>

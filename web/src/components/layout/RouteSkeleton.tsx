@@ -7,11 +7,12 @@ import { TOKEN_PAGE_SIZE } from '../../pages/Token/token-management';
 import Pagination from '../ui/layout/Pagination';
 import Skeleton from '../ui/feedback/Skeleton';
 import { TopUpSkeleton } from '../../features/payments/TopUpLayout';
+import { personalSettingsTab } from '../../pages/Personal/personal-navigation';
 
 export default function RouteSkeleton() {
-  const { pathname } = useLocation();
+  const { pathname, search } = useLocation();
   const { t } = useTranslation();
-  if (pathname === '/console/personal') return <PersonalSkeleton />;
+  if (pathname === '/console/personal') return <PersonalSkeleton tab={personalSettingsTab(search)} />;
   if (pathname === '/console/topup') return <TopUpSkeleton />;
   if (['/console/log', '/console/task', '/console/midjourney'].includes(pathname)) return <div className='console-content-page'>
     <ConsolePageHeader title={t('日志')} />
