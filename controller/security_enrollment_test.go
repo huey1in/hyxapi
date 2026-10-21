@@ -50,6 +50,7 @@ func setupSecurityEnrollmentTest(t *testing.T) (*model.User, service.AuthIdentit
 	previousRedis, previousSecret := common.RedisEnabled, common.SessionSecret
 	previousEncryption := common.PasswordLoginEncryptionEnabled
 	previousSettings := *system_setting.GetPasskeySettings()
+	previousTwoFASettings := *system_setting.GetTwoFASettings()
 	dialect := os.Getenv("TEST_SECURITY_DIALECT")
 	if dialect == "" {
 		dialect = "sqlite"
@@ -92,12 +93,14 @@ func setupSecurityEnrollmentTest(t *testing.T) (*model.User, service.AuthIdentit
 	common.RedisEnabled = false
 	common.SessionSecret = "security-enrollment-test-secret"
 	*system_setting.GetPasskeySettings() = system_setting.PasskeySettings{Enabled: true, RPID: "example.com", Origins: "https://example.com", RPDisplayName: "new-api"}
+	*system_setting.GetTwoFASettings() = system_setting.TwoFASettings{Enabled: true}
 	t.Cleanup(func() {
 		model.DB, model.LOG_DB = previousDB, previousLogDB
 		common.SetDatabaseTypes(previousMain, previousLog)
 		common.RedisEnabled, common.SessionSecret = previousRedis, previousSecret
 		common.PasswordLoginEncryptionEnabled = previousEncryption
 		*system_setting.GetPasskeySettings() = previousSettings
+		*system_setting.GetTwoFASettings() = previousTwoFASettings
 		connection, err := db.DB()
 		if err == nil {
 			_ = connection.Close()

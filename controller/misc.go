@@ -111,6 +111,7 @@ func GetStatus(c *gin.Context) {
 		"oidc_authorization_endpoint":       system_setting.GetOIDCSettings().AuthorizationEndpoint,
 		"password_login_encryption_enabled": common.PasswordLoginEncryptionEnabled,
 		"passkey_login":                     passkeySetting.Enabled,
+		"two_factor_enabled":                system_setting.GetTwoFASettings().Enabled,
 		"passkey_display_name":              passkeySetting.RPDisplayName,
 		"passkey_rp_id":                     passkeySetting.RPID,
 		"passkey_allow_insecure":            passkeySetting.AllowInsecureOrigin,

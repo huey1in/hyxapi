@@ -1,5 +1,7 @@
 {
   "translation": {
+    "Hide client settings and prevent new setup when disabled. Existing accounts still require their verification codes.": "При отключении настройки скрываются в клиенте и новая настройка блокируется. Для уже настроенных аккаунтов по-прежнему требуются коды подтверждения.",
+    "Two-factor authentication setup is disabled by the administrator.": "Администратор отключил настройку двухфакторной аутентификации.",
     "auth.login.submit": "Войти",
     "auth.login.action": "Войти",
     "auth.login.forgotPassword": "Забыли пароль?",

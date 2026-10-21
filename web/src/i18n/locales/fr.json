@@ -1,5 +1,7 @@
 {
   "translation": {
+    "Hide client settings and prevent new setup when disabled. Existing accounts still require their verification codes.": "La désactivation masque les paramètres client et empêche toute nouvelle configuration. Les comptes déjà configurés doivent toujours saisir leurs codes de vérification.",
+    "Two-factor authentication setup is disabled by the administrator.": "La configuration de l’authentification à deux facteurs a été désactivée par l’administrateur.",
     "auth.login.submit": "Se connecter",
     "auth.login.action": "Se connecter",
     "auth.login.forgotPassword": "Mot de passe oublié ?",

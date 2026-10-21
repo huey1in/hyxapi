@@ -9,6 +9,7 @@ import (
 	"github.com/QuantumNous/new-api/middleware"
 	"github.com/QuantumNous/new-api/model"
 	"github.com/QuantumNous/new-api/service"
+	"github.com/QuantumNous/new-api/setting/system_setting"
 
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
@@ -20,6 +21,10 @@ type Verify2FARequest struct {
 }
 
 func Setup2FA(c *gin.Context) {
+	if !system_setting.IsTwoFAEnabled() {
+		writeSecurityOperationError(c, service.ErrTwoFAEnrollmentDisabled)
+		return
+	}
 	authorization := middleware.RequireSecurityProof(c, service.VerificationOperation{Scope: service.VerificationScopeTwoFASetup})
 	if authorization == nil {
 		return

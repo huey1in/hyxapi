@@ -228,6 +228,7 @@ function SettingPageContent() {
         >
           <label htmlFor={id} className="text-sm text-ui-text">
             {label}
+            {key === 'twofa.enabled' && <span className='mt-1 block text-xs text-ui-text-3'>{t('Hide client settings and prevent new setup when disabled. Existing accounts still require their verification codes.')}</span>}
           </label>
           <Switch
             id={id}

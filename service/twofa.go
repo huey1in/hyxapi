@@ -6,7 +6,10 @@ import (
 
 	"github.com/QuantumNous/new-api/common"
 	"github.com/QuantumNous/new-api/model"
+	"github.com/QuantumNous/new-api/setting/system_setting"
 )
+
+var ErrTwoFAEnrollmentDisabled = errors.New("Two-factor authentication setup is disabled by the administrator.")
 
 type TwoFASetup struct {
 	Secret      string   `json:"secret"`
@@ -17,6 +20,9 @@ type TwoFASetup struct {
 }
 
 func StartTwoFASetup(identity AuthIdentity, authorization *model.AuthFlowAuthorization) (*TwoFASetup, error) {
+	if !system_setting.IsTwoFAEnabled() {
+		return nil, ErrTwoFAEnrollmentDisabled
+	}
 	if err := ValidateFlowAuthorization(identity, VerificationOperation{Scope: VerificationScopeTwoFASetup}, authorization); err != nil {
 		return nil, err
 	}
@@ -41,6 +47,9 @@ func StartTwoFASetup(identity AuthIdentity, authorization *model.AuthFlowAuthori
 }
 
 func FinishTwoFASetup(identity AuthIdentity, flowToken, code string) error {
+	if !system_setting.IsTwoFAEnabled() {
+		return ErrTwoFAEnrollmentDisabled
+	}
 	flow, err := model.GetAuthFlow(flowToken, model.AuthFlowMatch{
 		Purpose: model.AuthFlowPurposeTwoFASetup, UserId: identity.UserID, SessionId: identity.SessionID,
 	})

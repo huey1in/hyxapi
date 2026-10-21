@@ -1,5 +1,7 @@
 {
   "translation": {
+    "Hide client settings and prevent new setup when disabled. Existing accounts still require their verification codes.": "無効にするとクライアントの設定を非表示にし、新規登録を停止します。登録済みのアカウントには引き続き認証コードが必要です。",
+    "Two-factor authentication setup is disabled by the administrator.": "管理者が二要素認証の新規登録を無効にしています。",
     "auth.login.submit": "ログイン",
     "auth.login.action": "ログイン",
     "auth.login.forgotPassword": "パスワードをお忘れですか？",

@@ -1,5 +1,7 @@
 {
   "translation": {
+    "Hide client settings and prevent new setup when disabled. Existing accounts still require their verification codes.": "关闭后隐藏客户端设置并禁止新绑定；已绑定账户仍需输入验证码。",
+    "Two-factor authentication setup is disabled by the administrator.": "管理员已关闭双重身份验证的绑定功能。",
     "auth.login.title": "欢迎使用 Hyxware",
     "auth.login.subtitle": "一个入口，连接所有模型",
     "auth.login.submit": "登录",

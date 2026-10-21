@@ -1,5 +1,7 @@
 {
   "translation": {
+    "Hide client settings and prevent new setup when disabled. Existing accounts still require their verification codes.": "Khi tắt, ẩn cài đặt trên giao diện và ngăn thiết lập mới. Tài khoản đã thiết lập vẫn cần mã xác minh.",
+    "Two-factor authentication setup is disabled by the administrator.": "Quản trị viên đã tắt chức năng thiết lập xác thực hai yếu tố.",
     "auth.login.submit": "Đăng nhập",
     "auth.login.action": "Đăng nhập",
     "auth.login.forgotPassword": "Quên mật khẩu?",

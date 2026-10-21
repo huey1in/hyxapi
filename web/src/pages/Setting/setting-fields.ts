@@ -127,6 +127,7 @@ export const TAB_KEYS: Record<string, string[]> = {
     'passkey.allow_insecure_origin',
     'passkey.user_verification',
     'passkey.attachment_preference',
+    'twofa.enabled',
   ],
   ssrf: [
     'WorkerUrl',
@@ -376,6 +377,10 @@ export const TAB_SECTIONS: Record<string, SettingSection[]> = {
         'passkey.user_verification',
         'passkey.attachment_preference',
       ],
+    },
+    {
+      title: 'Two-factor authentication',
+      keys: ['twofa.enabled'],
     },
   ],
   limits: [
@@ -688,6 +693,7 @@ export const BOOL_KEYS = new Set([
   'MemoryCacheEnabled',
   'DisplayTokenStatEnabled',
   'passkey.enabled',
+  'twofa.enabled',
   'passkey.allow_insecure_origin',
   'fetch_setting.enable_ssrf_protection',
   'fetch_setting.allow_private_ip',
@@ -833,6 +839,7 @@ export const LABELS: Record<string, string> = {
   'telegram.client_id': 'Telegram Client ID',
   'telegram.client_secret': 'Telegram Client Secret',
   'passkey.enabled': 'Passkey 登录',
+  'twofa.enabled': 'Two-factor authentication',
   'passkey.rp_display_name': '服务显示名称',
   'passkey.rp_id': '网站域名标识',
   'passkey.legacy_rp_ids': '保留的旧域名标识（逗号分隔）',

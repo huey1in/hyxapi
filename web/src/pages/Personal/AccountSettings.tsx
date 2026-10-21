@@ -22,7 +22,7 @@ function PasswordDialog({ user, refresh, close }: { user: AuthUser; refresh: Ref
     await authResult(API.put('/api/user/self', payload, { signal, skipErrorHandler: true, acceptAuthRotation: true }));
     signal.throwIfAborted(); await refresh(signal); showSuccess(t('Password updated')); close();
   });
-  return <Modal open title={t(user.has_password === false ? 'Set password' : 'Change password')} onClose={close} onConfirm={save} loading={busy} confirmText={t('Save')} cancelText={t('Cancel')}>
+  return <Modal open width={380} title={t(user.has_password === false ? 'Set password' : 'Change password')} onClose={close} onConfirm={save} loading={busy} confirmText={t('Save')} cancelText={t('Cancel')}>
     <fieldset disabled={busy} className='m-0 space-y-3 border-0 p-0'>
       {user.has_password !== false && <FieldGroup label={t('Current password')}><Input aria-label={t('Current password')} type='password' autoComplete='current-password' value={original} onChange={setOriginal} width='full' /></FieldGroup>}
       <FieldGroup label={t('New password')}><Input aria-label={t('New password')} type='password' autoComplete='new-password' value={password} onChange={setPassword} width='full' /></FieldGroup>
@@ -97,11 +97,11 @@ export default function AccountSettings({ user, refresh }: { user: AuthUser; ref
   </>;
 }
 
-export function PasswordSettings({ user, refresh }: { user: AuthUser; refresh: RefreshProfile }) {
+export function PasswordSettings({ user, refresh, last }: { user: AuthUser; refresh: RefreshProfile; last?: boolean }) {
   const { t } = useTranslation();
   const [editing, setEditing] = useState(false);
   return <>
-    <SettingRow title={t('Password')} description={t(user.has_password === false ? 'Set a login password' : 'Change your login password')}><Button variant='toggle' onClick={() => setEditing(true)}>{t(user.has_password === false ? 'Set password' : 'Change')}</Button></SettingRow>
+    <SettingRow title={t('Password')} description={t(user.has_password === false ? 'Set a login password' : 'Change your login password')} last={last}><Button variant='toggle' onClick={() => setEditing(true)}>{t(user.has_password === false ? 'Set password' : 'Change')}</Button></SettingRow>
     {editing && <PasswordDialog user={user} refresh={refresh} close={() => setEditing(false)} />}
   </>;
 }

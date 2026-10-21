@@ -1,5 +1,7 @@
 {
   "translation": {
+    "Hide client settings and prevent new setup when disabled. Existing accounts still require their verification codes.": "關閉後隱藏用戶端設定並禁止新綁定；已綁定帳戶仍需輸入驗證碼。",
+    "Two-factor authentication setup is disabled by the administrator.": "管理員已關閉雙重身分驗證的綁定功能。",
     "auth.login.submit": "登入",
     "auth.login.action": "登入",
     "auth.login.forgotPassword": "忘記密碼？",

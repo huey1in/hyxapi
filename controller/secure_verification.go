@@ -102,6 +102,9 @@ func writeSecurityOperationError(c *gin.Context, err error) {
 	case errors.Is(err, model.ErrTwoFASetupInvalid):
 		status = http.StatusConflict
 		code, message = "TWOFA_SETUP_INVALID", model.ErrTwoFASetupInvalid.Error()
+	case errors.Is(err, service.ErrTwoFAEnrollmentDisabled):
+		status = http.StatusForbidden
+		code, message = "TWOFA_ENROLLMENT_DISABLED", service.ErrTwoFAEnrollmentDisabled.Error()
 	case errors.Is(err, model.ErrTwoFACodeInvalid):
 		code, message = "TWOFA_CODE_INVALID", model.ErrTwoFACodeInvalid.Error()
 	case errors.Is(err, model.ErrTwoFAAlreadyEnabled):

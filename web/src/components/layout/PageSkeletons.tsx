@@ -49,7 +49,7 @@ export function PersonalSkeleton({ tab = 'account', onChange }: { tab?: Personal
     <PersonalSettingsHeader tab={tab} onChange={onChange} />
     <ContentSkeleton variant='form'><div data-settings-panel={tab} className='flex min-w-0 flex-col gap-6'>
       {tab === 'account' && <>{group('Account', ['Email'])}{bindings.length > 0 && group('Linked accounts', bindings)}{group('Preferences', ['Language'])}{role < 100 && group('Account actions', ['Delete account'])}</>}
-      {tab === 'security' && <>{group('Security', ['Password', 'Passkey', 'Two-factor authentication'])}{group('Login devices', ['Manage login sessions'])}{group('System access tokens', ['Personal tokens for the management API'])}</>}
+      {tab === 'security' && <>{group('Security', ['Password', ...(status?.passkey_login === true ? ['Passkey'] : []), ...(status?.two_factor_enabled === true ? ['Two-factor authentication'] : [])])}{group('Login devices', ['Manage login sessions'])}{group('System access tokens', ['Personal tokens for the management API'])}</>}
       {tab === 'usage' && <><BillingSettingsSkeleton />{group('Usage preferences', ['Record IP Address', 'Allow models without a configured price'], true)}</>}
       {tab === 'notifications' && <div className='space-y-2'>{group('Notifications', notificationRows)}<p className='px-0.5 text-xs text-ui-text-3'>{t('Verification and password reset emails are always sent')}</p></div>}
     </div></ContentSkeleton>

@@ -45,6 +45,7 @@ export interface SiteStatus {
   turnstile_check?: boolean;
   turnstile_site_key?: string;
   passkey_login?: boolean;
+  two_factor_enabled?: boolean;
   user_agreement_enabled?: boolean;
   privacy_policy_enabled?: boolean;
   self_use_mode_enabled?: boolean;

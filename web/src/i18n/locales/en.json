@@ -1,5 +1,7 @@
 {
   "translation": {
+    "Hide client settings and prevent new setup when disabled. Existing accounts still require their verification codes.": "Hide client settings and prevent new setup when disabled. Existing accounts still require their verification codes.",
+    "Two-factor authentication setup is disabled by the administrator.": "Two-factor authentication setup is disabled by the administrator.",
     "auth.login.title": "Welcome to Hyxware",
     "auth.login.subtitle": "One gateway for every model",
     "auth.login.submit": "Sign in",
