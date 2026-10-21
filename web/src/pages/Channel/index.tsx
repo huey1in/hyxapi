@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   Plus,
@@ -16,11 +16,12 @@ import {
   Copy,
   HardDrive,
   Wallet,
+  Search,
+  SlidersHorizontal,
 } from 'lucide-react';
 import { showError, showSuccess, renderQuota } from '../../helpers';
 import {
   PageShell,
-  Card,
   Button,
   IconButton,
   Input,
@@ -30,7 +31,6 @@ import {
   Tag,
   ConfirmDialog,
 } from '../../components/ui';
-import { CHANNEL_TYPE_OPTIONS as TYPE_OPTIONS } from '../../constants/channel-types';
 import { priorityMove, priorityRestore } from './priority';
 import { useAuthStore } from '../../stores/auth-store';
 import SystemTaskActions from './SystemTaskActions';
@@ -55,6 +55,8 @@ import type { PriorityOrder, Placement } from './priority';
 import { channelRequest } from './channel-query';
 import ChannelEditModal from './ChannelEditor';
 import ChannelTestModal from './ChannelTester';
+import ChannelFiltersDialog, { DEFAULT_CHANNEL_FILTERS } from './ChannelFiltersDialog';
+import type { ChannelFilterValues } from './ChannelFiltersDialog';
 const PAGE_SIZE = 20;
 const STATUS_TAG = {
   1: { color: 'green', text: '启用' },
@@ -64,37 +66,26 @@ const STATUS_TAG = {
 type PriorityRequest =
   | NonNullable<ReturnType<typeof priorityMove>>
   | ReturnType<typeof priorityRestore>;
-type Filters = {
+type Filters = ChannelFilterValues & {
   page: number;
   keyword: string;
-  status: string;
-  type: string;
   tag: boolean;
-  group: string;
-  sort: string;
-  direction: string;
 };
 function ChannelSession({ identity }: { identity: string }) {
   const { t } = useTranslation();
   const client = useQueryClient();
   const { busy, run } = useOwnedOperation();
   const [keyword, setKeyword] = useState('');
-  const [statusF, setStatusF] = useState('all');
-  const [typeF, setTypeF] = useState('all');
-  const [groupF, setGroupF] = useState('');
-  const [sortBy, setSortBy] = useState('priority');
-  const [sortOrder, setSortOrder] = useState('desc');
-  const [tagMode, setTagMode] = useState(false);
+  const [filtersOpen, setFiltersOpen] = useState(false);
+  const filtersButton = useRef<HTMLButtonElement>(null);
   const [applied, setApplied] = useState<Filters>({
+    ...DEFAULT_CHANNEL_FILTERS,
     page: 1,
     keyword: '',
-    status: 'all',
-    type: 'all',
     tag: false,
-    group: '',
-    sort: 'priority',
-    direction: 'desc',
   });
+  const activeFilters = (Object.keys(DEFAULT_CHANNEL_FILTERS) as (keyof ChannelFilterValues)[])
+    .filter((key) => applied[key] !== DEFAULT_CHANNEL_FILTERS[key]).length;
   const [editing, setEditing] = useState<EditingChannel | null>(null);
   const [confirm, setConfirm] = useState<{
     title: string;
@@ -175,27 +166,15 @@ function ChannelSession({ identity }: { identity: string }) {
     void query.refetch();
     if (canWrite) void orderQuery.refetch();
   };
-  const load = (
-    p = 1,
-    kw = keyword,
-    s = statusF,
-    ty = typeF,
-    tm = tagMode,
-    group = groupF,
-    sort = sortBy,
-    direction = sortOrder,
-  ) => {
+  const load = (filters: ChannelFilterValues = applied, kw = keyword, tag = applied.tag) => {
     setSelected(new Set());
     setDragMode(false);
     const next = {
-      page: p,
+      ...filters,
+      page: 1,
       keyword: kw.trim(),
-      status: s,
-      type: ty,
-      tag: tm,
-      group: group.trim(),
-      sort,
-      direction,
+      tag,
+      group: filters.group.trim(),
     };
     setApplied(next);
     if (JSON.stringify(next) === JSON.stringify(applied)) void query.refetch();
@@ -476,7 +455,7 @@ function ChannelSession({ identity }: { identity: string }) {
               size='sm'
               variant='toggle'
               selected={dragMode}
-              disabled={priorityBusy || (!dragMode && (tagMode || !priorityOrder))}
+              disabled={priorityBusy || (!dragMode && (applied.tag || !priorityOrder))}
               onClick={() => setDragMode((value) => !value)}
             >
               {t('拖动排序')}
@@ -564,110 +543,29 @@ function ChannelSession({ identity }: { identity: string }) {
         </>
       }
     >
-      <Card className='mb-4'>
-        <div className='flex flex-wrap items-center gap-2'>
+      <form className='channel-filter-panel mb-4 flex flex-wrap items-center gap-2 rounded-2xl border border-ui-border bg-[var(--page-bg)] p-4' onSubmit={(event) => { event.preventDefault(); load(); }}>
+        <div className='min-w-0 basis-full sm:w-[320px] sm:basis-auto'>
           <Input
             placeholder={t('搜索渠道名称/key/分组')}
+            aria-label={t('搜索渠道名称/key/分组')}
             value={keyword}
-            onChange={setKeyword}
-            onKeyDown={(e) => e.key === 'Enter' && load(1, keyword)}
-            width={240}
-          />
-          <Select
-            value={statusF}
-            onChange={(v) => {
-              setStatusF(v);
-              load(1, keyword, v, typeF);
-            }}
-            width={120}
-            options={[
-              { value: 'all', label: t('全部状态') },
-              { value: '1', label: t('启用') },
-              { value: '2', label: t('禁用') },
-              { value: '3', label: t('自动禁用') },
-            ]}
-          />
-          <Select
-            value={typeF}
-            onChange={(v) => {
-              setTypeF(v);
-              load(1, keyword, statusF, v);
-            }}
-            width={120}
-            options={[
-              { value: 'all', label: t('全部类型') },
-              ...TYPE_OPTIONS.map((o) => ({
-                value: String(o.value),
-                label: o.label,
-              })),
-            ]}
-          />
-          <Input
-            value={groupF}
-            onChange={setGroupF}
-            placeholder={t('按分组筛选')}
-            width={140}
-            onKeyDown={(event) => {
-              if (event.key === 'Enter') load(1, keyword);
-            }}
-          />
-          <Select
-            value={sortBy}
-            width={130}
-            onChange={(value) => {
-              setSortBy(value);
-              load(
-                1,
-                keyword,
-                statusF,
-                typeF,
-                tagMode,
-                groupF,
-                value,
-                sortOrder,
-              );
-            }}
-            options={[
-              { value: 'priority', label: t('按优先级') },
-              { value: 'id', label: t('按 ID') },
-              { value: 'name', label: t('按名称') },
-              { value: 'balance', label: t('按余额') },
-              { value: 'response_time', label: t('按响应时间') },
-              { value: 'test_time', label: t('按测试时间') },
-            ]}
-          />
-          <Select
-            value={sortOrder}
-            width={90}
-            onChange={(value) => {
-              setSortOrder(value);
-              load(1, keyword, statusF, typeF, tagMode, groupF, sortBy, value);
-            }}
-            options={[
-              { value: 'desc', label: t('降序') },
-              { value: 'asc', label: t('升序') },
-            ]}
-          />
-          <Button onClick={() => load(1, keyword)}>{t('搜索')}</Button>
-          <Button
-            size='sm'
-            variant='toggle'
-            selected={tagMode}
-            icon={TagIcon}
-            onClick={() => {
-              setTagMode((s) => !s);
-              load(1, keyword, statusF, typeF, !tagMode);
-            }}
-          >
-            {t('标签视图')}
-          </Button>
-          <IconButton
-            icon={RefreshCw}
-            title={t('刷新')}
-            onClick={() => refresh()}
+            onChange={(value) => { setKeyword(value); if (!value) load(applied, ''); }}
+            prefix={<Search size={15} />}
+            clearable
+            width='full'
           />
         </div>
-      </Card>
+        <Button type='submit' variant='toggle'>{t('Search')}</Button>
+        <div className='ml-auto flex max-w-full flex-wrap items-center justify-end gap-2'>
+          <Button ref={filtersButton} variant='toggle' icon={SlidersHorizontal} shrink={false} selected={activeFilters > 0} aria-label={t('Filters')} aria-haspopup='dialog' aria-expanded={filtersOpen} onClick={() => setFiltersOpen(true)}>
+            {t('Filters')}{activeFilters > 0 && <span className='text-xs tabular-nums'>{activeFilters}</span>}
+          </Button>
+          {activeFilters > 0 && <Button variant='link' size='sm' onClick={() => { load(DEFAULT_CHANNEL_FILTERS); filtersButton.current?.focus(); }}>{t('Reset filters')}</Button>}
+          <Button size='sm' variant='toggle' selected={applied.tag} icon={TagIcon} onClick={() => load(applied, keyword, !applied.tag)}>{t('标签视图')}</Button>
+          <IconButton icon={RefreshCw} title={t('Refresh')} onClick={refresh} />
+        </div>
+      </form>
+      {filtersOpen && <ChannelFiltersDialog initialValues={applied} onApply={(values) => { load(values); setFiltersOpen(false); }} onClose={() => setFiltersOpen(false)} />}
 
       {orderQuery.isError && (
         <div role='alert' className='mb-4 text-sm text-ui-danger'>

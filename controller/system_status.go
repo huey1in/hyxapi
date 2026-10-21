@@ -18,7 +18,6 @@ func GetSystemStatus(c *gin.Context) {
 	diskInfo := common.GetDiskSpaceInfo()
 	stats := middleware.GetStats()
 	dcStats := common.GetDiskCacheStats()
-	allHealth := model.GetAllModelHealth()
 
 	// Go runtime memory stats
 	var mem runtime.MemStats
@@ -87,97 +86,9 @@ func GetSystemStatus(c *gin.Context) {
 	todayStat, _ := model.SumUsedQuota(0, todayStart, 0, "", "", "", 0, "")
 	totalStat, _ := model.SumUsedQuota(0, 0, 0, "", "", "", 0, "")
 	requestHealth, _ := model.GetRequestHealthStat(windowStart, now.Unix())
-	riskChannels, _ := model.GetTopRiskChannels(todayStart, now.Unix(), 10)
-	riskModels, _ := model.GetTopRiskModels(todayStart, now.Unix(), 10)
 
 	// Channel affinity cache
 	affinityStats := service.GetChannelAffinityCacheStats()
-
-	// Channel details
-	channels, _ := model.GetAllChannels(0, -1, false, false)
-	var totalCh, enabledCh, disabledCh int
-	type channelInfo struct {
-		ID         int     `json:"id"`
-		Name       string  `json:"name"`
-		Score      float64 `json:"score"`
-		Success    int64   `json:"success"`
-		Errors     int64   `json:"errors"`
-		AvgLatency int64   `json:"avg_latency"`
-		UsedQuota  int64   `json:"used_quota"`
-		Balance    float64 `json:"balance"`
-	}
-	var channelList []channelInfo
-	for _, ch := range channels {
-		totalCh++
-		if ch.Status == common.ChannelStatusEnabled {
-			enabledCh++
-		} else {
-			disabledCh++
-		}
-		detail := service.GetChannelPerfDetail(ch.Id)
-		channelList = append(channelList, channelInfo{
-			ID:         ch.Id,
-			Name:       ch.Name,
-			Score:      detail.Score,
-			Success:    detail.Success,
-			Errors:     detail.Errors,
-			AvgLatency: detail.AvgLatency,
-			UsedQuota:  ch.UsedQuota,
-			Balance:    ch.Balance,
-		})
-	}
-
-	// Model health details
-	healthSummary := map[string]int{"up": 0, "degraded": 0, "down": 0, "idle": 0}
-	type modelDetail struct {
-		Model     string  `json:"model"`
-		Groups    int     `json:"groups"`
-		Status    string  `json:"status"`
-		Latency   int64   `json:"latency"`
-		Total     int64   `json:"total"`
-		Errors    int64   `json:"errors"`
-		ErrorRate float64 `json:"error_rate"`
-	}
-	var modelDetails []modelDetail
-	for modelName, groups := range allHealth {
-		worstStatus := "idle"
-		var totalLatency, totalReqs, totalErrors int64
-		var latencyCount int64
-		for _, g := range groups {
-			if g.Current == nil {
-				healthSummary["idle"]++
-				continue
-			}
-			s := g.Current.Status
-			healthSummary[s]++
-			if statusPriority(s) > statusPriority(worstStatus) {
-				worstStatus = s
-			}
-			if g.Current.Latency > 0 {
-				totalLatency += g.Current.Latency
-				latencyCount++
-			}
-			totalReqs += g.Current.Total
-			totalErrors += g.Current.Errors
-		}
-		var avgLat int64
-		if latencyCount > 0 {
-			avgLat = totalLatency / latencyCount
-		}
-		var errRate float64
-		if totalReqs > 0 {
-			errRate = float64(totalErrors) / float64(totalReqs) * 100
-		}
-		modelDetails = append(modelDetails, modelDetail{
-			Model:     modelName,
-			Groups:    len(groups),
-			Status:    worstStatus,
-			Latency:   avgLat,
-			Total:     totalReqs,
-			Errors:    totalErrors,
-			ErrorRate: errRate,
-		})
-	}
 
 	dbPressure := poolPressure(dbStats)
 	logDbPressure := poolPressure(logDbStats)
@@ -256,10 +167,6 @@ func GetSystemStatus(c *gin.Context) {
 				"total_quota":    totalStat.Quota,
 			},
 			"request_health": requestHealth,
-			"risk": gin.H{
-				"channels": riskChannels,
-				"models":   riskModels,
-			},
 			"disk_cache": gin.H{
 				"active_disk_files":    dcStats.ActiveDiskFiles,
 				"disk_usage_bytes":     dcStats.CurrentDiskUsageBytes,
@@ -275,16 +182,6 @@ func GetSystemStatus(c *gin.Context) {
 				"total":          affinityStats.Total,
 				"cache_capacity": affinityStats.CacheCapacity,
 				"cache_algo":     affinityStats.CacheAlgo,
-			},
-			"channels": gin.H{
-				"total":       totalCh,
-				"enabled":     enabledCh,
-				"disabled":    disabledCh,
-				"perf_scores": channelList,
-			},
-			"models": gin.H{
-				"health_summary": healthSummary,
-				"details":        modelDetails,
 			},
 		},
 	})
@@ -303,17 +200,4 @@ func poolPressure(stats gin.H) float64 {
 		return 0
 	}
 	return float64(inUse) / float64(maxOpen) * 100
-}
-
-func statusPriority(s string) int {
-	switch s {
-	case "down":
-		return 3
-	case "degraded":
-		return 2
-	case "up":
-		return 1
-	default:
-		return 0
-	}
 }

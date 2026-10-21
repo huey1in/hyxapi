@@ -4,7 +4,6 @@ const count = z.number().int().nonnegative().safe();
 const amount = z.number().finite().nonnegative();
 const percent = amount.max(100);
 const poolSchema = z.object({ max_open: count.optional(), open: count.optional(), in_use: count.optional(), idle: count.optional(), wait_count: count.optional(), wait_duration_ms: count.optional() });
-const riskSchema = z.object({ total_requests: count, error_requests: count, error_rate: percent, avg_latency_seconds: amount });
 export const systemStatusSchema = z.object({
   system: z.object({ version: z.string(), go_version: z.string(), uptime_seconds: count, goroutines: count, active_connections: count }),
   health: z.object({ status: z.enum(['ok', 'warning', 'critical']), warnings: z.array(z.string()).nullable().transform((values) => values ?? []) }),
@@ -14,15 +13,11 @@ export const systemStatusSchema = z.object({
   redis: z.object({ enabled: z.boolean(), total_conns: count.optional(), idle_conns: count.optional(), timeouts: count.optional(), db_size: count.optional() }),
   request_stats: z.object({ today_requests: count, today_tokens: count, today_quota: amount, total_requests: count, total_tokens: count, total_quota: amount }),
   request_health: z.object({ rpm: amount, total_requests: count, error_requests: count, success_rate: percent, avg_latency_seconds: amount }),
-  risk: z.object({ channels: z.array(riskSchema.extend({ channel_id: count, channel_name: z.string() })).nullable().transform((rows) => rows ?? []), models: z.array(riskSchema.extend({ model_name: z.string() })).nullable().transform((rows) => rows ?? []) }),
   disk_cache: z.object({ active_disk_files: count, disk_usage_bytes: count, active_memory_bufs: count, memory_usage_bytes: count, disk_max_bytes: count }),
   channel_affinity: z.object({ enabled: z.boolean(), cache_algo: z.string(), total: count, cache_capacity: count }),
-  channels: z.object({ enabled: count, disabled: count }),
 });
 export type SystemStatus = z.infer<typeof systemStatusSchema>;
 export type PoolStatus = z.infer<typeof poolSchema>;
-export type ChannelRisk = SystemStatus['risk']['channels'][number];
-export type ModelRisk = SystemStatus['risk']['models'][number];
 
 export const systemTaskTypes: Record<string, string> = { log_cleanup: 'Usage log cleanup', channel_test: 'Channel test', model_update: 'Model update', midjourney_poll: 'Midjourney polling', async_task_poll: 'Async task polling' };
 export const systemTaskStatuses: Record<string, string> = { pending: 'Pending', running: 'Running', succeeded: 'Completed', failed: 'Failed' };

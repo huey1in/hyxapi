@@ -87,11 +87,8 @@ export function StatisticsSkeleton({ system = false }: { system?: boolean }) {
         {group.labels.map((label) => <StatCard key={label} label={t(label)} value={<div className={`flex items-center ${system && index === 1 && label !== 'Active connections' ? 'h-9' : 'h-[30px]'}`}><Skeleton width={85} height={20} /></div>} sub={!system || index === 0 || label === 'Active connections' || label === 'Errors in last 5 minutes' ? <Skeleton width={75} height={18} /> : index === 1 ? <Skeleton height={4} className='mt-1' /> : undefined} />)}
       </div>
     </section>)}
-    {(system ? ['Channel health', 'Model risk'] : ['Charges by group', 'Charges by channel']).map((title, index) => <ReportSection key={title} title={t(title)}>
-      <Table loading size='sm' skeletonRows={3} columns={(system
-        ? [index === 0 ? 'Channel' : 'Model', 'Errors', 'Error rate', 'Average latency', 'Requests']
-        : ['#', index === 0 ? 'Group' : 'Channel', 'Usage charges', 'Requests', 'Token', 'Share of charges']
-      ).map((label, column) => ({ key: label, title: t(label), align: column > (system ? 0 : 1) ? 'right' as const : 'left' as const, width: label === '#' ? 40 : label === 'Share of charges' ? 100 : undefined }))} />
+    {!system && ['Charges by group', 'Charges by channel'].map((title, index) => <ReportSection key={title} title={t(title)}>
+      <Table loading size='sm' skeletonRows={3} columns={['#', index === 0 ? 'Group' : 'Channel', 'Usage charges', 'Requests', 'Token', 'Share of charges'].map((label, column) => ({ key: label, title: t(label), align: column > 1 ? 'right' as const : 'left' as const, width: label === '#' ? 40 : label === 'Share of charges' ? 100 : undefined }))} />
     </ReportSection>)}
     {system && ['Dependencies', 'Cache and capacity'].map((title) => <ReportSection key={title} title={t(title)}><div className={`flex gap-3 ${mobile ? 'flex-col' : ''}`}>{[0, 1].map((index) => <div key={index} className='min-w-0 flex-1 rounded-2xl border border-ui-border p-4'><Skeleton width={110} height={20} /><div className='mt-2.5 grid grid-cols-2 gap-2'>{[0, 1, 2, 3].map((field) => <div key={field} className='space-y-1'><Skeleton width={60} height={16} /><Skeleton width={50} height={20} /></div>)}</div></div>)}</div></ReportSection>)}
   </div></ContentSkeleton>;

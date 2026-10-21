@@ -6,16 +6,15 @@ import { useTranslation } from 'react-i18next';
 import { useAuthStore } from '../../stores/auth-store';
 import { apiErrorMessage } from '../../lib/api-error';
 import { systemStatusSchema } from './status-data';
-import type { SystemStatus as StatusData, PoolStatus, ChannelRisk, ModelRisk } from './status-data';
+import type { SystemStatus as StatusData, PoolStatus } from './status-data';
 import { readSystemData } from './status-query';
 import { RefreshCw } from 'lucide-react';
 import { renderQuota, renderNumber } from '../../helpers';
 import SystemTasksPanel from './SystemTasksPanel';
 import InstancesPanel from '../../features/operations/InstancesPanel';
 import MaintenancePanel from '../../features/operations/MaintenancePanel';
-import { Button, IconButton, Table } from '../../components/ui';
+import { Button, IconButton } from '../../components/ui';
 import useIsMobile from '../../hooks/useIsMobile';
-import type { TableColumn } from '../../components/ui/layout/Table';
 
 /* ─── helpers ─── */
 
@@ -141,27 +140,9 @@ const StatusPill = ({ status }: { status: StatusData['health']['status'] }) => {
 function StatusCards({ data, isMobile }: { data: StatusData; isMobile: boolean }) {
   const { t } = useTranslation();
   const { system, health, resources, runtime: rt, database, log_database, redis,
-    request_stats: rs, request_health: rh, risk, disk_cache: dc, channel_affinity: ca, channels } = data;
+    request_stats: rs, request_health: rh, disk_cache: dc, channel_affinity: ca } = data;
 
   const grid = (cols: number): CSSProperties => ({ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : `repeat(${cols}, 1fr)`, gap: isMobile ? 8 : 12 });
-  const enabledChannels = channels?.enabled || 0;
-  const disabledChannels = channels?.disabled || 0;
-  const channelRiskRows = risk?.channels || [];
-  const modelRiskRows = risk?.models || [];
-  const channelRiskColumns: TableColumn<ChannelRisk>[] = [
-    { key: 'name', title: t('Channel'), render: (r) => <span style={{ fontWeight: 500 }}>{r.channel_name || `#${r.channel_id}`}</span> },
-    { key: 'errors', title: t('Errors'), align: 'right', render: (r) => renderNumber(r.error_requests || 0) },
-    { key: 'rate', title: t('Error rate'), align: 'right', render: (r) => fmtPct(r.error_rate) },
-    { key: 'latency', title: t('Average latency'), align: 'right' as const, render: (r: ChannelRisk | ModelRisk) => fmtLatency(r.avg_latency_seconds) },
-    { key: 'total', title: t('Requests'), align: 'right' as const, render: (r: ChannelRisk | ModelRisk) => renderNumber(r.total_requests || 0) },
-  ];
-  const modelRiskColumns: TableColumn<ModelRisk>[] = [
-    { key: 'model', title: t('Model'), render: (r) => <span style={{ fontWeight: 500, maxWidth: isMobile ? 150 : 320, display: 'inline-block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', verticalAlign: 'bottom' }} title={r.model_name}>{r.model_name}</span> },
-    { key: 'errors', title: t('Errors'), align: 'right', render: (r) => renderNumber(r.error_requests || 0) },
-    { key: 'rate', title: t('Error rate'), align: 'right', render: (r) => fmtPct(r.error_rate) },
-    { key: 'latency', title: t('Average latency'), align: 'right' as const, render: (r: ChannelRisk | ModelRisk) => fmtLatency(r.avg_latency_seconds) },
-    { key: 'total', title: t('Requests'), align: 'right' as const, render: (r: ChannelRisk | ModelRisk) => renderNumber(r.total_requests || 0) },
-  ];
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: isMobile ? 20 : 28 }}>
@@ -195,17 +176,7 @@ function StatusCards({ data, isMobile }: { data: StatusData; isMobile: boolean }
         </div>
       </Section>
 
-      {/* S4: Channel health */}
-      <Section title={t('Channel health')} right={t('{{enabled}} enabled / {{disabled}} disabled', { enabled: enabledChannels, disabled: disabledChannels })}>
-        <Table columns={channelRiskColumns} rows={channelRiskRows} rowKey='channel_id' size='sm' emptyText={t('No channel risk data today')} />
-      </Section>
-
-      {/* S5: Model risk */}
-      <Section title={t('Model risk')} right={`Top ${modelRiskRows.length}`}>
-        <Table columns={modelRiskColumns} rows={modelRiskRows} rowKey='model_name' size='sm' emptyText={t('No model risk data today')} />
-      </Section>
-
-      {/* S6: Dependencies */}
+      {/* S4: Dependencies */}
       <Section title={t('Dependencies')}>
         <div style={{ display: 'flex', gap: isMobile ? 8 : 12, flexDirection: isMobile ? 'column' : 'row' }}>
           <PoolCard title={t('Main database')} data={database} />
@@ -229,7 +200,7 @@ function StatusCards({ data, isMobile }: { data: StatusData; isMobile: boolean }
         </div>
       </Section>
 
-      {/* S7: Cache System */}
+      {/* S5: Cache System */}
       <Section title={t('Cache and capacity')}>
         <div style={{ display: 'flex', gap: isMobile ? 8 : 12, flexDirection: isMobile ? 'column' : 'row' }}>
           <div style={{ padding: 16, border: '1px solid var(--ui-border)', borderRadius: 16, flex: 1, minWidth: 0 }}>
@@ -255,7 +226,7 @@ function StatusCards({ data, isMobile }: { data: StatusData; isMobile: boolean }
         </div>
       </Section>
 
-      {/* S8: Advanced runtime */}
+      {/* S6: Advanced runtime */}
       {rt && (
         <Section title={t('Advanced runtime')} right={system?.go_version}>
           <div style={grid(isMobile ? 2 : 6)}>
@@ -269,7 +240,7 @@ function StatusCards({ data, isMobile }: { data: StatusData; isMobile: boolean }
         </Section>
       )}
 
-      {/* S9: All-time counters */}
+      {/* S7: All-time counters */}
       <Section title={t('All-time counters')}>
         <div style={grid(3)}>
           <StatMini label={t('Total requests')} value={renderNumber(rs?.total_requests || 0)} />
