@@ -14,18 +14,22 @@ import Forbidden from '../../pages/Forbidden';
 import { Button } from '../ui';
 import { MobileSidebarProvider } from '../../context/MobileSidebar';
 import { StatusContext } from '../../context/Status';
-import { API, getSystemName, setStatusData } from '../../helpers';
+import { API, setStatusData } from '../../helpers';
 import type { ApiEnvelope, SiteStatus } from '../../types/api';
 import { apiErrorMessage } from '../../lib/api-error';
 import { parseHeaderNavModules, publicModuleAccess, publicRouteModule } from '../../lib/nav-modules';
 import { cn } from '../ui/tokens';
 import SiteNoticeBanner from '../../features/notifications/SiteNoticeBanner';
+import { usePageTitle } from '../../hooks/common/usePageTitle';
+import { pageTitleKey } from '../../lib/page-title';
 
 export default function PageLayout() {
   const { t } = useTranslation();
   const [statusState, statusDispatch] = useContext(StatusContext);
   const user = useAuthStore((state) => state.auth.user);
   const location = useLocation();
+  const titleKey = pageTitleKey(location.pathname);
+  usePageTitle(titleKey === null ? null : titleKey ? t(titleKey) : '');
   const currentLocation = useRef(location); currentLocation.current = location;
   const mainRef = useRef<HTMLElement>(null);
   const navigate = useNavigate();
@@ -79,7 +83,6 @@ export default function PageLayout() {
     });
     return () => { active = false; unsubscribe(); };
   }, [needsAuthentication, authAttempt]);
-  useEffect(() => { document.title = getSystemName() || 'Hyxware'; }, [location.pathname]);
 
   const needsSetup = statusState.status?.setup === false && location.pathname !== '/setup';
   const allowed = !isConsoleRoute || canOpenConsolePage(location.pathname, user);

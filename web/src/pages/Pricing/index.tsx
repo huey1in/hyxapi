@@ -6,7 +6,6 @@ import { useTranslation } from 'react-i18next';
 import { Search, LayoutGrid, List, SlidersHorizontal } from 'lucide-react';
 import { Card, Input, Table, Pagination, Tag, EmptyState, IconButton, Divider, Button } from '../../components/ui';
 import { useModelPricingData } from '../../hooks/model-pricing/useModelPricingData';
-import { usePageTitle } from '../../hooks/common/usePageTitle';
 import { calculateModelPrice, getModelPriceItems, getLobeHubIcon, getModelIcon } from '../../helpers';
 import { QuotaTag, VendorTag } from './tags';
 import { usePerformanceSummary } from '../../features/performance-metrics/api';
@@ -36,7 +35,6 @@ const PREVIEW_MODELS: PricingModel[] = [
 
 const Pricing = ({ preview = false }: { preview?: boolean }) => {
   const { t } = useTranslation();
-  usePageTitle(preview ? '' : t('Models'));
 
   const {
     loading, error, filteredModels, models,

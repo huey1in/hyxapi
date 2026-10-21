@@ -3,10 +3,11 @@ import { getSystemName } from '../../helpers';
 
 /**
  * Set page title with format: "PageName - SystemName"
- * @param {string} pageTitle - The current page title (e.g., "令牌管理", "渠道管理")
+ * @param {string | null} pageTitle - Page name, or null when another component owns the title.
  */
 export function usePageTitle(pageTitle) {
   useEffect(() => {
+    if (pageTitle === null) return;
     const systemName = getSystemName() || 'Hyxware';
     if (pageTitle) {
       document.title = `${pageTitle} - ${systemName}`;

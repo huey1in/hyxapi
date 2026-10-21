@@ -22,6 +22,7 @@ import { StatusContext } from '../../context/Status';
 import MarkdownRenderer from '../../components/common/markdown/MarkdownRenderer';
 import { isLoginChallenge, registrationPayload, safeAuthRedirect } from './auth-flow';
 import { useAuthOperation } from './useAuthOperation';
+import { usePageTitle } from '../../hooks/common/usePageTitle';
 
 const oauthIconCdn = {
   github: 'https://cdn.simpleicons.org/github/181717',
@@ -94,6 +95,7 @@ const Auth = () => {
   const status = statusState.status ?? {};
   const isLogin = mode === 'login';
   const isReset = mode === 'reset';
+  usePageTitle(t(isReset ? 'Reset password' : isLogin ? 'Sign in' : 'Create account'));
   const registerEnabled = status.register_enabled !== false;
   const passwordLoginEnabled = status.password_login_enabled !== false;
   const passwordFormEnabled = isLogin ? passwordLoginEnabled : registerEnabled && status.password_register_enabled !== false;
