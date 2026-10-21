@@ -5,7 +5,7 @@ import { ROLE } from './roles';
 export const isConsolePath = (path: string) => path === '/console' || path.startsWith('/console/');
 const adminPages = new Set(['channel', 'models', 'vendors', 'user', 'operations', 'system-status', 'redemption', 'subscription', 'audit']);
 
-// Sidebar preferences control discoverability. Authorization uses the role and
+// Administrator sidebar configuration controls discoverability. Authorization uses the role and
 // capability matrix returned by the server, including for direct navigation.
 export function canOpenConsolePage(path: string, user: AuthUser | null | undefined): boolean {
   if (!isConsolePath(path)) return true;

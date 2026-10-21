@@ -22,8 +22,6 @@ import type { LoginChallenge } from '../features/auth/secure-verification/types'
 import type { AdminCapabilities } from '../lib/admin-permissions'
 
 export type UserPermissions = {
-  sidebar_settings?: boolean
-  sidebar_modules?: Record<string, unknown>
   admin_permissions?: AdminCapabilities
 }
 
@@ -52,7 +50,6 @@ export interface AuthUser {
   language?: string
   setting?: Record<string, unknown> | string
   stripe_customer?: string
-  sidebar_modules?: string
   permissions?: UserPermissions
 }
 

@@ -10,7 +10,7 @@ import (
 )
 
 // PatchUserSetting merges against the locked current row. Independent forms
-// must not restore a stale language, sidebar, billing, or notification setting.
+// must not restore a stale language, billing, or notification setting.
 func PatchUserSetting(ctx context.Context, userID int, patch func(dto.UserSetting, int) (dto.UserSetting, error)) error {
 	if userID <= 0 {
 		return common.NewMessage("ID is empty!")
@@ -30,7 +30,6 @@ func PatchUserSetting(ctx context.Context, userID int, patch func(dto.UserSettin
 		if err != nil {
 			return err
 		}
-		updated.SidebarModules = CleanSidebarModules(updated.SidebarModules)
 		encoded, err := common.Marshal(updated)
 		if err != nil {
 			return err

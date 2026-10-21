@@ -13,8 +13,8 @@ export function logTabFromSearch(search: string): LogTab {
   return LOG_TABS.find((tab) => tab.value === requested)?.value ?? 'usage';
 }
 
-export function visibleLogTabs(admin: SidebarModules, user: SidebarModules = {}) {
-  return LOG_TABS.filter((tab) => isSidebarModuleEnabled('console', tab.module, admin, user));
+export function visibleLogTabs(admin: SidebarModules) {
+  return LOG_TABS.filter((tab) => isSidebarModuleEnabled('console', tab.module, admin));
 }
 
 export function logTabLocation(tab: LogTab, search = '', hash = ''): string {

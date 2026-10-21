@@ -4,40 +4,22 @@ import { loadTestModules } from '../../../scripts/load-test-modules.mjs';
 
 const { entry0: sidebar, entry1: calendar, entry2: { filterSidebarItems } } = await loadTestModules(['./src/lib/sidebar-modules.ts', './src/features/payments/checkin-calendar.ts', './src/components/layout/sidebarItems.ts']);
 
-test('sidebar preferences only narrow administrator visibility and never bypass roles', () => {
-  const admin = sidebar.parseSidebarModules('{"console":{"token":false},"personal":{"topup":false}}');
-  const user = sidebar.parseSidebarModules('{"console":{"token":true,"log":false,"task":false,"midjourney":false},"admin":{"channel":true}}');
-  assert.equal(sidebar.isSidebarModuleVisible('/console/token', admin, user), false);
-  assert.equal(sidebar.isSidebarModuleVisible('/console/log', admin, user), false);
-  assert.equal(sidebar.isSidebarModuleVisible('/console/my-subscription', admin, user), false);
+test('sidebar navigation respects administrator visibility and role requirements', () => {
+  const admin = sidebar.parseSidebarModules('{"console":{"token":false,"log":false,"task":false,"midjourney":false},"personal":{"topup":false}}');
+  assert.equal(sidebar.isSidebarModuleVisible('/console/token', admin), false);
+  assert.equal(sidebar.isSidebarModuleVisible('/console/log', admin), false);
+  assert.equal(sidebar.isSidebarModuleVisible('/console/my-subscription', admin), false);
   const items = [{ to: '/console' }, { to: '/console/channel', admin: true }];
-  assert.deepEqual(filterSidebarItems(items, { admin: false, root: false, isVisible: (route) => sidebar.isSidebarModuleVisible(route, admin, user) }), [{ to: '/console' }]);
-  assert.equal(sidebar.isSidebarModuleVisible('/console/personal', {}, { personal: { personal: false } }), true);
-  assert.equal(sidebar.isSidebarModuleVisible('/console/personal', {}, { personal: { personal: false, security: false } }), false);
+  assert.deepEqual(filterSidebarItems(items, { admin: false, root: false, isVisible: (route) => sidebar.isSidebarModuleVisible(route, admin) }), [{ to: '/console' }]);
+  assert.equal(sidebar.isSidebarModuleVisible('/console/personal', { personal: { personal: false } }), true);
+  assert.equal(sidebar.isSidebarModuleVisible('/console/personal', { personal: { personal: false, security: false } }), false);
 });
 
-test('legacy sidebar values fail open for display and reset preserves unknown module preferences', () => {
+test('legacy administrator sidebar values fail open for display and ignore retired sections', () => {
   for (const value of [null, 'bad-json', '[]', 'null', '{"console":false}', '{"console":{"token":"false"}}']) {
     assert.equal(sidebar.isSidebarModuleVisible('/console/token', sidebar.parseSidebarModules(value)), true);
   }
-  const current = { admin: { user: false }, console: { future_module: false, token: false }, chat: { chat: false } };
-  const defaults = sidebar.defaultSidebarModules(current);
-  assert.equal(defaults.console.token, true);
-  assert.equal(defaults.console.future_module, false);
-  assert.equal(defaults.admin.user, false);
-  assert.equal(defaults.chat, undefined);
-  assert.deepEqual(sidebar.parseSidebarModules(current).chat, undefined);
-  assert.equal(current.console.token, false);
-  assert.equal(current.chat.chat, false);
-});
-
-test('personal sidebar settings expose audit navigation only to administrators', () => {
-  const keysFor = (role) => sidebar.sidebarSectionsForRole(role).flatMap((section) => section.modules.map((module) => module.key));
-  assert.equal(keysFor(0).includes('audit'), false);
-  assert.equal(keysFor(1).includes('audit'), false);
-  assert.equal(keysFor(10).includes('audit'), true);
-  assert.equal(keysFor(100).includes('audit'), true);
-  assert.deepEqual(keysFor(1), keysFor(10).filter((key) => key !== 'audit'));
+  assert.deepEqual(sidebar.parseSidebarModules({ chat: { chat: false }, console: { token: false } }), { console: { token: false } });
 });
 
 test('check-in calendar handles leap years, week boundaries, and year transitions', () => {

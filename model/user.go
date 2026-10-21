@@ -220,62 +220,7 @@ func UpdateUserBindColumn(userId int, column string, value string) error {
 	return DB.Model(&User{}).Where("id = ?", userId).Update(column, value).Error
 }
 
-// 根据用户角色生成默认的边栏配置
-func generateDefaultSidebarConfigForRole(userRole int) string {
-	defaultConfig := map[string]any{}
-
-	// 控制台区域 - 所有用户都可以访问
-	defaultConfig["console"] = map[string]any{
-		"enabled":    true,
-		"detail":     true,
-		"token":      true,
-		"log":        true,
-		"midjourney": true,
-		"task":       true,
-	}
-
-	// 个人中心区域 - 所有用户都可以访问
-	defaultConfig["personal"] = map[string]any{
-		"enabled":  true,
-		"topup":    true,
-		"personal": true,
-	}
-
-	// 管理员区域 - 根据角色决定
-	if userRole == common.RoleAdminUser {
-		// 管理员可以访问管理员区域，但不能访问系统设置
-		defaultConfig["admin"] = map[string]any{
-			"enabled":    true,
-			"channel":    true,
-			"models":     true,
-			"redemption": true,
-			"user":       true,
-			"setting":    false, // 管理员不能访问系统设置
-		}
-	} else if userRole == common.RoleRootUser {
-		// 超级管理员可以访问所有功能
-		defaultConfig["admin"] = map[string]any{
-			"enabled":    true,
-			"channel":    true,
-			"models":     true,
-			"redemption": true,
-			"user":       true,
-			"setting":    true,
-		}
-	}
-	// 普通用户不包含admin区域
-
-	// 转换为JSON字符串
-	configBytes, err := common.Marshal(defaultConfig)
-	if err != nil {
-		common.SysLog(common.LogText("failed to generate the default sidebar config: %s", err.Error()))
-		return ""
-	}
-
-	return string(configBytes)
-}
-
-// CheckUserExistOrDeleted check if user exist or deleted, if not exist, return false, nil, if deleted or exist, return true, nil
+// CheckUserExistOrDeleted reports whether a username or email is already taken.
 func CheckUserExistOrDeleted(username string, email string) (bool, error) {
 	var user User
 
@@ -673,10 +618,9 @@ func (user *User) Insert(inviterId int) error {
 			user.Quota = common.QuotaForNewUser
 			user.AffCode = common.GetRandomString(4)
 
-			// 初始化用户设置，包括默认的边栏配置
+			// Initialize account settings.
 			if user.Setting == "" {
 				defaultSetting := dto.UserSetting{}
-				// 这里暂时不设置SidebarModules，因为需要在用户创建后根据角色设置
 				user.SetSetting(defaultSetting)
 			}
 
@@ -691,21 +635,6 @@ func (user *User) Insert(inviterId int) error {
 }
 
 func (user *User) finishInsert(inviterId int) {
-	// 用户创建成功后，根据角色初始化边栏配置
-	// 需要重新获取用户以确保有正确的ID和Role
-	var createdUser User
-	if err := DB.Where("username = ?", user.Username).First(&createdUser).Error; err == nil {
-		// 生成基于角色的默认边栏配置
-		defaultSidebarConfig := generateDefaultSidebarConfigForRole(createdUser.Role)
-		if defaultSidebarConfig != "" {
-			currentSetting := createdUser.GetSetting()
-			currentSetting.SidebarModules = defaultSidebarConfig
-			createdUser.SetSetting(currentSetting)
-			createdUser.Update(false)
-			common.SysLog(common.LogText("initialized the sidebar config for new user %s (role: %d)", createdUser.Username, createdUser.Role))
-		}
-	}
-
 	if common.QuotaForNewUser > 0 {
 		RecordLog(user.Id, LogTypeSystem, common.NewMessage("New user sign-up bonus {{quota}}", map[string]any{"quota": logger.FormatQuota(common.QuotaForNewUser)}))
 	}
@@ -728,7 +657,7 @@ func (user *User) FinishInsert(inviterId int) {
 
 // InsertWithTx inserts a new user within an existing transaction.
 // This is used for OAuth registration where user creation and binding need to be atomic.
-// Post-creation tasks (sidebar config, logs, inviter rewards) are handled after the transaction commits.
+// Post-creation tasks (logs, inviter rewards) are handled after the transaction commits.
 func (user *User) InsertWithTx(tx *gorm.DB, inviterId int) error {
 	return withNormalizedEmailLock(tx, user.Email, func(tx *gorm.DB) error {
 		if err := user.prepareForInsert(tx); err != nil {
@@ -750,19 +679,6 @@ func (user *User) InsertWithTx(tx *gorm.DB, inviterId int) error {
 // FinalizeOAuthUserCreation performs post-transaction tasks for OAuth user creation.
 // This should be called after the transaction commits successfully.
 func (user *User) FinalizeOAuthUserCreation(inviterId int) {
-	// 用户创建成功后，根据角色初始化边栏配置
-	var createdUser User
-	if err := DB.Where("id = ?", user.Id).First(&createdUser).Error; err == nil {
-		defaultSidebarConfig := generateDefaultSidebarConfigForRole(createdUser.Role)
-		if defaultSidebarConfig != "" {
-			currentSetting := createdUser.GetSetting()
-			currentSetting.SidebarModules = defaultSidebarConfig
-			createdUser.SetSetting(currentSetting)
-			createdUser.Update(false)
-			common.SysLog(common.LogText("initialized the sidebar config for new user %s (role: %d)", createdUser.Username, createdUser.Role))
-		}
-	}
-
 	if common.QuotaForNewUser > 0 {
 		RecordLog(user.Id, LogTypeSystem, common.NewMessage("New user sign-up bonus {{quota}}", map[string]any{"quota": logger.FormatQuota(common.QuotaForNewUser)}))
 	}

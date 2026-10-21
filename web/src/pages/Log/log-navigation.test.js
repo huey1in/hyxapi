@@ -15,19 +15,15 @@ test('log links select a canonical tab and preserve query parameters and fragmen
   assert.equal(logs.logTabLocation('usage'), '/console/log');
 });
 
-test('merged log navigation respects the intersection of system and personal module preferences', () => {
+test('merged log navigation follows administrator module configuration', () => {
   const hidden = { console: { log: false, task: false, midjourney: false } };
-  assert.deepEqual(logs.visibleLogTabs({}, {}).map((tab) => tab.value), ['usage', 'tasks', 'midjourney']);
+  assert.deepEqual(logs.visibleLogTabs({}).map((tab) => tab.value), ['usage', 'tasks', 'midjourney']);
   for (const tab of logs.LOG_TABS) {
     const enabled = { console: { ...hidden.console, [tab.module]: true } };
     assert.deepEqual(logs.visibleLogTabs(enabled).map((item) => item.value), [tab.value]);
-    assert.deepEqual(logs.visibleLogTabs({}, enabled).map((item) => item.value), [tab.value]);
     assert.equal(sidebar.isSidebarModuleVisible('/console/log', enabled), true);
   }
-  const system = { console: { log: false, task: true, midjourney: false } };
-  const personal = { console: { log: true, task: false, midjourney: false } };
-  assert.deepEqual(logs.visibleLogTabs(system, personal), []);
-  assert.equal(sidebar.isSidebarModuleVisible('/console/log', system, personal), false);
-  assert.deepEqual(logs.visibleLogTabs({}, hidden), []);
+  assert.deepEqual(logs.visibleLogTabs(hidden), []);
+  assert.equal(sidebar.isSidebarModuleVisible('/console/log', hidden), false);
   assert.deepEqual(logs.visibleLogTabs({ console: { enabled: false } }), []);
 });

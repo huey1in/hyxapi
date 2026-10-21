@@ -95,26 +95,21 @@ func CleanSidebarModules(raw string) string {
 
 func purgeRemovedFeatureUserSettings(db *gorm.DB) error {
 	var users []User
-	return db.Select("id", "setting").FindInBatches(&users, userAccessTokenCleanupBatchSize, func(_ *gorm.DB, _ int) error {
+	return db.Unscoped().Select("id", "setting").FindInBatches(&users, userAccessTokenCleanupBatchSize, func(_ *gorm.DB, _ int) error {
 		for _, user := range users {
 			var settings map[string]json.RawMessage
 			if common.UnmarshalJsonStr(user.Setting, &settings) != nil || settings == nil {
 				continue
 			}
-			var sidebar string
-			if json.Unmarshal(settings["sidebar_modules"], &sidebar) != nil {
+			if _, exists := settings["sidebar_modules"]; !exists {
 				continue
 			}
-			cleaned := CleanSidebarModules(sidebar)
-			if cleaned == sidebar {
-				continue
-			}
-			settings["sidebar_modules"], _ = common.Marshal(cleaned)
+			delete(settings, "sidebar_modules")
 			encoded, err := common.Marshal(settings)
 			if err != nil {
 				return err
 			}
-			if err := db.Model(&User{}).Where("id = ? AND setting = ?", user.Id, user.Setting).Update("setting", string(encoded)).Error; err != nil {
+			if err := db.Unscoped().Model(&User{}).Where("id = ? AND setting = ?", user.Id, user.Setting).Update("setting", string(encoded)).Error; err != nil {
 				return err
 			}
 		}

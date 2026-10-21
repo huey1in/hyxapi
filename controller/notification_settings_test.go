@@ -13,12 +13,11 @@ import (
 
 func TestNotificationSettingsPreservePreferencesAndEnforceAdminCategories(t *testing.T) {
 	disabled := false
-	previous := dto.UserSetting{Language: "en", SidebarModules: "saved", BillingPreference: "wallet_only", QuotaWarningEnabled: &disabled}
+	previous := dto.UserSetting{Language: "en", BillingPreference: "wallet_only", QuotaWarningEnabled: &disabled}
 	patch := map[string]interface{}{"notify_type": "email", "channel_notify_enabled": true, "upstream_model_update_notify_enabled": true}
 	user, err := applyNotificationSettings(previous, patch, common.RoleCommonUser)
 	require.NoError(t, err)
 	require.Equal(t, "en", user.Language)
-	require.Equal(t, "saved", user.SidebarModules)
 	require.Equal(t, "wallet_only", user.BillingPreference)
 	require.NotNil(t, user.QuotaWarningEnabled)
 	require.False(t, *user.QuotaWarningEnabled)
@@ -32,7 +31,7 @@ func TestNotificationSettingsPreservePreferencesAndEnforceAdminCategories(t *tes
 
 func TestUserSettingsHTTPPartialPatchPreservesOtherPreferences(t *testing.T) {
 	user, identity := setupSecurityEnrollmentTest(t)
-	initial := dto.UserSetting{NotifyType: "email", Language: "fr", SidebarModules: "saved", BillingPreference: "wallet_only", RecordIpLog: true, AcceptUnsetRatioModel: true}
+	initial := dto.UserSetting{NotifyType: "email", Language: "fr", BillingPreference: "wallet_only", RecordIpLog: true, AcceptUnsetRatioModel: true}
 	require.NoError(t, model.UpdateUserSetting(user.Id, initial))
 	for _, body := range []string{`{"quota_warning_threshold":123}`, `{"notify_type":"email","notification_email":"notice@example.com"}`} {
 		response := securityEnrollmentRequest("PUT", "/api/user/setting", body, "", identity, UpdateUserSetting)
@@ -47,7 +46,6 @@ func TestUserSettingsHTTPPartialPatchPreservesOtherPreferences(t *testing.T) {
 	require.True(t, current.RecordIpLog)
 	require.True(t, current.AcceptUnsetRatioModel)
 	require.Equal(t, "fr", current.Language)
-	require.Equal(t, "saved", current.SidebarModules)
 	require.Equal(t, "wallet_only", current.BillingPreference)
 	require.Equal(t, float64(123), current.QuotaWarningThreshold)
 	response := securityEnrollmentRequest("PUT", "/api/user/setting", `{"record_ip_log":false,"accept_unset_model_ratio_model":false}`, "", identity, UpdateUserSetting)
@@ -73,7 +71,6 @@ func TestConcurrentPersonalSettingsFormsMergeLatestRow(t *testing.T) {
 	}
 	operations := []operation{
 		{UpdateSelf, `{"language":"ja"}`},
-		{UpdateSelf, `{"sidebar_modules":"{\"console\":{\"enabled\":false}}"}`},
 		{UpdateSubscriptionPreference, `{"billing_preference":"wallet_only"}`},
 		{UpdateUserSetting, `{"record_ip_log":true,"quota_warning_threshold":456}`},
 	}
@@ -101,7 +98,6 @@ func TestConcurrentPersonalSettingsFormsMergeLatestRow(t *testing.T) {
 	current, err := model.GetUserSetting(user.Id, true)
 	require.NoError(t, err)
 	require.Equal(t, "ja", current.Language)
-	require.Equal(t, `{"console":{"enabled":false}}`, current.SidebarModules)
 	require.Equal(t, "wallet_only", current.BillingPreference)
 	require.True(t, current.RecordIpLog)
 	require.Equal(t, float64(456), current.QuotaWarningThreshold)

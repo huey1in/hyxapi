@@ -90,8 +90,7 @@ const SiderBar = ({ preview = false, previewActive = '/console', loading = false
   };
 
   const adminModules = parseSidebarModules(statusState?.status?.SidebarModulesAdmin);
-  const userModules = currentUser?.permissions?.sidebar_settings === false ? {} : parseSidebarModules(currentUser?.sidebar_modules);
-  const items = filterSidebarItems(NAV_ITEMS, { preview, admin, root, isVisible: (route) => preview || (canOpenConsolePage(route, currentUser) && isSidebarModuleVisible(route, adminModules, userModules)) });
+  const items = filterSidebarItems(NAV_ITEMS, { preview, admin, root, isVisible: (route) => preview || (canOpenConsolePage(route, currentUser) && isSidebarModuleVisible(route, adminModules)) });
   const compact = collapsed && !isMobile;
   const itemClass = cn(
     'flex min-w-0 items-center rounded-lg text-base leading-6 whitespace-nowrap',

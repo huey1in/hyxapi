@@ -1,28 +1,7 @@
-import { ROLE } from './roles';
-
 export type SidebarModules = Record<string, Record<string, boolean>>;
 
-export const sidebarSections = [
-  { key: 'console', title: 'Console Area', modules: [
-    { key: 'detail', title: 'Dashboard' }, { key: 'token', title: 'Token Management' },
-    { key: 'log', title: 'Request logs' }, { key: 'task', title: 'Async tasks' },
-    { key: 'midjourney', title: 'Midjourney' }, { key: 'audit', title: 'Audit Logs', admin: true },
-  ] },
-  { key: 'personal', title: 'Personal Center Area', modules: [
-    { key: 'topup', title: 'Wallet Management' }, { key: 'personal', title: 'Personal Settings' },
-    { key: 'security', title: 'Security & Access' },
-  ] },
-] as const;
-
-export function sidebarSectionsForRole(role: number) {
-  return sidebarSections.map((section) => ({
-    ...section,
-    modules: section.modules.filter((module) => !('admin' in module) || role >= ROLE.ADMIN),
-  }));
-}
-
 // Invalid/legacy values do not narrow navigation. Only actual booleans count;
-// personal preferences can never override the administrator or role checks.
+// navigation visibility remains separate from role and API authorization.
 export function parseSidebarModules(raw: unknown): SidebarModules {
   try {
     const value: unknown = typeof raw === 'string' ? JSON.parse(raw) : raw;
@@ -51,23 +30,12 @@ const routes: Record<string, readonly (readonly [string, string])[]> = {
   '/console/subscription': [['admin', 'subscription']], '/console/setting': [['admin', 'setting']],
 };
 
-export function isSidebarModuleVisible(route: string, admin: SidebarModules, user: SidebarModules = {}): boolean {
+export function isSidebarModuleVisible(route: string, admin: SidebarModules): boolean {
   const mappings = routes[route];
   if (!mappings) return true;
-  return mappings.some(([section, module]) => isSidebarModuleEnabled(section, module, admin, user));
+  return mappings.some(([section, module]) => isSidebarModuleEnabled(section, module, admin));
 }
 
-export function isSidebarModuleEnabled(section: string, module: string, admin: SidebarModules, user: SidebarModules = {}): boolean {
-  return admin[section]?.enabled !== false && admin[section]?.[module] !== false &&
-    user[section]?.enabled !== false && user[section]?.[module] !== false;
-}
-
-export function defaultSidebarModules(current: SidebarModules = {}): SidebarModules {
-  const result = structuredClone(current);
-  delete result.chat;
-  for (const section of sidebarSections) {
-    result[section.key] = { ...result[section.key], enabled: true };
-    for (const module of section.modules) result[section.key][module.key] = true;
-  }
-  return result;
+export function isSidebarModuleEnabled(section: string, module: string, admin: SidebarModules): boolean {
+  return admin[section]?.enabled !== false && admin[section]?.[module] !== false;
 }

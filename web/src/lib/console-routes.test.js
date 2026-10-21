@@ -15,8 +15,8 @@ test('console authorization respects route boundaries and role requirements', ()
   assert.equal(canOpenConsolePage('/console/setting', { ...member, role: 10 }), false);
   assert.equal(canOpenConsolePage('/console/setting', { ...member, role: 100 }), true);
 });
-test('audit pages require an administrator role independently of sidebar preferences or audit grants', () => {
-  const member = { id: 1, username: 'member', role: 1, sidebar_modules: '{"console":{"audit":true}}', permissions: { admin_permissions: { audit: { read: true } } } };
+test('audit pages require an administrator role independently of audit grants', () => {
+  const member = { id: 1, username: 'member', role: 1, permissions: { admin_permissions: { audit: { read: true } } } };
   for (const path of ['/console/audit', '/console/audit/', '/console/audit/nested']) {
     assert.equal(canOpenConsolePage(path, member), false, path);
     assert.equal(canOpenConsolePage(path, { ...member, role: 10 }), true, path);

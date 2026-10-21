@@ -26,8 +26,7 @@ export default function LogsPage() {
   const location = useLocation();
   const navigate = useNavigate();
   const adminModules = parseSidebarModules(status.status?.SidebarModulesAdmin);
-  const userModules = user?.permissions?.sidebar_settings === false ? {} : parseSidebarModules(user?.sidebar_modules);
-  const tabs = status.status ? visibleLogTabs(adminModules, userModules) : [];
+  const tabs = status.status ? visibleLogTabs(adminModules) : [];
   const requested = logTabFromSearch(location.search);
   const active = tabs.find((tab) => tab.value === requested) ?? tabs[0];
   const canonical = active ? logTabLocation(active.value, location.search, location.hash) : '';

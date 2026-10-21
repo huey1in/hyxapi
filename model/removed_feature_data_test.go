@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"path/filepath"
 	"testing"
+	"time"
 
 	"github.com/QuantumNous/new-api/common"
 	"github.com/glebarez/sqlite"
@@ -160,11 +161,50 @@ func TestRetiredSidebarSectionIsPurgedWithoutChangingOtherSettings(t *testing.T)
 	require.JSONEq(t, expectedSidebar, stored.Value)
 	require.NoError(t, db.First(&user, user.Id).Error)
 	require.Contains(t, user.Setting, "9007199254740993")
-	require.JSONEq(t, `{"language":"en","notify_type":"email","sidebar_modules":"{\"console\":{\"token\":false}}","future_setting":{"large":9007199254740993}}`, user.Setting)
+	require.JSONEq(t, `{"language":"en","notify_type":"email","future_setting":{"large":9007199254740993}}`, user.Setting)
 	require.Equal(t, "invalid legacy value", CleanSidebarModules("invalid legacy value"))
 	require.NoError(t, UpdateOption("SidebarModulesAdmin", originalSidebar))
 	require.JSONEq(t, expectedSidebar, common.OptionMap["SidebarModulesAdmin"])
 	require.NoError(t, UpdateOptionsBulk(map[string]string{"SidebarModulesAdmin": originalSidebar}))
 	require.NoError(t, db.First(&stored, "key = ?", "SidebarModulesAdmin").Error)
 	require.JSONEq(t, expectedSidebar, stored.Value)
+}
+
+func TestPersonalSidebarSettingsArePurgedAcrossBatchesAndDeletedUsers(t *testing.T) {
+	db, err := gorm.Open(sqlite.Open(filepath.Join(t.TempDir(), "personal-sidebar.db")), &gorm.Config{})
+	require.NoError(t, err)
+	sqlDB, err := db.DB()
+	require.NoError(t, err)
+	t.Cleanup(func() { _ = sqlDB.Close() })
+	require.NoError(t, db.AutoMigrate(&User{}))
+	const expected = `{"language":"en","billing_preference":"wallet_only","future_setting":{"large":9007199254740993}}`
+	var users []User
+	for index := range userAccessTokenCleanupBatchSize + 2 {
+		legacy := []string{`"{\"console\":{\"token\":false}}"`, `null`, `false`, `{"console":false}`, `"invalid-json"`}[index%5]
+		setting := expected[:len(expected)-1] + `,"sidebar_modules":` + legacy + `}`
+		user := User{Username: fmt.Sprintf("sidebar-%d", index), AffCode: fmt.Sprintf("s-%04d", index), Setting: setting}
+		if index%2 == 0 {
+			user.DeletedAt = gorm.DeletedAt{Time: time.Now(), Valid: true}
+		}
+		users = append(users, user)
+	}
+	require.NoError(t, db.CreateInBatches(users, 100).Error)
+	untouched := []string{"", "null", "invalid-json", `[]`, `{ "language": "fr" }`}
+	for index, setting := range untouched {
+		require.NoError(t, db.Create(&User{Username: fmt.Sprintf("unchanged-%d", index), AffCode: fmt.Sprintf("u-%04d", index), Setting: setting}).Error)
+	}
+	for range 2 {
+		require.NoError(t, purgeRemovedFeatureUserSettings(db))
+		var stored []User
+		require.NoError(t, db.Unscoped().Order("id").Find(&stored).Error)
+		require.Len(t, stored, len(users)+len(untouched))
+		for index, user := range stored {
+			if index >= len(users) {
+				require.Equal(t, untouched[index-len(users)], user.Setting)
+				continue
+			}
+			require.JSONEq(t, expected, user.Setting)
+			require.Equal(t, users[index].DeletedAt.Valid, user.DeletedAt.Valid)
+		}
+	}
 }
