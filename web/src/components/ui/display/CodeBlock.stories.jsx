@@ -18,7 +18,7 @@ export default function Demo({ name }) {
 }`;
 
 const jsonSample = `{
-  "name": "hyxware",
+  "name": "hyxapi",
   "version": "0.1.0",
   "private": true,
   "scripts": { "build": "rsbuild build" }

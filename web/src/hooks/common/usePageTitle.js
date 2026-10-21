@@ -8,7 +8,7 @@ import { getSystemName } from '../../helpers';
 export function usePageTitle(pageTitle) {
   useEffect(() => {
     if (pageTitle === null) return;
-    const systemName = getSystemName() || 'Hyxware';
+    const systemName = getSystemName() || 'HyxAPI';
     if (pageTitle) {
       document.title = `${pageTitle} - ${systemName}`;
     } else {

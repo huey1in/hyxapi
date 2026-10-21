@@ -3,7 +3,7 @@
   "configVersion": 1,
   "workspaces": {
     "": {
-      "name": "hyxware-desktop",
+      "name": "hyxapi-desktop",
       "devDependencies": {
         "electron": "41.10.6",
         "electron-builder": "26.15.3",

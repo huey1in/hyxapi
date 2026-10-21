@@ -17,7 +17,7 @@ export default function ModelApiExamples({ model, endpoints }: { model: PricingM
   if (!active) return null;
   return <Card><section aria-label={t('API examples')} className='min-w-0 space-y-3'>
     <h2 className='text-sm font-medium text-ui-text'>{t('API examples')}</h2>
-    <p className='text-xs text-ui-text-3'>{t('Set HYXWARE_API_KEY to a token from the Tokens page before running these examples.')}</p>
+    <p className='text-xs text-ui-text-3'>{t('Set HYXAPI_API_KEY to a token from the Tokens page before running these examples.')}</p>
     <div className='flex flex-wrap gap-2'>
       <Select aria-label={t('Example protocol')} value={active.type} options={examples.map(({ type }) => ({ value: type, label: type }))} onChange={setEndpoint} />
       <Select aria-label={t('Example language')} value={language} options={[{ value: 'curl' as const, label: 'cURL' }, { value: 'python' as const, label: 'Python' }, { value: 'typescript' as const, label: 'TypeScript' }, { value: 'javascript' as const, label: 'JavaScript' }]} onChange={setLanguage} />

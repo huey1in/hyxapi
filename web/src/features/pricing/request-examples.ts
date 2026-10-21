@@ -33,7 +33,7 @@ const shellQuote = (value: string) => `'${value.replaceAll("'", "'\"'\"'")}'`;
 export function renderModelRequest(request: ModelRequest, language: ExampleLanguage): string {
   if (language === 'curl') return [
     `curl --request ${request.method} ${shellQuote(request.url)}`,
-    '  --header "Authorization: Bearer $HYXWARE_API_KEY"',
+    '  --header "Authorization: Bearer $HYXAPI_API_KEY"',
     ...Object.entries(request.headers).map(([name, value]) => `  --header ${shellQuote(`${name}: ${value}`)}`),
     ...(request.body ? [`  --data-raw ${shellQuote(JSON.stringify(request.body, null, 2))}`] : []),
   ].join(' \\\n');
@@ -41,14 +41,14 @@ export function renderModelRequest(request: ModelRequest, language: ExampleLangu
     'import json', 'import os', 'from urllib.request import Request, urlopen', '',
     ...(request.body ? [`body = json.loads(${JSON.stringify(JSON.stringify(request.body))})`] : []),
     `headers = ${JSON.stringify(request.headers)}`,
-    'headers["Authorization"] = "Bearer " + os.environ["HYXWARE_API_KEY"]',
+    'headers["Authorization"] = "Bearer " + os.environ["HYXAPI_API_KEY"]',
     `request = Request(${JSON.stringify(request.url)}, method=${JSON.stringify(request.method)}, headers=headers${request.body ? ', data=json.dumps(body).encode("utf-8")' : ''})`,
     'with urlopen(request) as response:', '    print(json.load(response))',
   ].join('\n');
   return [
     `const response = await fetch(${JSON.stringify(request.url)}, {`,
     `  method: ${JSON.stringify(request.method)},`,
-    '  headers: {', '    Authorization: `Bearer ${process.env.HYXWARE_API_KEY}`,',
+    '  headers: {', '    Authorization: `Bearer ${process.env.HYXAPI_API_KEY}`,',
     ...Object.entries(request.headers).map(([name, value]) => `    ${JSON.stringify(name)}: ${JSON.stringify(value)},`),
     '  },', ...(request.body ? [`  body: JSON.stringify(${JSON.stringify(request.body, null, 2)}),`] : []),
     '});', 'console.log(await response.json());',

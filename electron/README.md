@@ -1,6 +1,6 @@
-# Hyxware Desktop
+# HyxAPI Desktop
 
-The desktop application runs the existing Hyxware interface with a private local
+The desktop application runs the existing HyxAPI interface with a private local
 SQLite server. It supports a system tray, a single application instance, and
 persistent data under the operating system's application data
 directory. Closing the window hides it; choose **Quit** to stop the local server.

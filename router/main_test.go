@@ -20,7 +20,7 @@ func TestSetRouterServesPagesOnCurrentSite(t *testing.T) {
 	t.Setenv("FRONTEND_BASE_URL", "https://old-home.example")
 
 	engine := gin.New()
-	index := []byte("<!doctype html><title>Hyxware</title>")
+	index := []byte("<!doctype html><title>HyxAPI</title>")
 	SetRouter(engine, embed.FS{}, index)
 	for _, path := range []string{"/", "/auth?mode=login", "/console", "/pricing", "/token", "/log", "/topup", "/subscription", "/personal", "/notices", "/console/subscription", "/oauth/github?code=test&state=test"} {
 		t.Run(path, func(t *testing.T) {

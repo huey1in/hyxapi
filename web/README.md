@@ -1,4 +1,4 @@
-# Hyxware frontend
+# HyxAPI frontend
 
 Use Node.js 22.12 or later and Bun. The application uses React 19, Rsbuild 2 and
 Tailwind CSS 4. Run these commands from `web/`:

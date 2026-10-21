@@ -20,12 +20,11 @@ interface Props {
   initialValues: PricingFilterValues;
   groupOptions: SelectOption<string>[];
   vendorOptions: SelectOption<string>[];
-  preview?: boolean;
   onApply: (values: PricingFilterValues) => void;
   onClose: () => void;
 }
 
-export default function PricingFiltersDialog({ initialValues, groupOptions, vendorOptions, preview, onApply, onClose }: Props) {
+export default function PricingFiltersDialog({ initialValues, groupOptions, vendorOptions, onApply, onClose }: Props) {
   const { t } = useTranslation();
   const id = useId();
   const dialog = useRef<HTMLFormElement>(null);
@@ -62,7 +61,7 @@ export default function PricingFiltersDialog({ initialValues, groupOptions, vend
           {field('vendor', 'Vendor', vendorOptions)}
           {field('sort', 'Sort models', pricingSorts.map((item) => ({ value: item.value, label: t(item.label) })))}
           {field('tokenUnit', 'Token price unit', [{ value: 'M', label: t('Per 1M tokens') }, { value: 'K', label: t('Per 1K tokens') }])}
-          {!preview && field('priceBasis', 'Price basis', [{ value: 'standard', label: t('Standard price') }, { value: 'recharge', label: t('Recharge price') }])}
+          {field('priceBasis', 'Price basis', [{ value: 'standard', label: t('Standard price') }, { value: 'recharge', label: t('Recharge price') }])}
         </div>
       </div>
       <footer className='flex shrink-0 flex-wrap items-center justify-end gap-2 px-6 pt-3 pb-5'>

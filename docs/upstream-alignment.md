@@ -1,6 +1,6 @@
-# Hyxware 功能与配置说明
+# HyxAPI 功能与配置说明
 
-本轮按 New API `v1.0.0-rc.45`（`6cf0d90b`）补齐功能，保留 Hyxware 页面、同域登录和直接价格配置。
+本轮按 New API `v1.0.0-rc.45`（`6cf0d90b`）补齐功能，保留 HyxAPI 页面、同域登录和直接价格配置。
 
 固定版本的本地对齐和最终回归已完成；保留差异及实环境验收边界见 [最终语义复核与验收](newapi-semantic-audit.md)。
 

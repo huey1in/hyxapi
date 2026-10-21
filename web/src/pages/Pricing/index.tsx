@@ -18,22 +18,7 @@ import type { PricingModel } from '../../features/pricing/types';
 import type { TableColumn } from '../../components/ui/layout/Table';
 import { parsePricingSort } from '../../features/pricing/catalog-data';
 
-const PREVIEW_MODELS: PricingModel[] = [
-  { quota_type: 0, model_name: 'gpt-4.1', vendor_name: 'OpenAI', vendor_icon: 'OpenAI', description: "A general model for complex reasoning, coding and long-context tasks.", billing_type: 'tokens', input_price: 2, output_price: 8, cache_read_price: 0.5, enable_groups: ['default', 'production'] },
-  { quota_type: 0, model_name: 'gpt-4o-mini', vendor_name: 'OpenAI', vendor_icon: 'OpenAI', description: "Balances speed and cost for high-volume, lightweight tasks.", billing_type: 'tokens', input_price: 0.15, output_price: 0.6, cache_read_price: 0.075, enable_groups: ['default'] },
-  { quota_type: 0, model_name: 'claude-sonnet-4', vendor_name: 'Anthropic', vendor_icon: 'Anthropic', description: "A capable model for coding, agents and specialized work.", billing_type: 'tokens', input_price: 3, output_price: 15, cache_read_price: 0.3, enable_groups: ['default', 'production'] },
-  { quota_type: 0, model_name: 'claude-3.5-haiku', vendor_name: 'Anthropic', vendor_icon: 'Anthropic', billing_type: 'tokens', input_price: 0.8, output_price: 4, cache_read_price: 0.08, enable_groups: ['default'] },
-  { quota_type: 0, model_name: 'gemini-2.5-pro', vendor_name: 'Google', vendor_icon: 'Gemini.Color', billing_type: 'tokens', input_price: 1.25, output_price: 10, enable_groups: ['default'] },
-  { quota_type: 0, model_name: 'gemini-2.5-flash', vendor_name: 'Google', vendor_icon: 'Gemini.Color', billing_type: 'tokens', input_price: 0.3, output_price: 2.5, enable_groups: ['default', 'production'] },
-  { quota_type: 0, model_name: 'deepseek-chat', vendor_name: 'DeepSeek', vendor_icon: 'DeepSeek.Color', billing_type: 'tokens', input_price: 0.27, output_price: 1.1, cache_read_price: 0.07, enable_groups: ['default'] },
-  { quota_type: 0, model_name: 'deepseek-reasoner', vendor_name: 'DeepSeek', vendor_icon: 'DeepSeek.Color', billing_type: 'tokens', input_price: 0.55, output_price: 2.19, cache_read_price: 0.14, enable_groups: ['production'] },
-  { quota_type: 0, model_name: 'grok-4', vendor_name: 'xAI', vendor_icon: 'XAI', billing_type: 'tokens', input_price: 3, output_price: 15, enable_groups: ['production'] },
-  { quota_type: 0, model_name: 'grok-3-mini', vendor_name: 'xAI', vendor_icon: 'XAI', billing_type: 'tokens', input_price: 0.3, output_price: 0.5, enable_groups: ['default'] },
-  { quota_type: 0, model_name: 'mistral-large', vendor_name: 'Mistral AI', vendor_icon: 'Mistral.Color', billing_type: 'tokens', input_price: 2, output_price: 6, enable_groups: ['default'] },
-  { quota_type: 0, model_name: 'mistral-small', vendor_name: 'Mistral AI', vendor_icon: 'Mistral.Color', billing_type: 'tokens', input_price: 0.1, output_price: 0.3, enable_groups: ['default', 'production'] },
-];
-
-const Pricing = ({ preview = false }: { preview?: boolean }) => {
+const Pricing = () => {
   const { t } = useTranslation();
 
   const {
@@ -46,7 +31,7 @@ const Pricing = ({ preview = false }: { preview?: boolean }) => {
     tokenUnit, displayPrice, showRechargePrice, setShowRechargePrice,
     currentPage, setCurrentPage, pageSize,
     refresh, sortBy, setSortBy, setTokenUnit, pricingNow,
-  } = useModelPricingData(preview ? PREVIEW_MODELS : null);
+  } = useModelPricingData();
 
   const navigate = useNavigate();
   const location = useLocation();
@@ -56,12 +41,10 @@ const Pricing = ({ preview = false }: { preview?: boolean }) => {
   const filtersButton = useRef<HTMLButtonElement>(null);
   const activeFilters = [selectedGroup !== 'all', filterQuotaType !== 'all', filterVendor !== 'all', sortBy !== 'name', tokenUnit !== 'M', showRechargePrice].filter(Boolean).length;
   const updateQuery = (key: string, value: string) => {
-    if (preview) return;
     const next = new URLSearchParams(searchParams); if (!value || value === 'all') next.delete(key); else next.set(key, value);
     setSearchParams(next, { replace: true });
   };
   useEffect(() => {
-    if (preview) return;
     const query = new URLSearchParams(location.search);
     if (query.has('endpointType') || query.has('currency') || query.has('tag')) {
       query.delete('endpointType'); query.delete('currency'); query.delete('tag');
@@ -73,21 +56,19 @@ const Pricing = ({ preview = false }: { preview?: boolean }) => {
     setSortBy(parsePricingSort(query.get('sort'))); setTokenUnit(query.get('tokenUnit') === 'K' ? 'K' : 'M');
     setShowRechargePrice(query.get('rechargePrice') === 'true');
     handleChange(query.get('search') || ''); setViewMode(query.get('view') === 'table' ? 'table' : 'card');
-  }, [location.search, preview, setSearchParams, setFilterVendor, setSelectedGroup, setFilterGroup, setFilterQuotaType, setSortBy, setTokenUnit, setShowRechargePrice, handleChange]);
+  }, [location.search, setSearchParams, setFilterVendor, setSelectedGroup, setFilterGroup, setFilterQuotaType, setSortBy, setTokenUnit, setShowRechargePrice, handleChange]);
   const applyFilters = (values: PricingFilterValues) => {
     setSelectedGroup(values.group); setFilterGroup(values.group); setFilterQuotaType(values.billing); setFilterVendor(values.vendor); setSortBy(values.sort);
     setTokenUnit(values.tokenUnit); setShowRechargePrice(values.priceBasis === 'recharge'); setCurrentPage(1);
-    if (!preview) {
-      const next = new URLSearchParams(searchParams);
-      const parameters = { group: values.group, quotaType: values.billing, vendor: values.vendor, sort: values.sort === 'name' ? 'all' : values.sort, tokenUnit: values.tokenUnit === 'M' ? 'all' : values.tokenUnit, rechargePrice: values.priceBasis === 'recharge' ? 'true' : 'all' };
-      for (const [key, value] of Object.entries(parameters)) { if (value === 'all') next.delete(key); else next.set(key, value); }
-      setSearchParams(next, { replace: true });
-    }
+    const next = new URLSearchParams(searchParams);
+    const parameters = { group: values.group, quotaType: values.billing, vendor: values.vendor, sort: values.sort === 'name' ? 'all' : values.sort, tokenUnit: values.tokenUnit === 'M' ? 'all' : values.tokenUnit, rechargePrice: values.priceBasis === 'recharge' ? 'true' : 'all' };
+    for (const [key, value] of Object.entries(parameters)) { if (value === 'all') next.delete(key); else next.set(key, value); }
+    setSearchParams(next, { replace: true });
     setFiltersOpen(false);
   };
 
   const goDetail = (row: PricingModel) => {
-    if (!preview) navigate('/pricing/model/' + encodeURIComponent(row.model_name) + location.search);
+    navigate('/pricing/model/' + encodeURIComponent(row.model_name) + location.search);
   };
 
   const priceOf = (record: PricingModel) =>
@@ -128,7 +109,7 @@ const Pricing = ({ preview = false }: { preview?: boolean }) => {
     [filteredModels, currentPage, pageSize],
   );
 
-  const performance = usePerformanceSummary(pagedRows.map((row: PricingModel) => row.model_name), !preview && !loading && !error && models.length > 0);
+  const performance = usePerformanceSummary(pagedRows.map((row: PricingModel) => row.model_name), !loading && !error && models.length > 0);
   const performanceModels = new Map((performance.data?.models || []).map((model) => [model.model_name, model]));
   const renderPerformance = (row: PricingModel) => <PerformanceBadge model={performanceModels.get(row.model_name)}
     history={performance.data?.recent_success_series?.[row.model_name] || performanceModels.get(row.model_name)?.recent_success_series} />;
@@ -160,7 +141,7 @@ const Pricing = ({ preview = false }: { preview?: boolean }) => {
     const pd = priceOf(row);
     const priceItems = pd.isPerToken ? getModelPriceItems(pd, t) : [];
     return (
-      <Card key={row.model_name} data-pricing-model={row.model_name} interactive={preview ? undefined : 'lift'} onClick={preview ? undefined : () => goDetail(row)}>
+      <Card key={row.model_name} data-pricing-model={row.model_name} interactive='lift' onClick={() => goDetail(row)}>
         <div className='flex flex-col'>
           <div className='flex items-start justify-between gap-2'>
             <div className='flex items-center gap-2 min-w-0'>
@@ -176,11 +157,11 @@ const Pricing = ({ preview = false }: { preview?: boolean }) => {
             </div>
           </div>
 
-          {!preview && <div className='mt-3'>{renderPerformance(row)}</div>}
+          <div className='mt-3'>{renderPerformance(row)}</div>
 
           {row.description && (
             <p className='mt-4 mb-0 min-h-10 text-xs leading-5 text-ui-text-3 line-clamp-2'>
-              {preview ? t(row.description) : row.description}
+              {row.description}
             </p>
           )}
 
@@ -236,7 +217,7 @@ const Pricing = ({ preview = false }: { preview?: boolean }) => {
       title: t("Pricing"),
       render: renderPriceCell,
     },
-    ...(!preview ? [{ key: 'performance', title: t("Performance"), render: renderPerformance }] : []),
+    { key: 'performance', title: t("Performance"), render: renderPerformance },
     {
       key: 'groups',
       title: t("Available groups"),
@@ -271,18 +252,18 @@ const Pricing = ({ preview = false }: { preview?: boolean }) => {
                 filtersButton.current?.focus();
               }}>{t('Reset filters')}</Button>}
             </div>
-            {!preview && <div className='inline-flex shrink-0 items-center gap-0.5 rounded-xl border border-ui-border p-0.5'>
+            <div className='inline-flex shrink-0 items-center gap-0.5 rounded-xl border border-ui-border p-0.5'>
               <IconButton icon={LayoutGrid} size='sm' shape='square' selected={viewMode === 'card'} title={t("Card view")} onClick={() => { setViewMode('card'); updateQuery('view', 'card'); }} />
               <IconButton icon={List} size='sm' shape='square' selected={viewMode === 'table'} title={t("Table view")} onClick={() => { setViewMode('table'); updateQuery('view', 'table'); }} />
-            </div>}
+            </div>
           </div>
         </div>
 
-        {filtersOpen && <PricingFiltersDialog initialValues={{ group: selectedGroup, billing: filterQuotaType, vendor: filterVendor, sort: sortBy, tokenUnit, priceBasis: showRechargePrice ? 'recharge' : 'standard' }} groupOptions={groupOptions} vendorOptions={vendorOptions} preview={preview} onApply={applyFilters} onClose={() => setFiltersOpen(false)} />}
+        {filtersOpen && <PricingFiltersDialog initialValues={{ group: selectedGroup, billing: filterQuotaType, vendor: filterVendor, sort: sortBy, tokenUnit, priceBasis: showRechargePrice ? 'recharge' : 'standard' }} groupOptions={groupOptions} vendorOptions={vendorOptions} onApply={applyFilters} onClose={() => setFiltersOpen(false)} />}
 
         <div className='pricing-results mt-4' style={{ minHeight: 'calc(100vh - 320px)' }}>
           {loading ? (
-            viewMode === 'card' ? <PricingCardsSkeleton preview={preview} /> : <Table loading columns={columns} rows={[]} />
+            viewMode === 'card' ? <PricingCardsSkeleton /> : <Table loading columns={columns} rows={[]} />
           ) : error ? (<Card><div role='alert' className='space-y-3'><p>{t('Unable to load model pricing')}</p><Button onClick={() => void refresh()}>{t('Retry')}</Button></div></Card>) : total === 0 ? (
             <Card>
               <EmptyState

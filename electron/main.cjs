@@ -3,8 +3,11 @@ const fs = require('node:fs');
 const path = require('node:path');
 const { LocalServer, externalURL } = require('./runtime.cjs');
 
-app.setName('Hyxware');
+// Keep the existing profile location when changing the displayed application name.
+const defaultDataDir = path.join(app.getPath('appData'), 'Hyxware');
+app.setName('HyxAPI');
 if (process.env.HYXWARE_DESKTOP_DATA_DIR) app.setPath('userData', path.resolve(process.env.HYXWARE_DESKTOP_DATA_DIR));
+else if (fs.existsSync(defaultDataDir)) app.setPath('userData', defaultDataDir);
 const development = process.argv.includes('--development');
 const background = process.argv.includes('--background');
 let mainWindow;
@@ -29,7 +32,7 @@ function openExternal(value) {
 function createWindow() {
   mainWindow = new BrowserWindow({
     width: 1080, height: 760, minWidth: 360, minHeight: 480,
-    show: !background, title: 'Hyxware', icon: path.join(__dirname, 'icon.png'),
+    show: !background, title: 'HyxAPI', icon: path.join(__dirname, 'icon.png'),
     webPreferences: {
       preload: path.join(__dirname, 'preload.cjs'), nodeIntegration: false,
       contextIsolation: true, sandbox: true,
@@ -58,8 +61,8 @@ async function fatal(error) {
   const logPath = path.join(app.getPath('logs'), 'hyxware-desktop-error.log');
   fs.mkdirSync(path.dirname(logPath), { recursive: true });
   fs.writeFileSync(logPath, `${new Date().toISOString()}\n${error.message}\n${server?.logs.join('') || ''}`, { mode: 0o600 });
-  const result = await dialog.showMessageBox({ type: 'error', title: 'Hyxware',
-    message: 'Hyxware could not continue.', detail: `${error.message}\n\n${logPath}`,
+  const result = await dialog.showMessageBox({ type: 'error', title: 'HyxAPI',
+    message: 'HyxAPI could not continue.', detail: `${error.message}\n\n${logPath}`,
     buttons: ['Quit', 'Open log folder'], defaultId: 0, cancelId: 0 });
   if (result.response === 1) shell.showItemInFolder(logPath);
   app.quit();
@@ -81,8 +84,8 @@ else {
       session.defaultSession.setPermissionRequestHandler((_webContents, _permission, callback) => callback(false));
       session.defaultSession.setPermissionCheckHandler(() => false);
       Menu.setApplicationMenu(Menu.buildFromTemplate([
-        { label: 'Hyxware', submenu: [
-          { label: 'Show Hyxware', click: showWindow },
+        { label: 'HyxAPI', submenu: [
+          { label: 'Show HyxAPI', click: showWindow },
           { label: 'Open data folder', click: () => shell.openPath(path.join(app.getPath('userData'), 'data')) },
           { type: 'separator' }, { role: 'quit' },
         ] },
@@ -91,8 +94,8 @@ else {
       ]));
       try {
         tray = new Tray(nativeImage.createFromPath(path.join(__dirname, 'icon.png')).resize({ width: 20, height: 20 }));
-        tray.setToolTip('Hyxware');
-        tray.setContextMenu(Menu.buildFromTemplate([{ label: 'Show Hyxware', click: showWindow }, { label: 'Quit', click: () => app.quit() }]));
+        tray.setToolTip('HyxAPI');
+        tray.setContextMenu(Menu.buildFromTemplate([{ label: 'Show HyxAPI', click: showWindow }, { label: 'Quit', click: () => app.quit() }]));
         tray.on('click', showWindow);
       } catch { tray = null; }
       createWindow();

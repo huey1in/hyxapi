@@ -5,9 +5,6 @@ import { Link, useNavigate } from 'react-router-dom';
 import { Trans, useTranslation } from 'react-i18next';
 import { interfaceLanguages, normalizeLanguage } from '../../i18n/language';
 import Dashboard from '../Dashboard';
-import Pricing from '../Pricing';
-import Token from '../Token';
-import Log from '../Log/LogPreview';
 import SiderBar from '../../components/layout/SiderBar';
 import { useSetTheme, useTheme } from '../../context/Theme';
 import { StatusContext } from '../../context/Status';
@@ -168,7 +165,7 @@ const HomeContent = () => {
   return (
     <div className='home-page studio-home cursor-home'>
       <header className='home-nav'>
-        <Link to='/' className='home-brand'>Hyxware</Link>
+        <Link to='/' className='home-brand'>HyxAPI</Link>
         <nav id='home-navigation' aria-label={t('Main navigation')} className={`home-nav-links public-site-navigation${menuOpen ? ' is-open' : ''}`} onKeyDown={(event) => { if (event.key === 'Escape') { setMenuOpen(false); menuButton.current?.focus(); } }}>
           <PublicNavLinks status={statusState.status} includeHome={false} onNavigate={() => setMenuOpen(false)} />
           {isLoggedIn ? (
@@ -190,15 +187,15 @@ const HomeContent = () => {
       <main>
         <section className='studio-hero'>
           <div className='studio-hero-copy'>
-            <h1>{t('Hyxware is the unified model gateway for AI applications.')}</h1>
+            <h1>{t('HyxAPI is the unified model gateway for AI applications.')}</h1>
             <div className='studio-actions'>
-              <Link to={startLink}>{t(isLoggedIn ? 'Go to Console' : registerEnabled ? 'Get started with Hyxware' : 'Sign in')} <ArrowRight size={16} /></Link>
+              <Link to={startLink}>{t(isLoggedIn ? 'Go to Console' : registerEnabled ? 'Get started with HyxAPI' : 'Sign in')} <ArrowRight size={16} /></Link>
             </div>
           </div>
           <div className='hero-side-note'><span>OPENAI COMPATIBLE</span><code>{`${window.location.origin}/v1`}</code></div>
         </section>
 
-        <section id='inside' className='product-frame' aria-label={t('Hyxware console preview')}>
+        <section id='inside' className='product-frame' aria-label={t('HyxAPI console preview')}>
           <div className='product-frame-bar'>
             <div className='mac-window-controls' aria-hidden='true'><i /><i /><i /></div>
             <BrowserAddress>{`${window.location.host}/console`}</BrowserAddress>
@@ -230,117 +227,8 @@ const HomeContent = () => {
           </div>
         </section>
 
-        <section className='marketplace-showcase' aria-labelledby='marketplace-title'>
-          <div className='marketplace-showcase-copy'>
-            <h2 id='marketplace-title'>{t('More providers, transparent pricing')}</h2>
-            <p>{t('Compare every provider for the same model. Choose lower-cost routes with prices below official rates.')}</p>
-            <Link to='/pricing'>{t('View model pricing')} <ArrowRight size={15} /></Link>
-          </div>
-          <div className='marketplace-stage' aria-label={t('Hyxware models preview')}>
-            <div className='marketplace-preview-mat'>
-              <div className='product-frame marketplace-frame'>
-                <div className='product-frame-bar'>
-                  <div className='mac-window-controls' aria-hidden='true'><i /><i /><i /></div>
-                  <BrowserAddress>{`${window.location.host}/pricing`}</BrowserAddress>
-                  <span aria-hidden='true' />
-                </div>
-                <div className='product-shell'>
-                  <SiderBar preview previewActive='/pricing' />
-                  <div className='marketplace-preview-content'>{pricingAccess === 'allowed' ? <Pricing preview /> : <div className='p-8 text-sm text-ui-text-2'>{t(pricingAccess === 'loading' ? 'Loading...' : pricingAccess === 'disabled' ? 'Model pricing is unavailable' : 'Sign in to view model pricing')}</div>}</div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        <div className='feature-showcase-stack'>
-        <section className='feature-showcase api-showcase' aria-labelledby='api-showcase-title'>
-          <div className='feature-stage feature-stage-right' aria-label={t('Hyxware API keys preview')}>
-            <div className='feature-preview-mat'>
-              <div className='product-frame console-feature-frame api-feature-frame'>
-                <div className='product-frame-bar'>
-                  <div className='mac-window-controls' aria-hidden='true'><i /><i /><i /></div>
-                  <BrowserAddress>{`${window.location.host}/token`}</BrowserAddress>
-                  <span aria-hidden='true' />
-                </div>
-                <div className='product-shell'>
-                  <SiderBar preview previewActive='/token' />
-                  <div className='console-feature-content'><Token preview /></div>
-                </div>
-              </div>
-            </div>
-          </div>
-          <div className='feature-showcase-copy'>
-            <h2 id='api-showcase-title'>{t('One key for every model')}</h2>
-            <p>{t('Create keys by project and manage quotas, groups, and model access from one place.')}</p>
-            <Link to='/token'>{t('Manage API keys')} <ArrowRight size={15} /></Link>
-          </div>
-        </section>
-
-        <section className='feature-showcase log-showcase' aria-labelledby='log-showcase-title'>
-          <div className='feature-showcase-copy'>
-            <h2 id='log-showcase-title'>{t('Every request, fully traceable')}</h2>
-            <p>{t('Track model, provider, tokens, latency, and actual cost in one complete request log.')}</p>
-            <Link to='/log'>{t('View request logs')} <ArrowRight size={15} /></Link>
-          </div>
-          <div className='feature-stage feature-stage-left' aria-label={t('Hyxware request logs preview')}>
-            <div className='feature-preview-mat'>
-              <div className='product-frame console-feature-frame log-feature-frame'>
-                <div className='product-frame-bar'>
-                  <div className='mac-window-controls' aria-hidden='true'><i /><i /><i /></div>
-                  <BrowserAddress>{`${window.location.host}/log`}</BrowserAddress>
-                  <span aria-hidden='true' />
-                </div>
-                <div className='product-shell'>
-                  <SiderBar preview previewActive='/log' />
-                  <div className='console-feature-content'><Log /></div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
-        </div>
-
-        <section className='frontier-section' aria-labelledby='frontier-title'>
-          <h2 id='frontier-title'>{t('Always at the frontier')}</h2>
-          <div className='frontier-grid'>
-            <article className='frontier-card'>
-              <div className='frontier-card-copy'>
-                <h3>{t('The latest models, ready when you are')}</h3>
-                <p>{t('Access new releases from leading providers through the same OpenAI-compatible API.')}</p>
-                <Link to='/pricing'>{t('Explore models')} <ArrowRight size={14} /></Link>
-              </div>
-              <div className='frontier-visual frontier-model-menu' aria-hidden='true'>
-                <div className='frontier-composer'><span>{t('Choose the best model for this request')}</span><b>{t('Auto')}</b></div>
-                <div className='frontier-model-list'>{['GPT-5.6', 'Claude Opus 5', 'Gemini 3.1 Pro', 'DeepSeek V4'].map((model, index) => <span key={model}><i />{model}{index === 0 && <b>{t('New')}</b>}</span>)}</div>
-              </div>
-            </article>
-            <article className='frontier-card'>
-              <div className='frontier-card-copy'>
-                <h3>{t('Every provider, one clear price')}</h3>
-                <p>{t('Compare routes for the same model and use prices below official rates without changing your SDK.')}</p>
-                <Link to='/pricing'>{t('Compare pricing')} <ArrowRight size={14} /></Link>
-              </div>
-              <div className='frontier-visual frontier-price-list' aria-hidden='true'>
-                <div><span>{t('Provider')}</span><span>{t('Input / 1M')}</span><span>{t('Status')}</span></div>
-                <div><strong>Hyxware A</strong><b>$1.82</b><em>{t('Best price')}</em></div><div><strong>Hyxware B</strong><b>$2.06</b><em>{t('Available')}</em></div><div><strong>{t('Official')}</strong><b>$3.00</b><em>{t('Reference')}</em></div>
-              </div>
-            </article>
-            <article className='frontier-card'>
-              <div className='frontier-card-copy'>
-                <h3>{t('Automatic scheduling for every endpoint')}</h3>
-                <p>{t('Messages and completions requests are both scheduled automatically across available providers.')}</p>
-                <Link to='/log'>{t('View request logs')} <ArrowRight size={14} /></Link>
-              </div>
-              <div className='frontier-visual frontier-route-flow' aria-hidden='true'>
-                <div className='frontier-request'><small>POST</small><span>/v1/messages</span></div><div className='frontier-request frontier-request-secondary'><small>POST</small><span>/v1/chat/completions</span></div><div className='frontier-route-line'><i /><span>{t('Scheduled automatically')}</span><b>38 ms</b></div><div className='frontier-route-line'><i /><span>{t('Provider responded')}</span><b>200</b></div><div className='frontier-route-total'><span>{t('Requests completed')}</span><strong>1.24 s</strong></div>
-              </div>
-            </article>
-          </div>
-        </section>
-
-        <section ref={brandSectionRef} className='studio-closing giant-brand-section' aria-label='Hyxware'>
-          <div className='giant-brand-word'>Hyx<span>ware</span></div>
+        <section ref={brandSectionRef} className='studio-closing giant-brand-section' aria-label='HyxAPI'>
+          <div className='giant-brand-word'>HyxAPI</div>
         </section>
       </main>
 
@@ -351,7 +239,7 @@ const HomeContent = () => {
           <div><span>{t('Legal')}</span>{agreementEnabled ? <button type='button' onClick={() => setLegal('terms')}>{t('Terms of Service')}</button> : <span className='footer-link-disabled'>{t('Terms of Service')}</span>}{privacyEnabled ? <button type='button' onClick={() => setLegal('privacy')}>{t('Privacy Policy')}</button> : <span className='footer-link-disabled'>{t('Privacy Policy')}</span>}</div>
         </div>
         <div className='site-footer-bottom'>
-          <span className='footer-copyright'>© {new Date().getFullYear()} Hyxware</span>
+          <span className='footer-copyright'>© {new Date().getFullYear()} HyxAPI</span>
           <span className='footer-status'><Trans i18nKey='Compute services provided by <provider>Xunduyun</provider>' components={{ provider: <a href='https://www.xunduyun.com/' target='_blank' rel='noopener noreferrer' /> }} /></span>
           <div className='footer-controls'>
             <div className='footer-theme-switch' aria-label={t('Theme')}>

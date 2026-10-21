@@ -74,7 +74,7 @@ function PricingBatchContent({ onClose, onSaved, modelNames }: Omit<Props, 'open
   const exportSelected = () => {
     const changes = entries.filter((entry) => selected.has(entry.model_name)).map((entry) => ({ model_name: entry.model_name, expected_version: entry.version, pricing: entry.configured }));
     const url = URL.createObjectURL(new Blob([serializePricingDraft(changes)], { type: 'application/json' }));
-    const link = document.createElement('a'); link.href = url; link.download = 'hyxware-model-pricing.json'; link.click();
+    const link = document.createElement('a'); link.href = url; link.download = 'hyxapi-model-pricing.json'; link.click();
     setTimeout(() => URL.revokeObjectURL(url), 1000);
   };
   const save = () => {

@@ -15,7 +15,7 @@ const FooterBar = () => {
   const [legal, setLegal] = useState<'terms' | 'privacy' | null>(null);
   const [statusState] = useContext(StatusContext);
   const status = statusState?.status || {};
-  const systemName = getSystemName() || 'Hyxware';
+  const systemName = getSystemName() || 'HyxAPI';
   const modules = parseHeaderNavModules(status.HeaderNavModules);
   const year = new Date().getFullYear();
 

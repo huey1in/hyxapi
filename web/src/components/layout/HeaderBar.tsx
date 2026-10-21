@@ -20,7 +20,7 @@ export default function HeaderBar() {
   const { busy, logout } = useLogout();
   return <header className='console-home-nav'>
     <div className='console-home-nav-left'>
-      <Link to='/' className='home-brand'>Hyxware</Link>
+      <Link to='/' className='home-brand'>HyxAPI</Link>
     </div>
     <nav ref={publicNav} id='public-header-navigation' aria-label={t('Main navigation')} className={`home-nav-links public-site-navigation${publicMenu ? ' is-open' : ''}`} onKeyDown={(event) => { if (event.key === 'Escape' && publicMenu) { setPublicMenu(false); publicMenuButton.current?.focus(); } }}>
       <PublicNavLinks status={status.status} onNavigate={() => setPublicMenu(false)} />

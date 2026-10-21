@@ -23,14 +23,14 @@ import { useTranslation } from 'react-i18next';
 import { API, copy, showError, showSuccess } from '../../helpers';
 import { StatusContext } from '../../context/Status';
 import { useAuthStore } from '../../stores/auth-store';
-import { filterPricingModels, parsePricingData, pricingModelSchema, sortPricingModels } from '../../features/pricing/catalog-data';
+import { filterPricingModels, parsePricingData, sortPricingModels } from '../../features/pricing/catalog-data';
 import type { PricingSort } from '../../features/pricing/catalog-data';
 import type { PricingModel, TokenUnit } from '../../features/pricing/types';
 import { usePricingClock } from '../../features/pricing/DynamicPricingDetails';
 import { applyRechargePrice } from '../../features/pricing/lib/pricing-display';
 
 type PricingCurrency = 'USD' | 'CNY' | 'CUSTOM';
-export const useModelPricingData = (previewModels: PricingModel[] | null = null) => {
+export const useModelPricingData = () => {
   const { t, i18n } = useTranslation();
   const user = useAuthStore((state) => state.auth.user);
   const sid = useAuthStore((state) => state.auth.session?.sid);
@@ -53,16 +53,15 @@ export const useModelPricingData = (previewModels: PricingModel[] | null = null)
   const siteDisplayType = status?.quota_display_type || 'USD';
   useEffect(() => { if (siteDisplayType === 'USD' || siteDisplayType === 'CNY' || siteDisplayType === 'CUSTOM') setCurrency(siteDisplayType); }, [siteDisplayType]);
   const query = useQuery({
-    queryKey: ['model-pricing', account], enabled: previewModels === null, gcTime: 0, retry: false, refetchOnWindowFocus: false,
+    queryKey: ['model-pricing', account], gcTime: 0, retry: false, refetchOnWindowFocus: false,
     queryFn: async ({ signal }) => {
       const response = await API.get('/api/pricing', { signal, skipErrorHandler: true, disableDuplicate: true });
       signal.throwIfAborted(); return parsePricingData(response.data);
     },
   });
-  const preview = useMemo(() => previewModels?.map((model) => pricingModelSchema.parse(model)), [previewModels]);
-  const models: PricingModel[] = preview ?? (query.isError ? [] : query.data?.models ?? []);
-  const groupRatio: Record<string, number> = preview ? { default: 1, production: 1 } : query.isError ? {} : query.data?.groupRatio ?? {};
-  const usableGroup: Record<string, string> = preview ? { default: t('Default group'), production: t('Production group') } : query.isError ? {} : query.data?.usableGroup ?? {};
+  const models: PricingModel[] = query.isError ? [] : query.data?.models ?? [];
+  const groupRatio: Record<string, number> = query.isError ? {} : query.data?.groupRatio ?? {};
+  const usableGroup: Record<string, string> = query.isError ? {} : query.data?.usableGroup ?? {};
   const filteredModels = useMemo(() => sortPricingModels(filterPricingModels(models, { search: searchValue, group: filterGroup, billing: filterQuotaType, vendor: filterVendor }), sortBy, pricingNow), [models, searchValue, filterGroup, filterQuotaType, filterVendor, sortBy, pricingNow]);
   useEffect(() => { setCurrentPage(1); }, [filterGroup, filterQuotaType, filterVendor, searchValue, sortBy]);
   useEffect(() => { setCurrentPage((page) => Math.max(1, Math.min(page, Math.ceil(filteredModels.length / 20) || 1))); }, [filteredModels.length]);
@@ -84,8 +83,8 @@ export const useModelPricingData = (previewModels: PricingModel[] | null = null)
   return {
     searchValue, handleChange: setSearchValue, selectedGroup, setSelectedGroup, setFilterGroup, filterQuotaType, setFilterQuotaType, filterVendor, setFilterVendor,
     sortBy, setSortBy, pageSize: 20, currentPage, setCurrentPage,
-    currency, setCurrency, siteDisplayType, tokenUnit, setTokenUnit, models, loading: previewModels === null && (query.isPending || query.isFetching),
-    error: previewModels === null && query.isError, groupRatio, usableGroup, filteredModels, displayPrice, refresh: () => query.refetch(), copyText,
+    currency, setCurrency, siteDisplayType, tokenUnit, setTokenUnit, models, loading: query.isPending || query.isFetching,
+    error: query.isError, groupRatio, usableGroup, filteredModels, displayPrice, refresh: () => query.refetch(), copyText,
     showRechargePrice, setShowRechargePrice, supportedEndpoints: query.data?.supportedEndpoints ?? {},
     pricingNow, autoGroups: query.isError ? [] : query.data?.autoGroups ?? [],
   };

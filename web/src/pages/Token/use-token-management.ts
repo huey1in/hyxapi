@@ -5,14 +5,14 @@ import { API, copy, showSuccess } from '../../helpers';
 import { showError } from '../../components/ui';
 import type { ApiEnvelope } from '../../types/api';
 import { useAuthStore } from '../../stores/auth-store';
-import { TOKEN_PAGE_SIZE as pageSize, tokenErrorMessage, tokenListItemSchema, tokenPageSchema, tokenSchema } from './token-management';
+import { TOKEN_PAGE_SIZE as pageSize, tokenErrorMessage, tokenPageSchema, tokenSchema } from './token-management';
 import type { ManagedToken, TokenListItem } from './token-management';
 
-export function useTokenManagement(preview: boolean, previewRows: unknown[]) {
+export function useTokenManagement() {
   const { t } = useTranslation();
   const userID = useAuthStore((state) => state.auth.user?.id);
   const sessionID = useAuthStore((state) => state.auth.session?.sid);
-  const identity = preview ? 'preview' : `${userID ?? ''}:${sessionID ?? ''}`;
+  const identity = `${userID ?? ''}:${sessionID ?? ''}`;
   const client = useQueryClient();
   const [pageOwner, setPageOwner] = useState(identity);
   const [storedPage, setPage] = useState(1);
@@ -33,7 +33,7 @@ export function useTokenManagement(preview: boolean, previewRows: unknown[]) {
 
   const list = useQuery({
     queryKey: ['managed-tokens', identity, page],
-    enabled: !preview && !!userID,
+    enabled: !!userID,
     queryFn: async ({ signal }) => {
       const params = new URLSearchParams({ p: String(page), size: String(pageSize) });
       const { data } = await API.get<ApiEnvelope<unknown>>(`/api/token/?${params}`, { signal, skipErrorHandler: true });
@@ -45,8 +45,8 @@ export function useTokenManagement(preview: boolean, previewRows: unknown[]) {
     },
     retry: false, refetchOnWindowFocus: false, gcTime: 0,
   });
-  const rows = preview ? previewRows.map((row) => tokenListItemSchema.parse(row)) : list.data?.items ?? [];
-  const total = preview ? rows.length : list.data?.total ?? 0;
+  const rows = list.data?.items ?? [];
+  const total = list.data?.total ?? 0;
   useEffect(() => {
     if (list.data && page > Math.max(1, Math.ceil(total / pageSize))) setPage(Math.max(1, Math.ceil(total / pageSize)));
   }, [list.data, page, pageSize, total]);
@@ -57,7 +57,7 @@ export function useTokenManagement(preview: boolean, previewRows: unknown[]) {
   ]);
   const runAction = async (action: (owner: AbortController) => Promise<void>): Promise<boolean> => {
     const owner = lifetime.current;
-    if (!owner || owner.signal.aborted || actionLock.current || preview) return false;
+    if (!owner || owner.signal.aborted || actionLock.current) return false;
     actionLock.current = true; setPendingOwner(identity);
     try { await action(owner); owner.signal.throwIfAborted(); return true; }
     catch (error) { const message = tokenErrorMessage(error); if (!owner.signal.aborted && message) showError(t(message)); return false; }
@@ -105,7 +105,7 @@ export function useTokenManagement(preview: boolean, previewRows: unknown[]) {
 
   return {
     identity, rows, total, page, pageSize,
-    loading: !preview && list.isPending, fetching: list.isFetching, busy: pendingOwner === identity,
+    loading: list.isPending, fetching: list.isFetching, busy: pendingOwner === identity,
     error: list.isError ? t(tokenErrorMessage(list.error)) : '',
     setPage,
     refresh, deleteToken, loadToken, changeStatus, copyToken,

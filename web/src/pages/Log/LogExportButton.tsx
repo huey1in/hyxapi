@@ -21,7 +21,7 @@ export default function LogExportButton({ filters, role, all, sources }: { filte
       const csv = feedToCSV(data, all ? role : 1, (key) => t(key));
       const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }));
       const link = document.createElement('a'); link.href = url;
-      link.download = `hyxware-logs-${new Date().toISOString().slice(0, 10)}.csv`; link.click();
+      link.download = `hyxapi-logs-${new Date().toISOString().slice(0, 10)}.csv`; link.click();
       setTimeout(() => URL.revokeObjectURL(url), 1000);
     });
   };

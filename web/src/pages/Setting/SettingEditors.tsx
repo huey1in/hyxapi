@@ -724,7 +724,7 @@ export function EmailTemplateEditor({
   const preview = useMemo(
     () =>
       value
-        .replaceAll('{{siteName}}', 'Hyxware')
+        .replaceAll('{{siteName}}', 'HyxAPI')
         .replaceAll('{{code}}', '482913')
         .replaceAll('{{expireMinutes}}', '10')
         .replaceAll(

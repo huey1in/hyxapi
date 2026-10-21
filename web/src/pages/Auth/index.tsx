@@ -212,7 +212,7 @@ const Auth = () => {
 
   return (
     <div className='cursor-auth-page'>
-      <header className='cursor-auth-header'><Link to='/' className='home-brand'>Hyxware</Link></header>
+      <header className='cursor-auth-header'><Link to='/' className='home-brand'>HyxAPI</Link></header>
       <main className='cursor-auth-main'>
         <div className='cursor-auth-panel'>
           {!(isReset && resetSent) && <h1><span>{!isReset && !isLogin ? registerStepTitle : t(`auth.${headingKey}.title`)}</span><small>{t(`auth.${headingKey}.subtitle`)}</small></h1>}

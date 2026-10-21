@@ -29,7 +29,7 @@ type GeneralSetting struct {
 }
 
 // Documentation is a user-opened external link; it never changes the site's
-// origin or the fixed Hyxware branding.
+// origin or the fixed HyxAPI branding.
 func NormalizeDocsLink(raw string) (string, error) {
 	value := strings.TrimSpace(raw)
 	if value == "" {

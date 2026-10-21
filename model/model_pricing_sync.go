@@ -55,7 +55,7 @@ func upstreamProviderPriority(provider string) int {
 	return 1
 }
 
-// ParseModelsDevPrices converts models.dev token costs into Hyxware's USD per
+// ParseModelsDevPrices converts models.dev token costs into HyxAPI's USD per
 // million token price schema. The first provider alphabetically wins when the
 // same model identifier is published by more than one provider.
 func ParseModelsDevPrices(reader io.Reader) ([]UpstreamModelPricing, error) {

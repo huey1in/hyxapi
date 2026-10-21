@@ -257,8 +257,8 @@ func ResolveWaffoPancakeSubscriptionTradeNo(event *WaffoPancakeWebhookEvent) (st
 // Deterministic default names for "+ Create": stable bodies mean stable
 // X-Idempotency-Key, which lets Pancake dedupe retries server-side.
 const (
-	defaultWaffoPancakeStoreName   = "hyxware-store"
-	defaultWaffoPancakeProductName = "hyxware-charge-product"
+	defaultWaffoPancakeStoreName   = "hyxapi-store"
+	defaultWaffoPancakeProductName = "hyxapi-charge-product"
 )
 
 // CreateWaffoPancakePrimaryStore creates a Pancake Store using in-flight

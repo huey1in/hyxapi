@@ -48,7 +48,7 @@ const NAV_ITEMS: NavItem[] = [
   { to: '/console/setting',      label: '系统设置',   icon: Settings,   root: true },
 ];
 
-const SiderBar = ({ preview = false, previewActive = '/console', loading = false }: { preview?: boolean; previewActive?: string; loading?: boolean }) => {
+const SiderBar = ({ preview = false, loading = false }: { preview?: boolean; loading?: boolean }) => {
   const { t } = useTranslation();
   const [statusState] = useContext(StatusContext);
   const currentUser = useAuthStore((state) => state.auth.user);
@@ -56,7 +56,7 @@ const SiderBar = ({ preview = false, previewActive = '/console', loading = false
   const root = (currentUser?.role ?? 0) >= 100;
   const isMobile = useIsMobile();
   const [mobileOpen, setMobileOpen] = useMobileSidebar();
-  const brand = getSystemName() || 'Hyxware';
+  const brand = getSystemName() || 'HyxAPI';
   const [collapsed, setCollapsed] = useState(() => {
     try { return localStorage.getItem(LS_KEY) === '1'; } catch { return false; }
   });
@@ -113,7 +113,7 @@ const SiderBar = ({ preview = false, previewActive = '/console', loading = false
               key={item.to}
               className={cn(
                 itemClass,
-                item.to === previewActive ? 'bg-ui-bg-subtle font-medium text-ui-text' : 'text-ui-text',
+                item.to === '/console' ? 'bg-ui-bg-subtle font-medium text-ui-text' : 'text-ui-text',
               )}
             >
               <span className='relative shrink-0'><Icon size={22} /></span>

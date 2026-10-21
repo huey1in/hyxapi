@@ -3,7 +3,7 @@
   "configVersion": 0,
   "workspaces": {
     "": {
-      "name": "hyxware-web",
+      "name": "hyxapi-web",
       "dependencies": {
         "@tanstack/react-query": "^5.101.2",
         "axios": "^1.7.7",

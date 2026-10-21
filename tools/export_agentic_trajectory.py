@@ -175,7 +175,7 @@ def build_record(row, other, request, response, redaction_stats):
         "request": request_redacted,
         "response": response_redacted,
         "meta": {
-            "source": "hyxware.logs",
+            "source": "hyxapi.logs",
             "source_log_id": int(row["id"]),
             "user_id_hash": hashlib.sha256(str(row["user_id"]).encode()).hexdigest()[:16],
             "token_id_hash": hashlib.sha256(str(row["token_id"]).encode()).hexdigest()[:16],
@@ -289,8 +289,8 @@ def main():
     total = stats["scanned_candidates"]
     accepted = stats["accepted"]
     manifest = {
-        "batch_id": "hyxware_agentic_trajectory_20260728",
-        "supplier": "hyxware",
+        "batch_id": "hyxapi_agentic_trajectory_20260728",
+        "supplier": "hyxapi",
         "delivery_date": "2026-07-28",
         "format": "jsonl.gz",
         "encoding": "UTF-8",
@@ -337,7 +337,7 @@ def main():
     with open(os.path.join(args.out_dir, "self_check_report.json"), "w", encoding="utf-8") as f:
         json.dump(self_check, f, ensure_ascii=False, indent=2)
     with open(os.path.join(args.out_dir, "README.md"), "w", encoding="utf-8") as f:
-        f.write("# Hyxware Agentic Trajectory Export\n\n")
+        f.write("# HyxAPI Agentic Trajectory Export\n\n")
         f.write("This package filters `logs.type = 2` successful consumption records only.\n\n")
         f.write(f"- accepted records: {accepted}\n")
         f.write(f"- sessions: {len(sessions)}\n")

@@ -34,9 +34,9 @@ export function isRoot() {
 }
 
 export function getSystemName() {
-  // Brand is hardcoded for the Hyxware build — do not read from server-side
+  // Brand is hardcoded for the HyxAPI build — do not read from server-side
   // Option/SystemName, which other operators may have set to "New API" etc.
-  return 'Hyxware';
+  return 'HyxAPI';
 }
 
 export function getUserIdFromLocalStorage() {

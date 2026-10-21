@@ -23,11 +23,11 @@ test('copied examples escape model data and do not send a body with GET', () => 
   const name = "quote'\"\n$(echo unsafe)</script>";
   const request = buildModelRequest(name, 'openai', endpoint, 'https://example.test');
   const curl = renderModelRequest(request, 'curl');
-  assert.ok(curl.includes("'\"'\"'")); assert.ok(curl.includes('$HYXWARE_API_KEY'));
+  assert.ok(curl.includes("'\"'\"'")); assert.ok(curl.includes('$HYXAPI_API_KEY'));
   const python = renderModelRequest(request, 'python');
   assert.deepEqual(JSON.parse(JSON.parse(python.split('body = json.loads(')[1].split(')\n')[0])), request.body);
   const js = renderModelRequest(request, 'javascript');
-  assert.ok(js.includes(JSON.stringify(name))); assert.ok(js.includes('process.env.HYXWARE_API_KEY'));
+  assert.ok(js.includes(JSON.stringify(name))); assert.ok(js.includes('process.env.HYXAPI_API_KEY'));
   const get = buildModelRequest('read', 'openai', { ...endpoint, method: 'GET' }, 'https://example.test');
   assert.equal(get.body, undefined); assert.ok(!renderModelRequest(get, 'curl').includes('--data-raw'));
 });

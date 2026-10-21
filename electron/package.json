@@ -1,8 +1,8 @@
 {
-  "name": "hyxware-desktop",
+  "name": "hyxapi-desktop",
   "version": "1.0.0",
-  "description": "Hyxware desktop gateway",
-  "author": "Hyxware contributors",
+  "description": "HyxAPI desktop gateway",
+  "author": "HyxAPI contributors",
   "private": true,
   "main": "main.cjs",
   "scripts": {
@@ -22,7 +22,7 @@
   "trustedDependencies": ["electron"],
   "build": {
     "appId": "com.hyxware.desktop",
-    "productName": "Hyxware",
+    "productName": "HyxAPI",
     "electronDist": "node_modules/electron/dist",
     "publish": null,
     "directories": { "output": "dist" },

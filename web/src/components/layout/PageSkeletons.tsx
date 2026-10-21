@@ -123,12 +123,12 @@ export function DashboardStatsSkeleton() {
   </div>;
 }
 
-export function PricingCardsSkeleton({ preview = false }: { preview?: boolean }) {
+export function PricingCardsSkeleton() {
   return <ContentSkeleton variant='cards'><div className='pricing-model-grid grid'>
     {Array.from({ length: 8 }, (_, index) => <Card key={index} data-pricing-placeholder>
       <div className='flex flex-col'>
         <div className='flex items-start justify-between gap-2'><div className='flex min-w-0 items-center gap-2'><Skeleton width={22} height={22} /><Skeleton width={100} height={21} /></div><Skeleton width={45} height={22} /></div>
-        {!preview && <div className='mt-3'><Skeleton width={120} height={28} /></div>}
+        <div className='mt-3'><Skeleton width={120} height={28} /></div>
         <Divider />
         <div className='mt-3 flex flex-col gap-1'>{[0, 1].map((row) => <div key={row} className='flex items-center justify-between gap-2'><Skeleton width={55} height={16} /><Skeleton width={90} height={16} /></div>)}</div>
       </div>
