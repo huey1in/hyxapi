@@ -10,7 +10,6 @@ import type { ApiEnvelope } from '../../types/api';
 import { useAuthStore } from '../../stores/auth-store';
 import { Button, Select } from '../../components/ui';
 import useIsDark from '../../hooks/useIsDark';
-import { advancePreviewState, createPreviewState, getPreviewUsage, previewKeys } from './dashboardPreviewSimulation';
 import { dashboardKeysSchema, dashboardLocalTime, dashboardPeriods, dashboardProfileSchema, dashboardRange, dashboardUsageSchema } from './dashboard-data';
 import type { DashboardRange } from './dashboard-data';
 import DashboardRangeDialog from './DashboardRangeDialog';
@@ -31,10 +30,9 @@ async function readDashboardData<T>(path: string, schema: z.ZodType<T>, signal: 
   return schema.parse(data.data);
 }
 
-function DashboardContent({ preview = false }: { preview?: boolean }) {
+function DashboardContent() {
   const navigate = useNavigate(); const { t } = useTranslation();
   const auth = useAuthStore((state) => state.auth);
-  const [previewState, setPreviewState] = useState(createPreviewState);
   const [range, setRange] = useState<DashboardRange>('month');
   const [rangeDialogOpen, setRangeDialogOpen] = useState(false);
   const [selectedKeyID, setSelectedKeyID] = useState(0);
@@ -43,23 +41,18 @@ function DashboardContent({ preview = false }: { preview?: boolean }) {
   const identity = `${auth.user?.id}:${auth.session?.sid}:${role}`;
   const day = new Date().toDateString();
   const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';
-  const common = { enabled: !preview && !!auth.user, gcTime: 0, retry: false, refetchOnMount: 'always' as const, refetchInterval: preview ? false as const : 5000 };
+  const common = { enabled: !!auth.user, gcTime: 0, retry: false, refetchOnMount: 'always' as const, refetchInterval: 5000 };
   const profile = useQuery({ ...common, queryKey: ['dashboard-profile', identity], queryFn: ({ signal }) => readDashboardData('/api/user/self', dashboardProfileSchema, signal) });
   const keys = useQuery({ ...common, queryKey: ['dashboard-keys', identity], queryFn: ({ signal }) => readDashboardData('/api/log/self/keys', dashboardKeysSchema, signal) });
-  const availableKeys = preview ? previewKeys : keys.data ?? [];
+  const availableKeys = keys.data ?? [];
   const activeKeyID = availableKeys.some((key) => key.id === selectedKeyID) ? selectedKeyID : 0;
   useEffect(() => {
-    if (!preview && keys.isSuccess && selectedKeyID !== activeKeyID) setSelectedKeyID(activeKeyID);
-  }, [preview, keys.isSuccess, selectedKeyID, activeKeyID]);
+    if (keys.isSuccess && selectedKeyID !== activeKeyID) setSelectedKeyID(activeKeyID);
+  }, [keys.isSuccess, selectedKeyID, activeKeyID]);
   const usage = useQuery({ ...common, queryKey: ['dashboard-usage', identity, range, day, activeKeyID, timezone], queryFn: ({ signal }) => readDashboardData('/api/log/self/stat', dashboardUsageSchema, signal, { ...dashboardRange(range), include_trend: true, timezone, ...(activeKeyID ? { token_id: activeKeyID } : {}) }) });
-  useEffect(() => {
-    if (!preview) return;
-    const timer = setInterval(() => setPreviewState((current) => advancePreviewState(current)), 2400);
-    return () => clearInterval(timer);
-  }, [preview]);
-  const activeStats = preview ? getPreviewUsage(previewState, dashboardRange(range), activeKeyID) : usage.error ? undefined : usage.data;
-  const u = preview ? previewState.user : profile.error ? undefined : profile.data;
-  const overviewError = !preview && (profile.error || usage.error || keys.error);
+  const activeStats = usage.error ? undefined : usage.data;
+  const u = profile.error ? undefined : profile.data;
+  const overviewError = profile.error || usage.error || keys.error;
   const refresh = () => void Promise.allSettled([profile.refetch(), usage.refetch(), keys.refetch()]);
   const closeRangeDialog = () => { setRangeDialogOpen(false); document.getElementById('dashboard-period')?.focus(); };
   const customRangeTitle = typeof range === 'string' ? undefined : `${dashboardLocalTime(range.start_timestamp).replace('T', ' ')} – ${dashboardLocalTime(range.end_timestamp).replace('T', ' ')}`;
@@ -71,7 +64,7 @@ function DashboardContent({ preview = false }: { preview?: boolean }) {
       {overviewError && <div role='alert' className='flex flex-wrap items-center justify-between gap-3 rounded-xl border border-ui-border p-4 text-sm text-ui-text-2'><span>{t('Unable to load overview')}</span><Button variant='toggle' onClick={refresh}>{t('Retry')}</Button></div>}
 
       {/* 统计卡片 */}
-      {!preview && profile.isPending ? <DashboardPrimaryStatsSkeleton /> :
+      {profile.isPending ? <DashboardPrimaryStatsSkeleton /> :
       <div className='dashboard-primary-stats'>
         {/* 充值余额 */}
         <div className='dashboard-primary-card'>
@@ -80,8 +73,7 @@ function DashboardContent({ preview = false }: { preview?: boolean }) {
             <div style={{ fontSize: 28, fontWeight: 700, color: 'var(--ui-text)' }}>{u ? renderQuota(u.quota) : '—'}</div>
           </div>
           <button
-            onClick={preview ? undefined : () => navigate('/topup')}
-            disabled={preview}
+            onClick={() => navigate('/topup')}
             style={{
               cursor: 'pointer',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -115,16 +107,16 @@ function DashboardContent({ preview = false }: { preview?: boolean }) {
             }} />
           </div>
           <div className='dashboard-filter-field dashboard-key-filter'>
-            <Select id='dashboard-key' popover size={32} prefix='API Key' aria-label='API Key' value={activeKeyID} disabled={!preview && keys.isPending} options={[{ value: 0, label: t('All') }, ...availableKeys.map((key) => ({ value: key.id, label: <span title={`${key.name || 'API Key'} (#${key.id})`}>{key.name || 'API Key'} (#{key.id})</span> }))]} onChange={setSelectedKeyID} />
+            <Select id='dashboard-key' popover size={32} prefix='API Key' aria-label='API Key' value={activeKeyID} disabled={keys.isPending} options={[{ value: 0, label: t('All') }, ...availableKeys.map((key) => ({ value: key.id, label: <span title={`${key.name || 'API Key'} (#${key.id})`}>{key.name || 'API Key'} (#{key.id})</span> }))]} onChange={setSelectedKeyID} />
           </div>
         </div>
         {rangeDialogOpen && <DashboardRangeDialog initialRange={dashboardRange(range)} onClose={closeRangeDialog} onApply={(next) => { setRange(next); closeRangeDialog(); }} />}
-        {!preview && usage.isPending ? <DashboardUsageStatsSkeleton /> : <div className='dashboard-secondary-stats'>
+        {usage.isPending ? <DashboardUsageStatsSkeleton /> : <div className='dashboard-secondary-stats'>
           <StatMini label={t('Spending amount')} value={activeStats ? renderQuota(activeStats.quota) : '—'} />
           <StatMini label={t('API requests')} value={activeStats ? renderNumber(activeStats.requests) : '—'} />
           <StatMini label='Tokens' value={fmtTokens(activeStats?.tokens)} />
         </div>}
-        <SpendingTrendChart usage={activeStats} loading={!preview && usage.isPending} />
+        <SpendingTrendChart usage={activeStats} loading={usage.isPending} />
       </section>
 
     </div>
@@ -139,7 +131,7 @@ const fmtTokens = (n?: number) => {
   return String(n);
 };
 
-export default function Dashboard({ preview = false }: { preview?: boolean }) {
+export default function Dashboard() {
   const identity = useAuthStore((state) => `${state.auth.user?.id}:${state.auth.session?.sid}:${state.auth.user?.role}`);
-  return <DashboardContent key={`${identity}:${preview}`} preview={preview} />;
+  return <DashboardContent key={identity} />;
 }

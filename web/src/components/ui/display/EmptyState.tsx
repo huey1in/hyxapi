@@ -12,8 +12,8 @@ import type { LucideIcon } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { cn } from '../tokens';
 
-interface EmptyStateProps { icon?: LucideIcon | null; title?: ReactNode; description?: ReactNode; action?: ReactNode; padding?: 'lg' | 'md' | 'sm' }
-const EmptyState = ({ icon: Icon = Inbox, title, description, action, padding = 'lg' }: EmptyStateProps) => (
+interface EmptyStateProps { icon?: LucideIcon | null; iconVariant?: 'subtle' | 'plain'; title?: ReactNode; description?: ReactNode; action?: ReactNode; padding?: 'lg' | 'md' | 'sm' }
+const EmptyState = ({ icon: Icon = Inbox, iconVariant = 'subtle', title, description, action, padding = 'lg' }: EmptyStateProps) => (
   <div className={cn(
     'flex flex-col items-center justify-center text-center text-ui-text-3',
     padding === 'lg' && 'py-16',
@@ -21,8 +21,8 @@ const EmptyState = ({ icon: Icon = Inbox, title, description, action, padding = 
     padding === 'sm' && 'py-6',
   )}>
     {Icon && (
-      <div className='w-12 h-12 rounded-full bg-ui-bg-subtle flex items-center justify-center mb-3'>
-        <Icon size={20} />
+      <div className={cn('w-12 h-12 flex items-center justify-center mb-3', iconVariant === 'subtle' && 'rounded-full bg-ui-bg-subtle')}>
+        <Icon size={iconVariant === 'plain' ? 36 : 20} aria-hidden='true' />
       </div>
     )}
     {title && <div className='text-sm text-ui-text-2 font-medium mb-1'>{title}</div>}

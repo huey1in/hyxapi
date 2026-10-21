@@ -21,6 +21,7 @@ import { parseHeaderNavModules, publicModuleAccess, publicRouteModule } from '..
 import { cn } from '../ui/tokens';
 import SiteNoticeBanner from '../../features/notifications/SiteNoticeBanner';
 import { usePageTitle } from '../../hooks/common/usePageTitle';
+import { useHomeScrollRestoration } from '../../hooks/common/useHomeScrollRestoration';
 import { pageTitleKey } from '../../lib/page-title';
 import { hasSessionHint } from '../../lib/session-hint';
 
@@ -51,7 +52,7 @@ export default function PageLayout() {
   const isStandaloneRoute = ['/', '/auth', '/setup', '/user/reset'].includes(location.pathname) || location.pathname.startsWith('/oauth/');
   const showHeader = !isStandaloneRoute && !isConsoleLayout;
 
-  useEffect(() => { if (mainRef.current) mainRef.current.scrollTop = 0; }, [location.pathname]);
+  useHomeScrollRestoration(mainRef, location.pathname);
   useEffect(() => {
     const owner = new AbortController();
     setStatusError('');

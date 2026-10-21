@@ -1,11 +1,9 @@
 import { useContext, useEffect, useRef, useState } from 'react';
-import type { PointerEvent, ReactNode } from 'react';
-import { ArrowRight, ChevronDown, Globe2, LockKeyhole, Monitor, Moon, RotateCw, Sun } from 'lucide-react';
+import type { PointerEvent } from 'react';
+import { ArrowRight, ChevronDown, Globe2, Monitor, Moon, Sun } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Trans, useTranslation } from 'react-i18next';
 import { interfaceLanguages, normalizeLanguage } from '../../i18n/language';
-import Dashboard from '../Dashboard';
-import SiderBar from '../../components/layout/SiderBar';
 import { useSetTheme, useTheme } from '../../context/Theme';
 import { StatusContext } from '../../context/Status';
 import HeaderBar from '../../components/layout/HeaderBar';
@@ -45,14 +43,6 @@ const ProviderIcon = ({ icon, name }: ModelBrand) => (
       onError={(event) => { event.currentTarget.hidden = true; const fallback = event.currentTarget.nextElementSibling; if (fallback instanceof HTMLElement) fallback.hidden = false; }}
     />
     <span hidden>{name?.charAt(0)?.toUpperCase() || '?'}</span>
-  </span>
-);
-
-const BrowserAddress = ({ children }: { children: ReactNode }) => (
-  <span className='mac-window-address'>
-    <LockKeyhole size={10} strokeWidth={2} aria-hidden='true' />
-    <span>{children}</span>
-    <RotateCw size={10} strokeWidth={2} aria-hidden='true' />
   </span>
 );
 
@@ -162,20 +152,9 @@ const HomeContent = () => {
               <Link to={startLink}>{t(isLoggedIn ? 'Go to Console' : registerEnabled ? 'Get started with HyxAPI' : 'Sign in')} <ArrowRight size={16} /></Link>
             </div>
           </div>
-          <div className='hero-side-note'><span>OPENAI COMPATIBLE</span><code>{`${window.location.origin}/v1`}</code></div>
         </section>
 
-        <section id='inside' className='product-frame' aria-label={t('HyxAPI console preview')}>
-          <div className='product-frame-bar'>
-            <div className='mac-window-controls' aria-hidden='true'><i /><i /><i /></div>
-            <BrowserAddress>{`${window.location.host}/console`}</BrowserAddress>
-            <span aria-hidden='true' />
-          </div>
-          <div className='product-shell'>
-            <SiderBar preview />
-            <div className='dashboard-preview-content'><Dashboard preview /></div>
-          </div>
-        </section>
+        <div id='inside' className='home-gradient-banner' aria-hidden='true' />
 
         <section className='model-trust'>
           <h2>{t('Works with the models you already use')}</h2>
@@ -204,7 +183,13 @@ const HomeContent = () => {
 
       <footer className='site-footer'>
         <div className='site-footer-links'>
-          <div><span>{t('Product')}</span>{showPublicModels && <Link to='/pricing'>{t('Models')}</Link>}<Link to='/console'>{t('Console')}</Link><Link to='/token'>{t('API keys')}</Link><Link to='/log'>{t('Request logs')}</Link></div>
+          <div>
+            <span>{t('Product')}</span>
+            {showPublicModels && <Link to='/pricing'>{t('Models')}</Link>}
+            <Link to='/token'>{t('API')}</Link>
+            <Link to='/subscription'>{t('订阅')}</Link>
+            <Link to='/log'>{t('日志')}</Link>
+          </div>
           <div><span>{t('Contact')}</span><a href='https://github.com/huey1in' target='_blank' rel='noopener noreferrer'>GitHub</a><a href='mailto:1in@yxh.me'>{t('Email')}</a></div>
           <div><span>{t('Legal')}</span>{agreementEnabled ? <button type='button' onClick={() => setLegal('terms')}>{t('Terms of Service')}</button> : <span className='footer-link-disabled'>{t('Terms of Service')}</span>}{privacyEnabled ? <button type='button' onClick={() => setLegal('privacy')}>{t('Privacy Policy')}</button> : <span className='footer-link-disabled'>{t('Privacy Policy')}</span>}</div>
         </div>

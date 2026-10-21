@@ -48,7 +48,7 @@ const NAV_ITEMS: NavItem[] = [
   { to: '/console/setting',      label: '系统设置',   icon: Settings,   root: true },
 ];
 
-const SiderBar = ({ preview = false, loading = false }: { preview?: boolean; loading?: boolean }) => {
+const SiderBar = ({ loading = false }: { loading?: boolean }) => {
   const { t } = useTranslation();
   const [statusState] = useContext(StatusContext);
   const currentUser = useAuthStore((state) => state.auth.user);
@@ -63,7 +63,7 @@ const SiderBar = ({ preview = false, loading = false }: { preview?: boolean; loa
 
   const drawer = useRef<HTMLElement>(null);
   useEffect(() => {
-    if (!isMobile || !mobileOpen || preview) return;
+    if (!isMobile || !mobileOpen) return;
     const previousFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null;
     const element = drawer.current;
     const focusable = () => Array.from(element?.querySelectorAll<HTMLElement>('a[href],button:not([disabled]),[tabindex="0"]') ?? []);
@@ -77,9 +77,9 @@ const SiderBar = ({ preview = false, loading = false }: { preview?: boolean; loa
     };
     element?.addEventListener('keydown', keydown);
     return () => { element?.removeEventListener('keydown', keydown); if (previousFocus?.isConnected) previousFocus.focus(); };
-  }, [isMobile, mobileOpen, preview, setMobileOpen]);
+  }, [isMobile, mobileOpen, setMobileOpen]);
 
-  const { unread: unreadNotices } = useNotifications(!preview && !loading);
+  const { unread: unreadNotices } = useNotifications(!loading);
 
   const toggle = () => {
     setCollapsed((c) => {
@@ -90,7 +90,7 @@ const SiderBar = ({ preview = false, loading = false }: { preview?: boolean; loa
   };
 
   const adminModules = parseSidebarModules(statusState?.status?.SidebarModulesAdmin);
-  const items = filterSidebarItems(NAV_ITEMS, { preview, admin, root, isVisible: (route) => preview || (canOpenConsolePage(route, currentUser) && isSidebarModuleVisible(route, adminModules)) });
+  const items = filterSidebarItems(NAV_ITEMS, { admin, root, isVisible: (route) => canOpenConsolePage(route, currentUser) && isSidebarModuleVisible(route, adminModules) });
   const compact = collapsed && !isMobile;
   const itemClass = cn(
     'flex min-w-0 items-center rounded-lg text-base leading-6 whitespace-nowrap',
@@ -107,20 +107,6 @@ const SiderBar = ({ preview = false, loading = false }: { preview?: boolean; loa
           return <div key={`div-${idx}`} className='my-1.5 mx-1 h-px bg-ui-divider' />;
         }
         const Icon = item.icon;
-        if (preview) {
-          return (
-            <div
-              key={item.to}
-              className={cn(
-                itemClass,
-                item.to === '/console' ? 'bg-ui-bg-subtle font-medium text-ui-text' : 'text-ui-text',
-              )}
-            >
-              <span className='relative shrink-0'><Icon size={22} /></span>
-              {!compact && <span className='min-w-0 truncate'>{t(item.label)}</span>}
-            </div>
-          );
-        }
         return (
           <NavLink
             key={item.to}
@@ -154,10 +140,9 @@ const SiderBar = ({ preview = false, loading = false }: { preview?: boolean; loa
 
   const brandDisplay = compact ? <img src='/logo/hyxware-light.svg' alt='' width={32} height={32} className='h-8 w-8 shrink-0 object-contain' /> : brand;
   const brandClass = cn('home-brand max-w-full', compact ? 'flex items-center justify-center' : 'truncate');
-  const brandContent = preview ? <span className={brandClass} title={brand}>{brandDisplay}</span> : <Link to='/' className={brandClass} aria-label={brand} title={brand}>{brandDisplay}</Link>;
+  const brandContent = <Link to='/' className={brandClass} aria-label={brand} title={brand}>{brandDisplay}</Link>;
 
   if (isMobile) {
-    if (preview) return null;
     return <>
       <button type='button' className='console-menu-button fixed left-0 top-1/2 z-40 -translate-y-1/2 rounded-r-xl border border-l-0 border-ui-border bg-[var(--page-bg)] shadow-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ui-text' style={{ width: 28, height: 48 }} onClick={() => setMobileOpen(true)} aria-label={t('Open sidebar')} aria-expanded={mobileOpen} aria-controls='console-mobile-sidebar' aria-hidden={mobileOpen || undefined} tabIndex={mobileOpen ? -1 : undefined}><Menu size={16} /></button>
       {mobileOpen && <div className='fixed inset-0 z-[150] flex'>
@@ -173,7 +158,7 @@ const SiderBar = ({ preview = false, loading = false }: { preview?: boolean; loa
             </button>
           </div>
           {navContent}
-          <SidebarLogoutButton loading={loading} preview={preview} className={itemClass} iconSize={20} />
+          <SidebarLogoutButton loading={loading} className={itemClass} iconSize={20} />
         </aside>
       </div>}
     </>;
@@ -193,28 +178,9 @@ const SiderBar = ({ preview = false, loading = false }: { preview?: boolean; loa
       </div>
 
       {navContent}
-      <SidebarLogoutButton compact={collapsed} loading={loading} preview={preview} className={itemClass} />
+      <SidebarLogoutButton compact={collapsed} loading={loading} className={itemClass} />
 
-      {preview && (
-        <div
-          aria-hidden='true'
-          className='hidden md:flex absolute top-1/2 -translate-y-1/2 items-center justify-center'
-          style={{
-            right: '-14px',
-            width: '14px',
-            height: '44px',
-            backgroundColor: 'var(--page-bg)',
-            border: '1px solid var(--ui-border)',
-            borderLeft: 'none',
-            borderRadius: '0 8px 8px 0',
-            zIndex: 10,
-          }}
-        >
-          <ChevronLeft size={12} className='text-[var(--ui-text-3)]' />
-        </div>
-      )}
-
-      {!preview && <button
+      <button
         onClick={toggle}
         aria-label={t(collapsed ? 'Expand sidebar' : 'Collapse sidebar')}
         className='hidden md:flex absolute top-1/2 -translate-y-1/2 items-center justify-center cursor-pointer hover:bg-[var(--ui-bg-subtle)] transition-colors'
@@ -237,7 +203,7 @@ const SiderBar = ({ preview = false, loading = false }: { preview?: boolean; loa
             transition: 'transform 0.2s ease',
           }}
         />
-      </button>}
+      </button>
     </aside>
   );
 };
