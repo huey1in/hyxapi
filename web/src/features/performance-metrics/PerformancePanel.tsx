@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Button, Card, Select, Tag, ContentSkeleton } from '../../components/ui';
+import { Button, Card, Select, Tag, Table, ContentSkeleton } from '../../components/ui';
 import { useModelPerformance } from './api';
 import { formatLatency, formatSuccessRate, formatThroughput, successTone, trendSamples, ttftSamples } from './format';
 import type { ModelSummary, SeriesPoint, SuccessPoint } from './types';
@@ -83,16 +83,13 @@ export function ModelPerformance({ model }: { model: string }) {
       {!summary ? <p className='text-xs text-ui-text-3'>{t("No actual call samples for this period")}</p> : <>
         <div className='space-y-2'><h3 className='text-xs text-ui-text-3'>{t("Average time to first token")}</h3><LatencyTrend points={metrics.data?.series ?? []} /></div>
         <div className='space-y-2'><h3 className='text-xs text-ui-text-3'>{t("Success rate history (last 24 hours with samples)")}</h3><SuccessHistory points={metrics.data?.series ?? []} /></div>
-        <div className='overflow-x-auto'>
-          <table className='w-full text-xs text-left whitespace-nowrap'>
-            <thead className='text-ui-text-3'><tr>{["Group", "Time to first token", "Request latency", "Success rate", "Throughput"].map((label) => <th key={label} className='py-2 pr-4 font-normal'>{t(label)}</th>)}</tr></thead>
-            <tbody className='text-ui-text-2'>{metrics.data?.groups.map((group) => <tr key={group.group} className='border-t border-ui-border'>
-              <td className='py-3 pr-4'>{group.group}</td><td className='pr-4 tabular-nums'>{formatLatency(group.avg_ttft_ms, i18n.language)}</td>
-              <td className='pr-4 tabular-nums'>{formatLatency(group.avg_latency_ms, i18n.language)}</td><td className='pr-4 tabular-nums'>{formatSuccessRate(group.success_rate, i18n.language)}</td>
-              <td className='tabular-nums'>{formatThroughput(group.avg_tps, i18n.language)}</td>
-            </tr>)}</tbody>
-          </table>
-        </div>
+        <Table rows={metrics.data?.groups ?? []} rowKey='group' size='sm' columns={[
+          { key: 'group', title: t('Group') },
+          { key: 'ttft', title: t('Time to first token'), render: (group) => formatLatency(group.avg_ttft_ms, i18n.language) },
+          { key: 'latency', title: t('Request latency'), render: (group) => formatLatency(group.avg_latency_ms, i18n.language) },
+          { key: 'success', title: t('Success rate'), render: (group) => formatSuccessRate(group.success_rate, i18n.language) },
+          { key: 'throughput', title: t('Throughput'), render: (group) => formatThroughput(group.avg_tps, i18n.language) },
+        ]} />
       </>}
       <p className='text-xs text-ui-text-3'>{t("Based on actual calls. Business rejections and user cancellations are excluded from success rates. Empty periods have no samples.")}</p>
     </>}

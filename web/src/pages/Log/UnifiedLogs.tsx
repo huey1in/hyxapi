@@ -74,11 +74,11 @@ export default function UnifiedLogs({ sources }: { sources: LogSourceOption[] })
     : filters.source === 'tasks' ? ['task_id', 'action', 'platform'] : filters.source === 'midjourney' ? ['task_id', 'action'] : [];
 
   return <div className='min-w-0 space-y-5'>
-    <div className='flex flex-wrap items-center justify-between gap-3'>
-      <div className='flex items-center gap-2'><Button size='md' variant='toggle' icon={Filter} selected={active} onClick={() => { setFilters({ ...applied }); setBadDates({}); setShowFilters(true); }}>{t('Filters')}</Button>{active && <Button size='sm' variant='link' onClick={reset}>{t('Reset filters')}</Button>}</div>
-      <div className='flex flex-wrap items-center gap-3'>
-        {admin && <Select aria-label={t('Log scope')} popover width={130} value={scope} onChange={(value) => { setScope(value); resetPage(); }} options={[{ value: 'all', label: t('All logs') }, { value: 'self', label: t('My logs') }]} />}
-        <label className='flex items-center gap-2 text-sm text-ui-text-2'><span>{t('Auto refresh')}</span><Switch aria-label={t('Auto refresh')} checked={refresh} onChange={setRefresh} /></label>
+    <div className='grid grid-cols-[auto_minmax(0,1fr)] items-start gap-2 md:flex md:flex-wrap md:items-center md:justify-between md:gap-3'>
+      <div className='flex flex-col items-start gap-2 md:flex-row md:items-center'><Button size='md' variant='toggle' icon={Filter} selected={active} onClick={() => { setFilters({ ...applied }); setBadDates({}); setShowFilters(true); }}>{t('Filters')}</Button>{active && <Button size='sm' variant='link' onClick={reset}>{t('Reset filters')}</Button>}</div>
+      <div className='flex min-w-0 flex-wrap items-center justify-end gap-1 md:justify-start md:gap-3'>
+        {admin && <div className='order-last w-full md:order-none md:w-auto'><Select aria-label={t('Log scope')} popover width={130} value={scope} onChange={(value) => { setScope(value); resetPage(); }} options={[{ value: 'all', label: t('All logs') }, { value: 'self', label: t('My logs') }]} /></div>}
+        <label className='flex min-h-[38px] shrink-0 items-center gap-2 whitespace-nowrap text-sm text-ui-text-2'><span>{t('Auto refresh')}</span><Switch aria-label={t('Auto refresh')} checked={refresh} onChange={setRefresh} /></label>
         {(admin || status.status?.log_export_enabled !== false) && <LogExportButton key={`${identity}:${all}:${queryString}`} filters={applied} role={role} all={all} sources={enabledSources} />}
         <IconButton icon={RefreshCw} title={t('Refresh')} disabled={query.isFetching} onClick={reload} />
       </div>

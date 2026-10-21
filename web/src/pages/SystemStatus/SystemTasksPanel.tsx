@@ -63,7 +63,7 @@ function SystemTasksSession({ identity }: { identity: string }) {
       { key: 'status', title: t('Status'), render: (row) => t(systemTaskStatuses[row.status]) },
       { key: 'progress', title: t('Progress'), render: (row) => { const progress = row.state?.progress; return typeof progress === 'number' && Number.isFinite(progress) ? `${progress}%` : '—'; } },
       { key: 'updated', title: t('Updated at'), render: (row) => <span className='whitespace-nowrap text-xs'>{taskDate(row.updated_at, i18n.language)}</span> },
-      { key: 'detail', title: t('Details'), render: (row) => <Button size='sm' variant='toggle' onClick={() => setSelected(row.task_id)}>{t('View record')}</Button> },
+      { key: 'detail', mobileRole: 'actions' as const, title: t('Details'), render: (row) => <Button size='sm' variant='toggle' onClick={() => setSelected(row.task_id)}>{t('View record')}</Button> },
     ]} /><Pagination page={page} pageSize={10} total={query.data?.total || 0} onChange={(value: number) => setPage(value)} /></>}
     <div className='flex flex-wrap items-end gap-3 border-t border-ui-border pt-4'><label className='grid min-w-0 gap-1.5 text-xs text-ui-text-3'>{t('Clean usage logs before')}<Input aria-label={t('Clean usage logs before')} type='datetime-local' value={before} onChange={(value, event) => { setBefore(value); setBadDate(event?.target.validity.badInput ?? false); }} /></label><Button size='sm' variant='toggle' disabled={Boolean(action) || timestamp === null} onClick={() => { if (timestamp !== null) setAction({ type: 'logs', timestamp }); }}>{t('Create usage log cleanup task')}</Button></div>
     {(before || badDate) && timestamp === null && <p role='alert' className='text-sm text-ui-danger'>{t('Choose a valid past time')}</p>}

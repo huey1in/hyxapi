@@ -80,7 +80,7 @@ export default function MultiKeyManager({ channel, onClose, onChanged }: Props) 
     { key: 'status', title: t('Status'), render: (row) => t(row.status === 1 ? 'Enabled' : row.status === 2 ? 'Manually disabled' : 'Automatically disabled') },
     { key: 'reason', title: t('Disabled reason'), render: (row) => <span className='break-words'>{row.reason === 'Manually disabled' ? t(row.reason) : row.reason || '—'}</span> },
     { key: 'disabled_time', title: t('Disabled at'), render: (row) => row.disabled_time ? new Date(row.disabled_time * 1000).toLocaleString(i18n.language) : '—' },
-    { key: 'actions', title: t('Actions'), render: (row) => <div className='flex gap-1'>
+    { key: 'actions', mobileRole: 'actions' as const, title: t('Actions'), render: (row) => <div className='flex gap-1'>
       <Button size='sm' variant='secondary' disabled={disabled || !canOperate} onClick={() => request(row.status === 1 ? 'disable_key' : 'enable_key', row)}>{t(row.status === 1 ? 'Disable' : 'Enable')}</Button>
       {canDelete && <Button size='sm' variant='secondary' disabled={disabled || (snapshot?.enabled_count ?? 0) + (snapshot?.manual_disabled_count ?? 0) + (snapshot?.auto_disabled_count ?? 0) <= 1} onClick={() => request('delete_key', row)}>{t('Delete')}</Button>}
     </div> },

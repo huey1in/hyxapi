@@ -663,6 +663,17 @@ input[type='number'] {
 /* Reserve one header and ten compact rows, shrinking only in short viewports. */
 .token-management-page .token-key-list { flex:0 1 calc(44px + 10 * 49px); min-height:0; }
 .api-key-table :is(th,td) { font-size:14px; line-height:20px; }
+.mobile-table-card { min-width:0; border:1px solid var(--ui-border); border-radius:16px; background:var(--page-bg); padding:16px; }
+.mobile-table-field { display:grid; grid-template-columns:minmax(0,0.8fr) minmax(0,1.2fr); align-items:start; gap:12px; }
+.mobile-table-field-wide { grid-template-columns:minmax(0,1fr); gap:6px; }
+.mobile-table-value { min-width:0; max-width:100%; overflow-wrap:anywhere; }
+.mobile-table-value :is(.whitespace-nowrap,.truncate) { white-space:normal; overflow:visible; text-overflow:clip; overflow-wrap:anywhere; }
+.mobile-table-value :is(.flex,.inline-flex) { flex-wrap:wrap; max-width:100%; }
+.mobile-table-value > :is(.flex,.inline-flex) { justify-content:flex-end; }
+.mobile-table-field-wide .mobile-table-value > :is(.flex,.inline-flex) { justify-content:flex-start; }
+.mobile-table-value :is(input,select,button) { max-width:100%; }
+.mobile-table-field:has(input:not([type='checkbox']),select,[role='combobox']) { grid-template-columns:minmax(0,1fr); gap:6px; }
+@media (max-width:767px) { .token-management-page .token-key-list { flex:0 0 auto; min-height:auto; } }
 .token-management-page .token-key-list tbody tr { height:49px; }
 .token-management-page .token-key-list > :not(:last-child) { flex-shrink:0; }
 .token-management-page .token-key-list > :last-child { min-height:0; }

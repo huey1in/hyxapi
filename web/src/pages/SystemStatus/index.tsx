@@ -152,19 +152,15 @@ function StatusCards({ data, isMobile }: { data: StatusData; isMobile: boolean }
     { key: 'name', title: t('Channel'), render: (r) => <span style={{ fontWeight: 500 }}>{r.channel_name || `#${r.channel_id}`}</span> },
     { key: 'errors', title: t('Errors'), align: 'right', render: (r) => renderNumber(r.error_requests || 0) },
     { key: 'rate', title: t('Error rate'), align: 'right', render: (r) => fmtPct(r.error_rate) },
-    ...(!isMobile ? [
-      { key: 'latency', title: t('Average latency'), align: 'right' as const, render: (r: ChannelRisk | ModelRisk) => fmtLatency(r.avg_latency_seconds) },
-      { key: 'total', title: t('Requests'), align: 'right' as const, render: (r: ChannelRisk | ModelRisk) => renderNumber(r.total_requests || 0) },
-    ] : []),
+    { key: 'latency', title: t('Average latency'), align: 'right' as const, render: (r: ChannelRisk | ModelRisk) => fmtLatency(r.avg_latency_seconds) },
+    { key: 'total', title: t('Requests'), align: 'right' as const, render: (r: ChannelRisk | ModelRisk) => renderNumber(r.total_requests || 0) },
   ];
   const modelRiskColumns: TableColumn<ModelRisk>[] = [
     { key: 'model', title: t('Model'), render: (r) => <span style={{ fontWeight: 500, maxWidth: isMobile ? 150 : 320, display: 'inline-block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', verticalAlign: 'bottom' }} title={r.model_name}>{r.model_name}</span> },
     { key: 'errors', title: t('Errors'), align: 'right', render: (r) => renderNumber(r.error_requests || 0) },
     { key: 'rate', title: t('Error rate'), align: 'right', render: (r) => fmtPct(r.error_rate) },
-    ...(!isMobile ? [
-      { key: 'latency', title: t('Average latency'), align: 'right' as const, render: (r: ChannelRisk | ModelRisk) => fmtLatency(r.avg_latency_seconds) },
-      { key: 'total', title: t('Requests'), align: 'right' as const, render: (r: ChannelRisk | ModelRisk) => renderNumber(r.total_requests || 0) },
-    ] : []),
+    { key: 'latency', title: t('Average latency'), align: 'right' as const, render: (r: ChannelRisk | ModelRisk) => fmtLatency(r.avg_latency_seconds) },
+    { key: 'total', title: t('Requests'), align: 'right' as const, render: (r: ChannelRisk | ModelRisk) => renderNumber(r.total_requests || 0) },
   ];
 
   return (

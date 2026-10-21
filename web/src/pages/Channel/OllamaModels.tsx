@@ -132,13 +132,13 @@ export default function OllamaModels({ channel, onClose, onChanged }: Props) {
     }
   };
   const columns: TableColumn<ModelRow>[] = [
-    { key: 'select', title: <input className='accent-ui-accent' type='checkbox' aria-label={t('Select visible models')} checked={allVisibleSelected} disabled={disabled} onChange={toggleVisible} />, render: (row) => <input className='accent-ui-accent' type='checkbox' aria-label={`${t('Select model')} ${row.name}`} checked={selected.has(row.name)} disabled={disabled} onChange={() => toggle(row.name)} /> },
+    { key: 'select', mobileRole: 'selection', title: <input className='accent-ui-accent' type='checkbox' aria-label={t('Select visible models')} checked={allVisibleSelected} disabled={disabled} onChange={toggleVisible} />, render: (row) => <input className='accent-ui-accent' type='checkbox' aria-label={`${t('Select model')} ${row.name}`} checked={selected.has(row.name)} disabled={disabled} onChange={() => toggle(row.name)} /> },
     { key: 'name', title: t('Model'), render: (row) => <code className='break-all'>{row.name}</code> },
     { key: 'details', title: t('Details'), render: (row) => <span className='break-words'>{[row.model?.details?.family, row.model?.details?.parameter_size, row.model?.details?.quantization_level].filter(Boolean).join(' · ') || '—'}</span> },
     { key: 'size', title: t('Size'), render: (row) => row.model ? bytes(row.model.size) : '—' },
     { key: 'configured', title: t('Channel routing'), render: (row) => t(row.configured ? 'Configured' : 'Not configured') },
     { key: 'installed', title: t('Installation'), render: (row) => t(row.installed ? 'Installed' : 'Not installed') },
-    { key: 'actions', title: t('Actions'), render: (row) => <div className='flex gap-1'>
+    { key: 'actions', mobileRole: 'actions' as const, title: t('Actions'), render: (row) => <div className='flex gap-1'>
       <Button size='sm' variant='secondary' disabled={disabled} onClick={() => request({ action: 'pull', name: row.name })}>{t('Download model')}</Button>
       {row.installed && <Button size='sm' variant='secondary' disabled={disabled} onClick={() => request({ action: 'delete', name: row.name })}>{t('Delete')}</Button>}
     </div> },

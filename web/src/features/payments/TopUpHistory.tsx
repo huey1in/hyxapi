@@ -1,9 +1,9 @@
-import Skeleton from '../../components/ui/feedback/Skeleton';
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { API, timestamp2string } from '../../helpers';
-import { Button, ConfirmDialog, Input, Modal, Pagination, Select, showSuccess } from '../../components/ui';
+import { Button, ConfirmDialog, Input, Modal, Pagination, Select, Table, showSuccess } from '../../components/ui';
+import type { TableColumn } from '../../components/ui/layout/Table';
 import type { ApiEnvelope } from '../../types/api';
 import { apiErrorMessage } from '../../lib/api-error';
 import { useOwnedOperation } from '../../hooks/useOwnedOperation';
@@ -31,6 +31,12 @@ export default function TopUpHistory({ identity, role, onClose, onSaved }: { ide
     queryFn: ({ signal }) => readWalletData(admin ? '/api/user/topup' : '/api/user/topup/self', topUpPageSchema, signal, { p: page, page_size: pageSize, keyword }) });
   const data = query.isError ? undefined : query.data;
   const statusLabels: Record<string, string> = { pending: 'Pending payment', success: 'Completed', expired: 'Expired', failed: 'Failed' };
+  const columns: TableColumn<TopUpRecord>[] = [
+    { key: 'time', title: t('Time'), render: (order) => <span className='whitespace-nowrap'>{order.create_time ? timestamp2string(order.create_time) : '—'}</span> },
+    { key: 'description', title: t('Description'), mobileRole: 'wide', render: (order) => <div><div>{order.payment_method || order.payment_provider || '—'} · {t(statusLabels[order.status] || order.status)}</div><div className='break-all text-xs text-ui-text-3'>{order.trade_no}{admin && ` · ${t('User #{{id}}', { id: order.user_id })}`}</div></div> },
+    { key: 'money', title: t('Payment amount'), align: 'right', render: (order) => <span className='tabular-nums'>{order.money.toFixed(2)}</span> },
+    ...(admin ? [{ key: 'actions', title: t('Actions'), mobileRole: 'actions' as const, render: (order: TopUpRecord) => order.status === 'pending' && <Button size='sm' variant='link' onClick={() => setComplete(order)}>{t('Complete order')}</Button> }] : []),
+  ];
   return <Modal open title={t('Top-up history')} onClose={onClose} width={admin ? 640 : 520} hideFooter>
     <form className={`grid min-w-0 grid-cols-[minmax(0,240px)_max-content] justify-start gap-2 ${role >= 10 ? 'sm:grid-cols-[150px_minmax(0,240px)_max-content]' : ''}`} onSubmit={(event) => { event.preventDefault(); setKeyword(search.trim()); setPage(1); if (keyword === search.trim() && page === 1) void query.refetch(); }}>
       {role >= 10 && <div className='col-span-2 min-w-0 sm:col-span-1'><Select width='full' aria-label={t('Order scope')} value={scope} options={[{ value: 'self', label: t('My orders') }, { value: 'all', label: t('All orders') }]} onChange={(value) => { setScope(value); setPage(1); setComplete(null); }} /></div>}
@@ -38,15 +44,7 @@ export default function TopUpHistory({ identity, role, onClose, onSaved }: { ide
       <Button type='submit' variant='secondary'>{t('Search')}</Button>
     </form>
     {query.isError ? <div role='alert' className='space-y-2 text-sm text-ui-danger'><p>{t(apiErrorMessage(query.error, 'Unable to load wallet data'))}</p><Button onClick={() => void query.refetch()}>{t('Retry')}</Button></div> : <>
-      <div className='max-h-[400px] overflow-auto' role={query.isPending ? 'status' : undefined} aria-label={query.isPending ? t('Loading...') : undefined} aria-busy={query.isPending || undefined} data-loading-skeleton={query.isPending ? 'table' : undefined}><table className='w-full border-collapse text-sm'>
-        <thead><tr className='border-b border-ui-divider text-ui-text-3'><th className='px-3 py-2 text-left font-normal'>{t('Time')}</th><th className='px-3 py-2 text-left font-normal'>{t('Description')}</th><th className='px-3 py-2 text-right font-normal'>{t('Payment amount')}</th>{admin && <th className='px-3 py-2 font-normal'>{t('Actions')}</th>}</tr></thead>
-        <tbody>{query.isPending ? Array.from({ length: 4 }, (_, index) => <tr key={index} aria-hidden='true' className='border-b border-ui-divider'>{Array.from({ length: admin ? 4 : 3 }, (_, column) => <td key={column} className='px-3 py-2'><Skeleton width='75%' height={36} /></td>)}</tr>) : !data?.items.length ? <tr><td colSpan={admin ? 4 : 3} className='px-3 py-6 text-center text-ui-text-3'>{t('No top-up records')}</td></tr> : data.items.map((order) => <tr key={order.id} className='border-b border-ui-divider text-ui-text'>
-          <td className='whitespace-nowrap px-3 py-2'>{order.create_time ? timestamp2string(order.create_time) : '—'}</td>
-          <td className='px-3 py-2'><div>{order.payment_method || order.payment_provider || '—'} · {t(statusLabels[order.status] || order.status)}</div><div className='break-all text-xs text-ui-text-3'>{order.trade_no}{admin && ` · ${t('User #{{id}}', { id: order.user_id })}`}</div></td>
-          <td className='px-3 py-2 text-right tabular-nums'>{order.money.toFixed(2)}</td>
-          {admin && <td className='px-3 py-2'>{order.status === 'pending' && <Button size='sm' variant='link' onClick={() => setComplete(order)}>{t('Complete order')}</Button>}</td>}
-        </tr>)}</tbody>
-      </table></div>
+      <div className='max-h-[400px] overflow-y-auto'><Table columns={columns} rows={data?.items ?? []} rowKey='id' loading={query.isPending} skeletonRows={4} emptyText={t('No top-up records')} /></div>
       <Pagination page={page} pageSize={pageSize} total={data?.total ?? 0} onChange={(value: number) => { setPage(value); setComplete(null); }} />
     </>}
     {complete && <CompleteOrder key={complete.id} order={complete} onClose={() => setComplete(null)} onSaved={() => { void query.refetch(); onSaved(); }} />}

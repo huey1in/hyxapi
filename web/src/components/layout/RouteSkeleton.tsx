@@ -37,7 +37,7 @@ export default function RouteSkeleton() {
     <div className='flex h-8 items-center justify-between gap-3'><h1 className='text-lg font-semibold text-ui-text'>{t(pathname.endsWith('operations') ? 'Operations' : 'System status')}</h1><Skeleton width={130} height={28} /></div>
     <StatisticsSkeleton system={pathname.endsWith('system-status')} />
   </ConsolePage>;
-  if (pathname === '/console/my-subscription') return <ConsolePage><div className='flex h-8 items-center justify-between'><h1 className='text-lg font-semibold text-ui-text'>{t('My subscriptions')}</h1><Skeleton width={28} height={28} /></div><MySubscriptionSkeleton /></ConsolePage>;
+  if (pathname === '/console/my-subscription') return <ConsolePage><h1 className='text-lg font-semibold text-ui-text'>{t('My subscriptions')}</h1><MySubscriptionSkeleton /></ConsolePage>;
 
   // Route chunks cannot know data-dependent layouts. Navigation retains the
   // current page; cold loads show progress without inventing a table or form.

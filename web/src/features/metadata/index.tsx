@@ -88,19 +88,19 @@ function CatalogSession({ kind, root }: { kind: 'models' | 'vendors'; root: bool
       </div>
       <ErrorMessage message={error} />
       {kind === 'models' ? <Table<Model> loading={loading} rows={models} rowKey={(item) => item.id || `channel:${item.model_name}`} minWidth={800} columns={[
-        { key: 'select', title: '', width: 40, render: (item) => <Checkbox checked={selected.includes(item.id)} disabled={!item.id} aria-label={`选择 ${item.model_name}`} onChange={(checked) => toggle(item.id, checked)} /> },
+        { key: 'select', mobileRole: 'selection', title: '', width: 40, render: (item) => <Checkbox checked={selected.includes(item.id)} disabled={!item.id} aria-label={`选择 ${item.model_name}`} onChange={(checked) => toggle(item.id, checked)} /> },
         { key: 'model_name', title: '模型', render: (item) => <div className='max-w-72 break-all'><p>{item.model_name}</p><p className='mt-1 text-xs text-ui-text-3'>{ruleOptions[item.name_rule]?.label}{!item.has_metadata && ' · 尚无元数据'}</p></div> },
         { key: 'vendor', title: '供应商', render: (item) => vendorOptions.find((vendor) => vendor.id === item.vendor_id)?.name || '未分配' },
         { key: 'square_state', title: '广场状态', render: (item) => <Tag>{stateLabels[item.square_state || ''] || '不可用'}</Tag> },
         { key: 'channels', title: '接入渠道', render: (item) => item.configured_channel_count || 0 },
         { key: 'visible', title: '允许显示', render: (item) => <Checkbox checked={item.status === 1} disabled={!item.id || busy} aria-label={`${item.model_name} 允许显示`} onChange={() => toggleStatus(item)} /> },
-        { key: 'ops', title: '操作', align: 'right', render: (item) => <div className='flex justify-end gap-1'><IconButton icon={Pencil} title={item.id ? '编辑' : '补充元数据'} onClick={() => setEditing(item.id ? item : { ...item, status: 1, sync_official: 1 })} />{root && <Button size='sm' onClick={() => setPricing(item.model_name)}>价格</Button>}{item.id > 0 && <IconButton icon={Trash2} title='删除' onClick={() => setDeleting([item])} />}</div> },
+        { key: 'ops', mobileRole: 'actions' as const, title: '操作', align: 'right', render: (item) => <div className='flex justify-end gap-1'><IconButton icon={Pencil} title={item.id ? '编辑' : '补充元数据'} onClick={() => setEditing(item.id ? item : { ...item, status: 1, sync_official: 1 })} />{root && <Button size='sm' onClick={() => setPricing(item.model_name)}>价格</Button>}{item.id > 0 && <IconButton icon={Trash2} title='删除' onClick={() => setDeleting([item])} />}</div> },
       ]} /> : <Table<Vendor> loading={loading} rows={vendors} minWidth={600} columns={[
-        { key: 'select', title: '', width: 40, render: (item) => <Checkbox checked={selected.includes(item.id)} aria-label={`选择 ${item.name}`} onChange={(checked) => toggle(item.id, checked)} /> },
+        { key: 'select', mobileRole: 'selection', title: '', width: 40, render: (item) => <Checkbox checked={selected.includes(item.id)} aria-label={`选择 ${item.name}`} onChange={(checked) => toggle(item.id, checked)} /> },
         { key: 'name', title: '供应商', render: (item) => <span className='break-all'>{item.name}</span> },
         { key: 'description', title: '描述', render: (item) => <span className='inline-block max-w-80 break-words'>{item.description || '—'}</span> },
         { key: 'model_count', title: '关联模型', render: (item) => item.model_count || 0 },
-        { key: 'ops', title: '操作', align: 'right', render: (item) => <div className='flex justify-end gap-1'><IconButton icon={Pencil} title='编辑' onClick={() => setEditing(item)} /><IconButton icon={Trash2} title='删除' onClick={() => setOperation({ action: 'delete', vendor_ids: [item.id] })} /></div> },
+        { key: 'ops', mobileRole: 'actions' as const, title: '操作', align: 'right', render: (item) => <div className='flex justify-end gap-1'><IconButton icon={Pencil} title='编辑' onClick={() => setEditing(item)} /><IconButton icon={Trash2} title='删除' onClick={() => setOperation({ action: 'delete', vendor_ids: [item.id] })} /></div> },
       ]} />}
       <Pagination page={page} pageSize={pageSize} total={total} onChange={setPage} />
     </div>

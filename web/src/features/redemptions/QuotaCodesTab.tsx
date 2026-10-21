@@ -86,7 +86,7 @@ export default function QuotaCodesTab() {
   });
   const allSelected = rows.length > 0 && rows.every((row) => selected.includes(row.id));
   const columns: TableColumn<RedemptionCode>[] = [
-    { key: 'select', title: <Checkbox checked={allSelected} indeterminate={selected.length > 0 && !allSelected} disabled={busy || !rows.length} aria-label={t('Select current page')} onChange={(checked) => setSelected(checked ? rows.map((row) => row.id) : [])} />, width: 45, render: (row) => <Checkbox checked={selected.includes(row.id)} disabled={busy} aria-label={t('Select redemption code #{{id}}', { id: row.id })} onChange={(checked) => setSelected((old) => checked ? [...old, row.id] : old.filter((id) => id !== row.id))} /> },
+    { key: 'select', mobileRole: 'selection', title: <Checkbox checked={allSelected} indeterminate={selected.length > 0 && !allSelected} disabled={busy || !rows.length} aria-label={t('Select current page')} onChange={(checked) => setSelected(checked ? rows.map((row) => row.id) : [])} />, width: 45, render: (row) => <Checkbox checked={selected.includes(row.id)} disabled={busy} aria-label={t('Select redemption code #{{id}}', { id: row.id })} onChange={(checked) => setSelected((old) => checked ? [...old, row.id] : old.filter((id) => id !== row.id))} /> },
     { key: 'id', title: 'ID', width: 65 }, { key: 'name', title: t('Name'), render: (row) => row.name || '—' },
     { key: 'key', title: t('Redemption Code'), render: (row) => <div className='flex items-center gap-2 font-mono text-xs'><span>{row.key.slice(0, 12)}…</span><IconButton icon={Copy} aria-label={t('Copy code #{{id}}', { id: row.id })} onClick={() => void copied(row.key)} /></div> },
     { key: 'quota', title: t('Value'), render: (row) => renderQuota(row.quota, 2) },
@@ -94,7 +94,7 @@ export default function QuotaCodesTab() {
     { key: 'used_user_id', title: t('Redeemed by'), render: (row) => row.used_user_id || '—' },
     { key: 'expired_time', title: t('Expiry time'), render: (row) => row.expired_time ? timestamp2string(row.expired_time) : t('Never') },
     { key: 'created_time', title: t('Created time'), render: (row) => timestamp2string(row.created_time) },
-    { key: 'ops', title: t('Actions'), align: 'right', render: (row) => <div className='flex justify-end gap-1'>
+    { key: 'ops', mobileRole: 'actions' as const, title: t('Actions'), align: 'right', render: (row) => <div className='flex justify-end gap-1'>
       {row.status !== 3 && <IconButton icon={Pencil} aria-label={t('Edit code #{{id}}', { id: row.id })} disabled={busy} onClick={() => setEditing(row)} />}
       {(row.status === 1 || row.status === 2) && <IconButton icon={row.status === 1 ? PowerOff : Power} aria-label={t(row.status === 1 ? 'Disable code #{{id}}' : 'Enable code #{{id}}', { id: row.id })} disabled={busy} onClick={() => setStatus(row)} />}
       <IconButton icon={Trash2} variant='danger' aria-label={t('Delete code #{{id}}', { id: row.id })} disabled={busy} onClick={() => setConfirmation({ title: t('Delete redemption code #{{id}}?', { id: row.id }), ids: [row.id] })} />

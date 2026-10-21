@@ -89,8 +89,8 @@ export function StatisticsSkeleton({ system = false }: { system?: boolean }) {
     </section>)}
     {(system ? ['Channel health', 'Model risk'] : ['Charges by group', 'Charges by channel']).map((title, index) => <ReportSection key={title} title={t(title)}>
       <Table loading size='sm' skeletonRows={3} columns={(system
-        ? [index === 0 ? 'Channel' : 'Model', 'Errors', 'Error rate', ...(!mobile ? ['Average latency', 'Requests'] : [])]
-        : ['#', index === 0 ? 'Group' : 'Channel', 'Usage charges', ...(!mobile ? ['Requests', 'Token', 'Share of charges'] : [])]
+        ? [index === 0 ? 'Channel' : 'Model', 'Errors', 'Error rate', 'Average latency', 'Requests']
+        : ['#', index === 0 ? 'Group' : 'Channel', 'Usage charges', 'Requests', 'Token', 'Share of charges']
       ).map((label, column) => ({ key: label, title: t(label), align: column > (system ? 0 : 1) ? 'right' as const : 'left' as const, width: label === '#' ? 40 : label === 'Share of charges' ? 100 : undefined }))} />
     </ReportSection>)}
     {system ? ['Dependencies', 'Cache and capacity'].map((title) => <ReportSection key={title} title={t(title)}><div className={`flex gap-3 ${mobile ? 'flex-col' : ''}`}>{[0, 1].map((index) => <div key={index} className='min-w-0 flex-1 rounded-2xl border border-ui-border p-4'><Skeleton width={110} height={20} /><div className='mt-2.5 grid grid-cols-2 gap-2'>{[0, 1, 2, 3].map((field) => <div key={field} className='space-y-1'><Skeleton width={60} height={16} /><Skeleton width={50} height={20} /></div>)}</div></div>)}</div></ReportSection>) : <ReportSection title={t('Reporting basis')}><div className='rounded-lg border border-ui-border p-3.5 space-y-2'><Skeleton height={22} /><Skeleton width='80%' height={16} /></div></ReportSection>}

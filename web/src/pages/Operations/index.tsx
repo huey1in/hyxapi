@@ -79,19 +79,17 @@ function OperationsCards({ data, isMobile, selectedRangeLabel }: { data: Operati
     { key: 'rank', title: '#', width: 40, render: (_, i) => <span style={{ color: 'var(--ui-text-3)' }}>{i + 1}</span> },
     { key: 'name', title: t('Channel'), render: (r) => <span style={{ fontWeight: 500, maxWidth: isMobile ? 130 : 240, display: 'inline-block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', verticalAlign: 'bottom' }} title={r.channel_name}>{r.channel_name || `#${r.channel_id}`}</span> },
     { key: 'quota', title: t('Usage charges'), align: 'right' as const, render: (r: ChannelConsumption | GroupConsumption) => <span style={{ fontVariantNumeric: 'tabular-nums', fontWeight: 600 }}>{renderQuota(r.quota || 0)}</span> },
-    ...(!isMobile ? [
-      { key: 'requests', title: t('Requests'), align: 'right' as const, render: (r: ChannelConsumption | GroupConsumption) => <span style={{ fontVariantNumeric: 'tabular-nums', color: 'var(--ui-text-2)' }}>{renderNumber(r.requests || 0)}</span> },
-      { key: 'tokens', title: 'Token', align: 'right' as const, render: (r: ChannelConsumption | GroupConsumption) => <span style={{ fontVariantNumeric: 'tabular-nums', color: 'var(--ui-text-2)' }}>{fmtTokens(r.tokens || 0)}</span> },
-      { key: 'share', title: t('Share of charges'), align: 'right' as const, width: 100, render: (r: ChannelConsumption | GroupConsumption) => {
-        const pct = totalChargeQuota > 0 ? ((r.quota || 0) / totalChargeQuota * 100) : 0;
-        return (
-          <div style={{ minWidth: 60 }}>
-            <span style={{ fontVariantNumeric: 'tabular-nums', color: 'var(--ui-text-2)', fontSize: 12 }}>{pct.toFixed(1)}%</span>
-            <MiniBar value={r.quota || 0} max={totalChargeQuota} color='#999' />
-          </div>
-        );
-      } },
-    ] : []),
+    { key: 'requests', title: t('Requests'), align: 'right' as const, render: (r: ChannelConsumption | GroupConsumption) => <span style={{ fontVariantNumeric: 'tabular-nums', color: 'var(--ui-text-2)' }}>{renderNumber(r.requests || 0)}</span> },
+    { key: 'tokens', title: 'Token', align: 'right' as const, render: (r: ChannelConsumption | GroupConsumption) => <span style={{ fontVariantNumeric: 'tabular-nums', color: 'var(--ui-text-2)' }}>{fmtTokens(r.tokens || 0)}</span> },
+    { key: 'share', title: t('Share of charges'), align: 'right' as const, width: 100, render: (r: ChannelConsumption | GroupConsumption) => {
+      const pct = totalChargeQuota > 0 ? ((r.quota || 0) / totalChargeQuota * 100) : 0;
+      return (
+        <div style={{ minWidth: 60 }}>
+          <span style={{ fontVariantNumeric: 'tabular-nums', color: 'var(--ui-text-2)', fontSize: 12 }}>{pct.toFixed(1)}%</span>
+          <MiniBar value={r.quota || 0} max={totalChargeQuota} color='#999' />
+        </div>
+      );
+    } },
   ];
 
   /* ── group ranking ── */
@@ -99,19 +97,17 @@ function OperationsCards({ data, isMobile, selectedRangeLabel }: { data: Operati
     { key: 'rank', title: '#', width: 40, render: (_, i) => <span style={{ color: 'var(--ui-text-3)' }}>{i + 1}</span> },
     { key: 'group', title: t('Group'), render: (r) => <span style={{ fontWeight: 500 }}>{r.group || t('Default')}</span> },
     { key: 'quota', title: t('Usage charges'), align: 'right' as const, render: (r: ChannelConsumption | GroupConsumption) => <span style={{ fontVariantNumeric: 'tabular-nums', fontWeight: 600 }}>{renderQuota(r.quota || 0)}</span> },
-    ...(!isMobile ? [
-      { key: 'requests', title: t('Requests'), align: 'right' as const, render: (r: ChannelConsumption | GroupConsumption) => <span style={{ fontVariantNumeric: 'tabular-nums', color: 'var(--ui-text-2)' }}>{renderNumber(r.requests || 0)}</span> },
-      { key: 'tokens', title: 'Token', align: 'right' as const, render: (r: ChannelConsumption | GroupConsumption) => <span style={{ fontVariantNumeric: 'tabular-nums', color: 'var(--ui-text-2)' }}>{fmtTokens(r.tokens || 0)}</span> },
-      { key: 'share', title: t('Share of charges'), align: 'right' as const, width: 100, render: (r: ChannelConsumption | GroupConsumption) => {
-        const pct = totalChargeQuota > 0 ? ((r.quota || 0) / totalChargeQuota * 100) : 0;
-        return (
-          <div style={{ minWidth: 60 }}>
-            <span style={{ fontVariantNumeric: 'tabular-nums', color: 'var(--ui-text-2)', fontSize: 12 }}>{pct.toFixed(1)}%</span>
-            <MiniBar value={r.quota || 0} max={totalChargeQuota} color='#999' />
-          </div>
-        );
-      } },
-    ] : []),
+    { key: 'requests', title: t('Requests'), align: 'right' as const, render: (r: ChannelConsumption | GroupConsumption) => <span style={{ fontVariantNumeric: 'tabular-nums', color: 'var(--ui-text-2)' }}>{renderNumber(r.requests || 0)}</span> },
+    { key: 'tokens', title: 'Token', align: 'right' as const, render: (r: ChannelConsumption | GroupConsumption) => <span style={{ fontVariantNumeric: 'tabular-nums', color: 'var(--ui-text-2)' }}>{fmtTokens(r.tokens || 0)}</span> },
+    { key: 'share', title: t('Share of charges'), align: 'right' as const, width: 100, render: (r: ChannelConsumption | GroupConsumption) => {
+      const pct = totalChargeQuota > 0 ? ((r.quota || 0) / totalChargeQuota * 100) : 0;
+      return (
+        <div style={{ minWidth: 60 }}>
+          <span style={{ fontVariantNumeric: 'tabular-nums', color: 'var(--ui-text-2)', fontSize: 12 }}>{pct.toFixed(1)}%</span>
+          <MiniBar value={r.quota || 0} max={totalChargeQuota} color='#999' />
+        </div>
+      );
+    } },
   ];
 
   return (

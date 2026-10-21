@@ -69,7 +69,7 @@ function UsersWorkspace({ actor }: { actor: AuthUser | null }) {
     { key: 'aff_quota', title: t('Earnings'), render: (user) => renderQuota(user.aff_quota, 2) },
     { key: 'last_login_at', title: t('Last login'), render: (user) => <span className='text-xs whitespace-nowrap'>{date(user.last_login_at)}<span className='block text-ui-text-3'>{t('Created: {{time}}', { time: date(user.created_at) })}</span></span> },
     { key: 'status', title: t('Status'), render: (user) => <Tag color={!user.DeletedAt && user.status === 1 ? 'green' : 'grey'}>{t(user.DeletedAt ? 'Deleted' : user.status === 1 ? 'Enabled' : 'Disabled')}</Tag> },
-    { key: 'ops', title: t('Actions'), align: 'right', render: (user) => !actor || !canManageUser(actor.role, user) ? null : <div className='flex justify-end gap-1'>
+    { key: 'ops', mobileRole: 'actions' as const, title: t('Actions'), align: 'right', render: (user) => !actor || !canManageUser(actor.role, user) ? null : <div className='flex justify-end gap-1'>
       <IconButton icon={DollarSign} title={t('Adjust quota')} disabled={busy} onClick={() => setWindowState({ kind: 'quota', user })} />
       <IconButton icon={CreditCard} title={t('Manage subscriptions')} disabled={busy} onClick={() => setWindowState({ kind: 'subscriptions', user })} />
       <IconButton icon={Pencil} title={t('Edit')} disabled={busy} onClick={() => setWindowState({ kind: 'edit', user })} />

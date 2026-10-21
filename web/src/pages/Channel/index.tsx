@@ -288,6 +288,7 @@ function ChannelSession({ identity }: { identity: string }) {
   const columns: TableColumn<Channel>[] = [
     {
       key: '_sel',
+      mobileRole: 'selection',
       title: (
         <button
           aria-label={t('Select visible channels')}
@@ -361,7 +362,7 @@ function ChannelSession({ identity }: { identity: string }) {
           : '—',
     },
     {
-      key: 'ops',
+      key: 'ops', mobileRole: 'actions' as const,
       title: t('操作'),
       align: 'right',
       render: (r) => (

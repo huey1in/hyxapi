@@ -3,9 +3,8 @@ import { useEffect, useState } from 'react';
 import type { ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { RefreshCw } from 'lucide-react';
 import { renderQuota } from '../../helpers';
-import { Button, Tag, IconButton } from '../../components/ui';
+import { Button, Tag } from '../../components/ui';
 import { useAuthStore } from '../../stores/auth-store';
 import { apiErrorMessage } from '../../lib/api-error';
 import useIsMobile from '../../hooks/useIsMobile';
@@ -62,7 +61,7 @@ function MySubscription({ identity }: { identity: string }) {
   const active = data?.all_subscriptions.filter(({ subscription }) => isActiveSubscription(subscription, now)) ?? [];
   const inactive = data?.all_subscriptions.filter(({ subscription }) => !isActiveSubscription(subscription, now)) ?? [];
   return <div style={{ display: 'flex', flexDirection: 'column', gap: mobile ? 20 : 28, width: '100%', maxWidth: 960, marginInline: 'auto', padding: mobile ? '16px' : '24px 16px' }}>
-    <div className='flex items-center justify-between gap-2'><h1 className='text-lg font-semibold text-ui-text'>{t('My subscriptions')}</h1><IconButton icon={RefreshCw} title={t('Refresh')} aria-label={t('Refresh subscriptions')} disabled={query.isFetching} onClick={() => void query.refetch()} /></div>
+    <h1 className='text-lg font-semibold text-ui-text'>{t('My subscriptions')}</h1>
     {query.isPending ? <MySubscriptionSkeleton /> : query.isError ? <div role='alert' className='space-y-2 text-sm text-ui-danger'><p>{t(apiErrorMessage(query.error, 'Unable to load subscriptions'))}</p><Button onClick={() => void query.refetch()}>{t('Retry')}</Button></div> : data && <>
       {!data.all_subscriptions.length ? <div className='py-8 text-center sm:py-12'><p className='mb-4 text-sm text-ui-text-3'>{t('No subscriptions yet. Activate one with a code or buy a plan.')}</p><Button onClick={() => navigate('/console/topup')}>{t('Open top-up page')}</Button></div> : <>
         {active.map(({ subscription }) => <SubscriptionCard key={subscription.id} subscription={subscription} title={planTitles.get(subscription.plan_id)} mobile={mobile} now={now} />)}

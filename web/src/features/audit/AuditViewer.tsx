@@ -53,23 +53,22 @@ export default function AuditViewer({ identity, scope, onDenied, accessOnly = fa
   const rows = query.isError ? [] : query.data?.items ?? [];
   const total = query.isError ? 0 : query.data?.total ?? 0;
   const resultBadge = (row: AuditLog) => <span className='inline-flex items-center gap-1.5 whitespace-nowrap text-xs'><span style={{ width: 7, height: 7, borderRadius: '50%', background: row.success ? '#22c55e' : '#ef4444' }} />{t(row.success ? 'Success' : 'Failed')}</span>;
-  const eventColumn: TableColumn<AuditLog> = { key: 'event', title: t('Event'), render: (row) => {
+  const eventColumn: TableColumn<AuditLog> = { key: 'event', title: t('Event'), mobileRole: 'wide', render: (row) => {
     const details = buildAuditDetails(row, t);
     const operation = details.operation;
-    return <div className='space-y-1' style={{ maxWidth: isMobile ? 120 : 280 }}>
+    return <div className='space-y-1' style={{ maxWidth: isMobile ? '100%' : 280 }}>
       {operation ? <>
         <div className='flex min-w-0 items-baseline gap-1'><span className='min-w-0 truncate font-medium' title={operation.summary}>{operation.headline}</span>{operation.identifier && <span className='shrink-0 whitespace-nowrap text-xs'>{operation.identifier}</span>}</div>
         {operation.description && <p className='line-clamp-2 break-words text-ui-text-2' title={operation.description}>{operation.description}</p>}
       </> : <span className={isMobile ? 'line-clamp-2 break-words' : 'block truncate'} title={details.summary}>{details.summary}</span>}
-      {isMobile && resultBadge(row)}
     </div>;
   } };
   const columns: TableColumn<AuditLog>[] = [
-    { key: 'time', title: t('Time'), render: (row) => <span className={isMobile ? 'block max-w-[90px] text-xs text-ui-text-2' : 'whitespace-nowrap text-xs text-ui-text-2'}>{formatAuditDate(row.created_at, i18n.language)}</span> },
-    ...(!isMobile ? [{ key: 'username', title: t('Username'), render: (row: AuditLog) => <span className='whitespace-nowrap font-medium'>{row.username || '—'}</span> }, eventColumn,
-      { key: 'ip', title: 'IP', render: (row: AuditLog) => <span className='whitespace-nowrap text-xs font-mono text-ui-text-3'>{row.ip || '—'}</span> }] : [eventColumn]),
-    ...(!isMobile ? [{ key: 'result', title: t('Result'), render: resultBadge }] : []),
-    { key: 'details', title: t('Details'), render: (row) => <Button variant='link' size='sm' onClick={() => setSelected(row)}>{t('Details')}</Button> },
+    { key: 'time', title: t('Time'), render: (row) => <span className='whitespace-nowrap text-xs text-ui-text-2'>{formatAuditDate(row.created_at, i18n.language)}</span> },
+    { key: 'username', title: t('Username'), render: (row: AuditLog) => <span className='whitespace-nowrap font-medium'>{row.username || '—'}</span> }, eventColumn,
+    { key: 'ip', title: 'IP', render: (row: AuditLog) => <span className='whitespace-nowrap text-xs font-mono text-ui-text-3'>{row.ip || '—'}</span> },
+    { key: 'result', title: t('Result'), render: resultBadge },
+    { key: 'details', title: t('Details'), mobileRole: 'actions', render: (row) => <Button variant='link' size='sm' onClick={() => setSelected(row)}>{t('Details')}</Button> },
   ];
   const input = (key: keyof AuditFilters, label: string, type = 'text') => <label className='block space-y-1 text-xs text-ui-text-3'>
     <span>{t(label)}</span><Input type={type} aria-label={t(label)} value={draft[key]} onChange={(value) => set(key, value)} width='full' step={type === 'datetime-local' ? 1 : undefined} />

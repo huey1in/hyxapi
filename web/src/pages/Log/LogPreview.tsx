@@ -38,12 +38,7 @@ export default function LogPreview() {
   const { t } = useTranslation();
   const mobile = useIsMobile();
   const rows = useMemo(() => PREVIEW_LOGS.map((row) => enrichLog(row, 0)), []);
-  const columns: TableColumn<EnrichedLog>[] = mobile ? [
-    { key: 'model', title: t('Model'), render: (row) => <TruncatedField value={row.model_name} /> },
-    { key: 'input', title: t('Input'), align: 'right', render: (row) => <Num value={row.prompt_tokens} compact /> },
-    { key: 'output', title: t('Output'), align: 'right', render: (row) => <Num value={row.completion_tokens} compact /> },
-    { key: 'cache', title: t('Cache'), align: 'right', render: (row) => <Num value={row._cache} compact /> },
-  ] : [
+  const columns: TableColumn<EnrichedLog>[] = [
     { key: 'time', title: t('Time'), width: 175, render: (row) => <span className='whitespace-nowrap text-ui-text-2'>{timestamp2string(row.created_at)}</span> },
     { key: 'type', title: t('Type'), width: 135, render: (row) => <TypeBadge type={row.type} /> },
     { key: 'model', title: t('Model'), width: 150, render: (row) => <TruncatedField value={row.model_name} /> },
