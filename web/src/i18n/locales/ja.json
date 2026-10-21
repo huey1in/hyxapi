@@ -765,7 +765,6 @@
     "Unable to load check-in records": "チェックイン記録を読み込めません",
     "Check-in successful: {{quota}}": "チェックイン成功：{{quota}}",
     "Check in daily to earn quota rewards": "毎日チェックインしてクォータ報酬を獲得",
-    "Reward range: {{min}} – {{max}}": "報酬範囲：{{min}} – {{max}}",
     "Check In": "チェックイン",
     "Security verification is not configured": "セキュリティ認証が設定されていません",
     "Previous month": "前の月",

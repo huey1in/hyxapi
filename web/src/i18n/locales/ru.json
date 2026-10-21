@@ -765,7 +765,6 @@
     "Unable to load check-in records": "Не удалось загрузить отметки",
     "Check-in successful: {{quota}}": "Отметка выполнена: {{quota}}",
     "Check in daily to earn quota rewards": "Отмечайтесь ежедневно и получайте награды",
-    "Reward range: {{min}} – {{max}}": "Награда: {{min}} – {{max}}",
     "Check In": "Отметиться",
     "Security verification is not configured": "Проверка безопасности не настроена",
     "Previous month": "Предыдущий месяц",

@@ -35,11 +35,9 @@ func GetCheckinStatus(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"success": true,
 		"data": gin.H{
-			"enabled":   setting.Enabled,
-			"min_quota": setting.MinQuota,
-			"max_quota": setting.MaxQuota,
-			"today":     time.Now().Format("2006-01-02"),
-			"stats":     stats,
+			"enabled": setting.Enabled,
+			"today":   time.Now().Format("2006-01-02"),
+			"stats":   stats,
 		},
 	})
 }

@@ -19,10 +19,10 @@ export function DailyCheckinSkeleton({ month = monthKey(new Date()) }: { month?:
   const { t } = useTranslation();
   return <section aria-label={t('Daily Check-in')} aria-busy='true' data-wallet-checkin data-loading-skeleton='cards' className='overflow-hidden rounded-[26px] border border-ui-border'>
     <div className='flex flex-wrap items-center justify-between gap-4 p-5'>
-      <div className='min-w-0 space-y-2'>
+      <div className='min-w-0'>
         <h2 className='text-lg font-semibold text-ui-text'>{t('Daily Check-in')}</h2>
-        <Skeleton width={208} height={16} />
-        <Skeleton width={164} height={12} />
+        <div className='mt-1'><Skeleton width={208} height={20} /></div>
+        <div className='mt-1 flex flex-wrap gap-x-4 gap-y-1'><Skeleton width={104} height={16} /><Skeleton width={104} height={16} /></div>
       </div>
       <Skeleton width={96} height={36} rounded='rounded-full' />
     </div>
@@ -32,7 +32,6 @@ export function DailyCheckinSkeleton({ month = monthKey(new Date()) }: { month?:
         {Array.from({ length: 7 }, (_, day) => <div key={day} className='pb-2'><Skeleton height={20} /></div>)}
         {calendarDays(month).map((date, index) => <div key={index} className={dayHeight}>{date && <Skeleton height='100%' rounded='rounded-lg' className='h-full' />}</div>)}
       </div>
-      <div className='mt-4 grid grid-cols-2 gap-3 border-t border-ui-divider pt-4'><Skeleton width={140} height={36} /><Skeleton width={140} height={36} /></div>
     </div>
   </section>;
 }
@@ -56,7 +55,6 @@ function CheckinCard({ identity, turnstileEnabled, siteKey }: { identity: string
   const [year = 2000, number = 1] = month.split('-').map(Number);
   const heading = new Date(year, number - 1, 1).toLocaleDateString(i18n.language, { year: 'numeric', month: 'long' });
   const records = new Map(info?.stats.records.map((record) => [record.checkin_date, record.quota_awarded]));
-  const monthlyQuota = info?.stats.records.reduce((sum, record) => sum + record.quota_awarded, 0) ?? 0;
   const today = info?.today ?? `${monthKey(new Date())}-${String(new Date().getDate()).padStart(2, '0')}`;
   const checked = info?.stats.checked_in_today;
   const checkin = () => void run(async (signal) => {
@@ -71,7 +69,6 @@ function CheckinCard({ identity, turnstileEnabled, siteKey }: { identity: string
           ...previous.stats,
           checked_in_today: true,
           total_checkins: previous.stats.total_checkins + 1,
-          total_quota: previous.stats.total_quota + reward.quota_awarded,
           checkin_count: previous.stats.checkin_count + (inMonth ? 1 : 0),
           records: inMonth ? [reward, ...previous.stats.records] : previous.stats.records,
         } };
@@ -91,7 +88,10 @@ function CheckinCard({ identity, turnstileEnabled, siteKey }: { identity: string
       <div className='min-w-0 text-sm text-ui-text-2'>
         <h2 className='text-lg font-semibold text-ui-text'>{t('Daily Check-in')}</h2>
         <p className='mt-1'>{checked ? t('Already checked in today') : t('Check in daily to earn quota rewards')}</p>
-        {info && <p className='mt-1 text-xs text-ui-text-3'>{t('Reward range: {{min}} – {{max}}', { min: renderQuota(info.min_quota), max: renderQuota(info.max_quota) })}</p>}
+        {info && <div data-checkin-counts className='mt-1 flex flex-wrap gap-x-4 gap-y-1 text-xs text-ui-text-3'>
+          <span>{t('Check-ins this month: {{count}}', { count: info.stats.checkin_count })}</span>
+          <span>{t('Total check-ins: {{count}}', { count: info.stats.total_checkins })}</span>
+        </div>}
       </div>
       <Button onClick={checkin} loading={busy} disabled={!info || status.isError || checked || !info.enabled || (turnstileEnabled && !token)}>{t(checked ? 'Checked In' : 'Check In')}</Button>
     </div>
@@ -121,10 +121,6 @@ function CheckinCard({ identity, turnstileEnabled, siteKey }: { identity: string
             </svg>}
           </>}
         </div>)}
-      </div>
-      <div className='mt-4 grid grid-cols-2 gap-3 border-t border-ui-divider pt-4 text-xs text-ui-text-3'>
-        <p>{t('Check-ins this month: {{count}}', { count: info?.stats.checkin_count ?? 0 })}<br /><strong className='mt-1 inline-block font-medium text-ui-text'>{renderQuota(monthlyQuota)}</strong></p>
-        <p>{t('Total check-ins: {{count}}', { count: info?.stats.total_checkins ?? 0 })}<br /><strong className='mt-1 inline-block font-medium text-ui-text'>{renderQuota(info?.stats.total_quota ?? 0)}</strong></p>
       </div>
     </div>}
   </section>;

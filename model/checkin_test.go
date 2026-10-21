@@ -59,7 +59,8 @@ func checkCheckinConcurrentCredit(t *testing.T) {
 	stats, err := GetUserCheckinStats(user.Id, time.Now().Format("2006-01"))
 	require.NoError(t, err)
 	require.EqualValues(t, 1, stats["total_checkins"])
-	require.EqualValues(t, 75, stats["total_quota"])
+	require.EqualValues(t, 1, stats["checkin_count"])
+	require.Equal(t, []CheckinRecord{{CheckinDate: time.Now().Format("2006-01-02"), QuotaAwarded: 75}}, stats["records"])
 	require.Equal(t, true, stats["checked_in_today"])
 }
 
@@ -126,7 +127,9 @@ func TestCheckinMonthStatsAreScopedAndValidated(t *testing.T) {
 	stats, err := GetUserCheckinStats(user.Id, "2024-02")
 	require.NoError(t, err)
 	require.Equal(t, []CheckinRecord{{CheckinDate: "2024-02-29", QuotaAwarded: 9}}, stats["records"])
-	require.EqualValues(t, 20, stats["total_quota"])
+	require.EqualValues(t, 2, stats["total_checkins"])
+	require.EqualValues(t, 1, stats["checkin_count"])
+	require.NotContains(t, stats, "total_quota")
 	for _, month := range []string{"2024-2", "2024-13", "2024-01-01", "0000-01", "invalid"} {
 		_, err := GetUserCheckinStats(user.Id, month)
 		require.ErrorContains(t, err, "Invalid check-in month")

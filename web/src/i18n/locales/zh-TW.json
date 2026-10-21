@@ -765,7 +765,6 @@
     "Unable to load check-in records": "無法載入簽到記錄",
     "Check-in successful: {{quota}}": "簽到成功，獲得 {{quota}}",
     "Check in daily to earn quota rewards": "每日簽到，領取額度獎勵",
-    "Reward range: {{min}} – {{max}}": "獎勵範圍：{{min}} – {{max}}",
     "Check In": "簽到",
     "Security verification is not configured": "尚未設定安全驗證",
     "Previous month": "上個月",

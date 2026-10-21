@@ -155,18 +155,13 @@ func GetUserCheckinStats(userId int, month string) (map[string]interface{}, erro
 		return nil, err
 	}
 
-	// 获取用户所有时间的签到统计
+	// 获取用户所有时间的签到次数
 	var totalCheckins int64
-	var totalQuota int64
 	if err := DB.Model(&Checkin{}).Where("user_id = ?", userId).Count(&totalCheckins).Error; err != nil {
-		return nil, err
-	}
-	if err := DB.Model(&Checkin{}).Where("user_id = ?", userId).Select("COALESCE(SUM(quota_awarded), 0)").Scan(&totalQuota).Error; err != nil {
 		return nil, err
 	}
 
 	return map[string]interface{}{
-		"total_quota":      totalQuota,      // 所有时间累计获得的额度
 		"total_checkins":   totalCheckins,   // 所有时间累计签到次数
 		"checkin_count":    len(records),    // 本月签到次数
 		"checked_in_today": hasCheckedToday, // 今天是否已签到

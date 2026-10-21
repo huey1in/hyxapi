@@ -765,7 +765,6 @@
     "Unable to load check-in records": "Impossible de charger les présences",
     "Check-in successful: {{quota}}": "Présence enregistrée : {{quota}}",
     "Check in daily to earn quota rewards": "Connectez-vous chaque jour pour recevoir une récompense",
-    "Reward range: {{min}} – {{max}}": "Récompense : {{min}} – {{max}}",
     "Check In": "Pointer",
     "Security verification is not configured": "La vérification de sécurité n’est pas configurée",
     "Previous month": "Mois précédent",

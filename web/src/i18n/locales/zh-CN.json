@@ -811,7 +811,6 @@
     "Unable to load check-in records": "无法加载签到记录",
     "Check-in successful: {{quota}}": "签到成功，获得 {{quota}}",
     "Check in daily to earn quota rewards": "每日签到，领取额度奖励",
-    "Reward range: {{min}} – {{max}}": "奖励范围：{{min}} – {{max}}",
     "Check In": "签到",
     "Security verification is not configured": "尚未配置安全验证",
     "Previous month": "上个月",
