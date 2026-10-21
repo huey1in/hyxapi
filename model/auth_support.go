@@ -18,8 +18,6 @@ func validateOptionValue(key, value string) error {
 		return ErrRemovedFeatureOption
 	}
 	consoleTypes := map[string]string{
-		"console_setting.api_info":           "ApiInfo",
-		"console_setting.faq":                "FAQ",
 		"console_setting.announcements":      "Announcements",
 		"console_setting.uptime_kuma_groups": "UptimeKumaGroups",
 	}
@@ -37,7 +35,7 @@ func validateOptionValue(key, value string) error {
 		return model_setting.ValidateGeminiSafetySettings(value)
 	case "WorkerUrl", "WorkerAllowHttpImageRequestEnabled":
 		return system_setting.ValidateWorkerOption(key, value)
-	case "console_setting.api_info_enabled", "console_setting.faq_enabled", "console_setting.announcements_enabled", "console_setting.uptime_kuma_enabled":
+	case "console_setting.announcements_enabled", "console_setting.uptime_kuma_enabled":
 		if value != "true" && value != "false" {
 			return fmt.Errorf("console panel enabled must be true or false")
 		}

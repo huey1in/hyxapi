@@ -3,10 +3,6 @@ package console_setting
 import "github.com/QuantumNous/new-api/setting/config"
 
 type ConsoleSetting struct {
-	ApiInfo              string `json:"api_info"`
-	FAQ                  string `json:"faq"`
-	ApiInfoEnabled       bool   `json:"api_info_enabled"`
-	FAQEnabled           bool   `json:"faq_enabled"`
 	UptimeKumaGroups     string `json:"uptime_kuma_groups"`    // Uptime Kuma 分组配置 (JSON 数组字符串)
 	Announcements        string `json:"announcements"`         // 系统公告 (JSON 数组字符串)
 	UptimeKumaEnabled    bool   `json:"uptime_kuma_enabled"`   // 是否启用 Uptime Kuma 面板
@@ -15,8 +11,6 @@ type ConsoleSetting struct {
 
 // 默认配置
 var defaultConsoleSetting = ConsoleSetting{
-	ApiInfoEnabled:       true,
-	FAQEnabled:           true,
 	UptimeKumaGroups:     "",
 	Announcements:        "",
 	UptimeKumaEnabled:    true,

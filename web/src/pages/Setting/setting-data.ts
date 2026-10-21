@@ -6,7 +6,6 @@ import {
   SELECT_OPTIONS,
 } from './setting-fields';
 import { invalidPaymentSettings } from '../../features/payments/payment-setup-data';
-import { invalidConsoleContentChanges } from '../../features/dashboard-content/content';
 import { invalidGroupPricingChanges } from './group-pricing-rules';
 
 export type Settings = Record<string, string>;
@@ -242,7 +241,6 @@ export function invalidSettingKeys(
       invalid.push('checkin_setting.min_quota', 'checkin_setting.max_quota');
   }
   if (invalidPaymentSettings(changes)) invalid.push('payment');
-  if (invalidConsoleContentChanges(changes)) invalid.push('console');
   if (invalidGroupPricingChanges(changes)) invalid.push('groups');
   return [...new Set(invalid)];
 }

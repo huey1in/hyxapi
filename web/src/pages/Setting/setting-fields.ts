@@ -226,10 +226,6 @@ export const TAB_KEYS: Record<string, string[]> = {
     'Notice',
     'console_setting.announcements_enabled',
     'console_setting.announcements',
-    'console_setting.api_info_enabled',
-    'console_setting.api_info',
-    'console_setting.faq_enabled',
-    'console_setting.faq',
     'log_setting.log_request_body',
     'log_setting.log_response_body',
     'log_setting.max_body_log_bytes',
@@ -524,16 +520,6 @@ export const TAB_SECTIONS: Record<string, SettingSection[]> = {
         'console_setting.announcements_enabled',
         'console_setting.announcements',
       ],
-    },
-    {
-      title: 'API information',
-      component: 'ConsoleAPIInfo',
-      keys: ['console_setting.api_info_enabled', 'console_setting.api_info'],
-    },
-    {
-      title: 'Frequently asked questions',
-      component: 'ConsoleFAQ',
-      keys: ['console_setting.faq_enabled', 'console_setting.faq'],
     },
     {
       title: '日志查询与导出',

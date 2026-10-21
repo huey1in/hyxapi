@@ -21,10 +21,6 @@ export interface SiteStatus {
   version?: string;
   announcements?: { id?: string | number; content?: string; publishDate?: string; type?: string; extra?: string; title?: string; link?: string }[];
   announcements_enabled?: boolean;
-  api_info_enabled?: boolean;
-  faq_enabled?: boolean;
-  api_info?: { url: string; route: string; description: string; color: string }[];
-  faq?: { question: string; answer: string }[];
   enable_data_export?: boolean;
   start_time?: number;
   setup?: boolean;

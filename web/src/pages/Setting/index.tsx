@@ -26,7 +26,6 @@ import TaskPluginManager from './TaskPluginManager';
 import CheckinSetup from './CheckinSetup';
 import SiteSettings from './SiteSettings';
 import SiteNoticeEditor from './SiteNoticeEditor';
-import ConsoleContentEditor from './ConsoleContentEditor';
 import GroupPricingRules from './GroupPricingRules';
 import { groupPricingRuleKeys } from './group-pricing-rules';
 import { useAuthStore } from '../../stores/auth-store';
@@ -400,24 +399,6 @@ function SettingPageContent() {
     keys: string[],
     section?: SettingSection,
   ) => {
-    if (
-      section?.component === 'ConsoleAPIInfo' ||
-      section?.component === 'ConsoleFAQ'
-    ) {
-      const kind = section.component === 'ConsoleAPIInfo' ? 'api_info' : 'faq';
-      const key = `console_setting.${kind}`;
-      return (
-        <ConsoleContentEditor
-          key={key}
-          kind={kind}
-          value={val(key)}
-          enabled={toBool(val(key + '_enabled'))}
-          onChange={(value) => set(key, value)}
-          onEnabledChange={(enabled) => set(key + '_enabled', String(enabled))}
-          disabled={saving}
-        />
-      );
-    }
     if (section?.component === 'GroupPricingRules')
       return (
         <GroupPricingRules

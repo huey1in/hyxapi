@@ -21,7 +21,12 @@ func TestRemovedFeatureSettingsArePurgedAndCannotBeRestored(t *testing.T) {
 	DB, common.OptionMap = db, map[string]string{}
 	t.Cleanup(func() { DB, common.OptionMap = previousDB, previousMap })
 	require.NoError(t, db.AutoMigrate(&Option{}))
-	keys := []string{"model_deployment.ionet.enabled", "model_deployment.ionet.api_key", "Chats", "ChatLink", "ChatLink2", "log_setting.max_range_days", "About"}
+	keys := []string{
+		"model_deployment.ionet.enabled", "model_deployment.ionet.api_key",
+		"Chats", "ChatLink", "ChatLink2", "log_setting.max_range_days", "About",
+		"ApiInfo", "FAQ", "console_setting.api_info", "console_setting.faq",
+		"console_setting.api_info_enabled", "console_setting.faq_enabled",
+	}
 	for _, key := range keys {
 		require.NoError(t, db.Create(&Option{Key: key, Value: "legacy-value"}).Error)
 	}

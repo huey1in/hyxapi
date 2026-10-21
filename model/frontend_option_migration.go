@@ -27,19 +27,8 @@ func MigrateRetiredFrontendOptions() error {
 		migrationErrors = append(migrationErrors, fmt.Errorf("normalize %s: %w", retiredThemeOptionKey, err))
 	}
 
-	migrations := []struct {
-		source    string
-		target    string
-		transform legacyOptionTransform
-	}{
-		{source: "ApiInfo", target: "console_setting.api_info", transform: transformLegacyAPIInfo},
-		{source: "Announcements", target: "console_setting.announcements", transform: transformLegacyAnnouncements},
-		{source: "FAQ", target: "console_setting.faq", transform: transformLegacyFAQ},
-	}
-	for _, migration := range migrations {
-		if err := migrateLegacyOption(migration.source, migration.target, migration.transform); err != nil {
-			migrationErrors = append(migrationErrors, err)
-		}
+	if err := migrateLegacyOption("Announcements", "console_setting.announcements", transformLegacyAnnouncements); err != nil {
+		migrationErrors = append(migrationErrors, err)
 	}
 	if err := migrateLegacyUptimeOptions(); err != nil {
 		migrationErrors = append(migrationErrors, err)
@@ -102,28 +91,6 @@ func migrateLegacyOption(sourceKey, targetKey string, transform legacyOptionTran
 	})
 }
 
-func transformLegacyAPIInfo(value string) (string, error) {
-	if strings.TrimSpace(value) == "" {
-		return "", errors.New("value is empty")
-	}
-	var items []map[string]any
-	if err := common.UnmarshalJsonStr(value, &items); err != nil {
-		return "", err
-	}
-	if len(items) > 50 {
-		items = items[:50]
-	}
-	encoded, err := common.Marshal(items)
-	if err != nil {
-		return "", err
-	}
-	result := string(encoded)
-	if err := console_setting.ValidateConsoleSettings(result, "ApiInfo"); err != nil {
-		return "", err
-	}
-	return result, nil
-}
-
 func transformLegacyAnnouncements(value string) (string, error) {
 	if strings.TrimSpace(value) == "" {
 		return "", errors.New("value is empty")
@@ -132,43 +99,6 @@ func transformLegacyAnnouncements(value string) (string, error) {
 		return "", err
 	}
 	return value, nil
-}
-
-func transformLegacyFAQ(value string) (string, error) {
-	if strings.TrimSpace(value) == "" {
-		return "", errors.New("value is empty")
-	}
-	var legacyItems []map[string]any
-	if err := common.UnmarshalJsonStr(value, &legacyItems); err != nil {
-		return "", err
-	}
-	items := make([]map[string]any, 0, len(legacyItems))
-	for index, item := range legacyItems {
-		question, _ := item["question"].(string)
-		if strings.TrimSpace(question) == "" {
-			question, _ = item["title"].(string)
-		}
-		answer, _ := item["answer"].(string)
-		if strings.TrimSpace(answer) == "" {
-			answer, _ = item["content"].(string)
-		}
-		if strings.TrimSpace(question) == "" || strings.TrimSpace(answer) == "" {
-			return "", fmt.Errorf("FAQ entry %d is missing a question or answer", index)
-		}
-		items = append(items, map[string]any{"question": question, "answer": answer})
-	}
-	if len(items) > 100 {
-		items = items[:100]
-	}
-	encoded, err := common.Marshal(items)
-	if err != nil {
-		return "", err
-	}
-	result := string(encoded)
-	if err := console_setting.ValidateConsoleSettings(result, "FAQ"); err != nil {
-		return "", err
-	}
-	return result, nil
 }
 
 func migrateLegacyUptimeOptions() error {

@@ -14,7 +14,6 @@ import { advancePreviewState, createPreviewState, getPreviewUsage, previewKeys }
 import { dashboardKeysSchema, dashboardLocalTime, dashboardPeriods, dashboardProfileSchema, dashboardRange, dashboardUsageSchema } from './dashboard-data';
 import type { DashboardRange } from './dashboard-data';
 import DashboardRangeDialog from './DashboardRangeDialog';
-import ConsoleContent from '../../features/dashboard-content/ConsoleContent';
 import SpendingTrendChart from './SpendingTrendChart';
 import ConsolePageHeader from '../../components/layout/ConsolePageHeader';
 
@@ -125,8 +124,6 @@ function DashboardContent({ preview = false }: { preview?: boolean }) {
         </div>}
         <SpendingTrendChart usage={activeStats} loading={!preview && usage.isPending} />
       </section>
-
-      {!preview && <ConsoleContent />}
 
     </div>
   );

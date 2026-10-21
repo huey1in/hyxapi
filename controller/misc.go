@@ -100,8 +100,6 @@ func GetStatus(c *gin.Context) {
 
 		// 面板启用开关
 		"uptime_kuma_enabled":   cs.UptimeKumaEnabled,
-		"api_info_enabled":      cs.ApiInfoEnabled,
-		"faq_enabled":           cs.FAQEnabled,
 		"announcements_enabled": cs.AnnouncementsEnabled,
 		// 模块管理配置
 		"HeaderNavModules":    common.OptionMap["HeaderNavModules"],
@@ -126,12 +124,6 @@ func GetStatus(c *gin.Context) {
 	}
 
 	// 根据启用状态注入可选内容
-	if cs.ApiInfoEnabled {
-		data["api_info"] = console_setting.GetApiInfo()
-	}
-	if cs.FAQEnabled {
-		data["faq"] = console_setting.GetFAQ()
-	}
 	if cs.AnnouncementsEnabled {
 		data["announcements"] = console_setting.GetAnnouncements()
 	}
