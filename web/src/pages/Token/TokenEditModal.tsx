@@ -1,9 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ArrowUp, ArrowDown, Trash2 } from 'lucide-react';
 import { API, showSuccess } from '../../helpers';
 import { quotaToDisplayAmount, displayAmountToQuota } from '../../helpers/quota';
-import { Button, IconButton, Input, NumberInput, Switch, Select, MultiSelect, SlideOver, showError as notifyError } from '../../components/ui';
+import { Button, Input, NumberInput, Switch, Select, MultiSelect, SlideOver, showError as notifyError } from '../../components/ui';
+import SortableMultiSelect from '../../components/ui/select/SortableMultiSelect';
 import { autoGroupsPayload, manualTokenGroups, reconcileAutoGroups, validateAutoGroups } from './autoGroups';
 import type { AutoGroupMode } from './autoGroups';
 import type { ManagedToken } from './token-management';
@@ -32,7 +32,7 @@ const TokenEditModal = ({ open, token, onClose, onSaved, onChanged }: Props) => 
   const savingLock = useRef(false);
   const [createCount, setCreateCount] = useState<number | ''>(1);
   const [form, setForm] = useState<TokenForm>({ automatic: true, auto_groups_mode: 'inherit', auto_groups: [], groups: [] });
-  const [groups, setGroups] = useState<GroupOption[]>([]);
+  const [groups, setGroups] = useState<string[]>([]);
   const [models, setModels] = useState<GroupOption[]>([]);
   const [autoConfig, setAutoConfig] = useState<AutoConfig>({ groups: [], max_count: 5 });
   const [groupsLoading, setGroupsLoading] = useState(false);
@@ -72,12 +72,12 @@ const TokenEditModal = ({ open, token, onClose, onSaved, onChanged }: Props) => 
     setGroupsLoading(true);
     setGroupsError('');
     setAutoNotice(false);
-    Promise.all([API.get<ApiEnvelope<Record<string, { desc?: string }>>>('/api/user/self/groups', { signal: owner.signal, skipErrorHandler: true }), API.get<ApiEnvelope<AutoConfig>>('/api/token/auto-groups', { signal: owner.signal, skipErrorHandler: true })]).then(([usable, auto]) => {
+    Promise.all([API.get<ApiEnvelope<Record<string, unknown>>>('/api/user/self/groups', { signal: owner.signal, skipErrorHandler: true }), API.get<ApiEnvelope<AutoConfig>>('/api/token/auto-groups', { signal: owner.signal, skipErrorHandler: true })]).then(([usable, auto]) => {
       if (owner.signal.aborted) return;
       if (!usable.data?.success || !auto.data?.success) throw new Error(usable.data?.message || auto.data?.message || t('Failed to load groups'));
-      const available = Object.entries(usable.data.data || {}).filter(([value]) => value !== 'auto').map(([value, info]) => ({ value, label: `${value}${info.desc && info.desc !== value ? ` · ${info.desc}` : ''}` }));
+      const available = Object.keys(usable.data.data || {}).filter((value) => value !== 'auto');
       const config = auto.data.data;
-      const selection = reconcileAutoGroups(token.auto_groups, available.map((item) => item.value), config.max_count);
+      const selection = reconcileAutoGroups(token.auto_groups, available, config.max_count);
       setGroups(available);
       setAutoConfig(config);
       setAutoNotice(selection.changed);
@@ -106,7 +106,7 @@ const TokenEditModal = ({ open, token, onClose, onSaved, onChanged }: Props) => 
     if (new TextEncoder().encode(form.name.trim()).length > (count > 1 ? 43 : 50)) return showError(t('Key name is too long for the requested creation count'));
     if (form.automatic) {
       if (groupsLoading || groupsError) return showError(groupsError || t('Loading Auto group configuration'));
-      const error = validateAutoGroups(form.auto_groups_mode, form.auto_groups || [], autoConfig.max_count, groups.map((item) => item.value), (key, options) => t(key, options ?? {}));
+      const error = validateAutoGroups(form.auto_groups_mode, form.auto_groups || [], autoConfig.max_count, groups, (key, options) => t(key, options ?? {}));
       if (error) return showError(error);
     } else if (!form.groups?.length) return showError(t('Select at least one group or use automatic groups'));
     savingLock.current = true; setSaving(true);
@@ -152,17 +152,6 @@ const TokenEditModal = ({ open, token, onClose, onSaved, onChanged }: Props) => 
 
   const selectedModels = form.model_limits ? form.model_limits.split(',').filter(Boolean) : [];
   const selectedGroups = form.automatic ? [] : form.groups || [];
-  const addGroup = (value: string) => {
-    if (!value || selectedGroups.includes(value)) return;
-    u('groups')([...selectedGroups, value]);
-  };
-  const moveGroup = (index: number, delta: number) => {
-    const next = [...selectedGroups];
-    const target = index + delta;
-    if (target < 0 || target >= next.length) return;
-    [next[index], next[target]] = [next[target], next[index]];
-    u('groups')(next);
-  };
 
   return (
     <SlideOver
@@ -188,11 +177,13 @@ const TokenEditModal = ({ open, token, onClose, onSaved, onChanged }: Props) => 
           <NumberInput value={createCount} onChange={setCreateCount} min={1} max={1000} step={1} aria-label={t('Number of API keys')} />
         </div>}
 
-        <div>
-          <label className='block text-sm text-[#666] mb-1.5'>{t('Group mode')}</label>
-          <Select value={form.automatic ? 'auto' : 'manual'} options={[
-            { value: 'auto', label: t('Automatic groups') }, { value: 'manual', label: t('Ordered groups') },
-          ]} onChange={(value) => u('automatic')(value === 'auto')} width='100%' />
+        <div className='flex items-center justify-between gap-3'>
+          <label htmlFor='token-group-mode' className='min-w-0 flex-1 text-sm text-ui-text'>{t('Group mode')}</label>
+          <div className='w-[min(220px,calc(100%_-_88px))] min-w-0 shrink-0'>
+            <Select id='token-group-mode' popover value={form.automatic ? 'auto' : 'manual'} options={[
+              { value: 'auto', label: t('Automatic groups') }, { value: 'manual', label: t('Ordered groups') },
+            ]} onChange={(value) => u('automatic')(value === 'auto')} width='full' />
+          </div>
         </div>
 
         {form.automatic && (
@@ -204,22 +195,12 @@ const TokenEditModal = ({ open, token, onClose, onSaved, onChanged }: Props) => 
               ]} onChange={u('auto_groups_mode')} width='100%' />
               {autoNotice && <p role='status' className='text-xs text-amber-600'>{t('Unavailable or excess groups were removed. Review before saving. An empty custom list requires a new selection or explicit inheritance.')}</p>}
               {form.auto_groups_mode === 'custom' ? <>
-                <Select value='' placeholder={t('Add Auto group')} width='100%' disabled={(form.auto_groups || []).length >= autoConfig.max_count}
-                  options={groups.filter((item) => !(form.auto_groups || []).includes(item.value))}
-                  onChange={(value) => { if (value && !(form.auto_groups || []).includes(value)) u('auto_groups')([...(form.auto_groups || []), value]); }} />
-                {(form.auto_groups || []).map((group, index, ordered) => (
-                  <div key={group} className='flex w-full min-h-12 items-center gap-1 rounded-lg border border-ui-border px-3 py-2'>
-                    <span className='shrink-0 text-xs text-ui-text-3'>{index + 1}</span>
-                    <span className='min-w-0 flex-1 truncate text-sm text-ui-text'>{group}</span>
-                    <IconButton icon={ArrowUp} size='sm' aria-label={t('Increase {{group}} priority', { group })} disabled={index === 0} onClick={() => {
-                      const next = [...ordered]; [next[index - 1], next[index]] = [next[index], next[index - 1]]; u('auto_groups')(next);
-                    }} />
-                    <IconButton icon={ArrowDown} size='sm' aria-label={t('Decrease {{group}} priority', { group })} disabled={index === ordered.length - 1} onClick={() => {
-                      const next = [...ordered]; [next[index + 1], next[index]] = [next[index], next[index + 1]]; u('auto_groups')(next);
-                    }} />
-                    <IconButton icon={Trash2} size='sm' tone='red' aria-label={t('Remove Auto group {{group}}', { group })} onClick={() => u('auto_groups')(ordered.filter((item) => item !== group))} />
+                <div className='flex items-center justify-between gap-3'>
+                  <label htmlFor='token-group-priority' className='min-w-0 flex-1 text-sm text-ui-text'>{t('Group priority')}</label>
+                  <div className='w-[min(220px,calc(100%_-_88px))] min-w-0 shrink-0'>
+                    <SortableMultiSelect id='token-group-priority' label={t('Group priority')} options={groups} value={form.auto_groups || []} onChange={u('auto_groups')} maxSelected={autoConfig.max_count} placeholder={t('Add Auto group')} />
                   </div>
-                ))}
+                </div>
                 <p className='text-xs text-ui-text-3'>{t('Route in list order, up to {{count}} groups. This list is independent of global changes; group permissions are still checked for each request.', { count: autoConfig.max_count })}</p>
               </> : <p className='text-xs text-ui-text-3 break-words'>{t('Global order: {{groups}}. Administrator changes apply automatically.', { groups: autoConfig.groups.join(' → ') || t('No groups are available; Auto routing will fail') })}</p>}
               <div className='flex items-center justify-between gap-3'>
@@ -231,28 +212,11 @@ const TokenEditModal = ({ open, token, onClose, onSaved, onChanged }: Props) => 
         )}
 
         {!form.automatic && (
-          <div>
-            <label className='block text-sm text-[#666] mb-1.5'>{t('Group priority')}</label>
-            <Select value='' onChange={addGroup} options={groups.filter((item) => !selectedGroups.includes(item.value))} placeholder={t('Add group')} />
-            <div className='mt-3 flex flex-col gap-2'>
-              {selectedGroups.length === 0 && (
-                <div className='flex w-full min-h-12 items-center gap-2 rounded-lg border border-ui-border bg-[var(--page-bg)] px-3 py-2'>
-                  <span className='min-w-0 flex-1 truncate text-sm text-ui-text-3'>{t('No groups selected')}</span>
-                </div>
-              )}
-              {selectedGroups.map((group, index) => (
-                <div key={group} className='flex w-full min-h-12 items-center gap-2 rounded-lg border border-ui-border bg-[var(--page-bg)] px-3 py-2'>
-                  <span className='flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-ui-bg-subtle text-xs font-medium text-ui-text-3'>{index + 1}</span>
-                  <span className='min-w-0 flex-1 truncate text-sm font-medium text-ui-text'>
-                    {groups.find((item) => item.value === group)?.label || group}
-                  </span>
-                  <IconButton icon={ArrowUp} size='sm' aria-label={t('Increase priority')} disabled={index === 0} onClick={() => moveGroup(index, -1)} />
-                  <IconButton icon={ArrowDown} size='sm' aria-label={t('Decrease priority')} disabled={index === selectedGroups.length - 1} onClick={() => moveGroup(index, 1)} />
-                  <IconButton icon={Trash2} size='sm' tone='red' aria-label={t('Remove group')} onClick={() => u('groups')(selectedGroups.filter((item) => item !== group))} />
-                </div>
-              ))}
+          <div className='flex items-center justify-between gap-3'>
+            <label htmlFor='token-group-priority' className='min-w-0 flex-1 text-sm text-ui-text'>{t('Group priority')}</label>
+            <div className='w-[min(220px,calc(100%_-_88px))] min-w-0 shrink-0'>
+              <SortableMultiSelect id='token-group-priority' label={t('Group priority')} options={groups} value={selectedGroups} onChange={u('groups')} disabled={groupsLoading} placeholder={t('Add group')} />
             </div>
-            {selectedGroups.length === 0 && <p className='mt-2 text-xs text-ui-text-3'>{t('Select at least one group or use automatic groups.')}</p>}
           </div>
         )}
 
