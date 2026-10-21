@@ -19,6 +19,7 @@ import type { ApiEnvelope, SiteStatus } from '../../types/api';
 import { apiErrorMessage } from '../../lib/api-error';
 import { parseHeaderNavModules, publicModuleAccess, publicRouteModule } from '../../lib/nav-modules';
 import { cn } from '../ui/tokens';
+import SiteNoticeBanner from '../../features/notifications/SiteNoticeBanner';
 
 export default function PageLayout() {
   const { t } = useTranslation();
@@ -95,6 +96,7 @@ export default function PageLayout() {
   return <MobileSidebarProvider>
     <SecurityVerification />
     <div className='app-layout' style={{ backgroundColor: 'var(--page-bg)' }}>
+      {isConsoleRoute && ready && user && <SiteNoticeBanner key={user.id} />}
       {showHeader && <HeaderBar />}
       <div className={cn('app-layout-body', isConsoleRoute && 'console-layout-body', showHeader && 'public-layout-body')}>
         {isConsoleRoute && <SiderBar loading={!ready || !user || !statusState.status} />}

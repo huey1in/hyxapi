@@ -11,7 +11,7 @@ export default function SiteNoticeEditor({ value, onChange, disabled = false }: 
       <span className='font-medium'>{t('Site notice')}</span>
       <Textarea aria-label={t('Site notice content')} value={value} onChange={onChange} disabled={disabled} rows={6} />
     </label>
-    <p className='text-xs text-ui-text-3'>{t('Shown on the notifications page. Supports Markdown, sandboxed HTML, or a web address.')}</p>
+    <p className='text-xs text-ui-text-3'>{t('Shown in a dismissible banner above console pages. Supports Markdown, sandboxed HTML, or a web address.')}</p>
     {value.trim() && <details className='min-w-0 rounded-xl border border-ui-border p-3'>
       <summary className='cursor-pointer text-sm text-ui-text-2'>{t('Preview')}</summary>
       <div className='mt-3 min-w-0'><ConfiguredContent content={value} title={t('Site notice')} /></div>

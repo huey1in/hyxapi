@@ -1,12 +1,10 @@
-import { ParagraphSkeleton } from '../../components/ui/feedback/ContentSkeleton';
 import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Megaphone, RefreshCw } from 'lucide-react';
+import { Megaphone } from 'lucide-react';
 import { Button, EmptyState, Pagination } from '../../components/ui';
-import { useAuthStore } from '../../stores/auth-store';
-import useIsMobile from '../../hooks/useIsMobile';
-import ConfiguredContent from '../../components/common/markdown/ConfiguredContent';
+import ConsolePageHeader from '../../components/layout/ConsolePageHeader';
 import MarkdownRenderer from '../../components/common/markdown/MarkdownRenderer';
+import { useAuthStore } from '../../stores/auth-store';
 import { announcementKey, safeAnnouncementLink } from '../../features/notifications/notification-data';
 import { useNotifications } from '../../features/notifications/use-notifications';
 
@@ -15,24 +13,20 @@ const pageSize = 20;
 
 function Notifications() {
   const { t, i18n } = useTranslation();
-  const mobile = useIsMobile();
-  const { notice, content, announcements, unread, read, markRead } = useNotifications();
+  const { announcements, unread, read, markRead } = useNotifications();
   const [page, setPage] = useState(1);
   const [previouslyRead, setPreviouslyRead] = useState(() => new Set(read.announcements));
   const visible = useMemo(() => announcements.slice((page - 1) * pageSize, page * pageSize), [announcements, page]);
   const keys = useMemo(() => visible.map(announcementKey), [visible]);
   useEffect(() => { setPage((current) => Math.min(current, Math.max(1, Math.ceil(announcements.length / pageSize)))); }, [announcements.length]);
-  useEffect(() => { markRead(content, keys); }, [content, keys, markRead]);
+  useEffect(() => { markRead(keys); }, [keys, markRead]);
   const date = (raw: string) => { const value = new Date(raw); return Number.isNaN(value.getTime()) ? raw : new Intl.DateTimeFormat(i18n.language, { dateStyle: 'medium', timeStyle: 'short' }).format(value); };
-  return <div className='mx-auto flex w-full max-w-[960px] min-w-0 flex-col' style={{ gap: mobile ? 20 : 28, padding: mobile ? 16 : '24px 16px' }}>
-    <div className='flex flex-wrap items-center justify-between gap-3'>
-      <h1 className='text-lg font-semibold text-ui-text'>{t('Notifications')}</h1>
-      <Button size='sm' variant='toggle' disabled={!unread} onClick={() => { const all = announcements.map(announcementKey); markRead(content, all); setPreviouslyRead(new Set(all)); }}>{t('Mark all as read')}</Button>
-    </div>
-    <section aria-label={t('Site notice')} className='min-w-0 space-y-4 rounded-[26px] border border-ui-border p-6'>
-      <div className='flex items-center justify-between gap-3'><h2 className='text-sm font-semibold'>{t('Site notice')}</h2><Button size='sm' variant='toggle' icon={RefreshCw} loading={notice.isFetching} onClick={() => void notice.refetch()}>{t('Refresh')}</Button></div>
-      {notice.isPending ? <ParagraphSkeleton /> : notice.error ? <div role='alert' className='space-y-3 text-sm text-ui-text-2'><p>{t('Unable to load site notice')}</p><Button variant='toggle' onClick={() => void notice.refetch()}>{t('Retry')}</Button></div> : content ? <ConfiguredContent content={content} title={t('Site notice')} /> : <p className='text-sm text-ui-text-3'>{t('No site notice configured')}</p>}
-    </section>
+  return <div className='console-content-page'>
+    <ConsolePageHeader title={t('Notifications')} actions={<Button size='sm' variant='toggle' disabled={!unread} onClick={() => {
+      const all = announcements.map(announcementKey);
+      markRead(all);
+      setPreviouslyRead(new Set(all));
+    }}>{t('Mark all as read')}</Button>} />
     <section aria-label={t('System announcements')} className='min-w-0 rounded-[26px] border border-ui-border p-6'>
       <h2 className='mb-5 text-sm font-semibold'>{t('System announcements')}</h2>
       {!announcements.length ? <EmptyState icon={Megaphone} title={t('No announcements')} /> : visible.map((item, index) => {
