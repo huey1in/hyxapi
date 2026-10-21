@@ -119,7 +119,7 @@ func TestLogUsagePreservesDateKeyFiltersAndImmutableUserScope(t *testing.T) {
 			require.Equal(t, 1, userStat.Requests)
 			keys, err := GetLogTokenOptions(context.Background(), filter, 71)
 			require.NoError(t, err)
-			require.Equal(t, []LogTokenOption{{ID: 303, Name: "unused"}, {ID: 302, Name: "token"}, {ID: 301, Name: "renamed-token"}}, keys, "unused and deleted keys remain selectable; current names take precedence without merging IDs")
+			require.Equal(t, []LogTokenOption{{ID: 303, Name: "unused"}, {ID: 301, Name: "renamed-token"}}, keys, "only current owned keys remain selectable, using their latest names")
 			adminStat, err := SumUsedQuota(0, now-3700, now-3500, "model%", "current_user", "token", 2, "default")
 			require.NoError(t, err)
 			require.Zero(t, adminStat.Requests)

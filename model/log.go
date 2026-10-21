@@ -431,13 +431,25 @@ type Stat struct {
 	Requests int   `json:"requests"`
 }
 
-// LogTokenOption exposes historical key identities without reading key secrets.
+// LogTokenOption exposes key identities without reading key secrets.
 type LogTokenOption struct {
 	ID   int    `json:"id"`
 	Name string `json:"name"`
 }
 
 func GetLogTokenOptions(ctx context.Context, filter LogFilter, userID int) ([]LogTokenOption, error) {
+	if userID < 0 {
+		return nil, errors.New("invalid user scope")
+	}
+	// Personal overview filters list current keys, including unused and disabled
+	// keys. A deleted key's historical usage remains part of the totals.
+	if userID > 0 {
+		options := make([]LogTokenOption, 0)
+		err := DB.WithContext(ctx).Model(&Token{}).Select("id, name").
+			Where("user_id = ?", userID).Order("id DESC").Find(&options).Error
+		return options, err
+	}
+
 	filter.Type, filter.TokenID = LogTypeConsume, 0
 	query, err := buildLogQuery(filter, userID)
 	if err != nil {
@@ -452,9 +464,6 @@ func GetLogTokenOptions(ctx context.Context, filter LogFilter, userID int) ([]Lo
 	// Include unused current keys and prefer current names after a rename. The
 	// main and log databases can be separate, so merge metadata without a join.
 	currentQuery := DB.WithContext(ctx).Model(&Token{}).Select("id, name")
-	if userID > 0 {
-		currentQuery = currentQuery.Where("user_id = ?", userID)
-	}
 	var current []LogTokenOption
 	if err := currentQuery.Find(&current).Error; err != nil {
 		return nil, err

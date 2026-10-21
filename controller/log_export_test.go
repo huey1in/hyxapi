@@ -205,7 +205,7 @@ func TestLogUsageAndKeyChoicesAreScopedAndValidateFilters(t *testing.T) {
 		}
 		require.NoError(t, json.Unmarshal(response.Body.Bytes(), &result))
 		require.True(t, result.Success)
-		expected := []model.LogTokenOption{{ID: 206, Name: "unused"}, {ID: 202, Name: "duplicate"}, {ID: 201, Name: "duplicate"}}
+		expected := []model.LogTokenOption{{ID: 206, Name: "unused"}, {ID: 201, Name: "duplicate"}}
 		if !self {
 			expected = []model.LogTokenOption{{ID: 207, Name: "foreign-unused"}, {ID: 206, Name: "unused"}, {ID: 203, Name: "duplicate"}, {ID: 202, Name: "duplicate"}, {ID: 201, Name: "duplicate"}}
 		}
@@ -219,4 +219,39 @@ func TestLogUsageAndKeyChoicesAreScopedAndValidateFilters(t *testing.T) {
 			require.Contains(t, response.Body.String(), `"success":false`, query)
 		}
 	}
+}
+
+func TestDashboardKeyChoicesExcludeDeletedKeysWithoutLosingUsage(t *testing.T) {
+	user, _ := setupAccessTokenAudit(t)
+	require.NoError(t, model.DB.AutoMigrate(&model.Token{}))
+	token := model.Token{UserId: user.Id, Name: "deleted-key", Key: "private-deleted-key"}
+	require.NoError(t, model.DB.Create(&token).Error)
+	require.NoError(t, model.LOG_DB.Create(&model.Log{UserId: user.Id, TokenId: token.Id, TokenName: token.Name, Type: model.LogTypeConsume, CreatedAt: time.Now().Unix(), Quota: 50, PromptTokens: 10}).Error)
+	call := func(handler gin.HandlerFunc) []byte {
+		response := httptest.NewRecorder()
+		c, _ := gin.CreateTestContext(response)
+		c.Set("id", user.Id)
+		c.Request = httptest.NewRequest(http.MethodGet, "/api/log/self/keys", nil)
+		handler(c)
+		require.Equal(t, http.StatusOK, response.Code)
+		return response.Body.Bytes()
+	}
+	var choices struct {
+		Success bool
+		Data    []model.LogTokenOption
+	}
+	require.NoError(t, json.Unmarshal(call(GetUserLogTokenOptions), &choices))
+	require.True(t, choices.Success)
+	require.Equal(t, []model.LogTokenOption{{ID: token.Id, Name: token.Name}}, choices.Data)
+	require.NoError(t, token.Delete())
+	require.NoError(t, json.Unmarshal(call(GetUserLogTokenOptions), &choices))
+	require.True(t, choices.Success)
+	require.Empty(t, choices.Data)
+	var usage struct {
+		Success bool
+		Data    model.Stat
+	}
+	require.NoError(t, json.Unmarshal(call(GetLogsSelfStat), &usage))
+	require.True(t, usage.Success)
+	require.Equal(t, model.Stat{Quota: 50, Tokens: 10, Requests: 1}, usage.Data)
 }

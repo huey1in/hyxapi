@@ -37,7 +37,7 @@ function DashboardContent({ preview = false }: { preview?: boolean }) {
   const [previewState, setPreviewState] = useState(createPreviewState);
   const [range, setRange] = useState<DashboardRange>('month');
   const [rangeDialogOpen, setRangeDialogOpen] = useState(false);
-  const [selectedKey, setSelectedKey] = useState({ id: 0, name: '' });
+  const [selectedKeyID, setSelectedKeyID] = useState(0);
   const isDark = useIsDark();
   const role = auth.user?.role ?? 0;
   const identity = `${auth.user?.id}:${auth.session?.sid}:${role}`;
@@ -45,16 +45,19 @@ function DashboardContent({ preview = false }: { preview?: boolean }) {
   const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';
   const common = { enabled: !preview && !!auth.user, gcTime: 0, retry: false, refetchOnMount: 'always' as const, refetchInterval: preview ? false as const : 5000 };
   const profile = useQuery({ ...common, queryKey: ['dashboard-profile', identity], queryFn: ({ signal }) => readDashboardData('/api/user/self', dashboardProfileSchema, signal) });
-  const usage = useQuery({ ...common, queryKey: ['dashboard-usage', identity, range, day, selectedKey.id, timezone], queryFn: ({ signal }) => readDashboardData('/api/log/self/stat', dashboardUsageSchema, signal, { ...dashboardRange(range), include_trend: true, timezone, ...(selectedKey.id ? { token_id: selectedKey.id } : {}) }) });
-  const keys = useQuery({ ...common, refetchInterval: 60000, queryKey: ['dashboard-keys', identity], queryFn: ({ signal }) => readDashboardData('/api/log/self/keys', dashboardKeysSchema, signal) });
+  const keys = useQuery({ ...common, queryKey: ['dashboard-keys', identity], queryFn: ({ signal }) => readDashboardData('/api/log/self/keys', dashboardKeysSchema, signal) });
+  const availableKeys = preview ? previewKeys : keys.data ?? [];
+  const activeKeyID = availableKeys.some((key) => key.id === selectedKeyID) ? selectedKeyID : 0;
+  useEffect(() => {
+    if (!preview && keys.isSuccess && selectedKeyID !== activeKeyID) setSelectedKeyID(activeKeyID);
+  }, [preview, keys.isSuccess, selectedKeyID, activeKeyID]);
+  const usage = useQuery({ ...common, queryKey: ['dashboard-usage', identity, range, day, activeKeyID, timezone], queryFn: ({ signal }) => readDashboardData('/api/log/self/stat', dashboardUsageSchema, signal, { ...dashboardRange(range), include_trend: true, timezone, ...(activeKeyID ? { token_id: activeKeyID } : {}) }) });
   useEffect(() => {
     if (!preview) return;
     const timer = setInterval(() => setPreviewState((current) => advancePreviewState(current)), 2400);
     return () => clearInterval(timer);
   }, [preview]);
-  const activeStats = preview ? getPreviewUsage(previewState, dashboardRange(range), selectedKey.id) : usage.error ? undefined : usage.data;
-  const availableKeys = preview ? previewKeys : keys.data ?? [];
-  const keyChoices = selectedKey.id && !availableKeys.some((key) => key.id === selectedKey.id) ? [selectedKey, ...availableKeys] : availableKeys;
+  const activeStats = preview ? getPreviewUsage(previewState, dashboardRange(range), activeKeyID) : usage.error ? undefined : usage.data;
   const u = preview ? previewState.user : profile.error ? undefined : profile.data;
   const overviewError = !preview && (profile.error || usage.error || keys.error);
   const refresh = () => void Promise.allSettled([profile.refetch(), usage.refetch(), keys.refetch()]);
@@ -112,7 +115,7 @@ function DashboardContent({ preview = false }: { preview?: boolean }) {
             }} />
           </div>
           <div className='dashboard-filter-field dashboard-key-filter'>
-            <Select id='dashboard-key' popover size={32} prefix='API Key' aria-label='API Key' value={selectedKey.id} disabled={!preview && keys.isPending} options={[{ value: 0, label: t('All') }, ...keyChoices.map((key) => ({ value: key.id, label: <span title={`${key.name || 'API Key'} (#${key.id})`}>{key.name || 'API Key'} (#{key.id})</span> }))]} onChange={(id) => setSelectedKey(keyChoices.find((key) => key.id === id) ?? { id: 0, name: '' })} />
+            <Select id='dashboard-key' popover size={32} prefix='API Key' aria-label='API Key' value={activeKeyID} disabled={!preview && keys.isPending} options={[{ value: 0, label: t('All') }, ...availableKeys.map((key) => ({ value: key.id, label: <span title={`${key.name || 'API Key'} (#${key.id})`}>{key.name || 'API Key'} (#{key.id})</span> }))]} onChange={setSelectedKeyID} />
           </div>
         </div>
         {rangeDialogOpen && <DashboardRangeDialog initialRange={dashboardRange(range)} onClose={closeRangeDialog} onApply={(next) => { setRange(next); closeRangeDialog(); }} />}

@@ -51,7 +51,10 @@ export function useTokenManagement(preview: boolean, previewRows: unknown[]) {
     if (list.data && page > Math.max(1, Math.ceil(total / pageSize))) setPage(Math.max(1, Math.ceil(total / pageSize)));
   }, [list.data, page, pageSize, total]);
 
-  const refresh = () => client.invalidateQueries({ queryKey: ['managed-tokens', identity] });
+  const refresh = () => Promise.all([
+    client.invalidateQueries({ queryKey: ['managed-tokens', identity] }),
+    client.invalidateQueries({ queryKey: ['dashboard-keys'] }),
+  ]);
   const runAction = async (action: (owner: AbortController) => Promise<void>): Promise<boolean> => {
     const owner = lifetime.current;
     if (!owner || owner.signal.aborted || actionLock.current || preview) return false;
