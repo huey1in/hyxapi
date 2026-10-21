@@ -167,14 +167,18 @@ const TokenEditModal = ({ open, token, onClose, onSaved, onChanged }: Props) => 
       }
     >
       <div className='px-6 py-4 space-y-5'>
-        <div>
-          <label className='block text-sm text-[#666] mb-1.5'>{t('Name')}</label>
-          <Input value={form.name || ''} onChange={u('name')} placeholder={t('For example, my-app')} />
+        <div className='flex items-center justify-between gap-3'>
+          <label htmlFor='token-name' className='min-w-0 flex-1 text-sm text-ui-text'>{t('Name')}</label>
+          <div className='w-[min(220px,calc(100%_-_88px))] min-w-0 shrink-0'>
+            <Input id='token-name' value={form.name || ''} onChange={u('name')} placeholder={t('For example, my-app')} width='full' />
+          </div>
         </div>
 
-        {!isEdit && <div>
-          <label className='block text-sm text-[#666] mb-1.5'>{t('Number of API keys')}</label>
-          <NumberInput value={createCount} onChange={setCreateCount} min={1} max={1000} step={1} aria-label={t('Number of API keys')} />
+        {!isEdit && <div className='flex items-center justify-between gap-3'>
+          <label htmlFor='token-create-count' className='min-w-0 flex-1 text-sm text-ui-text'>{t('Number of API keys')}</label>
+          <div className='w-[min(220px,calc(100%_-_88px))] min-w-0 shrink-0'>
+            <NumberInput id='token-create-count' value={createCount} onChange={setCreateCount} min={1} max={1000} step={1} width='full' aria-label={t('Number of API keys')} />
+          </div>
         </div>}
 
         <div className='flex items-center justify-between gap-3'>
@@ -264,16 +268,17 @@ const TokenEditModal = ({ open, token, onClose, onSaved, onChanged }: Props) => 
           </div>
         )}
 
-        <div>
-          <label className='block text-sm text-[#666] mb-1.5'>{t('Expiration time')}</label>
-          <div className='flex gap-2'>
+        <div className='flex items-center justify-between gap-3'>
+          <label htmlFor='token-expiration' className='min-w-0 flex-1 text-sm text-ui-text'>{t('Expiration time')}</label>
+          <div className='flex w-[min(280px,calc(100%_-_88px))] min-w-0 shrink-0 items-center gap-2'>
             <input
+              id='token-expiration'
               type='datetime-local'
               value={toLocalInput(form.expired_time)}
               onChange={(e) => u('expired_time')(toUnix(e.target.value) || -1)}
-              className='flex-1 rounded-lg border border-ui-border bg-transparent px-3 py-2 text-sm text-ui-text'
+              className='h-9 min-w-0 flex-1 rounded-xl border border-ui-border bg-transparent px-1.5 text-xs text-ui-text'
             />
-            <Button variant='toggle' selected={form.expired_time === -1}
+            <Button size='sm' shrink={false} variant='toggle' selected={form.expired_time === -1}
               onClick={() => u('expired_time')(-1)}>{t('Never')}</Button>
           </div>
         </div>
