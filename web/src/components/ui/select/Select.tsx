@@ -171,7 +171,7 @@ function Select<V extends SelectValue>({
                       o.disabled && 'opacity-50 cursor-not-allowed',
                     )}
                   >
-                    <span className='truncate'>{o.label}</span>
+                    <span className='min-w-0 flex-1 truncate'>{o.label}</span>
                     {sel && <Check size={14} className='shrink-0 text-ui-text-2' />}
                   </button>
                 );

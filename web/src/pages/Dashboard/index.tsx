@@ -39,15 +39,14 @@ function DashboardContent({ preview = false }: { preview?: boolean }) {
   const [rangeDialogOpen, setRangeDialogOpen] = useState(false);
   const [selectedKey, setSelectedKey] = useState({ id: 0, name: '' });
   const isDark = useIsDark();
-  const role = auth.user?.role ?? 0; const admin = role >= 10;
-  const base = admin ? '/api/log' : '/api/log/self';
+  const role = auth.user?.role ?? 0;
   const identity = `${auth.user?.id}:${auth.session?.sid}:${role}`;
   const day = new Date().toDateString();
   const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';
   const common = { enabled: !preview && !!auth.user, gcTime: 0, retry: false, refetchOnMount: 'always' as const, refetchInterval: preview ? false as const : 5000 };
   const profile = useQuery({ ...common, queryKey: ['dashboard-profile', identity], queryFn: ({ signal }) => readDashboardData('/api/user/self', dashboardProfileSchema, signal) });
-  const usage = useQuery({ ...common, queryKey: ['dashboard-usage', identity, range, day, selectedKey.id, timezone], queryFn: ({ signal }) => readDashboardData(`${base}/stat`, dashboardUsageSchema, signal, { ...dashboardRange(range), include_trend: true, timezone, ...(selectedKey.id ? { token_id: selectedKey.id } : {}) }) });
-  const keys = useQuery({ ...common, refetchInterval: 60000, queryKey: ['dashboard-keys', identity], queryFn: ({ signal }) => readDashboardData(`${base}/keys`, dashboardKeysSchema, signal) });
+  const usage = useQuery({ ...common, queryKey: ['dashboard-usage', identity, range, day, selectedKey.id, timezone], queryFn: ({ signal }) => readDashboardData('/api/log/self/stat', dashboardUsageSchema, signal, { ...dashboardRange(range), include_trend: true, timezone, ...(selectedKey.id ? { token_id: selectedKey.id } : {}) }) });
+  const keys = useQuery({ ...common, refetchInterval: 60000, queryKey: ['dashboard-keys', identity], queryFn: ({ signal }) => readDashboardData('/api/log/self/keys', dashboardKeysSchema, signal) });
   useEffect(() => {
     if (!preview) return;
     const timer = setInterval(() => setPreviewState((current) => advancePreviewState(current)), 2400);
@@ -65,7 +64,7 @@ function DashboardContent({ preview = false }: { preview?: boolean }) {
   return (
     <div className='console-content-page dashboard-overview'>
       {/* 页面标题 */}
-      <ConsolePageHeader title={admin ? t('Global usage') : t('Usage overview')} />
+      <ConsolePageHeader title={t('Usage overview')} />
       {overviewError && <div role='alert' className='flex flex-wrap items-center justify-between gap-3 rounded-xl border border-ui-border p-4 text-sm text-ui-text-2'><span>{t('Unable to load overview')}</span><Button variant='toggle' onClick={refresh}>{t('Retry')}</Button></div>}
 
       {/* 统计卡片 */}
@@ -113,7 +112,7 @@ function DashboardContent({ preview = false }: { preview?: boolean }) {
             }} />
           </div>
           <div className='dashboard-filter-field dashboard-key-filter'>
-            <Select id='dashboard-key' size={32} prefix='API Key' aria-label='API Key' value={selectedKey.id} disabled={!preview && keys.isPending} options={[{ value: 0, label: t('All') }, ...keyChoices.map((key) => ({ value: key.id, label: <span title={`${key.name || 'API Key'} (#${key.id})`}>{key.name || 'API Key'} (#{key.id})</span> }))]} onChange={(id) => setSelectedKey(keyChoices.find((key) => key.id === id) ?? { id: 0, name: '' })} />
+            <Select id='dashboard-key' popover size={32} prefix='API Key' aria-label='API Key' value={selectedKey.id} disabled={!preview && keys.isPending} options={[{ value: 0, label: t('All') }, ...keyChoices.map((key) => ({ value: key.id, label: <span title={`${key.name || 'API Key'} (#${key.id})`}>{key.name || 'API Key'} (#{key.id})</span> }))]} onChange={(id) => setSelectedKey(keyChoices.find((key) => key.id === id) ?? { id: 0, name: '' })} />
           </div>
         </div>
         {rangeDialogOpen && <DashboardRangeDialog initialRange={dashboardRange(range)} onClose={closeRangeDialog} onApply={(next) => { setRange(next); closeRangeDialog(); }} />}
