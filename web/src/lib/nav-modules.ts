@@ -3,7 +3,6 @@ export type HeaderNavModules = {
   home: boolean;
   console: boolean;
   pricing: ModuleAccess;
-  docs: boolean;
 };
 
 const flag = (raw: unknown, fallback: boolean): boolean => {
@@ -30,7 +29,7 @@ export function parseHeaderNavModules(raw: unknown): HeaderNavModules {
     const entry = record(config[key]);
     return entry ? { enabled: flag(entry.enabled, true), requireAuth: flag(entry.requireAuth, false) } : { enabled: flag(config[key], true), requireAuth: false };
   };
-  return { home: flag(config.home, true), console: flag(config.console, true), pricing: access('pricing'), docs: flag(config.docs, true) };
+  return { home: flag(config.home, true), console: flag(config.console, true), pricing: access('pricing') };
 }
 
 export function publicModuleAccess(config: HeaderNavModules, module: 'pricing', authenticated: boolean): 'allowed' | 'disabled' | 'sign-in' {

@@ -43,7 +43,6 @@ export const TAB_KEYS: Record<string, string[]> = {
   platform: [
     'ServerAddress',
     'HeaderNavModules',
-    'general_setting.docs_link',
     'legal.user_agreement',
     'legal.privacy_policy',
     'RetryTimes',
@@ -261,7 +260,6 @@ export const TAB_SECTIONS: Record<string, SettingSection[]> = {
       component: 'SiteSettings',
       keys: [
         'HeaderNavModules',
-        'general_setting.docs_link',
         'legal.user_agreement',
         'legal.privacy_policy',
       ],

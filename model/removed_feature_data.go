@@ -17,7 +17,7 @@ func IsRemovedFeatureOption(key string) bool {
 	switch key {
 	case "About", "Chats", "ChatLink", "ChatLink2", "log_setting.max_range_days",
 		"ApiInfo", "FAQ", "console_setting.api_info", "console_setting.faq",
-		"console_setting.api_info_enabled", "console_setting.faq_enabled":
+		"console_setting.api_info_enabled", "console_setting.faq_enabled", "general_setting.docs_link":
 		return true
 	}
 	return strings.HasPrefix(key, "model_deployment.")
@@ -60,7 +60,7 @@ func CleanHeaderNavModules(raw string) string {
 		return raw
 	}
 	changed := false
-	for _, key := range []string{"rankings", "about"} {
+	for _, key := range []string{"rankings", "about", "docs"} {
 		if _, exists := modules[key]; exists {
 			delete(modules, key)
 			changed = true

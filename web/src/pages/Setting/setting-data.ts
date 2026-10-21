@@ -208,10 +208,7 @@ export function invalidSettingKeys(
       !SELECT_OPTIONS[key].some((option) => option.value === value)
     )
       return true;
-    if (
-      (key === 'general_setting.docs_link' || key === 'WorkerUrl') &&
-      value.trim()
-    ) {
+    if (key === 'WorkerUrl' && value.trim()) {
       try {
         const url = new URL(value.trim());
         return (
@@ -219,7 +216,7 @@ export function invalidSettingKeys(
           !url.hostname ||
           !!url.username ||
           !!url.password ||
-          (key === 'WorkerUrl' && (!!url.hash || value !== value.trim())) ||
+          !!url.hash ||
           /[\u0000-\u0020\u007f]/.test(value.trim())
         );
       } catch {

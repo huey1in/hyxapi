@@ -63,7 +63,7 @@ test('hidden-tab validation checks nested headers, check-in, site links and poli
     { 'claude.model_headers_settings': '{"model":"[object Object]"}' },
     { 'channel_affinity_setting.rules': '{}' },
     { 'global.chat_completions_to_responses_policy': '{"enabled":"true"}' },
-    { 'general_setting.docs_link': 'https://user:password@example.com' },
+    { WorkerUrl: 'https://user:password@example.com' },
   ])
     assert.notDeepEqual(
       data.invalidSettingKeys(changes, stored),

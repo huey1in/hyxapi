@@ -32,11 +32,8 @@ export function setStatusData(data) {
     data.data_export_default_time,
   );
   localStorage.setItem('mj_notify_enabled', data.mj_notify_enabled);
-  if (data.docs_link) {
-    localStorage.setItem('docs_link', data.docs_link);
-  } else {
-    localStorage.removeItem('docs_link');
-  }
+  // Remove the retired documentation link from existing browser profiles.
+  localStorage.removeItem('docs_link');
 }
 
 export function setUserData(data) {

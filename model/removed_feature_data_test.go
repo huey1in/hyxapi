@@ -26,7 +26,7 @@ func TestRemovedFeatureSettingsArePurgedAndCannotBeRestored(t *testing.T) {
 		"model_deployment.ionet.enabled", "model_deployment.ionet.api_key",
 		"Chats", "ChatLink", "ChatLink2", "log_setting.max_range_days", "About",
 		"ApiInfo", "FAQ", "console_setting.api_info", "console_setting.faq",
-		"console_setting.api_info_enabled", "console_setting.faq_enabled",
+		"console_setting.api_info_enabled", "console_setting.faq_enabled", "general_setting.docs_link",
 	}
 	for _, key := range keys {
 		require.NoError(t, db.Create(&Option{Key: key, Value: "legacy-value"}).Error)
@@ -62,7 +62,7 @@ func TestRetiredPublicNavigationIsPurgedAndCannotBeRestored(t *testing.T) {
 	DB, common.OptionMap = db, map[string]string{}
 	t.Cleanup(func() { DB, common.OptionMap = previousDB, previousMap })
 	require.NoError(t, db.AutoMigrate(&Option{}))
-	const original = `{"rankings":{"enabled":true,"requireAuth":true},"about":true,"pricing":{"enabled":false,"requireAuth":true},"custom":{"large":9007199254740993}}`
+	const original = `{"rankings":{"enabled":true,"requireAuth":true},"about":true,"docs":true,"pricing":{"enabled":false,"requireAuth":true},"custom":{"large":9007199254740993}}`
 	const expected = `{"pricing":{"enabled":false,"requireAuth":true},"custom":{"large":9007199254740993}}`
 	require.NoError(t, db.Create(&Option{Key: "HeaderNavModules", Value: original}).Error)
 	for range 2 {
@@ -87,7 +87,7 @@ func TestRetiredPublicNavigationIsPurgedAndCannotBeRestored(t *testing.T) {
 	for _, value := range []string{"", "invalid legacy value", "null", "[]", expected} {
 		require.Equal(t, value, CleanHeaderNavModules(value))
 	}
-	for _, value := range []string{`{"about":false,"home":false}`, `{"rankings":false,"home":false}`} {
+	for _, value := range []string{`{"about":false,"home":false}`, `{"rankings":false,"home":false}`, `{"docs":false,"home":false}`} {
 		require.JSONEq(t, `{"home":false}`, CleanHeaderNavModules(value))
 	}
 }

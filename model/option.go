@@ -280,13 +280,6 @@ func UpdateOption(key string, value string) error {
 	if IsRemovedModelPricingOption(key) {
 		return ErrRemovedModelPricingOption
 	}
-	if key == "general_setting.docs_link" {
-		normalized, err := operation_setting.NormalizeDocsLink(value)
-		if err != nil {
-			return err
-		}
-		value = normalized
-	}
 	if isRemovedBrandingOption(key) {
 		if err := DB.Delete(&Option{Key: key}).Error; err != nil {
 			return err
@@ -737,14 +730,6 @@ func UpdateOptionsBulk(values map[string]string) error {
 	values, err := normalizedGroupRatioOptions(values)
 	if err != nil {
 		return err
-	}
-	if raw, ok := values["general_setting.docs_link"]; ok {
-		normalized, err := operation_setting.NormalizeDocsLink(raw)
-		if err != nil {
-			return err
-		}
-		values = maps.Clone(values)
-		values["general_setting.docs_link"] = normalized
 	}
 	pricingKeys := 0
 	for key := range values {

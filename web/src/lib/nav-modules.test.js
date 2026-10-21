@@ -13,7 +13,7 @@ test('public navigation accepts persisted legacy switches and fails back on malf
   assert.equal(publicModuleAccess(parseHeaderNavModules({ pricing: { enabled: false, requireAuth: true } }), 'pricing', false), 'disabled');
   assert.equal(publicModuleAccess(parseHeaderNavModules({ pricing: { enabled: ' 1 ', requireAuth: ' 1 ' } }), 'pricing', false), 'sign-in');
   assert.equal(publicModuleAccess(parseHeaderNavModules({ pricing: ' 0 ' }), 'pricing', false), 'disabled');
-  assert.deepEqual(Object.keys(parseHeaderNavModules({ rankings: { enabled: true }, about: true })), ['home', 'console', 'pricing', 'docs']);
+  assert.deepEqual(Object.keys(parseHeaderNavModules({ rankings: { enabled: true }, about: true, docs: true })), ['home', 'console', 'pricing']);
 });
 
 test('public module guards include details and exclude console routes and prefix lookalikes', () => {

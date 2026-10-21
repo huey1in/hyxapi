@@ -9,6 +9,7 @@ import SiderBar from '../../components/layout/SiderBar';
 import { useSetTheme, useTheme } from '../../context/Theme';
 import { StatusContext } from '../../context/Status';
 import PublicNavLinks from '../../components/layout/PublicNavLinks';
+import HomeNavigation from './HomeNavigation';
 import LegalDocumentDialog from '../../components/layout/LegalDocumentDialog';
 import { API, updateAPI, logoutAuthentication } from '../../helpers';
 import { extractSupportedModelBrands } from './modelBrands';
@@ -190,17 +191,19 @@ const HomeContent = () => {
       <header ref={navigationRef} className='home-nav'>
         <Link to='/' className='home-brand'>HyxAPI</Link>
         <nav id='home-navigation' aria-label={t('Main navigation')} className={`home-nav-links public-site-navigation${menuOpen ? ' is-open' : ''}`} onKeyDown={(event) => { if (event.key === 'Escape') { setMenuOpen(false); menuButton.current?.focus(); } }}>
-          <PublicNavLinks status={statusState.status} includeHome={false} includePricing={showPublicModels} onNavigate={() => setMenuOpen(false)} />
-          {isLoggedIn ? (
-            <button type='button' className='home-nav-start' onClick={logout} disabled={busy}>
-              {t('Sign out')}
-            </button>
-          ) : (
-            <>
-              <Link to='/auth?mode=login'>{t('Sign in')}</Link>
-              {registerEnabled && <Link className='home-nav-start' to='/auth?mode=register'>{t('Create account')}</Link>}
-            </>
-          )}
+          <HomeNavigation>
+            <PublicNavLinks status={statusState.status} includeHome={false} includePricing={showPublicModels} onNavigate={() => setMenuOpen(false)} />
+            {isLoggedIn ? (
+              <button type='button' onClick={logout} disabled={busy}>
+                {t('Sign out')}
+              </button>
+            ) : (
+              <>
+                <Link to='/auth?mode=login'>{t('Sign in')}</Link>
+                {registerEnabled && <Link to='/auth?mode=register'>{t('Create account')}</Link>}
+              </>
+            )}
+          </HomeNavigation>
         </nav>
         <button ref={menuButton} type='button' className='home-menu-button' onClick={() => setMenuOpen(!menuOpen)} aria-label={t('Toggle navigation menu')} aria-expanded={menuOpen} aria-controls='home-navigation'>
           {menuOpen ? <X size={19} /> : <Menu size={19} />}

@@ -131,11 +131,11 @@ func TestDropLegacyBrandingOptions(t *testing.T) {
 			DB = db
 			t.Cleanup(func() { DB = previous })
 			require.NoError(t, db.AutoMigrate(&Option{}))
-			require.NoError(t, db.Create(&[]Option{{"SystemName", "old"}, {"Logo", "old"}, {"general_setting.docs_link", "old"}, {"DefaultCollapseSidebar", "true"}, {"ModelRatio", "{}"}}).Error)
+			require.NoError(t, db.Create(&[]Option{{"SystemName", "old"}, {"Logo", "old"}, {"WorkerUrl", "https://example.test"}, {"DefaultCollapseSidebar", "true"}, {"ModelRatio", "{}"}}).Error)
 			dropLegacyBrandingOptions()
 			var options []Option
 			require.NoError(t, db.Find(&options).Error)
-			require.ElementsMatch(t, []Option{{"general_setting.docs_link", "old"}, {"ModelRatio", "{}"}}, options)
+			require.ElementsMatch(t, []Option{{"WorkerUrl", "https://example.test"}, {"ModelRatio", "{}"}}, options)
 		})
 	}
 }

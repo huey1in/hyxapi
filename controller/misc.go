@@ -60,7 +60,6 @@ func GetStatus(c *gin.Context) {
 		"password_login_enabled":      common.PasswordLoginEnabled,
 		"password_register_enabled":   common.PasswordRegisterEnabled,
 		"self_use_mode_enabled":       operation_setting.SelfUseModeEnabled,
-		"docs_link":                   operation_setting.GetGeneralSetting().DocsLink,
 		"demo_site_enabled":           operation_setting.DemoSiteEnabled,
 		"default_use_auto_group":      setting.DefaultUseAutoGroup,
 		"github_oauth":                common.GitHubOAuthEnabled,
