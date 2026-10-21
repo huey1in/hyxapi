@@ -6,18 +6,18 @@ const { entry0: sidebar, entry1: calendar, entry2: { filterSidebarItems } } = aw
 
 test('sidebar navigation respects administrator visibility and role requirements', () => {
   const admin = sidebar.parseSidebarModules('{"console":{"token":false,"log":false,"task":false,"midjourney":false},"personal":{"topup":false}}');
-  assert.equal(sidebar.isSidebarModuleVisible('/console/token', admin), false);
-  assert.equal(sidebar.isSidebarModuleVisible('/console/log', admin), false);
-  assert.equal(sidebar.isSidebarModuleVisible('/console/my-subscription', admin), false);
+  assert.equal(sidebar.isSidebarModuleVisible('/token', admin), false);
+  assert.equal(sidebar.isSidebarModuleVisible('/log', admin), false);
+  assert.equal(sidebar.isSidebarModuleVisible('/subscription', admin), false);
   const items = [{ to: '/console' }, { to: '/console/channel', admin: true }];
   assert.deepEqual(filterSidebarItems(items, { admin: false, root: false, isVisible: (route) => sidebar.isSidebarModuleVisible(route, admin) }), [{ to: '/console' }]);
-  assert.equal(sidebar.isSidebarModuleVisible('/console/personal', { personal: { personal: false } }), true);
-  assert.equal(sidebar.isSidebarModuleVisible('/console/personal', { personal: { personal: false, security: false } }), false);
+  assert.equal(sidebar.isSidebarModuleVisible('/personal', { personal: { personal: false } }), true);
+  assert.equal(sidebar.isSidebarModuleVisible('/personal', { personal: { personal: false, security: false } }), false);
 });
 
 test('legacy administrator sidebar values fail open for display and ignore retired sections', () => {
   for (const value of [null, 'bad-json', '[]', 'null', '{"console":false}', '{"console":{"token":"false"}}']) {
-    assert.equal(sidebar.isSidebarModuleVisible('/console/token', sidebar.parseSidebarModules(value)), true);
+    assert.equal(sidebar.isSidebarModuleVisible('/token', sidebar.parseSidebarModules(value)), true);
   }
   assert.deepEqual(sidebar.parseSidebarModules({ chat: { chat: false }, console: { token: false } }), { console: { token: false } });
 });

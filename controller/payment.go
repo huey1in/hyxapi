@@ -113,7 +113,7 @@ func AlipayReturn(c *gin.Context) {
 		c.String(http.StatusBadRequest, "invalid alipay return")
 		return
 	}
-	c.Redirect(http.StatusFound, strings.TrimRight(system_setting.ServerAddress, "/")+"/console/topup")
+	c.Redirect(http.StatusFound, strings.TrimRight(system_setting.ServerAddress, "/")+"/topup")
 }
 
 // epayMethodMinTopUp 返回指定支付方式的最低充值数量；
@@ -222,13 +222,13 @@ func EpayRedirect(c *gin.Context) {
 		return
 	}
 	if topUp.Status != common.TopUpStatusPending {
-		c.Redirect(http.StatusFound, strings.TrimRight(system_setting.ServerAddress, "/")+"/console/topup")
+		c.Redirect(http.StatusFound, strings.TrimRight(system_setting.ServerAddress, "/")+"/topup")
 		return
 	}
 
 	moneyStr := decimal.NewFromFloat(topUp.Money).StringFixed(2)
 	notifyURL := strings.TrimRight(service.GetCallbackAddress(), "/") + "/api/payment/epay/notify"
-	returnURL := strings.TrimRight(system_setting.ServerAddress, "/") + "/console/topup"
+	returnURL := strings.TrimRight(system_setting.ServerAddress, "/") + "/topup"
 	payURL := service.BuildEpayPayURL(operation_setting.PayAddress, payType, tradeNo, notifyURL, returnURL, "额度充值", moneyStr)
 	c.Redirect(http.StatusFound, payURL)
 }

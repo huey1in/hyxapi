@@ -1,5 +1,6 @@
 {
   "translation": {
+    "Unable to load page. Refresh to try again.": "Не удалось загрузить страницу. Обновите её и попробуйте снова.",
     "Verify notification email": "Подтвердить почту для уведомлений",
     "Notification email verified": "Почта для уведомлений подтверждена",
     "Verified": "Подтверждена",

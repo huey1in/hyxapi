@@ -125,7 +125,7 @@ const PricingDetail = () => {
     return sections;
   }, [model, t]);
 
-  const back = () => navigate((location.pathname.startsWith('/console') ? '/console/pricing' : '/pricing') + location.search);
+  const back = () => navigate('/pricing' + location.search);
 
   return (
     <PageShell maxWidth='960px'>

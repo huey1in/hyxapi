@@ -45,7 +45,7 @@ func TestQuotaNotificationUsesSavedLanguageAndCurrentSite(t *testing.T) {
 	require.NoError(t, i18n.Init())
 	text, values := quotaNotifyContent("en", dto.NotifyTypeEmail, "Low balance", "$1")
 	require.Contains(t, text, "Low balance")
-	require.Contains(t, text, "/console/topup")
+	require.Contains(t, text, "/topup")
 	require.Len(t, values, 4)
 	plain, values := quotaNotifyContent("zh-CN", dto.NotifyTypeGotify, "余额提醒", "$1")
 	require.Contains(t, plain, "余额")

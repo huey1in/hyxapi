@@ -899,6 +899,17 @@ func TestDeclarativeRouteValidationProtectsNamespacesAndCanonicalSyntax(t *testi
 	}
 }
 
+func TestDeclarativeRoutesCannotClaimClientPages(t *testing.T) {
+	for _, namespace := range []string{"/pricing", "/token", "/log", "/topup", "/subscription", "/personal", "/notices"} {
+		t.Run(namespace, func(t *testing.T) {
+			for _, path := range []string{namespace, namespace + "/:task_id"} {
+				meta := Meta{APIVersion: 1, Key: "validation", Name: "Validation", Version: "1.0.0", Author: AuthorMeta{Name: "Test"}, Models: []string{"model"}, FetchMode: "per_task", Routes: []Route{{Method: "GET", Path: path, Type: RouteTypeQuery, Render: "native"}}}
+				require.ErrorContains(t, ValidateV1Meta(meta), "reserved namespace "+namespace)
+			}
+		})
+	}
+}
+
 func TestRemovedEndpointsAndProtocolHooksAreValidatedAtCompileTime(t *testing.T) {
 	removed := routingTestPluginSource(
 		"removed-endpoint",

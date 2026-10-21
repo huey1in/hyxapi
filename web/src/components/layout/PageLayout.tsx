@@ -10,6 +10,7 @@ import HeaderBar from './HeaderBar';
 import SiderBar from './SiderBar';
 import FooterBar from './FooterBar';
 import RouteSkeleton from './RouteSkeleton';
+import RouteLoadBoundary from './RouteLoadBoundary';
 import Forbidden from '../../pages/Forbidden';
 import { Button } from '../ui';
 import { MobileSidebarProvider } from '../../context/MobileSidebar';
@@ -22,6 +23,7 @@ import { cn } from '../ui/tokens';
 import SiteNoticeBanner from '../../features/notifications/SiteNoticeBanner';
 import { usePageTitle } from '../../hooks/common/usePageTitle';
 import { pageTitleKey } from '../../lib/page-title';
+import { hasSessionHint } from '../../lib/session-hint';
 
 export default function PageLayout() {
   const { t } = useTranslation();
@@ -40,15 +42,16 @@ export default function PageLayout() {
   const [authAttempt, setAuthAttempt] = useState(0);
   const [statusError, setStatusError] = useState('');
   const [statusAttempt, setStatusAttempt] = useState(0);
-  const isConsoleRoute = isConsolePath(location.pathname);
+  const isConsoleRoute = isConsolePath(location.pathname, Boolean(user));
   const module = publicRouteModule(location.pathname);
+  const isConsoleLayout = isConsoleRoute || (module === 'pricing' && !authReady && hasSessionHint());
   const modules = parseHeaderNavModules(statusState.status?.HeaderNavModules);
   const moduleAccess = module ? publicModuleAccess(modules, module, Boolean(user)) : 'allowed';
   const needsAuthentication = isConsoleRoute || Boolean(module && modules[module].enabled && modules[module].requireAuth);
   const ready = authReady && resolvedAuthMode === needsAuthentication;
   const isStandaloneRoute = ['/', '/auth', '/setup', '/user/reset'].includes(location.pathname) || location.pathname.startsWith('/oauth/');
-  const showHeader = !isStandaloneRoute && !isConsoleRoute;
-  const hideFooter = isConsoleRoute || isStandaloneRoute;
+  const showHeader = !isStandaloneRoute && !isConsoleLayout;
+  const hideFooter = isConsoleLayout || isStandaloneRoute;
 
   useEffect(() => { if (mainRef.current) mainRef.current.scrollTop = 0; }, [location.pathname]);
   useEffect(() => {
@@ -94,18 +97,18 @@ export default function PageLayout() {
     <p>{t(authError)}</p><Button onClick={() => setAuthAttempt((value) => value + 1)}>{t('Retry')}</Button>
   </div> : <RouteSkeleton />;
   else if (!allowed) content = <Forbidden />;
-  else content = <Suspense fallback={<RouteSkeleton />}><Outlet /></Suspense>;
+  else content = <RouteLoadBoundary key={location.pathname}><Suspense fallback={<RouteSkeleton />}><Outlet /></Suspense></RouteLoadBoundary>;
 
   return <MobileSidebarProvider>
     <SecurityVerification />
     <div className='app-layout' style={{ backgroundColor: 'var(--page-bg)' }}>
-      {isConsoleRoute && ready && user && <SiteNoticeBanner key={user.id} />}
+      {isConsoleLayout && ready && user && <SiteNoticeBanner key={user.id} />}
       {showHeader && <HeaderBar />}
-      <div className={cn('app-layout-body', isConsoleRoute && 'console-layout-body', showHeader && 'public-layout-body')}>
-        {isConsoleRoute && <SiderBar loading={!ready || !user || !statusState.status} />}
+      <div className={cn('app-layout-body', isConsoleLayout && 'console-layout-body', showHeader && 'public-layout-body')}>
+        {isConsoleLayout && <SiderBar loading={!ready || !user || !statusState.status} />}
         <main ref={mainRef} className='app-layout-main'>
           {statusError && <div role='alert' className='flex items-center justify-center gap-3 px-4 py-3 text-sm text-ui-text-2'>{t(statusError)}<Button variant='link' onClick={() => setStatusAttempt((value) => value + 1)}>{t('Retry')}</Button></div>}
-          <div className={cn('flex-1', location.pathname === '/console/token' && 'token-page-content')}>{content}</div>
+          <div className={cn('flex-1', location.pathname === '/token' && 'token-page-content')}>{content}</div>
           {!hideFooter && <FooterBar />}
         </main>
       </div>

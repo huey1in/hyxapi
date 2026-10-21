@@ -24,7 +24,7 @@ const FooterBar = () => {
       title: t('Product'),
       links: [
         ...(modules.console ? [{ label: t('Console'), to: '/console' }] : []),
-        { label: t('API Keys'),  to: '/console/token' },
+        { label: t('API Keys'),  to: '/token' },
       ],
     },
     {

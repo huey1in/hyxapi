@@ -251,8 +251,8 @@ func TestEpayCallbacksVerifyBeforeSettlement(t *testing.T) {
 		{
 			name: "subscription return", path: "/api/subscription/epay/return", handler: SubscriptionEpayReturn,
 			status:           http.StatusFound,
-			rejectedLocation: "https://dashboard.example.com/console/topup?pay=fail",
-			pendingLocation:  "https://dashboard.example.com/console/topup?pay=pending",
+			rejectedLocation: "https://dashboard.example.com/topup?pay=fail",
+			pendingLocation:  "https://dashboard.example.com/topup?pay=pending",
 		},
 	}
 	router := gin.New()

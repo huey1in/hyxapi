@@ -1,5 +1,6 @@
 {
   "translation": {
+    "Unable to load page. Refresh to try again.": "暂时无法加载页面，请刷新重试。",
     "Verify notification email": "验证通知邮箱",
     "Notification email verified": "通知邮箱已验证",
     "Verified": "已验证",

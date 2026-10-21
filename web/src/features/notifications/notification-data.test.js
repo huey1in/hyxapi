@@ -22,15 +22,15 @@ test('announcement identity includes late edits and optional details', () => {
 test('announcement parsing skips invalid entries and retains content and optional details', () => {
   assert.deepEqual(parseAnnouncements([null, {}, { content: '' }, { content: 'valid' }]).map((item) => item.content), ['valid']);
   assert.deepEqual(parseAnnouncements(null), []);
-  const [item] = parseAnnouncements([{ content: 'Maintenance **notice**', title: 'Update', extra: 'More details', link: '/console/log' }]);
+  const [item] = parseAnnouncements([{ content: 'Maintenance **notice**', title: 'Update', extra: 'More details', link: '/log' }]);
   assert.equal(item.content, 'Maintenance **notice**');
   assert.equal(item.extra, 'More details');
   assert.equal(item.title, 'Update');
-  assert.equal(item.link, '/console/log');
+  assert.equal(item.link, '/log');
 });
 
 test('announcement destinations allow safe web and local links', () => {
   for (const url of ['javascript:alert(1)', '//other.example/path', '/\\other.example', '/\n/other.example', '/\t/other.example', 'https://user:password@example.com', 'data:text/html,unsafe']) assert.equal(safeAnnouncementLink(url), '');
-  assert.equal(safeAnnouncementLink('/console/log'), '/console/log');
+  assert.equal(safeAnnouncementLink('/log'), '/log');
   assert.equal(safeAnnouncementLink('https://example.com/news'), 'https://example.com/news');
 });

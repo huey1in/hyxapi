@@ -13,20 +13,20 @@ import LogsLoading from '../../pages/Log/LogsLoading';
 export default function RouteSkeleton() {
   const { pathname, search } = useLocation();
   const { t } = useTranslation();
-  if (pathname === '/console/personal') return <PersonalSkeleton tab={personalSettingsTab(search)} />;
-  if (pathname === '/console/topup') return <TopUpSkeleton />;
-  if (['/console/log', '/console/task', '/console/midjourney'].includes(pathname)) return <div className='console-content-page'>
+  if (pathname === '/personal') return <PersonalSkeleton tab={personalSettingsTab(search)} />;
+  if (pathname === '/topup') return <TopUpSkeleton />;
+  if (pathname === '/log') return <div className='console-content-page'>
     <ConsolePageHeader title={t('日志')} />
     <LogsLoading />
   </div>;
   if (pathname === '/console') return <div className='console-content-page dashboard-overview'><ConsolePageHeader title={t('Usage overview')} /><DashboardStatsSkeleton /></div>;
-  if (pathname === '/console/token') return <div className='console-content-page token-management-page'>
+  if (pathname === '/token') return <div className='console-content-page token-management-page'>
     <ConsolePageHeader title='API keys' />
     <div className='token-page-toolbar'><Skeleton width={140} height={32} rounded='rounded-full' /></div>
     <div className='token-key-list flex flex-col gap-3'><TokenTable loading /></div>
     <div className='token-page-pagination'><Pagination page={1} pageSize={TOKEN_PAGE_SIZE} total={0} onChange={() => {}} /></div>
   </div>;
-  if (pathname === '/console/pricing' || pathname === '/pricing') return <div className='console-content-page'>
+  if (pathname === '/pricing') return <div className='console-content-page'>
     <ConsolePageHeader title={t('Models')} />
     <div><div className='mb-4 flex flex-wrap items-center gap-2 rounded-2xl border border-ui-border p-4'>
       <div className='min-w-0 basis-full sm:w-[320px] sm:basis-auto'><Skeleton width='100%' height={36} rounded='rounded-full' /></div><Skeleton width={90} height={32} />
@@ -37,7 +37,7 @@ export default function RouteSkeleton() {
     <div className='flex h-8 items-center justify-between gap-3'><h1 className='text-lg font-semibold text-ui-text'>{t(pathname.endsWith('operations') ? 'Operations' : 'System status')}</h1><Skeleton width={130} height={28} /></div>
     <StatisticsSkeleton system={pathname.endsWith('system-status')} />
   </ConsolePage>;
-  if (pathname === '/console/my-subscription') return <ConsolePage><h1 className='text-lg font-semibold text-ui-text'>{t('My subscriptions')}</h1><MySubscriptionSkeleton /></ConsolePage>;
+  if (pathname === '/subscription') return <ConsolePage><h1 className='text-lg font-semibold text-ui-text'>{t('My subscriptions')}</h1><MySubscriptionSkeleton /></ConsolePage>;
 
   // Route chunks cannot know data-dependent layouts. Navigation retains the
   // current page; cold loads show progress without inventing a table or form.

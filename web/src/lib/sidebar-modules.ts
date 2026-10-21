@@ -16,14 +16,14 @@ export function parseSidebarModules(raw: unknown): SidebarModules {
 
 const routes: Record<string, readonly (readonly [string, string])[]> = {
   '/console': [['console', 'detail']],
-  '/console/token': [['console', 'token']],
-  '/console/log': [['console', 'log'], ['console', 'task'], ['console', 'midjourney']],
+  '/token': [['console', 'token']],
+  '/log': [['console', 'log'], ['console', 'task'], ['console', 'midjourney']],
   '/console/audit': [['console', 'audit']], '/console/task': [['console', 'task']],
   '/console/midjourney': [['console', 'midjourney']],
-  '/console/topup': [['personal', 'topup']], '/console/my-subscription': [['personal', 'topup']],
+  '/topup': [['personal', 'topup']], '/subscription': [['personal', 'topup']],
   // Profile and security share one local page. Keep its entry when either of
   // the corresponding upstream modules remains visible.
-  '/console/personal': [['personal', 'personal'], ['personal', 'security']],
+  '/personal': [['personal', 'personal'], ['personal', 'security']],
   '/console/channel': [['admin', 'channel']], '/console/models': [['admin', 'models']],
   '/console/vendors': [['admin', 'models']],
   '/console/redemption': [['admin', 'redemption']], '/console/user': [['admin', 'user']],

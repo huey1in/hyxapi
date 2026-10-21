@@ -22,7 +22,7 @@ func TestSetRouterServesPagesOnCurrentSite(t *testing.T) {
 	engine := gin.New()
 	index := []byte("<!doctype html><title>Hyxware</title>")
 	SetRouter(engine, embed.FS{}, index)
-	for _, path := range []string{"/", "/auth?mode=login", "/console", "/oauth/github?code=test&state=test"} {
+	for _, path := range []string{"/", "/auth?mode=login", "/console", "/pricing", "/token", "/log", "/topup", "/subscription", "/personal", "/notices", "/console/subscription", "/oauth/github?code=test&state=test"} {
 		t.Run(path, func(t *testing.T) {
 			recorder := httptest.NewRecorder()
 			engine.ServeHTTP(recorder, httptest.NewRequest(http.MethodGet, path, nil))

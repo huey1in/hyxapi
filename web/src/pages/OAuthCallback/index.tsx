@@ -43,7 +43,7 @@ export default function OAuthCallback() {
           owner.signal.throwIfAborted();
           let redirectTo = '/console';
           try { redirectTo = safeAuthRedirect(sessionStorage.getItem(`hyxware:oauth-redirect:${state}`)); sessionStorage.removeItem(`hyxware:oauth-redirect:${state}`); } catch { /* optional storage */ }
-          if (data && typeof data === 'object' && 'action' in data && data.action === 'bind') { navigate('/console/personal', { replace: true }); return; }
+          if (data && typeof data === 'object' && 'action' in data && data.action === 'bind') { navigate('/personal', { replace: true }); return; }
           if (isLoginChallenge(data)) {
             useAuthStore.getState().auth.setPendingLoginVerification({ challenge: data, redirectTo });
             navigate('/auth', { replace: true }); return;

@@ -51,7 +51,6 @@ const Pricing = ({ preview = false }: { preview?: boolean }) => {
   const navigate = useNavigate();
   const location = useLocation();
   const [searchParams, setSearchParams] = useSearchParams();
-  const basePath = location.pathname.startsWith('/console') ? '/console/pricing' : '/pricing';
   const [viewMode, setViewMode] = useState<'card' | 'table'>('card');
   const [filtersOpen, setFiltersOpen] = useState(false);
   const filtersButton = useRef<HTMLButtonElement>(null);
@@ -88,7 +87,7 @@ const Pricing = ({ preview = false }: { preview?: boolean }) => {
   };
 
   const goDetail = (row: PricingModel) => {
-    if (!preview) navigate(basePath + '/model/' + encodeURIComponent(row.model_name) + location.search);
+    if (!preview) navigate('/pricing/model/' + encodeURIComponent(row.model_name) + location.search);
   };
 
   const priceOf = (record: PricingModel) =>

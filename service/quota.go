@@ -605,7 +605,7 @@ func quotaNotifyContent(lang string, notifyType string, prompt string, remaining
 	case dto.NotifyTypeGotify:
 		return i18n.Translate(lang, i18n.MsgNotifyQuotaLowGotify, map[string]any{"Prompt": prompt, "Quota": remaining}), []any{prompt, remaining}
 	default:
-		topUpLink := fmt.Sprintf("%s/console/topup", system_setting.ServerAddress)
+		topUpLink := fmt.Sprintf("%s/topup", system_setting.ServerAddress)
 		return i18n.Translate(lang, i18n.MsgNotifyQuotaLowEmail, map[string]any{"Prompt": prompt, "Quota": remaining, "Link": topUpLink}), []any{prompt, remaining, topUpLink, topUpLink}
 	}
 }

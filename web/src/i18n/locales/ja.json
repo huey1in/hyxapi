@@ -1,5 +1,6 @@
 {
   "translation": {
+    "Unable to load page. Refresh to try again.": "ページを読み込めません。更新してもう一度お試しください。",
     "Verify notification email": "通知用メールアドレスを確認",
     "Notification email verified": "通知用メールアドレスを確認しました",
     "Verified": "確認済み",

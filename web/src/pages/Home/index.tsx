@@ -234,18 +234,18 @@ const HomeContent = () => {
           <div className='marketplace-showcase-copy'>
             <h2 id='marketplace-title'>{t('More providers, transparent pricing')}</h2>
             <p>{t('Compare every provider for the same model. Choose lower-cost routes with prices below official rates.')}</p>
-            <Link to='/console/pricing'>{t('View model pricing')} <ArrowRight size={15} /></Link>
+            <Link to='/pricing'>{t('View model pricing')} <ArrowRight size={15} /></Link>
           </div>
           <div className='marketplace-stage' aria-label={t('Hyxware models preview')}>
             <div className='marketplace-preview-mat'>
               <div className='product-frame marketplace-frame'>
                 <div className='product-frame-bar'>
                   <div className='mac-window-controls' aria-hidden='true'><i /><i /><i /></div>
-                  <BrowserAddress>{`${window.location.host}/console/pricing`}</BrowserAddress>
+                  <BrowserAddress>{`${window.location.host}/pricing`}</BrowserAddress>
                   <span aria-hidden='true' />
                 </div>
                 <div className='product-shell'>
-                  <SiderBar preview previewActive='/console/pricing' />
+                  <SiderBar preview previewActive='/pricing' />
                   <div className='marketplace-preview-content'>{pricingAccess === 'allowed' ? <Pricing preview /> : <div className='p-8 text-sm text-ui-text-2'>{t(pricingAccess === 'loading' ? 'Loading...' : pricingAccess === 'disabled' ? 'Model pricing is unavailable' : 'Sign in to view model pricing')}</div>}</div>
                 </div>
               </div>
@@ -260,11 +260,11 @@ const HomeContent = () => {
               <div className='product-frame console-feature-frame api-feature-frame'>
                 <div className='product-frame-bar'>
                   <div className='mac-window-controls' aria-hidden='true'><i /><i /><i /></div>
-                  <BrowserAddress>{`${window.location.host}/console/token`}</BrowserAddress>
+                  <BrowserAddress>{`${window.location.host}/token`}</BrowserAddress>
                   <span aria-hidden='true' />
                 </div>
                 <div className='product-shell'>
-                  <SiderBar preview previewActive='/console/token' />
+                  <SiderBar preview previewActive='/token' />
                   <div className='console-feature-content'><Token preview /></div>
                 </div>
               </div>
@@ -273,7 +273,7 @@ const HomeContent = () => {
           <div className='feature-showcase-copy'>
             <h2 id='api-showcase-title'>{t('One key for every model')}</h2>
             <p>{t('Create keys by project and manage quotas, groups, and model access from one place.')}</p>
-            <Link to='/console/token'>{t('Manage API keys')} <ArrowRight size={15} /></Link>
+            <Link to='/token'>{t('Manage API keys')} <ArrowRight size={15} /></Link>
           </div>
         </section>
 
@@ -281,18 +281,18 @@ const HomeContent = () => {
           <div className='feature-showcase-copy'>
             <h2 id='log-showcase-title'>{t('Every request, fully traceable')}</h2>
             <p>{t('Track model, provider, tokens, latency, and actual cost in one complete request log.')}</p>
-            <Link to='/console/log'>{t('View request logs')} <ArrowRight size={15} /></Link>
+            <Link to='/log'>{t('View request logs')} <ArrowRight size={15} /></Link>
           </div>
           <div className='feature-stage feature-stage-left' aria-label={t('Hyxware request logs preview')}>
             <div className='feature-preview-mat'>
               <div className='product-frame console-feature-frame log-feature-frame'>
                 <div className='product-frame-bar'>
                   <div className='mac-window-controls' aria-hidden='true'><i /><i /><i /></div>
-                  <BrowserAddress>{`${window.location.host}/console/log`}</BrowserAddress>
+                  <BrowserAddress>{`${window.location.host}/log`}</BrowserAddress>
                   <span aria-hidden='true' />
                 </div>
                 <div className='product-shell'>
-                  <SiderBar preview previewActive='/console/log' />
+                  <SiderBar preview previewActive='/log' />
                   <div className='console-feature-content'><Log /></div>
                 </div>
               </div>
@@ -330,7 +330,7 @@ const HomeContent = () => {
               <div className='frontier-card-copy'>
                 <h3>{t('Automatic scheduling for every endpoint')}</h3>
                 <p>{t('Messages and completions requests are both scheduled automatically across available providers.')}</p>
-                <Link to='/console/log'>{t('View request logs')} <ArrowRight size={14} /></Link>
+                <Link to='/log'>{t('View request logs')} <ArrowRight size={14} /></Link>
               </div>
               <div className='frontier-visual frontier-route-flow' aria-hidden='true'>
                 <div className='frontier-request'><small>POST</small><span>/v1/messages</span></div><div className='frontier-request frontier-request-secondary'><small>POST</small><span>/v1/chat/completions</span></div><div className='frontier-route-line'><i /><span>{t('Scheduled automatically')}</span><b>38 ms</b></div><div className='frontier-route-line'><i /><span>{t('Provider responded')}</span><b>200</b></div><div className='frontier-route-total'><span>{t('Requests completed')}</span><strong>1.24 s</strong></div>
@@ -346,7 +346,7 @@ const HomeContent = () => {
 
       <footer className='site-footer'>
         <div className='site-footer-links'>
-          <div><span>{t('Product')}</span><Link to='/pricing'>{t('Models')}</Link><Link to='/console'>{t('Console')}</Link><Link to='/console/token'>{t('API keys')}</Link><Link to='/console/log'>{t('Request logs')}</Link></div>
+          <div><span>{t('Product')}</span><Link to='/pricing'>{t('Models')}</Link><Link to='/console'>{t('Console')}</Link><Link to='/token'>{t('API keys')}</Link><Link to='/log'>{t('Request logs')}</Link></div>
           <div><span>{t('Contact')}</span><a href='https://github.com/huey1in' target='_blank' rel='noopener noreferrer'>GitHub</a><a href='mailto:1in@yxh.me'>{t('Email')}</a></div>
           <div><span>{t('Legal')}</span>{agreementEnabled ? <button type='button' onClick={() => setLegal('terms')}>{t('Terms of Service')}</button> : <span className='footer-link-disabled'>{t('Terms of Service')}</span>}{privacyEnabled ? <button type='button' onClick={() => setLegal('privacy')}>{t('Privacy Policy')}</button> : <span className='footer-link-disabled'>{t('Privacy Policy')}</span>}</div>
         </div>

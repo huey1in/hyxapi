@@ -16,5 +16,5 @@ export function logLocation(search = '', hash = ''): string {
   const params = new URLSearchParams(search);
   params.delete('tab');
   const query = params.toString();
-  return `/console/log${query ? `?${query}` : ''}${hash}`;
+  return `/log${query ? `?${query}` : ''}${hash}`;
 }

@@ -15,7 +15,7 @@ test('registration forwards invitations and verified email without normalizing p
 });
 test('post-login redirects reject network paths, backslashes and control characters', () => {
   for (const value of ['//foreign.test', '/\\foreign.test', 'https://foreign.test', '\\foreign.test', '/\n/foreign.test', null, '']) assert.equal(safeAuthRedirect(value), '/console');
-  assert.equal(safeAuthRedirect('/console/personal?tab=security#passkey'), '/console/personal?tab=security#passkey');
+  assert.equal(safeAuthRedirect('/personal?tab=security#passkey'), '/personal?tab=security#passkey');
 });
 test('login challenges require a usable flow and advertised verification methods', () => {
   const challenge = { require_verification: true, flow_token: 'one-use-flow', expires_at: 1900000000, methods: [{ method: '2fa' }] };

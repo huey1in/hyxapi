@@ -1,19 +1,45 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { loadTestModules } from '../../scripts/load-test-modules.mjs';
-const { entry0: { canOpenConsolePage, isConsolePath } } = await loadTestModules(['./src/lib/console-routes.ts']);
+const { entry0: { canOpenConsolePage, isConsolePath, canonicalClientPath, CLIENT_ROUTE_REDIRECTS } } = await loadTestModules(['./src/lib/console-routes.ts']);
 
 test('console authorization respects route boundaries and role requirements', () => {
   const member = { id: 1, username: 'member', role: 1 };
   assert.equal(isConsolePath('/console'), true);
   assert.equal(isConsolePath('/console/token'), true);
   assert.equal(isConsolePath('/console-preview'), false);
-  assert.equal(canOpenConsolePage('/console/personal', member), true);
-  assert.equal(canOpenConsolePage('/console/token', null), false);
+  for (const path of ['/token', '/log', '/topup', '/subscription', '/personal', '/notices']) {
+    assert.equal(isConsolePath(path), true, path);
+    assert.equal(canOpenConsolePage(path, member), true, path);
+    assert.equal(canOpenConsolePage(path, null), false, path);
+  }
   for (const page of ['user', 'models', 'vendors', 'operations', 'system-status', 'redemption', 'subscription', 'audit', 'setting']) assert.equal(canOpenConsolePage('/console/' + page, member), false, page);
   assert.equal(canOpenConsolePage('/console/user', { ...member, role: 10 }), true);
   assert.equal(canOpenConsolePage('/console/setting', { ...member, role: 10 }), false);
   assert.equal(canOpenConsolePage('/console/setting', { ...member, role: 100 }), true);
+});
+
+test('pricing retains public access and uses the console layout when signed in', () => {
+  for (const path of ['/pricing', '/pricing/model/provider%2Fmodel']) {
+    assert.equal(isConsolePath(path), false, path);
+    assert.equal(isConsolePath(path, true), true, path);
+    assert.equal(canOpenConsolePage(path, null), true, path);
+  }
+  for (const path of ['/tokenizer', '/subscription-preview', '/pricing-preview']) {
+    assert.equal(isConsolePath(path, true), false, path);
+  }
+});
+
+test('legacy client paths preserve nested paths and encoded model names', () => {
+  for (const [previous, current] of Object.entries(CLIENT_ROUTE_REDIRECTS)) {
+    assert.equal(canonicalClientPath(previous), current);
+    assert.equal(canonicalClientPath(previous + '/'), current + '/');
+    assert.equal(canonicalClientPath(previous + '-preview'), previous + '-preview');
+  }
+  assert.equal(canonicalClientPath('/console/pricing/model/provider%2Fmodel%252Fversion'), '/pricing/model/provider%2Fmodel%252Fversion');
+  for (const path of ['/console', '/console/subscription', '/console/user', '/subscription']) {
+    assert.equal(canonicalClientPath(path), path);
+  }
 });
 test('audit pages require an administrator role independently of audit grants', () => {
   const member = { id: 1, username: 'member', role: 1, permissions: { admin_permissions: { audit: { read: true } } } };

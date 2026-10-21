@@ -77,7 +77,7 @@ function DashboardContent({ preview = false }: { preview?: boolean }) {
             <div style={{ fontSize: 28, fontWeight: 700, color: 'var(--ui-text)' }}>{u ? renderQuota(u.quota) : '—'}</div>
           </div>
           <button
-            onClick={preview ? undefined : () => navigate('/console/topup')}
+            onClick={preview ? undefined : () => navigate('/topup')}
             disabled={preview}
             style={{
               cursor: 'pointer',
