@@ -26,12 +26,45 @@ export function notificationForm(user: AuthUser) {
   const settings = parsePersonalSettings(user.setting);
   return { ...settings, quota_warning_threshold: quotaToDisplayAmount(settings.quota_warning_threshold), channel_notify_enabled: settings.channel_notify_enabled ?? user.role >= 100 };
 }
-export type NotificationForm = ReturnType<typeof notificationForm>;
-export function notificationPayload(form: NotificationForm, role: number) {
-  if (!Number.isFinite(Number(form.quota_warning_threshold)) || Number(form.quota_warning_threshold) < 0) throw new Error('Reminder threshold cannot be negative');
-  const { notify_type, notification_email, webhook_url, webhook_secret, bark_url, gotify_url, gotify_token, gotify_priority, quota_warning_enabled } = form;
-  return { notify_type, notification_email, webhook_url, webhook_secret, bark_url, gotify_url, gotify_token, gotify_priority, quota_warning_enabled,
-    quota_warning_threshold: displayAmountToQuota(form.quota_warning_threshold),
-    ...(role >= 10 ? { channel_notify_enabled: form.channel_notify_enabled, upstream_model_update_notify_enabled: form.upstream_model_update_notify_enabled } : {}),
-  };
+export type NotificationForm = Omit<ReturnType<typeof notificationForm>, 'quota_warning_threshold' | 'gotify_priority'> & {
+  quota_warning_threshold: number | string;
+  gotify_priority: number | string;
+};
+export type PreferenceField = keyof NotificationForm;
+export type PreferenceErrors = Partial<Record<PreferenceField, string>>;
+export type PreferencePatch = Partial<Record<PreferenceField, string | number | boolean>>;
+
+export function personalSettingsChanges(form: NotificationForm, saved: NotificationForm, role: number, retryFields: ReadonlySet<PreferenceField> = new Set()) {
+  const patch: PreferencePatch = {};
+  const errors: PreferenceErrors = {};
+  const changed = (key: PreferenceField) => form[key] !== saved[key] || retryFields.has(key);
+  for (const key of ['record_ip_log', 'accept_unset_model_ratio_model', 'quota_warning_enabled', ...(role >= 10 ? ['channel_notify_enabled', 'upstream_model_update_notify_enabled'] as const : [])] as const) {
+    if (changed(key)) patch[key] = form[key];
+  }
+  if (changed('quota_warning_threshold')) {
+    const value = Number(form.quota_warning_threshold);
+    if (String(form.quota_warning_threshold).trim() === '' || !Number.isFinite(value) || value < 0) errors.quota_warning_threshold = 'Reminder threshold cannot be negative';
+    else patch.quota_warning_threshold = displayAmountToQuota(value);
+  }
+  const delivery: PreferenceField[] = form.notify_type === 'email' ? ['notification_email']
+    : form.notify_type === 'webhook' ? ['webhook_url', 'webhook_secret']
+      : form.notify_type === 'bark' ? ['bark_url'] : ['gotify_url', 'gotify_token', 'gotify_priority'];
+  const methodChanged = changed('notify_type');
+  const deliveryPatch: PreferencePatch = {};
+  for (const key of delivery) {
+    if (!methodChanged && !changed(key)) continue;
+    const value = form[key];
+    if (key === 'notification_email' && value !== '' && !z.email().safeParse(value).success) errors[key] = 'Invalid notification email';
+    else if (key.endsWith('_url')) {
+      try { const url = new URL(String(value)); if (!['http:', 'https:'].includes(url.protocol) || !url.hostname) throw new Error(); }
+      catch { errors[key] = 'Notification URL must use http or https'; }
+    } else if (key === 'gotify_token' && !String(value).trim()) errors[key] = 'Gotify token cannot be empty';
+    else if (key === 'gotify_priority' && (String(value).trim() === '' || !Number.isInteger(Number(value)) || Number(value) < 0 || Number(value) > 10)) errors[key] = 'Gotify priority must be between 0 and 10';
+    if (!errors[key]) deliveryPatch[key] = key === 'gotify_priority' ? Number(value) : value;
+  }
+  if (!methodChanged || !delivery.some((key) => errors[key])) {
+    Object.assign(patch, deliveryPatch);
+    if (methodChanged) patch.notify_type = form.notify_type;
+  }
+  return { patch, errors };
 }

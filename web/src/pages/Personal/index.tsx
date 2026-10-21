@@ -22,6 +22,7 @@ import AccountBindings from './AccountBindings';
 import { PersonalSettingsHeader } from './ProfileSettingsLayout';
 import { personalSettingsTab } from './personal-navigation';
 import type { PersonalSettingsTab } from './personal-navigation';
+import { useSettingsAutosave } from './useSettingsAutosave';
 
 function PersonalProfile({ identity, tab, onChange }: { identity: string; tab: PersonalSettingsTab; onChange: (tab: PersonalSettingsTab) => void }) {
   const { t } = useTranslation();
@@ -43,13 +44,18 @@ function PersonalProfile({ identity, tab, onChange }: { identity: string; tab: P
   if (profile.error) return <ConsolePage width={720} gap={24} mobileGap={24}><PersonalSettingsHeader tab={tab} onChange={onChange} /><div role='alert' className='text-sm'>{t(apiErrorMessage(profile.error, 'Unable to load profile'))} <Button onClick={() => void profile.refetch()} loading={profile.isFetching}>{t('Retry')}</Button></div></ConsolePage>;
   if (!ready) return <PersonalSkeleton tab={tab} onChange={onChange} />;
   if (!user || !profile.data) return null;
+  return <PersonalSettings key={`${identity}:${user.role}`} identity={identity} user={user} refresh={refresh} tab={tab} onChange={onChange} />;
+}
+
+function PersonalSettings({ identity, user, refresh, tab, onChange }: { identity: string; user: AuthUser; refresh: RefreshProfile; tab: PersonalSettingsTab; onChange: (tab: PersonalSettingsTab) => void }) {
+  const preferences = useSettingsAutosave(user, refresh);
   return <ConsolePage width={720} gap={24} mobileGap={24}>
     <PersonalSettingsHeader tab={tab} onChange={onChange} />
     <div key={tab} data-settings-panel={tab} className='flex min-w-0 flex-col gap-6'>
       {tab === 'account' && <><AccountSettings user={user} refresh={refresh} /><AccountBindings /><LanguagePreference refresh={refresh} /><AccountActions user={user} /></>}
       {tab === 'security' && <><SecuritySettings identity={identity} user={user} refresh={refresh} /><LoginSessions /><AccessTokens /></>}
-      {tab === 'usage' && <><BillingSettings /><UsagePreferences user={user} refresh={refresh} /></>}
-      {tab === 'notifications' && <NotificationSettings user={user} refresh={refresh} />}
+      {tab === 'usage' && <><BillingSettings /><UsagePreferences preferences={preferences} /></>}
+      {tab === 'notifications' && <NotificationSettings user={user} preferences={preferences} />}
     </div>
   </ConsolePage>;
 }
