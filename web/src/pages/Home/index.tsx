@@ -91,6 +91,7 @@ const HomeContent = () => {
   const [supportedBrands, setSupportedBrands] = useState<ModelBrand[]>(modelProviders);
   const [languageOpen, setLanguageOpen] = useState(false);
   const [legal, setLegal] = useState<'terms' | 'privacy' | null>(null);
+  const navigationRef = useRef<HTMLElement>(null);
   const brandSectionRef = useRef<HTMLElement>(null);
   const languageRef = useRef<HTMLDivElement>(null);
   const menuButton = useRef<HTMLButtonElement>(null);
@@ -104,6 +105,7 @@ const HomeContent = () => {
   const isLoggedIn = Boolean(user);
   const status = statusState?.status || {};
   const modules = parseHeaderNavModules(status.HeaderNavModules);
+  const showPublicModels = Boolean(statusState.status) && modules.pricing.enabled && !modules.pricing.requireAuth;
   const pricingAccess = statusState.status ? publicModuleAccess(modules, 'pricing', isLoggedIn) : 'loading';
   const registerEnabled = status.register_enabled !== false;
   const startLink = isLoggedIn ? '/console' : registerEnabled ? '/auth?mode=register' : '/auth?mode=login';
@@ -120,6 +122,27 @@ const HomeContent = () => {
     try { localStorage.setItem('i18nextLng', language); } catch {}
     setLanguageOpen(false); languageButton.current?.focus();
   };
+
+  useEffect(() => {
+    const navigation = navigationRef.current;
+    if (!navigation) return;
+    // PageLayout owns the scroll container; the document itself does not scroll.
+    const container = navigation.closest<HTMLElement>('.app-layout-main');
+    const target = container ?? window;
+    let frame = 0;
+    const update = () => {
+      frame = 0;
+      const progress = Math.min(1, Math.max(0, (container?.scrollTop ?? window.scrollY) / 160));
+      navigation.style.setProperty('--home-nav-progress', String(progress));
+    };
+    const onScroll = () => { if (!frame) frame = requestAnimationFrame(update); };
+    update();
+    target.addEventListener('scroll', onScroll, { passive: true });
+    return () => {
+      target.removeEventListener('scroll', onScroll);
+      cancelAnimationFrame(frame);
+    };
+  }, []);
 
   useEffect(() => {
     if (pricingAccess !== 'allowed') return;
@@ -164,10 +187,10 @@ const HomeContent = () => {
 
   return (
     <div className='home-page studio-home cursor-home'>
-      <header className='home-nav'>
+      <header ref={navigationRef} className='home-nav'>
         <Link to='/' className='home-brand'>HyxAPI</Link>
         <nav id='home-navigation' aria-label={t('Main navigation')} className={`home-nav-links public-site-navigation${menuOpen ? ' is-open' : ''}`} onKeyDown={(event) => { if (event.key === 'Escape') { setMenuOpen(false); menuButton.current?.focus(); } }}>
-          <PublicNavLinks status={statusState.status} includeHome={false} onNavigate={() => setMenuOpen(false)} />
+          <PublicNavLinks status={statusState.status} includeHome={false} includePricing={showPublicModels} onNavigate={() => setMenuOpen(false)} />
           {isLoggedIn ? (
             <button type='button' className='home-nav-start' onClick={logout} disabled={busy}>
               {t('Sign out')}
@@ -234,7 +257,7 @@ const HomeContent = () => {
 
       <footer className='site-footer'>
         <div className='site-footer-links'>
-          <div><span>{t('Product')}</span><Link to='/pricing'>{t('Models')}</Link><Link to='/console'>{t('Console')}</Link><Link to='/token'>{t('API keys')}</Link><Link to='/log'>{t('Request logs')}</Link></div>
+          <div><span>{t('Product')}</span>{showPublicModels && <Link to='/pricing'>{t('Models')}</Link>}<Link to='/console'>{t('Console')}</Link><Link to='/token'>{t('API keys')}</Link><Link to='/log'>{t('Request logs')}</Link></div>
           <div><span>{t('Contact')}</span><a href='https://github.com/huey1in' target='_blank' rel='noopener noreferrer'>GitHub</a><a href='mailto:1in@yxh.me'>{t('Email')}</a></div>
           <div><span>{t('Legal')}</span>{agreementEnabled ? <button type='button' onClick={() => setLegal('terms')}>{t('Terms of Service')}</button> : <span className='footer-link-disabled'>{t('Terms of Service')}</span>}{privacyEnabled ? <button type='button' onClick={() => setLegal('privacy')}>{t('Privacy Policy')}</button> : <span className='footer-link-disabled'>{t('Privacy Policy')}</span>}</div>
         </div>

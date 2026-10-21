@@ -143,7 +143,18 @@ body {
 
 /* Cursor-inspired composition: quiet type, generous pacing, large product surfaces. */
 .cursor-home { --studio-bg:var(--page-bg); --studio-paper:#fdfdfb; --studio-ink:#24231f; --studio-muted:#77756e; --studio-line:#deddd7; --studio-orange:#24231f; }
-.cursor-home .home-nav { position:fixed; top:0; left:0; z-index:50; width:100%; height:70px; box-sizing:border-box; padding:0 max(20px,calc((100% - 1210px)/2)); border:0; transform:none; background:color-mix(in srgb,var(--studio-bg) 92%,transparent); backdrop-filter:blur(14px); }
+.cursor-home .home-nav {
+  --home-nav-progress:0;
+  position:fixed; top:calc(var(--home-nav-progress)*12px); left:50%; z-index:50;
+  width:calc(100% - var(--home-nav-progress)*max(40px,calc(100% - 960px)));
+  height:calc(70px - var(--home-nav-progress)*10px); box-sizing:border-box;
+  padding:0 calc((1 - var(--home-nav-progress))*max(20px,calc((100vw - 1210px)/2)) + var(--home-nav-progress)*24px);
+  border:0; border-radius:calc(var(--home-nav-progress)*20px); transform:translateX(-50%);
+  background:color-mix(in srgb,var(--studio-bg) 92%,transparent); backdrop-filter:blur(14px);
+  box-shadow:inset 0 0 0 1px rgb(128 128 128 / calc(var(--home-nav-progress)*.16)),0 8px 28px rgb(24 24 21 / calc(var(--home-nav-progress)*.08));
+  transition:width .2s ease-out,height .2s ease-out,top .2s ease-out,padding .2s ease-out,border-radius .2s ease-out,box-shadow .2s ease-out;
+}
+@media (prefers-reduced-motion:reduce) { .cursor-home .home-nav { transition:none; } }
 .console-home-nav { position:fixed; top:0; left:50%; z-index:50; display:flex; align-items:center; justify-content:space-between; width:min(1210px,calc(100% - 40px)); height:70px; box-sizing:border-box; transform:translateX(-50%); background:color-mix(in srgb,var(--page-bg) 92%,transparent); backdrop-filter:blur(14px); }
 .console-home-nav-left { display:flex; align-items:center; gap:12px; }
 .console-home-nav .home-brand { color:var(--ui-text-1,#24231f); font-size:21px; font-weight:600; }
@@ -247,6 +258,8 @@ body[theme-mode='dark'] .cursor-home .home-nav-links>a:not(.home-nav-start):hove
 .cursor-home .footer-language-menu button:hover,.cursor-home .footer-language-menu button.is-active { background:#e9e7e1; color:#24231f; }
 body[theme-mode='dark'] .cursor-home { --studio-bg:#171714; --studio-paper:#22221e; --studio-ink:#f1f0ea; --studio-muted:#aaa79f; --studio-line:#383832; background:#171714; color:#f1f0ea; }
 body[theme-mode='dark'] .cursor-home .home-brand,body[theme-mode='dark'] .cursor-home .home-nav-links,body[theme-mode='dark'] .cursor-home .home-nav-links a { color:#f1f0ea; }
+body[theme-mode='dark'] .cursor-home .home-nav-start { color:#171714 !important; }
+body[theme-mode='dark'] .cursor-home .home-nav-start:hover { background:#fff; }
 body[theme-mode='dark'] .cursor-home .home-nav { background:rgba(23,23,20,.92); }
 body[theme-mode='dark'] .cursor-home .studio-hero-copy>p { color:#aaa79f; }
 body[theme-mode='dark'] .cursor-home .giant-brand-word { color:#f1f0ea; }
@@ -265,7 +278,8 @@ body[theme-mode='dark'] .cursor-home .footer-language-menu button:hover,body[the
   .public-layout-body { padding-top:62px; }
   .console-home-nav .home-nav-start { height:34px; }
   .cursor-home .studio-hero, .cursor-home .product-frame, .cursor-home .model-trust, .cursor-home .studio-closing { width:calc(100% - 28px); }
-  .cursor-home .home-nav { width:100%; height:62px; padding:0 14px; }.cursor-home .studio-hero { padding:134px 0 44px; }.cursor-home .studio-hero h1 { font-size:30px; }.cursor-home .studio-hero-copy>p { font-size:14px; }
+  .cursor-home .home-nav { top:calc(var(--home-nav-progress)*8px); width:calc(100% - var(--home-nav-progress)*24px); height:calc(62px - var(--home-nav-progress)*6px); padding:0 14px; }
+  .cursor-home .studio-hero { padding:134px 0 44px; }.cursor-home .studio-hero h1 { font-size:30px; }.cursor-home .studio-hero-copy>p { font-size:14px; }
   .cursor-home .product-frame { padding:42px 10px 0; border-radius:4px; }.cursor-home .model-trust { padding:75px 0 85px; }.cursor-home .model-trust h2 { font-size:20px; }.cursor-home .model-card { flex-basis:130px; width:130px; height:56px; }
   .cursor-home .product-shell { height:520px; }.dashboard-preview-content { width:100%; }
   .dashboard-preview-content>div { width:100%; transform:none; }
