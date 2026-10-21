@@ -249,7 +249,7 @@ const TokenEditModal = ({ open, token, onClose, onSaved, onChanged }: Props) => 
 
         <div className='flex items-center justify-between'>
             <span className='text-sm text-ui-text'>{t('Unlimited quota')}</span>
-          <Switch checked={!!form.unlimited_quota} onChange={u('unlimited_quota')} />
+          <Switch aria-label={t('Unlimited quota')} checked={!!form.unlimited_quota} onChange={u('unlimited_quota')} />
         </div>
 
         <div className='flex items-center justify-between'>
@@ -258,13 +258,16 @@ const TokenEditModal = ({ open, token, onClose, onSaved, onChanged }: Props) => 
         </div>
 
         {!form.unlimited_quota && (
-          <div>
-            <label className='block text-sm text-[#666] mb-1.5'>{t('Amount')}</label>
-            <NumberInput
-              value={quotaToDisplayAmount(form.remain_quota || 0)}
-              onChange={(v) => u('remain_quota')(displayAmountToQuota(v))}
-              min={0} step='any'
-            />
+          <div className='flex items-center justify-between gap-3'>
+            <label htmlFor='token-amount' className='min-w-0 flex-1 text-sm text-ui-text'>{t('Amount')}</label>
+            <div className='w-[min(220px,calc(100%_-_88px))] min-w-0 shrink-0'>
+              <NumberInput
+                id='token-amount' width='full'
+                value={quotaToDisplayAmount(form.remain_quota || 0)}
+                onChange={(v) => u('remain_quota')(displayAmountToQuota(v))}
+                min={0} step='any'
+              />
+            </div>
           </div>
         )}
 
@@ -285,19 +288,22 @@ const TokenEditModal = ({ open, token, onClose, onSaved, onChanged }: Props) => 
 
         <div className='flex items-center justify-between'>
           <span className='text-sm text-ui-text'>{t('Model restrictions')}</span>
-          <Switch checked={!!form.model_limits_enabled} onChange={u('model_limits_enabled')} />
+          <Switch aria-label={t('Model restrictions')} checked={!!form.model_limits_enabled} onChange={u('model_limits_enabled')} />
         </div>
 
         {form.model_limits_enabled && (
-          <div>
-            <label className='block text-sm text-[#666] mb-1.5'>{t('Allowed models')}</label>
-            <MultiSelect
-              options={models}
-              value={selectedModels}
-              onChange={(arr) => u('model_limits')(arr.join(','))}
-              placeholder={t('Select allowed models')}
-              searchable
-            />
+          <div className='flex items-center justify-between gap-3'>
+            <label htmlFor='token-allowed-models' className='min-w-0 flex-1 text-sm text-ui-text'>{t('Allowed models')}</label>
+            <div className='w-[min(220px,calc(100%_-_88px))] min-w-0 shrink-0'>
+              <MultiSelect
+                id='token-allowed-models' popover width='full'
+                options={models}
+                value={selectedModels}
+                onChange={(arr) => u('model_limits')(arr.join(','))}
+                placeholder={t('Select allowed models')}
+                searchable
+              />
+            </div>
           </div>
         )}
 
