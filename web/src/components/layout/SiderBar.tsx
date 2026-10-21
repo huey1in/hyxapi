@@ -152,9 +152,9 @@ const SiderBar = ({ preview = false, previewActive = '/console', loading = false
     </nav>
   );
 
-  const brandText = collapsed && !isMobile ? Array.from(brand)[0] : brand;
-  const brandClass = 'home-brand max-w-full truncate';
-  const brandContent = preview ? <span className={brandClass} title={brand}>{brandText}</span> : <Link to='/' className={brandClass} aria-label={brand} title={brand}>{brandText}</Link>;
+  const brandDisplay = compact ? <img src='/logo/hyxware-light.svg' alt='' width={32} height={32} className='h-8 w-8 shrink-0 object-contain' /> : brand;
+  const brandClass = cn('home-brand max-w-full', compact ? 'flex items-center justify-center' : 'truncate');
+  const brandContent = preview ? <span className={brandClass} title={brand}>{brandDisplay}</span> : <Link to='/' className={brandClass} aria-label={brand} title={brand}>{brandDisplay}</Link>;
 
   if (isMobile) {
     if (preview) return null;

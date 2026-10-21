@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512" role="img" aria-labelledby="hyxware-title hyxware-desc">
+  <title id="hyxware-title">Hyxware</title>
+  <desc id="hyxware-desc">An open handwritten h with a tall sweeping loop, generous entry and exit strokes, and a uniform soft round line.</desc>
+  <rect id="tile" width="512" height="512" rx="112" fill="#14151C"/>
+  <g id="mark">
+    <path id="ribbon" d="M76 296 C148 282 260 172 276 110 C286 70 246 72 224 104 C187 160 150 284 132 374 C127 399 135 403 143 378 C170 307 212 225 276 221 C322 218 315 267 294 321 C275 370 297 387 339 366 C376 349 414 308 449 278" fill="none" stroke="#EEF0FF" stroke-width="24" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+</svg>

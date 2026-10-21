@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Megaphone } from 'lucide-react';
-import { Button, EmptyState, Pagination } from '../../components/ui';
+import { EmptyState, Pagination } from '../../components/ui';
 import ConsolePageHeader from '../../components/layout/ConsolePageHeader';
 import MarkdownRenderer from '../../components/common/markdown/MarkdownRenderer';
 import { useAuthStore } from '../../stores/auth-store';
@@ -13,20 +13,16 @@ const pageSize = 20;
 
 function Notifications() {
   const { t, i18n } = useTranslation();
-  const { announcements, unread, read, markRead } = useNotifications();
+  const { announcements, read, markRead } = useNotifications();
   const [page, setPage] = useState(1);
-  const [previouslyRead, setPreviouslyRead] = useState(() => new Set(read.announcements));
+  const [previouslyRead] = useState(() => new Set(read.announcements));
   const visible = useMemo(() => announcements.slice((page - 1) * pageSize, page * pageSize), [announcements, page]);
-  const keys = useMemo(() => visible.map(announcementKey), [visible]);
+  const keys = useMemo(() => announcements.map(announcementKey), [announcements]);
   useEffect(() => { setPage((current) => Math.min(current, Math.max(1, Math.ceil(announcements.length / pageSize)))); }, [announcements.length]);
   useEffect(() => { markRead(keys); }, [keys, markRead]);
   const date = (raw: string) => { const value = new Date(raw); return Number.isNaN(value.getTime()) ? raw : new Intl.DateTimeFormat(i18n.language, { dateStyle: 'medium', timeStyle: 'short' }).format(value); };
   return <div className='console-content-page'>
-    <ConsolePageHeader title={t('Notifications')} actions={<Button size='sm' variant='toggle' disabled={!unread} onClick={() => {
-      const all = announcements.map(announcementKey);
-      markRead(all);
-      setPreviouslyRead(new Set(all));
-    }}>{t('Mark all as read')}</Button>} />
+    <ConsolePageHeader title={t('Notifications')} />
     <section aria-label={t('System announcements')} className='min-w-0 rounded-[26px] border border-ui-border p-6'>
       <h2 className='mb-5 text-sm font-semibold'>{t('System announcements')}</h2>
       {!announcements.length ? <EmptyState icon={Megaphone} title={t('No announcements')} /> : visible.map((item, index) => {
