@@ -108,7 +108,7 @@ body {
 .auth-form label { display: grid; gap: 9px; color: #666; font-size: 12px; }
 .auth-form input { height: 45px; padding: 0; border: 0; border-bottom: 1px solid #aaa; border-radius: 0; outline: none; background: transparent; color: #111; font-size: 16px; }
 .auth-form input:focus { border-color: #111; }
-.auth-form button { display: flex; align-items: center; justify-content: space-between; height: 48px; margin-top: 12px; padding: 0 16px; background: #111; color: #fff; font-size: 13px; }
+.auth-form button:not([role='checkbox']) { display: flex; align-items: center; justify-content: space-between; height: 48px; margin-top: 12px; padding: 0 16px; background: #111; color: #fff; font-size: 13px; }
 .auth-form button:disabled { opacity: .5; }
 
 /* HyxAPI public site v3: product-first, warm neutral, no template card grid. */
@@ -311,6 +311,10 @@ body[theme-mode='dark'] .cursor-home .footer-language-menu button:hover,body[the
 .cursor-auth-page .auth-form input::placeholder { color:#aaa79f; }
 .cursor-auth-page .auth-form input:focus { border-color:#8f8350; box-shadow:none; }
 .cursor-auth-page .auth-form .cursor-auth-submit { display:flex; align-items:center; justify-content:center; width:100%; height:42px; margin-top:6px; padding:0 16px; border:1px solid #24231f; border-radius:3px; background:#24231f; color:#f7f7f4; font-size:15px; font-weight:500; }
+.cursor-auth-panel > .cursor-auth-consent { margin-bottom:16px; }
+.cursor-auth-page .cursor-auth-consent label { display:flex; align-items:flex-start; gap:8px; }
+.cursor-auth-consent [role='checkbox'] { margin-top:2px; }
+.cursor-auth-consent label > span { color:var(--ui-text-2); font-size:12px; line-height:20px; }
 .cursor-auth-forgot { display:block; margin:14px 0 0 auto; color:#77746a; font-size:12px; }
 .cursor-auth-forgot:hover { color:#24231f; text-decoration:underline; text-underline-offset:3px; }
 .cursor-auth-switch { margin:26px 0 0; color:#858176; font-size:13px; text-align:center; }

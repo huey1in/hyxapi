@@ -4,7 +4,7 @@ import { AlertCircle, CheckCircle2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { API } from '../../helpers';
-import { Modal, Input, Select } from '../../components/ui';
+import { Modal, Input, Select, Checkbox } from '../../components/ui';
 import { applyAuthBundle, isAuthBundle } from '../../lib/auth-session';
 import { useAuthStore } from '../../stores/auth-store';
 import { encryptPassword } from '../../features/auth/lib/password-encryption';
@@ -210,6 +210,10 @@ const Auth = () => {
     });
   };
 
+  const legalConsent = (agreementEnabled || privacyEnabled) && <div className='cursor-auth-consent'>
+    <Checkbox size='sm' checked={agreed} onChange={setAgreed} disabled={busy} label={t('I agree to the terms and privacy policy')} />
+  </div>;
+
   return (
     <div className='cursor-auth-page'>
       <header className='cursor-auth-header'><Link to='/' className='home-brand'>HyxAPI</Link></header>
@@ -221,7 +225,7 @@ const Auth = () => {
             <span>{feedback.message}</span>
           </div>}
           {turnstileEnabled && <div className='cursor-auth-turnstile'><TurnstileChallenge key={`${mode}:${turnstileAttempt}`} siteKey={status.turnstile_site_key!} onToken={setTurnstileToken} /></div>}
-          {!isReset && (agreementEnabled || privacyEnabled) && <label className='flex items-start gap-2 text-xs text-ui-text-2 mb-4'><input type='checkbox' checked={agreed} onChange={(event) => setAgreed(event.target.checked)} aria-label={t('I agree to the terms and privacy policy')} /><span>{t('I agree to the terms and privacy policy')}</span></label>}
+          {!isReset && !passwordFormEnabled && legalConsent}
           {!isReset && oauthEnabled && <div className='cursor-auth-oauth-list'>
             {oauthProviders.map(({ id, label, icon }) => <button className='cursor-auth-oauth' type='button' key={id} onClick={() => continueWithOAuth(id)} disabled={busy || !legalReady}>
               <ProviderIcon src={icon} label={label} />
@@ -246,6 +250,7 @@ const Auth = () => {
               <div className='cursor-auth-code-row'><input value={form.verificationCode} onChange={update('verificationCode')} aria-label={t('Email verification code')} autoComplete='one-time-code' placeholder={t("Email verification code")} /><button type='button' onClick={sendVerificationCode} disabled={busy || codeCountdown > 0}>{codeCountdown ? `${codeCountdown}s` : operation === 'code' ? t("Sending…") : t("Send verification code")}</button></div>
             </>}
             {!isLogin && registerStep === 3 && <label>{t('auth.fields.confirmPassword')}<input value={form.confirm} onChange={update('confirm')} type='password' autoComplete='new-password' placeholder={t('auth.fields.confirmPasswordPlaceholder')} /></label>}
+            {legalConsent}
             <button className='cursor-auth-submit' disabled={busy || !legalReady}>{busy ? t('auth.processing') : isLogin ? t('auth.login.submit') : registerStep < 3 ? t("Next") : t('auth.register.submit')}</button>
           </form> : <p role='status' className='text-sm text-ui-text-2'>{t(!registerEnabled && !isLogin ? 'New user registration is disabled' : 'Password authentication is disabled. Use an available sign-in method.')}</p>}
           {!isLogin && passwordFormEnabled && registerStep > 1 && <button className='cursor-auth-forgot' disabled={busy} onClick={() => { setRegisterStep((step) => step === 3 && !emailVerificationEnabled ? 1 : step - 1); setFeedback(null); }}>{t("Previous")}</button>}
