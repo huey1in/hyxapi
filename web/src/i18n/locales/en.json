@@ -813,8 +813,6 @@
     "Reward range: {{min}} – {{max}}": "Reward range: {{min}} – {{max}}",
     "Checked In": "Checked In",
     "Check In": "Check In",
-    "Expand calendar": "Expand calendar",
-    "Collapse calendar": "Collapse calendar",
     "Security verification is not configured": "Security verification is not configured",
     "Retry": "Retry",
     "Previous month": "Previous month",

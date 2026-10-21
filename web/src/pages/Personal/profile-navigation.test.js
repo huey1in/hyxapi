@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { loadTestModules } from '../../../scripts/load-test-modules.mjs';
 
-const { entry0: sidebar, entry1: calendar, entry2: { filterSidebarItems } } = await loadTestModules(['./src/lib/sidebar-modules.ts', './src/pages/Personal/checkin-calendar.ts', './src/components/layout/sidebarItems.ts']);
+const { entry0: sidebar, entry1: calendar, entry2: { filterSidebarItems } } = await loadTestModules(['./src/lib/sidebar-modules.ts', './src/features/payments/checkin-calendar.ts', './src/components/layout/sidebarItems.ts']);
 
 test('sidebar preferences only narrow administrator visibility and never bypass roles', () => {
   const admin = sidebar.parseSidebarModules('{"console":{"token":false},"personal":{"topup":false}}');

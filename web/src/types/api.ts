@@ -50,6 +50,7 @@ export interface SiteStatus {
   self_use_mode_enabled?: boolean;
   demo_site_enabled?: boolean;
   invitation_rewards_enabled?: boolean;
+  checkin_enabled?: boolean;
   custom_oauth_providers?: OAuthProvider[];
   [key: string]: unknown;
 }

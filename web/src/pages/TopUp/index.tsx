@@ -15,6 +15,7 @@ import { AffiliateTransferDialog, RedemptionDialog } from '../../features/paymen
 import TopUpHistory from '../../features/payments/TopUpHistory';
 import usePaymentCheckout from '../../features/payments/usePaymentCheckout';
 import SubscriptionOffers from '../../features/payments/SubscriptionOffers';
+import DailyCheckin from '../../features/payments/DailyCheckin';
 
 type Quote = { key: string; value?: number; error?: string };
 function TopUp({ identity }: { identity: string }) {
@@ -75,6 +76,7 @@ function TopUp({ identity }: { identity: string }) {
   const canRedeem = paymentInfo?.enable_redemption === true;
   return <TopUpPage pending={info.isPending || offers.isPending}>
     <WalletBalanceCard user={user} pending={profile.isPending} onHistory={() => setShowHistory(true)} />
+    <DailyCheckin identity={identity} />
     {profile.isError && <div role='alert' className='space-y-2 text-sm text-ui-danger'><p>{t(apiErrorMessage(profile.error, 'Unable to load wallet data'))}</p><Button onClick={refreshUser}>{t('Retry')}</Button></div>}
     {info.isError ? <div role='alert' className='space-y-2 text-sm text-ui-danger'><p>{t(apiErrorMessage(info.error, 'Unable to load payment methods'))}</p><Button onClick={() => void info.refetch()}>{t('Retry')}</Button></div> : methods.length > 0 && <section className='flex flex-col gap-4'>
       <div className='flex items-center justify-between gap-2'><h2 className='text-lg font-semibold text-ui-text'>{t('Top up now')}</h2>{canRedeem && <Button size='sm' variant='secondary' onClick={() => setRedeemOpen(true)}>{t('Redemption code')}</Button>}</div>

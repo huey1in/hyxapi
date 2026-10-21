@@ -7,6 +7,7 @@ import { Button, IconButton, Skeleton } from '../../components/ui';
 import { renderQuota } from '../../helpers';
 import type { WalletProfile } from './wallet-data';
 import { StatusContext } from '../../context/Status';
+import { DailyCheckinSkeleton } from './DailyCheckin';
 
 export function TopUpPage({ children, pending = false }: PropsWithChildren<{ pending?: boolean }>) {
   const { t } = useTranslation();
@@ -69,6 +70,7 @@ export function TopUpSkeleton() {
   const [{ status }] = useContext(StatusContext);
   return <TopUpPage pending>
     <WalletBalanceCard pending />
+    {status?.checkin_enabled === true && <DailyCheckinSkeleton />}
     {status?.invitation_rewards_enabled === true && <InvitationRewards pending linkPending />}
   </TopUpPage>;
 }

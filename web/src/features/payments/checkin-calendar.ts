@@ -9,6 +9,7 @@ export const checkinStatusSchema = z.object({
     records: z.array(z.object({ checkin_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/), quota_awarded: z.number().nonnegative() })),
   }),
 });
+export type CheckinStatus = z.infer<typeof checkinStatusSchema>;
 
 export const monthKey = (date: Date) => `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
 export function moveMonth(month: string, delta: number) {

@@ -14,7 +14,6 @@ import SecuritySettings from './SecuritySettings';
 import NotificationSettings, { PersonalPreferences } from './NotificationSettings';
 import { parsePersonalSettings } from './personal-settings';
 import type { RefreshProfile } from './personal-settings';
-import CheckinCalendar from './CheckinCalendar';
 import SidebarSettings from './SidebarSettings';
 import LoginSessions from './LoginSessions';
 import AccessTokens from './AccessTokens';
@@ -47,7 +46,6 @@ function PersonalProfile({ identity }: { identity: string }) {
     <LoginSessions />
     <AccessTokens />
     <AccountBindings />
-    <CheckinCalendar />
     <SidebarSettings />
     <NotificationSettings user={user} refresh={refresh} />
     <PersonalPreferences user={user} refresh={refresh} />
