@@ -1,10 +1,12 @@
 import { useId, useLayoutEffect, useRef, useState } from 'react';
-import type { PointerEvent } from 'react';
+import type { CSSProperties, PointerEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Check, ChevronDown, GripVertical, X } from 'lucide-react';
 import { inputStyle } from '../input/Input';
 import { cn, FOCUS_RING } from '../tokens';
 import useDropdownState from './useDropdownState';
+import useDropdownLayout from './useDropdownLayout';
+import { selectorStyle } from './selectorSizing';
 
 type Props = {
   id?: string;
@@ -15,10 +17,11 @@ type Props = {
   placeholder?: string;
   maxSelected?: number;
   disabled?: boolean;
+  width?: CSSProperties['width'] | 'full';
 };
 type Drag = { pointer: number; item: string; x: number; y: number; order: string[] };
 
-export default function SortableMultiSelect({ id, label, options, value, onChange, placeholder, maxSelected = Infinity, disabled = false }: Props) {
+export default function SortableMultiSelect({ id, label, options, value, onChange, placeholder, maxSelected = Infinity, disabled = false, width }: Props) {
   const { t } = useTranslation();
   const container = useRef<HTMLDivElement>(null);
   const trigger = useRef<HTMLButtonElement>(null);
@@ -40,53 +43,12 @@ export default function SortableMultiSelect({ id, label, options, value, onChang
     setPreview(null);
   }, [open, value]);
 
+  useDropdownLayout({ open, trigger, menu, content: items, placement: 'bottom-end' });
   useLayoutEffect(() => {
-    const panel = menu.current, content = items.current, button = trigger.current;
-    if (!open || !panel || !content || !button) return;
-    panel.showPopover();
-    const position = () => {
-      const bounds = button.getBoundingClientRect();
-      const viewport = window.visualViewport;
-      const left = (viewport?.offsetLeft ?? 0) + 8;
-      const top = (viewport?.offsetTop ?? 0) + 8;
-      const right = left + (viewport?.width ?? innerWidth) - 16;
-      const bottom = top + (viewport?.height ?? innerHeight) - 16;
-      const width = Math.min(bounds.width, right - left);
-      const above = Math.max(0, bounds.top - top - 6);
-      const below = Math.max(0, bottom - bounds.bottom - 6);
-      const upwards = below < Math.min(content.scrollHeight, 288) + 2 && above > below;
-      const maxHeight = Math.max(0, Math.min(288, (upwards ? above : below) - 2));
-      content.style.maxHeight = `${maxHeight}px`;
-      panel.style.width = `${width}px`;
-      panel.style.left = `${Math.max(left, Math.min(bounds.right - width, right - width))}px`;
-      panel.style.top = `${upwards ? bounds.top - 6 - Math.min(content.scrollHeight, maxHeight) - 2 : bounds.bottom + 6}px`;
-    };
-    position();
-    if (focusMenu.current) { content.querySelector<HTMLButtonElement>('button:not(:disabled)')?.focus(); focusMenu.current = false; }
-    const observer = new ResizeObserver(position);
-    observer.observe(button);
-    observer.observe(content);
-    window.addEventListener('resize', position);
-    window.addEventListener('scroll', position, true);
-    document.addEventListener('animationend', position, true);
-    viewportEvents(true);
-    function viewportEvents(add: boolean) {
-      if (add) {
-        window.visualViewport?.addEventListener('resize', position);
-        window.visualViewport?.addEventListener('scroll', position);
-      } else {
-        window.visualViewport?.removeEventListener('resize', position);
-        window.visualViewport?.removeEventListener('scroll', position);
-      }
+    if (open && focusMenu.current) {
+      items.current?.querySelector<HTMLButtonElement>('button:not(:disabled)')?.focus();
+      focusMenu.current = false;
     }
-    return () => {
-      observer.disconnect();
-      window.removeEventListener('resize', position);
-      window.removeEventListener('scroll', position, true);
-      document.removeEventListener('animationend', position, true);
-      viewportEvents(false);
-      if (panel.matches(':popover-open')) panel.hidePopover();
-    };
   }, [open]);
 
   const toggle = (item: string) => {
@@ -128,17 +90,17 @@ export default function SortableMultiSelect({ id, label, options, value, onChang
     if (commit && inside && active.order.some((item, index) => item !== value[index])) onChange(active.order);
   };
 
-  return <div ref={container} className='relative w-full min-w-0' onKeyDownCapture={(event) => {
+  return <div ref={container} className='relative inline-flex' style={selectorStyle(width)} onKeyDownCapture={(event) => {
     if (event.key !== 'Escape' || !open) return;
     event.preventDefault(); event.stopPropagation(); setOpen(false); trigger.current?.focus({ preventScroll: true });
   }}>
-    <div style={{ ...style, minHeight: height, paddingTop: 4, paddingBottom: 4 }} className={cn(inputStyle().className, 'relative flex min-w-0 items-center justify-between gap-2', open && 'border-ui-text-3', disabled && 'opacity-50')}>
+    <div style={{ ...style, minHeight: height, paddingTop: 4, paddingBottom: 4 }} className={cn(inputStyle().className, 'relative flex w-full min-w-0 items-center justify-between gap-2', open && 'border-ui-text-3', disabled && 'opacity-50')}>
       <button ref={trigger} id={id} type='button' aria-label={label} aria-haspopup='dialog' aria-expanded={open} aria-controls={open ? menuId : undefined}
         disabled={disabled} onClick={() => setOpen((previous) => !previous)} onKeyDown={(event) => {
           if (event.key === 'ArrowDown' && !open) { event.preventDefault(); focusMenu.current = true; setOpen(true); }
         }} className={cn('absolute inset-0 rounded-xl', FOCUS_RING, disabled ? 'cursor-not-allowed' : 'cursor-pointer')} />
       <div className='pointer-events-none flex min-w-0 flex-1 flex-wrap gap-1'>
-        {!selected.length && <span className='text-sm text-ui-text-3'>{placeholder ?? t('Please select')}</span>}
+        {!selected.length && <span className='min-w-0 truncate text-sm text-ui-text-3'>{placeholder ?? t('Please select')}</span>}
         {selected.map((item) => <span key={item} title={item} className='relative inline-flex min-w-0 max-w-full items-center gap-1 rounded-md border border-ui-border bg-ui-bg-subtle px-1.5 py-0.5 text-xs text-ui-text-2'>
           <span className='truncate'>{item}</span>
           <button type='button' disabled={disabled || !!preview} aria-label={t('Remove {{item}}', { item })} onClick={() => { toggle(item); trigger.current?.focus({ preventScroll: true }); }}
@@ -160,7 +122,7 @@ export default function SortableMultiSelect({ id, label, options, value, onChang
             <button type='button' aria-label={item} aria-pressed={checked} disabled={disabled || !checked && selected.length >= maxSelected} onClick={() => toggle(item)}
               className={cn('flex min-w-0 flex-1 items-center gap-2 rounded-lg px-2 py-2 text-left text-sm text-ui-text hover:bg-ui-bg-subtle disabled:cursor-not-allowed disabled:opacity-40', FOCUS_RING)}>
               {checked && <span className='shrink-0 text-xs text-ui-text-3'>{index + 1}</span>}
-              <span className='min-w-0 flex-1 break-all'>{item}</span>
+              <span title={item} className='min-w-0 flex-1 truncate'>{item}</span>
               {checked && <Check size={13} className='shrink-0 text-ui-text-3' />}
             </button>
             {checked && <button type='button' aria-label={t('Reorder {{item}}', { item })} aria-describedby={instructionsId} aria-keyshortcuts='ArrowUp ArrowDown' disabled={disabled}

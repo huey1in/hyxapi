@@ -19,7 +19,7 @@ export default function FormField({ label, hint, wide = false, compact = false, 
       {hint && <p className='text-xs text-ui-text-3 break-words'>{hint}</p>}
     </div>
     <div className={cn(
-      'min-w-0 shrink-0',
+      'flex min-w-0 shrink-0 justify-end',
       compact ? 'flex min-h-9 items-center justify-end' : wide
         ? 'w-[min(320px,calc(100%_-_88px))]'
         : 'w-[min(220px,calc(100%_-_88px))]',

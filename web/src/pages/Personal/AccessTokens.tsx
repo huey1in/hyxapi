@@ -90,12 +90,12 @@ function Tokens({ identity }: { identity: string }) {
         </div>
         {!editing.original && <div className='flex items-start justify-between gap-3'>
           <label htmlFor='personal-access-token-validity' className='min-w-0 flex-1 pt-2 text-sm text-ui-text'>{t('Validity')}</label>
-          <div className='w-[min(220px,calc(100%_-_88px))] min-w-0 shrink-0'>
+          <div className='flex w-[min(220px,calc(100%_-_88px))] min-w-0 shrink-0 flex-col items-end'>
             <Select id='personal-access-token-validity' aria-label={t('Access token validity')} popover width='full' value={editing.form.expiry} onChange={(value) => set('expiry', value)} options={[
               ...[7, 30, 90, 180, 365].map((days) => ({ value: String(days), label: t('{{days}} days', { days }) })),
               { value: 'custom', label: t('Custom') }, { value: 'never', label: t('Never expires') },
             ]} />
-            {editing.form.expiry === 'custom' && <div className='mt-2'><Input aria-label={t('Access token expiry date')} type='datetime-local' value={editing.form.customExpiry} onChange={(value) => set('customExpiry', value)} width='full' /><p className='mt-1 text-xs text-ui-text-3'>{t('Choose an expiry at least one hour from now')}</p></div>}
+            {editing.form.expiry === 'custom' && <div className='mt-2 w-full'><Input aria-label={t('Access token expiry date')} type='datetime-local' value={editing.form.customExpiry} onChange={(value) => set('customExpiry', value)} width='full' /><p className='mt-1 text-xs text-ui-text-3'>{t('Choose an expiry at least one hour from now')}</p></div>}
           </div>
         </div>}
         {(catalog?.groups ?? []).flatMap((group) => group.resources).map((resource) => <FieldGroup key={resource.resource} label={t(resource.label_key)}>

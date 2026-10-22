@@ -183,7 +183,7 @@ const TokenEditModal = ({ open, token, onClose, onSaved, onChanged }: Props) => 
 
         <div className='flex items-center justify-between gap-3'>
           <label htmlFor='token-group-mode' className='min-w-0 flex-1 text-sm text-ui-text'>{t('Group mode')}</label>
-          <div className='w-[min(220px,calc(100%_-_88px))] min-w-0 shrink-0'>
+          <div className='flex w-[min(220px,calc(100%_-_88px))] min-w-0 shrink-0 justify-end'>
             <Select id='token-group-mode' popover value={form.automatic ? 'auto' : 'manual'} options={[
               { value: 'auto', label: t('Automatic groups') }, { value: 'manual', label: t('Ordered groups') },
             ]} onChange={(value) => u('automatic')(value === 'auto')} width='full' />
@@ -194,7 +194,7 @@ const TokenEditModal = ({ open, token, onClose, onSaved, onChanged }: Props) => 
           <div className='space-y-3'>
             <div className='flex items-center justify-between gap-3'>
               <label htmlFor='token-auto-group-config' className='min-w-0 flex-1 text-sm text-ui-text'>{t('Auto group configuration')}</label>
-              <div className='w-[min(220px,calc(100%_-_88px))] min-w-0 shrink-0'>
+              <div className='flex w-[min(220px,calc(100%_-_88px))] min-w-0 shrink-0 justify-end'>
                 {groupsLoading ? <p className='text-xs text-ui-text-3'>{t('Loading group configuration…')}</p> : groupsError ? <p role='alert' className='text-xs text-ui-danger'>{groupsError}</p> : <Select id='token-auto-group-config' popover value={form.auto_groups_mode || 'inherit'} options={[
                   { value: 'inherit', label: t('Inherit global Auto groups') }, { value: 'custom', label: t('Custom Auto groups') },
                 ]} onChange={u('auto_groups_mode')} width='full' />}
@@ -205,7 +205,7 @@ const TokenEditModal = ({ open, token, onClose, onSaved, onChanged }: Props) => 
               {form.auto_groups_mode === 'custom' ? <>
                 <div className='flex items-center justify-between gap-3'>
                   <label htmlFor='token-group-priority' className='min-w-0 flex-1 text-sm text-ui-text'>{t('Group priority')}</label>
-                  <div className='w-[min(220px,calc(100%_-_88px))] min-w-0 shrink-0'>
+                  <div className='flex w-[min(220px,calc(100%_-_88px))] min-w-0 shrink-0 justify-end'>
                     <SortableMultiSelect id='token-group-priority' label={t('Group priority')} options={groups} value={form.auto_groups || []} onChange={u('auto_groups')} maxSelected={autoConfig.max_count} placeholder={t('Add Auto group')} />
                   </div>
                 </div>
@@ -222,7 +222,7 @@ const TokenEditModal = ({ open, token, onClose, onSaved, onChanged }: Props) => 
         {!form.automatic && (
           <div className='flex items-center justify-between gap-3'>
             <label htmlFor='token-group-priority' className='min-w-0 flex-1 text-sm text-ui-text'>{t('Group priority')}</label>
-            <div className='w-[min(220px,calc(100%_-_88px))] min-w-0 shrink-0'>
+            <div className='flex w-[min(220px,calc(100%_-_88px))] min-w-0 shrink-0 justify-end'>
               <SortableMultiSelect id='token-group-priority' label={t('Group priority')} options={groups} value={selectedGroups} onChange={u('groups')} disabled={groupsLoading} placeholder={t('Add group')} />
             </div>
           </div>
@@ -298,7 +298,7 @@ const TokenEditModal = ({ open, token, onClose, onSaved, onChanged }: Props) => 
         {form.model_limits_enabled && (
           <div className='flex items-center justify-between gap-3'>
             <label htmlFor='token-allowed-models' className='min-w-0 flex-1 text-sm text-ui-text'>{t('Allowed models')}</label>
-            <div className='w-[min(220px,calc(100%_-_88px))] min-w-0 shrink-0'>
+            <div className='flex w-[min(220px,calc(100%_-_88px))] min-w-0 shrink-0 justify-end'>
               <MultiSelect
                 id='token-allowed-models' popover width='full'
                 options={models}

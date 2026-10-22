@@ -6,15 +6,18 @@
  * onChange:   完整新数组
  * placeholder: 未选时显示
  * searchable: 是否带搜索（默认 true）
+ * width:      最大宽度；控件按内容收缩，默认上限 320px
  */
 
-import { useEffect, useId, useLayoutEffect, useRef, useState } from 'react';
+import { useEffect, useId, useRef, useState } from 'react';
 import type { CSSProperties, ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ChevronDown, Check, Search, X } from 'lucide-react';
 import { cn, FOCUS_RING } from '../tokens';
-import { inputStyle, resolveWidth } from '../input/Input';
+import { inputStyle } from '../input/Input';
 import useDropdownState from './useDropdownState';
+import useDropdownLayout from './useDropdownLayout';
+import { selectorStyle } from './selectorSizing';
 
 type OptionValue = string | number;
 export type MultiSelectOption<T extends OptionValue = string> = T | { value: T; label: ReactNode };
@@ -52,7 +55,7 @@ function MultiSelect<T extends OptionValue = string>({
   width,
   id,
   'aria-label': ariaLabel,
-  popover = false,
+  popover = true,
 }: MultiSelectProps<T>) {
   const { t } = useTranslation();
   const [keyword, setKeyword] = useState('');
@@ -64,49 +67,7 @@ function MultiSelect<T extends OptionValue = string>({
   const search = useRef<HTMLInputElement>(null);
   const menuId = useId();
 
-  useLayoutEffect(() => {
-    const panel = menu.current, items = content.current, button = trigger.current;
-    if (!open || !popover || !panel || !items || !button) return;
-    panel.showPopover();
-    const position = () => {
-      const bounds = button.getBoundingClientRect();
-      const viewport = window.visualViewport;
-      const left = (viewport?.offsetLeft ?? 0) + 8;
-      const top = (viewport?.offsetTop ?? 0) + 8;
-      const right = left + (viewport?.width ?? innerWidth) - 16;
-      const bottom = top + (viewport?.height ?? innerHeight) - 16;
-      const width = Math.min(bounds.width, right - left);
-      panel.style.width = `${width}px`;
-      const header = items.offsetTop;
-      const height = Math.min(items.scrollHeight, 288) + header + 1;
-      const above = Math.max(0, bounds.top - top - 6);
-      const below = Math.max(0, bottom - bounds.bottom - 6);
-      const upwards = below < height && above > below;
-      const maxHeight = Math.max(0, Math.min(288, (upwards ? above : below) - header - 1));
-      items.style.maxHeight = `${maxHeight}px`;
-      panel.style.left = `${Math.max(left, Math.min(bounds.right - width, right - width))}px`;
-      panel.style.top = `${upwards ? bounds.top - 6 - Math.min(items.scrollHeight, maxHeight) - header - 1 : bounds.bottom + 6}px`;
-    };
-    position();
-    search.current?.focus({ preventScroll: true });
-    const observer = new ResizeObserver(position);
-    observer.observe(button);
-    observer.observe(panel);
-    window.addEventListener('resize', position);
-    window.addEventListener('scroll', position, true);
-    document.addEventListener('animationend', position, true);
-    window.visualViewport?.addEventListener('resize', position);
-    window.visualViewport?.addEventListener('scroll', position);
-    return () => {
-      observer.disconnect();
-      window.removeEventListener('resize', position);
-      window.removeEventListener('scroll', position, true);
-      document.removeEventListener('animationend', position, true);
-      window.visualViewport?.removeEventListener('resize', position);
-      window.visualViewport?.removeEventListener('scroll', position);
-      if (panel.matches(':popover-open')) panel.hidePopover();
-    };
-  }, [open, popover]);
+  useDropdownLayout({ open, popover, trigger, menu, content, placement: 'bottom-end', minMenuWidth: searchable ? 180 : 0, search });
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => e.key === 'Escape' && setOpen(false);
@@ -126,13 +87,12 @@ function MultiSelect<T extends OptionValue = string>({
   };
 
   const labelOfVal = (v: T) => list.find((o) => o.value === v)?.label || String(v);
-  const w = resolveWidth(width);
   const s = inputStyle({ variant: 'admin', size });
   /* MultiSelect 高度可随 tag 增长，height 改为 min-height */
   const { height, ...flatStyle } = s.style;
 
   return (
-    <div className={cn('relative inline-flex', w.className)} style={w.style} ref={ref}
+    <div className='relative inline-flex' style={selectorStyle(width)} ref={ref}
       onKeyDownCapture={(event) => {
         if (event.key !== 'Escape' || !open) return;
         event.preventDefault(); event.stopPropagation();
@@ -151,13 +111,13 @@ function MultiSelect<T extends OptionValue = string>({
         style={{ ...flatStyle, minHeight: height, paddingTop: 4, paddingBottom: 4 }}
         className={cn(
           s.className,
-          'w-full inline-flex items-center justify-between gap-2 cursor-pointer text-left',
+          'w-full min-w-0 inline-flex items-center justify-between gap-2 cursor-pointer text-left',
           open && 'border-ui-text-3',
           FOCUS_RING,
         )}
       >
         <span className='flex flex-wrap items-center gap-1 min-w-0'>
-          {value.length === 0 && <span className='text-ui-text-3 text-sm'>{placeholder ?? t('Please select')}</span>}
+          {value.length === 0 && <span className='min-w-0 truncate text-ui-text-3 text-sm'>{placeholder ?? t('Please select')}</span>}
           {value.slice(0, 4).map((v) => (
             <span key={String(v)} className='inline-flex min-w-0 max-w-full items-center gap-1 px-1.5 py-0.5 text-[11px] rounded-md bg-ui-bg-subtle border border-ui-border text-ui-text-2'>
               <span className='min-w-0 truncate'>{labelOfVal(v)}</span>
@@ -178,15 +138,16 @@ function MultiSelect<T extends OptionValue = string>({
       {open && (
         <div
           ref={menu} id={menuId} popover={popover ? 'manual' : undefined}
-          className={cn('border border-ui-border rounded-xl shadow-lg overflow-hidden animate-dropdown', !popover && 'absolute z-30 top-full mt-1.5 left-0 right-0 min-w-full')}
+          className={cn('border border-ui-border rounded-xl shadow-lg overflow-hidden animate-dropdown', !popover && 'absolute z-30 top-full mt-1.5 right-0 w-max min-w-full max-w-[min(320px,calc(100vw_-_16px))]')}
           style={{ backgroundColor: 'var(--page-bg)', ...(popover ? { position: 'fixed', inset: 'auto', margin: 0, padding: 0 } : {}) }}
         >
           {searchable && (
             <div className='p-2 border-b border-ui-divider'>
               <div className='flex items-center gap-2 px-1'>
-                <Search size={14} className='text-ui-text-3' />
+                <Search size={14} className='shrink-0 text-ui-text-3' />
                 <input
                   ref={search}
+                  size={1}
                   autoFocus
                   value={keyword}
                   onChange={(e) => setKeyword(e.target.value)}
@@ -212,7 +173,7 @@ function MultiSelect<T extends OptionValue = string>({
                       sel ? 'bg-ui-bg-subtle text-ui-text' : 'text-ui-text hover:bg-ui-bg-subtle',
                     )}
                   >
-                    <span className='truncate'>{o.label}</span>
+                    <span title={typeof o.label === 'string' ? o.label : undefined} className='min-w-0 flex-1 truncate'>{o.label}</span>
                     {sel && <Check size={14} className='shrink-0 text-ui-text-2' />}
                   </button>
                 );

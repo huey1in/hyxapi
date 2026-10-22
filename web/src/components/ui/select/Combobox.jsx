@@ -4,11 +4,13 @@
  * 与 Select 接口一致，多一个搜索输入框过滤 options。
  */
 
-import { useEffect, useRef, useState } from 'react';
+import { useId, useRef, useState } from 'react';
 import { ChevronDown, Check, Search } from 'lucide-react';
 import { cn, FOCUS_RING } from '../tokens';
-import { inputStyle, resolveWidth } from '../input/Input';
+import { inputStyle } from '../input/Input';
 import useDropdownState from './useDropdownState';
+import useDropdownLayout from './useDropdownLayout';
+import { selectorStyle } from './selectorSizing';
 
 const Combobox = ({
   options = [],
@@ -20,42 +22,50 @@ const Combobox = ({
   disabled = false,
   size = 36,
   width,
+  id,
+  'aria-label': ariaLabel,
+  popover = true,
 }) => {
   const [keyword, setKeyword] = useState('');
   const ref = useRef(null);
   const trigger = useRef(null);
   const [open, setOpen] = useDropdownState(ref, trigger);
+  const menu = useRef(null);
+  const content = useRef(null);
+  const search = useRef(null);
+  const menuId = useId();
 
-  useEffect(() => {
-    const onKey = (e) => e.key === 'Escape' && setOpen(false);
-    document.addEventListener('keydown', onKey);
-    return () => {
-      document.removeEventListener('keydown', onKey);
-    };
-  }, [setOpen]);
+  useDropdownLayout({ open, popover, trigger, menu, content, minMenuWidth: 180, search });
 
   const list = options.map((o) => (typeof o === 'string' ? { value: o, label: o } : o));
   const current = list.find((o) => o.value === value);
   const filtered = list.filter((o) => String(o.label || o.value).toLowerCase().includes(keyword.toLowerCase()));
-  const w = resolveWidth(width);
   const s = inputStyle({ variant: 'admin', size });
 
   return (
-    <div className={cn('relative inline-flex', w.className)} style={w.style} ref={ref}>
+    <div className='relative inline-flex' style={selectorStyle(width)} ref={ref} onKeyDownCapture={(event) => {
+      if (event.key !== 'Escape' || !open) return;
+      event.preventDefault(); event.stopPropagation(); setOpen(false); trigger.current?.focus({ preventScroll: true });
+    }}>
       <button
         ref={trigger}
+        id={id}
         type='button'
+        aria-label={ariaLabel}
+        aria-haspopup='true'
+        aria-expanded={open}
+        aria-controls={open ? menuId : undefined}
         disabled={disabled}
         onClick={() => !disabled && setOpen((o) => !o)}
         style={s.style}
         className={cn(
           s.className,
-          'w-full inline-flex items-center justify-between gap-2 cursor-pointer text-left',
+          'w-full min-w-0 inline-flex items-center justify-between gap-2 cursor-pointer text-left',
           open && 'border-ui-text-3',
           FOCUS_RING,
         )}
       >
-        <span className={cn('truncate', !current && 'text-ui-text-3')}>
+        <span title={typeof current?.label === 'string' ? current.label : undefined} className={cn('min-w-0 flex-1 truncate', !current && 'text-ui-text-3')}>
           {current?.label ?? placeholder}
         </span>
         <ChevronDown size={14} className={cn('text-ui-text-3 shrink-0 transition-transform', open && 'rotate-180')} />
@@ -63,22 +73,25 @@ const Combobox = ({
 
       {open && (
         <div
-          className='absolute z-30 top-full mt-1.5 left-0 right-0 min-w-full border border-ui-border rounded-xl shadow-lg overflow-hidden animate-dropdown'
-          style={{ backgroundColor: 'var(--page-bg)' }}
+          ref={menu} id={menuId} popover={popover ? 'manual' : undefined}
+          className={cn('border border-ui-border rounded-xl shadow-lg overflow-hidden animate-dropdown', !popover && 'absolute z-30 top-full mt-1.5 left-0 w-max min-w-full max-w-[min(320px,calc(100vw_-_16px))]')}
+          style={{ backgroundColor: 'var(--page-bg)', ...(popover ? { position: 'fixed', inset: 'auto', margin: 0, padding: 0 } : {}) }}
         >
           <div className='p-2 border-b border-ui-divider'>
             <div className='flex items-center gap-2 px-1'>
-              <Search size={14} className='text-ui-text-3' />
+              <Search size={14} className='shrink-0 text-ui-text-3' />
               <input
+                ref={search}
+                size={1}
                 autoFocus
                 value={keyword}
                 onChange={(e) => setKeyword(e.target.value)}
                 placeholder={searchPlaceholder}
-                className='flex-1 bg-transparent outline-hidden text-sm py-1 placeholder:text-ui-text-3'
+                className='min-w-0 flex-1 bg-transparent outline-hidden text-sm py-1 placeholder:text-ui-text-3'
               />
             </div>
           </div>
-          <div className='p-1 flex flex-col gap-0.5 max-h-72 overflow-y-auto ui-scrollbar'>
+          <div ref={content} className='p-1 flex flex-col gap-0.5 max-h-72 overflow-y-auto ui-scrollbar'>
             {filtered.length === 0 ? (
               <div className='py-3 text-center text-xs text-ui-text-3'>{emptyText}</div>
             ) : (
@@ -94,7 +107,7 @@ const Combobox = ({
                       sel ? 'bg-ui-bg-subtle text-ui-text' : 'text-ui-text hover:bg-ui-bg-subtle',
                     )}
                   >
-                    <span className='truncate'>{o.label}</span>
+                    <span title={typeof o.label === 'string' ? o.label : undefined} className='min-w-0 flex-1 truncate'>{o.label}</span>
                     {sel && <Check size={14} className='shrink-0 text-ui-text-2' />}
                   </button>
                 );
