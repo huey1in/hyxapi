@@ -164,7 +164,7 @@ function Select<V extends SelectValue>({
                     disabled={o.disabled}
                     onClick={() => { onChange?.(o.value); setOpen(false); trigger.current?.focus({ preventScroll: true }); }}
                     className={cn(
-                      'flex items-center justify-between w-full px-2.5 py-1.5 rounded-lg text-sm transition-colors',
+                      'flex items-center justify-between w-full px-2.5 py-1.5 rounded-lg text-left text-sm transition-colors',
                       sel
                         ? 'bg-ui-bg-subtle text-ui-text'
                         : 'text-ui-text hover:bg-ui-bg-subtle',

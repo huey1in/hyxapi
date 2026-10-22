@@ -1,8 +1,9 @@
 import { useState } from 'react';
+import { FileDown } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { renderQuota } from '../../helpers';
-import { Button } from '../../components/ui';
+import { Button, EmptyState } from '../../components/ui';
 import { apiErrorMessage } from '../../lib/api-error';
 import { taskArtifactsSchema, taskDate, taskStatusLabels } from './task-data';
 import type { TaskRow } from './task-data';
@@ -51,7 +52,7 @@ export default function TaskDetails({ row, identity }: { row: TaskRow; identity:
         </div>)}
         {artifacts.legacy_content_url && <a className='block text-sm underline' href={artifacts.legacy_content_url} target='_blank' rel='noreferrer'>{t('Download video')}</a>}
         {artifacts.legacy_audio_clips?.map((clip, index) => <div key={clip.id || index}><p className='text-sm'>{clip.title || t('Audio {{index}}', { index: index + 1 })}</p><audio controls preload='none' src={clip.audio_url} className='w-full' /></div>)}
-        {!artifacts.artifacts.length && !artifacts.legacy_content_url && !artifacts.legacy_audio_clips?.length && <p className='text-sm text-ui-text-3'>{t('This task has no downloadable files.')}</p>}
+        {!artifacts.artifacts.length && !artifacts.legacy_content_url && !artifacts.legacy_audio_clips?.length && <EmptyState icon={FileDown} padding='sm' title={t('This task has no downloadable files.')} />}
       </div>}
     </DetailSection>
     {(row.admin_info || row.root_info) && <DetailCode title={t('Runtime information')} value={JSON.stringify({ admin_info: row.admin_info, root_info: row.root_info })} />}

@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { KeyRound } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { z } from 'zod';
@@ -103,7 +104,7 @@ export default function MultiKeyManager({ channel, onClose, onChanged }: Props) 
       {query.isPending && canOperate && <p role='status'>{t('Loading key status')}</p>}
       {query.isError && <p role='alert' className='text-sm text-ui-danger break-words'>{query.error.message}</p>}
       {snapshot && <>
-        <Table columns={columns} rows={snapshot.keys ?? []} rowKey='index' minWidth={850} emptyText={t('No matching keys')} />
+        <Table columns={columns} rows={snapshot.keys ?? []} rowKey='index' minWidth={850} emptyIcon={KeyRound} emptyText={t('No matching keys')} />
         <Pagination total={snapshot.total} pageSize={snapshot.page_size} page={snapshot.page} onChange={(value: number) => { if (!busy) setPage(value); }} />
       </>}
     </Modal>

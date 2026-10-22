@@ -90,7 +90,7 @@ export default function UnifiedLogs({ sources }: { sources: LogSourceOption[] })
       <LogsTable rows={rows} loading={query.isPending} all={all} onSelect={setSelected} />
       <Pagination page={pagination.page} pageSize={PAGE_SIZE} total={query.data?.total ?? 0} onChange={nextPage} />
     </>}
-    <Modal open={showFilters} title={t('Filters')} width={640} onClose={() => setShowFilters(false)} footer={<><Button variant='toggle' onClick={reset}>{t('Reset')}</Button><Button disabled={Boolean(validation)} onClick={() => apply(filters, draftScope)}>{t('Search')}</Button></>}>
+    <Modal open={showFilters} title={t('Filters')} width={520} onClose={() => setShowFilters(false)} footer={<><Button variant='toggle' onClick={reset}>{t('Reset')}</Button><Button disabled={Boolean(validation)} onClick={() => apply(filters, draftScope)}>{t('Search')}</Button></>}>
       <div className='grid grid-cols-1 gap-4 pb-2 sm:grid-cols-2'>
         {admin && <label className='grid gap-1.5 text-xs text-ui-text-3'>{t('Log scope')}<Select<LogScope> aria-label={t('Log scope')} width='full' popover value={draftScope} onChange={(value) => { setDraftScope(value); if (value === 'self') setFilters((previous) => ({ ...previous, username: '', channel: '', upstream_request_id: '' })); }} options={[{ value: 'all', label: t('All logs') }, { value: 'self', label: t('My logs') }]} /></label>}
         <label className='grid gap-1.5 text-xs text-ui-text-3'>{t('Log source')}<Select width='full' popover aria-label={t('Log source')} value={filters.source} onChange={(value) => setFilters((previous) => changeFeedSource(previous, value))} options={[{ value: '', label: t('All types') }, ...sources.map((source) => ({ value: source.value, label: t(source.label) }))]} /></label>

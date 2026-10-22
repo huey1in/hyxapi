@@ -1,6 +1,8 @@
 import { useContext, useEffect } from 'react';
+import { ScrollText } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import { EmptyState } from '../../components/ui';
 import ConsolePageHeader from '../../components/layout/ConsolePageHeader';
 import { useAuthStore } from '../../stores/auth-store';
 import { StatusContext } from '../../context/Status';
@@ -21,6 +23,6 @@ export default function LogsPage() {
 
   return <div className='console-content-page'>
     <ConsolePageHeader title={t('日志')} />
-    {!status.status ? <LogsLoading /> : !sources.length ? <p className='text-sm text-ui-text-3'>{t('No log views are enabled.')}</p> : <UnifiedLogs key={`${identity}:${sources.map((source) => source.value).join(',')}`} sources={sources} />}
+    {!status.status ? <LogsLoading /> : !sources.length ? <EmptyState icon={ScrollText} padding='md' title={t('No log views are enabled.')} /> : <UnifiedLogs key={`${identity}:${sources.map((source) => source.value).join(',')}`} sources={sources} />}
   </div>;
 }

@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { isAxiosError } from 'axios';
 import { useTranslation } from 'react-i18next';
-import { Filter, RefreshCw } from 'lucide-react';
+import { Filter, RefreshCw, ShieldCheck } from 'lucide-react';
 import { API } from '../../helpers';
 import { Button, IconButton, Input, Pagination, Select, Table } from '../../components/ui';
 import type { TableColumn } from '../../components/ui/layout/Table';
@@ -93,7 +93,7 @@ export default function AuditViewer({ identity, scope, onDenied, accessOnly = fa
     </form>}
     {error && <div role='alert' className='text-sm text-ui-text-2 flex items-center gap-3'><span>{t(error)}</span><Button variant='link' onClick={refresh}>{t('Retry')}</Button></div>}
     {<>
-      <Table loading={query.isPending && canQuery} columns={columns} rows={rows} rowKey='event_id' size={isMobile ? 'sm' : 'md'} emptyText={t(query.isError ? 'Failed to load audit records' : 'No audit records')} />
+      <Table loading={query.isPending && canQuery} columns={columns} rows={rows} rowKey='event_id' size={isMobile ? 'sm' : 'md'} emptyIcon={ShieldCheck} emptyText={t(query.isError ? 'Failed to load audit records' : 'No audit records')} />
       <div className='flex flex-wrap justify-end items-center gap-2'>
         <Select aria-label={t('Rows per page')} value={pageSize} disabled={query.isFetching || query.isError} options={[20, 50, 100]} onChange={(value) => { setSelected(null); setPageSize(value); setPage(1); }} width={85} />
         <Pagination total={total} pageSize={pageSize} page={page} onChange={(value: number) => { if (!query.isFetching && !query.isError) { setSelected(null); setPage(value); } }} />

@@ -34,7 +34,7 @@ export default function CopyChannelDialog({ channel, onClose, onCopied }: Props)
     finally { if (!owner.signal.aborted) { lock.current = false; setBusy(false); } }
   };
   const close = () => { if (!lock.current) onClose(); };
-  return <Modal open title={t('Copy channel')} onClose={close} onConfirm={() => void copy()} width={520} footer={<>
+  return <Modal open title={t('Copy channel')} onClose={close} onConfirm={() => void copy()} width={420} footer={<>
     <Button variant='secondary' disabled={busy} onClick={close}>{t('Cancel')}</Button><Button loading={busy} onClick={() => void copy()}>{t('Create copy')}</Button>
   </>}>
     <p className='text-sm text-ui-text-2 break-all'>{t('The copy includes channel credentials and configuration.')}</p>

@@ -17,7 +17,7 @@ function BillingSettingsLayout({ children, description }: PropsWithChildren<{ de
   const { t } = useTranslation();
   return <SettingGroup title={t('Billing & usage')}>
     <SettingRow title={t('Billing priority')} description={description} last>
-      <div className='w-[min(200px,48vw)]'>{children}</div>
+      <div className='w-[min(180px,48vw)]'>{children}</div>
     </SettingRow>
   </SettingGroup>;
 }

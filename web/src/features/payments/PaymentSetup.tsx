@@ -1,10 +1,12 @@
 import { useEffect, useId, useState } from 'react';
+import { Store } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { z } from 'zod';
 import { API, showSuccess } from '../../helpers';
 import {
   Button,
   ConfirmDialog,
+  EmptyState,
   Input,
   NumberInput,
   Select,
@@ -405,9 +407,7 @@ export default function PaymentSetup({
                   </div>
                 )}
                 {loaded && !stores.length && (
-                  <p className='text-xs text-ui-text-3'>
-                    {t('No payment stores found')}
-                  </p>
+                  <EmptyState icon={Store} padding='sm' title={t('No payment stores found')} />
                 )}
                 {stores.length > 0 && (
                   <>

@@ -11,7 +11,7 @@ import {
   Table,
   Tag,
 } from '../../components/ui';
-import { CheckSquare, PlusCircle, Play, RotateCcw } from 'lucide-react';
+import { CheckSquare, FlaskConical, PlusCircle, Play, RotateCcw } from 'lucide-react';
 import { cn } from '../../components/ui/tokens';
 import { CHANNEL_TYPE_OPTIONS as TYPE_OPTIONS } from '../../constants/channel-types';
 import { useOwnedOperation } from '../../hooks/useOwnedOperation';
@@ -314,6 +314,7 @@ export default function ChannelTestModal({
         {results.length > 0 && (
           <div className='max-h-80 overflow-auto ui-scrollbar'>
             <Table
+              emptyIcon={FlaskConical}
               columns={resultColumns}
               rows={results}
               rowKey='model'

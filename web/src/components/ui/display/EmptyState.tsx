@@ -7,13 +7,13 @@
  * action:      节点（通常是个 Button）
  */
 
-import { Inbox } from 'lucide-react';
+import { PackageOpen } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { cn } from '../tokens';
 
 interface EmptyStateProps { icon?: LucideIcon | null; iconVariant?: 'subtle' | 'plain'; title?: ReactNode; description?: ReactNode; action?: ReactNode; padding?: 'lg' | 'md' | 'sm' }
-const EmptyState = ({ icon: Icon = Inbox, iconVariant = 'subtle', title, description, action, padding = 'lg' }: EmptyStateProps) => (
+const EmptyState = ({ icon: Icon = PackageOpen, iconVariant = 'plain', title, description, action, padding = 'lg' }: EmptyStateProps) => (
   <div className={cn(
     'flex flex-col items-center justify-center text-center text-ui-text-3',
     padding === 'lg' && 'py-16',

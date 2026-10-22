@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { Boxes } from 'lucide-react';
 import { request, errorText } from './catalog';
 import type { Operation, OperationPreview, Page, Vendor } from './catalog';
 import { Button, ErrorMessage, Field, Select, SlideOver, Table } from './ui';
@@ -35,7 +36,7 @@ export default function VendorOperationDialog({ operation, onClose, onSaved }: {
       <p className='text-sm text-ui-text-2'>{operation.action === 'merge' ? '将所选供应商的模型移至目标供应商，再删除来源供应商。' : operation.action === 'delete' ? '仅删除没有模型引用的供应商。存在引用时，先转移或清除模型关联。' : '将所选模型分配至目标供应商；选择未分配可清除关联。'}</p>
       {operation.action !== 'delete' && <Field label='目标供应商'><Select width='full' value={target} disabled={busy} onChange={(value) => { setTarget(value); setPreview(undefined); setError(''); }} options={[...(operation.action === 'assign' ? [{ value: '0', label: '未分配' }] : []), ...vendors.filter((vendor) => !operation.vendor_ids?.includes(vendor.id)).map((vendor) => ({ value: String(vendor.id), label: vendor.name }))]} /></Field>}
       <ErrorMessage message={error} />
-      {preview && <><p className='text-sm text-ui-text-2'>影响 {preview.models.length} 个模型；来源：{preview.sources.map((vendor) => vendor.name).join('、') || '未分配'}；目标：{preview.target?.name || '未分配'}</p><Table rows={preview.models} columns={[{ key: 'model_name', title: '模型' }, { key: 'vendor_name', title: '原供应商' }]} /></>}
+      {preview && <><p className='text-sm text-ui-text-2'>影响 {preview.models.length} 个模型；来源：{preview.sources.map((vendor) => vendor.name).join('、') || '未分配'}；目标：{preview.target?.name || '未分配'}</p><Table rows={preview.models} emptyIcon={Boxes} columns={[{ key: 'model_name', title: '模型' }, { key: 'vendor_name', title: '原供应商' }]} /></>}
     </div>
   </SlideOver>;
 }

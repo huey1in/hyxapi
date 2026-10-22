@@ -8,6 +8,7 @@
  * striped: 隔行变色
  * hoverable: 行 hover 高亮（默认 true）
  * emptyText: 空数据文案
+ * emptyIcon: 与表格内容对应的空状态图标
  * onRowClick: (row, idx) => void
  * expandedKey: 当前展开行的 rowKey（与 renderExpanded 搭配，在该行下方插入详情）
  * renderExpanded: (row, idx) => node   展开行内容
@@ -17,9 +18,11 @@
 
 import React from 'react';
 import type { CSSProperties, HTMLAttributes, Key, ReactNode } from 'react';
+import type { LucideIcon } from 'lucide-react';
 import { cn } from '../tokens';
 import { useTranslation } from 'react-i18next';
 import Skeleton from '../feedback/Skeleton';
+import EmptyState from '../display/EmptyState';
 import useIsMobile from '../../../hooks/useIsMobile';
 
 const SIZE_PAD = {
@@ -52,6 +55,7 @@ export interface TableProps<T extends object> {
   striped?: boolean;
   hoverable?: boolean;
   emptyText?: ReactNode;
+  emptyIcon?: LucideIcon | null;
   onRowClick?: (row: T, index: number) => void;
   rowProps?: (row: T, index: number) => HTMLAttributes<HTMLElement>;
   expandedKey?: Key | null;
@@ -71,6 +75,7 @@ function Table<T extends object>({
   striped = false,
   hoverable = true,
   emptyText = '暂无数据',
+  emptyIcon,
   onRowClick,
   rowProps,
   expandedKey,
@@ -82,6 +87,8 @@ function Table<T extends object>({
 }: TableProps<T>) {
   const { t } = useTranslation();
   const mobile = useIsMobile();
+  const textEmptyState = typeof emptyText === 'string' || typeof emptyText === 'number';
+  const emptyContent = textEmptyState ? <EmptyState icon={emptyIcon} title={emptyText} padding='sm' /> : emptyText;
   const keyOf = (row: T, i: number): Key => {
     if (typeof rowKey === 'function') return rowKey(row);
     const value: unknown = rowKey === undefined ? Reflect.get(row, 'id') : row[rowKey];
@@ -102,7 +109,7 @@ function Table<T extends object>({
       {loading ? Array.from({ length: skeletonRows }, (_, index) => <div key={index} aria-hidden='true' className='mobile-table-card space-y-3'>
         {fields.map((column) => <div key={column.key} className={cn('mobile-table-field', column.mobileRole === 'wide' && 'mobile-table-field-wide')}><Skeleton height={14} width={column.mobileRole === 'wide' ? '40%' : '75%'} /><Skeleton height={18} width='85%' className={column.mobileRole === 'wide' ? undefined : 'ml-auto'} /></div>)}
         {actions.length > 0 && <div className='flex justify-end gap-2 border-t border-ui-divider pt-3'><Skeleton height={30} width={60} /><Skeleton height={30} width={60} /></div>}
-      </div>) : rows.length === 0 ? <div className='mobile-table-card py-8 text-center text-sm text-ui-text-3'>{emptyText}</div> : rows.map((row, index) => {
+      </div>) : rows.length === 0 ? <div className={cn('mobile-table-card text-center text-sm text-ui-text-3', !textEmptyState && 'py-8')}>{emptyContent}</div> : rows.map((row, index) => {
         const key = keyOf(row, index);
         const expanded = expandedKey != null && key === expandedKey;
         const { className: rowClass, onClick, onKeyDown, ...attributes } = rowProps?.(row, index) ?? {};
@@ -164,8 +171,8 @@ function Table<T extends object>({
             </td>)}
           </tr>) : rows.length === 0 ? (
             <tr>
-              <td colSpan={columns.length} className={cn('text-center text-ui-text-3', SIZE_PAD[size])}>
-                {emptyText}
+              <td colSpan={columns.length} className={cn('text-center text-ui-text-3', textEmptyState ? 'px-4' : SIZE_PAD[size])}>
+                {emptyContent}
               </td>
             </tr>
           ) : (

@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { Boxes } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { z } from 'zod';
@@ -185,7 +186,7 @@ export default function OllamaModels({ channel, onClose, onChanged }: Props) {
           </>}
         </div>
         {selected.size > 1000 && <p role='alert'>{t('Select at most 1000 models')}</p>}
-        <Table columns={columns} rows={visible} rowKey='name' minWidth={920} emptyText={t('No matching models')} />
+        <Table columns={columns} rows={visible} rowKey='name' minWidth={920} emptyIcon={Boxes} emptyText={t('No matching models')} />
       </>}
     </Modal>
     {confirmation && <ConfirmDialog open title={t(title)} description={<><span>{t(description)}</span><span className='block mt-2 text-sm break-all'>{'name' in confirmation ? confirmation.name : `${t('Selected')}: ${confirmation.names.length}`}</span></>}

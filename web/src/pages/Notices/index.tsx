@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { PackageOpen } from 'lucide-react';
+import { Bell } from 'lucide-react';
 import { EmptyState, Pagination } from '../../components/ui';
 import ConsolePageHeader from '../../components/layout/ConsolePageHeader';
 import MarkdownRenderer from '../../components/common/markdown/MarkdownRenderer';
@@ -25,7 +25,7 @@ function Notifications() {
     <ConsolePageHeader title={t('Notifications')} />
     <section aria-label={t('System announcements')} className='notices-announcements flex min-h-[440px] min-w-0 flex-col rounded-[26px] border border-ui-border p-6 md:min-h-[560px]'>
       <h2 className='mb-5 text-sm font-semibold'>{t('System announcements')}</h2>
-      {!announcements.length ? <div className='notices-empty-state flex flex-1 items-center justify-center'><EmptyState icon={PackageOpen} iconVariant='plain' title={t('No announcements')} /></div> : visible.map((item, index) => {
+      {!announcements.length ? <div className='notices-empty-state flex flex-1 items-center justify-center'><EmptyState icon={Bell} iconVariant='plain' title={t('No announcements')} /></div> : visible.map((item, index) => {
         const key = announcementKey(item); const last = index === visible.length - 1; const color = colors[item.type] ?? colors.default; const link = safeAnnouncementLink(item.link);
         return <article key={key} className='flex min-w-0 gap-4'>
           <div className='flex shrink-0 flex-col items-center' aria-hidden='true'><span className='mt-[5px] h-2.5 w-2.5 shrink-0 rounded-full' style={{ background: color, boxShadow: `0 0 0 3px var(--page-bg), 0 0 0 4px ${color}55` }} />{!last && <span className='mt-1.5 w-px flex-1 bg-ui-border' />}</div>

@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { ReceiptText } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { API, timestamp2string } from '../../helpers';
@@ -44,7 +45,7 @@ export default function TopUpHistory({ identity, role, onClose, onSaved }: { ide
       <Button type='submit' variant='secondary'>{t('Search')}</Button>
     </form>
     {query.isError ? <div role='alert' className='space-y-2 text-sm text-ui-danger'><p>{t(apiErrorMessage(query.error, 'Unable to load wallet data'))}</p><Button onClick={() => void query.refetch()}>{t('Retry')}</Button></div> : <>
-      <div className='max-h-[400px] overflow-y-auto'><Table columns={columns} rows={data?.items ?? []} rowKey='id' loading={query.isPending} skeletonRows={4} emptyText={t('No top-up records')} /></div>
+      <div className='h-[200px] overflow-y-auto ui-scrollbar'><Table className='min-h-full' columns={columns} rows={data?.items ?? []} rowKey='id' loading={query.isPending} skeletonRows={4} emptyIcon={ReceiptText} emptyText={t('No top-up records')} /></div>
       <Pagination page={page} pageSize={pageSize} total={data?.total ?? 0} onChange={(value: number) => { setPage(value); setComplete(null); }} />
     </>}
     {complete && <CompleteOrder key={complete.id} order={complete} onClose={() => setComplete(null)} onSaved={() => { void query.refetch(); onSaved(); }} />}

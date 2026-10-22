@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Gauge } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Button, Card, Select, Tag, Table, ContentSkeleton } from '../../components/ui';
@@ -83,7 +84,7 @@ export function ModelPerformance({ model }: { model: string }) {
       {!summary ? <p className='text-xs text-ui-text-3'>{t("No actual call samples for this period")}</p> : <>
         <div className='space-y-2'><h3 className='text-xs text-ui-text-3'>{t("Average time to first token")}</h3><LatencyTrend points={metrics.data?.series ?? []} /></div>
         <div className='space-y-2'><h3 className='text-xs text-ui-text-3'>{t("Success rate history (last 24 hours with samples)")}</h3><SuccessHistory points={metrics.data?.series ?? []} /></div>
-        <Table rows={metrics.data?.groups ?? []} rowKey='group' size='sm' columns={[
+        <Table rows={metrics.data?.groups ?? []} rowKey='group' size='sm' emptyIcon={Gauge} columns={[
           { key: 'group', title: t('Group') },
           { key: 'ttft', title: t('Time to first token'), render: (group) => formatLatency(group.avg_ttft_ms, i18n.language) },
           { key: 'latency', title: t('Request latency'), render: (group) => formatLatency(group.avg_latency_ms, i18n.language) },

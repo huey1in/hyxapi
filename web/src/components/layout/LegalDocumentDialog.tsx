@@ -1,9 +1,10 @@
 import { useEffect, useId, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { FileText, ShieldCheck } from 'lucide-react';
 import { API } from '../../helpers';
 import type { ApiEnvelope } from '../../types/api';
 import { apiErrorMessage } from '../../lib/api-error';
-import { Button } from '../ui';
+import { Button, EmptyState } from '../ui';
 import ConfiguredContent from '../common/markdown/ConfiguredContent';
 
 export default function LegalDocumentDialog({ type, onClose }: { type: 'terms' | 'privacy'; onClose: () => void }) {
@@ -43,7 +44,7 @@ export default function LegalDocumentDialog({ type, onClose }: { type: 'terms' |
     }}>
       <header><h2 id={titleId}>{t(type === 'terms' ? 'Terms of Service' : 'Privacy Policy')}</h2><button type='button' onClick={onClose} aria-label={t('Close')}>×</button></header>
       <div className='cursor-auth-legal-content'>
-        {loading ? <p role='status'>{t('Loading...')}</p> : error ? <div role='alert' className='space-y-3'><p>{t(error)}</p><Button onClick={() => setAttempt((value) => value + 1)}>{t('Retry')}</Button></div> : content ? <ConfiguredContent content={content} title={t(type === 'terms' ? 'Terms of Service' : 'Privacy Policy')} /> : <p>{t('No legal document has been configured')}</p>}
+        {loading ? <p role='status'>{t('Loading...')}</p> : error ? <div role='alert' className='space-y-3'><p>{t(error)}</p><Button onClick={() => setAttempt((value) => value + 1)}>{t('Retry')}</Button></div> : content ? <ConfiguredContent content={content} title={t(type === 'terms' ? 'Terms of Service' : 'Privacy Policy')} /> : <EmptyState icon={type === 'privacy' ? ShieldCheck : FileText} padding='md' title={t('No legal document has been configured')} />}
       </div>
     </section>
   </div>;

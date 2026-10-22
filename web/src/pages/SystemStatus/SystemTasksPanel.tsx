@@ -1,5 +1,6 @@
 import { ParagraphSkeleton } from '../../components/ui/feedback/ContentSkeleton';
 import { useState } from 'react';
+import { ListTodo } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { z } from 'zod';
@@ -37,7 +38,7 @@ function SystemTaskDetails({ id, identity, onClose }: { id: string; identity: st
     const row = await readSystemData(`/api/system-task/${encodeURIComponent(id)}`, systemTaskSchema, signal); if (row.task_id !== id) throw new Error('Invalid system data; reload and try again.'); return row;
   } });
   const row = query.isError ? undefined : query.data;
-  return <Modal open width={760} title={t('System task details')} onClose={onClose} footer={<div className='flex flex-wrap justify-end gap-2'><Button variant='secondary' onClick={onClose}>{t('Close')}</Button><Button loading={query.isFetching} onClick={() => void query.refetch()}>{t('Refresh details')}</Button></div>}>
+  return <Modal open width={600} title={t('System task details')} onClose={onClose} footer={<div className='flex flex-wrap justify-end gap-2'><Button variant='secondary' onClick={onClose}>{t('Close')}</Button><Button loading={query.isFetching} onClick={() => void query.refetch()}>{t('Refresh details')}</Button></div>}>
     {query.isError ? <p role='alert' className='text-sm text-ui-danger'>{t(apiErrorMessage(query.error))}</p> : !row ? <ParagraphSkeleton /> : <div className='space-y-3 text-sm'><p className='break-all'>{t(systemTaskTypes[row.type] || row.type)} · {row.task_id}</p><p>{t(systemTaskStatuses[row.status])} · {taskDate(row.updated_at, i18n.language)}</p>
       {row.error && <p role='alert' className='whitespace-pre-wrap break-all text-ui-danger'>{row.error}</p>}
       {(['state', 'result', 'payload'] as const).map((key) => <div key={key}><p className='text-xs text-ui-text-3'>{t(({ state: 'Execution progress', result: 'Execution result', payload: 'Task parameters' })[key])}</p><pre className='mt-1 whitespace-pre-wrap break-all text-xs'>{JSON.stringify(row[key], null, 2)}</pre></div>)}
@@ -58,7 +59,7 @@ function SystemTasksSession({ identity }: { identity: string }) {
       <Select width='full' aria-label={t('System task scope')} value={filters.scope} onChange={update('scope')} options={[{ value: '', label: t('All records') }, { value: 'active', label: t('Active tasks') }, { value: 'history', label: t('History') }]} />
       <Button size='sm' variant='link' disabled={Boolean(action) || filters.scope === 'active' || ['pending', 'running'].includes(filters.status)} onClick={() => setAction({ type: 'history', filters: { ...filters } })}>{t('Clean task history')}</Button>
     </div>
-    {query.isError ? <div role='alert' className='space-y-2 text-sm text-ui-danger'><p>{t(apiErrorMessage(query.error))}</p><Button onClick={() => void query.refetch()}>{t('Retry')}</Button></div> : <><Table loading={query.isPending} rows={rows} rowKey='task_id' minWidth={600} emptyText={t('No system tasks')} columns={[
+    {query.isError ? <div role='alert' className='space-y-2 text-sm text-ui-danger'><p>{t(apiErrorMessage(query.error))}</p><Button onClick={() => void query.refetch()}>{t('Retry')}</Button></div> : <><Table loading={query.isPending} rows={rows} rowKey='task_id' minWidth={600} emptyIcon={ListTodo} emptyText={t('No system tasks')} columns={[
       { key: 'type', title: t('Task'), render: (row) => <div>{t(systemTaskTypes[row.type] || row.type)}<div className='break-all text-xs text-ui-text-3'>{row.task_id}</div></div> },
       { key: 'status', title: t('Status'), render: (row) => t(systemTaskStatuses[row.status]) },
       { key: 'progress', title: t('Progress'), render: (row) => { const progress = row.state?.progress; return typeof progress === 'number' && Number.isFinite(progress) ? `${progress}%` : '—'; } },

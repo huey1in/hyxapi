@@ -1,9 +1,9 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
-import { Plus, RefreshCw, Save, Trash2 } from 'lucide-react';
+import { BadgeDollarSign, Plus, RefreshCw, Save, Trash2 } from 'lucide-react';
 import { API, showSuccess } from '../../helpers';
-import { Button, Checkbox, ConfirmDialog, Input, Modal, NumberInput, Pagination, Select, Switch, ContentSkeleton } from '../../components/ui';
+import { Button, Checkbox, ConfirmDialog, EmptyState, Input, Modal, NumberInput, Pagination, Select, Switch, ContentSkeleton } from '../../components/ui';
 import { useAuthStore } from '../../stores/auth-store';
 import { useOwnedOperation } from '../../hooks/useOwnedOperation';
 import { apiErrorMessage } from '../../lib/api-error';
@@ -122,7 +122,7 @@ function PricingWorkspace({ modelSuggestions, identity }: { modelSuggestions: Pr
       <Button size='sm' variant='secondary' disabled={unavailable || busy} onClick={() => setSyncOpen(true)}>{t('Upstream price synchronization')}</Button>
     </div>
     {prices.isPending ? <PricingRowsSkeleton /> : prices.error ? <div role='alert' className='space-y-3 text-sm'><p>{t(apiErrorMessage(prices.error, 'Unable to load model prices'))}</p><Button variant='toggle' onClick={refresh}>{t('Retry')}</Button></div> : <>
-      {!rows.length && <p className='border-y border-ui-border px-4 py-8 text-center text-sm text-ui-text-3'>{t('No model prices configured')}</p>}
+      {!rows.length && <div className='border-y border-ui-border px-4'><EmptyState icon={BadgeDollarSign} padding='sm' title={t('No model prices configured')} /></div>}
       <div style={MODEL_PRICING_ROWS_STYLE}><div className='grid'>{visible.map((row) => <fieldset key={row._key} aria-label={t('Price for {{model}}', { model: row.model_name || t('New model') })} disabled={busy || prices.isFetching} style={MODEL_PRICING_ROW_STYLE} className='grid gap-3 border-t border-ui-border py-4'>
         <div className='grid grid-cols-[minmax(220px,1fr)_minmax(130px,170px)_auto_auto] items-end gap-3'>
           <label className='grid min-w-0 gap-1 text-[11px] text-ui-text-3'>{t('Model name (supports leading or trailing *)')}<Input aria-label={t('Model name')} value={row.model_name} list='model-pricing-suggestions' onChange={(value) => update(row._key, 'model_name', value)} /></label>

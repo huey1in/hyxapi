@@ -18,6 +18,7 @@ import {
   Wallet,
   Search,
   SlidersHorizontal,
+  Radio,
 } from 'lucide-react';
 import { showError, showSuccess, renderQuota } from '../../helpers';
 import {
@@ -607,6 +608,7 @@ function ChannelSession({ identity }: { identity: string }) {
             </div>
           )}
           <Table
+            emptyIcon={Radio}
             loading={loading}
             columns={columns}
             rows={

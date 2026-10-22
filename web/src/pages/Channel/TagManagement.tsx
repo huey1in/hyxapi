@@ -56,7 +56,7 @@ export default function TagManagement({ tag, onClose, onChanged }: { tag: string
   };
   const close = () => { if (!lock.current && !confirmation) onClose(); };
   return <>
-    <Modal open title={`${t('Manage channel tag')} · ${tag}`} width={760} onClose={close} onConfirm={close} footer={<>
+    <Modal open title={`${t('Manage channel tag')} · ${tag}`} width={560} onClose={close} onConfirm={close} footer={<>
       <Button variant='secondary' disabled={busy} onClick={close}>{t('Close')}</Button>{canWrite && <Button disabled={busy || !selected.size} onClick={review}>{t('Review tag changes')}</Button>}
     </>}>
       <p className='text-sm text-ui-text-2'>{t('Changes apply to every channel with this tag, including channels outside the current filters.')}</p>
@@ -102,7 +102,7 @@ export function AssignChannelTag({ ids, onChanged }: { ids: number[]; onChanged:
   const close = () => { if (!lock.current) setTargets(null); };
   return <>
     <Button size='sm' variant='toggle' disabled={!ids.length || ids.length > 1000 || busy} onClick={() => { setTag(''); setError(''); setTargets([...ids]); }}>{t('Assign channel tag')}</Button>
-    {targets && <Modal open title={t('Assign channel tag')} width={520} onClose={close} onConfirm={() => void apply()} footer={<><Button variant='secondary' disabled={busy} onClick={close}>{t('Cancel')}</Button><Button loading={busy} onClick={() => void apply()}>{t('Apply tag')}</Button></>}>
+    {targets && <Modal open title={t('Assign channel tag')} width={420} onClose={close} onConfirm={() => void apply()} footer={<><Button variant='secondary' disabled={busy} onClick={close}>{t('Cancel')}</Button><Button loading={busy} onClick={() => void apply()}>{t('Apply tag')}</Button></>}>
       <p className='text-sm'>{t('Selected channel IDs')}: {targets.join(', ')}</p><p className='text-xs text-ui-text-3'>{t('A blank tag removes the tag from the selected channels. Other fields stay as they are.')}</p>
       <Input aria-label={t('Tag name')} value={tag} maxLength={255} disabled={busy} onChange={setTag} />
       {error && <p role='alert' className='text-sm text-ui-danger break-words'>{error}</p>}

@@ -1,9 +1,9 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
-import { Plus, Trash2 } from 'lucide-react';
+import { Plus, Store, Trash2 } from 'lucide-react';
 import { z } from 'zod';
-import { Button, Input, Modal, Select, Table, showSuccess } from '../../components/ui';
+import { Button, EmptyState, Input, Modal, Select, Table, showSuccess } from '../../components/ui';
 import { useOwnedOperation } from '../../hooks/useOwnedOperation';
 import { apiErrorMessage } from '../../lib/api-error';
 import {
@@ -191,11 +191,10 @@ export default function TaskPluginMarketplace({
           <Button onClick={load}>{t('Retry')}</Button>
         </div>
       ) : !loaded ? (
-        <p className="text-sm text-ui-text-3">
-          {t('Select a marketplace source, then load available plugins.')}
-        </p>
+        <EmptyState icon={Store} padding='sm' title={t('Select a marketplace source, then load available plugins.')} />
       ) : (
         <Table
+          emptyIcon={Store}
           loading={query.isPending}
           rows={query.data ?? []}
           rowKey="key"
@@ -284,7 +283,7 @@ function SourcesEditor({
   return (
     <Modal
       open
-      width={720}
+      width={560}
       title={t('Plugin marketplace sources')}
       onClose={onClose}
       confirmText={t('Save')}

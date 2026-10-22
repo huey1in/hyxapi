@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
-import { Plus, Pencil, Trash2, KeyRound, RotateCcw, RefreshCw } from 'lucide-react';
+import { CreditCard, Plus, Pencil, Trash2, KeyRound, RotateCcw, RefreshCw } from 'lucide-react';
 import { API, renderQuota } from '../../helpers';
 import { Button, ConfirmDialog, IconButton, Input, PageShell, Pagination, Select, Table, Tag, showSuccess } from '../../components/ui';
 import type { TableColumn } from '../../components/ui/layout/Table';
@@ -52,7 +52,7 @@ function SubscriptionPage({ identity }: { identity: string }) {
   const refresh = () => { void query.refetch(); };
   return <PageShell title={t('Subscription plans')} actions={<Button icon={Plus} onClick={() => setEditing('new')}>{t('Create plan')}</Button>}>
     <div className='mb-4 grid min-w-0 grid-cols-1 gap-2 sm:grid-cols-[1fr_140px_160px_auto]'><Input aria-label={t('Search plans')} placeholder={t('Search plan ID, name or description')} value={search} onChange={(value) => { setSearch(value); setPage(1); }} /><Select width='full' aria-label={t('Plan status')} value={filter} onChange={(value) => { setFilter(value); setPage(1); }} options={[{ value: 'all', label: t('All statuses') }, { value: 'enabled', label: t('Enabled') }, { value: 'disabled', label: t('Disabled') }]} /><Select width='full' aria-label={t('Plan sorting')} value={sort} onChange={(value) => { setSort(value); setPage(1); }} options={[{ value: 'weight', label: t('Sort weight') }, { value: 'price-asc', label: t('Price: low to high') }, { value: 'price-desc', label: t('Price: high to low') }, { value: 'name', label: t('Plan name') }]} /><IconButton icon={RefreshCw} aria-label={t('Refresh plans')} disabled={query.isFetching} onClick={refresh} /></div>
-    {query.isError ? <div role='alert' className='space-y-2 text-sm text-ui-danger'><p>{t(apiErrorMessage(query.error, 'Unable to load subscription plans'))}</p><Button onClick={refresh}>{t('Retry')}</Button></div> : <><Table loading={query.isPending} columns={columns} rows={visible} rowKey='id' emptyText={t('No subscription plans')} /><Pagination page={currentPage} pageSize={pageSize} total={rows.length} onChange={setPage} /></>}
+    {query.isError ? <div role='alert' className='space-y-2 text-sm text-ui-danger'><p>{t(apiErrorMessage(query.error, 'Unable to load subscription plans'))}</p><Button onClick={refresh}>{t('Retry')}</Button></div> : <><Table loading={query.isPending} columns={columns} rows={visible} rowKey='id' emptyIcon={CreditCard} emptyText={t('No subscription plans')} /><Pagination page={currentPage} pageSize={pageSize} total={rows.length} onChange={setPage} /></>}
     {editing && <PlanEditPanel key={editing === 'new' ? 'new' : editing.id} identity={identity} plan={editing === 'new' ? undefined : editing} onClose={() => setEditing(null)} onSaved={refresh} />}
     {codes && <CodesDialog key={codes.id} identity={identity} plan={codes} onClose={() => setCodes(null)} />}
     {reset && <SubscriptionResetDialog key={reset.id} plan={reset} onClose={() => setReset(null)} onSaved={() => { setReset(null); refresh(); }} />}

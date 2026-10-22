@@ -8,7 +8,7 @@ import { healthSchema, summarizeHealth as summarizeHistory } from '../../feature
 import type { TableColumn } from '../../components/ui/layout/Table';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { ArrowLeft, Copy } from 'lucide-react';
+import { ArrowLeft, Coins, Copy, SearchX } from 'lucide-react';
 import { PageShell, Card, Tag, Table, Button, Divider, EmptyState, Select } from '../../components/ui';
 import { useModelPricingData } from '../../hooks/model-pricing/useModelPricingData';
 import { usePageTitle } from '../../hooks/common/usePageTitle';
@@ -143,7 +143,7 @@ const PricingDetail = () => {
         ) : !model ? (
           <Card>
             <EmptyState
-              icon={null}
+              icon={SearchX}
               title={t("Model not found")}
               description={modelName}
               action={<Button variant='secondary' onClick={back}>{t('Back to models')}</Button>}
@@ -224,6 +224,7 @@ const PricingDetail = () => {
                   </>
                 ) : (
                   <Table
+                    emptyIcon={Coins}
                     size='sm'
                     hoverable={false}
                     columns={priceColumns}

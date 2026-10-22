@@ -1,9 +1,10 @@
 import Skeleton from '../../components/ui/feedback/Skeleton';
 import { useEffect, useState } from 'react';
+import { CreditCard } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { API, showSuccess, renderQuota } from '../../helpers';
 import SubscriptionResetDialog from '../../features/payments/SubscriptionResetDialog';
-import { Button, Select, SlideOver, ConfirmDialog, Tag, ContentSkeleton } from '../../components/ui';
+import { Button, Select, SlideOver, ConfirmDialog, Tag, ContentSkeleton, EmptyState } from '../../components/ui';
 import type { ApiEnvelope } from '../../types/api';
 import type { ManagedUser } from './user-management';
 import { userErrorMessage } from './user-management';
@@ -52,7 +53,7 @@ export default function UserSubscriptionsPanel({ user, onClose }: { user: Manage
           </div>
         </div>
         <div className='flex items-center justify-between'><h3 className='text-sm font-medium'>{t('Subscription records')}</h3><Button size='sm' variant='toggle' disabled={busy} onClick={() => void refresh()}>{t('Refresh')}</Button></div>
-        {!subs.length && !error && <p className='text-sm text-ui-text-3 text-center py-6'>{t('No subscriptions')}</p>}
+        {!subs.length && !error && <EmptyState icon={CreditCard} padding='sm' title={t('No subscriptions')} />}
         {subs.map((subscription) => {
           const total = subscription.amount_total || 0; const used = subscription.amount_used || 0; const pct = total > 0 ? Math.min(100, used / total * 100) : 0;
           return <div key={subscription.id} className='rounded-xl border border-ui-border px-4 py-3.5 space-y-2'>

@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { z } from 'zod';
-import { Copy, Pencil, Power, PowerOff, Trash2 } from 'lucide-react';
+import { Copy, Pencil, Power, PowerOff, Ticket, Trash2 } from 'lucide-react';
 import { API, copy, renderQuota, timestamp2string } from '../../helpers';
 import { quotaToDisplayAmount, displayAmountToQuota } from '../../helpers/quota';
 import { useAuthStore } from '../../stores/auth-store';
@@ -29,15 +29,15 @@ function QuotaFields({ draft, onChange, includeCount = false }: { draft: Redempt
       <label className='grid max-w-full gap-1 text-xs text-ui-text-2'>{t('Amount')}<NumberInput aria-label={t('Code amount')} value={draft.amount} onChange={(amount) => onChange({ ...draft, amount })} min={0} step='any' width={140} /></label>
       {includeCount && <label className='grid max-w-full gap-1 text-xs text-ui-text-2'>{t('Count')}<NumberInput aria-label={t('Quota code count (1–100)')} value={draft.count} onChange={(count) => onChange({ ...draft, count })} min={1} max={100} width={110} /></label>}
     </div>
-    <label className='grid gap-1 text-xs text-ui-text-2'>{t('Expiry time (blank means never)')}<Input aria-label={t('Quota code expiry (empty = never)')} type='datetime-local' value={draft.expiry} onChange={(expiry, event) => onChange({ ...draft, expiry, badExpiry: event?.target.validity.badInput ?? false })} width={260} /></label>
+    <label className='grid gap-1 text-xs text-ui-text-2'>{t('Expiry time (blank means never)')}<Input aria-label={t('Quota code expiry (empty = never)')} type='datetime-local' value={draft.expiry} onChange={(expiry, event) => onChange({ ...draft, expiry, badExpiry: event?.target.validity.badInput ?? false })} width='min(260px, 100%)' /></label>
     {!validDraft(draft, includeCount) && <p role='alert' className='text-xs text-ui-danger'>{t('Enter a positive amount, a whole count from 1 to 100, and a future expiry or leave expiry empty.')}</p>}
   </div>;
 }
 function EditCode({ code, onClose, onSaved }: { code: RedemptionCode; onClose: () => void; onSaved: () => void }) {
   const { t } = useTranslation(); const { busy, run } = useOwnedOperation();
   const [draft, setDraft] = useState<RedemptionDraft>(() => ({ name: code.name, amount: quotaToDisplayAmount(code.quota), count: 1, expiry: localExpiry(code.expired_time), badExpiry: false }));
-  return <Modal open title={t('Update Redemption Code')} onClose={onClose} hideFooter width={560}>
-    <fieldset disabled={busy} className='space-y-4'><QuotaFields draft={draft} onChange={setDraft} /><div className='flex justify-end'><Button loading={busy} disabled={!validDraft(draft, false)} onClick={() => void run(async (signal) => {
+  return <Modal open title={t('Update Redemption Code')} onClose={onClose} hideFooter width={480}>
+    <fieldset disabled={busy} className='min-w-0 space-y-4'><QuotaFields draft={draft} onChange={setDraft} /><div className='flex justify-end'><Button loading={busy} disabled={!validDraft(draft, false)} onClick={() => void run(async (signal) => {
       const payload = validDraft(draft, false); if (!payload) return;
       const { data } = await API.put<ApiEnvelope<unknown>>('/api/redemption/', { id: code.id, ...payload }, { ...requestConfig, signal });
       signal.throwIfAborted(); if (!data.success) throw new Error(data.message || 'Unable to update redemption code');
@@ -101,7 +101,7 @@ export default function QuotaCodesTab() {
     </div> },
   ];
   return <>
-    <fieldset disabled={busy} className='mb-4 space-y-3 rounded-2xl border border-ui-border p-4'><QuotaFields draft={draft} onChange={setDraft} includeCount /><Button loading={busy} disabled={!validDraft(draft)} onClick={generate}>{t('Create Redemption Code')}</Button></fieldset>
+    <fieldset disabled={busy} className='mb-4 min-w-0 space-y-3 rounded-2xl border border-ui-border p-4'><QuotaFields draft={draft} onChange={setDraft} includeCount /><Button loading={busy} disabled={!validDraft(draft)} onClick={generate}>{t('Create Redemption Code')}</Button></fieldset>
     <form className='mb-3 flex flex-wrap items-center justify-between gap-3' onSubmit={(event) => { event.preventDefault(); search(); }}>
       <div className='flex max-w-full flex-wrap items-center gap-2'>
         <Input aria-label={t('Search ID, name or redemption code')} value={filters.keyword} onChange={(keyword) => setFilters({ ...filters, keyword })} placeholder={t('Search ID, name or redemption code')} width={200} />
@@ -114,7 +114,7 @@ export default function QuotaCodesTab() {
         <Button variant='toggle' disabled={busy} onClick={() => setConfirmation({ title: t('Delete Invalid Redemption Codes?'), invalid: true })}>{t('Delete invalid redemption codes')}</Button>
       </div>
     </form>
-    {query.isError ? <div role='alert' className='space-y-2 text-sm text-ui-danger'><p>{t(apiErrorMessage(query.error, 'Unable to load redemption codes'))}</p><Button onClick={refresh}>{t('Retry')}</Button></div> : <><Table loading={!data} columns={columns} rows={rows} rowKey='id' minWidth={1050} /><div className='mt-4 flex justify-end'><Pagination total={total} pageSize={PAGE_SIZE} page={page} onChange={setPage} /></div></>}
+    {query.isError ? <div role='alert' className='space-y-2 text-sm text-ui-danger'><p>{t(apiErrorMessage(query.error, 'Unable to load redemption codes'))}</p><Button onClick={refresh}>{t('Retry')}</Button></div> : <><Table loading={!data} columns={columns} rows={rows} rowKey='id' minWidth={1050} emptyIcon={Ticket} /><div className='mt-4 flex justify-end'><Pagination total={total} pageSize={PAGE_SIZE} page={page} onChange={setPage} /></div></>}
     {generated && <Modal open title={t('Redemption codes created')} onClose={() => setGenerated(undefined)} hideFooter width={520}><div className='space-y-3'><p className='text-sm text-ui-text-2'>{t('Save these redemption codes in a safe place:')}</p><pre className='max-h-64 overflow-auto whitespace-pre-wrap break-all rounded-lg bg-ui-bg-subtle p-3 font-mono text-xs'>{generated.join('\n')}</pre><div className='flex justify-end gap-2'><Button variant='toggle' onClick={() => void copied(generated.join('\n'))}>{t('Copy all')}</Button><Button onClick={() => setGenerated(undefined)}>{t('Done')}</Button></div></div></Modal>}
     {editing && <EditCode key={editing.id} code={editing} onClose={() => setEditing(undefined)} onSaved={refresh} />}
     {confirmation && <DeleteCodes confirmation={confirmation} onClose={() => setConfirmation(undefined)} onSaved={refresh} />}

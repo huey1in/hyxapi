@@ -42,7 +42,7 @@ export default function PricingFiltersDialog({ initialValues, groupOptions, vend
     </div>
   );
 
-  return <ModalShell open onClose={onClose} maxWidth={560}>
+  return <ModalShell open onClose={onClose} maxWidth={480}>
     <form ref={dialog} role='dialog' aria-modal='true' aria-labelledby={`${id}-title`} className='flex max-h-[calc(100dvh-32px)] flex-col' onSubmit={(event) => { event.preventDefault(); onApply(draft); }} onKeyDown={(event) => {
       if (event.key !== 'Tab') return;
       const items = [...(dialog.current?.querySelectorAll<HTMLButtonElement>('button:not(:disabled)') ?? [])];

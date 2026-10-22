@@ -88,7 +88,7 @@ export default function SystemTaskActions({ children }: { children?: ReactNode }
     <ConfirmDialog open={!!confirmation} loading={busy} closeOnConfirm={false} onClose={() => { if (!lock.current) setConfirmation(null); }} onConfirm={() => void submit()}
       title={t(confirmation === 'channel_test' ? 'Test all channels' : 'Detect all model updates')} confirmText={t('Start task')} cancelText={t('Cancel')}
       description={t(confirmation === 'channel_test' ? 'Tests all channels. Upstream usage may be billed.' : 'Checks channels with model detection enabled and stages changes for review.')} />
-    <Modal open={!!task} title={t('Channel background task')} width={640} onClose={close} onConfirm={close} footer={<Button variant='secondary' onClick={close}>{t('Close')}</Button>}>
+    <Modal open={!!task} title={t('Channel background task')} width={520} onClose={close} onConfirm={close} footer={<Button variant='secondary' onClick={close}>{t('Close')}</Button>}>
       {task && <div className='space-y-3 text-sm'>
         <p className='break-all'>{task.task_id}</p>
         <p>{t(labels[task.status] || task.status)}{typeof task.state?.progress === 'number' ? ` · ${task.state.progress}%` : ''}</p>

@@ -1,11 +1,12 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { SearchX } from 'lucide-react';
 import { isAxiosError } from 'axios';
 import { API } from '../../../helpers';
 import type { ApiEnvelope } from '../../../types/api';
 import { useAuthStore } from '../../../stores/auth-store';
 import { useOwnedOperation } from '../../../hooks/useOwnedOperation';
-import { Button, Checkbox, Modal, showSuccess } from '../../../components/ui';
+import { Button, Checkbox, EmptyState, Modal, showSuccess } from '../../../components/ui';
 import { Input, Select, Textarea } from './controls';
 import { copyModelPricing, parsePricingBatch, serializePricingDraft, pricingSnapshotSchema, PricingConfigError } from './pricing-config';
 import type { PricingChange, PricingEntry, PricingSnapshot } from './pricing-config';
@@ -118,7 +119,7 @@ function PricingBatchContent({ onClose, onSaved, modelNames }: Omit<Props, 'open
           <span className='min-w-0 flex-1 break-all'>{entry.model_name}</span>
           <span className='shrink-0 text-ui-text-3'>{sourceLabel(entry)}{entry.configured['billing_setting.plugin_billing_expr'] ? ` · ${t('Plugin overrides')}` : ''}</span>
         </label>)}
-        {!visible.length && <p className='py-4 text-xs text-ui-text-3'>{t('No matching models.')}</p>}
+        {!visible.length && <EmptyState icon={SearchX} padding='sm' title={t('No matching models.')} />}
       </div>
       <div className='flex flex-wrap items-center justify-between gap-2 text-xs text-ui-text-3'>
         <span>{t('{{count}} models · page {{page}} / {{pages}}', { count: filtered.length, page: Math.min(page, maxPage), pages: maxPage })}</span>

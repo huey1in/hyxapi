@@ -8,7 +8,7 @@ import { readOperationsData, errorText } from '../../features/operations/api';
 import { operationsReportSchema, operationsRange } from '../../features/operations/operations-data';
 import type { OperationsReport, ChannelConsumption, GroupConsumption } from '../../features/operations/operations-data';
 import type { TableColumn } from '../../components/ui/layout/Table';
-import { RefreshCw } from 'lucide-react';
+import { ChartColumn, ChartNoAxesCombined, RefreshCw } from 'lucide-react';
 import { renderQuota, renderNumber } from '../../helpers';
 import { Button, Table, IconButton } from '../../components/ui';
 import useIsMobile from '../../hooks/useIsMobile';
@@ -130,12 +130,12 @@ function OperationsCards({ data, isMobile, selectedRangeLabel }: { data: Operati
 
       {/* S2: 分组扣费 */}
       <Section title={t('Charges by group')} right={`${selectedRangeLabel} Top ${groupRanking.length}`}>
-        <Table columns={groupRankCols} rows={groupRanking} rowKey='group' size='sm' emptyText={t('No group charges in this period')} />
+        <Table columns={groupRankCols} rows={groupRanking} rowKey='group' size='sm' emptyIcon={ChartNoAxesCombined} emptyText={t('No group charges in this period')} />
       </Section>
 
       {/* S3: 渠道扣费 */}
       <Section title={t('Charges by channel')} right={`${selectedRangeLabel} Top ${channelRanking.length}`}>
-        <Table columns={channelRankCols} rows={channelRanking} rowKey='channel_id' size='sm' emptyText={t('No channel charges in this period')} />
+        <Table columns={channelRankCols} rows={channelRanking} rowKey='channel_id' size='sm' emptyIcon={ChartColumn} emptyText={t('No channel charges in this period')} />
       </Section>
 
     </div>

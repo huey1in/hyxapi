@@ -1,6 +1,7 @@
 import { LayoutSkeleton } from '../../components/ui/feedback/ContentSkeleton';
 import Skeleton from '../../components/ui/feedback/Skeleton';
 import { useState } from 'react';
+import { Files } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { z } from 'zod';
@@ -51,7 +52,7 @@ function MaintenanceSession({ identity }: { identity: string }) {
       {logs?.enabled && <><p className='break-all text-xs text-ui-text-3'>{t('{{path}} · Use system tasks to clean usage logs.', { path: logs.log_dir })}</p><div className='flex flex-wrap items-end gap-3'>
         <label className='grid gap-1.5 text-xs text-ui-text-3'>{t('Retention policy')}<Select aria-label={t('Retention policy')} value={mode} disabled={Boolean(action)} onChange={setMode} options={[{ value: 'by_count', label: t('Keep latest file count') }, { value: 'by_days', label: t('Keep recent days') }]} /></label>
         <label className='grid gap-1.5 text-xs text-ui-text-3'>{t('Retention amount')}<Input aria-label={t('Log retention amount')} type='number' min='1' step='1' value={value} disabled={Boolean(action)} onChange={setValue} width='110px' /></label><Button size='sm' disabled={Boolean(action) || invalidValue || !logs.file_count} onClick={() => choose('logs')}>{t('Clean file logs')}</Button>
-      </div><Table rows={logs.files.slice((page - 1) * 10, page * 10)} rowKey='name' minWidth={500} emptyText={t('No log files')} columns={[
+      </div><Table rows={logs.files.slice((page - 1) * 10, page * 10)} rowKey='name' minWidth={500} emptyIcon={Files} emptyText={t('No log files')} columns={[
         { key: 'name', title: t('File'), render: (row) => <span className='text-xs'>{row.name}{row.active && <span className='ml-2 text-ui-text-3'>{t('Being written')}</span>}</span> }, { key: 'size', title: t('Size'), render: (row) => bytes(row.size) }, { key: 'date', title: t('Modified at'), render: (row) => <span className='whitespace-nowrap text-xs'>{timestamp(row.mod_time, i18n.language)}</span> },
       ]} /><Pagination page={page} pageSize={10} total={logs.files.length} onChange={setLogPage} /></>}
     </div>

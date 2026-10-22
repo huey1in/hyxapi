@@ -208,7 +208,7 @@ function MultiSelect<T extends OptionValue = string>({
                     type='button'
                     onClick={() => toggle(o.value)}
                     className={cn(
-                      'flex items-center justify-between w-full px-2.5 py-1.5 rounded-lg text-sm transition-colors',
+                      'flex items-center justify-between w-full px-2.5 py-1.5 rounded-lg text-left text-sm transition-colors',
                       sel ? 'bg-ui-bg-subtle text-ui-text' : 'text-ui-text hover:bg-ui-bg-subtle',
                     )}
                   >

@@ -3,7 +3,7 @@ import ConsolePageHeader from '../../components/layout/ConsolePageHeader';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useLocation, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { Search, LayoutGrid, List, SlidersHorizontal, PackageOpen } from 'lucide-react';
+import { Search, LayoutGrid, List, SlidersHorizontal, Boxes } from 'lucide-react';
 import { Card, Input, Table, Pagination, Tag, EmptyState, IconButton, Divider, Button } from '../../components/ui';
 import { useModelPricingData } from '../../hooks/model-pricing/useModelPricingData';
 import { calculateModelPrice, getModelPriceItems, getLobeHubIcon, getModelIcon } from '../../helpers';
@@ -267,7 +267,7 @@ const Pricing = () => {
           ) : error ? (<Card><div role='alert' className='space-y-3'><p>{t('Unable to load model pricing')}</p><Button onClick={() => void refresh()}>{t('Retry')}</Button></div></Card>) : total === 0 ? (
             <Card className='pricing-empty-state flex min-h-[max(480px,65dvh)] items-center justify-center sm:min-h-[max(560px,65dvh)]'>
               <EmptyState
-                icon={PackageOpen}
+                icon={Boxes}
                 iconVariant='plain'
                 title={t("No models")}
                 description={t("No models match the current filters")}
@@ -281,6 +281,7 @@ const Pricing = () => {
                 </div>
               ) : (
                 <Table
+                  emptyIcon={Boxes}
                   columns={columns}
                   rows={pagedRows}
                   rowKey={(row: PricingModel) => row.model_name}

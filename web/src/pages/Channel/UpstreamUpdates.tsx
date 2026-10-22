@@ -1,9 +1,10 @@
 import { useEffect, useRef, useState } from 'react';
+import { ListFilter } from 'lucide-react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { z } from 'zod';
 import { API } from '../../helpers';
-import { Button, ConfirmDialog, Input, Modal } from '../../components/ui';
+import { Button, ConfirmDialog, EmptyState, Input, Modal } from '../../components/ui';
 import { hasPermission } from '../../lib/admin-permissions';
 import { useAuthStore } from '../../stores/auth-store';
 
@@ -29,7 +30,7 @@ function ModelSelection({ title, models, selected, onChange, disabled }: { title
     }} />{t('Select visible models')}</label>
     <div className='max-h-60 overflow-y-auto rounded-lg border border-ui-border p-3 space-y-2'>
       {visible.length ? visible.map((model) => <label key={model} className='flex gap-2 items-start text-sm break-all'><input className='mt-1 shrink-0 accent-ui-accent' type='checkbox' checked={selected.has(model)} disabled={disabled} onChange={() => toggle(model)} /><code>{model}</code></label>)
-        : <p className='text-sm text-ui-text-3'>{t('No matching models')}</p>}
+        : <EmptyState icon={ListFilter} padding='sm' title={t('No matching models')} />}
     </div>
   </section>;
 }

@@ -1,10 +1,11 @@
 import { MySubscriptionSkeleton } from '../../components/layout/PageSkeletons';
 import { useEffect, useState } from 'react';
+import { CreditCard } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { renderQuota } from '../../helpers';
-import { Button, Tag } from '../../components/ui';
+import { Button, EmptyState, Tag } from '../../components/ui';
 import { useAuthStore } from '../../stores/auth-store';
 import { apiErrorMessage } from '../../lib/api-error';
 import useIsMobile from '../../hooks/useIsMobile';
@@ -63,9 +64,9 @@ function MySubscription({ identity }: { identity: string }) {
   return <div style={{ display: 'flex', flexDirection: 'column', gap: mobile ? 20 : 28, width: '100%', maxWidth: 960, marginInline: 'auto', padding: mobile ? '16px' : '24px 16px' }}>
     <h1 className='text-lg font-semibold text-ui-text'>{t('My subscriptions')}</h1>
     {query.isPending ? <MySubscriptionSkeleton /> : query.isError ? <div role='alert' className='space-y-2 text-sm text-ui-danger'><p>{t(apiErrorMessage(query.error, 'Unable to load subscriptions'))}</p><Button onClick={() => void query.refetch()}>{t('Retry')}</Button></div> : data && <>
-      {!data.all_subscriptions.length ? <div className='py-8 text-center sm:py-12'><p className='mb-4 text-sm text-ui-text-3'>{t('No subscriptions yet. Activate one with a code or buy a plan.')}</p><Button onClick={() => navigate('/topup')}>{t('Open top-up page')}</Button></div> : <>
+      {!data.all_subscriptions.length ? <EmptyState icon={CreditCard} padding='md' title={t('No subscriptions yet. Activate one with a code or buy a plan.')} action={<Button onClick={() => navigate('/topup')}>{t('Open top-up page')}</Button>} /> : <>
         {active.map(({ subscription }) => <SubscriptionCard key={subscription.id} subscription={subscription} title={planTitles.get(subscription.plan_id)} mobile={mobile} now={now} />)}
-        {!active.length && <p className='py-6 text-center text-sm text-ui-text-3'>{t('No active subscriptions')}</p>}
+        {!active.length && <EmptyState icon={CreditCard} padding='sm' title={t('No active subscriptions')} />}
         {inactive.length > 0 && <section className='space-y-3'><h2 className='text-[15px] font-semibold text-ui-text-2'>{t('Subscription history')}</h2>{inactive.map(({ subscription }) => <SubscriptionCard key={subscription.id} subscription={subscription} title={planTitles.get(subscription.plan_id)} mobile={mobile} now={now} />)}</section>}
       </>}
     </>}

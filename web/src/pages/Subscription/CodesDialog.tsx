@@ -2,9 +2,9 @@ import Skeleton from '../../components/ui/feedback/Skeleton';
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
-import { Copy, Trash2 } from 'lucide-react';
+import { Copy, Ticket, Trash2 } from 'lucide-react';
 import { API, copy } from '../../helpers';
-import { Button, ConfirmDialog, IconButton, Input, Modal, NumberInput, Pagination, Select, Tag, showError, showSuccess, ContentSkeleton } from '../../components/ui';
+import { Button, ConfirmDialog, EmptyState, IconButton, Input, Modal, NumberInput, Pagination, Select, Tag, showError, showSuccess, ContentSkeleton } from '../../components/ui';
 import type { ApiEnvelope } from '../../types/api';
 import { useOwnedOperation } from '../../hooks/useOwnedOperation';
 import { apiErrorMessage } from '../../lib/api-error';
@@ -61,7 +61,7 @@ export default function CodesDialog({ identity, plan, onClose, inline = false }:
     </form>
     <div className='flex flex-wrap justify-end gap-2'><Button size='sm' variant='link' disabled={busy} onClick={() => void query.refetch()}>{t('Refresh')}</Button><Button size='sm' variant='link' disabled={busy} onClick={() => setDeleting('invalid')}>{t('Delete invalid codes')}</Button></div>
     {query.isPending ? <ContentSkeleton variant='tokens'><div className='max-h-80 space-y-2 overflow-auto'>{[0, 1, 2, 3].map((index) => <div key={index} className='flex flex-wrap items-center justify-between gap-2 rounded-lg border border-ui-border p-2'><div className='min-w-0 flex-1 space-y-1'><Skeleton width='65%' height={16} /><Skeleton width='40%' height={16} /></div><Skeleton width={55} height={20} /><Skeleton width={28} height={28} /><Skeleton width={28} height={28} /></div>)}</div></ContentSkeleton> : query.isError ? <div role='alert' className='space-y-2 text-sm text-ui-danger'><p>{t(apiErrorMessage(query.error, 'Unable to load activation codes'))}</p><Button onClick={() => void query.refetch()}>{t('Retry')}</Button></div> : <>
-      <div className='max-h-80 space-y-2 overflow-auto'>{!visible.length && <p className='text-sm text-ui-text-3'>{t('No activation codes')}</p>}{visible.map((code) => <div key={code.id} className='flex flex-wrap items-center justify-between gap-2 rounded-lg border border-ui-border p-2'>
+      <div className='max-h-80 space-y-2 overflow-auto'>{!visible.length && <EmptyState icon={Ticket} padding='sm' title={t('No activation codes')} />}{visible.map((code) => <div key={code.id} className='flex flex-wrap items-center justify-between gap-2 rounded-lg border border-ui-border p-2'>
         <div className='min-w-0 flex-1'><div className='truncate font-mono text-xs text-ui-text'>{code.key}</div>{code.expired_time > 0 && <div className='mt-1 text-xs text-ui-text-3'>{t('Expires {{date}}', { date: formatDate(code.expired_time) })}</div>}</div>
         <Tag color={state(code) === 'unused' ? 'green' : state(code) === 'expired' ? 'red' : 'grey'}>{state(code) === 'used' ? t('Used by #{{id}}', { id: code.used_user_id }) : t(statusLabels[state(code)])}</Tag>
         <IconButton icon={Copy} aria-label={t('Copy code #{{id}}', { id: code.id })} onClick={() => void copied(code.key)} /><IconButton icon={Trash2} variant='danger' aria-label={t('Delete code #{{id}}', { id: code.id })} disabled={busy} onClick={() => setDeleting(code)} />

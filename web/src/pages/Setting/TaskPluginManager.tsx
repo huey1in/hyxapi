@@ -2,7 +2,7 @@ import Skeleton from '../../components/ui/feedback/Skeleton';
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
-import { Plus, RefreshCw } from 'lucide-react';
+import { Plus, Puzzle, RefreshCw } from 'lucide-react';
 import { Button, Input, Pagination, Table, Tabs, ContentSkeleton } from '../../components/ui';
 import { useAuthStore } from '../../stores/auth-store';
 import { apiErrorMessage } from '../../lib/api-error';
@@ -29,7 +29,7 @@ function PluginSession({ identity }: { identity: string }) {
     {runtimeQuery.isError ? <div role='alert' className='space-y-2 text-sm text-ui-danger'><p>{t(apiErrorMessage(runtimeQuery.error, 'Unable to load plugin runtime'))}</p><Button size='sm' onClick={() => void runtimeQuery.refetch()}>{t('Retry runtime')}</Button></div> : runtime && <div className='text-xs text-ui-text-3'>{t('Runtime generation {{generation}} · Last publication: {{status}}', { generation: runtime.current_generation, status: t(runtime.last_rebuild.status) })}{Object.keys(runtime.plugin_errors).length > 0 && <details className='mt-2'><summary>{t('View loading errors')}</summary><pre className='whitespace-pre-wrap break-all'>{JSON.stringify(runtime.plugin_errors, null, 2)}</pre></details>}{runtime.database_error && <p role='alert'>{runtime.database_error}</p>}</div>}
     {tab === 'installed' ? <>
       <Input aria-label={t('Search plugin name or key')} value={search} onChange={(value) => { setSearch(value); setPage(1); }} placeholder={t('Search plugin name or key')} />
-      {listQuery.isError ? <div role='alert' className='space-y-2 text-sm text-ui-danger'><p>{t(apiErrorMessage(listQuery.error, 'Unable to load plugins'))}</p><Button onClick={() => void listQuery.refetch()}>{t('Retry plugins')}</Button></div> : <><Table loading={!listQuery.data} rowKey={(row) => row.meta.key} minWidth={650} rows={filtered.slice((currentPage - 1) * 20, currentPage * 20)} columns={[
+      {listQuery.isError ? <div role='alert' className='space-y-2 text-sm text-ui-danger'><p>{t(apiErrorMessage(listQuery.error, 'Unable to load plugins'))}</p><Button onClick={() => void listQuery.refetch()}>{t('Retry plugins')}</Button></div> : <><Table loading={!listQuery.data} rowKey={(row) => row.meta.key} minWidth={650} rows={filtered.slice((currentPage - 1) * 20, currentPage * 20)} emptyIcon={Puzzle} columns={[
         { key: 'name', title: t('Plugin'), render: (row) => <div><div>{row.meta.name || row.meta.key}</div><div className='text-xs text-ui-text-3'>{row.meta.key} · {row.meta.version}</div></div> },
         { key: 'source', title: t('Source'), render: (row) => t(sourceLabels[row.source]) },
         { key: 'runtime', title: t('Status'), render: (row) => <div title={row.runtime_error}>{t(statusLabels[row.runtime_status])}</div> },

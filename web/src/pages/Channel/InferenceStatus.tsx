@@ -1,10 +1,11 @@
 import Skeleton from '../../components/ui/feedback/Skeleton';
 import { useRef, useState } from 'react';
+import { Boxes } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import type { TFunction } from 'i18next';
 import { useQuery } from '@tanstack/react-query';
 import { API } from '../../helpers';
-import { Button, ContentSkeleton, Modal, Switch } from '../../components/ui';
+import { Button, ContentSkeleton, EmptyState, Modal, Switch } from '../../components/ui';
 import { hasPermission } from '../../lib/admin-permissions';
 import { useAuthStore } from '../../stores/auth-store';
 import { metricMean, metricRatio, metricValue, recentMetrics } from './inference-status';
@@ -131,7 +132,7 @@ export default function InferenceStatusDialog({ channel, onClose, onSyncModels, 
         <p className='text-xs text-ui-text-2'>{t('Start SGLang with --enable-metrics to expose metrics.')}</p>}
       <section aria-label={t('Served models')} className='space-y-2'>
         <h4 className='text-sm font-medium'>{t('Served models')}</h4>
-        {!snapshot.models.length && <p className='text-xs text-ui-text-3'>{snapshot.endpoints['/v1/models']?.error ? t('Unavailable') : t('No models available')}</p>}
+        {!snapshot.models.length && (snapshot.endpoints['/v1/models']?.error ? <p className='text-xs text-ui-text-3'>{t('Unavailable')}</p> : <EmptyState icon={Boxes} padding='sm' title={t('No models available')} />)}
         {snapshot.models.map((model) => <div key={model.id} className='border border-ui-border rounded-lg p-3 text-sm space-y-1 break-all'>
           <strong>{model.id}</strong><p className='text-ui-text-2'>{t('Model source:')}{model.root || t('Unavailable')}</p>
           <p className='text-ui-text-2'>{t('Maximum context tokens:')}{model.max_model_len == null ? t('Unavailable') : number.format(model.max_model_len)}</p>

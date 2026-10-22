@@ -40,7 +40,7 @@ export default function BalanceQuery({ channel, onClose, onChanged }: Props) {
   const updatedAt = result?.kind === 'balance' ? result.updatedAt : channel.balance_updated_time;
   const balance = result?.kind === 'balance' ? result.balance : channel.balance;
   const amount = typeof balance === 'number' && Number.isFinite(balance) ? new Intl.NumberFormat(i18n.language, { style: 'currency', currency: 'USD', maximumFractionDigits: 6 }).format(balance) : '—';
-  return <Modal open title={`${t('Channel balance')} · ${channel.name}`} width={640} onClose={onClose} onConfirm={onClose} footer={<>
+  return <Modal open title={`${t('Channel balance')} · ${channel.name}`} width={480} onClose={onClose} onConfirm={onClose} footer={<>
     <Button variant='secondary' onClick={onClose}>{t(busy ? 'Cancel request' : 'Close')}</Button>
     {hasPermission(user, 'channel', 'operate') && <Button loading={busy} onClick={() => void query()}>{t('Query balance now')}</Button>}
   </>}>

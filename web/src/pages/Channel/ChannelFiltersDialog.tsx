@@ -39,7 +39,7 @@ export default function ChannelFiltersDialog({ initialValues, onApply, onClose }
     <Select id={`${id}-${key}`} aria-label={t(label)} width='full' value={draft[key]} options={options} popover onChange={(value) => setDraft((current) => ({ ...current, [key]: value }))} />
   </div>;
 
-  return <ModalShell open onClose={onClose} maxWidth={560}>
+  return <ModalShell open onClose={onClose} maxWidth={480}>
     <form ref={dialog} role='dialog' aria-modal='true' aria-labelledby={`${id}-title`} className='flex max-h-[calc(100dvh-32px)] flex-col' onSubmit={(event) => { event.preventDefault(); onApply(draft); }} onKeyDown={(event) => {
       if (event.key !== 'Tab') return;
       const items = [...(dialog.current?.querySelectorAll<HTMLElement>('button:not(:disabled),input:not(:disabled),[tabindex="0"]') ?? [])].filter((item) => item.getClientRects().length > 0);
