@@ -201,8 +201,9 @@ func IncrementUserAuthVersionWithTx(tx *gorm.DB, userId int) (int64, error) {
 	return 0, ErrUserAuthVersionConflict
 }
 
-// BumpUserAuthVersion is the transaction-owning variant used by password,
-// role, status and security-factor changes outside another transaction.
+// BumpUserAuthVersion advances the version in its own transaction and publishes
+// the cache. Security mutations use IncrementUserAuthVersionWithTx atomically;
+// this standalone operation also supports session invalidation test fixtures.
 func BumpUserAuthVersion(userId int) (int64, error) {
 	var next int64
 	if err := DB.Transaction(func(tx *gorm.DB) error {

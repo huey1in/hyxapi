@@ -930,10 +930,6 @@ type TaskSubmitReq struct {
 	Metadata       map[string]interface{} `json:"metadata,omitempty"`
 }
 
-func (t *TaskSubmitReq) HasImage() bool {
-	return len(t.Images) > 0
-}
-
 func (t *TaskSubmitReq) UnmarshalJSON(data []byte) error {
 	type Alias TaskSubmitReq
 	aux := &struct {

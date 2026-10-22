@@ -824,13 +824,6 @@ func pathHasParameter(routePath, name string) bool {
 	return slices.Contains(strings.Split(routePath, "/"), ":"+name)
 }
 
-func ResolveRouteAction(route Route, resolvedAction string) string {
-	if strings.TrimSpace(resolvedAction) != "" {
-		return resolvedAction
-	}
-	return route.Action
-}
-
 func buildRoutingGeneration(factory, override map[string]*LoadedPlugin, number uint64) (*RoutingGeneration, error) {
 	effective := effectivePlugins(factory, override)
 	return buildRoutingGenerationFromPlugins(effective, number)

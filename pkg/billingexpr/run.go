@@ -13,20 +13,8 @@ import (
 	"github.com/tidwall/gjson"
 )
 
-// RunExpr compiles (with cache) and executes an expression string.
-// The environment exposes:
-//   - p, c             — prompt / completion tokens (auto-excluding separately-priced sub-categories)
-//   - len              — total input context length for tier conditions (never reduced by sub-category exclusion)
-//   - cr, cc, cc1h     — cache read / creation / creation-1h tokens
-//   - tier(name, value) — trace callback that records which tier matched
-//   - max, min, abs, ceil, floor — standard math helpers
-//
-// Returns the resulting float64 quota (before group ratio) and a TraceResult
-// with side-channel info captured by tier() during execution.
-func RunExpr(exprStr string, params TokenParams) (float64, TraceResult, error) {
-	return RunExprWithRequest(exprStr, params, RequestInput{})
-}
-
+// RunExprWithRequest compiles an expression with caching, then evaluates its
+// token quantities and request facts. The trace records matched tiers and rules.
 func RunExprWithRequest(exprStr string, params TokenParams, request RequestInput) (float64, TraceResult, error) {
 	entry, err := compileEntryFromCacheByHash(exprStr, ExprHashString(exprStr))
 	if err != nil {

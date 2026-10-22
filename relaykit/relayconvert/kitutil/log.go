@@ -7,7 +7,7 @@ import (
 )
 
 // Kit packages log rare data-shape anomalies through these hooks. The host
-// redirects them into its logging system at startup; standalone relaykit users
+// can redirect them into its logging system at startup; standalone relaykit users
 // get stderr defaults.
 
 type LogFunc func(message string)

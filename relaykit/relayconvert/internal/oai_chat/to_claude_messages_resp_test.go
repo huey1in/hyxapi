@@ -5,6 +5,7 @@ import (
 
 	"github.com/QuantumNous/new-api/relaykit/dto"
 	"github.com/QuantumNous/new-api/relaykit/relayconvert/convmeta"
+	sharedclaude "github.com/QuantumNous/new-api/relaykit/relayconvert/internal/shared/claude"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -410,11 +411,11 @@ func TestStreamResponseOpenAI2ClaudeGeminiBillingUsageOnStartAndDelta(t *testing
 }
 
 func TestNormalizeCacheCreationSplit(t *testing.T) {
-	cache5m, cache1h := NormalizeCacheCreationSplit(10, 3, 2)
+	cache5m, cache1h := sharedclaude.NormalizeCacheCreationSplit(10, 3, 2)
 	assert.Equal(t, 8, cache5m)
 	assert.Equal(t, 2, cache1h)
 
-	cache5m, cache1h = NormalizeCacheCreationSplit(3, 5, 1)
+	cache5m, cache1h = sharedclaude.NormalizeCacheCreationSplit(3, 5, 1)
 	assert.Equal(t, 5, cache5m)
 	assert.Equal(t, 1, cache1h)
 }

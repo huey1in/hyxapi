@@ -51,11 +51,6 @@ func HasCheckedInToday(userId int) (bool, error) {
 	return count > 0, err
 }
 
-// UserCheckin retains the non-HTTP entry point for callers without a context.
-func UserCheckin(userId int) (*Checkin, error) {
-	return UserCheckinContext(context.Background(), userId)
-}
-
 // UserCheckinContext commits the daily record and wallet credit together on all
 // supported databases. Locking the wallet also serializes other quota changes.
 func UserCheckinContext(ctx context.Context, userId int) (*Checkin, error) {

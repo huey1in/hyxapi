@@ -2,6 +2,7 @@ package relayconvert
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
 	"github.com/QuantumNous/new-api/relaykit/dto"
@@ -14,6 +15,18 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+func convertRequestForTest[T any](ctx context.Context, meta convmeta.Meta, target types.RelayFormat, request any) (*T, error) {
+	result, err := ConvertRequest(ctx, meta, target, request)
+	if err != nil {
+		return nil, err
+	}
+	converted, ok := result.Value.(*T)
+	if !ok {
+		return nil, fmt.Errorf("expected %s request, got %T", target, result.Value)
+	}
+	return converted, nil
+}
+
 func TestClaudeDefaultMaxTokensPresence(t *testing.T) {
 	converters := []struct {
 		name    string
@@ -23,7 +36,7 @@ func TestClaudeDefaultMaxTokensPresence(t *testing.T) {
 			name: "chat completions",
 			convert: func(t *testing.T, meta convmeta.Meta, clientMaxTokens *uint) (*dto.ClaudeRequest, error) {
 				t.Helper()
-				return OpenAIChatRequestToClaudeMessages(context.Background(), meta, dto.GeneralOpenAIRequest{
+				return convertRequestForTest[dto.ClaudeRequest](context.Background(), meta, types.RelayFormatClaude, &dto.GeneralOpenAIRequest{
 					Model:     "claude-test",
 					MaxTokens: clientMaxTokens,
 					Messages: []dto.Message{
@@ -36,7 +49,7 @@ func TestClaudeDefaultMaxTokensPresence(t *testing.T) {
 			name: "responses",
 			convert: func(t *testing.T, meta convmeta.Meta, clientMaxTokens *uint) (*dto.ClaudeRequest, error) {
 				t.Helper()
-				return OpenAIResponsesRequestToClaudeMessages(context.Background(), meta, &dto.OpenAIResponsesRequest{
+				return convertRequestForTest[dto.ClaudeRequest](context.Background(), meta, types.RelayFormatClaude, &dto.OpenAIResponsesRequest{
 					Model:           "claude-test",
 					Input:           []byte(`"hello"`),
 					MaxOutputTokens: clientMaxTokens,
@@ -117,7 +130,7 @@ func TestClaudeThinkingAdapterSatisfiesMaxTokensWithoutCallback(t *testing.T) {
 			},
 		},
 	}
-	got, err := OpenAIChatRequestToClaudeMessages(context.Background(), meta, dto.GeneralOpenAIRequest{
+	got, err := convertRequestForTest[dto.ClaudeRequest](context.Background(), meta, types.RelayFormatClaude, &dto.GeneralOpenAIRequest{
 		Model: "claude-test-thinking",
 		Messages: []dto.Message{
 			{Role: "user", Content: "hello"},
@@ -187,7 +200,7 @@ func TestOpenAIChatRequestToClaudeMessagesOmitsEmptyTools(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			got, err := OpenAIChatRequestToClaudeMessages(context.Background(), &convmeta.Values{}, test.request)
+			got, err := convertRequestForTest[dto.ClaudeRequest](context.Background(), &convmeta.Values{}, types.RelayFormatClaude, &test.request)
 			require.NoError(t, err)
 
 			body, err := kitutil.Marshal(got)

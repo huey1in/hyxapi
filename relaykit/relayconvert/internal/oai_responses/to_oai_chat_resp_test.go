@@ -9,7 +9,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestNormalizeResponsesUsagePreservesImageCacheDetails(t *testing.T) {
+func TestUsageFromResponsesUsagePreservesImageCacheDetails(t *testing.T) {
 	for _, tc := range []struct {
 		name        string
 		imageTokens int
@@ -35,7 +35,7 @@ func TestNormalizeResponsesUsagePreservesImageCacheDetails(t *testing.T) {
 				},
 			}
 
-			usage := NormalizeResponsesUsage(source)
+			usage := UsageFromResponsesUsage(source)
 			assert.Equal(t, *source.InputTokensDetails, usage.PromptTokensDetails)
 			details := usage.PromptTokensDetails.CachedTokensDetails
 			require.NotNil(t, details)

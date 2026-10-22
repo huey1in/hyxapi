@@ -37,7 +37,11 @@ func TestRequestImageEstimationUsesModelAndDetail(t *testing.T) {
 		t.Run(tc.model+"/"+tc.detail, func(t *testing.T) {
 			c, _ := gin.CreateTestContext(httptest.NewRecorder())
 			common.SetContextKey(c, constant.ContextKeyOriginalModel, tc.model)
-			file := types.NewImageFileMeta(types.NewBase64FileSource(base64.StdEncoding.EncodeToString(encoded.Bytes()), "image/png"), tc.detail)
+			file := &types.FileMeta{
+				FileType: types.FileTypeImage,
+				Source:   types.NewBase64FileSource(base64.StdEncoding.EncodeToString(encoded.Bytes()), "image/png"),
+				Detail:   tc.detail,
+			}
 			defer CleanupFileSources(c)
 			got, err := EstimateRequestToken(c, &types.TokenCountMeta{Files: []*types.FileMeta{file}}, &relaycommon.RelayInfo{RelayFormat: types.RelayFormatClaude})
 			require.NoError(t, err)
@@ -68,7 +72,11 @@ func TestImageCountingAvoidsNetworkWhenMeasurementDisabled(t *testing.T) {
 	t.Cleanup(func() { constant.GetMediaToken = oldMedia })
 	constant.GetMediaToken = false
 	c, _ := gin.CreateTestContext(httptest.NewRecorder())
-	file := types.NewImageFileMeta(types.NewURLFileSource("http://127.0.0.1:1/unreachable.png"), "original")
+	file := &types.FileMeta{
+		FileType: types.FileTypeImage,
+		Source:   types.NewURLFileSource("http://127.0.0.1:1/unreachable.png"),
+		Detail:   "original",
+	}
 	got, err := getImageToken(c, file, "gpt-5.6-sol", true)
 	require.NoError(t, err)
 	require.Equal(t, 1229, got)

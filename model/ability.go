@@ -64,19 +64,6 @@ func GetEnabledModels() []string {
 	return models
 }
 
-func GetChannel(
-	group string,
-	model string,
-	retry int,
-	filterSets ...[]dto.ChannelFilter,
-) (*Channel, error) {
-	var filters []dto.ChannelFilter
-	for _, set := range filterSets {
-		filters = append(filters, set...)
-	}
-	return getChannelWithExclusions(group, model, retry, filters, nil)
-}
-
 func getChannelWithExclusions(group, model string, retry int, filters []dto.ChannelFilter, excluded []int) (*Channel, error) {
 	if retry < 0 {
 		retry = 0

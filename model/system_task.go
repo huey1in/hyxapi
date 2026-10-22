@@ -220,21 +220,6 @@ func DeleteSystemTaskHistory(filter SystemTaskFilter) (int64, error) {
 	return result.RowsAffected, result.Error
 }
 
-// GetLatestSystemTask returns the most recent task row of the given type
-// (any status) so the scheduler can decide whether enough time has elapsed
-// since the last run. Returns (nil, nil) when no row exists.
-func GetLatestSystemTask(taskType string) (*SystemTask, error) {
-	var task SystemTask
-	err := DB.Where("type = ?", taskType).Order("id desc").First(&task).Error
-	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, nil
-		}
-		return nil, err
-	}
-	return &task, nil
-}
-
 func GetLatestSystemTasks(taskTypes []string) (map[string]*SystemTask, error) {
 	tasksByType := map[string]*SystemTask{}
 	if len(taskTypes) == 0 {

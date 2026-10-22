@@ -131,10 +131,10 @@ get_probe_token() {
 }
 
 # 探测单实例：返回 "状态码|耗时ms|错误标记(OK/ERR)"
-# $1=端口 $2=token $3=实例名
+# $1=端口 $2=token
 probe() {
-  local port=$1 tok=$2 name=$3
-  local out start ms code
+  local port=$1 tok=$2
+  local out start ms
   start=$(date +%s%N)
   out=$(curl -s -m 10 -o /dev/null -w "%{http_code}" \
         "http://127.0.0.1:$port/v1/models" -H "Authorization: Bearer $tok" 2>/dev/null) || out="000"
@@ -165,8 +165,8 @@ cmd_watch() {
   local consec=0 canary_res prod_res
 
   while true; do
-    canary_res=$(probe 3002 "$tok" canary)
-    prod_res=$(probe 3001 "$tok" prod)
+    canary_res=$(probe 3002 "$tok")
+    prod_res=$(probe 3001 "$tok")
 
     local ccode cm cflag pcode pm pflag
     IFS='|' read -r ccode cm cflag <<<"$canary_res"

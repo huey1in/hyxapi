@@ -21,7 +21,7 @@ the same origin. Optional `PUBLIC_API_BASE_URL` replaces the old
 
 New modules use `.ts` or `.tsx`. Shared API types, requests, authentication state,
 theme state and the primary button are checked strictly. Existing JavaScript
-pages remain supported through `allowJs` during incremental migration; they are
+components and helpers remain supported through `allowJs`; they are
 not covered by `typecheck` until converted.
 
 Define design tokens with `@theme inline` in `src/index.css`. Dark mode follows

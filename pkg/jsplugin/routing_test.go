@@ -558,7 +558,7 @@ func TestRegistryReportsPartialAndFailedRebuildOutcomes(t *testing.T) {
 	beta := mustCompileRoutingPlugin(t, "outcome-beta", 601, `["beta"]`, "", "")
 	require.NoError(t, registry.ReplaceOverrides([]*LoadedPlugin{alpha, beta}))
 
-	partial := registry.LastRebuildOutcome()
+	partial := registry.RoutingStatus().LastRebuild
 	assert.Equal(t, "partial", partial.Status)
 	assert.Equal(t, registry.Generation().Number, partial.Generation)
 	assert.Empty(t, partial.Error)
@@ -567,13 +567,13 @@ func TestRegistryReportsPartialAndFailedRebuildOutcomes(t *testing.T) {
 		return PreparedRoutingGeneration{}, fmt.Errorf("runtime rebuild unavailable")
 	})
 	require.ErrorContains(t, err, "runtime rebuild unavailable")
-	failed := registry.LastRebuildOutcome()
+	failed := registry.RoutingStatus().LastRebuild
 	assert.Equal(t, "failed", failed.Status)
 	assert.Equal(t, registry.Generation().Number, failed.Generation)
 	assert.Contains(t, failed.Error, "runtime rebuild unavailable")
 
 	require.NoError(t, registry.ReplaceOverrides([]*LoadedPlugin{alpha}))
-	success := registry.LastRebuildOutcome()
+	success := registry.RoutingStatus().LastRebuild
 	assert.Equal(t, "success", success.Status)
 	assert.Equal(t, registry.Generation().Number, success.Generation)
 	assert.Empty(t, success.Error)
@@ -1089,12 +1089,6 @@ func TestReservedNamespaceChecksUseSegmentBoundaries(t *testing.T) {
 		Routes:     []Route{{Method: "POST", Path: "/apiary/jobs", Type: RouteTypeSubmit, Decode: "decode", Render: "render"}},
 	}
 	require.NoError(t, ValidateV1Meta(meta))
-}
-
-func TestResolveRouteActionPrefersResolvedAction(t *testing.T) {
-	route := Route{Action: "manifest-action"}
-	assert.Equal(t, "hook-action", ResolveRouteAction(route, "hook-action"))
-	assert.Equal(t, "manifest-action", ResolveRouteAction(route, ""))
 }
 
 func mustCompileRoutingPlugin(t *testing.T, key string, channelType int, models, metaFields, exports string) *LoadedPlugin {

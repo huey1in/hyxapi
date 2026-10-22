@@ -19,12 +19,8 @@ func quotaConversion(exprOutput float64, snap *BillingSnapshot) float64 {
 	}
 }
 
-// ComputeTieredQuota runs the Expr from a frozen BillingSnapshot against
-// actual token counts and returns the settlement result.
-func ComputeTieredQuota(snap *BillingSnapshot, params TokenParams) (TieredResult, error) {
-	return ComputeTieredQuotaWithRequest(snap, params, RequestInput{})
-}
-
+// ComputeTieredQuotaWithRequest settles actual usage against the frozen billing
+// snapshot and request context.
 func ComputeTieredQuotaWithRequest(snap *BillingSnapshot, params TokenParams, request RequestInput) (TieredResult, error) {
 	if snap.RequestContext != nil {
 		request.Frozen = snap.RequestContext

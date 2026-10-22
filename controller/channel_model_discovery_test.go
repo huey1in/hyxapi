@@ -2,8 +2,14 @@ package controller
 
 import (
 	"bytes"
+	"context"
 	"errors"
 	"fmt"
+	"net/http"
+	"net/http/httptest"
+	"net/url"
+	"testing"
+
 	"github.com/QuantumNous/new-api/common"
 	"github.com/QuantumNous/new-api/constant"
 	"github.com/QuantumNous/new-api/model"
@@ -13,10 +19,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"gorm.io/gorm"
-	"net/http"
-	"net/http/httptest"
-	"net/url"
-	"testing"
 )
 
 func setupModelListControllerTestDB(t *testing.T) *gorm.DB {
@@ -122,7 +124,7 @@ func TestFetchAdvancedCustomModelsAppliesHeaderOverrideAfterRouteAuth(t *testing
 	}`
 	channel.HeaderOverride = &headerOverride
 
-	models, err := fetchChannelUpstreamModelIDs(channel)
+	models, err := fetchChannelUpstreamModelIDsWithContext(context.Background(), channel)
 	require.NoError(t, err)
 	require.Equal(t, []string{"gpt-4.1"}, models)
 
@@ -150,7 +152,7 @@ func TestFetchAdvancedCustomModelsUsesEnabledSavedMultiKey(t *testing.T) {
 		},
 	}
 
-	models, err := fetchChannelUpstreamModelIDs(channel)
+	models, err := fetchChannelUpstreamModelIDsWithContext(context.Background(), channel)
 	require.NoError(t, err)
 	require.Equal(t, []string{"gpt-4.1-mini"}, models)
 	require.Equal(t, "Bearer enabled-key", <-authorization)
@@ -164,7 +166,7 @@ func TestFetchAdvancedCustomModelsRejectsNonOKResponse(t *testing.T) {
 	defer server.Close()
 
 	channel := newAdvancedCustomModelListChannel(server.URL, "secret-key", "/v1/models", nil)
-	models, err := fetchChannelUpstreamModelIDs(channel)
+	models, err := fetchChannelUpstreamModelIDsWithContext(context.Background(), channel)
 	require.ErrorContains(t, err, "status code: 502")
 	require.Nil(t, models)
 }
@@ -181,7 +183,7 @@ func TestFetchAdvancedCustomModelsRedactsQueryKeyFromTransportErrors(t *testing.
 		Value: "prefix-{api_key}",
 	})
 
-	_, err := fetchChannelUpstreamModelIDs(channel)
+	_, err := fetchChannelUpstreamModelIDsWithContext(context.Background(), channel)
 	require.Error(t, err)
 	require.NotContains(t, err.Error(), secret)
 	require.NotContains(t, err.Error(), "custom-token")
@@ -216,7 +218,7 @@ func TestFetchOrdinaryOpenAIModelsKeepsExistingEmptyDataBehavior(t *testing.T) {
 		Key:     "ordinary-key",
 		BaseURL: &baseURL,
 	}
-	models, err := fetchChannelUpstreamModelIDs(channel)
+	models, err := fetchChannelUpstreamModelIDsWithContext(context.Background(), channel)
 	require.NoError(t, err)
 	require.Empty(t, models)
 }
@@ -370,7 +372,7 @@ func TestFailedAdvancedCustomDetectionDoesNotStageFullRemoval(t *testing.T) {
 	channel.SetOtherSettings(settings)
 	require.NoError(t, db.Create(channel).Error)
 
-	modelsChanged, autoAdded, err := checkAndPersistChannelUpstreamModelUpdates(channel, &settings, true, true)
+	modelsChanged, autoAdded, err := checkAndPersistChannelUpstreamModelUpdatesWithContext(context.Background(), channel, &settings, true, true)
 	require.ErrorContains(t, err, "no valid model IDs")
 	require.False(t, modelsChanged)
 	require.Zero(t, autoAdded)
@@ -436,7 +438,7 @@ func TestFetchNewAPIModelsUsesOpenAIContract(t *testing.T) {
 		BaseURL: &baseURL,
 	}
 
-	models, err := fetchChannelUpstreamModelIDs(channel)
+	models, err := fetchChannelUpstreamModelIDsWithContext(context.Background(), channel)
 
 	require.NoError(t, err)
 	require.Equal(t, []string{"gpt-5", "gpt-5-mini"}, models)
@@ -454,14 +456,14 @@ func TestFetchInferenceModelsUsesPresetDespiteStoredCustomRoutes(t *testing.T) {
 			defer server.Close()
 			channel, err := buildAdvancedCustomModelPreviewChannel(fetchModelsRequest{Type: channelType, BaseURL: &server.URL, Key: "preset-key"})
 			require.NoError(t, err)
-			models, err := fetchChannelUpstreamModelIDs(channel)
+			models, err := fetchChannelUpstreamModelIDsWithContext(context.Background(), channel)
 			require.NoError(t, err)
 			require.Equal(t, []string{"served-model"}, models)
 			require.Equal(t, "/v1/models", <-path)
 			config := `{"advanced_routes":[{"incoming_path":"/v1/models","upstream_path":"/custom/models","converter":"none"}]}`
 			channel, err = buildAdvancedCustomModelPreviewChannel(fetchModelsRequest{Type: channelType, BaseURL: &server.URL, Key: "preset-key", AdvancedCustom: &config})
 			require.NoError(t, err)
-			_, err = fetchChannelUpstreamModelIDs(channel)
+			_, err = fetchChannelUpstreamModelIDsWithContext(context.Background(), channel)
 			require.NoError(t, err)
 			require.Equal(t, "/v1/models", <-path)
 		})
@@ -474,7 +476,7 @@ func TestFetchVolcEngineModelsUsesArkPath(t *testing.T) {
 		_, _ = w.Write([]byte(`{"data":[{"id":"ark-model"}]}`))
 	}))
 	defer server.Close()
-	models, err := fetchChannelUpstreamModelIDs(&model.Channel{Type: constant.ChannelTypeVolcEngine, Key: "ark-key", BaseURL: &server.URL})
+	models, err := fetchChannelUpstreamModelIDsWithContext(context.Background(), &model.Channel{Type: constant.ChannelTypeVolcEngine, Key: "ark-key", BaseURL: &server.URL})
 	require.NoError(t, err)
 	require.Equal(t, []string{"ark-model"}, models)
 }

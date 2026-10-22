@@ -678,7 +678,7 @@ func TestUnattributableRebuildFailureRetainsOldGeneration(t *testing.T) {
 	assert.Same(t, before, registry.Generation())
 
 	assert.Equal(t, "1.0.0", performPluginRequest(outer, http.MethodGet, "/rebuild/version").Body.String())
-	assert.Contains(t, registry.LastRebuildError(), "engine configuration failed")
+	assert.Contains(t, registry.RoutingStatus().LastRebuild.Error, "engine configuration failed")
 
 	builder.configure = normalConfigure
 	require.NoError(t, registry.ReplaceOverrides([]*jsplugin.LoadedPlugin{v2}))

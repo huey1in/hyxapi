@@ -56,9 +56,9 @@ func TestSanitizeURLForLogKeepsURLWithoutSensitiveQuery(t *testing.T) {
 	assert.Equal(t, rawURL, got)
 }
 
-func TestValidateMultipartDirectNormalizesImageField(t *testing.T) {
+func TestValidateBasicTaskRequestNormalizesImageField(t *testing.T) {
 	gin.SetMode(gin.TestMode)
-	body := strings.NewReader(`{"model":"wan2.7-i2v","prompt":"animate","image":" https://example.com/first.png "}`)
+	body := strings.NewReader(`{"model":"wan2.7-i2v","prompt":"animate","image":"https://example.com/first.png"}`)
 	request := httptest.NewRequest(http.MethodPost, "/v1/video/generations", body)
 	request.Header.Set("Content-Type", "application/json")
 	recorder := httptest.NewRecorder()
@@ -68,11 +68,13 @@ func TestValidateMultipartDirectNormalizesImageField(t *testing.T) {
 		TaskRelayInfo: &TaskRelayInfo{},
 	}
 
-	taskErr := ValidateMultipartDirect(context, info)
+	taskErr := ValidateBasicTaskRequest(context, info, constant.TaskActionGenerate)
 
 	require.Nil(t, taskErr)
-	storedReq, err := GetTaskRequest(context)
-	require.NoError(t, err)
+	stored, exists := context.Get("task_request")
+	require.True(t, exists)
+	storedReq, ok := stored.(TaskSubmitReq)
+	require.True(t, ok)
 	require.Equal(t, []string{"https://example.com/first.png"}, storedReq.Images)
 	require.Equal(t, constant.TaskActionGenerate, info.Action)
 }
@@ -118,16 +120,6 @@ func TestTaskDurationBounds(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		t.Run(tt.name+" (multipart direct)", func(t *testing.T) {
-			context, info := newContext(t, tt.body)
-			taskErr := ValidateMultipartDirect(context, info)
-			if tt.wantErr {
-				require.NotNil(t, taskErr)
-				require.Equal(t, "invalid_seconds", taskErr.Code)
-			} else {
-				require.Nil(t, taskErr)
-			}
-		})
 		t.Run(tt.name+" (basic task request)", func(t *testing.T) {
 			context, info := newContext(t, tt.body)
 			taskErr := ValidateBasicTaskRequest(context, info, constant.TaskActionGenerate)

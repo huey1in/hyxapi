@@ -35,5 +35,4 @@ func TestValuesTypedNilMetaIsSafe(t *testing.T) {
 	require.NotNil(t, meta.ConvOptions())
 	require.NotNil(t, OptionsOf(meta))
 	assert.Empty(t, UpstreamModelName(meta))
-	assert.Zero(t, ChannelTypeOf(meta))
 }

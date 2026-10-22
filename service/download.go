@@ -20,10 +20,6 @@ type WorkerRequest struct {
 	Body    json.RawMessage   `json:"body,omitempty"`
 }
 
-func DoWorkerRequest(req *WorkerRequest) (*http.Response, error) {
-	return doWorkerRequest(req, system_setting.WorkerSettingsSnapshot())
-}
-
 func doWorkerRequest(req *WorkerRequest, worker system_setting.WorkerSettings) (*http.Response, error) {
 	if worker.URL == "" {
 		return nil, fmt.Errorf("worker not enabled")

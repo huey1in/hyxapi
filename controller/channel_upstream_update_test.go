@@ -66,7 +66,7 @@ func TestUpstreamDetectionRejectsConcurrentConfigurationButPreservesCounters(t *
 			channel.BaseURL = &server.URL
 			require.NoError(t, channel.Insert())
 			settings := channel.GetOtherSettings()
-			_, _, err := checkAndPersistChannelUpstreamModelUpdates(channel, &settings, true, false)
+			_, _, err := checkAndPersistChannelUpstreamModelUpdatesWithContext(context.Background(), channel, &settings, true, false)
 			if routingChange {
 				require.ErrorIs(t, err, model.ErrChannelModelStateChanged)
 			} else {
@@ -132,7 +132,7 @@ func TestUpstreamDiscoveryCancelsBoundsAndRejectsMissingData(t *testing.T) {
 		http.Redirect(w, r, destination.URL, http.StatusTemporaryRedirect)
 	}))
 	defer origin.Close()
-	_, err := fetchChannelUpstreamModelIDs(&model.Channel{Type: 1, Key: "fixture", BaseURL: &origin.URL})
+	_, err := fetchChannelUpstreamModelIDsWithContext(context.Background(), &model.Channel{Type: 1, Key: "fixture", BaseURL: &origin.URL})
 	require.Error(t, err)
 	require.False(t, redirected)
 }

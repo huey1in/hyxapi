@@ -78,7 +78,7 @@ func TestDirectPricingConversionPreservesZeroAndIndependentMediaPrices(t *testin
 	for _, key := range []string{"p", "c", "cr", "cc", "cc1h", "img", "ai", "ao"} {
 		require.True(t, used[key], key)
 	}
-	cost, _, err := billingexpr.RunExpr(preview.Expression, billingexpr.TokenParams{P: 1000, C: 100, CR: 400, CC: 50, CC1h: 20, Img: 100, AI: 20, AO: 10})
+	cost, _, err := billingexpr.RunExprWithRequest(preview.Expression, billingexpr.TokenParams{P: 1000, C: 100, CR: 400, CC: 50, CC1h: 20, Img: 100, AI: 20, AO: 10}, billingexpr.RequestInput{})
 	require.NoError(t, err)
 	require.Equal(t, float64(780), cost)
 	// Previewing does not switch relay precedence or persist a billing mode.

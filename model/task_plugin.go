@@ -163,13 +163,6 @@ func GetTaskPluginVersion(key, version string) (*TaskPlugin, error) {
 	return &plugin, nil
 }
 
-// ListActiveTaskPlugins returns the enabled override rows without their
-// source and icon payloads; see GetTaskPluginSyncSnapshot.
-func ListActiveTaskPlugins() ([]TaskPlugin, error) {
-	snapshot, err := GetTaskPluginSyncSnapshot()
-	return snapshot.Plugins, err
-}
-
 type TaskPluginSyncSnapshot struct {
 	// Plugins are the enabled active overrides with Source and Icon left
 	// empty. Sync compares SourceHash against what it already compiled and

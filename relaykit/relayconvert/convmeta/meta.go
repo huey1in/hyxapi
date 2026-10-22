@@ -304,13 +304,6 @@ func UpstreamModelName(m Meta) string {
 	return m.GetUpstreamModelName()
 }
 
-func ChannelTypeOf(m Meta) int {
-	if m == nil || !m.HasChannelMeta() {
-		return 0
-	}
-	return m.GetChannelType()
-}
-
 // OptionsOf returns m's conversion options, or empty defaults when m is nil.
 func OptionsOf(m Meta) *Options {
 	if m == nil {

@@ -77,8 +77,9 @@ func TestSystemTaskSchedulerCreatesWhenDueAndDedups(t *testing.T) {
 	require.Equal(t, int64(1), countSystemTasks(t, handler.taskType))
 
 	// Finish the run; with a fresh updated_at the next run is not due yet.
-	latest, err := model.GetLatestSystemTask(handler.taskType)
+	tasks, err := model.GetLatestSystemTasks([]string{handler.taskType})
 	require.NoError(t, err)
+	latest := tasks[handler.taskType]
 	require.NotNil(t, latest)
 	_, claimed, err := model.ClaimSystemTask(latest.ID, handler.taskType, "runner-a", common.GetTimestamp()+60)
 	require.NoError(t, err)
@@ -138,7 +139,8 @@ func TestSystemTaskClaimPassDispatchesByType(t *testing.T) {
 	}
 
 	require.Eventually(t, func() bool {
-		latest, err := model.GetLatestSystemTask(handler.taskType)
+		tasks, err := model.GetLatestSystemTasks([]string{handler.taskType})
+		latest := tasks[handler.taskType]
 		return err == nil && latest != nil && latest.Status == model.SystemTaskStatusSucceeded
 	}, 2*time.Second, 20*time.Millisecond)
 }

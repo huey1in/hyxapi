@@ -16,11 +16,12 @@ func TestCalculateAudioQuotaRoundsPositiveRequestToMinimumUnit(t *testing.T) {
 	common.QuotaPerUnit = 1
 	t.Cleanup(func() { common.QuotaPerUnit = originalQuotaPerUnit })
 
-	quota := calculateAudioQuota(QuotaInfo{
+	quota, clamp := calculateAudioQuotaChecked(QuotaInfo{
 		BillingType:  model.ModelPricingBillingRequest,
 		RequestPrice: 0.1,
 		GroupRatio:   1,
 	})
+	require.Nil(t, clamp)
 
 	require.Equal(t, 1, quota)
 }
@@ -30,7 +31,7 @@ func TestCalculateAudioQuotaUsesDirectMediaPricesAndGroupMultiplier(t *testing.T
 	common.QuotaPerUnit = 100
 	t.Cleanup(func() { common.QuotaPerUnit = originalQuotaPerUnit })
 
-	quota := calculateAudioQuota(QuotaInfo{
+	quota, clamp := calculateAudioQuotaChecked(QuotaInfo{
 		BillingType: model.ModelPricingBillingToken,
 		InputDetails: TokenDetails{
 			TextTokens:  1_000_000,
@@ -46,6 +47,7 @@ func TestCalculateAudioQuotaUsesDirectMediaPricesAndGroupMultiplier(t *testing.T
 		AudioOutputPrice: 16,
 		GroupRatio:       1.5,
 	})
+	require.Nil(t, clamp)
 
 	// ($2 + $2 + $2 + $2) * 1.5 group * 100 quota/USD.
 	require.Equal(t, 1200, quota)
@@ -56,7 +58,7 @@ func TestCalculateAudioQuotaChargesCachedInputOnce(t *testing.T) {
 	common.QuotaPerUnit = 100
 	t.Cleanup(func() { common.QuotaPerUnit = originalQuotaPerUnit })
 
-	quota := calculateAudioQuota(QuotaInfo{
+	quota, clamp := calculateAudioQuotaChecked(QuotaInfo{
 		BillingType: model.ModelPricingBillingToken,
 		InputDetails: TokenDetails{
 			TextTokens:        600_000,
@@ -70,6 +72,7 @@ func TestCalculateAudioQuotaChargesCachedInputOnce(t *testing.T) {
 		CacheReadPrice:  0.5,
 		GroupRatio:      1,
 	})
+	require.Nil(t, clamp)
 
 	// 500k uncached text + 200k uncached audio + 300k cached input.
 	require.Equal(t, 275, quota)
@@ -104,10 +107,11 @@ func TestAudioQuotaPreservesCachedModalityPrices(t *testing.T) {
 			TextTokens: common.GetPointer(100_000), AudioTokens: common.GetPointer(200_000),
 		},
 	}
-	quota := calculateAudioQuota(QuotaInfo{
+	quota, clamp := calculateAudioQuotaChecked(QuotaInfo{
 		InputDetails: quotaInputTokenDetails(details), InputPrice: 2,
 		AudioInputPrice: 8, CacheReadPrice: 0.5, GroupRatio: 1,
 	})
+	require.Nil(t, clamp)
 	// Cached audio must not be reassigned to the cheaper text lane.
 	require.Equal(t, 275, quota)
 }
@@ -149,7 +153,7 @@ func TestCalculateAudioQuotaUsesCacheWriteAndImagePrices(t *testing.T) {
 	common.QuotaPerUnit = 100
 	t.Cleanup(func() { common.QuotaPerUnit = originalQuotaPerUnit })
 
-	quota := calculateAudioQuota(QuotaInfo{
+	quota, clamp := calculateAudioQuotaChecked(QuotaInfo{
 		BillingType: model.ModelPricingBillingToken,
 		InputDetails: TokenDetails{
 			TextTokens:        400_000,
@@ -164,6 +168,7 @@ func TestCalculateAudioQuotaUsesCacheWriteAndImagePrices(t *testing.T) {
 		CacheWritePrice: 10,
 		GroupRatio:      1,
 	})
+	require.Nil(t, clamp)
 
 	// 300k uncached text + 100k uncached image + 200k cache read + 100k cache write.
 	require.Equal(t, 210, quota)

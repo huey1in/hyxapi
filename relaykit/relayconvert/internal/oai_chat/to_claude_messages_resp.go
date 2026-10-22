@@ -104,10 +104,6 @@ func clientVisibleClaudeStreamUsage(state *convmeta.ClaudeConvertInfo, incoming 
 	return dto.MergeClaudeUsageNonZero(prior, converted)
 }
 
-func NormalizeCacheCreationSplit(totalTokens int, tokens5m int, tokens1h int) (int, int) {
-	return sharedclaude.NormalizeCacheCreationSplit(totalTokens, tokens5m, tokens1h)
-}
-
 func StreamResponseOpenAI2Claude(openAIResponse *dto.ChatCompletionsStreamResponse, info convmeta.Meta) []*dto.ClaudeResponse {
 	if info == nil {
 		info = &convmeta.Values{}

@@ -181,18 +181,6 @@ func responseAnnotationToChat(annotation any) (map[string]any, error) {
 }
 
 func UsageFromResponsesUsage(src *dto.Usage) *dto.Usage {
-	return usageFromResponsesUsage(src, true)
-}
-
-// NormalizeResponsesUsage maps Responses usage into the shared accounting
-// shape without creating a BillingUsage snapshot. Native Responses handlers
-// use it so passthrough traffic preserves an existing snapshot but does not
-// introduce a conversion sidecar solely for local settlement.
-func NormalizeResponsesUsage(src *dto.Usage) *dto.Usage {
-	return usageFromResponsesUsage(src, false)
-}
-
-func usageFromResponsesUsage(src *dto.Usage, createBillingSnapshot bool) *dto.Usage {
 	usage := &dto.Usage{}
 	if src == nil {
 		return usage
@@ -200,7 +188,7 @@ func usageFromResponsesUsage(src *dto.Usage, createBillingSnapshot bool) *dto.Us
 	usage.UsageSemantic = src.UsageSemantic
 	usage.UsageSource = src.UsageSource
 	usage.BillingUsage = dto.CloneBillingUsage(src.BillingUsage)
-	if usage.BillingUsage == nil && createBillingSnapshot {
+	if usage.BillingUsage == nil {
 		usage.BillingUsage = dto.NewOpenAIResponsesBillingUsage(src)
 	}
 	usage.Cost = src.Cost

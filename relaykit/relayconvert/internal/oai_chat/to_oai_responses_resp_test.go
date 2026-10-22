@@ -25,7 +25,7 @@ func TestChatCompletionsResponseToResponsesPreservesTextToolCallsAndUsage(t *tes
 		Usage: dto.Usage{PromptTokens: 3, CompletionTokens: 5, TotalTokens: 8},
 	}
 
-	resp, usage, err := ChatCompletionsResponseToResponsesResponse(chat, "resp_1")
+	resp, usage, err := ChatCompletionsResponseToResponsesResponseWithTools(chat, "resp_1", nil)
 	require.NoError(t, err)
 	require.NotNil(t, usage)
 
@@ -70,13 +70,13 @@ func TestChatCompletionsResponseToResponsesDropsEmptyNameToolCalls(t *testing.T)
 		},
 	})
 
-	resp, convertedUsage, err := ChatCompletionsResponseToResponsesResponse(&dto.OpenAITextResponse{
+	resp, convertedUsage, err := ChatCompletionsResponseToResponsesResponseWithTools(&dto.OpenAITextResponse{
 		Usage: usage,
 		Choices: []dto.OpenAITextResponseChoice{{
 			Message:      message,
 			FinishReason: "tool_calls",
 		}},
-	}, "resp_1")
+	}, "resp_1", nil)
 	require.NoError(t, err)
 
 	require.Len(t, resp.Output, 1)
@@ -94,13 +94,13 @@ func TestChatCompletionsResponseToResponsesDropsEmptyNameToolCalls(t *testing.T)
 func TestChatCompletionsResponseToResponsesEmitsReasoningSummaryBeforeText(t *testing.T) {
 	message := dto.Message{Role: "assistant", Content: "final answer"}
 	message.ReasoningContent = lo.ToPtr("thinking summary")
-	resp, _, err := ChatCompletionsResponseToResponsesResponse(&dto.OpenAITextResponse{
+	resp, _, err := ChatCompletionsResponseToResponsesResponseWithTools(&dto.OpenAITextResponse{
 		Id:    "chatcmpl_1",
 		Model: "gpt-test",
 		Choices: []dto.OpenAITextResponseChoice{
 			{Message: message, FinishReason: "stop"},
 		},
-	}, "resp_1")
+	}, "resp_1", nil)
 	require.NoError(t, err)
 
 	require.Len(t, resp.Output, 2)
@@ -124,7 +124,7 @@ func TestChatCompletionsResponseToResponsesMapsIncompleteFinishReasons(t *testin
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			resp, _, err := ChatCompletionsResponseToResponsesResponse(&dto.OpenAITextResponse{
+			resp, _, err := ChatCompletionsResponseToResponsesResponseWithTools(&dto.OpenAITextResponse{
 				Id:    "chatcmpl_1",
 				Model: "gpt-test",
 				Choices: []dto.OpenAITextResponseChoice{
@@ -133,7 +133,7 @@ func TestChatCompletionsResponseToResponsesMapsIncompleteFinishReasons(t *testin
 						FinishReason: tt.finishReason,
 					},
 				},
-			}, "resp_1")
+			}, "resp_1", nil)
 			require.NoError(t, err)
 
 			assert.Equal(t, `"incomplete"`, string(resp.Status))
@@ -374,7 +374,7 @@ func TestChatCompletionsResponseToResponsesRestoresCustomToolCalls(t *testing.T)
 	assert.Equal(t, responsesOutputTypeFunctionCall, resp.Output[1].Type)
 	assert.Equal(t, `"{\"ms\":1}"`, string(resp.Output[1].Arguments))
 
-	plain, _, err := ChatCompletionsResponseToResponsesResponse(chat, "resp_1")
+	plain, _, err := ChatCompletionsResponseToResponsesResponseWithTools(chat, "resp_1", nil)
 	require.NoError(t, err)
 	assert.Equal(t, responsesOutputTypeFunctionCall, plain.Output[0].Type)
 }

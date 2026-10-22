@@ -32,10 +32,10 @@ func TestTaskPluginVersionActivationAndSourceImmutability(t *testing.T) {
 	assert.False(t, v2.Active)
 	require.NoError(t, ActivateTaskPlugin("mock", "2.0.0"))
 
-	active, err := ListActiveTaskPlugins()
+	snapshot, err := GetTaskPluginSyncSnapshot()
 	require.NoError(t, err)
-	require.Len(t, active, 1)
-	assert.Equal(t, "2.0.0", active[0].Version)
+	require.Len(t, snapshot.Plugins, 1)
+	assert.Equal(t, "2.0.0", snapshot.Plugins[0].Version)
 
 	conflict := TaskPlugin{Key: "mock", APIVersion: 1, Version: "2.0.0", Source: "changed", SourceHash: "different", Enabled: true}
 	err = SaveTaskPlugin(&conflict)
@@ -43,9 +43,9 @@ func TestTaskPluginVersionActivationAndSourceImmutability(t *testing.T) {
 	assert.Contains(t, err.Error(), "different source")
 
 	require.NoError(t, SetTaskPluginEnabled("mock", false))
-	active, err = ListActiveTaskPlugins()
+	snapshot, err = GetTaskPluginSyncSnapshot()
 	require.NoError(t, err)
-	assert.Empty(t, active)
+	assert.Empty(t, snapshot.Plugins)
 
 	all, err := ListTaskPlugins()
 	require.NoError(t, err)

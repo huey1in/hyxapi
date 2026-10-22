@@ -96,6 +96,6 @@ func TestDownloadWorkerDoesNotFollowRedirectsWithSecrets(t *testing.T) {
 	require.False(t, leaked)
 	_, err = doWorkerRequest(nil, system_setting.WorkerSettings{URL: worker.URL})
 	require.Error(t, err)
-	_, err = DoWorkerRequest(nil)
+	_, err = doWorkerRequest(nil, system_setting.WorkerSettingsSnapshot())
 	require.Error(t, err)
 }

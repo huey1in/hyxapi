@@ -129,8 +129,8 @@ func TestImageModelBuiltinPricesAndOverrides(t *testing.T) {
 			usage := &dto.Usage{PromptTokens: 1000, CompletionTokens: 100, PromptTokensDetails: dto.InputTokenDetails{
 				CachedTokens: 300, ImageTokens: 600, CachedTokensDetails: &dto.CachedTokenDetails{ImageTokens: common.GetPointer(200)},
 			}}
-			result, err := billingexpr.ComputeTieredQuota(&billingexpr.BillingSnapshot{ExprString: expression, ExprHash: billingexpr.ExprHashString(expression), GroupRatio: 1, QuotaPerUnit: 500000},
-				service.BuildTieredTokenParams(usage, false, billingexpr.UsedVars(expression)))
+			result, err := billingexpr.ComputeTieredQuotaWithRequest(&billingexpr.BillingSnapshot{ExprString: expression, ExprHash: billingexpr.ExprHashString(expression), GroupRatio: 1, QuotaPerUnit: 500000},
+				service.BuildTieredTokenParams(usage, false, billingexpr.UsedVars(expression)), billingexpr.RequestInput{})
 			require.NoError(t, err)
 			assert.Equal(t, 4113, result.ActualQuotaAfterGroup)
 			encoded, err := common.Marshal(map[string]float64{name: 0})
@@ -173,9 +173,9 @@ func TestDeepSeekBuiltinBilling(t *testing.T) {
 	anthropic := &dto.Usage{PromptTokens: 1000, CompletionTokens: 500, PromptTokensDetails: dto.InputTokenDetails{CachedTokens: 2000}, UsageSemantic: "anthropic"}
 	quota := func(expression string, usage *dto.Usage) billingexpr.TieredResult {
 		params := service.BuildTieredTokenParams(usage, usage.UsageSemantic == "anthropic", billingexpr.UsedVars(expression))
-		result, err := billingexpr.ComputeTieredQuota(&billingexpr.BillingSnapshot{
+		result, err := billingexpr.ComputeTieredQuotaWithRequest(&billingexpr.BillingSnapshot{
 			ExprString: expression, ExprHash: billingexpr.ExprHashString(expression), GroupRatio: 1, QuotaPerUnit: 500000,
-		}, params)
+		}, params, billingexpr.RequestInput{})
 		require.NoError(t, err)
 		return result
 	}

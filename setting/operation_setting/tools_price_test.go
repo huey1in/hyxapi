@@ -6,7 +6,6 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 )
 
 func preserveToolPrices(t *testing.T) {
@@ -135,35 +134,6 @@ func TestValidateToolPricesJSON(t *testing.T) {
 	for _, value := range invalid {
 		assert.Error(t, ValidateToolPricesJSON(value), value)
 	}
-}
-
-func TestLoadToolPricesFromJSONStringReplacesMapAndKeepsValidSiblings(t *testing.T) {
-	preserveToolPrices(t)
-
-	LoadToolPricesFromJSONString(`{
-		"web_search": 0,
-		"custom_fn": 3,
-		"file_search": null,
-		"google_search": -1,
-		"image_generation": "0"
-	}`)
-
-	require.Len(t, toolPriceSetting.Prices, 2)
-	assert.Equal(t, 0.0, toolPriceSetting.Prices["web_search"])
-	assert.Equal(t, 3.0, toolPriceSetting.Prices["custom_fn"])
-	assert.Equal(t, 0.0, GetToolPrice("web_search"))
-	assert.Equal(t, 3.0, GetToolPrice("custom_fn"))
-	assert.Equal(t, 2.5, GetToolPrice("file_search"))
-	assert.Equal(t, 14.0, GetToolPrice("google_search"))
-	assert.Equal(t, 150.0, GetToolPrice("image_generation"))
-
-	LoadToolPricesFromJSONString(`{"image_generation":0}`)
-	require.Len(t, toolPriceSetting.Prices, 1)
-	assert.NotContains(t, toolPriceSetting.Prices, "web_search")
-	assert.NotContains(t, toolPriceSetting.Prices, "custom_fn")
-	assert.Equal(t, 10.0, GetToolPrice("web_search"))
-	assert.Equal(t, 0.0, GetToolPrice("custom_fn"))
-	assert.Equal(t, 0.0, GetToolPrice("image_generation"))
 }
 
 func TestRebuildToolPriceIndexIgnoresInvalidDirectValues(t *testing.T) {

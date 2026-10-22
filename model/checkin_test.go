@@ -37,7 +37,7 @@ func checkCheckinConcurrentCredit(t *testing.T) {
 	start, results := make(chan struct{}), make(chan error, 8)
 	var workers sync.WaitGroup
 	for range 8 {
-		workers.Go(func() { <-start; _, err := UserCheckin(user.Id); results <- err })
+		workers.Go(func() { <-start; _, err := UserCheckinContext(context.Background(), user.Id); results <- err })
 	}
 	close(start)
 	workers.Wait()
@@ -82,7 +82,7 @@ func TestCheckinConcurrentCreditMySQL(t *testing.T) {
 func TestCheckinFailedCreditRollsBackAndRejectsInvalidRewards(t *testing.T) {
 	user := checkinFixture(t)
 	require.NoError(t, DB.Exec("CREATE TEMP TRIGGER checkin_credit_failure BEFORE UPDATE OF quota ON users BEGIN SELECT RAISE(ABORT,'fixture credit failure'); END").Error)
-	_, err := UserCheckin(user.Id)
+	_, err := UserCheckinContext(context.Background(), user.Id)
 	require.ErrorContains(t, err, "fixture credit failure")
 	require.NoError(t, DB.Exec("DROP TRIGGER checkin_credit_failure").Error)
 	assertNoRecord := func() {
@@ -92,16 +92,16 @@ func TestCheckinFailedCreditRollsBackAndRejectsInvalidRewards(t *testing.T) {
 	}
 	assertNoRecord()
 	require.NoError(t, DB.Model(&user).Update("quota", common.MaxWalletQuota-50).Error)
-	_, err = UserCheckin(user.Id)
+	_, err = UserCheckinContext(context.Background(), user.Id)
 	require.ErrorIs(t, err, ErrWalletQuotaLimitExceeded)
 	assertNoRecord()
-	_, err = UserCheckin(user.Id + 100000)
+	_, err = UserCheckinContext(context.Background(), user.Id+100000)
 	require.ErrorIs(t, err, gorm.ErrRecordNotFound)
 	assertNoRecord()
 	for _, reward := range [][2]int{{-1, 5}, {5, 4}, {0, common.MaxWalletQuota + 1}} {
 		setting := operation_setting.GetCheckinSetting()
 		setting.MinQuota, setting.MaxQuota = reward[0], reward[1]
-		_, err = UserCheckin(user.Id)
+		_, err = UserCheckinContext(context.Background(), user.Id)
 		require.ErrorContains(t, err, "Invalid check-in reward")
 		assertNoRecord()
 	}
@@ -112,7 +112,7 @@ func TestCheckinFailedCreditRollsBackAndRejectsInvalidRewards(t *testing.T) {
 	_, err = UserCheckinContext(ctx, user.Id)
 	require.True(t, errors.Is(err, context.Canceled))
 	assertNoRecord()
-	_, err = UserCheckin(user.Id)
+	_, err = UserCheckinContext(context.Background(), user.Id)
 	require.NoError(t, err, "zero rewards still record the daily check-in")
 }
 

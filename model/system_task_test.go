@@ -314,12 +314,12 @@ func TestFindEarliestPendingSystemTasks(t *testing.T) {
 	assert.Nil(t, tasks["missing"])
 }
 
-func TestGetLatestSystemTask(t *testing.T) {
+func TestGetLatestSystemTasksIncludesLatestPendingRun(t *testing.T) {
 	truncateTables(t)
 
-	latest, err := GetLatestSystemTask(SystemTaskTypeChannelTest)
+	latest, err := GetLatestSystemTasks([]string{SystemTaskTypeChannelTest})
 	require.NoError(t, err)
-	require.Nil(t, latest)
+	require.Empty(t, latest)
 
 	first, err := CreateSystemTask(SystemTaskTypeChannelTest, nil, nil)
 	require.NoError(t, err)
@@ -333,10 +333,10 @@ func TestGetLatestSystemTask(t *testing.T) {
 	second, err := CreateSystemTask(SystemTaskTypeChannelTest, nil, nil)
 	require.NoError(t, err)
 
-	latest, err = GetLatestSystemTask(SystemTaskTypeChannelTest)
+	latest, err = GetLatestSystemTasks([]string{SystemTaskTypeChannelTest})
 	require.NoError(t, err)
-	require.NotNil(t, latest)
-	assert.Equal(t, second.TaskID, latest.TaskID)
+	require.Contains(t, latest, SystemTaskTypeChannelTest)
+	assert.Equal(t, second.TaskID, latest[SystemTaskTypeChannelTest].TaskID)
 }
 
 func TestGetLatestSystemTasks(t *testing.T) {

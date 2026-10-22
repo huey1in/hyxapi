@@ -96,11 +96,6 @@ type QuotaInfo struct {
 	GroupRatio       float64
 }
 
-func calculateAudioQuota(info QuotaInfo) int {
-	quota, _ := calculateAudioQuotaChecked(info)
-	return quota
-}
-
 func calculateAudioQuotaChecked(info QuotaInfo) (int, *common.QuotaClamp) {
 	groupRatio := decimal.NewFromFloat(info.GroupRatio)
 	quotaPerUnit := decimal.NewFromFloat(common.QuotaPerUnit)

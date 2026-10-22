@@ -242,10 +242,6 @@ func getUpstreamModelUpdateMinCheckIntervalSeconds() int64 {
 	return interval
 }
 
-func fetchChannelUpstreamModelIDs(channel *model.Channel) ([]string, error) {
-	return fetchChannelUpstreamModelIDsWithContext(context.Background(), channel)
-}
-
 func fetchChannelUpstreamModelIDsWithContext(ctx context.Context, channel *model.Channel) ([]string, error) {
 	return fetchChannelUpstreamModelIDsWithValidation(ctx, channel, false)
 }
@@ -376,15 +372,6 @@ func updateChannelUpstreamModelSettings(ctx context.Context, channel *model.Chan
 		nextModels = &channel.Models
 	}
 	return model.CommitChannelModelState(ctx, channel, expectedRevision, channel.OtherSettings, nextModels)
-}
-
-func checkAndPersistChannelUpstreamModelUpdates(
-	channel *model.Channel,
-	settings *dto.ChannelOtherSettings,
-	force bool,
-	allowAutoApply bool,
-) (modelsChanged bool, autoAdded int, err error) {
-	return checkAndPersistChannelUpstreamModelUpdatesWithContext(context.Background(), channel, settings, force, allowAutoApply)
 }
 
 func checkAndPersistChannelUpstreamModelUpdatesWithContext(ctx context.Context, channel *model.Channel, settings *dto.ChannelOtherSettings, force, allowAutoApply bool) (modelsChanged bool, autoAdded int, err error) {

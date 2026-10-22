@@ -264,20 +264,6 @@ func TestImageGenerationCallCounterCompletedOutputs(t *testing.T) {
 			wantCount: 1,
 		},
 		{
-			name: "output_item.done plus incomplete equals zero",
-			observe: func(c *ImageGenerationCallCounter) {
-				idx := 0
-				c.Observe(&dto.ResponsesOutput{
-					Type:   dto.ResponsesOutputTypeImageGenerationCall,
-					ID:     "img_1",
-					Status: "completed",
-					Result: "base64-a",
-				}, &idx)
-				c.Reset()
-			},
-			wantCount: 0,
-		},
-		{
 			name: "partial event equals zero",
 			observe: func(c *ImageGenerationCallCounter) {
 				idx := 0
@@ -309,7 +295,7 @@ func TestImageGenerationCallCounterCompletedOutputs(t *testing.T) {
 			t.Parallel()
 			counter := &ImageGenerationCallCounter{}
 			tt.observe(counter)
-			assert.Equal(t, tt.wantCount, counter.Count())
+			assert.Equal(t, tt.wantCount, counter.count)
 		})
 	}
 }
@@ -326,7 +312,7 @@ func TestImageGenerationCallCounterCommitCapsAtMaxImageN(t *testing.T) {
 			Result: "result-" + strings.Repeat("b", i+1),
 		}, &idx)
 	}
-	require.Equal(t, dto.MaxImageN+3, counter.Count())
+	require.Equal(t, dto.MaxImageN+3, counter.count)
 
 	info := &RelayInfo{}
 	counter.Commit(info)

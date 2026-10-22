@@ -25,7 +25,7 @@ func TestComputeTieredQuota_ClampOnOverflow(t *testing.T) {
 		QuotaPerUnit: 500_000,
 	}
 
-	result, err := billingexpr.ComputeTieredQuota(snap, billingexpr.TokenParams{P: 1_000_000_000})
+	result, err := billingexpr.ComputeTieredQuotaWithRequest(snap, billingexpr.TokenParams{P: 1_000_000_000}, billingexpr.RequestInput{})
 	require.NoError(t, err)
 
 	assert.Equal(t, common.MaxQuota, result.ActualQuotaAfterGroup, "oversized quota must clamp, never wrap negative")
@@ -46,7 +46,7 @@ func TestComputeTieredQuota_NoClampInRange(t *testing.T) {
 		QuotaPerUnit: 500_000,
 	}
 
-	result, err := billingexpr.ComputeTieredQuota(snap, billingexpr.TokenParams{P: 1000, C: 500})
+	result, err := billingexpr.ComputeTieredQuotaWithRequest(snap, billingexpr.TokenParams{P: 1000, C: 500}, billingexpr.RequestInput{})
 	require.NoError(t, err)
 	assert.Nil(t, result.Clamp, "in-range settlement must not report a clamp")
 }

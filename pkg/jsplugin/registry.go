@@ -273,7 +273,6 @@ type Registry struct {
 	generation      atomic.Pointer[RoutingGeneration]
 	preparer        RoutingGenerationPreparer
 	routingErrors   map[string]string
-	lastRebuildErr  string
 	lastRebuild     RoutingRebuildOutcome
 }
 
@@ -694,18 +693,6 @@ func (r *Registry) RoutingErrors() map[string]string {
 	return errorsCopy
 }
 
-func (r *Registry) LastRebuildError() string {
-	r.mu.RLock()
-	defer r.mu.RUnlock()
-	return r.lastRebuildErr
-}
-
-func (r *Registry) LastRebuildOutcome() RoutingRebuildOutcome {
-	r.mu.RLock()
-	defer r.mu.RUnlock()
-	return r.lastRebuild
-}
-
 func (r *Registry) RoutingStatus() RoutingStatus {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
@@ -775,7 +762,6 @@ func (r *Registry) publishGeneration(
 	}
 	r.routingErrors = routingErrors
 	r.activeOverride = activeOverride
-	r.lastRebuildErr = ""
 	status := "success"
 	if len(routingErrors) > 0 {
 		status = "partial"
@@ -818,7 +804,6 @@ func (r *Registry) publishGeneration(
 }
 
 func (r *Registry) recordRebuildFailure(err error) {
-	r.lastRebuildErr = err.Error()
 	generation := r.generation.Load()
 	var generationNumber uint64
 	if generation != nil {

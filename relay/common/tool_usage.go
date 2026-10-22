@@ -130,23 +130,6 @@ func (c *ImageGenerationCallCounter) Observe(item *dto.ResponsesOutput, outputIn
 	c.count++
 }
 
-// Reset clears pending observations (used when a terminal response fails).
-func (c *ImageGenerationCallCounter) Reset() {
-	if c == nil {
-		return
-	}
-	c.seen = nil
-	c.count = 0
-}
-
-// Count returns the deduplicated completed image output count before commit capping.
-func (c *ImageGenerationCallCounter) Count() int {
-	if c == nil {
-		return 0
-	}
-	return c.count
-}
-
 // Commit writes the capped completed-output count into RelayInfo once.
 // Request tool declarations alone must not become billable calls.
 func (c *ImageGenerationCallCounter) Commit(info *RelayInfo) {

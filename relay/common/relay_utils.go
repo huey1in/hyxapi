@@ -12,7 +12,6 @@ import (
 	hostdto "github.com/QuantumNous/new-api/dto"
 
 	"github.com/gin-gonic/gin"
-	"github.com/samber/lo"
 )
 
 func GetFullRequestURL(baseURL string, requestURL string, channelType int) string {
@@ -113,18 +112,6 @@ func storeTaskRequest(c *gin.Context, info *RelayInfo, action string, requestObj
 	info.Action = action
 	c.Set("task_request", requestObj)
 }
-func GetTaskRequest(c *gin.Context) (TaskSubmitReq, error) {
-	v, exists := c.Get("task_request")
-	if !exists {
-		return TaskSubmitReq{}, fmt.Errorf("request not found in context")
-	}
-	req, ok := v.(TaskSubmitReq)
-	if !ok {
-		return TaskSubmitReq{}, fmt.Errorf("invalid task request type")
-	}
-	return req, nil
-}
-
 func validatePrompt(prompt string) *hostdto.TaskError {
 	if strings.TrimSpace(prompt) == "" {
 		return createTaskError(fmt.Errorf("prompt is required"), "invalid_request", http.StatusBadRequest, true)
@@ -186,76 +173,6 @@ func validateMultipartTaskRequest(c *gin.Context, info *RelayInfo, action string
 		}
 	}
 	return req, nil
-}
-
-func ValidateMultipartDirect(c *gin.Context, info *RelayInfo) *hostdto.TaskError {
-	var prompt string
-	var model string
-	var seconds int
-	var size string
-	var hasInputReference bool
-
-	var req TaskSubmitReq
-	if err := common.UnmarshalBodyReusable(c, &req); err != nil {
-		return createTaskError(err, "invalid_json", http.StatusBadRequest, true)
-	}
-
-	prompt = req.Prompt
-	model = req.Model
-	size = req.Size
-	seconds, _ = strconv.Atoi(req.Seconds)
-	if seconds == 0 {
-		seconds = req.Duration
-	}
-	if req.InputReference != "" {
-		req.Images = []string{req.InputReference}
-	} else if len(req.Images) == 0 && strings.TrimSpace(req.Image) != "" {
-		// 兼容单图上传
-		req.Images = []string{strings.TrimSpace(req.Image)}
-	}
-
-	if strings.TrimSpace(req.Model) == "" {
-		return createTaskError(fmt.Errorf("model field is required"), "missing_model", http.StatusBadRequest, true)
-	}
-
-	if req.HasImage() {
-		hasInputReference = true
-	}
-
-	if taskErr := validatePrompt(prompt); taskErr != nil {
-		return taskErr
-	}
-
-	if taskErr := validateTaskDurationBounds(req); taskErr != nil {
-		return taskErr
-	}
-
-	action := constant.TaskActionTextGenerate
-	if hasInputReference {
-		action = constant.TaskActionGenerate
-	}
-	if strings.HasPrefix(model, "sora-2") {
-
-		if size == "" {
-			size = "720x1280"
-		}
-
-		if seconds <= 0 {
-			seconds = 4
-		}
-
-		if model == "sora-2" && !lo.Contains([]string{"720x1280", "1280x720"}, size) {
-			return createTaskError(fmt.Errorf("sora-2 size is invalid"), "invalid_size", http.StatusBadRequest, true)
-		}
-		if model == "sora-2-pro" && !lo.Contains([]string{"720x1280", "1280x720", "1792x1024", "1024x1792"}, size) {
-			return createTaskError(fmt.Errorf("sora-2 size is invalid"), "invalid_size", http.StatusBadRequest, true)
-		}
-		// OtherRatios 已移到 Sora adaptor 的 EstimateBilling 中设置
-	}
-
-	storeTaskRequest(c, info, action, req)
-
-	return nil
 }
 
 func isKnownTaskField(field string) bool {

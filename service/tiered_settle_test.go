@@ -49,10 +49,10 @@ func makeSnapshot(expr string, groupRatio float64, estPrompt, estCompletion int)
 
 func makeRelayInfo(expr string, groupRatio float64, estPrompt, estCompletion int) *relaycommon.RelayInfo {
 	snap := makeSnapshot(expr, groupRatio, estPrompt, estCompletion)
-	cost, trace, _ := billingexpr.RunExpr(expr, billingexpr.TokenParams{P: float64(estPrompt), C: float64(estCompletion)})
+	cost, trace, _ := billingexpr.RunExprWithRequest(expr, billingexpr.TokenParams{P: float64(estPrompt), C: float64(estCompletion)}, billingexpr.RequestInput{})
 	quotaBeforeGroup := cost / 1_000_000 * testQuotaPerUnit
 	snap.EstimatedQuotaBeforeGroup = quotaBeforeGroup
-	snap.EstimatedQuotaAfterGroup = billingexpr.QuotaRound(quotaBeforeGroup * groupRatio)
+	snap.EstimatedQuotaAfterGroup = common.QuotaRound(quotaBeforeGroup * groupRatio)
 	snap.EstimatedTier = trace.MatchedTier
 	return &relaycommon.RelayInfo{
 		TieredBillingSnapshot: snap,
@@ -685,7 +685,7 @@ func TestTryTieredSettle_ErrorFallbackToEstimatedQuotaAfterGroup(t *testing.T) {
 func tieredQuota(exprStr string, usage *dto.Usage, isClaudeSemantic bool, groupRatio float64) float64 {
 	usedVars := billingexpr.UsedVars(exprStr)
 	params := BuildTieredTokenParams(usage, isClaudeSemantic, usedVars)
-	cost, _, _ := billingexpr.RunExpr(exprStr, params)
+	cost, _, _ := billingexpr.RunExprWithRequest(exprStr, params, billingexpr.RequestInput{})
 	return cost / 1_000_000 * testQuotaPerUnit * groupRatio
 }
 
@@ -802,7 +802,7 @@ func TestImageCacheBilling(t *testing.T) {
 			assert.Equal(t, tc.img, params.Img)
 			assert.Equal(t, tc.imgCR, params.ImgCR)
 			assert.Equal(t, float64(1000), params.Len)
-			result, err := billingexpr.ComputeTieredQuota(makeSnapshot(tc.expression, 1, 1000, 100), params)
+			result, err := billingexpr.ComputeTieredQuotaWithRequest(makeSnapshot(tc.expression, 1, 1000, 100), params, billingexpr.RequestInput{})
 			require.NoError(t, err)
 			assert.Equal(t, tc.quota, result.ActualQuotaAfterGroup)
 		})
@@ -984,7 +984,7 @@ func TestBuildTieredTokenParams_Len_TierCondition(t *testing.T) {
 	}
 
 	// Run expression: len=300000 > 200000, so long_context tier
-	cost, trace, err := billingexpr.RunExpr(expr, params)
+	cost, trace, err := billingexpr.RunExprWithRequest(expr, params, billingexpr.RequestInput{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1041,7 +1041,7 @@ func BenchmarkTieredBilling_ComplexExpr(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		usage := usages[i%len(usages)]
 		params := BuildTieredTokenParams(usage, false, usedVars)
-		billingexpr.RunExpr(complexTieredExpr, params)
+		billingexpr.RunExprWithRequest(complexTieredExpr, params, billingexpr.RequestInput{})
 	}
 }
 
@@ -1067,7 +1067,7 @@ func BenchmarkTieredBilling_Parallel(b *testing.B) {
 		for pb.Next() {
 			usage := randomUsage(rng)
 			params := BuildTieredTokenParams(usage, false, usedVars)
-			billingexpr.RunExpr(complexTieredExpr, params)
+			billingexpr.RunExprWithRequest(complexTieredExpr, params, billingexpr.RequestInput{})
 		}
 	})
 }
@@ -1098,11 +1098,11 @@ func TestSamePriceCacheReadsRemainInInput(t *testing.T) {
 			separate := `tier("base", p * 60 + c * 120 + cr * 60` + tc.extra + `)`
 			params := BuildTieredTokenParams(&tc.usage, tc.usage.UsageSemantic == "anthropic", billingexpr.UsedVars(merged))
 			assert.Equal(t, tc.input, params.P)
-			cost, _, err := billingexpr.RunExpr(merged, params)
+			cost, _, err := billingexpr.RunExprWithRequest(merged, params, billingexpr.RequestInput{})
 			require.NoError(t, err)
 			assert.Equal(t, tc.cost, cost)
 			separateParams := BuildTieredTokenParams(&tc.usage, tc.usage.UsageSemantic == "anthropic", billingexpr.UsedVars(separate))
-			previousCost, _, err := billingexpr.RunExpr(separate, separateParams)
+			previousCost, _, err := billingexpr.RunExprWithRequest(separate, separateParams, billingexpr.RequestInput{})
 			require.NoError(t, err)
 			assert.Equal(t, previousCost, cost, "folding cache reads into input must preserve the charge")
 			assert.Equal(t, separateParams.Len, params.Len, "tier conditions keep the full context length")

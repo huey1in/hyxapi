@@ -7,6 +7,7 @@ import (
 	"github.com/QuantumNous/new-api/relaykit/dto"
 	"github.com/QuantumNous/new-api/relaykit/relayconvert/convmeta"
 	kitutil "github.com/QuantumNous/new-api/relaykit/relayconvert/kitutil"
+	"github.com/QuantumNous/new-api/relaykit/types"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -20,12 +21,12 @@ func TestOpenAIToGeminiSafetySettings(t *testing.T) {
 			name: "chat completions",
 			convert: func(t *testing.T, meta convmeta.Meta) *dto.GeminiChatRequest {
 				t.Helper()
-				got, err := OpenAIChatRequestToGeminiGenerateContent(context.Background(), dto.GeneralOpenAIRequest{
+				got, err := convertRequestForTest[dto.GeminiChatRequest](context.Background(), meta, types.RelayFormatGemini, &dto.GeneralOpenAIRequest{
 					Model: "gemini-test",
 					Messages: []dto.Message{
 						{Role: "user", Content: "hello"},
 					},
-				}, meta)
+				})
 				require.NoError(t, err)
 				return got
 			},
@@ -34,10 +35,10 @@ func TestOpenAIToGeminiSafetySettings(t *testing.T) {
 			name: "responses",
 			convert: func(t *testing.T, meta convmeta.Meta) *dto.GeminiChatRequest {
 				t.Helper()
-				got, err := OpenAIResponsesRequestToGeminiChat(context.Background(), &dto.OpenAIResponsesRequest{
+				got, err := convertRequestForTest[dto.GeminiChatRequest](context.Background(), meta, types.RelayFormatGemini, &dto.OpenAIResponsesRequest{
 					Model: "gemini-test",
 					Input: []byte(`"hello"`),
-				}, meta)
+				})
 				require.NoError(t, err)
 				return got
 			},

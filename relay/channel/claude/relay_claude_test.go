@@ -8,6 +8,7 @@ import (
 	"github.com/QuantumNous/new-api/relay/helper"
 	"github.com/QuantumNous/new-api/relaykit/dto"
 	"github.com/QuantumNous/new-api/relaykit/relayconvert"
+	"github.com/QuantumNous/new-api/relaykit/types"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -340,8 +341,10 @@ func TestOpenAIChatRequestToClaudeMessages_ClaudeOpus48HighUsesAdaptiveThinking(
 
 	info := &relaycommon.RelayInfo{OriginModelName: request.Model, Request: &request, ChannelMeta: &relaycommon.ChannelMeta{UpstreamModelName: request.Model}}
 	require.NoError(t, helper.ApplyReasoningModelSuffix(nil, info, &request))
-	claudeRequest, err := relayconvert.OpenAIChatRequestToClaudeMessages(nil, info, request)
+	result, err := relayconvert.ConvertRequest(nil, info, types.RelayFormatClaude, &request)
 	require.NoError(t, err)
+	claudeRequest, ok := result.Value.(*dto.ClaudeRequest)
+	require.True(t, ok)
 	require.Equal(t, "claude-opus-4-8", claudeRequest.Model)
 	require.NotNil(t, claudeRequest.Thinking)
 	require.Equal(t, "adaptive", claudeRequest.Thinking.Type)
@@ -368,8 +371,10 @@ func TestOpenAIChatRequestToClaudeMessages_ClaudeOpus48ThinkingUsesAdaptiveHighE
 
 	info := &relaycommon.RelayInfo{OriginModelName: request.Model, Request: &request, ChannelMeta: &relaycommon.ChannelMeta{UpstreamModelName: request.Model}}
 	require.NoError(t, helper.ApplyReasoningModelSuffix(nil, info, &request))
-	claudeRequest, err := relayconvert.OpenAIChatRequestToClaudeMessages(nil, info, request)
+	result, err := relayconvert.ConvertRequest(nil, info, types.RelayFormatClaude, &request)
 	require.NoError(t, err)
+	claudeRequest, ok := result.Value.(*dto.ClaudeRequest)
+	require.True(t, ok)
 	require.Equal(t, "claude-opus-4-8", claudeRequest.Model)
 	require.NotNil(t, claudeRequest.Thinking)
 	require.Equal(t, "adaptive", claudeRequest.Thinking.Type)

@@ -39,10 +39,6 @@ const (
 	responsesIncompleteReasonMaxTokens      = "max_output_tokens"
 )
 
-func ChatCompletionsResponseToResponsesResponse(resp *dto.OpenAITextResponse, id string) (*dto.OpenAIResponsesResponse, *dto.Usage, error) {
-	return ChatCompletionsResponseToResponsesResponseWithTools(resp, id, nil)
-}
-
 // ChatCompletionsResponseToResponsesResponseWithTools also restores function
 // calls that tools marks as Responses custom tools into custom_tool_call items.
 func ChatCompletionsResponseToResponsesResponseWithTools(resp *dto.OpenAITextResponse, id string, tools *convmeta.ResponsesToolState) (*dto.OpenAIResponsesResponse, *dto.Usage, error) {

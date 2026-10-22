@@ -123,7 +123,7 @@ def redact_string(value, stats):
     return value
 
 
-def redact(obj, stats, parent_key=""):
+def redact(obj, stats):
     if isinstance(obj, dict):
         out = {}
         for k, v in obj.items():
@@ -134,10 +134,10 @@ def redact(obj, stats, parent_key=""):
                 else:
                     out[k] = v
                 continue
-            out[k] = redact(v, stats, str(k))
+            out[k] = redact(v, stats)
         return out
     if isinstance(obj, list):
-        return [redact(v, stats, parent_key) for v in obj]
+        return [redact(v, stats) for v in obj]
     if isinstance(obj, str):
         return redact_string(obj, stats)
     return obj

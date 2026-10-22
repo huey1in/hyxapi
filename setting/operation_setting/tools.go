@@ -2,7 +2,6 @@ package operation_setting
 
 import (
 	"encoding/json"
-	"fmt"
 	"math"
 	"sort"
 	"strings"
@@ -149,7 +148,7 @@ func isValidToolPrice(price float64) bool {
 	return price >= 0 && !math.IsNaN(price) && !math.IsInf(price, 0)
 }
 
-func decodeToolPricesJSON(value string, ignoreInvalidEntries bool) (map[string]float64, error) {
+func decodeToolPricesJSON(value string) (map[string]float64, error) {
 	rawValue := json.RawMessage(strings.TrimSpace(value))
 	if common.GetJsonType(rawValue) != "object" {
 		return nil, common.NewMessage("Tool prices must be a JSON object")
@@ -176,13 +175,9 @@ func decodeToolPricesJSON(value string, ignoreInvalidEntries bool) (map[string]f
 			}
 		}
 
-		if entryErr == nil {
-			continue
-		}
-		if !ignoreInvalidEntries {
+		if entryErr != nil {
 			return nil, entryErr
 		}
-		common.SysError(entryErr.Error())
 	}
 	return prices, nil
 }
@@ -190,21 +185,8 @@ func decodeToolPricesJSON(value string, ignoreInvalidEntries bool) (map[string]f
 // ValidateToolPricesJSON validates an operator-supplied complete price map.
 // A numeric zero is valid and intentionally disables the matching rule.
 func ValidateToolPricesJSON(value string) error {
-	_, err := decodeToolPricesJSON(value, false)
+	_, err := decodeToolPricesJSON(value)
 	return err
-}
-
-// LoadToolPricesFromJSONString replaces the complete operator price map.
-// Invalid legacy entries are ignored individually so valid sibling overrides
-// survive, while missing built-in keys continue to use hardcoded fallbacks.
-func LoadToolPricesFromJSONString(value string) {
-	prices, err := decodeToolPricesJSON(value, true)
-	if err != nil {
-		common.SysError(fmt.Sprintf("failed to load tool prices, using hardcoded fallbacks: %s", err.Error()))
-		prices = make(map[string]float64)
-	}
-	toolPriceSetting.Prices = prices
-	RebuildToolPriceIndex()
 }
 
 // RebuildToolPriceIndex rebuilds the lookup index from the current config.

@@ -412,7 +412,9 @@ func TestIndependentRedisAuthVersionAdvanceConvergesAfterCacheTTL(t *testing.T) 
 	assert.Equal(t, "1", version, "node B must hold the pre-rotation session version")
 
 	common.RDB = clientA
-	rotated, err := AdvanceCurrentSessionSecurity(oldIdentity, "security_update")
+	_, err = model.BumpUserAuthVersion(user.Id)
+	require.NoError(t, err)
+	rotated, err := AdvanceCurrentSessionToUserVersion(oldIdentity, "security_update")
 	require.NoError(t, err)
 	newIdentity, err := ParseAccessToken(rotated.AccessToken)
 	require.NoError(t, err)
