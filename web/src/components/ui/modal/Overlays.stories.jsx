@@ -60,7 +60,6 @@ export const SlideOverDemo = () => {
         open={open}
         onClose={() => setOpen(false)}
         placement='right'
-        width={520}
         title={<span className='text-base font-semibold text-ui-text'>编辑套餐</span>}
         footer={
           <>

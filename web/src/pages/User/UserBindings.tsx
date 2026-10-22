@@ -52,7 +52,7 @@ export default function UserBindings({ user, onClose, onChanged }: { user: Manag
     const provider = providers.find((entry) => entry.id === providerID); const binding = custom.find((entry) => entry.provider_id === providerID);
     bindings.push({ key: `oauth_${providerID}`, label: provider?.name || binding?.provider_name || String(providerID), value: binding?.provider_user_id ?? '', endpoint: `/api/user/${user.id}/oauth/bindings/${providerID}`, enabled: !!provider });
   }
-  return <SlideOver open title={<h2 className='text-lg font-semibold'>{t('Account bindings · {{username}}', { username: user.username })}</h2>} width={480} onClose={() => { if (!busy) onClose(); }}>
+  return <SlideOver open title={<h2 className='text-lg font-semibold'>{t('Account bindings · {{username}}', { username: user.username })}</h2>} onClose={() => { if (!busy) onClose(); }}>
     <div className='px-6 pb-6 space-y-4'>
       <label className='flex items-center justify-between text-sm'>{t('Show bound accounts only')}<Switch checked={boundOnly} onChange={setBoundOnly} /></label>
       <label className='flex items-center justify-between text-sm'>{t('Show binding identifiers')}<Switch checked={reveal} onChange={setReveal} /></label>

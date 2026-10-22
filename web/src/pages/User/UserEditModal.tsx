@@ -59,7 +59,7 @@ export default function UserEditModal({ user, actorRole, onClose, onSaved }: Pro
     showSuccess(t('User saved')); onSaved();
   });
   const matrix = catalog ? normalizeAdminPermissions(form.admin_permissions, catalog) : {};
-  return <SlideOver open title={<h2 className='text-lg font-semibold'>{user ? t('Edit user #{{id}}', { id: user.id }) : t('Create user')}</h2>} width={480} onClose={() => { if (!busy) onClose(); }}
+  return <SlideOver open title={<h2 className='text-lg font-semibold'>{user ? t('Edit user #{{id}}', { id: user.id }) : t('Create user')}</h2>} onClose={() => { if (!busy) onClose(); }}
     footer={<><Button variant='toggle' disabled={busy} onClick={onClose}>{t('Cancel')}</Button><Button loading={busy} disabled={loading || !!error} onClick={() => void save()}>{t(user ? 'Save' : 'Create')}</Button></>}>
     <div className='px-6 pb-6 space-y-4'>
       {error ? <p role='alert'>{t(error)}</p> : <LayoutSkeleton loading={loading}><fieldset disabled={busy || loading} className='space-y-4'>

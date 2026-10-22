@@ -341,7 +341,6 @@ function ChannelEditForm({
         </span>
       }
       onClose={onClose}
-      width={560}
       footer={
         <>
           <Button variant='toggle' onClick={onClose}>

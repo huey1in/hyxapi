@@ -3,7 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { BadgeDollarSign, Plus, RefreshCw, Save, Trash2 } from 'lucide-react';
 import { API, showSuccess } from '../../helpers';
-import { Button, Checkbox, ConfirmDialog, EmptyState, FormField, Input, Modal, NumberInput, Pagination, Select, Switch, ContentSkeleton } from '../../components/ui';
+import { Button, Checkbox, ConfirmDialog, EmptyState, Input, Modal, NumberInput, Pagination, Select, Switch, ContentSkeleton } from '../../components/ui';
 import { useAuthStore } from '../../stores/auth-store';
 import { useOwnedOperation } from '../../hooks/useOwnedOperation';
 import { apiErrorMessage } from '../../lib/api-error';
@@ -12,7 +12,7 @@ import PricingConfigDialog from './PricingConfigDialog';
 import PricingBatchDialog from './billing/PricingBatchDialog';
 import PricingSync from '../../features/pricing-sync';
 import {
-  TOKEN_BILLING, REQUEST_BILLING, DEFAULT_PAGE_SIZE, MODEL_PRICING_ROWS_STYLE, MODEL_PRICING_ROW_STYLE,
+  TOKEN_BILLING, REQUEST_BILLING, DEFAULT_PAGE_SIZE,
   directPriceSchema, directPriceListSchema, pricingSummarySchema, upstreamPricePreviewSchema,
   createBlankPricingRow, getModelName, mergePricingRowsWithModels, mergeRefreshedPricingRows, replacePricingRow, removePricingRow,
   clampModelPricingPage, getModelPricingPageRows, getBillingTypeOptions, getDefaultModelPricingSyncSelection,
@@ -22,12 +22,19 @@ import type { DirectPrice, PriceField, PricingRow, PricingSuggestion, SyncPrevie
 import Skeleton from '../../components/ui/feedback/Skeleton';
 
 const tokenFields: [PriceField, string][] = [['input_price', 'Input'], ['output_price', 'Output'], ['cache_read_price', 'Cache read'], ['cache_write_price', 'Cache write'], ['image_price', 'Image'], ['audio_input_price', 'Audio input'], ['audio_output_price', 'Audio output']];
+const pricingRowClassName = 'grid min-w-0 gap-3 border-t border-ui-border py-4';
+const pricingFieldsClassName = 'grid min-w-0 grid-cols-[repeat(auto-fit,minmax(min(138px,100%),1fr))] gap-2.5';
 
 function PricingRowsSkeleton() {
   const { t } = useTranslation();
-  return <ContentSkeleton variant='form'><div style={MODEL_PRICING_ROWS_STYLE}>{[0, 1, 2].map((index) => <div key={index} style={MODEL_PRICING_ROW_STYLE} className='grid gap-3 border-t border-ui-border py-4'>
-    <div className='grid grid-cols-[minmax(220px,1fr)_minmax(130px,170px)_auto_auto] items-end gap-3'>{['Model name', 'Billing type', 'Enabled', 'Save'].map((label) => <div key={label} className='grid min-w-0 gap-1 text-[11px] text-ui-text-3'>{t(label)}<Skeleton width={label === 'Save' ? 160 : '100%'} height={36} rounded='rounded-full' /></div>)}</div>
-    <div className='grid grid-cols-[repeat(auto-fit,minmax(138px,1fr))] gap-2.5'>{tokenFields.map(([key, label]) => <div key={key} className='grid min-w-0 gap-1 text-[11px] text-ui-text-3'>{t(label)} · USD / 1M<Skeleton height={36} rounded='rounded-full' /></div>)}</div>
+  return <ContentSkeleton variant='form'><div className='grid min-w-0'>{[0, 1, 2].map((index) => <div key={index} className={pricingRowClassName}>
+    <div className='flex min-w-0 flex-wrap items-end gap-3'>
+      <div className='grid min-w-0 flex-[1_1_220px] gap-1 text-[11px] text-ui-text-3'>{t('Model name (supports leading or trailing *)')}<Skeleton height={36} rounded='rounded-xl' /></div>
+      <div className='grid min-w-0 gap-1 text-[11px] text-ui-text-3'>{t('Billing type')}<Skeleton width={100} height={36} rounded='rounded-xl' /></div>
+      <div className='flex min-h-9 items-center gap-2 text-sm text-ui-text-2'><Skeleton width={28} height={16} rounded='rounded-full' />{t('Enabled')}</div>
+      <div className='flex min-h-9 min-w-0 flex-wrap items-center gap-2'>{['Save', 'Advanced billing', 'Delete'].map((label) => <div key={label} className='relative px-2.5 py-1 text-xs'><span className='invisible inline-flex items-center gap-1'>{label === 'Save' ? <Save size={12} /> : label === 'Delete' ? <Trash2 size={12} /> : null}{t(label)}</span><span className='absolute inset-0'><Skeleton height={24} rounded='rounded-md' /></span></div>)}</div>
+    </div>
+    <div className={pricingFieldsClassName}>{tokenFields.map(([key, label]) => <div key={key} className='grid min-w-0 gap-1 text-[11px] text-ui-text-3'>{t(label)} · USD / 1M<Skeleton height={36} rounded='rounded-xl' /></div>)}</div>
   </div>)}</div></ContentSkeleton>;
 }
 
@@ -116,28 +123,28 @@ function PricingWorkspace({ modelSuggestions, identity }: { modelSuggestions: Pr
       </div>
     </div>
     <div className='flex flex-wrap items-center gap-2'>
-      <Input aria-label={t('Advanced billing model')} value={advancedTarget} list='model-pricing-suggestions' placeholder={t('Enter a model for tiered, scheduled, or expression billing')} onChange={setAdvancedTarget} />
+      <div className='min-w-0 flex-[1_1_220px]'><Input aria-label={t('Advanced billing model')} value={advancedTarget} list='model-pricing-suggestions' placeholder={t('Enter a model for tiered, scheduled, or expression billing')} onChange={setAdvancedTarget} /></div>
       <Button size='sm' variant='secondary' disabled={!advancedTarget.trim() || unavailable || busy} onClick={() => setAdvancedModel(advancedTarget.trim())}>{t('Advanced billing configuration')}</Button>
       <Button size='sm' variant='secondary' disabled={unavailable || busy} onClick={() => setBatchOpen(true)}>{t('Batch billing management')}</Button>
       <Button size='sm' variant='secondary' disabled={unavailable || busy} onClick={() => setSyncOpen(true)}>{t('Upstream price synchronization')}</Button>
     </div>
     {prices.isPending ? <PricingRowsSkeleton /> : prices.error ? <div role='alert' className='space-y-3 text-sm'><p>{t(apiErrorMessage(prices.error, 'Unable to load model prices'))}</p><Button variant='toggle' onClick={refresh}>{t('Retry')}</Button></div> : <>
       {!rows.length && <div className='border-y border-ui-border px-4'><EmptyState icon={BadgeDollarSign} padding='sm' title={t('No model prices configured')} /></div>}
-      <div style={MODEL_PRICING_ROWS_STYLE}><div className='grid'>{visible.map((row) => <fieldset key={row._key} aria-label={t('Price for {{model}}', { model: row.model_name || t('New model') })} disabled={busy || prices.isFetching} style={MODEL_PRICING_ROW_STYLE} className='grid gap-3 border-t border-ui-border py-4'>
-        <div className='grid grid-cols-[minmax(220px,1fr)_minmax(260px,320px)_auto_auto] items-end gap-3'>
-          <label className='grid min-w-0 gap-1 text-[11px] text-ui-text-3'>{t('Model name (supports leading or trailing *)')}<Input aria-label={t('Model name')} value={row.model_name} list='model-pricing-suggestions' onChange={(value) => update(row._key, 'model_name', value)} /></label>
-          <FormField label={t('Billing type')}><Select popover aria-label={t('Billing type')} disabled={busy} value={row.billing_type} options={getBillingTypeOptions(row.billing_type).map((option) => ({ ...option, label: option.value === TOKEN_BILLING || option.value === REQUEST_BILLING ? t(option.label) : t('Invalid type ({{type}})', { type: option.value }) }))} onChange={(value) => update(row._key, 'billing_type', value)} /></FormField>
+      <div className='grid min-w-0'>{visible.map((row) => <fieldset key={row._key} aria-label={t('Price for {{model}}', { model: row.model_name || t('New model') })} disabled={busy || prices.isFetching} className={pricingRowClassName}>
+        <div className='flex min-w-0 flex-wrap items-end gap-3'>
+          <label className='grid min-w-0 flex-[1_1_220px] gap-1 text-[11px] text-ui-text-3'>{t('Model name (supports leading or trailing *)')}<Input aria-label={t('Model name')} value={row.model_name} list='model-pricing-suggestions' onChange={(value) => update(row._key, 'model_name', value)} /></label>
+          <div className='grid min-w-0 gap-1 text-[11px] text-ui-text-3'><label htmlFor={`model-pricing-type-${row._key}`}>{t('Billing type')}</label><Select id={`model-pricing-type-${row._key}`} popover aria-label={t('Billing type')} disabled={busy} value={row.billing_type} options={getBillingTypeOptions(row.billing_type).map((option) => ({ ...option, label: option.value === TOKEN_BILLING || option.value === REQUEST_BILLING ? t(option.label) : t('Invalid type ({{type}})', { type: option.value }) }))} onChange={(value) => update(row._key, 'billing_type', value)} /></div>
           <label className='flex h-9 items-center gap-2 text-sm text-ui-text-2'><Switch size='sm' disabled={busy} checked={row.enabled} onChange={(value) => update(row._key, 'enabled', value)} aria-label={t('Enable model price')} />{t('Enabled')}</label>
-          <div className='flex h-9 items-center gap-2'><Button size='sm' icon={Save} loading={busy && savingId === row._key} disabled={!row._dirty || busy} onClick={() => void save(row)}>{t('Save')}</Button><Button size='sm' variant='secondary' disabled={!row.model_name.trim() || busy} onClick={() => setAdvancedModel(row.model_name.trim())}>{t('Advanced billing')}</Button><Button size='sm' variant='secondary' icon={Trash2} disabled={busy} onClick={() => remove(row)}>{t('Delete')}</Button></div>
+          <div className='flex min-h-9 min-w-0 flex-wrap items-center gap-2'><Button size='sm' icon={Save} loading={busy && savingId === row._key} disabled={!row._dirty || busy} onClick={() => void save(row)}>{t('Save')}</Button><Button size='sm' variant='secondary' disabled={!row.model_name.trim() || busy} onClick={() => setAdvancedModel(row.model_name.trim())}>{t('Advanced billing')}</Button><Button size='sm' variant='secondary' icon={Trash2} disabled={busy} onClick={() => remove(row)}>{t('Delete')}</Button></div>
         </div>
         {!!entries[row.model_name]?.configured['billing_setting.billing_mode'] && <p className='text-xs text-ui-text-3'>{t('Advanced billing is active. These direct prices remain a fallback until the billing configuration changes.')}</p>}
-        <div className={row.billing_type === REQUEST_BILLING ? 'grid max-w-64' : 'grid grid-cols-[repeat(auto-fit,minmax(138px,1fr))] gap-2.5'}>
+        <div className={row.billing_type === REQUEST_BILLING ? 'grid min-w-0 max-w-64' : pricingFieldsClassName}>
           {(row.billing_type === REQUEST_BILLING ? [['request_price', 'Per request']] as [PriceField, string][] : tokenFields).map(([key, label]) => <label key={key} className='grid min-w-0 gap-1 text-[11px] text-ui-text-3'>
             {t(label)} · {row.billing_type === REQUEST_BILLING ? t('USD / request') : 'USD / 1M'}
             <NumberInput aria-label={t(label)} value={row[key]} min={0} step='0.000001' onChange={(value) => update(row._key, key, value)} width='full' />
           </label>)}
         </div>
-      </fieldset>)}</div></div>
+      </fieldset>)}</div>
       {rows.length > 0 && <div className='flex flex-wrap items-center justify-between gap-3'>
         <Select aria-label={t('Prices per page')} value={pageSize} options={[10, 20, 50].map((value) => ({ value, label: t('{{count}} per page', { count: value }) }))} onChange={(value) => { setPageSize(value); setPage(1); }} />
         <div className='min-w-0'><Pagination page={page} pageSize={pageSize} total={rows.length} onChange={setPage} /></div>

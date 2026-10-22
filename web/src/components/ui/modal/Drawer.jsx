@@ -2,7 +2,7 @@
  * Drawer — 顶/底/左/右滑入大面板（非模态、可选 backdrop）
  *
  * placement: top | bottom | left | right (默认)
- * size:      宽（左右）或高（上下），默认 320
+ * size:      上下抽屉的高度，默认 320；左右抽屉统一为 480px。
  */
 
 import { useEffect } from 'react';
@@ -11,6 +11,7 @@ import { X } from 'lucide-react';
 import { cn } from '../tokens';
 import IconButton from '../button/IconButton';
 import useExitTransition from './useExitTransition';
+import { sidePanelStyle } from './side-panel';
 
 const PLACEMENT = {
   top:    { container: 'top-0 left-0 right-0',    sizeKey: 'height' },
@@ -49,20 +50,21 @@ const Drawer = ({
         />
       )}
       <div
+        data-side-panel={p.sizeKey === 'width' ? '' : undefined}
         className={cn(
-          'absolute bg-[var(--page-bg)] shadow-2xl flex flex-col',
+          'absolute min-w-0 bg-[var(--page-bg)] shadow-2xl flex flex-col',
           p.container,
           exiting ? `animate-slide-out-${placement}` : `animate-slide-in-${placement}`,
         )}
-        style={{ [p.sizeKey]: size }}
+        style={p.sizeKey === 'width' ? sidePanelStyle : { height: size, maxHeight: '100dvh' }}
       >
         {title && (
           <div className='flex items-center justify-between gap-3 px-5 pt-4 pb-2 shrink-0'>
-            <div className='text-base font-semibold text-ui-text'>{title}</div>
+            <div className='min-w-0 text-base font-semibold text-ui-text [overflow-wrap:anywhere]'>{title}</div>
             <IconButton icon={X} onClick={onClose} aria-label='close' />
           </div>
         )}
-        <div className='flex-1 overflow-y-auto'>{children}</div>
+        <div className='min-h-0 min-w-0 flex-1 overflow-y-auto'>{children}</div>
       </div>
     </div>,
     document.body,

@@ -181,13 +181,6 @@ test('log detail exposes only request price for request billing', () => {
   assert.deepEqual(fields.map(({ key }) => key), ['request_price']);
 });
 
-test('pricing rows use a horizontal scroll container on narrow screens', () => {
-  assert.equal(editor.MODEL_PRICING_ROWS_STYLE.overflowX, 'auto');
-  assert.equal(editor.MODEL_PRICING_ROWS_STYLE.minWidth, 0);
-  assert.equal(editor.MODEL_PRICING_ROWS_STYLE.width, '100%');
-  assert.match(String(editor.MODEL_PRICING_ROW_STYLE.minWidth), /\d/);
-});
-
 test('direct model price calculation does not expose legacy display mode fields', () => {
   const price = helpers.calculateModelPrice({
     record: { billing_type: 'tokens', input_price: 2, output_price: 8 },

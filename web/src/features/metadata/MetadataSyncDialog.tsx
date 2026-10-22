@@ -41,7 +41,7 @@ export default function MetadataSyncDialog({ onClose, onSaved }: { onClose: () =
     finally { busyRef.current = false; if (!abort.signal.aborted) setBusy(false); }
   };
   const count = Object.keys(selection).length;
-  return <SlideOver open width={780} title='同步上游元数据' onClose={onClose} footer={<div className='flex flex-wrap items-center justify-end gap-3'><span className='text-xs text-ui-text-3'>已选择 {count} 个模型</span><Button variant='primary' loading={busy} disabled={!preview || !count} onClick={apply}>应用所选变更</Button></div>}>
+  return <SlideOver open title='同步上游元数据' onClose={onClose} footer={<div className='flex flex-wrap items-center justify-end gap-3'><span className='text-xs text-ui-text-3'>已选择 {count} 个模型</span><Button variant='primary' loading={busy} disabled={!preview || !count} onClick={apply}>应用所选变更</Button></div>}>
     <div className='space-y-5 p-5'>
       <p className='text-sm text-ui-text-2'>先获取差异，再选择要新增的模型或覆盖的字段。上游或本地数据变化后，需要重新预览。</p>
       <div className='flex flex-wrap items-end gap-3'><Field label='元数据语言'><Select value={locale} disabled={busy} options={[{ value: 'zh', label: '中文' }, { value: 'en', label: 'English' }, { value: 'ja', label: '日本語' }]} onChange={(value) => { setLocale(value); setPreview(undefined); setSelection({}); }} /></Field><Button loading={busy} onClick={load}>获取差异</Button></div>

@@ -158,7 +158,6 @@ const TokenEditModal = ({ open, token, onClose, onSaved, onChanged }: Props) => 
       open={open}
       onClose={onClose}
       title={<span style={{ fontSize: 18, fontWeight: 600, color: 'var(--ui-text)' }}>{isEdit ? t('Edit API key') : t('Create API key settings')}</span>}
-      width={480}
       footer={
         <>
           <Button variant='toggle' onClick={onClose}>{t('Cancel')}</Button>

@@ -1,5 +1,4 @@
 import { z } from 'zod';
-import type { CSSProperties } from 'react';
 
 export const TOKEN_BILLING = 0;
 export const REQUEST_BILLING = 1;
@@ -25,8 +24,6 @@ export const upstreamPricePreviewSchema = z.array(z.object({
 export type SyncPreview = z.infer<typeof upstreamPricePreviewSchema>[number];
 
 export const MODEL_PRICING_REQUEST_CONFIG = Object.freeze({ skipErrorHandler: true });
-export const MODEL_PRICING_ROWS_STYLE: CSSProperties = Object.freeze({ width: '100%', maxWidth: '100%', minWidth: 0, overflowX: 'auto', WebkitOverflowScrolling: 'touch' });
-export const MODEL_PRICING_ROW_STYLE = Object.freeze({ minWidth: 720 });
 const defaults: DirectPrice = { id: 0, model_name: '', billing_type: TOKEN_BILLING, input_price: 0, output_price: 0, cache_read_price: 0, cache_write_price: 0, image_price: 0, audio_input_price: 0, audio_output_price: 0, request_price: 0, enabled: true };
 let nextLocalPricingKey = 0;
 export const createBlankPricingRow = (): PricingRow => ({ ...defaults, _new: true, _dirty: true, _key: `local-${++nextLocalPricingKey}` });
