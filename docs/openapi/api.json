@@ -274,31 +274,6 @@
         ]
       }
     },
-    "/api/home_page_content": {
-      "get": {
-        "summary": "获取首页内容",
-        "deprecated": false,
-        "description": "🔓 无需鉴权",
-        "tags": [
-          "系统"
-        ],
-        "parameters": [],
-        "responses": {
-          "200": {
-            "description": "成功",
-            "headers": {}
-          }
-        },
-        "security": [
-          {
-            "Combination343": []
-          },
-          {
-            "Combination1243": []
-          }
-        ]
-      }
-    },
     "/api/pricing": {
       "get": {
         "summary": "获取定价信息",
@@ -603,31 +578,6 @@
         ]
       }
     },
-    "/api/user/logout": {
-      "get": {
-        "summary": "用户登出",
-        "deprecated": false,
-        "description": "🔓 无需鉴权",
-        "tags": [
-          "用户登陆注册"
-        ],
-        "parameters": [],
-        "responses": {
-          "200": {
-            "description": "成功",
-            "headers": {}
-          }
-        },
-        "security": [
-          {
-            "Combination343": []
-          },
-          {
-            "Combination1243": []
-          }
-        ]
-      }
-    },
     "/api/user/groups": {
       "get": {
         "summary": "获取用户分组列表",
@@ -823,31 +773,6 @@
         ]
       }
     },
-    "/api/oauth/state": {
-      "get": {
-        "summary": "生成OAuth State",
-        "deprecated": false,
-        "description": "🔓 无需鉴权",
-        "tags": [
-          "OAuth"
-        ],
-        "parameters": [],
-        "responses": {
-          "200": {
-            "description": "成功",
-            "headers": {}
-          }
-        },
-        "security": [
-          {
-            "Combination343": []
-          },
-          {
-            "Combination1243": []
-          }
-        ]
-      }
-    },
     "/api/oauth/wechat": {
       "get": {
         "summary": "微信OAuth登录",
@@ -873,105 +798,11 @@
         ]
       }
     },
-    "/api/oauth/wechat/bind": {
-      "get": {
-        "summary": "绑定微信",
-        "deprecated": false,
-        "description": "🔓 无需鉴权",
-        "tags": [
-          "OAuth"
-        ],
-        "parameters": [],
-        "responses": {
-          "200": {
-            "description": "成功",
-            "headers": {}
-          }
-        },
-        "security": [
-          {
-            "Combination343": []
-          },
-          {
-            "Combination1243": []
-          }
-        ]
-      }
-    },
-    "/api/oauth/email/bind": {
-      "get": {
-        "summary": "绑定邮箱",
-        "deprecated": false,
-        "description": "🔓 无需鉴权",
-        "tags": [
-          "OAuth"
-        ],
-        "parameters": [
-          {
-            "name": "email",
-            "in": "query",
-            "description": "",
-            "required": false,
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "code",
-            "in": "query",
-            "description": "",
-            "required": false,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "成功",
-            "headers": {}
-          }
-        },
-        "security": [
-          {
-            "Combination343": []
-          },
-          {
-            "Combination1243": []
-          }
-        ]
-      }
-    },
     "/api/oauth/telegram/login": {
       "get": {
         "summary": "Telegram登录",
         "deprecated": false,
         "description": "🔓 无需鉴权（OAuth回调）",
-        "tags": [
-          "OAuth"
-        ],
-        "parameters": [],
-        "responses": {
-          "200": {
-            "description": "成功",
-            "headers": {}
-          }
-        },
-        "security": [
-          {
-            "Combination343": []
-          },
-          {
-            "Combination1243": []
-          }
-        ]
-      }
-    },
-    "/api/oauth/telegram/bind": {
-      "get": {
-        "summary": "绑定Telegram",
-        "deprecated": false,
-        "description": "🔓 无需鉴权",
         "tags": [
           "OAuth"
         ],
@@ -1114,31 +945,6 @@
     "/api/user/models": {
       "get": {
         "summary": "获取用户可用模型",
-        "deprecated": false,
-        "description": "🔐 需要登录（User权限）",
-        "tags": [
-          "用户管理"
-        ],
-        "parameters": [],
-        "responses": {
-          "200": {
-            "description": "成功",
-            "headers": {}
-          }
-        },
-        "security": [
-          {
-            "Combination343": []
-          },
-          {
-            "Combination1243": []
-          }
-        ]
-      }
-    },
-    "/api/user/token": {
-      "get": {
-        "summary": "生成访问令牌",
         "deprecated": false,
         "description": "🔐 需要登录（User权限）",
         "tags": [
@@ -2245,31 +2051,6 @@
     "/api/verify": {
       "post": {
         "summary": "通用安全验证",
-        "deprecated": false,
-        "description": "🔐 需要登录（User权限）",
-        "tags": [
-          "安全验证"
-        ],
-        "parameters": [],
-        "responses": {
-          "200": {
-            "description": "成功",
-            "headers": {}
-          }
-        },
-        "security": [
-          {
-            "Combination343": []
-          },
-          {
-            "Combination1243": []
-          }
-        ]
-      }
-    },
-    "/api/verify/status": {
-      "get": {
-        "summary": "获取验证状态",
         "deprecated": false,
         "description": "🔐 需要登录（User权限）",
         "tags": [
@@ -3913,41 +3694,6 @@
         ]
       }
     },
-    "/api/log/search": {
-      "get": {
-        "summary": "搜索日志",
-        "deprecated": false,
-        "description": "👨‍💼 需要管理员权限（Admin）",
-        "tags": [
-          "日志"
-        ],
-        "parameters": [
-          {
-            "name": "keyword",
-            "in": "query",
-            "description": "",
-            "required": false,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "成功",
-            "headers": {}
-          }
-        },
-        "security": [
-          {
-            "Combination343": []
-          },
-          {
-            "Combination1243": []
-          }
-        ]
-      }
-    },
     "/api/log/self": {
       "get": {
         "summary": "获取个人日志",
@@ -3957,41 +3703,6 @@
           "日志"
         ],
         "parameters": [],
-        "responses": {
-          "200": {
-            "description": "成功",
-            "headers": {}
-          }
-        },
-        "security": [
-          {
-            "Combination343": []
-          },
-          {
-            "Combination1243": []
-          }
-        ]
-      }
-    },
-    "/api/log/self/search": {
-      "get": {
-        "summary": "搜索个人日志",
-        "deprecated": false,
-        "description": "🔐 需要登录（User权限）",
-        "tags": [
-          "日志"
-        ],
-        "parameters": [
-          {
-            "name": "keyword",
-            "in": "query",
-            "description": "",
-            "required": false,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
         "responses": {
           "200": {
             "description": "成功",
@@ -4800,31 +4511,6 @@
         ]
       }
     },
-    "/api/option/migrate_console_setting": {
-      "post": {
-        "summary": "迁移控制台设置",
-        "deprecated": false,
-        "description": "👑 需要超级管理员权限（Root）",
-        "tags": [
-          "系统设置"
-        ],
-        "parameters": [],
-        "responses": {
-          "200": {
-            "description": "成功",
-            "headers": {}
-          }
-        },
-        "security": [
-          {
-            "Combination343": []
-          },
-          {
-            "Combination1243": []
-          }
-        ]
-      }
-    },
     "/api/model-pricing": {
       "get": {
         "summary": "获取模型原价列表",
@@ -5255,44 +4941,6 @@
             "type": "string"
           },
           "data": {}
-        }
-      },
-      "PageInfo": {
-        "type": "object",
-        "properties": {
-          "page": {
-            "type": "integer"
-          },
-          "page_size": {
-            "type": "integer"
-          },
-          "total": {
-            "type": "integer"
-          },
-          "items": {
-            "type": "array",
-            "items": {}
-          }
-        }
-      },
-      "Log": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "integer"
-          },
-          "user_id": {
-            "type": "integer"
-          },
-          "type": {
-            "type": "integer"
-          },
-          "content": {
-            "type": "string"
-          },
-          "created_at": {
-            "type": "integer"
-          }
         }
       },
       "User": {

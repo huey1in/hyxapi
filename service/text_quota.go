@@ -5,6 +5,8 @@ import (
 	"strings"
 	"time"
 
+	relaytypes "github.com/QuantumNous/new-api/relaykit/types"
+
 	"github.com/QuantumNous/new-api/common"
 	"github.com/QuantumNous/new-api/constant"
 	"github.com/QuantumNous/new-api/logger"
@@ -14,7 +16,6 @@ import (
 	"github.com/QuantumNous/new-api/relaykit/dto"
 	"github.com/QuantumNous/new-api/setting/operation_setting"
 	"github.com/QuantumNous/new-api/setting/ratio_setting"
-	"github.com/QuantumNous/new-api/types"
 
 	"github.com/gin-gonic/gin"
 	"github.com/shopspring/decimal"
@@ -241,7 +242,7 @@ func usageSemanticFromUsage(relayInfo *relaycommon.RelayInfo, usage *dto.Usage) 
 	if usage != nil && usage.UsageSemantic != "" {
 		return usage.UsageSemantic
 	}
-	if relayInfo != nil && relayInfo.GetFinalRequestRelayFormat() == types.RelayFormatClaude {
+	if relayInfo != nil && relayInfo.GetFinalRequestRelayFormat() == relaytypes.RelayFormatClaude {
 		return "anthropic"
 	}
 	return "openai"
@@ -373,7 +374,7 @@ func PostTextConsumeQuota(ctx *gin.Context, relayInfo *relaycommon.RelayInfo, us
 		// to cache_creation_tokens.
 		other["cache_write_tokens"] = cacheWriteTokens
 	}
-	if relayInfo.GetFinalRequestRelayFormat() != types.RelayFormatClaude && usage != nil && usage.UsageSource != "" && usage.InputTokens > 0 {
+	if relayInfo.GetFinalRequestRelayFormat() != relaytypes.RelayFormatClaude && usage != nil && usage.UsageSource != "" && usage.InputTokens > 0 {
 		// input_tokens_total: explicit normalized total input used by the usage log UI.
 		// Only write this field when upstream/current conversion has already provided a
 		// reliable total input value and tagged the usage source. Do not infer it from

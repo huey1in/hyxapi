@@ -1,4 +1,4 @@
-export type SidebarItem = { to?: string; label?: string; divider?: boolean; admin?: boolean; root?: boolean };
+type SidebarItem = { to?: string; label?: string; divider?: boolean; admin?: boolean; root?: boolean };
 type Options = { admin?: boolean; root?: boolean; isVisible?: (path: string) => boolean };
 export const filterSidebarItems = <T extends SidebarItem>(items: T[], { admin, root, isVisible }: Options): T[] =>
   items.filter((item) => {

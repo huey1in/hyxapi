@@ -2,11 +2,6 @@ package perfmetrics
 
 import "sync/atomic"
 
-type Store interface {
-	Record(sample Sample)
-	Query(params QueryParams) (QueryResult, error)
-}
-
 type Sample struct {
 	Model        string
 	Group        string

@@ -75,9 +75,6 @@ func (v *Vendor) Update() error {
 	return err
 }
 
-// Delete rejects referenced vendors rather than leaving orphaned model records.
-func (v *Vendor) Delete() error { return DeleteVendors([]int{v.Id}) }
-
 // GetVendorByID 根据 ID 获取供应商
 func GetVendorByID(id int) (*Vendor, error) {
 	var v Vendor

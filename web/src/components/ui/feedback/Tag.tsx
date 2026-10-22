@@ -30,7 +30,7 @@ const TONE_DOT: Record<string, string> = {
   grey:    'bg-ui-text-3',
 };
 
-export interface TagProps { children?: ReactNode; tone?: string; color?: string; size?: keyof typeof SIZE; dot?: boolean; closable?: boolean; onClose?: MouseEventHandler<HTMLButtonElement> }
+interface TagProps { children?: ReactNode; tone?: string; color?: string; size?: keyof typeof SIZE; dot?: boolean; closable?: boolean; onClose?: MouseEventHandler<HTMLButtonElement> }
 
 const Tag = ({
   children,

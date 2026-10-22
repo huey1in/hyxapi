@@ -11,7 +11,7 @@ export type Model = {
 export type Page<T> = { items: T[]; total: number };
 export type Operation = { action: 'assign' | 'merge' | 'delete'; vendor_ids?: number[]; model_ids?: number[]; target_vendor_id?: number };
 export type OperationPreview = { version: string; models: { id: number; model_name: string; vendor_name: string }[]; sources: Vendor[]; target?: Vendor };
-export type SyncField = { field: string; local: unknown; upstream: unknown };
+type SyncField = { field: string; local: unknown; upstream: unknown };
 export type SyncCandidate = { model_name: string; kind: string; scope: string; record_version: string; fields: SyncField[]; vendor_to_create?: string };
 export type SyncPreview = { source: { locale: string; version: string; models_url: string }; candidates: SyncCandidate[] };
 

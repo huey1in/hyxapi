@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-export const personalTokenSchema = z.object({
+const personalTokenSchema = z.object({
   id: z.number().int().positive(), name: z.string(), token_ref: z.string(), token_hint: z.string(),
   scopes: z.array(z.string()), expires_at: z.number(), last_used_at: z.number(),
   last_used_ip: z.string().nullish().transform((value) => value ?? ''), created_at: z.number(),

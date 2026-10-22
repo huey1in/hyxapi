@@ -24,7 +24,7 @@ export type VerificationMethod =
   | 'password'
   | 'oauth'
   | 'session'
-export type SecurityProofScope =
+type SecurityProofScope =
   | 'channel.key.read'
   | 'passkey.register'
   | 'passkey.delete'
@@ -48,7 +48,7 @@ export type SecurityProofScope =
   | 'admin.user.binding.clear'
 
 /** ManageUser actions that change a user's status or role and need step-up. */
-export type AdminUserManageAction = 'disable' | 'enable' | 'promote' | 'demote'
+type AdminUserManageAction = 'disable' | 'enable' | 'promote' | 'demote'
 
 export type VerificationOperation =
   | { scope: 'channel.key.read'; context: { channel_id: number } }

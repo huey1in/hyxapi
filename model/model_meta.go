@@ -319,11 +319,6 @@ func SetModelMetadataStatus(id, status int) error {
 	})
 }
 
-func (mi *Model) Delete() error {
-	_, err := DeleteModelMetadata([]int{mi.Id}, false, false)
-	return err
-}
-
 type ModelDeleteResult struct {
 	DeletedCount    int `json:"deleted_count"`
 	UpdatedChannels int `json:"updated_channels"`

@@ -2,11 +2,11 @@ import { z } from 'zod';
 import { usageSchema } from '../../../features/pricing/catalog-data';
 
 const numericKeys = new Set(['ModelRatio', 'CompletionRatio', 'CacheRatio', 'CreateCacheRatio', 'ImageRatio', 'AudioRatio', 'AudioCompletionRatio', 'ModelPrice']);
-export const pricingValuesSchema = z.record(z.string(), z.union([z.number().finite().nonnegative(), z.string(), z.record(z.string(), z.string())])).superRefine((values, context) => {
+const pricingValuesSchema = z.record(z.string(), z.union([z.number().finite().nonnegative(), z.string(), z.record(z.string(), z.string())])).superRefine((values, context) => {
   for (const [key, value] of Object.entries(values)) if (numericKeys.has(key) && typeof value !== 'number') context.addIssue({ code: 'custom', path: [key], message: 'Invalid numeric price' });
 });
 const usageExamples = z.array(z.object({ label: z.string(), facts: z.record(z.string(), z.union([z.string(), z.number().finite(), z.boolean()])) }));
-export const pricingEntrySchema = z.object({
+const pricingEntrySchema = z.object({
   model_name: z.string().min(1), version: z.string().min(1), configured: pricingValuesSchema, effective: pricingValuesSchema.default({}), source: z.string(),
   direct: z.object({ model_name: z.string() }).optional(), usage_schema: usageSchema.optional(),
   plugin_variants: z.array(z.object({

@@ -1,7 +1,7 @@
 import { personalSettingsChanges } from './personal-settings';
 import type { NotificationForm, PreferenceErrors, PreferenceField, PreferencePatch } from './personal-settings';
 
-export interface PreferenceSnapshot {
+interface PreferenceSnapshot {
   form: NotificationForm;
   errors: PreferenceErrors;
   saving: boolean;

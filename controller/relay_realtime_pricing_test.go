@@ -3,36 +3,37 @@ package controller
 import (
 	"testing"
 
+	relaytypes "github.com/QuantumNous/new-api/relaykit/types"
+
 	"github.com/QuantumNous/new-api/model"
-	"github.com/QuantumNous/new-api/types"
 	"github.com/stretchr/testify/require"
 )
 
 func TestRelayPreConsumeQuota(t *testing.T) {
 	tests := []struct {
 		name        string
-		relayFormat types.RelayFormat
+		relayFormat relaytypes.RelayFormat
 		billingType int
 		standard    int
 		want        int
 	}{
 		{
 			name:        "token billed realtime establishes funding without reserving usage quota",
-			relayFormat: types.RelayFormatOpenAIRealtime,
+			relayFormat: relaytypes.RelayFormatOpenAIRealtime,
 			billingType: model.ModelPricingBillingToken,
 			standard:    37,
 			want:        0,
 		},
 		{
 			name:        "request billed realtime reserves its one request charge",
-			relayFormat: types.RelayFormatOpenAIRealtime,
+			relayFormat: relaytypes.RelayFormatOpenAIRealtime,
 			billingType: model.ModelPricingBillingRequest,
 			standard:    37,
 			want:        37,
 		},
 		{
 			name:        "non realtime token billing keeps standard reservation",
-			relayFormat: types.RelayFormatOpenAI,
+			relayFormat: relaytypes.RelayFormatOpenAI,
 			billingType: model.ModelPricingBillingToken,
 			standard:    37,
 			want:        37,

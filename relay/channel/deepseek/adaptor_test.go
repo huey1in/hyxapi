@@ -3,11 +3,12 @@ package deepseek
 import (
 	"testing"
 
+	relaytypes "github.com/QuantumNous/new-api/relaykit/types"
+
 	relaycommon "github.com/QuantumNous/new-api/relay/common"
 	"github.com/QuantumNous/new-api/relay/constant"
 	"github.com/QuantumNous/new-api/relay/helper"
 	"github.com/QuantumNous/new-api/relaykit/dto"
-	"github.com/QuantumNous/new-api/types"
 	"github.com/stretchr/testify/require"
 )
 
@@ -15,7 +16,7 @@ func TestGetRequestURL(t *testing.T) {
 	adaptor := &Adaptor{}
 
 	claudeURL, err := adaptor.GetRequestURL(&relaycommon.RelayInfo{
-		RelayFormat: types.RelayFormatClaude,
+		RelayFormat: relaytypes.RelayFormatClaude,
 		ChannelMeta: &relaycommon.ChannelMeta{ChannelBaseUrl: "https://api.deepseek.com"},
 	})
 	require.NoError(t, err)

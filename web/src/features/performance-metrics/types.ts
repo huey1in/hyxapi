@@ -1,14 +1,14 @@
-export type Summary = { avg_latency_ms: number; success_rate: number; avg_tps: number };
+type Summary = { avg_latency_ms: number; success_rate: number; avg_tps: number };
 export type SuccessPoint = { ts: number; success_rate: number };
 export type SeriesPoint = SuccessPoint & { avg_ttft_ms: number; avg_latency_ms: number; avg_tps: number };
 export type ModelSummary = Summary & { model_name: string; recent_success_series?: SuccessPoint[] };
-export type SummaryResult = {
+type SummaryResult = {
   models: ModelSummary[];
   recent_success_series?: Record<string, SuccessPoint[]>;
   window_start: number;
   window_end: number;
 };
-export type ModelResult = {
+type ModelResult = {
   model_name: string;
   series_schema: string;
   summary: Summary | null;

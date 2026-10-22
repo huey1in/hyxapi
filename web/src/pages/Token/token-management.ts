@@ -5,7 +5,7 @@ export const TOKEN_PAGE_SIZE = 10;
 
 const flag = z.preprocess((value) => value === 1 ? true : value === 0 ? false : value, z.boolean()).default(false);
 const text = z.string().nullish().transform((value) => value ?? '');
-export const tokenListItemSchema = z.object({
+const tokenListItemSchema = z.object({
   id: z.number().int().positive(), name: z.string(), key: z.string(), status: z.number().int().default(1),
   created_time: z.number().finite().default(0), accessed_time: z.number().finite().default(0),
 });

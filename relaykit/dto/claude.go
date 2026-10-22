@@ -166,10 +166,6 @@ func (c *ClaudeMessage) GetStringContent() string {
 	return ""
 }
 
-func (c *ClaudeMessage) SetStringContent(content string) {
-	c.Content = content
-}
-
 func (c *ClaudeMessage) SetContent(content any) {
 	c.Content = content
 }
@@ -183,12 +179,6 @@ type Tool struct {
 	Description string         `json:"description,omitempty"`
 	InputSchema map[string]any `json:"input_schema"`
 	Strict      *bool          `json:"strict,omitempty"`
-}
-
-type InputSchema struct {
-	Type       string `json:"type"`
-	Properties any    `json:"properties,omitempty"`
-	Required   any    `json:"required,omitempty"`
 }
 
 type ClaudeWebSearchTool struct {
@@ -551,11 +541,6 @@ type ClaudeResponse struct {
 	ContentBlock *ClaudeMediaMessage  `json:"content_block,omitempty"`
 	Delta        *ClaudeMediaMessage  `json:"delta,omitempty"`
 	Message      *ClaudeMediaMessage  `json:"message,omitempty"`
-}
-
-// set index
-func (c *ClaudeResponse) SetIndex(i int) {
-	c.Index = &i
 }
 
 // get index

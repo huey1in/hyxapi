@@ -27,7 +27,7 @@ import {
   type TokenVariable,
 } from './types.ts'
 
-export type TokenTierCondition = {
+type TokenTierCondition = {
   var: 'p' | 'c' | 'len'
   op: '<' | '<=' | '>' | '>='
   value: number
@@ -41,7 +41,7 @@ export type TokenTier = {
   conditions: TokenTierCondition[]
   prices: Partial<Record<TokenVariable, number>>
 }
-export type TimeTokenTier = TokenTier & {
+type TimeTokenTier = TokenTier & {
   conditionText: string
   timeConditions: { condition: ExpressionNode; matches: boolean }[]
 }
@@ -243,7 +243,7 @@ export function readTokenTierChain(node: ExpressionNode): TokenTier[] | null {
   return [...tiers, fallback]
 }
 
-export function isTimeCondition(node: ExpressionNode): boolean {
+function isTimeCondition(node: ExpressionNode): boolean {
   const dependencies = expressionDependencies(node)
   return (
     dependencies.variables.size === 0 &&

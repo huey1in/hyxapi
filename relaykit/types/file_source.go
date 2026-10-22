@@ -19,7 +19,6 @@ type FileSource interface {
 	SetCache(data *CachedFileData)
 	GetCache() *CachedFileData
 	HasCache() bool
-	ClearCache()
 
 	IsRegistered() bool
 	SetRegistered(registered bool)
@@ -45,14 +44,6 @@ func (b *baseFileSource) GetCache() *CachedFileData {
 
 func (b *baseFileSource) HasCache() bool {
 	return b.cacheLoaded && b.cachedData != nil
-}
-
-func (b *baseFileSource) ClearCache() {
-	if b.cachedData != nil {
-		b.cachedData.Close()
-	}
-	b.cachedData = nil
-	b.cacheLoaded = false
 }
 
 func (b *baseFileSource) IsRegistered() bool {
@@ -194,10 +185,6 @@ func (c *CachedFileData) GetBase64Data() (string, error) {
 		return "", fmt.Errorf("failed to read from disk cache: %w", err)
 	}
 	return string(data), nil
-}
-
-func (c *CachedFileData) IsDisk() bool {
-	return c.isDisk
 }
 
 func (c *CachedFileData) Close() error {

@@ -14,7 +14,7 @@ import type { InputHTMLAttributes, ChangeEvent, CSSProperties } from 'react';
 import { inputStyle, resolveWidth } from './Input';
 import { cn } from '../tokens';
 
-export interface NumberInputProps extends Omit<InputHTMLAttributes<HTMLInputElement>, 'value' | 'onChange' | 'size' | 'width'> {
+interface NumberInputProps extends Omit<InputHTMLAttributes<HTMLInputElement>, 'value' | 'onChange' | 'size' | 'width'> {
   value?: number | '' | null;
   onChange?: (value: number | '') => void;
   invalid?: boolean;

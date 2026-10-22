@@ -10,7 +10,7 @@ export const feedItemSchema = z.discriminatedUnion('source', [
   z.object({ ...base, source: z.literal('midjourney'), midjourney: midjourneySchema }),
 ]);
 export const feedPageSchema = z.object({ items: z.array(feedItemSchema), total: z.number().int().nonnegative().safe(), next_cursor: z.string() });
-export type FeedItem = z.infer<typeof feedItemSchema>;
+type FeedItem = z.infer<typeof feedItemSchema>;
 export function projectFeedItem(item: FeedItem, role: number) {
   if (item.source === 'usage') return { ...item, log: enrichLog(item.log, role) };
   if (item.source === 'tasks') return { ...item, task: projectTaskRow(item.task, role) };

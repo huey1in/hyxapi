@@ -9,8 +9,6 @@ import (
 	"github.com/samber/lo"
 )
 
-var EffortSuffixes = []string{"-max", "-xhigh", "-high", "-medium", "-low", "-minimal"}
-
 var OpenAIEffortSuffixes = []string{"-max", "-xhigh", "-high", "-medium", "-low", "-minimal", "-none"}
 
 var DeepSeekV4EffortSuffixes = []string{"-none", "-low", "-max"}
@@ -213,11 +211,6 @@ func splitModelNamespace(modelName string) (string, string) {
 func lastModelPathSegment(modelName string) string {
 	_, bare := splitModelNamespace(modelName)
 	return bare
-}
-
-func TrimGeminiThinkingSuffix(modelName string) (string, bool) {
-	baseModel, _, ok, err := ParseGeminiModelSuffix(modelName, true)
-	return baseModel, ok && err == nil
 }
 
 // parseProviderModelSuffix recognises a provider family's naked model-name

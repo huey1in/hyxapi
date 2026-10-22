@@ -29,19 +29,19 @@ import {
   type LoginSession,
 } from '../stores/auth-store'
 
-export type RefreshOutcome =
+type RefreshOutcome =
   | { kind: 'authenticated'; bundle: AuthBundle }
   | { kind: 'anonymous' }
   | { kind: 'transient_error'; error: unknown }
   | { kind: 'out_of_sync'; code?: string }
 
-export interface AuthRefreshHTTPResponse {
+interface AuthRefreshHTTPResponse {
   status: number
   data?: unknown
   error?: unknown
 }
 
-export interface AuthRefreshRuntime {
+interface AuthRefreshRuntime {
   request: (expectedSID?: string) => Promise<AuthRefreshHTTPResponse>
   getExpectedSID: () => string | undefined
   parseBundle: (value: unknown) => AuthBundle | null
@@ -52,14 +52,14 @@ export interface AuthRefreshRuntime {
   isCurrent?: () => boolean
 }
 
-export interface AuthTokenRotation {
+interface AuthTokenRotation {
   access_token: string
   token_type: string
   access_expires_at: number
   session: LoginSession
 }
 
-export class AuthRotationError extends Error {
+class AuthRotationError extends Error {
   constructor(message: string) {
     super(message)
     this.name = 'AuthRotationError'
@@ -398,7 +398,7 @@ export async function bootstrapAuthentication(): Promise<RefreshOutcome> {
   return resolveAuthentication()
 }
 
-export function getCommonHeaders(): Record<string, string> {
+function getCommonHeaders(): Record<string, string> {
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
   }

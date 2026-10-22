@@ -31,7 +31,7 @@ export interface PasskeyDomains {
   rpIDs: string[]
 }
 
-export interface PasskeySelection {
+interface PasskeySelection {
   rpID?: string
   onDomains?: (domains: PasskeyDomains) => void
 }

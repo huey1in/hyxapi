@@ -13,7 +13,7 @@ import type { CSSProperties, ChangeEvent, ReactNode, TextareaHTMLAttributes } fr
 import { cn } from '../tokens';
 import { inputStyle, resolveWidth } from './Input';
 
-export interface TextareaProps extends Omit<TextareaHTMLAttributes<HTMLTextAreaElement>, 'onChange'> {
+interface TextareaProps extends Omit<TextareaHTMLAttributes<HTMLTextAreaElement>, 'onChange'> {
   onChange?: (value: string, event?: ChangeEvent<HTMLTextAreaElement>) => void;
   autoResize?: boolean;
   invalid?: boolean;

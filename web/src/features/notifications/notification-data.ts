@@ -1,12 +1,12 @@
 import { z } from 'zod';
 
 const text = z.string().nullish().transform((value) => value ?? '');
-export const announcementSchema = z.object({
+const announcementSchema = z.object({
   id: z.union([z.string(), z.number()]).nullish(), content: z.string(), publishDate: text,
   extra: text, type: text, title: text, link: text,
 });
-export type Announcement = z.infer<typeof announcementSchema>;
-export type NotificationReadState = { announcements: string[] };
+type Announcement = z.infer<typeof announcementSchema>;
+type NotificationReadState = { announcements: string[] };
 const readSchema = z.object({ announcements: z.array(z.string()).catch([]) });
 export function parseNotificationReadState(raw: string): NotificationReadState {
   try { const result = readSchema.safeParse(JSON.parse(raw)); if (result.success) return result.data; } catch { /* optional browser storage */ }

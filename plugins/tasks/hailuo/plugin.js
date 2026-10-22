@@ -517,21 +517,21 @@ export const native = {
     return { kind: "submit", model: body.model, action: h3HasVisualContent(content) ? "image_to_video" : "text_to_video", requestBody: requestBody };
   },
   // MiniMax answers /v1 with a base_resp envelope and /v2 with a bare task_id.
-  taskCreated: function (ctx, task) {
+  taskCreated: function (_ctx, task) {
     return Object.assign({}, plainObject(task.data) || {}, { task_id: task.task_id });
   },
   // A status route answers with the latest MiniMax snapshot. Before the first
   // poll that is the create response, which has no status, and the poller can
   // fail a task whose snapshot was still running; both take their status from
   // the task, so a downstream gateway reads the same state.
-  taskStatus: function (ctx, task) {
+  taskStatus: function (_ctx, task) {
     const data = plainObject(task.data) || {};
     const output = Object.assign({}, data, { task_id: task.task_id });
     if (task.status === "FAILURE") output.status = "Fail";
     else if (typeof data.status !== "string") output.status = task.status === "IN_PROGRESS" ? "Processing" : "Queueing";
     return output;
   },
-  h3TaskStatus: function (ctx, task) {
+  h3TaskStatus: function (_ctx, task) {
     const data = plainObject(task.data) || {};
     if (h3APIError(data)) return data;
     const current = h3QueryTask(data);
@@ -545,7 +545,7 @@ export const native = {
     return Object.assign({}, data, { task: output });
   },
   // MiniMax reports a rejected call in base_resp on both versions.
-  error: function (ctx, error) {
+  error: function (_ctx, error) {
     return { base_resp: { status_code: error.httpStatus, status_msg: error.message } };
   },
 };
@@ -646,7 +646,7 @@ export function buildQueryRequest(ctx) {
   };
 }
 
-export function parseTaskResult(ctx, body) {
+export function parseTaskResult(_ctx, body) {
   const apiError = h3APIError(body);
   if (apiError) {
     if (apiError.statusCode === 408 || apiError.statusCode === 429 || apiError.statusCode >= 500) throw new Error(apiError.message);
@@ -911,7 +911,7 @@ protocols.openai_video = {
       requestBody: Object.assign({}, req, { model: ctx.model }),
     };
   },
-  render: function (ctx, task) {
+  render: function (_ctx, task) {
     return legacyRenderers.openai_video(task);
   },
 };

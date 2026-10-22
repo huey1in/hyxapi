@@ -1,4 +1,4 @@
-export interface ChannelTypeOption { value: number; label: string }
+interface ChannelTypeOption { value: number; label: string }
 
 export const CHANNEL_TYPE_OPTIONS: ChannelTypeOption[] = [
   { value: 1, label: 'OpenAI' },

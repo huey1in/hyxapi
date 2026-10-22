@@ -4,13 +4,14 @@
 # sudo systemctl enable new-api
 # sudo systemctl status new-api
 [Unit]
-Description=One API Service
+Description=HyxAPI Service
 After=network.target
 
 [Service]
-User=ubuntu  # 注意修改用户名
-WorkingDirectory=/path/to/new-api  # 注意修改路径
-ExecStart=/path/to/new-api/new-api --port 3000 --log-dir /path/to/new-api/logs  # 注意修改路径和端口号
+# Change the user, paths, and port for your installation.
+User=ubuntu
+WorkingDirectory=/path/to/new-api
+ExecStart=/path/to/new-api/new-api --port 3000 --log-dir /path/to/new-api/logs
 Restart=always
 RestartSec=5
 

@@ -117,7 +117,7 @@ export function buildSubmitRequest(ctx) {
   return { url: ctx.baseUrl + "/v1/videos", method: "POST", headers, body: requestValues(req, ctx.upstreamModel) };
 }
 
-export function parseSubmitResponse(ctx, resp) {
+export function parseSubmitResponse(_ctx, resp) {
   const body = resp.body || {};
   const taskId = body.id || body.task_id;
   if (!taskId) throw new Error("task_id is empty");
@@ -132,7 +132,7 @@ export function extractUsage(ctx) {
   return { seconds: Math.min(seconds, 3600), size: req.size || "720x1280" };
 }
 
-export function extractUsageOnComplete(task, taskResult, body) {
+export function extractUsageOnComplete(_task, _taskResult, body) {
   const facts = {};
   const seconds = Number((body || {}).seconds || (body || {}).duration || 0);
   if (Number.isFinite(seconds) && seconds > 0) facts.seconds = Math.min(seconds, 3600);
@@ -145,7 +145,7 @@ export function buildQueryRequest(ctx) {
   return { url: ctx.baseUrl + "/v1/videos/" + ctx.taskId, method: "GET", headers: { Authorization: "Bearer " + ctx.apiKey } };
 }
 
-export function parseTaskResult(ctx, body) {
+export function parseTaskResult(_ctx, body) {
   const statuses = {
     queued: "QUEUED",
     pending: "QUEUED",
@@ -310,7 +310,7 @@ protocols.openai_video = {
       requestBody: Object.assign({}, req, { model: ctx.model }),
     };
   },
-  render: function (ctx, task) {
+  render: function (_ctx, task) {
     if (task.data && typeof task.data === "object" && !Array.isArray(task.data)) return task.data;
     return legacyRenderers.openai_video(task);
   },

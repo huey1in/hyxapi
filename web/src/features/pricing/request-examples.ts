@@ -1,6 +1,6 @@
 export type ExampleLanguage = 'curl' | 'python' | 'typescript' | 'javascript';
 export interface EndpointInfo { path: string; method: string }
-export interface ModelRequest { url: string; method: string; headers: Record<string, string>; body?: Record<string, unknown> }
+interface ModelRequest { url: string; method: string; headers: Record<string, string>; body?: Record<string, unknown> }
 
 export function buildModelRequest(model: string, endpoint: string, info: EndpointInfo | undefined, origin: string): ModelRequest | null {
   if (!info || !info.path.startsWith('/') || info.path.startsWith('//') || /[\s\\\x00-\x1f\x7f]/.test(info.path)) return null;

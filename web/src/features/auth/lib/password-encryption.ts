@@ -25,7 +25,7 @@ interface PasswordEncryptionKey {
   public_key: string
 }
 
-export interface EncryptedPassword {
+interface EncryptedPassword {
   password_encrypted: string
   encryption_key_id: string
 }
@@ -35,7 +35,7 @@ const KEY_CACHE_TTL_MS = 5 * 60_000
 let cachedKey: PasswordEncryptionKey | null = null
 let cachedAt = 0
 
-export function clearPasswordEncryptionCache(): void {
+function clearPasswordEncryptionCache(): void {
   cachedKey = null
   cachedAt = 0
 }

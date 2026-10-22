@@ -374,7 +374,7 @@ export function buildQueryRequest(ctx) {
   return { url: url, method: "POST", headers: requestHeaders(ctx, "POST", url, body), body: body };
 }
 
-export function parseTaskResult(ctx, body) {
+export function parseTaskResult(_ctx, body) {
   const data = body.data || {};
   if (body.code !== 10000) {
     return { code: body.code || 0, status: "FAILURE", progress: "100%", reason: body.message || "" };
@@ -553,17 +553,17 @@ protocols.openai_video = {
       requestBody: Object.assign({}, req, { model: ctx.model }),
     };
   },
-  render: function (ctx, task) {
+  render: function (_ctx, task) {
     return legacyRenderers.openai_video(task);
   },
 };
 
 export const native = {
   decodeRequest: decodeNativeRequest,
-  renderTask: function (ctx, tasks) {
+  renderTask: function (_ctx, tasks) {
     return legacyRenderers.jimeng_native(tasks);
   },
-  error: function (ctx, error) {
+  error: function (_ctx, error) {
     return { code: error.httpStatus, message: error.message };
   },
 };

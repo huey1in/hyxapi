@@ -11,7 +11,7 @@ import { TIME_FUNCTIONS } from '../../../features/pricing/lib/billing-expression
 import { Input, Select, Textarea, variableLabels } from './controls';
 
 const matchLabels: Record<string, string> = { eq: 'Equals', contains: 'Contains', gt: 'Greater than', gte: 'Greater than or equal', lt: 'Less than', lte: 'Less than or equal', exists: 'Exists', range: 'Time range (may cross midnight)' };
-export function requestRuleError(groups: RequestRuleGroup[]): string {
+function requestRuleError(groups: RequestRuleGroup[]): string {
   for (const group of groups) {
     if (group.multiplier.trim() === '' || !Number.isFinite(Number(group.multiplier)) || Number(group.multiplier) < 0) return 'Rule multipliers must be finite non-negative numbers';
     if (!group.conditions.length) return 'Each multiplier rule needs at least one condition';

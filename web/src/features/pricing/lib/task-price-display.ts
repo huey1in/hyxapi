@@ -33,7 +33,7 @@ import { formatBillingCondition } from './billing-expression/condition-display.t
 import { compileBillingExpression } from './billing-expression/parser.ts'
 import { visitExpression } from './billing-expression/types.ts'
 
-export function taskPriceLabel(
+function taskPriceLabel(
   description: LocalizedTextValue | undefined,
   field: string,
   language: string
@@ -45,7 +45,7 @@ export function taskPriceLabel(
   return resolveLocalizedText(localized, language) || field
 }
 
-export function taskEnumLabel(
+function taskEnumLabel(
   definition: BillingUsageFieldSchema | undefined,
   value: string,
   language: string
@@ -53,7 +53,7 @@ export function taskEnumLabel(
   return taskPriceLabel(definition?.enumLabels?.[value], value, language)
 }
 
-export function taskPricingConditions(
+function taskPricingConditions(
   conditions: TaskTierCondition[],
   schema: BillingUsageSchema | undefined,
   language: string,

@@ -82,14 +82,14 @@ export type ExpressionNode = (
     }
 ) & { start: number; end: number }
 
-export type DiagnosticCode =
+type DiagnosticCode =
   | 'syntax'
   | 'unsupported'
   | 'missing_context'
   | 'type'
   | 'number'
   | 'limit'
-export type ExpressionDiagnostic = {
+type ExpressionDiagnostic = {
   code: DiagnosticCode
   detail: string
   position?: number
@@ -121,7 +121,7 @@ export type CompiledBillingExpression = {
     cond: string
   }[]
 }
-export type ExpressionFailure = {
+type ExpressionFailure = {
   status: 'unsupported' | 'invalid' | 'missing_context'
   diagnostic: ExpressionDiagnostic
 }

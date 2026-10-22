@@ -32,7 +32,7 @@ type NodeBufferCtor = {
   from(input: string, encoding: string): { toString(encoding: string): string }
 }
 
-export function base64UrlToArrayBuffer(value?: string | null): ArrayBuffer {
+function base64UrlToArrayBuffer(value?: string | null): ArrayBuffer {
   if (!value) return new ArrayBuffer(0)
 
   const padding = '='.repeat((4 - (value.length % 4)) % 4)
@@ -68,7 +68,7 @@ export function base64UrlToArrayBuffer(value?: string | null): ArrayBuffer {
 /**
  * Convert an ArrayBuffer to a base64url string.
  */
-export function arrayBufferToBase64Url(
+function arrayBufferToBase64Url(
   buffer?: ArrayBuffer | ArrayBufferLike | null
 ): string {
   if (!buffer) return ''

@@ -2,7 +2,7 @@ import { z } from 'zod';
 
 const count = z.number().int().nonnegative().safe();
 const timestamp = count.max(8640000000000);
-export const redemptionCodeSchema = z.object({ id: count.positive(), key: z.string().min(1), name: z.string(), quota: count.positive(), status: z.union([z.literal(1), z.literal(2), z.literal(3)]), used_user_id: count, created_time: timestamp, expired_time: timestamp });
+const redemptionCodeSchema = z.object({ id: count.positive(), key: z.string().min(1), name: z.string(), quota: count.positive(), status: z.union([z.literal(1), z.literal(2), z.literal(3)]), used_user_id: count, created_time: timestamp, expired_time: timestamp });
 export const redemptionPageSchema = z.object({ total: count, items: z.array(redemptionCodeSchema).nullable().transform((rows) => rows ?? []) });
 export type RedemptionCode = z.infer<typeof redemptionCodeSchema>;
 export type RedemptionDraft = { name: string; amount: number | ''; count: number | ''; expiry: string; badExpiry: boolean };

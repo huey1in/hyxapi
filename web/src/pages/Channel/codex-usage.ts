@@ -14,10 +14,10 @@ const usageSchema = z.object({
 });
 const creditsSchema = z.object({ available_count: number, total_earned_count: number, credits: z.array(z.object({ id: z.union([z.string(), z.number()]).nullish(), title: text, description: text, status: text, reset_type: text, granted_at: text, expires_at: text, redeem_started_at: text, redeemed_at: text })).nullish() });
 
-export type CodexUsage = z.infer<typeof usageSchema>;
-export type CodexCredits = z.infer<typeof creditsSchema>;
+type CodexUsage = z.infer<typeof usageSchema>;
+type CodexCredits = z.infer<typeof creditsSchema>;
 export type CodexWindow = z.infer<typeof windowSchema>;
-export type CodexRateLimit = z.infer<typeof rateSchema>;
+type CodexRateLimit = z.infer<typeof rateSchema>;
 
 export function parseCodexUsage(value: unknown): CodexUsage { return usageSchema.parse(value); }
 export function parseCodexCredits(value: unknown): CodexCredits { return creditsSchema.parse(value); }

@@ -19,7 +19,7 @@ export const dashboardPeriods = [
   { value: 'week', label: 'Last 7 days' },
   { value: 'month', label: 'Last 30 days' },
 ] as const;
-export type DashboardPeriod = typeof dashboardPeriods[number]['value'];
+type DashboardPeriod = typeof dashboardPeriods[number]['value'];
 export type DashboardRange = DashboardPeriod | { start_timestamp: number; end_timestamp: number };
 
 // Use local calendar days, including DST transitions, rather than 24-hour offsets.

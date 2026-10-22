@@ -6,8 +6,9 @@ import (
 	"sync/atomic"
 	"testing"
 
+	relaytypes "github.com/QuantumNous/new-api/relaykit/types"
+
 	"github.com/QuantumNous/new-api/relaykit/dto"
-	"github.com/QuantumNous/new-api/types"
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/require"
 )
@@ -42,7 +43,7 @@ func TestObserveChannelAffinityUsageCacheByRelayFormat_ClaudeMode(t *testing.T) 
 		},
 	}
 
-	ObserveChannelAffinityUsageCacheByRelayFormat(ctx, usage, types.RelayFormatClaude)
+	ObserveChannelAffinityUsageCacheByRelayFormat(ctx, usage, relaytypes.RelayFormatClaude)
 	stats := GetChannelAffinityUsageCacheStats(ruleName, usingGroup, keyFP)
 
 	require.EqualValues(t, 1, stats.Total)
@@ -73,8 +74,8 @@ func TestObserveChannelAffinityUsageCacheByRelayFormat_MixedMode(t *testing.T) {
 		},
 	}
 
-	ObserveChannelAffinityUsageCacheByRelayFormat(ctx, openAIUsage, types.RelayFormatOpenAI)
-	ObserveChannelAffinityUsageCacheByRelayFormat(ctx, claudeUsage, types.RelayFormatClaude)
+	ObserveChannelAffinityUsageCacheByRelayFormat(ctx, openAIUsage, relaytypes.RelayFormatOpenAI)
+	ObserveChannelAffinityUsageCacheByRelayFormat(ctx, claudeUsage, relaytypes.RelayFormatClaude)
 	stats := GetChannelAffinityUsageCacheStats(ruleName, usingGroup, keyFP)
 
 	require.EqualValues(t, 2, stats.Total)
@@ -97,7 +98,7 @@ func TestObserveChannelAffinityUsageCacheByRelayFormat_UnsupportedModeKeepsEmpty
 		},
 	}
 
-	ObserveChannelAffinityUsageCacheByRelayFormat(ctx, usage, types.RelayFormatGemini)
+	ObserveChannelAffinityUsageCacheByRelayFormat(ctx, usage, relaytypes.RelayFormatGemini)
 	stats := GetChannelAffinityUsageCacheStats(ruleName, usingGroup, keyFP)
 
 	require.EqualValues(t, 1, stats.Total)

@@ -211,12 +211,12 @@ function decodeNativeSubmit(ctx) {
 
 export const native = {
   decodeSubmit: decodeNativeSubmit,
-  taskCreated: function (ctx, task) {
+  taskCreated: function (_ctx, task) {
     const result = task.data || {},
       data = result.data || {};
     return Object.assign({}, result, { data: Object.assign({}, data, { task_id: task.task_id }) });
   },
-  taskStatus: function (ctx, task) {
+  taskStatus: function (_ctx, task) {
     if (task.data && typeof task.data === "object" && !Array.isArray(task.data)) {
       const result = task.data,
         data = result.data && typeof result.data === "object" ? result.data : {};
@@ -225,7 +225,7 @@ export const native = {
     const statusMap = { NOT_START: "submitted", SUBMITTED: "submitted", QUEUED: "submitted", IN_PROGRESS: "processing", SUCCESS: "succeed", FAILURE: "failed" };
     return { code: 0, data: { task_id: task.task_id, task_status: statusMap[task.status] || "submitted", task_status_msg: task.fail_reason || "" } };
   },
-  error: function (ctx, error) {
+  error: function (_ctx, error) {
     return { code: error.code, message: error.message };
   },
 };
@@ -263,7 +263,7 @@ export function buildSubmitRequest(ctx) {
   };
 }
 
-export function parseSubmitResponse(ctx, resp) {
+export function parseSubmitResponse(_ctx, resp) {
   const result = resp.body || {};
   if (result.code !== 0) throw new Error(result.message || "kling submit failed");
   if (!result.data || !result.data.task_id) throw new Error("missing task_id");
@@ -287,7 +287,7 @@ export function buildQueryRequest(ctx) {
   };
 }
 
-export function parseTaskResult(ctx, body) {
+export function parseTaskResult(_ctx, body) {
   const data = body.data || {};
   const statuses = { submitted: "SUBMITTED", processing: "IN_PROGRESS", succeed: "SUCCESS", failed: "FAILURE" };
   const status = statuses[data.task_status];
@@ -459,7 +459,7 @@ export const protocols = {
         requestBody: Object.assign({}, req, { model: ctx.model }),
       };
     },
-    render: function (ctx, task) {
+    render: function (_ctx, task) {
       const response = task.data || {};
       const data = response.data || {};
       const statusMap = { NOT_START: "queued", SUBMITTED: "queued", QUEUED: "queued", IN_PROGRESS: "in_progress", SUCCESS: "completed", FAILURE: "failed" };

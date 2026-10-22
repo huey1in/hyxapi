@@ -122,7 +122,7 @@ export function buildSubmitRequest(ctx) {
   };
 }
 
-export function parseSubmitResponse(ctx, resp) {
+export function parseSubmitResponse(_ctx, resp) {
   const body = resp.body || {};
   if (body.code !== "success") throw new Error(String(body.message || ""));
   if (!body.data) throw new Error("task_id is empty");
@@ -159,7 +159,7 @@ export function buildQueryRequest(ctx) {
   return buildBatchQueryRequest(ctx, [ctx]);
 }
 
-export function parseBatchResult(ctx, body) {
+export function parseBatchResult(_ctx, body) {
   if (body.code !== "success") throw new Error(String(body.message || ""));
   return (body.data || []).map(function (item) {
     return {
@@ -221,7 +221,7 @@ export function buildContentRequest(ctx) {
   return { url: url, method: ctx.clientRequest.method, credentialless: true };
 }
 
-export function extractUsageOnComplete(task, taskResult, body) {
+export function extractUsageOnComplete(_task, _taskResult, body) {
   const values = Array.isArray(body) ? body : body && typeof body === "object" ? [body] : [];
   if (values.length === 0) return {};
   const music = values.some(function (item) {
@@ -337,17 +337,17 @@ function nativeTask(task) {
 export const native = {
   decodeSubmit: decodeNativeSubmit,
   decodeBatch: decodeNativeBatch,
-  renderSubmit: function (ctx, task) {
+  renderSubmit: function (_ctx, task) {
     const data = task.data && typeof task.data === "object" ? task.data : {};
     return { code: "success", message: String(data.message || ""), data: String(task.task_id || "") };
   },
-  renderTask: function (ctx, task) {
+  renderTask: function (_ctx, task) {
     return { code: "success", message: "", data: nativeTask(task) };
   },
-  renderTasks: function (ctx, tasks) {
+  renderTasks: function (_ctx, tasks) {
     return { code: "success", message: "", data: tasks.map(nativeTask) };
   },
-  error: function (ctx, error) {
+  error: function (_ctx, error) {
     return { code: error.code, message: error.message, data: null };
   },
 };

@@ -26,7 +26,7 @@ import {
 } from './types.ts';
 
 type Origin = { id: string; origin?: ExpressionNode }
-export type VisualComparison = Origin & {
+type VisualComparison = Origin & {
   kind: 'comparison'
   probe: 'p' | 'c' | 'len' | TimeFunction
   timezone: string
@@ -38,7 +38,7 @@ export type VisualCondition =
   | (Origin & { kind: 'all'; children: VisualCondition[] })
   | (Origin & { kind: 'any'; children: VisualCondition[] })
   | (Origin & { kind: 'not'; child: VisualCondition })
-export type VisualPrice = {
+type VisualPrice = {
   variable: Exclude<TokenVariable, 'len'>
   value: string
   origin?: ExpressionNode
@@ -58,8 +58,8 @@ export type VisualPricingNode =
       no: VisualPricingNode
     })
 export type VisualBillingDocument = { source: string; root: VisualPricingNode }
-export type VisualBillingIssue = { id: string; message: string }
-export type VisualBillingSerialization =
+type VisualBillingIssue = { id: string; message: string }
+type VisualBillingSerialization =
   | { ok: true; source: string }
   | { ok: false; issues: VisualBillingIssue[] }
 

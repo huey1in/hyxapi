@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { cn } from '../tokens';
 import Skeleton from './Skeleton';
 
-export type SkeletonVariant = 'table' | 'cards' | 'tokens' | 'form' | 'dashboard' | 'text';
+type SkeletonVariant = 'table' | 'cards' | 'tokens' | 'form' | 'dashboard' | 'text';
 interface ContentSkeletonProps {
   variant?: SkeletonVariant;
   className?: string;

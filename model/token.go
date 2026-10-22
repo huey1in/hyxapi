@@ -171,10 +171,6 @@ func (token *Token) NormalizeGroupPolicy() {
 	}
 }
 
-func (token *Token) Clean() {
-	token.Key = ""
-}
-
 func MaskTokenKey(key string) string {
 	if key == "" {
 		return ""

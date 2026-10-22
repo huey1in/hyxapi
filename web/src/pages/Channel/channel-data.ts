@@ -7,7 +7,7 @@ const text = z
   .string()
   .nullish()
   .transform((value) => value ?? '');
-export const channelSettingSchema = z.looseObject({
+const channelSettingSchema = z.looseObject({
   task_plugin_key: z.string().optional(),
   task_extend_plugin_keys: z.array(z.string()).nullable().optional(),
   force_format: z.boolean().optional(),
@@ -21,7 +21,7 @@ export const channelSettingSchema = z.looseObject({
   http2_connection_shards: count.optional(),
   tls_insecure_skip_verify: z.boolean().optional(),
 });
-export const channelOtherSchema = z.looseObject({
+const channelOtherSchema = z.looseObject({
   aws_api_type: z.string().optional(),
   aws_key_type: z.string().optional(),
   vertex_key_type: z.string().optional(),
@@ -45,7 +45,7 @@ export const channelOtherSchema = z.looseObject({
   allow_inference_geo: z.boolean().optional(),
   allow_speed: z.boolean().optional(),
 });
-export const channelSchema = z.looseObject({
+const channelSchema = z.looseObject({
   id: count.positive(),
   type: count.positive(),
   name: z.string(),
@@ -131,7 +131,7 @@ export type EditingChannel = Partial<Channel> & {
   fetchModelsOnOpen?: boolean;
 };
 
-export function parseChannelObject(
+function parseChannelObject(
   value: string | undefined,
 ): Record<string, unknown> {
   let parsed: unknown;

@@ -3,7 +3,7 @@ export type PaymentField = [
   label: string,
   type?: 'json-object' | 'json-array' | 'secret' | 'number' | 'bool' | 'pem',
 ];
-export type PaymentSetupGroup = [title: string, fields: PaymentField[]];
+type PaymentSetupGroup = [title: string, fields: PaymentField[]];
 
 export const paymentSetupGroups: PaymentSetupGroup[] = [
   [

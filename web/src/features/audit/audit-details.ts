@@ -63,24 +63,24 @@ const TOKEN_AUDIT_OPERATIONS: Record<
   'token.key_view_batch': { labelKey: 'View API token keys in batch' },
 }
 
-export type AuditDetailField = {
+type AuditDetailField = {
   label: string
   value: unknown
   copyable?: boolean
 }
 
-export type AuditDetailOptions = {
+type AuditDetailOptions = {
   // Labels for stored access token scopes; omitted until they have loaded.
   scopeResources?: PermissionResourceDef[]
 }
 
-export function isAuditDetailObject(
+function isAuditDetailObject(
   value: unknown
 ): value is Record<string, unknown> {
   return value !== null && typeof value === 'object' && !Array.isArray(value)
 }
 
-export function auditFieldLabel(key: string, t: TFunction): string {
+function auditFieldLabel(key: string, t: TFunction): string {
   switch (key) {
     case 'status':
       return t('Status')

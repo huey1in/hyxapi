@@ -33,7 +33,7 @@ const ESTIMATOR_VARS = [
   { var: 'ao', stateKey: 'audioOutputTokens' },
 ] as const
 
-export type ExtraTokenValues = Record<
+type ExtraTokenValues = Record<
   (typeof ESTIMATOR_VARS)[number]['stateKey'],
   number
 >

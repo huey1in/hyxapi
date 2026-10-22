@@ -3,7 +3,7 @@ import { z } from 'zod';
 export const TOKEN_BILLING = 0;
 export const REQUEST_BILLING = 1;
 export const DEFAULT_PAGE_SIZE = 10;
-export const priceFields = ['input_price', 'output_price', 'cache_read_price', 'cache_write_price', 'image_price', 'audio_input_price', 'audio_output_price', 'request_price'] as const;
+const priceFields = ['input_price', 'output_price', 'cache_read_price', 'cache_write_price', 'image_price', 'audio_input_price', 'audio_output_price', 'request_price'] as const;
 export type PriceField = typeof priceFields[number];
 export const directPriceSchema = z.object({
   id: z.number().int(), model_name: z.string(), billing_type: z.number().int(), enabled: z.boolean(),

@@ -46,7 +46,7 @@ export interface TableColumn<T> {
   mobileRole?: 'selection' | 'actions' | 'wide';
 }
 
-export interface TableProps<T extends object> {
+interface TableProps<T extends object> {
   className?: string;
   columns?: TableColumn<T>[];
   rows?: T[];

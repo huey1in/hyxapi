@@ -12,8 +12,8 @@ import { cn, FOCUS_RING } from '../tokens';
 import type { ReactNode } from 'react';
 
 type TabValue = string | number;
-export interface TabItem<V extends TabValue> { value: V; label: ReactNode; disabled?: boolean }
-export interface TabsProps<V extends TabValue> {
+interface TabItem<V extends TabValue> { value: V; label: ReactNode; disabled?: boolean }
+interface TabsProps<V extends TabValue> {
   items?: readonly TabItem<V>[];
   value?: V;
   onChange?: (value: V) => void;

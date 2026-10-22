@@ -22,7 +22,7 @@ export type ConfigNode = {
   children: { key: string; node: ConfigNode }[];
 };
 let sequence = 0;
-export function valueType(value: ConfigValue): ValueType {
+function valueType(value: ConfigValue): ValueType {
   return value === null ? 'null' : Array.isArray(value) ? 'array' : typeof value as ValueType;
 }
 export function configNode(value: ConfigValue): ConfigNode {

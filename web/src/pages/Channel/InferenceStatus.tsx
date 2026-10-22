@@ -16,7 +16,7 @@ type Props = { channel: Channel; onClose: () => void; onSyncModels: () => void; 
 type MetricRow = { label: string; value: number | undefined; unit?: 'percent' | 'seconds' | 'rate'; details?: string };
 type MetricGroup = { title: string; hint?: string; rows: MetricRow[] };
 
-export function inferenceMetricGroups(provider: string, metrics: InferenceMetric[], recent: ReturnType<typeof recentMetrics> | undefined, t: TFunction): MetricGroup[] {
+function inferenceMetricGroups(provider: string, metrics: InferenceMetric[], recent: ReturnType<typeof recentMetrics> | undefined, t: TFunction): MetricGroup[] {
   const sglang = provider === 'sglang';
   const value = (name: string) => metricValue(metrics, `${provider}:${name}`);
   const mean = (name: string) => metricMean(metrics, `${provider}:${name}`);

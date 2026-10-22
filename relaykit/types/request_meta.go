@@ -53,17 +53,3 @@ func (f *FileMeta) GetIdentifier() string {
 	}
 	return "unknown"
 }
-
-// IsURL 判断是否是 URL 来源
-func (f *FileMeta) IsURL() bool {
-	return f.Source != nil && f.Source.IsURL()
-}
-
-// GetRawData 获取原始数据（兼容旧代码）
-// Deprecated: 请使用 Source.GetRawData()
-func (f *FileMeta) GetRawData() string {
-	if f.Source != nil {
-		return f.Source.GetRawData()
-	}
-	return ""
-}

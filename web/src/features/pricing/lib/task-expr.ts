@@ -17,21 +17,19 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 import type {
-  BillingUsageExample,
   BillingUsageFieldSchema,
   BillingUsageSchema,
 } from '../types.ts'
 import {
   parseTaskTiersFromExpr,
-  splitBillingExprAndRequestRules,
 } from './billing-expr.ts'
 import { evaluateBillingExpression } from './billing-expression/runtime.ts'
 import { compileBillingExpression } from './billing-expression/parser.ts'
 import type { ExpressionNode } from './billing-expression/types.ts'
 
-export const TASK_TOKEN_PRICE_SCALE = 1_000_000
+const TASK_TOKEN_PRICE_SCALE = 1_000_000
 
-export type TaskVisualCondition = {
+type TaskVisualCondition = {
   field: string
   value: string
 }
@@ -47,17 +45,17 @@ export type TaskVisualConfig = {
   tiers: TaskVisualTier[]
 }
 
-export type TaskMatrixRow = {
+type TaskMatrixRow = {
   combination: Record<string, string>
   constant: number
   unitPrices: Record<string, number>
 }
 
-export type TaskMatrixConfig = {
+type TaskMatrixConfig = {
   rows: TaskMatrixRow[]
 }
 
-export type TaskPreviewResult = {
+type TaskPreviewResult = {
   tier: TaskVisualTier
   total: number
   parts: {
@@ -120,21 +118,6 @@ export function createDefaultTaskVisualConfig(
   }
 }
 
-export function createDefaultTaskMatrixConfig(
-  schema: BillingUsageSchema
-): TaskMatrixConfig {
-  const unitPrices = Object.fromEntries(
-    getTaskNumberFields(schema).map(([field]) => [field, 0])
-  )
-  return {
-    rows: getTaskEnumCombinations(schema).map((combination) => ({
-      combination,
-      constant: 0,
-      unitPrices: { ...unitPrices },
-    })),
-  }
-}
-
 export function taskMatrixRowLabel(
   combination: Record<string, string>
 ): string {
@@ -142,52 +125,6 @@ export function taskMatrixRowLabel(
     .sort(([left], [right]) => left.localeCompare(right))
     .map(([, value]) => value)
   return values.length > 0 ? values.join('·') : 'base'
-}
-
-export function taskMatrixToTiers(
-  config: TaskMatrixConfig,
-  schema: BillingUsageSchema
-): TaskVisualTier[] {
-  const numberFields = getTaskNumberFields(schema)
-  const firstRow = config.rows[0]
-  if (numberFields.length === 0 || !firstRow) return []
-
-  const isUniform = config.rows.every(
-    (row) =>
-      row.constant === firstRow.constant &&
-      numberFields.every(
-        ([field]) => row.unitPrices[field] === firstRow.unitPrices[field]
-      )
-  )
-  if (isUniform) {
-    return [
-      {
-        label: 'base',
-        conditions: [],
-        constant: firstRow.constant,
-        unitPrices: Object.fromEntries(
-          numberFields.map(([field]) => [
-            field,
-            firstRow.unitPrices[field] ?? 0,
-          ])
-        ),
-      },
-    ]
-  }
-
-  return config.rows.map((row, index) => ({
-    label: taskMatrixRowLabel(row.combination),
-    conditions:
-      index === config.rows.length - 1
-        ? []
-        : Object.entries(row.combination)
-            .sort(([left], [right]) => left.localeCompare(right))
-            .map(([field, value]) => ({ field, value })),
-    constant: row.constant,
-    unitPrices: Object.fromEntries(
-      numberFields.map(([field]) => [field, row.unitPrices[field] ?? 0])
-    ),
-  }))
 }
 
 export function tryParseTaskMatrixConfig(
@@ -288,25 +225,7 @@ export function evaluateTaskVisualConfig(
   return { tier: matchedTier, total: result.cost, parts }
 }
 
-export function evaluateTaskUsageExamples(
-  expression: string | null | undefined,
-  schema: BillingUsageSchema | null | undefined,
-  examples: BillingUsageExample[] | null | undefined
-): { label: string; total: number }[] {
-  if (!expression || !schema || !examples?.length) return []
-  const { billingExpr } = splitBillingExprAndRequestRules(expression)
-  const config = tryParseTaskVisualConfig(billingExpr, schema)
-  if (!config) return []
-  const rows: { label: string; total: number }[] = []
-  for (const example of examples) {
-    const result = evaluateTaskVisualConfig(config, example.facts, schema)
-    if (!result) continue
-    rows.push({ label: example.label, total: result.total })
-  }
-  return rows
-}
-
-export function normalizeTaskVisualConfig(
+function normalizeTaskVisualConfig(
   config: TaskVisualConfig | null | undefined,
   schema: BillingUsageSchema
 ): TaskVisualConfig {

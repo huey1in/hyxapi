@@ -32,7 +32,7 @@ import {
 type RuntimeValue = { value: unknown; integer?: boolean }
 
 /** The supported, deterministic subset of GJSON paths (not JavaScript property access). */
-export function readRequestPath(body: unknown, rawPath: string): unknown {
+function readRequestPath(body: unknown, rawPath: string): unknown {
   const path = rawPath.trim()
   if (!path) return null
   const parts: string[] = []
@@ -113,7 +113,7 @@ function billingString(value: unknown, depth = 0): string {
   return String(value)
 }
 
-export function timeInBillingZone(
+function timeInBillingZone(
   now: Date,
   zone: string
 ): Record<TimeFunction, number> {

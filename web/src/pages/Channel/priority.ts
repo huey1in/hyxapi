@@ -1,5 +1,5 @@
-export interface PriorityItem { id: number; priority: number | null }
-export interface PriorityChange { id: number; previous: number | null; priority: number | null }
+interface PriorityItem { id: number; priority: number | null }
+interface PriorityChange { id: number; previous: number | null; priority: number | null }
 export interface PriorityOrder { revision: string; items: PriorityItem[]; changes: PriorityChange[] }
 export type Placement = 'before' | 'after' | 'same';
 

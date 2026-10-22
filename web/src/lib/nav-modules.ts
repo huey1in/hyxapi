@@ -1,5 +1,5 @@
-export type ModuleAccess = { enabled: boolean; requireAuth: boolean };
-export type HeaderNavModules = {
+type ModuleAccess = { enabled: boolean; requireAuth: boolean };
+type HeaderNavModules = {
   home: boolean;
   console: boolean;
   pricing: ModuleAccess;

@@ -24,13 +24,13 @@ export type AdminPermissionMatrix = Record<string, Record<string, boolean>>
 export type AdminCapabilities = AdminPermissionMatrix
 
 // The role whose baseline grants are used as defaults in the permission editor.
-export const ADMIN_ROLE_KEY = 'admin'
+const ADMIN_ROLE_KEY = 'admin'
 
 // The permission catalog (resources, actions, labels and role baselines) is owned
 // by the backend authz package and fetched from GET /api/authz/catalog. It is
 // intentionally NOT duplicated here so the schema stays defined in one place.
 // These types mirror the backend JSON shape.
-export interface PermissionActionDef {
+interface PermissionActionDef {
   action: string
   label_key: string
   description_key: string
@@ -42,7 +42,7 @@ export interface PermissionResourceDef {
   actions: PermissionActionDef[]
 }
 
-export interface PermissionRoleDef {
+interface PermissionRoleDef {
   key: string
   name: string
   built_in: boolean
@@ -66,7 +66,7 @@ export function hasPermission(
 }
 
 // roleGrants returns the baseline grant matrix for the given role key.
-export function roleGrants(
+function roleGrants(
   catalog: PermissionCatalog,
   roleKey: string
 ): AdminPermissionMatrix {

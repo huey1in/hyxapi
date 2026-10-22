@@ -108,10 +108,10 @@ export type PricingModel = {
 }
 
 /** Input/output modalities supported by a model. */
-export type Modality = 'text' | 'image' | 'audio' | 'video' | 'file'
+type Modality = 'text' | 'image' | 'audio' | 'video' | 'file'
 
 /** Functional capabilities a model exposes. */
-export type ModelCapability =
+type ModelCapability =
   | 'function_calling'
   | 'streaming'
   | 'vision'

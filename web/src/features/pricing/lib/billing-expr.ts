@@ -56,7 +56,7 @@ export type BillingVar = {
   group?: string
 }
 
-export const BILLING_VARS: BillingVar[] = [
+const BILLING_VARS: BillingVar[] = [
   {
     key: 'p',
     field: 'inputPrice',
@@ -171,31 +171,31 @@ const BILLING_VAR_KEY_TO_FIELD = Object.fromEntries(
 // Request rule constants
 // ---------------------------------------------------------------------------
 
-export const SOURCE_HEADER = 'header'
-export const SOURCE_TIME = 'time'
+const SOURCE_HEADER = 'header'
+const SOURCE_TIME = 'time'
 
-export const MATCH_EQ = 'eq'
-export const MATCH_CONTAINS = 'contains'
-export const MATCH_GT = 'gt'
-export const MATCH_GTE = 'gte'
-export const MATCH_LT = 'lt'
-export const MATCH_LTE = 'lte'
-export const MATCH_EXISTS = 'exists'
-export const MATCH_RANGE = 'range'
+const MATCH_EQ = 'eq'
+const MATCH_CONTAINS = 'contains'
+const MATCH_GT = 'gt'
+const MATCH_GTE = 'gte'
+const MATCH_LT = 'lt'
+const MATCH_LTE = 'lte'
+const MATCH_EXISTS = 'exists'
+const MATCH_RANGE = 'range'
 
-export const TIME_FUNCS = ['hour', 'minute', 'weekday', 'month', 'day'] as const
-export type TimeFunc = (typeof TIME_FUNCS)[number]
+const TIME_FUNCS = ['hour', 'minute', 'weekday', 'month', 'day'] as const
+type TimeFunc = (typeof TIME_FUNCS)[number]
 
 const NUMERIC_LITERAL_REGEX = /^-?(?:\d+\.?\d*|\.\d+)(?:[eE][+-]?\d+)?$/
 
-export type ParamHeaderCondition = {
+type ParamHeaderCondition = {
   source: 'param' | 'header'
   path: string
   mode: string
   value: string
 }
 
-export type TimeCondition = {
+type TimeCondition = {
   source: 'time'
   timeFunc: TimeFunc
   timezone: string
@@ -214,7 +214,7 @@ export type RequestRuleGroup = {
   matched?: boolean
 }
 
-export type TierCondition = {
+type TierCondition = {
   var: 'p' | 'c' | 'len'
   op: '<' | '<=' | '>' | '>='
   value: number
@@ -613,7 +613,7 @@ export function createEmptyRuleGroup(): RequestRuleGroup {
 // Editor: match option helpers
 // ---------------------------------------------------------------------------
 
-export type MatchOption = { value: string; labelKey: string }
+type MatchOption = { value: string; labelKey: string }
 
 export function getRequestRuleMatchOptions(source: string): MatchOption[] {
   if (source === SOURCE_TIME) {
@@ -647,7 +647,7 @@ function isTimeFunc(value: unknown): value is TimeFunc {
   return typeof value === 'string' && TIME_FUNCS.includes(value as TimeFunc)
 }
 
-export function normalizeCondition(
+function normalizeCondition(
   cond: Partial<RequestCondition> | null | undefined
 ): RequestCondition {
   let source: RequestCondition['source'] = 'param'

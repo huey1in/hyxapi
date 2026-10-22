@@ -5,7 +5,7 @@ export type SettingSection = {
   gateKey?: string;
 };
 
-export const REQUEST_POLICY_KEYS = new Set([
+const REQUEST_POLICY_KEYS = new Set([
   'RetryTimes',
   'AutomaticRetryStatusCodes',
   'AutomaticDisableChannelEnabled',

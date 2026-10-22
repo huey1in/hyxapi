@@ -26,7 +26,7 @@ import { selectorStyle } from './selectorSizing';
 
 type SelectValue = string | number;
 export interface SelectOption<V extends SelectValue> { value: V; label: ReactNode; disabled?: boolean }
-export interface SelectProps<V extends SelectValue> {
+interface SelectProps<V extends SelectValue> {
   options?: (SelectOption<V> | V)[];
   value?: V | null;
   onChange?: (value: V) => void;

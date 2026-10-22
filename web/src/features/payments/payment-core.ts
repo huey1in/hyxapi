@@ -28,7 +28,7 @@ const array = (value: unknown): Record<string, unknown>[] => {
 };
 const text = (value: unknown, fallback: string) => typeof value === 'string' && value ? value : fallback;
 
-export type PaymentMethod = {
+type PaymentMethod = {
   id: string;
   name: string;
   provider: 'epay' | 'alipay' | 'stripe' | 'creem' | 'waffo' | 'waffo_pancake' | 'balance';

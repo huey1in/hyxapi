@@ -23,7 +23,7 @@ const otherSchema = z.object({
   channel_id: field(count), admin_info: field(record), request_body: field(z.string()), response_body: field(z.string()),
 }).passthrough();
 
-export type LogOther = z.infer<typeof otherSchema>;
+type LogOther = z.infer<typeof otherSchema>;
 export const logSchema = z.object({
   id: count, created_at: count, type: count, content: z.string().default(''),
   username: z.string().default(''), token_name: z.string().default(''), model_name: z.string().default(''),
@@ -32,7 +32,7 @@ export const logSchema = z.object({
   group: z.string().default(''), ip: z.string().default(''), request_id: z.string().default(''), upstream_request_id: z.string().default(''),
   other: z.union([z.string(), record]).nullish().transform((value) => value ?? ''),
 });
-export type LogRow = z.infer<typeof logSchema>;
+type LogRow = z.infer<typeof logSchema>;
 
 export function enrichLog(row: LogRow, role: number) {
   let raw: Record<string, unknown> = {}; let invalid = false;

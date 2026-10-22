@@ -1,5 +1,4 @@
 {
-  "$schema": "../web/node_modules/oxlint/configuration_schema.json",
   "plugins": ["oxc"],
   "categories": {
     "correctness": "error",

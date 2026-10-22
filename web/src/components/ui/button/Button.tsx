@@ -54,7 +54,7 @@ const JUSTIFY_CLS = {
 };
 
 type ButtonIcon = ComponentType<{ size?: number }> | ReactElement;
-export interface ButtonProps extends Omit<ButtonHTMLAttributes<HTMLButtonElement>, 'className'> {
+interface ButtonProps extends Omit<ButtonHTMLAttributes<HTMLButtonElement>, 'className'> {
   variant?: keyof typeof VARIANT_STYLES | keyof typeof STATEFUL;
   size?: keyof typeof SIZE_ICON;
   pill?: boolean;

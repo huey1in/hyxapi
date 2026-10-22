@@ -285,26 +285,26 @@
         ]
       }
     },
-	    "/v1/responses/compact": {
-	      "post": {
-	        "summary": "压缩对话 (OpenAI Responses API)",
-	        "deprecated": false,
-	        "description": "OpenAI Responses API，用于对长对话进行 compaction。",
-	        "operationId": "compactResponse",
+    "/v1/responses/compact": {
+      "post": {
+        "summary": "压缩对话 (OpenAI Responses API)",
+        "deprecated": false,
+        "description": "OpenAI Responses API，用于对长对话进行 compaction。",
+        "operationId": "compactResponse",
         "tags": [
           "OpenAI格式(Responses)"
         ],
         "parameters": [],
-	        "requestBody": {
-	          "content": {
-	            "application/json": {
-	              "schema": {
-	                "$ref": "#/components/schemas/ResponsesCompactionRequest"
-	              }
-	            }
-	          },
-	          "required": true
-	        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ResponsesCompactionRequest"
+              }
+            }
+          },
+          "required": true
+        },
         "responses": {
           "200": {
             "description": "成功压缩对话",
@@ -836,7 +836,7 @@
       "post": {
         "summary": "Kling 文生视频",
         "deprecated": false,
-        "description": "使用 Kling 模型从文本描述生成视频。\n\n支持的模型：kling-v1, kling-v1-5 等\n",
+        "description": "?????????????????kling??\n\n使用 Kling 模型从文本描述生成视频。\n\n支持的模型：kling-v1, kling-v1-5 等\n",
         "operationId": "createKlingText2Video",
         "tags": [
           "视频生成/Kling格式"
@@ -887,14 +887,15 @@
           {
             "BearerAuth": []
           }
-        ]
+        ],
+        "x-task-plugin": "kling"
       }
     },
     "/kling/v1/videos/text2video/{task_id}": {
       "get": {
         "summary": "获取 Kling 文生视频任务状态",
         "deprecated": false,
-        "description": "查询 Kling 文生视频任务的状态和结果。",
+        "description": "?????????????????kling??\n\n查询 Kling 文生视频任务的状态和结果。",
         "operationId": "getKlingText2Video",
         "tags": [
           "视频生成/Kling格式"
@@ -939,14 +940,15 @@
           {
             "BearerAuth": []
           }
-        ]
+        ],
+        "x-task-plugin": "kling"
       }
     },
     "/kling/v1/videos/image2video": {
       "post": {
         "summary": "Kling 图生视频",
         "deprecated": false,
-        "description": "使用 Kling 模型从图片生成视频。\n\n支持通过 image 参数传入图片 URL 或 Base64 编码的图片数据。\n",
+        "description": "?????????????????kling??\n\n使用 Kling 模型从图片生成视频。\n\n支持通过 image 参数传入图片 URL 或 Base64 编码的图片数据。\n",
         "operationId": "createKlingImage2Video",
         "tags": [
           "视频生成/Kling格式"
@@ -997,14 +999,15 @@
           {
             "BearerAuth": []
           }
-        ]
+        ],
+        "x-task-plugin": "kling"
       }
     },
     "/kling/v1/videos/image2video/{task_id}": {
       "get": {
         "summary": "获取 Kling 图生视频任务状态",
         "deprecated": false,
-        "description": "查询 Kling 图生视频任务的状态和结果。",
+        "description": "?????????????????kling??\n\n查询 Kling 图生视频任务的状态和结果。",
         "operationId": "getKlingImage2Video",
         "tags": [
           "视频生成/Kling格式"
@@ -1049,14 +1052,15 @@
           {
             "BearerAuth": []
           }
-        ]
+        ],
+        "x-task-plugin": "kling"
       }
     },
     "/jimeng/": {
       "post": {
         "summary": "即梦视频生成",
         "deprecated": false,
-        "description": "即梦官方 API 格式的视频生成接口。\n\n支持通过 Action 参数指定操作类型：\n- `CVSync2AsyncSubmitTask`: 提交视频生成任务\n- `CVSync2AsyncGetResult`: 获取任务结果\n\n需要在查询参数中指定 Action 和 Version。\n",
+        "description": "?????????????????jimeng??\n\n即梦官方 API 格式的视频生成接口。\n\n支持通过 Action 参数指定操作类型：\n- `CVSync2AsyncSubmitTask`: 提交视频生成任务\n- `CVSync2AsyncGetResult`: 获取任务结果\n\n需要在查询参数中指定 Action 和 Version。\n",
         "operationId": "createJimengVideo",
         "tags": [
           "视频生成/即梦格式"
@@ -1160,7 +1164,8 @@
           {
             "BearerAuth": []
           }
-        ]
+        ],
+        "x-task-plugin": "jimeng"
       }
     },
     "/v1/video/generations": {
@@ -3170,9 +3175,9 @@
           }
         }
       },
-	      "ResponsesCompactionResponse": {
-	        "type": "object",
-	        "properties": {
+      "ResponsesCompactionResponse": {
+        "type": "object",
+        "properties": {
           "id": {
             "type": "string"
           },
@@ -3197,44 +3202,44 @@
             "type": "object",
             "properties": {}
           }
-	        }
-	      },
-	      "ResponsesCompactionRequest": {
-	        "type": "object",
-	        "required": [
-	          "model"
-	        ],
-	        "properties": {
-	          "model": {
-	            "type": "string"
-	          },
-	          "input": {
-	            "description": "输入内容，可以是字符串或消息数组",
-	            "oneOf": [
-	              {
-	                "type": "string"
-	              },
-	              {
-	                "type": "array",
-	                "items": {
-	                  "type": "object",
-	                  "properties": {}
-	                }
-	              }
-	            ]
-	          },
-	          "instructions": {
-	            "type": "string"
-	          },
-	          "previous_response_id": {
-	            "type": "string"
-	          }
-	        }
-	      },
-	      "ResponsesStreamResponse": {
-	        "type": "object",
-	        "properties": {
-	          "type": {
+        }
+      },
+      "ResponsesCompactionRequest": {
+        "type": "object",
+        "required": [
+          "model"
+        ],
+        "properties": {
+          "model": {
+            "type": "string"
+          },
+          "input": {
+            "description": "输入内容，可以是字符串或消息数组",
+            "oneOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {}
+                }
+              }
+            ]
+          },
+          "instructions": {
+            "type": "string"
+          },
+          "previous_response_id": {
+            "type": "string"
+          }
+        }
+      },
+      "ResponsesStreamResponse": {
+        "type": "object",
+        "properties": {
+          "type": {
             "type": "string"
           },
           "response": {

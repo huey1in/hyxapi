@@ -1,8 +1,8 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import {
-  createDefaultTaskMatrixConfig, evaluateTaskUsageExamples, evaluateTaskVisualConfig, generateTaskExprFromConfig,
-  getTaskEnumCombinations, taskMatrixToTiers, tryParseTaskMatrixConfig, tryParseTaskVisualConfig, tryParseEditableTaskConfig,
+  evaluateTaskVisualConfig, generateTaskExprFromConfig,
+  getTaskEnumCombinations, tryParseTaskMatrixConfig, tryParseTaskVisualConfig, tryParseEditableTaskConfig,
 } from './task-expr.ts';
 import { evaluateBillingExpression } from './billing-expression/runtime.ts';
 
@@ -34,12 +34,22 @@ test('task enum tiers preserve first match priority and fallback prices', () => 
   }
 });
 
-test('task matrix expansion covers parameter combinations and preserves each independent price', () => {
+test('task matrix parsing covers parameter combinations and preserves each independent price', () => {
   const matrixSchema = { ...schema, mode: { enum: ['fast', 'quality'] } };
-  assert.equal(getTaskEnumCombinations(matrixSchema).length, 4);
-  const matrix = createDefaultTaskMatrixConfig(matrixSchema);
-  matrix.rows.forEach((row, i) => { row.unitPrices.seconds = (i + 1) / 10; });
-  const expression = generateTaskExprFromConfig({ tiers: taskMatrixToTiers(matrix, matrixSchema) }, matrixSchema);
+  const combinations = [
+    { mode: 'fast', resolution: '720p' },
+    { mode: 'fast', resolution: '1080p' },
+    { mode: 'quality', resolution: '720p' },
+    { mode: 'quality', resolution: '1080p' },
+  ];
+  assert.deepEqual(getTaskEnumCombinations(matrixSchema), combinations);
+  const expression = 'u("mode") == "fast" && u("resolution") == "720p" ? tier("fast720", u("seconds") * 0.1) : '
+    + 'u("mode") == "fast" && u("resolution") == "1080p" ? tier("fast1080", u("seconds") * 0.2) : '
+    + 'u("mode") == "quality" && u("resolution") == "720p" ? tier("quality720", u("seconds") * 0.3) : '
+    + 'tier("quality1080", u("seconds") * 0.4)';
+  const matrix = { rows: combinations.map((combination, i) => ({
+    combination, constant: 0, unitPrices: { seconds: (i + 1) / 10, tokens: 0 },
+  })) };
   assert.deepEqual(tryParseTaskMatrixConfig(expression, matrixSchema), matrix);
   for (const [i, row] of matrix.rows.entries()) {
     const result = evaluateBillingExpression(expression, { usage: { ...row.combination, seconds: 10, tokens: 0 } });
@@ -63,7 +73,6 @@ test('task simulation reports unknown quantities and invalid arithmetic instead 
   assert.equal(evaluateBillingExpression('tier("base", u("seconds") * 0.1)').status, 'missing_context');
   assert.notEqual(evaluateBillingExpression('tier("base", u("seconds") * 0.1)', { usage: {} }).status, 'success');
   assert.notEqual(evaluateBillingExpression('tier("base", u("seconds") * 0.1)', { usage: { seconds: 'unknown' } }).status, 'success');
-  assert.deepEqual(evaluateTaskUsageExamples('tier("base", u("seconds") * 0.1)', schema, [{ label: 'ten', facts: { seconds: 10 } }]), [{ label: 'ten', total: 1 }]);
 });
 
 test('task editor keeps references to removed plugin fields verbatim', () => {

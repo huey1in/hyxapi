@@ -120,10 +120,6 @@ func (o *Options) ShouldPreserveThinkingSuffix(modelName string) bool {
 	return o != nil && o.PreserveThinkingSuffix != nil && o.PreserveThinkingSuffix(modelName)
 }
 
-func (o *Options) ShouldPreserveEffortTail(modelName string) bool {
-	return o != nil && o.PreserveEffortTail != nil && o.PreserveEffortTail(modelName)
-}
-
 func (o *Options) EffectiveToolLossPolicy() types.ConversionLossPolicy {
 	if o == nil || o.ToolLossPolicy == "" {
 		return types.ConversionLossPolicyAllow

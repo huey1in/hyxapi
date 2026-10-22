@@ -3,7 +3,7 @@ import { subscriptionPlanSchema } from '../../features/payments/wallet-data';
 import { subscriptionNamesSchema } from '../../features/payments/subscription-data';
 
 const count = z.number().int().nonnegative().safe();
-export const adminPlanSchema = subscriptionPlanSchema.safeExtend({
+const adminPlanSchema = subscriptionPlanSchema.safeExtend({
   price_amount: z.number().finite().min(0).max(9999), enabled: z.boolean(), sort_order: z.number().int().safe(),
   allow_wallet_overflow: z.boolean().nullish(), downgrade_group: z.string(),
   allowed_groups: subscriptionNamesSchema, allowed_models: subscriptionNamesSchema,

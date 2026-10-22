@@ -757,11 +757,11 @@ export const native = {
     if (originTaskIds.length) intent.originTaskIds = originTaskIds;
     return intent;
   },
-  taskCreated: function (ctx, task) {
+  taskCreated: function (_ctx, task) {
     const data = task.data && typeof task.data === "object" && !Array.isArray(task.data) ? task.data : {};
     return Object.assign({}, data, { id: task.task_id });
   },
-  taskStatus: function (ctx, task) {
+  taskStatus: function (_ctx, task) {
     if (task.data && typeof task.data === "object" && !Array.isArray(task.data)) return Object.assign({}, task.data, { id: task.task_id });
     const statusMap = { NOT_START: "queued", SUBMITTED: "queued", QUEUED: "queued", IN_PROGRESS: "running", SUCCESS: "succeeded", FAILURE: "failed" };
     const output = { id: task.task_id, status: statusMap[task.status] || "queued" };
@@ -781,10 +781,10 @@ export const native = {
     const converted = convertImage({ model: model, requestBody: requestBody });
     return { kind: "submit", model: model, action: converted.action, requestBody: requestBody };
   },
-  imageCreated: function (ctx, task) {
+  imageCreated: function (_ctx, task) {
     return task.data && typeof task.data === "object" && !Array.isArray(task.data) ? task.data : {};
   },
-  error: function (ctx, error) {
+  error: function (_ctx, error) {
     return { error: { code: error.code, message: error.message } };
   },
 };
@@ -898,7 +898,7 @@ export function buildQueryRequest(ctx) {
   };
 }
 
-export function parseTaskResult(ctx, body) {
+export function parseTaskResult(_ctx, body) {
   if (body.status === "pending" || body.status === "queued") return { status: "QUEUED", progress: "10%" };
   if (body.status === "processing" || body.status === "running") return { status: "IN_PROGRESS", progress: "50%" };
   if (body.status === "succeeded") {
@@ -959,7 +959,7 @@ export function buildContentRequest(ctx) {
   return { url: url, method: ctx.clientRequest.method, credentialless: true };
 }
 
-export function extractUsageOnComplete(task, taskResult, body) {
+export function extractUsageOnComplete(task, _taskResult, body) {
   if (imageTask(task)) return imageUsage(body || {}, imageProfile(task));
   if (!body || body.status !== "succeeded") return {};
   const facts = {};
@@ -1124,7 +1124,7 @@ export const protocols = {
       if (ctx.operation === "edit" && converted.action !== "image_to_image") throw new Error("image is required");
       return { kind: "submit", model: model, action: converted.action, requestBody: requestBody };
     },
-    render: function (ctx, task) {
+    render: function (_ctx, task) {
       return {
         created: task.created_at,
         data: imageURLEntries(artifactData(task)).map(function (item) {
@@ -1205,7 +1205,7 @@ protocols.openai_video = {
       requestBody: Object.assign({}, req, { model: ctx.model }),
     };
   },
-  render: function (ctx, task) {
+  render: function (_ctx, task) {
     return legacyRenderers.openai_video(task);
   },
 };

@@ -4,7 +4,7 @@ const count = z.number().int().nonnegative().safe();
 const amount = z.number().finite().nonnegative();
 const percent = amount.max(100);
 const timestamp = count.max(8640000000000);
-export const instanceSchema = z.object({
+const instanceSchema = z.object({
   node_name: z.string().min(1), status: z.enum(['online', 'stale']), started_at: timestamp, last_seen_at: timestamp, stale_after_seconds: count,
   info: z.object({
     node: z.object({ source: z.string(), manually_configured: z.boolean(), should_configure_manually: z.boolean() }).optional(),
@@ -14,7 +14,7 @@ export const instanceSchema = z.object({
 });
 export const instancesSchema = z.array(instanceSchema).nullable().transform((rows) => rows ?? []);
 export type Instance = z.infer<typeof instanceSchema>;
-export const logFileSchema = z.object({ name: z.string().min(1), size: count, mod_time: z.string().refine((value) => Number.isFinite(new Date(value).getTime())), active: z.boolean() });
+const logFileSchema = z.object({ name: z.string().min(1), size: count, mod_time: z.string().refine((value) => Number.isFinite(new Date(value).getTime())), active: z.boolean() });
 export const logFilesSchema = z.object({ enabled: z.boolean(), log_dir: z.string(), file_count: count, total_size: count, files: z.array(logFileSchema).nullable().transform((rows) => rows ?? []) });
 export const performanceSchema = z.object({
   cache_stats: z.object({ disk_cache_hits: count, memory_cache_hits: count }), memory_stats: z.object({ alloc: count, num_gc: count }),
@@ -22,8 +22,8 @@ export const performanceSchema = z.object({
   config: z.object({ monitor_enabled: z.boolean(), monitor_cpu_threshold: percent, monitor_memory_threshold: percent, monitor_disk_threshold: percent, disk_cache_enabled: z.boolean() }),
 });
 const consumptionSchema = z.object({ quota: count, requests: count, tokens: count });
-export const channelConsumptionSchema = consumptionSchema.extend({ channel_id: count, channel_name: z.string() });
-export const groupConsumptionSchema = consumptionSchema.extend({ group: z.string() });
+const channelConsumptionSchema = consumptionSchema.extend({ channel_id: count, channel_name: z.string() });
+const groupConsumptionSchema = consumptionSchema.extend({ group: z.string() });
 export const operationsReportSchema = z.object({
   period: z.object({ start_timestamp: timestamp, end_timestamp: timestamp }),
   summary: z.object({

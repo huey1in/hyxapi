@@ -51,7 +51,7 @@ const POSITION_CLS = {
   br: 'bottom-2 right-2',
 };
 
-export interface IconButtonProps extends Omit<ButtonHTMLAttributes<HTMLButtonElement>, 'className'> {
+interface IconButtonProps extends Omit<ButtonHTMLAttributes<HTMLButtonElement>, 'className'> {
   icon?: ComponentType<{ size?: number }> | ReactElement;
   size?: keyof typeof SIZE_BOX;
   variant?: keyof typeof VARIANT_STYLES;

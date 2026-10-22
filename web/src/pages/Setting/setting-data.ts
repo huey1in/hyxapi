@@ -14,7 +14,7 @@ const name = z.string().refine((value) => value.trim().length > 0);
 export const stringMap = z.record(name, z.string());
 export const numericMap = z.record(name, z.number().finite().nonnegative());
 export const jsonObject = z.record(z.string(), z.unknown());
-export const affinityRuleSchema = z.looseObject({
+const affinityRuleSchema = z.looseObject({
   name: z.string().optional(),
   model_regex: z.array(z.string()).nullish(),
   path_regex: z.array(z.string()).nullish(),
@@ -243,7 +243,7 @@ export function invalidSettingKeys(
   return [...new Set(invalid)];
 }
 
-export type Pair = { key: string; value: string };
+type Pair = { key: string; value: string };
 export function serializePairs(rows: Pair[], numeric: boolean): string | null {
   const keys = rows.map((row) => row.key.trim());
   if (

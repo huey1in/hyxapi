@@ -31,7 +31,7 @@ const COMMON = 'placeholder:text-ui-text-3 disabled:opacity-50 disabled:cursor-n
 
 type InputVariant = keyof typeof VARIANT;
 type InputStyleOptions = { variant?: InputVariant; size?: number };
-export interface InputProps extends Omit<InputHTMLAttributes<HTMLInputElement>, 'size' | 'width' | 'prefix' | 'onChange'> {
+interface InputProps extends Omit<InputHTMLAttributes<HTMLInputElement>, 'size' | 'width' | 'prefix' | 'onChange'> {
   onChange?: (value: string, event?: ChangeEvent<HTMLInputElement>) => void;
   prefix?: ReactNode;
   suffix?: ReactNode;

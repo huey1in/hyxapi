@@ -1,7 +1,7 @@
 import { z } from 'zod';
 
 const chargeSchema = z.object({ name: z.string().min(1), count: z.number().int().positive(), price: z.number().finite().nonnegative() });
-export type ToolSurcharge = z.infer<typeof chargeSchema>;
+type ToolSurcharge = z.infer<typeof chargeSchema>;
 export function parseToolSurcharges(value: unknown) {
   if (!Array.isArray(value)) return { items: [], invalid: value != null };
   const items: ToolSurcharge[] = [];

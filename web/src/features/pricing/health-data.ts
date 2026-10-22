@@ -4,7 +4,7 @@ const count = z.number().finite().nonnegative();
 const record = z.object({ status: z.string(), latency: count, checked_at: count, total: count, errors: count, prompt_tokens: count, cache_tokens: count });
 export const healthSchema = z.array(z.object({ model: z.string(), group: z.string(), current: record.nullable(), history: z.array(record).nullable().transform((rows) => rows ?? []) })).nullable().transform((rows) => rows ?? []);
 export type ModelHealthRecord = z.infer<typeof record>;
-export type ModelGroupHealth = z.infer<typeof healthSchema>[number];
+type ModelGroupHealth = z.infer<typeof healthSchema>[number];
 
 export function summarizeHealth(entry?: ModelGroupHealth) {
   const rows = entry?.history ?? [];

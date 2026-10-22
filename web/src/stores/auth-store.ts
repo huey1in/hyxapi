@@ -21,7 +21,7 @@ import { create } from 'zustand'
 import type { LoginChallenge } from '../features/auth/secure-verification/types'
 import type { AdminCapabilities } from '../lib/admin-permissions'
 
-export type UserPermissions = {
+type UserPermissions = {
   admin_permissions?: AdminCapabilities
 }
 
@@ -74,7 +74,7 @@ export interface AuthBundle {
 
 export type AuthBootstrapState = 'idle' | 'checking' | 'complete'
 
-export interface PendingLoginVerification {
+interface PendingLoginVerification {
   challenge: LoginChallenge
   redirectTo?: string
 }

@@ -278,12 +278,12 @@ export const native = {
     validateViduCombo(model, duration, outboundResolution(requestBody, model), hasViduImages(requestBody, false));
     return { kind: "submit", model: model, action: action, requestBody: requestBody };
   },
-  taskCreated: function (ctx, task) {
+  taskCreated: function (_ctx, task) {
     return Object.assign({}, plainObject(task.data) || {}, { task_id: task.task_id });
   },
   // The poller can fail a task whose snapshot was still processing; that
   // snapshot is rendered failed so a downstream gateway reads the same state.
-  taskStatus: function (ctx, task) {
+  taskStatus: function (_ctx, task) {
     const output = Object.assign({}, plainObject(task.data) || {}, { id: task.task_id });
     if (task.status === "FAILURE" && output.state !== "failed") {
       output.state = "failed";
@@ -291,7 +291,7 @@ export const native = {
     }
     return output;
   },
-  error: function (ctx, error) {
+  error: function (_ctx, error) {
     return { code: error.code, message: error.message };
   },
 };
@@ -323,7 +323,7 @@ export function buildSubmitRequest(ctx) {
   };
 }
 
-export function parseSubmitResponse(ctx, resp) {
+export function parseSubmitResponse(_ctx, resp) {
   if (!resp.body || resp.body.state === "failed") throw new Error("task failed");
   if (!resp.body.task_id) throw new Error("missing task_id");
   return { taskId: resp.body.task_id, taskData: resp.body };
@@ -344,7 +344,7 @@ export function buildQueryRequest(ctx) {
   };
 }
 
-export function parseTaskResult(ctx, body) {
+export function parseTaskResult(_ctx, body) {
   const statuses = { created: "SUBMITTED", queueing: "SUBMITTED", processing: "IN_PROGRESS", success: "SUCCESS", failed: "FAILURE" };
   const status = statuses[body.state];
   if (!status) return { status: "UNKNOWN", reason: "unknown task state: " + String(body.state || "") };
@@ -519,7 +519,7 @@ protocols.openai_video = {
       requestBody: Object.assign({}, req, { model: ctx.model }),
     };
   },
-  render: function (ctx, task) {
+  render: function (_ctx, task) {
     return legacyRenderers.openai_video(task);
   },
 };

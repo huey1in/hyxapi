@@ -35,7 +35,7 @@ export function parseModelsString(modelsStr: string): string[] {
 /**
  * Normalize model name
  */
-export function normalizeModelName(model: string): string {
+function normalizeModelName(model: string): string {
   return typeof model === 'string' ? model.trim() : ''
 }
 

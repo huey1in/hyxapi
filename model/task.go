@@ -76,10 +76,6 @@ func (t *Task) SetData(data any) {
 	t.Data = json.RawMessage(b)
 }
 
-func (t *Task) GetData(v any) error {
-	return common.Unmarshal(t.Data, &v)
-}
-
 type Properties struct {
 	Input             string `json:"input"`
 	UpstreamModelName string `json:"upstream_model_name,omitempty"`
@@ -492,10 +488,6 @@ func GetTaskForProtocolObservation(ctx context.Context, userID int, platform con
 	return &task, true, nil
 }
 
-func (Task *Task) Insert() error {
-	return Task.InsertWithContext(context.Background())
-}
-
 // InsertWithContext creates the row. omitColumns are left out of the INSERT
 // (for example "data" when the submit route discards the upstream snapshot)
 // while the in-memory task keeps its values for presentation.
@@ -543,12 +535,6 @@ func (t *Task) Snapshot() taskSnapshot {
 		PluginState:  t.PrivateData.PluginState,
 		PollFailures: t.PrivateData.PollFailures,
 	}
-}
-
-func (Task *Task) Update() error {
-	var err error
-	err = DB.Save(Task).Error
-	return err
 }
 
 func (t *Task) UpdateQuota() error {

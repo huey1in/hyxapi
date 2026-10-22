@@ -1005,7 +1005,7 @@ export function buildSubmitRequest(ctx) {
 
 // DashScope sends text/image deltas but cumulative usage. The host applies
 // generic JSON changes; vendor completion and usage semantics remain here.
-export function parseSubmitEventDelta(ctx, event, previousState) {
+export function parseSubmitEventDelta(_ctx, event, previousState) {
   const body = JSON.parse(event.data);
   if (!body || typeof body !== "object" || Array.isArray(body)) throw new Error("invalid DashScope stream event");
   if (body.code || event.event === "error") throw new Error((body.code || "upstream_error") + ": " + (body.message || "stream failed"));
@@ -1113,7 +1113,7 @@ export function extractUsageOnSubmit(ctx, body) {
   return actual.image_count === undefined ? {} : imageRatios(ctx, converted, actual.image_count);
 }
 
-export function extractUsageOnComplete(task, taskResult, body) {
+export function extractUsageOnComplete(task, _taskResult, body) {
   if (imageModel(task)) return imageUsage(task, body || {});
   const output = (body && body.output) || {};
   const usage = (body && body.usage) || {};
@@ -1234,7 +1234,7 @@ export const native = {
     };
     return { kind: "submit", model: req.model, requestBody: requestBody };
   },
-  imageCreated: function (ctx, task) {
+  imageCreated: function (_ctx, task) {
     return task.data || {};
   },
   createVideoTask: function (ctx) {
@@ -1257,16 +1257,16 @@ export const native = {
       requestBody: normalizeRequest(requestBody),
     };
   },
-  taskCreated: function (ctx, task) {
+  taskCreated: function (_ctx, task) {
     const data = task.data || {};
     return { request_id: data.request_id || "", output: { task_id: task.task_id, task_status: "PENDING" } };
   },
-  taskStatus: function (ctx, task) {
+  taskStatus: function (_ctx, task) {
     const data = task.data || {},
       output = Object.assign({}, data.output || {}, { task_id: task.task_id });
     return Object.assign({}, data, { output: output });
   },
-  error: function (ctx, error) {
+  error: function (_ctx, error) {
     return { code: error.code, message: error.message, request_id: "" };
   },
 };
@@ -1462,7 +1462,7 @@ export const protocols = {
       // The model may be a mapped alias; final validation runs after channel selection.
       return { kind: "submit", model: model, action: images.length ? "image_to_image" : "text_to_image", requestBody: requestBody };
     },
-    render: function (ctx, task) {
+    render: function (_ctx, task) {
       const data = [];
       for (const part of imageContent(artifactData(task))) {
         if (part.image) data.push(imageDatum(part.image));
@@ -1517,7 +1517,7 @@ export const protocols = {
         requestBody: requestBody,
       };
     },
-    render: function (ctx, task) {
+    render: function (_ctx, task) {
       const data = task.data || {},
         outputData = data.output || {};
       const statuses = {

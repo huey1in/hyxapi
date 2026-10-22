@@ -17,7 +17,6 @@ import (
 	kitreasoning "github.com/QuantumNous/new-api/relaykit/relayconvert/reasoning"
 	"github.com/QuantumNous/new-api/relaykit/types"
 	"github.com/QuantumNous/new-api/setting/model_setting"
-	"github.com/QuantumNous/new-api/setting/reasoning"
 	"github.com/gin-gonic/gin"
 )
 
@@ -235,7 +234,7 @@ func applyDeepSeekV4ResponsesThinkingSuffix(info *relaycommon.RelayInfo, request
 func deepSeekThinking(info *relaycommon.RelayInfo, modelName string) (baseModel string, thinkingType string, effort string, ok bool) {
 	baseModel = modelName
 	if !model_setting.ShouldPreserveThinkingSuffix(modelName) && (info == nil || !model_setting.ShouldPreserveThinkingSuffix(info.OriginModelName)) {
-		baseModel, thinkingType, effort, ok = reasoning.ParseDeepSeekV4ThinkingSuffix(modelName)
+		baseModel, thinkingType, effort, ok = kitreasoning.ParseDeepSeekV4ThinkingSuffix(modelName)
 	}
 	state := info.ReasoningState()
 	if state == nil {

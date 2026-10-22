@@ -415,10 +415,10 @@ export const native = {
   createExtension: function (ctx) {
     return nativeRequest(ctx, "video_extension");
   },
-  videoCreated: function (ctx, task) {
+  videoCreated: function (_ctx, task) {
     return { request_id: task.task_id };
   },
-  videoStatus: function (ctx, task) {
+  videoStatus: function (_ctx, task) {
     const data = plainObject(task.data);
     // The poller can fail a task whose last snapshot was still pending.
     if (data && typeof data.status === "string" && !(task.status === "FAILURE" && data.status === "pending")) {
@@ -440,7 +440,7 @@ export const native = {
     const progress = Number(String(task.progress || "0").replace("%", ""));
     return { status: "pending", progress: Number.isFinite(progress) ? Math.min(Math.max(progress, 0), 99) : 0 };
   },
-  error: function (ctx, error) {
+  error: function (_ctx, error) {
     return { error: { code: error.code, message: error.message } };
   },
 };
@@ -765,7 +765,7 @@ export const protocols = {
     },
     // The host owns id, status, progress, and timestamps; a moderated video
     // reports completed (it is charged) and explains the missing content here.
-    render: function (ctx, task) {
+    render: function (_ctx, task) {
       const data = plainObject(task.data) || {};
       const output = { object: "video" };
       const seconds = Number(plainObject(data.video) ? data.video.duration : NaN);

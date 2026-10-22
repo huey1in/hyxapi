@@ -5,6 +5,8 @@ import (
 	"testing"
 	"time"
 
+	relaytypes "github.com/QuantumNous/new-api/relaykit/types"
+
 	"github.com/QuantumNous/new-api/model"
 	relaycommon "github.com/QuantumNous/new-api/relay/common"
 	"github.com/QuantumNous/new-api/relaykit/dto"
@@ -43,7 +45,7 @@ func TestCalculateTextQuotaSummaryAnthropicChargesInputAndCacheClassesIndependen
 	priceData := tokenPriceData()
 	priceData.GroupRatioInfo.GroupRatio = 1.5
 	relayInfo := newTextQuotaRelayInfo(priceData)
-	relayInfo.FinalRequestRelayFormat = types.RelayFormatClaude
+	relayInfo.FinalRequestRelayFormat = relaytypes.RelayFormatClaude
 	usage := &dto.Usage{
 		PromptTokens:     1000,
 		CompletionTokens: 200,

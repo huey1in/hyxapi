@@ -235,7 +235,7 @@ export const native = {
     }
     return output;
   },
-  error: function (ctx, error) {
+  error: function (_ctx, error) {
     return { error: { code: error.httpStatus, message: error.message } };
   },
 };
@@ -251,7 +251,7 @@ export function buildSubmitRequest(ctx) {
   };
 }
 
-export function parseSubmitResponse(ctx, resp) {
+export function parseSubmitResponse(_ctx, resp) {
   const body = resp.body || {};
   if (!String(body.name || "").trim()) throw new Error("missing operation name");
   const result = { taskId: utils.base64URL(body.name), taskData: body };
@@ -284,7 +284,7 @@ export function buildQueryRequest(ctx) {
   };
 }
 
-export function parseTaskResult(ctx, body) {
+export function parseTaskResult(_ctx, body) {
   if (body.error && body.error.message) return { status: "FAILURE", progress: "100%", reason: body.error.message };
   // Google long-running operations omit `done` (proto3 default) while still
   // running, so a missing key means in-progress; only a non-operation shape is
@@ -466,7 +466,7 @@ protocols.openai_video = {
       requestBody: Object.assign({}, req, { model: ctx.model }),
     };
   },
-  render: function (ctx, task) {
+  render: function (_ctx, task) {
     return legacyRenderers.openai_video(task);
   },
 };

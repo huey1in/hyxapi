@@ -40,7 +40,7 @@ export type ModelMappingRule =
   | { type: 'add-suffix'; value: string }
   | { type: 'replace'; find: string; replaceWith: string }
 
-export type ModelMappingDerivation = {
+type ModelMappingDerivation = {
   pairs: ModelMappingPair[]
   /** Selected models the rule left unchanged; they produce no mapping. */
   unchanged: string[]

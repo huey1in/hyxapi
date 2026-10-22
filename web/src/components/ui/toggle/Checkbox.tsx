@@ -11,7 +11,7 @@ import { cn, FOCUS_RING } from '../tokens';
 const SIZE = { sm: 'w-4 h-4', md: 'w-[18px] h-[18px]' };
 const ICON = { sm: 10, md: 12 };
 
-export interface CheckboxProps extends Omit<ButtonHTMLAttributes<HTMLButtonElement>, 'onChange' | 'children'> {
+interface CheckboxProps extends Omit<ButtonHTMLAttributes<HTMLButtonElement>, 'onChange' | 'children'> {
   checked?: boolean; indeterminate?: boolean; onChange?: (checked: boolean) => void;
   size?: keyof typeof SIZE; label?: ReactNode;
 }

@@ -44,7 +44,7 @@ import { getTaskPricingDisplayTiers } from './task-matrix-display.ts'
 
 const TOKEN_UNIT_DIVISORS = { M: 1, K: 1000 } as const
 
-export type DynamicPriceOptions = {
+type DynamicPriceOptions = {
   formatUSD?: (value: number) => string
   tokenUnit: TokenUnit
   showCurrencySymbol?: boolean
@@ -56,7 +56,7 @@ export type DynamicPriceOptions = {
   now?: Date
 }
 
-export type DynamicPriceLabelKind = 'i18n' | 'schema'
+type DynamicPriceLabelKind = 'i18n' | 'schema'
 
 export type DynamicPriceEntry = {
   key: string
@@ -76,15 +76,15 @@ export type DynamicPriceEntry = {
   description?: string | Record<string, string>
 }
 
-export type CardExamplePrice = {
+type CardExamplePrice = {
   label: string
   total: number
   formatted: string
 }
 
-export type DynamicPricingTier = ParsedTier | ParsedTaskTier
+type DynamicPricingTier = ParsedTier | ParsedTaskTier
 
-export type DynamicPricingSummary = {
+type DynamicPricingSummary = {
   tiers: DynamicPricingTier[]
   tier: DynamicPricingTier | null
   tierCount: number
@@ -110,7 +110,7 @@ function isTaskPricingTier(tier: DynamicPricingTier): tier is ParsedTaskTier {
   )
 }
 
-export function isDynamicPricingModel(model: PricingModel): boolean {
+function isDynamicPricingModel(model: PricingModel): boolean {
   if (model.billing_plugin_variants?.length) {
     return model.billing_plugin_variants.some(
       (variant) =>
@@ -120,15 +120,15 @@ export function isDynamicPricingModel(model: PricingModel): boolean {
   return model.billing_mode === 'tiered_expr' && Boolean(model.billing_expr)
 }
 
-export function hasTaskUsageSchema(model: PricingModel): boolean {
+function hasTaskUsageSchema(model: PricingModel): boolean {
   return Object.keys(model.billing_usage_schema ?? {}).length > 0
 }
 
-export function isTaskUsagePricingModel(model: PricingModel): boolean {
+function isTaskUsagePricingModel(model: PricingModel): boolean {
   return model.billing_mode === 'tiered_expr' && hasTaskUsageSchema(model)
 }
 
-export function isUnconfiguredTaskUsageModel(model: PricingModel): boolean {
+function isUnconfiguredTaskUsageModel(model: PricingModel): boolean {
   if (model.billing_plugin_variants?.length) {
     return model.billing_plugin_variants.every((variant) =>
       variant.billing_mode === 'ratio'
@@ -153,7 +153,7 @@ function applyRechargeRate(
   return (price * priceRate) / usdExchangeRate
 }
 
-export function formatDynamicUnitPrice(
+function formatDynamicUnitPrice(
   valuePerMillionTokens: number,
   options: DynamicPriceOptions
 ): string {
@@ -179,7 +179,7 @@ export function formatDynamicUnitPrice(
   })
 }
 
-export function formatTaskUsageUnitPrice(
+function formatTaskUsageUnitPrice(
   valuePerUnit: number,
   options: DynamicPriceOptions
 ): string {
@@ -221,7 +221,7 @@ export function getDynamicPricingTiers(
   return parseTiersFromExpr(billingExpr)
 }
 
-export function hasDynamicRequestRules(model: PricingModel): boolean {
+function hasDynamicRequestRules(model: PricingModel): boolean {
   if (model.billing_plugin_variants?.length) {
     return model.billing_plugin_variants.some((variant) =>
       hasDynamicRequestRules(withPluginPricing(model, variant))

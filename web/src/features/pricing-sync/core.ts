@@ -9,7 +9,7 @@ export type Preview = {
   test_results: { name: string; status: string; error?: string }[];
   export_errors?: Record<string, string>;
 };
-export const fields: Record<string, string> = {
+const fields: Record<string, string> = {
   model_ratio: 'ModelRatio', completion_ratio: 'CompletionRatio', cache_ratio: 'CacheRatio',
   create_cache_ratio: 'CreateCacheRatio', image_ratio: 'ImageRatio', audio_ratio: 'AudioRatio',
   audio_completion_ratio: 'AudioCompletionRatio', model_price: 'ModelPrice',

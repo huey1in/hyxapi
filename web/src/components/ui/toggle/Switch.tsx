@@ -16,7 +16,7 @@ const SIZES = {
   lg: { track: 'w-[52px] h-7 p-[3px]',   thumb: 'w-[22px] h-[22px]', on: 'translate-x-6' },
 };
 
-export interface SwitchProps extends Omit<ButtonHTMLAttributes<HTMLButtonElement>, 'onChange'> {
+interface SwitchProps extends Omit<ButtonHTMLAttributes<HTMLButtonElement>, 'onChange'> {
   checked?: boolean;
   onChange?: (checked: boolean) => void;
   size?: keyof typeof SIZES;

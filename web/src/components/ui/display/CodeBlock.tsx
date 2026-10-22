@@ -50,7 +50,7 @@ const Inline = ({ children }: PropsWithChildren) => (
   </code>
 );
 
-export type CodeBlockProps = PropsWithChildren<{ code?: string; language?: string; title?: string; showLineNumbers?: boolean; maxHeight?: CSSProperties['maxHeight']; inline?: boolean }>;
+type CodeBlockProps = PropsWithChildren<{ code?: string; language?: string; title?: string; showLineNumbers?: boolean; maxHeight?: CSSProperties['maxHeight']; inline?: boolean }>;
 
 const CodeBlock = ({
   code = '',

@@ -1,6 +1,5 @@
-// Package reasoning re-exports the pure model-name effort-suffix helpers,
-// which moved to the conversion kit (relaykit/relayconvert/reasoning) as part
-// of the relaykit extraction. Host code keeps importing this path unchanged.
+// Package reasoning applies host model settings to RelayKit's reasoning
+// modifiers and billing model names.
 package reasoning
 
 import (
@@ -8,18 +7,6 @@ import (
 
 	kitreasoning "github.com/QuantumNous/new-api/relaykit/relayconvert/reasoning"
 	"github.com/QuantumNous/new-api/setting/model_setting"
-)
-
-var (
-	EffortSuffixes           = kitreasoning.EffortSuffixes
-	OpenAIEffortSuffixes     = kitreasoning.OpenAIEffortSuffixes
-	DeepSeekV4EffortSuffixes = kitreasoning.DeepSeekV4EffortSuffixes
-)
-
-var (
-	TrimEffortSuffixWithSuffixes  = kitreasoning.TrimEffortSuffixWithSuffixes
-	ParseDeepSeekV4ThinkingSuffix = kitreasoning.ParseDeepSeekV4ThinkingSuffix
-	TrimGeminiThinkingSuffix      = kitreasoning.TrimGeminiThinkingSuffix
 )
 
 // ParseOpenAIReasoningEffortFromModelSuffix applies RelayKit's positive family

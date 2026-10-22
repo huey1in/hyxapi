@@ -20,8 +20,8 @@ import useDropdownLayout from './useDropdownLayout';
 import { selectorStyle } from './selectorSizing';
 
 type OptionValue = string | number;
-export type MultiSelectOption<T extends OptionValue = string> = T | { value: T; label: ReactNode };
-export interface MultiSelectProps<T extends OptionValue = string> {
+type MultiSelectOption<T extends OptionValue = string> = T | { value: T; label: ReactNode };
+interface MultiSelectProps<T extends OptionValue = string> {
   options?: MultiSelectOption<T>[];
   value?: T[];
   onChange?: (value: T[]) => void;

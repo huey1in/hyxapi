@@ -13,7 +13,7 @@ export const CLIENT_ROUTE_REDIRECTS: Record<string, string> = {
 };
 
 const clientPages = new Set(['token', 'log', 'topup', 'subscription', 'personal', 'notices']);
-export const isPricingPath = (path: string) => path === '/pricing' || path.startsWith('/pricing/');
+const isPricingPath = (path: string) => path === '/pricing' || path.startsWith('/pricing/');
 export const isConsolePath = (path: string, authenticated = false) => path === '/console' || path.startsWith('/console/') || clientPages.has(path.split('/')[1]) || (authenticated && isPricingPath(path));
 
 export function canonicalClientPath(path: string): string {

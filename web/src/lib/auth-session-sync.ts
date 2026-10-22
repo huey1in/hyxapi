@@ -16,7 +16,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 For commercial licensing, please contact support@quantumnous.com
 */
-export type AuthSessionSyncEvent = {
+type AuthSessionSyncEvent = {
   kind: 'authenticated' | 'signed_out'
   sid: string
   source: string
