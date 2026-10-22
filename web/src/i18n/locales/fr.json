@@ -3039,6 +3039,9 @@
     "View system settings, custom OAuth providers, and price sync sources.": "Consulter les paramètres système, les fournisseurs OAuth personnalisés et les sources de synchronisation des tarifs.",
     "View users, their sign-in bindings, and permission settings.": "Consulter les utilisateurs, leurs connexions associées et leurs paramètres d’autorisation.",
     "View your profile, groups, and available models.": "Consulter votre profil, vos groupes et les modèles disponibles.",
-    "View your usage logs, statistics, tasks, and audit logs.": "Consulter vos journaux d’utilisation, vos statistiques, vos tâches et vos journaux d’audit."
+    "View your usage logs, statistics, tasks, and audit logs.": "Consulter vos journaux d’utilisation, vos statistiques, vos tâches et vos journaux d’audit.",
+    "Personal permissions": "Autorisations personnelles",
+    "Administrative permissions": "Autorisations d’administration",
+    "System permissions": "Autorisations système"
   }
 }

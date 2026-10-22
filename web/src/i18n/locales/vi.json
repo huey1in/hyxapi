@@ -3039,6 +3039,9 @@
     "View system settings, custom OAuth providers, and price sync sources.": "Xem cài đặt hệ thống, nhà cung cấp OAuth tùy chỉnh và nguồn đồng bộ giá.",
     "View users, their sign-in bindings, and permission settings.": "Xem người dùng, liên kết đăng nhập và cài đặt quyền của họ.",
     "View your profile, groups, and available models.": "Xem hồ sơ, nhóm và mô hình khả dụng của bạn.",
-    "View your usage logs, statistics, tasks, and audit logs.": "Xem nhật ký sử dụng, thống kê, tác vụ và nhật ký kiểm toán của bạn."
+    "View your usage logs, statistics, tasks, and audit logs.": "Xem nhật ký sử dụng, thống kê, tác vụ và nhật ký kiểm toán của bạn.",
+    "Personal permissions": "Quyền cá nhân",
+    "Administrative permissions": "Quyền quản trị",
+    "System permissions": "Quyền hệ thống"
   }
 }

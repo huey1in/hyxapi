@@ -3039,6 +3039,9 @@
     "View system settings, custom OAuth providers, and price sync sources.": "システム設定、カスタム OAuth プロバイダー、料金同期元を表示します。",
     "View users, their sign-in bindings, and permission settings.": "ユーザー、ログイン連携、権限設定を表示します。",
     "View your profile, groups, and available models.": "自分のプロフィール、グループ、利用可能なモデルを表示します。",
-    "View your usage logs, statistics, tasks, and audit logs.": "自分の使用ログ、統計、タスク、監査ログを表示します。"
+    "View your usage logs, statistics, tasks, and audit logs.": "自分の使用ログ、統計、タスク、監査ログを表示します。",
+    "Personal permissions": "個人の権限",
+    "Administrative permissions": "管理者の権限",
+    "System permissions": "システムの権限"
   }
 }

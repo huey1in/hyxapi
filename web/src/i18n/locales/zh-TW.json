@@ -3039,6 +3039,9 @@
     "View system settings, custom OAuth providers, and price sync sources.": "檢視系統設定、自訂 OAuth 提供者和價格同步來源。",
     "View users, their sign-in bindings, and permission settings.": "檢視使用者、其登入綁定和權限設定。",
     "View your profile, groups, and available models.": "檢視你的個人資料、分組和可用模型。",
-    "View your usage logs, statistics, tasks, and audit logs.": "檢視你的用量日誌、統計資料、任務和稽核日誌。"
+    "View your usage logs, statistics, tasks, and audit logs.": "檢視你的用量日誌、統計資料、任務和稽核日誌。",
+    "Personal permissions": "個人權限",
+    "Administrative permissions": "管理權限",
+    "System permissions": "系統權限"
   }
 }

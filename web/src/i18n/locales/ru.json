@@ -3039,6 +3039,9 @@
     "View system settings, custom OAuth providers, and price sync sources.": "Просматривать системные настройки, пользовательских провайдеров OAuth и источники синхронизации цен.",
     "View users, their sign-in bindings, and permission settings.": "Просматривать пользователей, их привязки для входа и настройки разрешений.",
     "View your profile, groups, and available models.": "Просматривать свой профиль, группы и доступные модели.",
-    "View your usage logs, statistics, tasks, and audit logs.": "Просматривать свои журналы использования, статистику, задачи и журналы аудита."
+    "View your usage logs, statistics, tasks, and audit logs.": "Просматривать свои журналы использования, статистику, задачи и журналы аудита.",
+    "Personal permissions": "Личные разрешения",
+    "Administrative permissions": "Административные разрешения",
+    "System permissions": "Системные разрешения"
   }
 }

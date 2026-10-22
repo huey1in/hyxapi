@@ -3088,6 +3088,9 @@
     "View system settings, custom OAuth providers, and price sync sources.": "View system settings, custom OAuth providers, and price sync sources.",
     "View users, their sign-in bindings, and permission settings.": "View users, their sign-in bindings, and permission settings.",
     "View your profile, groups, and available models.": "View your profile, groups, and available models.",
-    "View your usage logs, statistics, tasks, and audit logs.": "View your usage logs, statistics, tasks, and audit logs."
+    "View your usage logs, statistics, tasks, and audit logs.": "View your usage logs, statistics, tasks, and audit logs.",
+    "Personal permissions": "Personal permissions",
+    "Administrative permissions": "Administrative permissions",
+    "System permissions": "System permissions"
   }
 }

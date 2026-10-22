@@ -13,6 +13,12 @@ import { SettingGroup, SettingRow, FieldGroup } from './ProfileSettingsLayout';
 import { localExpiryInput, personalTokenPayload, personalTokensSchema, tokenScopeCatalogSchema } from './access-token-settings';
 import type { AccessTokenForm, PersonalToken } from './access-token-settings';
 
+const permissionGroupLabels: Record<string, string> = {
+  personal: 'Personal permissions',
+  admin: 'Administrative permissions',
+  system: 'System permissions',
+};
+
 function Tokens({ identity }: { identity: string }) {
   const { t, i18n } = useTranslation();
   const { busy, run } = useOwnedOperation();
@@ -80,7 +86,7 @@ function Tokens({ identity }: { identity: string }) {
         <AuditViewer key={records.tokenRef ?? 'all'} identity={identity} scope='self' accessOnly currentTokenRef={records.tokenRef} defaultTokenScope={records.tokenRef ? 'current' : 'all'} />
       </div>
     </SlideOver>}
-    {editing && <Modal open width={380} title={t(editing.original ? 'Edit access token' : 'Create access token')} onClose={() => { if (!busy) setEditing(null); }} onConfirm={save} loading={busy} confirmText={t('Save')} cancelText={t('Cancel')}>
+    {editing && <Modal open width={480} title={t(editing.original ? 'Edit access token' : 'Create access token')} onClose={() => { if (!busy) setEditing(null); }} onConfirm={save} loading={busy} confirmText={t('Save')} cancelText={t('Cancel')}>
       <fieldset disabled={busy} className='m-0 min-w-0 space-y-4 border-0 p-0'>
         <div className='flex items-center justify-between gap-3'>
           <label htmlFor='personal-access-token-name' className='min-w-0 flex-1 text-sm text-ui-text'>{t('Name')}</label>
@@ -98,12 +104,17 @@ function Tokens({ identity }: { identity: string }) {
             {editing.form.expiry === 'custom' && <div className='mt-2 w-full'><Input aria-label={t('Access token expiry date')} type='datetime-local' value={editing.form.customExpiry} onChange={(value) => set('customExpiry', value)} width='full' /><p className='mt-1 text-xs text-ui-text-3'>{t('Choose an expiry at least one hour from now')}</p></div>}
           </div>
         </div>}
-        {(catalog?.groups ?? []).flatMap((group) => group.resources).map((resource) => <FieldGroup key={resource.resource} label={t(resource.label_key)}>
-          <div className='flex flex-wrap gap-x-3.5 gap-y-2'>{resource.actions.map((action) => {
-            const scope = `${resource.resource}:${action.action}`;
-            return <Checkbox key={scope} label={t(action.label_key)} title={t(action.description_key)} aria-label={`${t(resource.label_key)}: ${t(action.label_key)}`} checked={editing.form.scopes.includes(scope)} disabled={busy} onChange={(checked) => toggleScope(scope, checked)} />;
-          })}</div>
-        </FieldGroup>)}
+        {(catalog?.groups ?? []).map((group) => <section key={group.group} className='space-y-3 border-t border-ui-divider pt-4'>
+          <h4 className='text-sm font-semibold text-ui-text'>{t(permissionGroupLabels[group.group] ?? group.group)}</h4>
+          <div className='grid grid-cols-2 gap-x-5 gap-y-4'>
+            {group.resources.map((resource) => <FieldGroup key={resource.resource} label={t(resource.label_key)}>
+              <div className='grid gap-2 [&>label]:min-w-0 [&>label>span]:min-w-0 [&>label>span]:break-words'>{resource.actions.map((action) => {
+                const scope = `${resource.resource}:${action.action}`;
+                return <Checkbox key={scope} label={t(action.label_key)} title={t(action.description_key)} aria-label={`${t(resource.label_key)}: ${t(action.label_key)}`} checked={editing.form.scopes.includes(scope)} disabled={busy} onChange={(checked) => toggleScope(scope, checked)} />;
+              })}</div>
+            </FieldGroup>)}
+          </div>
+        </section>)}
         {unavailable.length > 0 && <FieldGroup label={t('Permissions no longer available')} hint={t('Renaming preserves the current grant; remove unavailable permissions before changing it.')}>
           <div className='space-y-2'>{unavailable.map((scope) => <Checkbox key={scope} label={<span className='break-all'>{scope}</span>} aria-label={scope} checked disabled={busy} onChange={() => toggleScope(scope, false)} />)}</div>
         </FieldGroup>}
