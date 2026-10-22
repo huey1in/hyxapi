@@ -239,7 +239,7 @@ const Pricing = () => {
       <ConsolePageHeader title={t('Models')} />
       <div>
         <div className='pricing-filter-panel flex flex-wrap items-center gap-2 rounded-2xl border border-ui-border bg-[var(--page-bg)] p-4'>
-          <div className='min-w-0 basis-full sm:w-[320px] sm:basis-auto'>
+          <div className='w-40 min-w-0 max-w-full sm:w-[320px]'>
             <Input value={searchValue} aria-label={t('Search models, vendors or tags')} onChange={(value) => { handleChange(value); updateQuery('search', value); }} placeholder={t('Search models, vendors or tags')} prefix={<Search size={15} />} clearable width='full' />
           </div>
           <div className='ml-auto flex shrink-0 items-center gap-1 sm:gap-2'>

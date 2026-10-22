@@ -4,7 +4,7 @@ import { useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { z } from 'zod';
 import { API, copy, renderQuota } from '../../helpers';
-import { Button, Input, Select, showError, showSuccess } from '../../components/ui';
+import { FormField, Button, Input, Select, showError, showSuccess } from '../../components/ui';
 import { useAuthStore } from '../../stores/auth-store';
 import { apiErrorMessage } from '../../lib/api-error';
 import { paymentMethods, paymentError, paymentSucceeded, topUpRequest, safePaymentURL } from '../../features/payments/payment-core';
@@ -80,7 +80,7 @@ function TopUp({ identity }: { identity: string }) {
     {profile.isError && <div role='alert' className='space-y-2 text-sm text-ui-danger'><p>{t(apiErrorMessage(profile.error, 'Unable to load wallet data'))}</p><Button onClick={refreshUser}>{t('Retry')}</Button></div>}
     {info.isError ? <div role='alert' className='space-y-2 text-sm text-ui-danger'><p>{t(apiErrorMessage(info.error, 'Unable to load payment methods'))}</p><Button onClick={() => void info.refetch()}>{t('Retry')}</Button></div> : methods.length > 0 && <section className='flex flex-col gap-4'>
       <div className='flex items-center justify-between gap-2'><h2 className='text-lg font-semibold text-ui-text'>{t('Top up now')}</h2>{canRedeem && <Button size='sm' variant='secondary' onClick={() => setRedeemOpen(true)}>{t('Redemption code')}</Button>}</div>
-      <Select width='full' aria-label={t('Payment method')} value={method?.id || ''} onChange={setSelectedMethod} disabled={checkingOut} options={methods.map((item) => ({ value: item.id, label: t(item.name) }))} />
+      <FormField label={t('Payment method')}><Select popover width='full' aria-label={t('Payment method')} value={method?.id || ''} onChange={setSelectedMethod} disabled={checkingOut} options={methods.map((item) => ({ value: item.id, label: t(item.name) }))} /></FormField>
       {method?.provider !== 'creem' && <fieldset disabled={checkingOut} className='grid gap-2' style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(80px, 1fr))' }}>
         {amounts.map((amount) => <button key={amount} onClick={() => { setDraft(String(amount)); setCustom(false); }} style={{ cursor: 'pointer', minWidth: 0, height: 45, border: !custom && units === amount ? '2px solid #000' : '1px solid #e5e5e5', borderRadius: 10, fontSize: 16, fontWeight: !custom && units === amount ? 600 : 400, color: 'var(--ui-text)', background: 'var(--page-bg)', boxShadow: !custom && units === amount ? '0 2px 8px rgba(0,0,0,0.08)' : 'none' }}>${amount}</button>)}
         <Input type='number' min={method?.min ?? 1} step='1' aria-label={t('Custom top-up amount')} placeholder={t('Custom amount')} value={custom ? draft : ''} onChange={(value) => { setDraft(value); setCustom(true); }} size={45} />

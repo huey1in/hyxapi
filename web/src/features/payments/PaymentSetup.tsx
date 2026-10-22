@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { z } from 'zod';
 import { API, showSuccess } from '../../helpers';
 import {
+  FormField,
   Button,
   ConfirmDialog,
   EmptyState,
@@ -411,7 +412,7 @@ export default function PaymentSetup({
                 )}
                 {stores.length > 0 && (
                   <>
-                    <Select
+                    <FormField label={t('Payment store')}><Select popover
                       aria-label={t('Payment store')}
                       width='full'
                       value={value('WaffoPancakeStoreID')}
@@ -423,8 +424,8 @@ export default function PaymentSetup({
                         onChange('WaffoPancakeStoreID', next);
                         onChange('WaffoPancakeProductID', '');
                       }}
-                    />
-                    <Select
+                    /></FormField>
+                    <FormField label={t('Top-up product')}><Select popover
                       aria-label={t('Top-up product')}
                       width='full'
                       value={value('WaffoPancakeProductID')}
@@ -439,7 +440,7 @@ export default function PaymentSetup({
                       onChange={(next) =>
                         onChange('WaffoPancakeProductID', next)
                       }
-                    />
+                    /></FormField>
                   </>
                 )}
               </div>

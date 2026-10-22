@@ -7,7 +7,7 @@ import type { TokenVariable } from '../../../features/pricing/lib/billing-expres
 import { buildEstimatorTokens } from '../../../features/pricing/lib/tier-expr';
 import { Input, Textarea, variableLabels } from './controls';
 import { Select } from './controls';
-import { Button } from '../../../components/ui';
+import { Button, FormField } from '../../../components/ui';
 import type { BillingUsageExample, BillingUsageSchema } from '../../../features/pricing/types';
 import { usageLabel, usageUnit } from './usage-labels';
 
@@ -99,18 +99,17 @@ export default function BillingSimulation({ expression, invalid, schema, example
       {Boolean(examples?.length) && <div className='flex flex-wrap gap-2'>
         {(examples ?? []).map((example, index) => <Button key={index} variant='secondary' size='sm' onClick={() => setUsage(JSON.stringify(example.facts, null, 2))}>{t('Example: {{label}}', { label: example.label })}</Button>)}
       </div>}
-      <div className='grid min-w-0 grid-cols-1 gap-3 sm:grid-cols-2'>
-        {Object.entries(schema).map(([field, definition]) => <label key={field} className='grid min-w-0 gap-1 text-xs text-ui-text-3'>
-          {usageLabel(definition.description, field, i18n.language)} · {field}{definition.unit ? ` (${usageUnit(definition, i18n.language, t)})` : ''}
-          {definition.type === 'boolean' ? <Select disabled={!usageObject} width='100%' value={usageObject?.[field] === undefined ? '' : String(usageObject[field])}
+      <div className='space-y-3'>
+        {Object.entries(schema).map(([field, definition]) => <FormField key={field} label={<>{usageLabel(definition.description, field, i18n.language)} · {field}{definition.unit ? ` (${usageUnit(definition, i18n.language, t)})` : ''}</>}>
+          {definition.type === 'boolean' ? <Select popover disabled={!usageObject} width='100%' value={usageObject?.[field] === undefined ? '' : String(usageObject[field])}
             options={[{ value: '', label: t('Unspecified') }, { value: 'true', label: 'true' }, { value: 'false', label: 'false' }]}
             onChange={(value) => setUsageField(field, value === '' ? undefined : value === 'true')} />
-            : definition.enum ? <Select disabled={!usageObject} width='100%' value={String(usageObject?.[field] ?? '')}
+            : definition.enum ? <Select popover disabled={!usageObject} width='100%' value={String(usageObject?.[field] ?? '')}
               options={[{ value: '', label: t('Unspecified') }, ...definition.enum.map((value) => ({ value, label: usageLabel(definition.enumLabels?.[value], value, i18n.language) }))]}
               onChange={(value) => setUsageField(field, value === '' ? undefined : value)} />
               : <Input aria-label={t('Simulation task field {{field}}', { field })} disabled={!usageObject} type={definition.type === 'number' ? 'number' : 'text'} min={0} step='any'
                 value={String(usageObject?.[field] ?? '')} placeholder={t('Unspecified')} onChange={(value) => setUsageField(field, value === '' ? undefined : definition.type === 'number' ? Number(value) : value)} />}
-        </label>)}
+        </FormField>)}
       </div>
       {!usageObject && <p role='status' className='text-xs text-ui-danger'>{t('Correct the task usage JSON below before using the field form.')}</p>}
     </>}

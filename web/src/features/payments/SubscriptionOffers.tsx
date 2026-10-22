@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { API, renderQuota } from '../../helpers';
-import { Button, ConfirmDialog, Modal, Select, Tag, showSuccess } from '../../components/ui';
+import { FormField, Button, ConfirmDialog, Modal, Select, Tag, showSuccess } from '../../components/ui';
 import { useAuthStore } from '../../stores/auth-store';
 import { apiErrorMessage } from '../../lib/api-error';
 import type { ApiEnvelope } from '../../types/api';
@@ -34,7 +34,7 @@ function PurchaseDialog({ plan, info, onClose, onPurchased }: Props & { plan: Su
   };
   return <>
     <Modal open title={t('Buy {{plan}}', { plan: plan.title })} onClose={onClose} hideFooter>
-      <label className='block space-y-2 text-sm text-ui-text-2'>{t('Payment method')}<Select width='full' value={method?.id || ''} options={methods.map((item) => ({ value: item.id, label: t(item.name) }))} onChange={setMethodId} disabled={checkingOut} /></label>
+      <FormField label={t('Payment method')}><Select popover width='full' value={method?.id || ''} options={methods.map((item) => ({ value: item.id, label: t(item.name) }))} onChange={setMethodId} disabled={checkingOut} /></FormField>
       <p className='text-sm text-ui-text-2'>{t('Plan price: {{amount}}', { amount: price })}{method?.provider === 'balance' ? ` ${t('(deducted from balance)')}` : ''}</p>
       {method?.provider !== 'balance' && <p className='text-xs text-ui-text-3'>{t('Check the final amount at checkout. Refresh this page after payment to view your subscription.')}</p>}
       <div className='flex justify-end pb-3'><Button loading={checkingOut} disabled={!method} onClick={() => method?.provider === 'balance' ? setConfirm(true) : buy()}>{t('Confirm purchase')}</Button></div>

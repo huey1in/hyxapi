@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { API } from '../../helpers';
-import { Button, Input, Modal, Select } from '../../components/ui';
+import { Button, FormField, Input, Modal, Select } from '../../components/ui';
 import { useAuthStore } from '../../stores/auth-store';
 import { hasPermission } from '../../lib/admin-permissions';
 
@@ -38,15 +38,14 @@ export default function CopyChannelDialog({ channel, onClose, onCopied }: Props)
     <Button variant='secondary' disabled={busy} onClick={close}>{t('Cancel')}</Button><Button loading={busy} onClick={() => void copy()}>{t('Create copy')}</Button>
   </>}>
     <p className='text-sm text-ui-text-2 break-all'>{t('The copy includes channel credentials and configuration.')}</p>
-    <div className='space-y-1'><label htmlFor='channel-copy-suffix' className='text-sm text-ui-text-2'>{t('Name suffix')}</label>
+    <FormField label={t('Name suffix')} hint={<span className='break-all'>{channel.name}{suffix}</span>}>
       <Input id='channel-copy-suffix' value={suffix} maxLength={100} disabled={busy} onChange={setSuffix} />
-      <p className='text-xs text-ui-text-3 break-all'>{channel.name}{suffix}</p>
-    </div>
-    <div className='space-y-1'><label htmlFor='channel-copy-counters' className='text-sm text-ui-text-2'>{t('Balance and usage counters')}</label>
-      <Select id='channel-copy-counters' value={reset} disabled={busy} onChange={setReset} options={[
+    </FormField>
+    <FormField label={t('Balance and usage counters')}>
+      <Select popover id='channel-copy-counters' value={reset} disabled={busy} onChange={setReset} options={[
         { value: 'reset', label: t('Reset counters in the copy') }, { value: 'preserve', label: t('Preserve counters in the copy') },
       ]} width='full' />
-    </div>
+    </FormField>
     {error && <p role='alert' className='text-sm text-ui-danger break-words'>{error}</p>}
   </Modal>;
 }

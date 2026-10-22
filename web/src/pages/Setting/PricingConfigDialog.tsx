@@ -5,7 +5,7 @@ import { API } from '../../helpers';
 import type { ApiEnvelope } from '../../types/api';
 import { useAuthStore } from '../../stores/auth-store';
 import { useOwnedOperation } from '../../hooks/useOwnedOperation';
-import { Button, Input, Modal, Select, showSuccess } from '../../components/ui';
+import { FormField, Button, Input, Modal, Select, showSuccess } from '../../components/ui';
 import { combineBillingExpr, splitBillingExprAndRequestRules } from '../../features/pricing/lib/billing-expr';
 import VisualBillingEditor from './billing/VisualBillingEditor';
 import RequestRulesEditor from './billing/RequestRulesEditor';
@@ -155,18 +155,14 @@ function PricingConfigContent({ modelName, onClose, onSaved }: Omit<Props, 'mode
       {!entry ? <div className='text-sm text-ui-text-3'>{error ? <Button variant='secondary' onClick={() => setGeneration((current) => current + 1)}>{t('Retry')}</Button> : t('Loading pricing…')}</div> : <>
         <p className='text-xs text-ui-text-3'>{t('Effective pricing')}: {t(entry.source === 'direct' ? 'Direct prices' : entry.source === 'tiered_expr' ? 'Expression billing' : 'Ratio billing')}.{' '}
           {t('An explicit billing mode overrides direct prices. Inherit configuration to use direct prices again.')}</p>
-        <label className='grid gap-1.5 text-xs text-ui-text-3'>{t('Billing mode')}
-          <Select aria-label={t('Billing mode')} disabled={busy || invalidEditors.base || invalidEditors.rules || Boolean(variant)} value={mode} options={[
+        <FormField label={t('Billing mode')}><Select popover aria-label={t('Billing mode')} disabled={busy || invalidEditors.base || invalidEditors.rules || Boolean(variant)} value={mode} options={[
             { value: 'inherit', label: t(entry.direct ? 'Inherit configuration (direct prices first)' : 'Automatic (current configuration)') },
             { value: 'ratio', label: t('Ratio billing') }, { value: 'tiered_expr', label: t('Expression billing') },
-          ]} onChange={(value: string) => update(modeKey, value === 'inherit' ? undefined : value)} />
-        </label>
-        {Boolean(entry.plugin_variants?.length) && <label className='grid gap-1.5 text-xs text-ui-text-3'>{t('Pricing target')}
-          <Select aria-label={t('Pricing target')} disabled={busy || invalidEditors.base || invalidEditors.rules} value={selectedPlugin} options={[
+          ]} onChange={(value: string) => update(modeKey, value === 'inherit' ? undefined : value)} /></FormField>
+        {Boolean(entry.plugin_variants?.length) && <FormField label={t('Pricing target')}><Select popover aria-label={t('Pricing target')} disabled={busy || invalidEditors.base || invalidEditors.rules} value={selectedPlugin} options={[
             { value: '', label: t('Model default (inherited by plugins without overrides)') },
             ...(entry.plugin_variants ?? []).map((item) => ({ value: item.plugin_key, label: `${item.plugin_name} · ${item.plugin_key}${item.stale ? ` ${t('(inactive)')}` : ''}` })),
-          ]} onChange={(value: string) => { setSelectedPlugin(value); setPreview(''); setError(''); }} />
-        </label>}
+          ]} onChange={(value: string) => { setSelectedPlugin(value); setPreview(''); setError(''); }} /></FormField>}
         {variant && <div className='space-y-2 text-xs text-ui-text-3'>
           <p>{t(overridden ? 'This plugin has its own expression. Other plugins keep their own prices.' : 'This plugin inherits model pricing. Create an override to price its usage fields.')}{' '}
             {entry.direct && mode === 'inherit' ? t('A plugin override enables an explicit billing mode and replaces direct prices.') : ''}</p>
@@ -197,12 +193,10 @@ function PricingConfigContent({ modelName, onClose, onSaved }: Omit<Props, 'mode
         </> : <>
           <p className='text-xs text-ui-text-3'>{t('Leave blank to inherit; 0 is free. Per-request pricing disables token ratio billing.')}</p>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 12 }}>
-            {fields.map(([key, label]) => <label key={key} className='grid gap-1.5 text-xs text-ui-text-3'>{t(label)}
-              <Input aria-label={t(label)} disabled={busy} type='number' min={0} step='any' value={draft[key] === undefined ? '' : String(draft[key])}
+            {fields.map(([key, label]) => <FormField key={key} label={t(label)}><Input aria-label={t(label)} disabled={busy} type='number' min={0} step='any' value={draft[key] === undefined ? '' : String(draft[key])}
                 invalid={draft[key] !== undefined && (typeof draft[key] !== 'number' || !Number.isFinite(draft[key]) || Number(draft[key]) < 0)}
                 placeholder={entry.effective[key] === undefined ? t('Default') : String(entry.effective[key])}
-                onChange={(value: string) => update(key, value === '' ? undefined : Number(value))} />
-            </label>)}
+                onChange={(value: string) => update(key, value === '' ? undefined : Number(value))} /></FormField>)}
           </div>
         </>}
         <div className='flex flex-wrap gap-2'>

@@ -27,7 +27,7 @@ export default function SortableMultiSelect({ id, label, options, value, onChang
   const focusMenu = useRef(false);
   const drag = useRef<Drag | null>(null);
   const [preview, setPreview] = useState<string[] | null>(null);
-  const [open, setOpen] = useDropdownState(container);
+  const [open, setOpen] = useDropdownState(container, trigger);
   const menuId = useId();
   const instructionsId = useId();
   const selected = preview ?? value;

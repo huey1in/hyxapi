@@ -1,6 +1,6 @@
 import { useEffect, useId, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Button, Input, Modal, MultiSelect, Select, Switch, Textarea } from '../../components/ui';
+import { Button, FormField, Input, Modal, MultiSelect, Select, Switch, Textarea } from '../../components/ui';
 import { deriveModelMappingPairs, mergeModelMappingPairs, synchronizeModelMapping } from './model-mapping-rules';
 import type { ModelMappingDirection, ModelMappingPair, ModelMappingRule, ModelMappingSync } from './model-mapping-rules';
 import { findMissingModelsInMapping, parseModelsString, validateModelMappingJson } from './model-mapping-validation';
@@ -160,43 +160,50 @@ function MappingBatch(props: { models: string[]; upstreamModels: string[]; curre
     catch (cause) { if (!lifetime.signal.aborted) setError(t((cause as Error).message || 'Unable to fetch upstream models')); }
     finally { if (!lifetime.signal.aborted) { lock.current = false; setBusy(false); } }
   };
-  return <Modal open title={t('Batch generate model mappings')} width={720} onClose={props.onClose} onConfirm={() => {}}
+  return <Modal open title={t('Batch generate model mappings')} width={480} onClose={props.onClose} onConfirm={() => {}}
     footer={<><Button onClick={props.onClose}>{t('Cancel')}</Button><Button disabled={!hasRule || !derived.pairs.length || (!!replaced.length && !overwrite)}
       onClick={() => props.onApply(derived.pairs, direction === 'upstream' && sync)}>{t('Apply {{count}} mappings', { count: derived.pairs.length })}</Button></>}>
-    <label className='block text-sm text-ui-text-2 space-y-2'>{t('Mapping direction')}
-      <Select value={direction} onChange={(value) => {
+    <FormField label={t('Mapping direction')}>
+      <Select popover value={direction} onChange={(value) => {
         setDirection(value as ModelMappingDirection); setRuleType(value === 'upstream' ? 'strip-suffix' : 'add-suffix');
         setAffix(''); setFind(''); setReplacement(''); setOverwrite(false);
       }} width='full' options={[
         { value: 'upstream', label: t('Generate request aliases from upstream names') }, { value: 'request', label: t('Generate upstream names from request names') },
       ]} />
-    </label>
-    <div className='grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2'>
-      <Select value={source} onChange={(value) => { setSource(value); setSelected([]); }} width='full' options={[
+    </FormField>
+    <FormField label={t('Model source')}>
+      <Select popover value={source} onChange={(value) => { setSource(value); setSelected([]); }} width='full' options={[
         { value: 'channel', label: t('Channel supported models') }, { value: 'upstream', label: t('Upstream model list') },
       ]} />
-      <Button size='sm' disabled={busy} onClick={fetch}>{t(busy ? 'Fetching models…' : 'Fetch upstream models')}</Button>
-    </div>
-    <MultiSelect value={selected} onChange={setSelected} options={candidates.map((value) => ({ value, label: value }))} width='full' placeholder={t('Select models for the rule')} />
-    <div className='flex flex-wrap gap-2'>
+    </FormField>
+    <div className='flex justify-end'><Button size='sm' disabled={busy} onClick={fetch}>{t(busy ? 'Fetching models…' : 'Fetch upstream models')}</Button></div>
+    <FormField label={t('Models')}>
+      <MultiSelect popover value={selected} onChange={setSelected} options={candidates.map((value) => ({ value, label: value }))} width='full' placeholder={t('Select models for the rule')} />
+    </FormField>
+    <div className='flex flex-wrap justify-end gap-2'>
       <Button size='sm' variant='toggle' onClick={() => setSelected([...new Set(candidates)])}>{t('Select all models')}</Button>
       <Button size='sm' variant='toggle' onClick={() => setSelected([])}>{t('Clear model selection')}</Button>
     </div>
-    <Select value={ruleType} onChange={(value) => { setRuleType(value as ModelMappingRule['type']); setOverwrite(false); }} width='full' options={[
+    <FormField label={t('Mapping rule')}>
+    <Select popover value={ruleType} onChange={(value) => { setRuleType(value as ModelMappingRule['type']); setOverwrite(false); }} width='full' options={[
       { value: 'strip-prefix', label: t('Remove prefix') }, { value: 'strip-suffix', label: t('Remove suffix') },
       { value: 'add-prefix', label: t('Add prefix') }, { value: 'add-suffix', label: t('Add suffix') }, { value: 'replace', label: t('Replace text') },
     ]} />
-    {ruleType === 'replace' ? <div className='grid grid-cols-1 sm:grid-cols-2 gap-2'>
-      <Input value={find} onChange={setFind} placeholder={t('Find text')} width='full' /><Input value={replacement} onChange={setReplacement} placeholder={t('Replacement text (may be empty)')} width='full' />
-    </div> : <Input value={affix} onChange={setAffix} placeholder={t(ruleType.startsWith('strip') ? 'Comma-separated prefixes or suffixes to remove' : 'Prefix or suffix to add')} width='full' />}
-    {direction === 'upstream' && <label className='flex items-center gap-2 text-sm text-ui-text-2'><Switch size='sm' checked={sync} onChange={setSync} />{t('Publish request aliases and remove their upstream names')}</label>}
+    </FormField>
+    {ruleType === 'replace' ? <>
+      <FormField label={t('Find text')}><Input value={find} onChange={setFind} placeholder={t('Find text')} width='full' /></FormField>
+      <FormField label={t('Replacement text (may be empty)')}><Input value={replacement} onChange={setReplacement} placeholder={t('Replacement text (may be empty)')} width='full' /></FormField>
+    </> : <FormField label={t(ruleType.startsWith('strip') ? 'Remove text' : 'Add text')}>
+      <Input value={affix} onChange={setAffix} placeholder={t(ruleType.startsWith('strip') ? 'Comma-separated prefixes or suffixes to remove' : 'Prefix or suffix to add')} width='full' />
+    </FormField>}
+    {direction === 'upstream' && <FormField compact label={t('Publish request aliases and remove their upstream names')}><Switch size='sm' checked={sync} onChange={setSync} /></FormField>}
     <div className='space-y-1 max-h-60 overflow-y-auto text-xs' aria-label={t('Mapping preview')}>
       {derived.pairs.map((pair) => <p key={pair.from} className='break-all'>{pair.from} → {pair.to}</p>)}
       {!derived.pairs.length && <p className='text-ui-text-3'>{t('Select models and enter a rule to preview mappings.')}</p>}
     </div>
     {!!derived.unchanged.length && <p className='text-xs text-ui-text-3 break-all'>{t('Unchanged models skipped')}: {derived.unchanged.join(', ')}</p>}
     {!!derived.conflicts.length && <p role='alert' className='text-xs text-ui-danger break-all'>{t('Conflicting models skipped')}: {derived.conflicts.join(', ')}</p>}
-    {!!replaced.length && <label className='flex items-center gap-2 text-xs text-ui-danger'><Switch size='sm' checked={overwrite} onChange={setOverwrite} />{t('Allow replacing {{count}} existing request names', { count: replaced.length })}</label>}
+    {!!replaced.length && <FormField compact label={<span className='text-ui-danger'>{t('Allow replacing {{count}} existing request names', { count: replaced.length })}</span>}><Switch size='sm' checked={overwrite} onChange={setOverwrite} /></FormField>}
     {error && <p role='alert' className='text-xs text-ui-danger'>{error}</p>}
   </Modal>;
 }

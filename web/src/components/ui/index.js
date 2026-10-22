@@ -33,6 +33,7 @@ export { default as NumberInput } from './input/NumberInput';
 export { default as TagInput }    from './input/TagInput';
 export { default as Slider }      from './input/Slider';
 export { default as FieldRow }    from './input/FieldRow';
+export { default as FormField }   from './input/FormField';
 
 export { default as Select }      from './select/Select';
 export { default as Combobox }    from './select/Combobox';

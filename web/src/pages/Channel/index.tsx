@@ -549,7 +549,7 @@ function ChannelSession({ identity }: { identity: string }) {
       }
     >
       <div className='channel-filter-panel mb-4 flex flex-wrap items-center gap-2 rounded-2xl border border-ui-border bg-[var(--page-bg)] p-4'>
-        <div className='min-w-0 basis-full sm:w-[320px] sm:basis-auto'>
+        <div className='w-40 min-w-0 max-w-full sm:w-[320px]'>
           <Input
             placeholder={t('搜索渠道名称/key/分组')}
             aria-label={t('搜索渠道名称/key/分组')}

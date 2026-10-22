@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Copy, Dices } from 'lucide-react';
 import { API, copy, showSuccess } from '../../helpers';
-import { Button, IconButton, Input, Select, SlideOver, Switch, Textarea, showError } from '../../components/ui';
+import { FormField, Button, IconButton, Input, Select, SlideOver, Switch, Textarea, showError } from '../../components/ui';
 import type { ApiEnvelope } from '../../types/api';
 import type { PermissionCatalog } from '../../lib/admin-permissions';
 import { normalizeAdminPermissions } from '../../lib/admin-permissions';
@@ -63,16 +63,16 @@ export default function UserEditModal({ user, actorRole, onClose, onSaved }: Pro
     footer={<><Button variant='toggle' disabled={busy} onClick={onClose}>{t('Cancel')}</Button><Button loading={busy} disabled={loading || !!error} onClick={() => void save()}>{t(user ? 'Save' : 'Create')}</Button></>}>
     <div className='px-6 pb-6 space-y-4'>
       {error ? <p role='alert'>{t(error)}</p> : <LayoutSkeleton loading={loading}><fieldset disabled={busy || loading} className='space-y-4'>
-        <label className='block space-y-1.5 text-sm'>{t('Username')}<Input aria-label={t('Username')} value={form.username} onChange={(value) => change('username', value)} disabled={!!user || busy} width='full' /></label>
-        <label className='block space-y-1.5 text-sm'>{t('Display name')}<Input aria-label={t('Display name')} value={form.display_name} onChange={(value) => change('display_name', value)} width='full' /></label>
+        <FormField label={t('Username')}><Input aria-label={t('Username')} value={form.username} onChange={(value) => change('username', value)} disabled={!!user || busy} width='full' /></FormField>
+        <FormField label={t('Display name')}><Input aria-label={t('Display name')} value={form.display_name} onChange={(value) => change('display_name', value)} width='full' /></FormField>
         <label className='block space-y-1.5 text-sm'>{t('Password')} {user && <span className='text-xs text-ui-text-3'>{t('Leave blank to keep the password')}</span>}
           <div className='flex gap-2'><Input aria-label={t('Password')} type='password' autoComplete='new-password' value={form.password} onChange={(value) => { change('password', value); setGenerated(false); }} width='full' /><IconButton icon={Dices} title={t('Generate random password')} onClick={generate} /><IconButton icon={Copy} title={t('Copy password')} disabled={!form.password} onClick={() => void copy(form.password).then((ok) => ok ? showSuccess(t('Password copied')) : showError(t('Copy failed')))} /></div>
         </label>
         {generated && <p className='text-xs text-ui-text-3'>{t('Random password generated. Copy it before saving.')}</p>}
-        {!user && <label className='block space-y-1.5 text-sm'>{t('Role')}<Select aria-label={t('Role')} value={form.role} onChange={(value) => change('role', value)} options={[{ value: 1, label: t('Regular user') }, ...(actorRole === 100 ? [{ value: 10, label: t('Administrator') }] : [])]} width='full' /></label>}
+        {!user && <FormField label={t('Role')}><Select popover aria-label={t('Role')} value={form.role} onChange={(value) => change('role', value)} options={[{ value: 1, label: t('Regular user') }, ...(actorRole === 100 ? [{ value: 10, label: t('Administrator') }] : [])]} width='full' /></FormField>}
         {user && <>
-          <label className='block space-y-1.5 text-sm'>{t('User group')}<Select aria-label={t('User group')} value={form.group} onChange={(value) => change('group', value)} options={[...new Set([...groups, form.group])].filter(Boolean)} width='full' /></label>
-          <label className='block space-y-1.5 text-sm'>{t('Remark')}<Textarea aria-label={t('Remark')} value={form.remark} onChange={(value) => change('remark', value)} width='full' /></label>
+          <FormField label={t('User group')}><Select popover aria-label={t('User group')} value={form.group} onChange={(value) => change('group', value)} options={[...new Set([...groups, form.group])].filter(Boolean)} width='full' /></FormField>
+          <FormField label={t('Remark')}><Textarea aria-label={t('Remark')} value={form.remark} onChange={(value) => change('remark', value)} width='full' /></FormField>
           <p className='text-xs text-ui-text-3'>{t('Use quota adjustment to change the balance. Editing profile fields preserves live usage.')}</p>
         </>}
         {actorRole === 100 && form.role === 10 && catalog?.resources.map((resource) => <section key={resource.resource} className='rounded-xl border border-ui-border p-3 space-y-3'>

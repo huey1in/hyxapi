@@ -114,6 +114,10 @@ function ChannelEditForm({
       ...(form.group ?? '').split(',').filter(Boolean),
     ]),
   ].map((value) => ({ value, label: value }));
+  const testModels = [...new Set([
+    ...(form.models || '').split(',').map((model) => model.trim()).filter(Boolean),
+    ...(form.test_model ? [form.test_model] : []),
+  ])];
   const defaultBaseURLs = defaults.isError ? {} : (defaults.data ?? {});
   const taskPlugins = plugins.isError ? [] : (plugins.data ?? []);
   const pluginOptionsError = plugins.isError
@@ -374,9 +378,10 @@ function ChannelEditForm({
         )}
         {/* 基本信息 */}
         <Section title={translate('基本信息')}>
-          <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
+          <div className='space-y-4'>
             <Field label={translate('类型')}>
               <Select
+                popover
                 value={form.type}
                 onChange={changeType}
                 options={TYPE_OPTIONS.filter(
@@ -400,6 +405,7 @@ function ChannelEditForm({
           {!isEdit && t !== 57 && (
             <Field label={translate('创建模式')}>
               <Select
+                popover
                 value={mode}
                 onChange={setMode}
                 width='full'
@@ -435,6 +441,7 @@ function ChannelEditForm({
                   )}
                 >
                   <Select
+                    popover
                     value={form.setting?.task_plugin_key || ''}
                     onChange={selectPlugin}
                     width='full'
@@ -470,6 +477,7 @@ function ChannelEditForm({
                   )}
                 >
                   <MultiSelect
+                    popover
                     value={form.setting?.task_extend_plugin_keys || []}
                     onChange={uSetting('task_extend_plugin_keys')}
                     options={taskPlugins
@@ -497,6 +505,7 @@ function ChannelEditForm({
         <Section title={translate('密钥与连接')}>
           {[1, 58, 59, 60].includes(Number(form.type)) && (
             <Field
+              compact
               label='Responses WebSocket'
               hint={translate(
                 '允许 /v1/responses 的持久连接；高级自定义渠道需配置原生 Responses 路由。',
@@ -509,7 +518,7 @@ function ChannelEditForm({
               />
             </Field>
           )}
-          <Field
+          <Field wide
             label={
               <>
                 {translate('密钥')}
@@ -542,19 +551,19 @@ function ChannelEditForm({
             />
           </Field>
           {!isEdit && mode === 'batch' && (
-            <label className='flex items-center gap-2 text-sm text-ui-text-2 cursor-pointer'>
+            <Field compact label={translate('将 key 前缀追加到渠道名称')}>
               <Switch
                 size='sm'
                 checked={batchPrefix}
                 onChange={setBatchPrefix}
               />
-              {translate('将 key 前缀追加到渠道名称')}
-            </label>
+            </Field>
           )}
           {t !== 57 &&
             (mode === 'multi_to_single' || (isEdit && isMultiKey)) && (
               <Field label={translate('多 Key 模式')}>
                 <Select
+                  popover
                   value={form.multi_key_mode || 'random'}
                   onChange={u('multi_key_mode')}
                   options={MULTI_KEY_MODE_OPTIONS.map((option) => ({
@@ -609,6 +618,7 @@ function ChannelEditForm({
               )}
             >
               <Select
+                popover
                 value={form.other_settings?.aws_api_type || 'invoke_model'}
                 onChange={uOther('aws_api_type')}
                 width='full'
@@ -625,6 +635,7 @@ function ChannelEditForm({
           {isAWS && (
             <Field label={translate('AWS Key 类型')}>
               <Select
+                popover
                 value={form.other_settings?.aws_key_type || 'ak_sk'}
                 onChange={uOther('aws_key_type')}
                 width='full'
@@ -638,6 +649,7 @@ function ChannelEditForm({
           {isVertex && (
             <Field label={translate('Vertex Key 类型')}>
               <Select
+                popover
                 value={form.other_settings?.vertex_key_type || 'json'}
                 onChange={uOther('vertex_key_type')}
                 width='full'
@@ -666,64 +678,61 @@ function ChannelEditForm({
 
         {/* 模型配置 */}
         <Section title={translate('模型配置')}>
-          <Field
-            label={
-              <div className='flex items-center justify-between w-full'>
-                <span>{translate('支持模型')}</span>
-                <div className='flex items-center gap-3'>
-                  {isEdit && (
-                    <button
-                      onClick={fetchModels}
-                      disabled={fetchingModels}
-                      className='text-xs text-ui-text-2 hover:text-ui-text cursor-pointer underline'
-                    >
-                      {fetchingModels
-                        ? translate('获取中…')
-                        : translate('获取模型列表')}
-                    </button>
-                  )}
-                  {!isEdit && MODEL_FETCHABLE_CHANNEL_TYPES.has(form.type) && (
-                    <button
-                      onClick={fetchModelsFromUrl}
-                      disabled={fetchingModels}
-                      className='text-xs text-ui-text-2 hover:text-ui-text cursor-pointer underline'
-                    >
-                      {fetchingModels
-                        ? translate('获取中…')
-                        : translate('从上游拉取')}
-                    </button>
-                  )}
+          <Field wide label={translate('支持模型')}>
+            <div className='min-w-0 space-y-2'>
+              <div className='flex flex-wrap items-center justify-end gap-x-3 gap-y-2'>
+                {isEdit && (
                   <button
-                    onClick={fillDefaultModels}
+                    onClick={fetchModels}
+                    disabled={fetchingModels}
                     className='text-xs text-ui-text-2 hover:text-ui-text cursor-pointer underline'
                   >
-                    {translate('填入默认模型')}
+                    {fetchingModels
+                      ? translate('获取中…')
+                      : translate('获取模型列表')}
                   </button>
+                )}
+                {!isEdit && MODEL_FETCHABLE_CHANNEL_TYPES.has(form.type) && (
                   <button
-                    onClick={clearModels}
+                    onClick={fetchModelsFromUrl}
+                    disabled={fetchingModels}
                     className='text-xs text-ui-text-2 hover:text-ui-text cursor-pointer underline'
                   >
-                    {translate('清除所有')}
+                    {fetchingModels
+                      ? translate('获取中…')
+                      : translate('从上游拉取')}
                   </button>
-                </div>
+                )}
+                <button
+                  onClick={fillDefaultModels}
+                  className='text-xs text-ui-text-2 hover:text-ui-text cursor-pointer underline'
+                >
+                  {translate('填入默认模型')}
+                </button>
+                <button
+                  onClick={clearModels}
+                  className='text-xs text-ui-text-2 hover:text-ui-text cursor-pointer underline'
+                >
+                  {translate('清除所有')}
+                </button>
               </div>
-            }
-            hint=''
-          >
-            <ModelTagList
-              models={form.models || ''}
-              onChange={(v) => setForm((p) => ({ ...p, models: v }))}
-            />
-          </Field>
-          <Field label={translate('自定义模型名称')}>
-            <div className='flex items-center gap-2'>
-              <Input
-                value={customModel}
-                onChange={setCustomModel}
-                width='full'
-                placeholder={translate('输入自定义模型名称')}
-                onKeyDown={(e) => e.key === 'Enter' && addCustomModel()}
+              <ModelTagList
+                models={form.models || ''}
+                onChange={(v) => setForm((p) => ({ ...p, models: v }))}
               />
+            </div>
+          </Field>
+          <Field wide label={translate('自定义模型名称')}>
+            <div className='flex items-center gap-2'>
+              <div className='min-w-0 flex-1'>
+                <Input
+                  value={customModel}
+                  onChange={setCustomModel}
+                  width='full'
+                  placeholder={translate('输入自定义模型名称')}
+                  onKeyDown={(e) => e.key === 'Enter' && addCustomModel()}
+                />
+              </div>
               <Button
                 variant='toggle'
                 onClick={addCustomModel}
@@ -735,6 +744,7 @@ function ChannelEditForm({
           </Field>
           <Field label={translate('分组')}>
             <MultiSelect
+              popover
               options={groupOptions}
               value={
                 form.group
@@ -751,7 +761,7 @@ function ChannelEditForm({
               width='full'
             />
           </Field>
-          <Field label={translate('模型重定向')}>
+          <Field wide label={translate('模型重定向')}>
             <ModelMappingEditor
               value={form.model_mapping || ''}
               models={form.models || ''}
@@ -767,6 +777,7 @@ function ChannelEditForm({
             hint={translate('仅当系统设置中自动禁用开启时有效')}
           >
             <Select
+              popover
               value={form.auto_ban ?? 1}
               onChange={(v) => u('auto_ban')(v)}
               width='full'
@@ -788,7 +799,7 @@ function ChannelEditForm({
             disabled={saving}
           />
           {Number(form.type) === 58 && (
-            <Field
+            <Field wide
               label={translate('协议路由')}
               hint={translate(
                 '配置 advanced_routes：入口路径、上游路径、转换器、模型范围和认证。模型获取需要 /v1/models 路由。',
@@ -810,6 +821,7 @@ function ChannelEditForm({
             hint={translate('控制工具或内容无法完整转换时的处理方式。')}
           >
             <Select
+              popover
               value={form.other_settings?.tool_loss_policy || 'allow'}
               onChange={uOther('tool_loss_policy')}
               width='full'
@@ -831,7 +843,7 @@ function ChannelEditForm({
             <span className='text-xs font-medium text-ui-text-2'>
               {translate('上游模型管理')}
             </span>
-            <label className='flex items-center gap-2 text-sm text-ui-text-2 cursor-pointer'>
+            <Field compact label={translate('检测上游模型更新')}>
               <Switch
                 size='sm'
                 checked={
@@ -841,12 +853,11 @@ function ChannelEditForm({
                   uOther('upstream_model_update_check_enabled')(v)
                 }
               />
-              {translate('检测上游模型更新')}
-            </label>
-            <p className='text-xs text-ui-text-3 ml-6 -mt-1'>
+            </Field>
+            <p className='text-xs text-ui-text-3'>
               {translate('开启后由后端定时任务检测该渠道上游模型变化')}
             </p>
-            <label className='flex items-center gap-2 text-sm text-ui-text-2 cursor-pointer'>
+            <Field compact label={translate('自动同步上游模型更新')}>
               <Switch
                 size='sm'
                 checked={
@@ -856,9 +867,8 @@ function ChannelEditForm({
                   uOther('upstream_model_update_auto_sync_enabled')(v)
                 }
               />
-              {translate('自动同步上游模型更新')}
-            </label>
-            <p className='text-xs text-ui-text-3 ml-6 -mt-1'>
+            </Field>
+            <p className='text-xs text-ui-text-3'>
               {translate('开启后检测到新增模型会自动加入当前渠道模型列表')}
             </p>
             <Field
@@ -886,7 +896,7 @@ function ChannelEditForm({
             <span className='text-xs font-medium text-ui-text-2'>
               {translate('请求配置')}
             </span>
-            <Field label={translate('参数覆盖')}>
+            <Field wide label={translate('参数覆盖')}>
               <KeyValueEditor
                 jsonValues
                 value={form.param_override || ''}
@@ -896,7 +906,7 @@ function ChannelEditForm({
                 hint={translate('用于覆盖请求参数，不支持覆盖 stream 参数')}
               />
             </Field>
-            <Field label={translate('请求头覆盖')}>
+            <Field wide label={translate('请求头覆盖')}>
               <KeyValueEditor
                 value={form.header_override || ''}
                 onChange={u('header_override')}
@@ -905,7 +915,7 @@ function ChannelEditForm({
                 hint={translate('支持变量：渠道密钥 {api_key}')}
               />
             </Field>
-            <Field label={translate('状态码复写')}>
+            <Field wide label={translate('状态码复写')}>
               <KeyValueEditor
                 value={form.status_code_mapping || ''}
                 onChange={u('status_code_mapping')}
@@ -923,7 +933,7 @@ function ChannelEditForm({
             <span className='text-xs font-medium text-ui-text-2'>
               {translate('渠道行为')}
             </span>
-            <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
+            <div className='space-y-4'>
               <Field label={translate('渠道标签')}>
                 <Input
                   value={form.tag || ''}
@@ -933,15 +943,19 @@ function ChannelEditForm({
                 />
               </Field>
               <Field label={translate('测试模型')}>
-                <Input
+                <Select
+                  popover
                   value={form.test_model || ''}
                   onChange={u('test_model')}
                   width='full'
-                  placeholder={translate('留空使用第一个')}
+                  options={[
+                    { value: '', label: translate('Use first model') },
+                    ...testModels.map((model) => ({ value: model, label: model })),
+                  ]}
                 />
               </Field>
             </div>
-            <Field label={translate('备注')} hint={translate('仅管理员可见')}>
+            <Field wide label={translate('备注')} hint={translate('仅管理员可见')}>
               <Textarea
                 value={form.remark || ''}
                 onChange={u('remark')}
@@ -950,7 +964,7 @@ function ChannelEditForm({
                 width='full'
               />
             </Field>
-            <div className='grid grid-cols-1 md:grid-cols-3 gap-4'>
+            <div className='space-y-4'>
               <Field label={translate('优先级')}>
                 <NumberInput
                   value={form.priority ?? 0}
@@ -967,6 +981,7 @@ function ChannelEditForm({
               </Field>
               <Field label={translate('状态')}>
                 <Select
+                  popover
                   value={form.status || 1}
                   disabled={isEdit}
                   onChange={(v) => u('status')(v as 1 | 2)}
@@ -983,19 +998,13 @@ function ChannelEditForm({
           {Number(form.type) === 4 && (
             <div className='space-y-3 pb-3 border-b border-[#eeeeee]'>
               <span className='text-xs font-medium text-ui-text-2'>Ollama</span>
-              <label className='flex items-start gap-2 text-sm text-ui-text-2 cursor-pointer'>
+              <Field compact label={translate('使用 OpenAI 兼容聊天接口')} hint={translate('启用后通过 /v1/chat/completions 转发聊天请求')}>
                 <Switch
                   size='sm'
                   checked={!!form.other_settings?.ollama_openai_chat}
                   onChange={(v) => uOther('ollama_openai_chat')(v)}
                 />
-                <div>
-                  <div>{translate('使用 OpenAI 兼容聊天接口')}</div>
-                  <p className='text-xs text-ui-text-3 mt-0.5'>
-                    {translate('启用后通过 /v1/chat/completions 转发聊天请求')}
-                  </p>
-                </div>
-              </label>
+              </Field>
             </div>
           )}
 
@@ -1004,97 +1013,67 @@ function ChannelEditForm({
             <span className='text-xs font-medium text-ui-text-2'>
               {translate('字段透传控制')}
             </span>
-            <label className='flex items-start gap-2 text-sm text-ui-text-2 cursor-pointer'>
+            <Field compact label={translate('允许 service_tier 透传')} hint={translate('允许透传可能导致实际计费高于预期')}>
               <Switch
                 size='sm'
                 checked={!!form.other_settings?.allow_service_tier}
                 onChange={(v) => uOther('allow_service_tier')(v)}
               />
-              <div>
-                <div>{translate('允许 service_tier 透传')}</div>
-                <p className='text-xs text-ui-text-3 mt-0.5'>
-                  {translate('允许透传可能导致实际计费高于预期')}
-                </p>
-              </div>
-            </label>
-            <label className='flex items-start gap-2 text-sm text-ui-text-2 cursor-pointer'>
+            </Field>
+            <Field compact label={translate('禁用 store 透传')} hint={translate('开启后可能导致 Codex 无法正常使用')}>
               <Switch
                 size='sm'
                 checked={!!form.other_settings?.disable_store}
                 onChange={(v) => uOther('disable_store')(v)}
               />
-              <div>
-                <div>{translate('禁用 store 透传')}</div>
-                <p className='text-xs text-ui-text-3 mt-0.5'>
-                  {translate('开启后可能导致 Codex 无法正常使用')}
-                </p>
-              </div>
-            </label>
-            <label className='flex items-start gap-2 text-sm text-ui-text-2 cursor-pointer'>
+            </Field>
+            <Field compact label={translate('允许 safety_identifier 透传')} hint={translate('默认关闭以保护用户隐私')}>
               <Switch
                 size='sm'
                 checked={!!form.other_settings?.allow_safety_identifier}
                 onChange={(v) => uOther('allow_safety_identifier')(v)}
               />
-              <div>
-                <div>{translate('允许 safety_identifier 透传')}</div>
-                <p className='text-xs text-ui-text-3 mt-0.5'>
-                  {translate('默认关闭以保护用户隐私')}
-                </p>
-              </div>
-            </label>
-            <label className='flex items-start gap-2 text-sm text-ui-text-2 cursor-pointer'>
+            </Field>
+            <Field compact label={translate('允许 stream_options.include_obfuscation 透传')} hint={translate('默认关闭以避免客户端关闭安全保护')}>
               <Switch
                 size='sm'
                 checked={!!form.other_settings?.allow_include_obfuscation}
                 onChange={(v) => uOther('allow_include_obfuscation')(v)}
               />
-              <div>
-                <div>
-                  {translate('允许 stream_options.include_obfuscation 透传')}
-                </div>
-                <p className='text-xs text-ui-text-3 mt-0.5'>
-                  {translate('默认关闭以避免客户端关闭安全保护')}
-                </p>
-              </div>
-            </label>
+            </Field>
             {isClaude && (
               <>
-                <label className='flex items-center gap-2 text-sm text-ui-text-2 cursor-pointer'>
+                <Field compact label='Claude Beta Query (?beta=true)'>
                   <Switch
                     size='sm'
                     checked={!!form.other_settings?.claude_beta_query}
                     onChange={(v) => uOther('claude_beta_query')(v)}
                   />
-                  Claude Beta Query (?beta=true)
-                </label>
-                <label className='flex items-center gap-2 text-sm text-ui-text-2 cursor-pointer'>
+                </Field>
+                <Field compact label={translate('允许 inference_geo 透传')}>
                   <Switch
                     size='sm'
                     checked={!!form.other_settings?.allow_inference_geo}
                     onChange={(v) => uOther('allow_inference_geo')(v)}
                   />
-                  {translate('允许 inference_geo 透传')}
-                </label>
-                <label className='flex items-center gap-2 text-sm text-ui-text-2 cursor-pointer'>
+                </Field>
+                <Field compact label={translate('允许 speed 参数透传')}>
                   <Switch
                     size='sm'
                     checked={!!form.other_settings?.allow_speed}
                     onChange={(v) => uOther('allow_speed')(v)}
                   />
-                  {translate('允许 speed 参数透传')}
-                </label>
+                </Field>
               </>
             )}
             {isOpenRouter && (
-              <label className='flex items-center gap-2 text-sm text-ui-text-2 cursor-pointer'>
+              <Field compact label={translate('OpenRouter Enterprise 模式')}>
                 <Switch
                   size='sm'
                   checked={!!form.other_settings?.openrouter_enterprise}
                   onChange={(v) => uOther('openrouter_enterprise')(v)}
                 />
-                {translate('OpenRouter Enterprise 模式')}
-              </label>
+              </Field>
             )}
             {isAzure && (
               <Field label='Azure Responses API Version'>
@@ -1113,47 +1092,31 @@ function ChannelEditForm({
             <span className='text-xs font-medium text-ui-text-2'>
               {translate('额外设置')}
             </span>
-            <label className='flex items-start gap-2 text-sm text-ui-text-2 cursor-pointer'>
+            <Field compact label={translate('强制格式化')} hint={translate('强制将响应格式化为 OpenAI 标准格式')}>
               <Switch
                 size='sm'
                 checked={!!form.setting?.force_format}
                 onChange={(v) => uSetting('force_format')(v)}
               />
-              <div>
-                <div>{translate('强制格式化')}</div>
-                <p className='text-xs text-ui-text-3 mt-0.5'>
-                  {translate('强制将响应格式化为 OpenAI 标准格式')}
-                </p>
-              </div>
-            </label>
-            <label className='flex items-start gap-2 text-sm text-ui-text-2 cursor-pointer'>
+            </Field>
+            <Field
+              compact
+              label={translate('思考内容转换')}
+              hint={translate('将 reasoning_content 转换为 &lt;think&gt; 标签拼接到内容中')}
+            >
               <Switch
                 size='sm'
                 checked={!!form.setting?.thinking_to_content}
                 onChange={(v) => uSetting('thinking_to_content')(v)}
               />
-              <div>
-                <div>{translate('思考内容转换')}</div>
-                <p className='text-xs text-ui-text-3 mt-0.5'>
-                  {translate(
-                    '将 reasoning_content 转换为 &lt;think&gt; 标签拼接到内容中',
-                  )}
-                </p>
-              </div>
-            </label>
-            <label className='flex items-start gap-2 text-sm text-ui-text-2 cursor-pointer'>
+            </Field>
+            <Field compact label={translate('透传请求体')} hint={translate('启用请求体透传功能')}>
               <Switch
                 size='sm'
                 checked={!!form.setting?.pass_through_body_enabled}
                 onChange={(v) => uSetting('pass_through_body_enabled')(v)}
               />
-              <div>
-                <div>{translate('透传请求体')}</div>
-                <p className='text-xs text-ui-text-3 mt-0.5'>
-                  {translate('启用请求体透传功能')}
-                </p>
-              </div>
-            </label>
+            </Field>
             <Field
               label={translate('代理地址')}
               hint={translate('支持 socks5 协议')}
@@ -1165,7 +1128,7 @@ function ChannelEditForm({
                 placeholder='socks5://user:pass@host:port'
               />
             </Field>
-            <Field label={translate('系统提示词')}>
+            <Field wide label={translate('系统提示词')}>
               <Textarea
                 value={form.setting?.system_prompt || ''}
                 onChange={uSetting('system_prompt')}
@@ -1174,21 +1137,17 @@ function ChannelEditForm({
                 width='full'
               />
             </Field>
-            <label className='flex items-start gap-2 text-sm text-ui-text-2 cursor-pointer'>
+            <Field
+              compact
+              label={translate('系统提示词覆盖')}
+              hint={translate('用户优先：如果用户请求中指定了系统提示词，将优先使用用户的设置。关闭则拼接到用户提示词前面')}
+            >
               <Switch
                 size='sm'
                 checked={!!form.setting?.system_prompt_override}
                 onChange={(v) => uSetting('system_prompt_override')(v)}
               />
-              <div>
-                <div>{translate('系统提示词覆盖')}</div>
-                <p className='text-xs text-ui-text-3 mt-0.5'>
-                  {translate(
-                    '用户优先：如果用户请求中指定了系统提示词，将优先使用用户的设置。关闭则拼接到用户提示词前面',
-                  )}
-                </p>
-              </div>
-            </label>
+            </Field>
           </div>
         </Section>
       </fieldset>

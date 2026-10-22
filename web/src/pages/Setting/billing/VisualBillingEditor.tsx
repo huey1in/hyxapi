@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Button } from '../../../components/ui';
+import { Button, FormField } from '../../../components/ui';
 import {
   createEmptyVisualCondition, parseVisualBillingDocument, serializeVisualBillingDocument, visualNodeId,
 } from '../../../features/pricing/lib/billing-expression/visual';
@@ -24,11 +24,11 @@ function ConditionEditor({ node, onChange }: ConditionProps) {
       <Button size='sm' variant='secondary' onClick={() => wrap('not')}>{t('Negate')}</Button>
     </div>
     {node.kind === 'comparison' ? <>
-      <div className='grid min-w-0 grid-cols-1 gap-2 sm:grid-cols-3'>
-        <Select width='100%' value={node.probe} options={['p', 'c', 'len', ...TIME_FUNCTIONS].map((value) => ({ value, label: t(variableLabels[value]) }))}
-          onChange={(value) => onChange({ ...node, probe: value as typeof node.probe })} />
-        <Select width='100%' value={node.operator} options={operators.map((value) => ({ value, label: value }))}
-          onChange={(value) => onChange({ ...node, operator: value as typeof node.operator })} />
+      <div className='space-y-2'>
+        <FormField label={t('Condition metric')}><Select popover width='100%' value={node.probe} options={['p', 'c', 'len', ...TIME_FUNCTIONS].map((value) => ({ value, label: t(variableLabels[value]) }))}
+          onChange={(value) => onChange({ ...node, probe: value as typeof node.probe })} /></FormField>
+        <FormField label={t('Comparison operator')}><Select popover width='100%' value={node.operator} options={operators.map((value) => ({ value, label: value }))}
+          onChange={(value) => onChange({ ...node, operator: value as typeof node.operator })} /></FormField>
         <Input aria-label={t('Condition threshold')} value={node.value} placeholder={t('Numeric value')} onChange={(value) => onChange({ ...node, value })} />
       </div>
       {TIME_FUNCTIONS.includes(node.probe as typeof TIME_FUNCTIONS[number]) && <label className='grid gap-1 text-xs text-ui-text-3'>{t('IANA timezone')}
@@ -38,8 +38,8 @@ function ConditionEditor({ node, onChange }: ConditionProps) {
       <ConditionEditor node={node.child} onChange={(child) => onChange({ ...node, child })} />
       <Button size='sm' variant='secondary' onClick={() => onChange(node.child)}>{t('Remove negation')}</Button>
     </> : <>
-      <Select width='100%' value={node.kind} options={[{ value: 'all', label: t('All conditions (AND)') }, { value: 'any', label: t('Any condition (OR)') }]}
-        onChange={(kind) => onChange({ ...node, kind: kind as 'all' | 'any', origin: undefined })} />
+      <FormField label={t('Condition type')}><Select popover width='100%' value={node.kind} options={[{ value: 'all', label: t('All conditions (AND)') }, { value: 'any', label: t('Any condition (OR)') }]}
+        onChange={(kind) => onChange({ ...node, kind: kind as 'all' | 'any', origin: undefined })} /></FormField>
       {node.children.map((child, index) => <div key={child.id} className='min-w-0 space-y-1'>
         <ConditionEditor node={child} onChange={(next) => onChange({ ...node, children: node.children.map((item, i) => i === index ? next : item) })} />
         <Button size='sm' variant='secondary' onClick={() => onChange({ ...node, children: node.children.filter((_, i) => i !== index) })}>{t('Remove this condition')}</Button>
@@ -75,8 +75,8 @@ function PriceNodeEditor({ node, onChange }: { node: VisualPricingNode; onChange
     <label className='grid gap-1 text-xs text-ui-text-3'>{t('Tier name')}
       <Input aria-label={t('Tier name')} value={node.label} onChange={(label) => onChange({ ...node, label })} />
     </label>
-    <Select width='100%' value={node.billingUnit} options={[{ value: 'token', label: t('Per token · USD / 1M tokens') }, { value: 'request', label: t('Per request · USD / request') }]}
-      onChange={(unit) => onChange({ ...node, billingUnit: unit as 'token' | 'request', origin: undefined, fixedPrice: node.fixedPrice || '0', prices: node.prices.length ? node.prices : [{ variable: 'p', value: '0' }, { variable: 'c', value: '0' }] })} />
+    <FormField label={t('Billing unit')}><Select popover width='100%' value={node.billingUnit} options={[{ value: 'token', label: t('Per token · USD / 1M tokens') }, { value: 'request', label: t('Per request · USD / request') }]}
+      onChange={(unit) => onChange({ ...node, billingUnit: unit as 'token' | 'request', origin: undefined, fixedPrice: node.fixedPrice || '0', prices: node.prices.length ? node.prices : [{ variable: 'p', value: '0' }, { variable: 'c', value: '0' }] })} /></FormField>
     {node.billingUnit === 'request' ? <label className='grid gap-1 text-xs text-ui-text-3'>{t('Price per request')}
       <Input aria-label={t('Request price')} value={node.fixedPrice} onChange={(fixedPrice) => onChange({ ...node, fixedPrice })} />
     </label> : <>
@@ -88,8 +88,8 @@ function PriceNodeEditor({ node, onChange }: { node: VisualPricingNode; onChange
           <Input aria-label={t('{{variable}} unit price', { variable: price.variable })} value={price.value} inputMode='decimal' onChange={(value) => onChange({ ...node, prices: node.prices.map((item, i) => i === index ? { ...item, value } : item) })} />
         </label>)}
       </div>
-      <Select width='100%' value='' placeholder={t('Add price dimension')} options={TOKEN_VARIABLES.filter((variable) => variable !== 'len' && !node.prices.some((item) => item.variable === variable)).map((value) => ({ value, label: t(variableLabels[value]) }))}
-        onChange={(variable) => onChange({ ...node, prices: [...node.prices, { variable: variable as typeof node.prices[number]['variable'], value: '0' }] })} />
+      <FormField label={t('Add price dimension')}><Select popover width='100%' value='' placeholder={t('Add price dimension')} options={TOKEN_VARIABLES.filter((variable) => variable !== 'len' && !node.prices.some((item) => item.variable === variable)).map((value) => ({ value, label: t(variableLabels[value]) }))}
+        onChange={(variable) => onChange({ ...node, prices: [...node.prices, { variable: variable as typeof node.prices[number]['variable'], value: '0' }] })} /></FormField>
     </>}
     <Button size='sm' variant='secondary' onClick={() => onChange({ id: visualNodeId(), kind: 'branch', condition: createEmptyVisualCondition(),
       yes: { ...node, id: visualNodeId(), origin: undefined, label: `${node.label || 'base'}-condition`, prices: node.prices.map(({ variable, value }) => ({ variable, value })) }, no: node })}>{t('Add tier or time branch')}</Button>
@@ -123,9 +123,9 @@ export default function VisualBillingEditor({ value, onChange, onInvalidChange }
   };
   const visual = view === 'visual' && document !== null;
   return <div aria-label={t('Base billing editor')} className='min-w-0 space-y-3'>
-    <Select width='100%' value={visual ? 'visual' : 'raw'} options={[
+    <FormField label={t('Editor mode')}><Select popover width='100%' value={visual ? 'visual' : 'raw'} options={[
       { value: 'visual', label: t('Visual tiers and time pricing'), disabled: !document }, { value: 'raw', label: t('Raw expression') },
-    ]} onChange={setView} />
+    ]} onChange={setView} /></FormField>
     {!document && value.trim() && <p className='text-xs text-ui-text-3'>{t('This expression cannot be represented visually without changes. The original is preserved for editing and server validation.')}</p>}
     {!value.trim() && <Button size='sm' variant='secondary' onClick={() => { onChange('tier("base", p * 0 + c * 0)'); setView('visual'); }}>{t('Create base price draft')}</Button>}
     {visual ? <PriceNodeEditor node={document.root} onChange={(root) => update({ ...document, root })} /> : <Textarea aria-label={t('Billing expression')} value={value} rows={7} onChange={onChange} />}

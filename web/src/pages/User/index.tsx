@@ -89,7 +89,7 @@ function UsersWorkspace({ actor }: { actor: AuthUser | null }) {
   return <PageShell title={t('User management')} actions={<Button icon={Plus} onClick={() => setWindowState({ kind: 'create' })}>{t('Create user')}</Button>}>
     <Card className='mb-4'>
       <div className='flex flex-wrap gap-2'>
-        <div className='min-w-48 flex-1'><Input aria-label={t('Search users')} placeholder={t('Search username, display name, email or ID')} value={keyword} onChange={setKeyword} prefix={<Search size={15} />} clearable /></div>
+        <div className='w-40 min-w-0 max-w-full sm:min-w-48 sm:flex-1'><Input aria-label={t('Search users')} placeholder={t('Search username, display name, email or ID')} value={keyword} onChange={setKeyword} prefix={<Search size={15} />} clearable /></div>
         <Button variant='toggle' onClick={() => { setKeyword(''); setFilters(emptyFilters); setPage(1); }}>{t('Reset')}</Button><Button variant='toggle' disabled={list.isFetching} onClick={() => void refresh()}>{t('Refresh')}</Button>
       </div>
       <div className='mt-3 flex flex-wrap gap-3'>

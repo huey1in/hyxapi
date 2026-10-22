@@ -3,7 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { Filter, RefreshCw } from 'lucide-react';
 import { API } from '../../helpers';
-import { Button, IconButton, Input, Modal, Pagination, Select, Switch, showError } from '../../components/ui';
+import { FormField, Button, IconButton, Input, Modal, Pagination, Select, Switch, showError } from '../../components/ui';
 import { useAuthStore } from '../../stores/auth-store';
 import { StatusContext } from '../../context/Status';
 import { apiErrorMessage } from '../../lib/api-error';
@@ -91,16 +91,16 @@ export default function UnifiedLogs({ sources }: { sources: LogSourceOption[] })
       <Pagination page={pagination.page} pageSize={PAGE_SIZE} total={query.data?.total ?? 0} onChange={nextPage} />
     </>}
     <Modal open={showFilters} title={t('Filters')} width={520} onClose={() => setShowFilters(false)} footer={<><Button variant='toggle' onClick={reset}>{t('Reset')}</Button><Button disabled={Boolean(validation)} onClick={() => apply(filters, draftScope)}>{t('Apply')}</Button></>}>
-      <div className='grid grid-cols-1 gap-4 pb-2 sm:grid-cols-2'>
-        {admin && <label className='grid gap-1.5 text-xs text-ui-text-3'>{t('Log scope')}<Select<LogScope> aria-label={t('Log scope')} width='full' popover value={draftScope} onChange={(value) => { setDraftScope(value); if (value === 'self') setFilters((previous) => ({ ...previous, username: '', upstream_request_id: '' })); }} options={[{ value: 'all', label: t('All logs') }, { value: 'self', label: t('My logs') }]} /></label>}
-        <label className='grid gap-1.5 text-xs text-ui-text-3'>{t('Log source')}<Select width='full' popover aria-label={t('Log source')} value={filters.source} onChange={(value) => setFilters((previous) => changeFeedSource(previous, value))} options={[{ value: '', label: t('All types') }, ...sources.map((source) => ({ value: source.value, label: t(source.label) }))]} /></label>
-        {(['start_timestamp', 'end_timestamp'] as const).map((key) => <label key={key} className='grid min-w-0 gap-1.5 text-xs text-ui-text-3'>{t(key === 'start_timestamp' ? 'Start time' : 'End time')}<Input width='full' aria-label={t(key === 'start_timestamp' ? 'Start time' : 'End time')} type='datetime-local' value={filters[key]} onChange={(value, event) => { field(key)(value); setBadDates((previous) => ({ ...previous, [key]: event?.target.validity.badInput ?? false })); }} /></label>)}
-        {draftAll && <label className='grid gap-1.5 text-xs text-ui-text-3'>{t('Username')}<Input width='full' aria-label={t('Username')} value={filters.username} onChange={field('username')} /></label>}
-        {(!filters.source || filters.source === 'usage') && <label className='grid gap-1.5 text-xs text-ui-text-3'>{t('Group')}<Input width='full' aria-label={t('Group')} value={filters.group} onChange={field('group')} /></label>}
-        {filters.source === 'usage' && <label className='grid gap-1.5 text-xs text-ui-text-3'>{t('Type')}<Select width='full' popover aria-label={t('Type')} value={filters.type} onChange={field('type')} options={LOG_TYPES.map((label, value) => ({ value, label: t(label) }))} /></label>}
-        {specificFields.map((key) => <label key={key} className='grid gap-1.5 text-xs text-ui-text-3'>{t(TEXT_FILTERS[key])}<Input width='full' aria-label={t(TEXT_FILTERS[key])} value={filters[key]} onChange={field(key)} /></label>)}
-        {(filters.source === 'tasks' || filters.source === 'midjourney') && <label className='grid gap-1.5 text-xs text-ui-text-3'>{t('Status')}<Select width='full' popover aria-label={t('Task status')} value={filters.status} onChange={field('status')} options={[{ value: '', label: t('All statuses') }, ...Object.entries(taskStatusLabels).map(([value, label]) => ({ value, label: t(label) }))]} /></label>}
-        {validation && <p role='alert' className='text-sm text-ui-danger sm:col-span-2'>{t(validation)}</p>}
+      <div className='space-y-4 pb-2'>
+        {admin && <FormField label={t('Log scope')}><Select<LogScope> aria-label={t('Log scope')} width='full' popover value={draftScope} onChange={(value) => { setDraftScope(value); if (value === 'self') setFilters((previous) => ({ ...previous, username: '', upstream_request_id: '' })); }} options={[{ value: 'all', label: t('All logs') }, { value: 'self', label: t('My logs') }]} /></FormField>}
+        <FormField label={t('Log source')}><Select width='full' popover aria-label={t('Log source')} value={filters.source} onChange={(value) => setFilters((previous) => changeFeedSource(previous, value))} options={[{ value: '', label: t('All types') }, ...sources.map((source) => ({ value: source.value, label: t(source.label) }))]} /></FormField>
+        {(['start_timestamp', 'end_timestamp'] as const).map((key) => <FormField key={key} label={t(key === 'start_timestamp' ? 'Start time' : 'End time')}><Input width='full' aria-label={t(key === 'start_timestamp' ? 'Start time' : 'End time')} type='datetime-local' value={filters[key]} onChange={(value, event) => { field(key)(value); setBadDates((previous) => ({ ...previous, [key]: event?.target.validity.badInput ?? false })); }} /></FormField>)}
+        {draftAll && <FormField label={t('Username')}><Input width='full' aria-label={t('Username')} value={filters.username} onChange={field('username')} /></FormField>}
+        {(!filters.source || filters.source === 'usage') && <FormField label={t('Group')}><Input width='full' aria-label={t('Group')} value={filters.group} onChange={field('group')} /></FormField>}
+        {filters.source === 'usage' && <FormField label={t('Type')}><Select width='full' popover aria-label={t('Type')} value={filters.type} onChange={field('type')} options={LOG_TYPES.map((label, value) => ({ value, label: t(label) }))} /></FormField>}
+        {specificFields.map((key) => <FormField key={key} label={t(TEXT_FILTERS[key])}><Input width='full' aria-label={t(TEXT_FILTERS[key])} value={filters[key]} onChange={field(key)} /></FormField>)}
+        {(filters.source === 'tasks' || filters.source === 'midjourney') && <FormField label={t('Status')}><Select width='full' popover aria-label={t('Task status')} value={filters.status} onChange={field('status')} options={[{ value: '', label: t('All statuses') }, ...Object.entries(taskStatusLabels).map(([value, label]) => ({ value, label: t(label) }))]} /></FormField>}
+        {validation && <p role='alert' className='text-sm text-ui-danger'>{t(validation)}</p>}
       </div>
     </Modal>
     {selected && <LogDetails key={selected.key} row={selected} identity={identity} isAdmin={all} isRoot={all && role >= 100} onClose={() => setSelected(null)} />}

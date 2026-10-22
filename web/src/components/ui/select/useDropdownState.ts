@@ -3,8 +3,22 @@ import type { RefObject } from 'react';
 
 let dismissActiveDropdown: (() => void) | undefined;
 
-export default function useDropdownState(container: RefObject<HTMLElement | null>) {
+export default function useDropdownState(container: RefObject<HTMLElement | null>, trigger: RefObject<HTMLButtonElement | null>) {
   const [open, setOpen] = useState(false);
+
+  // Keep accessible labels without forwarding clicks outside the selector to its button.
+  // Rebind after each render because a parent can replace a label or change the trigger ID.
+  useLayoutEffect(() => {
+    const labels = Array.from(trigger.current?.labels ?? []);
+    const preventLabelActivation = (event: MouseEvent) => {
+      const target = event.target;
+      if (!(target instanceof Element) || container.current?.contains(target)) return;
+      if (target.closest('a[href], button, input, select, textarea, summary')) return;
+      event.preventDefault();
+    };
+    labels.forEach((label) => label.addEventListener('click', preventLabelActivation));
+    return () => labels.forEach((label) => label.removeEventListener('click', preventLabelActivation));
+  });
 
   useLayoutEffect(() => {
     if (!open) return;

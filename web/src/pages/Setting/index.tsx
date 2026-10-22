@@ -8,6 +8,7 @@ import PaymentSetup from '../../features/payments/PaymentSetup';
 import { remainingSettingDrafts } from '../../features/payments/payment-setup-data';
 import {
   PageShell,
+  FormField,
   Button,
   IconButton,
   Input,
@@ -219,6 +220,11 @@ function SettingPageContent() {
       );
     const label = t(LABELS[key] || key);
     const id = `setting-${key}`;
+    if (SELECT_OPTIONS[key]) return <FormField key={key} label={label}>
+      <Select id={id} popover aria-label={label} value={val(key)} disabled={Boolean(policyError && isRequestPolicyKey(key))}
+        options={SELECT_OPTIONS[key].map((option) => ({ ...option, label: t(option.label) }))}
+        onChange={(value) => set(key, value)} />
+    </FormField>;
     if (BOOL_KEYS.has(key))
       return (
         <div
@@ -267,17 +273,7 @@ function SettingPageContent() {
           disabled={Boolean(policyError && isRequestPolicyKey(key))}
           className="min-w-0"
         >
-          {SELECT_OPTIONS[key] ? (
-            <Select
-              aria-label={label}
-              value={val(key)}
-              options={SELECT_OPTIONS[key].map((option) => ({
-                ...option,
-                label: t(option.label),
-              }))}
-              onChange={(value) => set(key, value)}
-            />
-          ) : key === 'QuotaRemindThreshold' ? (
+          {key === 'QuotaRemindThreshold' ? (
             <NumberInput
               id={id}
               aria-label={label}

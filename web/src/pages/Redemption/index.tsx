@@ -2,7 +2,7 @@ import Skeleton from '../../components/ui/feedback/Skeleton';
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
-import { Button, PageShell, Select, ContentSkeleton } from '../../components/ui';
+import { Button, FormField, PageShell, Select, ContentSkeleton } from '../../components/ui';
 import { useAuthStore } from '../../stores/auth-store';
 import { apiErrorMessage } from '../../lib/api-error';
 import { readWalletData } from '../../features/payments/wallet-query';
@@ -20,7 +20,7 @@ function SubscriptionCodesTab({ identity }: { identity: string }) {
   if (!query.data) return <ContentSkeleton variant='form'><div className='flex flex-wrap items-end justify-between gap-3 rounded-2xl border border-ui-border p-4'><div className='grid w-60 max-w-full gap-1.5 text-xs text-ui-text-3'>{t('Select plan')}<Skeleton height={36} rounded='rounded-full' /></div><Skeleton width={110} height={36} rounded='rounded-full' /></div></ContentSkeleton>;
   return <div className='space-y-4'>
     <div className='flex flex-wrap items-end justify-between gap-3 rounded-2xl border border-ui-border p-4'>
-      <label className='grid w-60 max-w-full gap-1.5 text-xs text-ui-text-3'>{t('Select plan')}<Select aria-label={t('Select plan')} width='full' value={plan ? String(plan.id) : ''} onChange={(value) => setSelected(Number(value))} options={plans.map((item) => ({ value: String(item.id), label: item.title }))} /></label>
+      <FormField label={t('Select plan')}><Select popover aria-label={t('Select plan')} width='full' value={plan ? String(plan.id) : ''} onChange={(value) => setSelected(Number(value))} options={plans.map((item) => ({ value: String(item.id), label: item.title }))} /></FormField>
       <Button variant='toggle' loading={query.isFetching} onClick={() => void query.refetch()}>{t('Refresh plans')}</Button>
     </div>
     {plan ? <CodesDialog key={`${identity}:${plan.id}`} identity={identity} plan={plan} inline onClose={() => {}} /> : <p className='text-sm text-ui-text-3'>{t('Create a subscription plan before generating activation codes.')}</p>}

@@ -3,7 +3,7 @@ import { ShoppingBag } from 'lucide-react';
 import { z } from 'zod';
 import { useTranslation } from 'react-i18next';
 import { API } from '../../helpers';
-import { Button, ConfirmDialog, EmptyState, Input, Select, showSuccess } from '../../components/ui';
+import { Button, ConfirmDialog, EmptyState, FormField, Input, Select, showSuccess } from '../../components/ui';
 import { useOwnedOperation } from '../../hooks/useOwnedOperation';
 import { paymentError, paymentSucceeded } from './payment-core';
 import { walletRequestConfig } from './wallet-query';
@@ -33,8 +33,8 @@ export default function PancakePlanProduct({ title, price, value, onChange, disa
     setProducts(result.data.data.products ?? []); setLoaded(true);
   });
   return <div className='space-y-2'>
-    <label className='block space-y-1.5 text-sm text-ui-text-2'>Pancake Product ID<Input width='full' value={value} onChange={onChange} disabled={disabled || busy || confirm} /></label>
-    {products.length > 0 && <Select aria-label={t('Bound store products')} width='full' value={value} disabled={disabled || busy || confirm} onChange={onChange} options={products.map((product) => ({ value: product.id, label: product.name || product.id }))} />}
+    <FormField label='Pancake Product ID'><Input width='full' value={value} onChange={onChange} disabled={disabled || busy || confirm} /></FormField>
+    {products.length > 0 && <FormField label={t('Bound store products')}><Select popover aria-label={t('Bound store products')} width='full' value={value} disabled={disabled || busy || confirm} onChange={onChange} options={products.map((product) => ({ value: product.id, label: product.name || product.id }))} /></FormField>}
     {loaded && !products.length && <EmptyState icon={ShoppingBag} padding='sm' title={t('No products in the bound store')} />}
     <div className='flex flex-wrap gap-2'><Button size='sm' loading={busy} disabled={disabled || confirm} onClick={load}>{t('Load bound store products')}</Button><Button size='sm' disabled={disabled || busy || confirm || !title.trim() || !validPrice} onClick={() => setConfirm(true)}>{t('Create plan product')}</Button></div>
     {price > 0 && !validPrice && <p className='text-xs text-ui-text-3'>{t('Pancake products require a positive price with at most 2 decimal places.')}</p>}

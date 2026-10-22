@@ -1,10 +1,6 @@
 import { useTranslation } from 'react-i18next';
 import {
-  Children,
-  cloneElement,
-  isValidElement,
   useEffect,
-  useId,
   useRef,
   useState,
 } from 'react';
@@ -14,6 +10,7 @@ import { Input, Textarea } from '../../components/ui';
 import { cn } from '../../components/ui/tokens';
 import { readOverridePairs, writeOverridePairs } from './channel-data';
 import type { OverridePair } from './channel-data';
+export { default as Field } from '../../components/ui/input/FormField';
 const MODEL_ICON_CDN =
   'https://registry.npmmirror.com/@lobehub/icons-static-png/latest/files/light';
 
@@ -163,15 +160,15 @@ export const KeyValueEditor = ({
       />
     );
   return (
-    <div className='space-y-2'>
-      {hint && <p className='text-xs text-ui-text-3'>{hint}</p>}
+    <div className='w-full min-w-0 space-y-2'>
+      {hint && <p className='text-xs text-ui-text-3 break-words'>{hint}</p>}
       {pairs.length === 0 && (
         <p className='text-xs text-ui-text-3 py-2'>
           {t('暂无数据，点击下方按钮添加键值对')}
         </p>
       )}
       {pairs.map((p, i) => (
-        <div key={i} className='flex items-center gap-2'>
+        <div key={i} className='grid min-w-0 grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)_auto] items-center gap-2'>
           <Input
             value={p.k}
             onChange={(v) => update(i, 'k', v)}
@@ -186,6 +183,7 @@ export const KeyValueEditor = ({
             placeholder={valuePlaceholder ?? t('值')}
           />
           <button
+            type='button'
             onClick={() => remove(i)}
             className='text-ui-text-3 hover:text-red-500 cursor-pointer text-sm shrink-0'
           >
@@ -194,6 +192,7 @@ export const KeyValueEditor = ({
         </div>
       ))}
       <button
+        type='button'
         onClick={add}
         className='text-xs text-ui-text-2 hover:text-ui-text cursor-pointer underline'
       >
@@ -243,6 +242,8 @@ export const ModelTagList = ({
       {list.map((m, i) => (
         <span
           key={`${m}-${i}`}
+          className='min-w-0 max-w-full'
+          title={m}
           style={{
             display: 'inline-flex',
             alignItems: 'center',
@@ -255,7 +256,7 @@ export const ModelTagList = ({
             background: 'var(--ui-bg-subtle)',
           }}
         >
-          {m}
+          <span className='min-w-0 truncate'>{m}</span>
           <button
             onClick={() => remove(i)}
             style={{
@@ -266,6 +267,7 @@ export const ModelTagList = ({
               fontSize: 14,
               lineHeight: 1,
               padding: 0,
+              flexShrink: 0,
             }}
           >
             ×
@@ -305,27 +307,6 @@ export const Section = ({
         )}
       </div>
       {open && <div className='space-y-4'>{children}</div>}
-    </div>
-  );
-};
-
-export const Field = ({
-  label,
-  hint,
-  children,
-}: PropsWithChildren<{ label: ReactNode; hint?: ReactNode }>) => {
-  const id = useId();
-  const control =
-    Children.count(children) === 1 && isValidElement<{ id?: string }>(children)
-      ? cloneElement(children, { id })
-      : children;
-  return (
-    <div>
-      <label htmlFor={id} className='block text-sm text-ui-text-2 mb-1.5'>
-        {label}
-      </label>
-      {hint && <p className='mb-1.5 text-xs text-ui-text-3'>{hint}</p>}
-      {control}
     </div>
   );
 };

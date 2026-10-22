@@ -23,7 +23,8 @@ const Combobox = ({
 }) => {
   const [keyword, setKeyword] = useState('');
   const ref = useRef(null);
-  const [open, setOpen] = useDropdownState(ref);
+  const trigger = useRef(null);
+  const [open, setOpen] = useDropdownState(ref, trigger);
 
   useEffect(() => {
     const onKey = (e) => e.key === 'Escape' && setOpen(false);
@@ -42,6 +43,7 @@ const Combobox = ({
   return (
     <div className={cn('relative inline-flex', w.className)} style={w.style} ref={ref}>
       <button
+        ref={trigger}
         type='button'
         disabled={disabled}
         onClick={() => !disabled && setOpen((o) => !o)}

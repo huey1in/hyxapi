@@ -4,6 +4,7 @@ import { z } from 'zod';
 import { Plus, Trash2 } from 'lucide-react';
 import {
   Button,
+  FormField,
   IconButton,
   Input,
   NumberInput,
@@ -459,11 +460,10 @@ export function AffinityRulesEditor({
                 onChange={(ttl_seconds) => edit(index, { ttl_seconds })}
               />
             </div>
-            <div>
-              <div className="mb-1 text-xs text-ui-text-3">
-                {t('Session mode')}
-              </div>
+            <FormField label={t('Session mode')}>
               <Select
+                popover
+                aria-label={t('Session mode') + ` ${index + 1}`}
                 value={row.session_mode ?? ''}
                 options={['', 'inherit', 'off', 'prefer', 'strict'].map(
                   (mode) => ({
@@ -483,7 +483,7 @@ export function AffinityRulesEditor({
                   edit(index, { session_mode });
                 }}
               />
-            </div>
+            </FormField>
           </div>
           <div className="flex flex-wrap gap-4">
             {(

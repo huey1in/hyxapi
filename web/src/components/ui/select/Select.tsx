@@ -54,8 +54,8 @@ function Select<V extends SelectValue>({
   'aria-label': ariaLabel,
 }: SelectProps<V>) {
   const ref = useRef<HTMLDivElement>(null);
-  const [open, setOpen] = useDropdownState(ref);
   const trigger = useRef<HTMLButtonElement>(null);
+  const [open, setOpen] = useDropdownState(ref, trigger);
   const menu = useRef<HTMLDivElement>(null);
   const content = useRef<HTMLDivElement>(null);
   const menuId = useId();

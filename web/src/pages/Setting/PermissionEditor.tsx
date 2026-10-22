@@ -3,7 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { RefreshCw, Save, Search, ShieldCheck } from 'lucide-react';
 import { API, showSuccess } from '../../helpers';
-import { Button, IconButton, Select, Switch, EmptyState, Tag, Input, Pagination, ContentSkeleton } from '../../components/ui';
+import { FormField, Button, IconButton, Select, Switch, EmptyState, Tag, Input, Pagination, ContentSkeleton } from '../../components/ui';
 import type { ApiEnvelope } from '../../types/api';
 import type { AdminPermissionMatrix, PermissionCatalog } from '../../lib/admin-permissions';
 import { normalizeAdminPermissions } from '../../lib/admin-permissions';
@@ -100,14 +100,10 @@ function PermissionWorkspace({ identity }: { identity: string }) {
   const choices: Administrator[] = target && !rows.some((user) => user.id === target.id) ? [target, ...rows] : rows;
   return <div className='min-w-0 space-y-5'>
     <div className='flex flex-wrap items-end gap-3'>
-      <label className='min-w-0 flex-1 space-y-1.5 text-xs text-ui-text-3'>{t('Search administrators')}
-        <Input aria-label={t('Search administrators')} value={input} onChange={setInput} prefix={<Search size={15} />} clearable width='full' />
-      </label>
+      <FormField label={t('Search administrators')}><Input aria-label={t('Search administrators')} value={input} onChange={setInput} prefix={<Search size={15} />} clearable width='full' /></FormField>
     </div>
     {users.error ? <div role='alert' className='space-y-2 text-sm'><p>{t(apiErrorMessage(users.error, 'Unable to load administrators'))}</p><Button variant='toggle' onClick={() => void users.refetch()}>{t('Retry')}</Button></div> : <>
-      <label className='block min-w-0 space-y-1.5 text-xs text-ui-text-3'>{t('Select administrator')}
-        <Select aria-label={t('Select administrator')} options={choices.map((user) => ({ value: String(user.id), label: `#${user.id} ${user.username}` }))} value={target ? String(target.id) : ''} disabled={users.isFetching} placeholder={t(users.isFetching ? 'Loading administrators' : 'Choose an administrator to edit permissions')} emptyText={t('No administrators found')} width='full' onChange={(value) => setTarget(choices.find((user) => String(user.id) === value) ?? null)} />
-      </label>
+      <FormField label={t('Select administrator')}><Select popover aria-label={t('Select administrator')} options={choices.map((user) => ({ value: String(user.id), label: `#${user.id} ${user.username}` }))} value={target ? String(target.id) : ''} disabled={users.isFetching} placeholder={t(users.isFetching ? 'Loading administrators' : 'Choose an administrator to edit permissions')} emptyText={t('No administrators found')} width='full' onChange={(value) => setTarget(choices.find((user) => String(user.id) === value) ?? null)} /></FormField>
       <Pagination page={page} pageSize={20} total={users.data?.total ?? 0} onChange={setPage} />
     </>}
     {catalog.isPending ? <ContentSkeleton variant='form'><div className='flex flex-col items-center gap-4 py-10'><Skeleton width={32} height={32} /><Skeleton width={260} height={20} /></div></ContentSkeleton> : catalog.error ? <div role='alert' className='space-y-2 text-sm'><p>{t(apiErrorMessage(catalog.error, 'Unable to load permission catalog'))}</p><Button variant='toggle' onClick={() => void catalog.refetch()}>{t('Retry')}</Button></div> : target && catalog.data ? <TargetPermissions key={target.id} target={target} identity={identity} catalog={catalog.data} /> : <EmptyState icon={ShieldCheck} title={t('Select an administrator to edit permissions')} />}

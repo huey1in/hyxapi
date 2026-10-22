@@ -1,7 +1,7 @@
 import { useEffect, useId, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { X } from 'lucide-react';
-import { Button, IconButton, ModalShell, Select } from '../../components/ui';
+import { Button, FormField, IconButton, ModalShell, Select } from '../../components/ui';
 import type { SelectOption } from '../../components/ui/select/Select';
 import { pricingSorts } from '../../features/pricing/catalog-data';
 import type { PricingSort } from '../../features/pricing/catalog-data';
@@ -36,10 +36,9 @@ export default function PricingFiltersDialog({ initialValues, groupOptions, vend
   }, [id]);
 
   const field = <K extends keyof PricingFilterValues>(key: K, label: string, options: SelectOption<PricingFilterValues[K]>[]) => (
-    <div className='min-w-0 space-y-1.5'>
-      <label htmlFor={`${id}-${key}`} className='block text-xs text-ui-text-3'>{t(label)}</label>
+    <FormField label={t(label)}>
       <Select id={`${id}-${key}`} aria-label={t(label)} width='full' value={draft[key]} options={options} popover onChange={(value) => setDraft((current) => ({ ...current, [key]: value }))} />
-    </div>
+    </FormField>
   );
 
   return <ModalShell open onClose={onClose} maxWidth={480}>
@@ -55,7 +54,7 @@ export default function PricingFiltersDialog({ initialValues, groupOptions, vend
         <IconButton icon={X} aria-label={t('Close')} onClick={onClose} />
       </header>
       <div className='min-h-0 overflow-y-auto overscroll-contain px-6 py-3 ui-scrollbar'>
-        <div className='grid grid-cols-1 gap-4 min-[480px]:grid-cols-2'>
+        <div className='space-y-4'>
           {field('group', 'Group', groupOptions)}
           {field('billing', 'Billing type', [{ value: 'all', label: t('All billing types') }, { value: 'tokens', label: t('Pay as you go') }, { value: 'request', label: t('Pay per request') }, { value: 'expression', label: t('Expression billing') }, { value: 'task', label: t('Task billing') }])}
           {field('vendor', 'Vendor', vendorOptions)}

@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Button } from '../../../components/ui';
+import { Button, FormField } from '../../../components/ui';
 import type { BillingUsageSchema } from '../../../features/pricing/types';
 import {
   createDefaultTaskVisualConfig, generateTaskExprFromConfig, getTaskEnumFields, getTaskNumberFields,
@@ -52,9 +52,9 @@ export default function TaskBillingEditor({ value, schema, onChange, onInvalidCh
   const reset = () => { setTiers(draftTiers(tryParseEditableTaskConfig(value, schema))); setError(''); onInvalidChange(false); };
   const visual = view === 'visual' && tiers !== null;
   return <div aria-label={t('Task usage billing editor')} className='min-w-0 space-y-3'>
-    <Select width='100%' value={visual ? 'visual' : 'raw'} options={[
+    <FormField label={t('Editor mode')}><Select popover width='100%' value={visual ? 'visual' : 'raw'} options={[
       { value: 'visual', label: t('Price by task usage'), disabled: !tiers }, { value: 'raw', label: t('Raw expression') },
-    ]} onChange={setView} />
+    ]} onChange={setView} /></FormField>
     <p className='text-xs text-ui-text-3'>{t('Tasks use plugin-reported usage: USD per unit, or USD per 1M tokens. Task expressions do not use fixed().')}</p>
     {!tiers && value.trim() && <p className='text-xs text-ui-text-3'>{t('This expression cannot become a task price table. The original is preserved; edit boolean or complex conditions in the raw expression.')}</p>}
     {!value.trim() && numbers.length > 0 && <Button variant='secondary' size='sm' onClick={() => {
@@ -78,15 +78,15 @@ export default function TaskBillingEditor({ value, schema, onChange, onInvalidCh
         </label>
         {index < tiers.length - 1 && <>
           <p className='text-xs text-ui-text-3'>{t('Use this tier when all conditions match. Tiers are checked from top to bottom.')}</p>
-          {tier.conditions.map((condition, conditionIndex) => <div key={conditionIndex} className='grid min-w-0 grid-cols-1 gap-2 sm:grid-cols-[1fr_1fr_auto]'>
-            <Select width='100%' value={condition.field} options={enums.map(([field, definition]) => ({ value: field, label: usageLabel(definition.description, field, i18n.language) }))}
-              onChange={(field) => changeTier(index, { ...tier, conditions: tier.conditions.map((item, i) => i === conditionIndex ? { field, value: schema[field].enum![0] } : item) })} />
-            <Select width='100%' value={condition.value} options={(schema[condition.field]?.enum || []).map((choice) => ({ value: choice, label: usageLabel(schema[condition.field]?.enumLabels?.[choice], choice, i18n.language) }))}
-              onChange={(choice) => changeTier(index, { ...tier, conditions: tier.conditions.map((item, i) => i === conditionIndex ? { ...item, value: choice } : item) })} />
-            <Button size='sm' variant='link' onClick={() => changeTier(index, { ...tier, conditions: tier.conditions.filter((_, i) => i !== conditionIndex) })}>{t('Remove condition')}</Button>
+          {tier.conditions.map((condition, conditionIndex) => <div key={conditionIndex} className='min-w-0 space-y-2'>
+            <FormField label={t('Usage condition')}><Select popover width='100%' value={condition.field} options={enums.map(([field, definition]) => ({ value: field, label: usageLabel(definition.description, field, i18n.language) }))}
+              onChange={(field) => changeTier(index, { ...tier, conditions: tier.conditions.map((item, i) => i === conditionIndex ? { field, value: schema[field].enum![0] } : item) })} /></FormField>
+            <FormField label={t('Condition value')}><Select popover width='100%' value={condition.value} options={(schema[condition.field]?.enum || []).map((choice) => ({ value: choice, label: usageLabel(schema[condition.field]?.enumLabels?.[choice], choice, i18n.language) }))}
+              onChange={(choice) => changeTier(index, { ...tier, conditions: tier.conditions.map((item, i) => i === conditionIndex ? { ...item, value: choice } : item) })} /></FormField>
+            <div className='flex justify-end'><Button size='sm' variant='link' onClick={() => changeTier(index, { ...tier, conditions: tier.conditions.filter((_, i) => i !== conditionIndex) })}>{t('Remove condition')}</Button></div>
           </div>)}
-          <Select width='100%' value='' placeholder={t('Add usage condition')} options={enums.filter(([field]) => !tier.conditions.some((item) => item.field === field)).map(([field, definition]) => ({ value: field, label: usageLabel(definition.description, field, i18n.language) }))}
-            onChange={(field) => changeTier(index, { ...tier, conditions: [...tier.conditions, { field, value: schema[field].enum![0] }] })} />
+          <FormField label={t('Add usage condition')}><Select popover width='100%' value='' placeholder={t('Add usage condition')} options={enums.filter(([field]) => !tier.conditions.some((item) => item.field === field)).map(([field, definition]) => ({ value: field, label: usageLabel(definition.description, field, i18n.language) }))}
+            onChange={(field) => changeTier(index, { ...tier, conditions: [...tier.conditions, { field, value: schema[field].enum![0] }] })} /></FormField>
         </>}
         <div className='grid min-w-0 grid-cols-1 gap-3 sm:grid-cols-2'>
           <label className='grid min-w-0 gap-1 text-xs text-ui-text-3'>{t('Base cost per task')} · USD

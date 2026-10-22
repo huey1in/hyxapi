@@ -6,7 +6,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { z } from 'zod';
 import { API } from '../../helpers';
-import { showSuccess } from '../../components/ui';
+import { FormField, showSuccess } from '../../components/ui';
 import type { ApiEnvelope } from '../../types/api';
 import { useOwnedOperation } from '../../hooks/useOwnedOperation';
 import { useAuthStore } from '../../stores/auth-store';
@@ -50,7 +50,7 @@ function MaintenanceSession({ identity }: { identity: string }) {
     </div>
     <div className='space-y-3 rounded-2xl border border-ui-border p-4'><div className='flex flex-wrap justify-between gap-2'><h3 className='text-sm font-semibold text-ui-text'>{t('File logs')}</h3><span className='text-xs text-ui-text-3'>{logs?.enabled ? t('{{count}} files / {{size}}', { count: logs.file_count, size: bytes(logs.total_size) }) : logs ? t('File logging is not configured') : '—'}</span></div>
       {logs?.enabled && <><p className='break-all text-xs text-ui-text-3'>{t('{{path}} · Use system tasks to clean usage logs.', { path: logs.log_dir })}</p><div className='flex flex-wrap items-end gap-3'>
-        <label className='grid gap-1.5 text-xs text-ui-text-3'>{t('Retention policy')}<Select aria-label={t('Retention policy')} value={mode} disabled={Boolean(action)} onChange={setMode} options={[{ value: 'by_count', label: t('Keep latest file count') }, { value: 'by_days', label: t('Keep recent days') }]} /></label>
+        <FormField label={t('Retention policy')}><Select popover aria-label={t('Retention policy')} value={mode} disabled={Boolean(action)} onChange={setMode} options={[{ value: 'by_count', label: t('Keep latest file count') }, { value: 'by_days', label: t('Keep recent days') }]} /></FormField>
         <label className='grid gap-1.5 text-xs text-ui-text-3'>{t('Retention amount')}<Input aria-label={t('Log retention amount')} type='number' min='1' step='1' value={value} disabled={Boolean(action)} onChange={setValue} width='110px' /></label><Button size='sm' disabled={Boolean(action) || invalidValue || !logs.file_count} onClick={() => choose('logs')}>{t('Clean file logs')}</Button>
       </div><Table rows={logs.files.slice((page - 1) * 10, page * 10)} rowKey='name' minWidth={500} emptyIcon={Files} emptyText={t('No log files')} columns={[
         { key: 'name', title: t('File'), render: (row) => <span className='text-xs'>{row.name}{row.active && <span className='ml-2 text-ui-text-3'>{t('Being written')}</span>}</span> }, { key: 'size', title: t('Size'), render: (row) => bytes(row.size) }, { key: 'date', title: t('Modified at'), render: (row) => <span className='whitespace-nowrap text-xs'>{timestamp(row.mod_time, i18n.language)}</span> },

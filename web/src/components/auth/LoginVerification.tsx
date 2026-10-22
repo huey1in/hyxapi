@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { API } from '../../helpers/api';
-import { Button, Modal, Input, Select } from '../ui';
+import { FormField, Button, Modal, Input, Select } from '../ui';
 import { authResult } from '../../lib/secure-verification';
 import { requestPasskeyAssertion, rememberPasskeyRPID } from '../../features/auth/passkey/assertion';
 import type { PasskeyDomains } from '../../features/auth/passkey/assertion';
@@ -60,10 +60,10 @@ function LoginChallengeDialog({ challenge, onComplete, onCancel }: Props) {
       {expired ? <p role='alert' className='text-sm text-ui-text-2'>{t('Sign-in verification expired; sign in again')}</p> : <>
         {error && <p role='alert' className='text-sm text-ui-text-2'>{t(error)}</p>}
         {methods.length === 0 && <p role='alert' className='text-sm text-ui-text-2'>{t('No verification method is available; contact an administrator.')}</p>}
-        <Select aria-label={t('Verification method')} value={method} disabled={busy} options={methods.map((entry) => ({ value: entry.method, label: t(entry.method === '2fa' ? 'Two-factor or backup code' : 'Passkey') }))} onChange={(value) => { setMethod(value); setCode(''); setError(''); }} />
+        <FormField label={t('Verification method')}><Select popover aria-label={t('Verification method')} value={method} disabled={busy} options={methods.map((entry) => ({ value: entry.method, label: t(entry.method === '2fa' ? 'Two-factor or backup code' : 'Passkey') }))} onChange={(value) => { setMethod(value); setCode(''); setError(''); }} /></FormField>
         {method === '2fa' && <Input aria-label={t('Verification or backup code')} value={code} onChange={setCode} disabled={busy} autoComplete='one-time-code' placeholder={t('Verification or backup code')}
           onKeyDown={(event) => { if (event.key === 'Enter') { event.preventDefault(); void verify(); } }} />}
-        {method === 'passkey' && domains.rpIDs.length > 1 && <Select aria-label={t('Passkey domain')} value={rpID || domains.rpID} disabled={busy} options={domains.rpIDs.map((id) => ({ value: id, label: id }))} onChange={setRPID} />}
+        {method === 'passkey' && domains.rpIDs.length > 1 && <FormField label={t('Passkey domain')}><Select popover aria-label={t('Passkey domain')} value={rpID || domains.rpID} disabled={busy} options={domains.rpIDs.map((id) => ({ value: id, label: id }))} onChange={setRPID} /></FormField>}
       </>}
     </div>
   </Modal>;

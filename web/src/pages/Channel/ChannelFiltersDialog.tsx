@@ -1,7 +1,7 @@
 import { useEffect, useId, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { X } from 'lucide-react';
-import { Button, IconButton, Input, ModalShell, Select } from '../../components/ui';
+import { Button, FormField, IconButton, Input, ModalShell, Select } from '../../components/ui';
 import type { SelectOption } from '../../components/ui/select/Select';
 import { CHANNEL_TYPE_OPTIONS } from '../../constants/channel-types';
 
@@ -34,10 +34,9 @@ export default function ChannelFiltersDialog({ initialValues, onApply, onClose }
     return () => { if (previous?.isConnected) previous.focus(); };
   }, [id]);
 
-  const field = (key: keyof ChannelFilterValues, label: string, options: SelectOption<string>[]) => <div className='min-w-0 space-y-1.5'>
-    <label htmlFor={`${id}-${key}`} className='block text-xs text-ui-text-3'>{t(label)}</label>
+  const field = (key: keyof ChannelFilterValues, label: string, options: SelectOption<string>[]) => <FormField label={t(label)}>
     <Select id={`${id}-${key}`} aria-label={t(label)} width='full' value={draft[key]} options={options} popover onChange={(value) => setDraft((current) => ({ ...current, [key]: value }))} />
-  </div>;
+  </FormField>;
 
   return <ModalShell open onClose={onClose} maxWidth={480}>
     <form ref={dialog} role='dialog' aria-modal='true' aria-labelledby={`${id}-title`} className='flex max-h-[calc(100dvh-32px)] flex-col' onSubmit={(event) => { event.preventDefault(); onApply(draft); }} onKeyDown={(event) => {
@@ -52,13 +51,12 @@ export default function ChannelFiltersDialog({ initialValues, onApply, onClose }
         <IconButton icon={X} aria-label={t('Close')} onClick={onClose} />
       </header>
       <div className='min-h-0 overflow-y-auto overscroll-contain px-6 py-3 ui-scrollbar'>
-        <div className='grid grid-cols-1 gap-4 min-[480px]:grid-cols-2'>
+        <div className='space-y-4'>
           {field('status', 'Status', [{ value: 'all', label: t('全部状态') }, { value: '1', label: t('启用') }, { value: '2', label: t('禁用') }, { value: '3', label: t('自动禁用') }])}
           {field('type', 'Type', [{ value: 'all', label: t('全部类型') }, ...CHANNEL_TYPE_OPTIONS.map((option) => ({ value: String(option.value), label: option.label }))])}
-          <div className='min-w-0 space-y-1.5 min-[480px]:col-span-2'>
-            <label htmlFor={`${id}-group`} className='block text-xs text-ui-text-3'>{t('Group')}</label>
+          <FormField label={t('Group')}>
             <Input id={`${id}-group`} aria-label={t('Group')} value={draft.group} onChange={(group) => setDraft((current) => ({ ...current, group }))} placeholder={t('按分组筛选')} width='full' />
-          </div>
+          </FormField>
           {field('sort', 'Sort channels by', [{ value: 'priority', label: t('按优先级') }, { value: 'id', label: t('按 ID') }, { value: 'name', label: t('按名称') }, { value: 'balance', label: t('按余额') }, { value: 'response_time', label: t('按响应时间') }, { value: 'test_time', label: t('按测试时间') }])}
           {field('direction', 'Sort direction', [{ value: 'desc', label: t('降序') }, { value: 'asc', label: t('升序') }])}
         </div>

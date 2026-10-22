@@ -4,7 +4,7 @@ import { CreditCard } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { API, showSuccess, renderQuota } from '../../helpers';
 import SubscriptionResetDialog from '../../features/payments/SubscriptionResetDialog';
-import { Button, Select, SlideOver, ConfirmDialog, Tag, ContentSkeleton, EmptyState } from '../../components/ui';
+import { Button, FormField, Select, SlideOver, ConfirmDialog, Tag, ContentSkeleton, EmptyState } from '../../components/ui';
 import type { ApiEnvelope } from '../../types/api';
 import type { ManagedUser } from './user-management';
 import { userErrorMessage } from './user-management';
@@ -44,8 +44,8 @@ export default function UserSubscriptionsPanel({ user, onClose }: { user: Manage
       {loading ? <ContentSkeleton variant='tokens'><div className='space-y-5'><div className='rounded-2xl border border-ui-border p-4 space-y-2'><div className='text-sm'>{t('Assign plan')}</div><div className='flex gap-2'><Skeleton height={36} /><Skeleton width={70} height={36} /></div></div><Skeleton width={150} height={28} />{[0, 1].map((index) => <div key={index} className='rounded-xl border border-ui-border px-4 py-3.5 space-y-2'><div className='flex justify-between gap-2'><Skeleton width={140} height={20} /><Skeleton width={55} height={20} /></div><Skeleton height={16} /><Skeleton height={6} /><div className='flex gap-2'><Skeleton width={80} height={28} /><Skeleton width={100} height={28} /></div></div>)}</div></ContentSkeleton> : <>
         {error && <p role='alert' className='text-sm text-ui-danger'>{t(error)}</p>}
         <div className='rounded-2xl border border-ui-border p-4 space-y-2'>
-          <label className='block text-sm'>{t('Assign plan')}</label>
-          <div className='flex gap-2'><div className='min-w-0 flex-1'><Select aria-label={t('Assign plan')} width='full' options={plans.filter((plan) => plan.enabled).map((plan) => ({ value: String(plan.id), label: plan.title || t('Plan #{{id}}', { id: plan.id }) }))} value={selectedPlan} onChange={setSelectedPlan} placeholder={t('Select plan')} /></div>
+          <FormField label={t('Assign plan')}><Select popover aria-label={t('Assign plan')} width='full' options={plans.filter((plan) => plan.enabled).map((plan) => ({ value: String(plan.id), label: plan.title || t('Plan #{{id}}', { id: plan.id }) }))} value={selectedPlan} onChange={setSelectedPlan} placeholder={t('Select plan')} /></FormField>
+          <div className='flex justify-end'>
             <Button disabled={!selectedPlan || !!error} loading={busy} onClick={() => run(async (signal) => {
               const { data } = await API.post<ApiEnvelope<unknown>>(`/api/subscription/admin/users/${user.id}/subscriptions`, { plan_id: Number(selectedPlan) }, { signal, skipErrorHandler: true });
               signal.throwIfAborted(); if (!data.success) throw new Error(data.message || 'Unable to assign subscription'); showSuccess(t('Subscription assigned')); setSelectedPlan(''); await load(signal);

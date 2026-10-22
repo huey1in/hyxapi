@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Button } from '../../../components/ui';
+import { Button, FormField } from '../../../components/ui';
 import {
   buildRequestRuleExpr, createEmptyCondition, createEmptyRuleGroup, createEmptyTimeCondition,
   getRequestRuleMatchOptions, tryParseRequestRuleExpr,
@@ -31,15 +31,15 @@ export function requestRuleError(groups: RequestRuleGroup[]): string {
 function RuleCondition({ value, onChange }: { value: RequestCondition; onChange: (next: RequestCondition) => void }) {
   const { t } = useTranslation();
   return <div className='min-w-0 space-y-2 rounded-lg border border-ui-border p-3'>
-    <Select width='100%' value={value.source} options={[{ value: 'param', label: t('Request body parameter') }, { value: 'header', label: t('Request header') }, { value: 'time', label: t('Request time') }]}
-      onChange={(source) => onChange(source === 'time' ? createEmptyTimeCondition() : { ...createEmptyCondition(), source: source as 'param' | 'header' })} />
+    <FormField label={t('Source')}><Select popover width='100%' value={value.source} options={[{ value: 'param', label: t('Request body parameter') }, { value: 'header', label: t('Request header') }, { value: 'time', label: t('Request time') }]}
+      onChange={(source) => onChange(source === 'time' ? createEmptyTimeCondition() : { ...createEmptyCondition(), source: source as 'param' | 'header' })} /></FormField>
     {value.source === 'time' ? <>
-      <Select width='100%' value={value.timeFunc} options={TIME_FUNCTIONS.map((timeFunc) => ({ value: timeFunc, label: t(variableLabels[timeFunc]) }))}
-        onChange={(timeFunc) => onChange({ ...value, timeFunc: timeFunc as typeof value.timeFunc })} />
+      <FormField label={t('Request time')}><Select popover width='100%' value={value.timeFunc} options={TIME_FUNCTIONS.map((timeFunc) => ({ value: timeFunc, label: t(variableLabels[timeFunc]) }))}
+        onChange={(timeFunc) => onChange({ ...value, timeFunc: timeFunc as typeof value.timeFunc })} /></FormField>
       <Input aria-label={t('Rule timezone')} value={value.timezone} placeholder='Asia/Shanghai' onChange={(timezone) => onChange({ ...value, timezone })} />
     </> : <Input aria-label={t('Rule parameter path')} value={value.path} placeholder={t(value.source === 'header' ? 'For example, X-Priority' : 'For example, service_tier or metadata.level')} onChange={(path) => onChange({ ...value, path })} />}
-    <Select width='100%' value={value.mode} options={getRequestRuleMatchOptions(value.source).map((option) => ({ value: option.value, label: t(matchLabels[option.value] || option.labelKey) }))}
-      onChange={(mode) => onChange({ ...value, mode })} />
+    <FormField label={t('Match mode')}><Select popover width='100%' value={value.mode} options={getRequestRuleMatchOptions(value.source).map((option) => ({ value: option.value, label: t(matchLabels[option.value] || option.labelKey) }))}
+      onChange={(mode) => onChange({ ...value, mode })} /></FormField>
     {value.source === 'time' && value.mode === 'range' ? <div className='grid grid-cols-2 gap-2'>
       <Input aria-label={t('Time range start')} value={value.rangeStart} placeholder={t('Start (inclusive)')} onChange={(rangeStart) => onChange({ ...value, rangeStart })} />
       <Input aria-label={t('Time range end')} value={value.rangeEnd} placeholder={t('End (exclusive)')} onChange={(rangeEnd) => onChange({ ...value, rangeEnd })} />

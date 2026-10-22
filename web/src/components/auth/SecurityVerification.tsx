@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { API } from '../../helpers/api';
-import { Button, Modal, Input, Select } from '../ui';
+import { FormField, Button, Modal, Input, Select } from '../ui';
 import { authResult } from '../../lib/secure-verification';
 import { subscribeVerificationRequests } from '../../lib/verification-request';
 import { encryptPassword } from '../../features/auth/lib/password-encryption';
@@ -131,12 +131,12 @@ function VerificationQueue() {
       {error && <p role='alert' className='text-sm text-ui-text-2'>{t(error)}</p>}
       {!requirements ? <><p className='text-sm text-ui-text-3'>{t('Loading verification methods...')}</p>{error && <Button onClick={() => void loadRequirements(request)}>{t('Retry')}</Button>}</>
         : requirements.methods.length === 0 ? <p role='alert' className='text-sm text-ui-text-2'>{t('No verification method is available; contact an administrator.')}</p> : <>
-          <Select aria-label={t('Verification method')} value={method} disabled={busy} onChange={(next) => { setMethod(next); setValue(''); setError(''); }} options={requirements.methods.map((entry) => ({ value: entry.method, label: t(labels[entry.method]) }))} />
+          <FormField label={t('Verification method')}><Select popover aria-label={t('Verification method')} value={method} disabled={busy} onChange={(next) => { setMethod(next); setValue(''); setError(''); }} options={requirements.methods.map((entry) => ({ value: entry.method, label: t(labels[entry.method]) }))} /></FormField>
           {(method === '2fa' || method === 'password') && <Input aria-label={t(method === 'password' ? 'Login password' : totpOnly ? 'Six-digit verification code' : 'Verification or backup code')} value={value} onChange={setValue} disabled={busy}
             type={method === 'password' ? 'password' : 'text'} inputMode={totpOnly ? 'numeric' : undefined} maxLength={totpOnly ? 6 : undefined} autoComplete={method === 'password' ? 'current-password' : 'one-time-code'} placeholder={t(method === 'password' ? 'Login password' : totpOnly ? 'Six-digit verification code' : 'Verification or backup code')}
             onKeyDown={(event) => { if (event.key === 'Enter') { event.preventDefault(); void verify(); } }} />}
-          {method === 'oauth' && <Select aria-label={t('Identity provider')} value={provider} disabled={busy} onChange={setProvider} options={requirements.oauth_providers.map((entry) => ({ value: entry.slug, label: entry.name }))} />}
-          {method === 'passkey' && domains.rpIDs.length > 1 && <Select aria-label={t('Passkey domain')} value={rpID || domains.rpID} disabled={busy} options={domains.rpIDs.map((id) => ({ value: id, label: id }))} onChange={setRPID} />}
+          {method === 'oauth' && <FormField label={t('Identity provider')}><Select popover aria-label={t('Identity provider')} value={provider} disabled={busy} onChange={setProvider} options={requirements.oauth_providers.map((entry) => ({ value: entry.slug, label: entry.name }))} /></FormField>}
+          {method === 'passkey' && domains.rpIDs.length > 1 && <FormField label={t('Passkey domain')}><Select popover aria-label={t('Passkey domain')} value={rpID || domains.rpID} disabled={busy} options={domains.rpIDs.map((id) => ({ value: id, label: id }))} onChange={setRPID} /></FormField>}
         </>}
     </div>
   </Modal>;

@@ -4,7 +4,7 @@ import { isAxiosError } from 'axios';
 import { useTranslation } from 'react-i18next';
 import { Filter, RefreshCw, ShieldCheck } from 'lucide-react';
 import { API } from '../../helpers';
-import { Button, IconButton, Input, Pagination, Select, Table } from '../../components/ui';
+import { FormField, Button, IconButton, Input, Pagination, Select, Table } from '../../components/ui';
 import type { TableColumn } from '../../components/ui/layout/Table';
 import useIsMobile from '../../hooks/useIsMobile';
 import { useLiveSearch } from '../../hooks/useLiveSearch';
@@ -72,9 +72,7 @@ export default function AuditViewer({ identity, scope, onDenied, accessOnly = fa
     { key: 'result', title: t('Result'), render: resultBadge },
     { key: 'details', title: t('Details'), mobileRole: 'actions', render: (row) => <Button variant='link' size='sm' onClick={() => setSelected(row)}>{t('Details')}</Button> },
   ];
-  const input = (key: keyof AuditFilters, label: string, type = 'text') => <label className='block space-y-1 text-xs text-ui-text-3'>
-    <span>{t(label)}</span><Input type={type} aria-label={t(label)} value={draft[key]} onChange={(value) => set(key, value)} width='full' step={type === 'datetime-local' ? 1 : undefined} />
-  </label>;
+  const input = (key: keyof AuditFilters, label: string, type = 'text') => <FormField label={<><span>{t(label)}</span></>}><Input type={type} aria-label={t(label)} value={draft[key]} onChange={(value) => set(key, value)} width='full' step={type === 'datetime-local' ? 1 : undefined} /></FormField>;
   const error = query.isError ? apiErrorMessage(query.error, 'Failed to load audit records') || 'Failed to load audit records' : '';
   return <div className='space-y-5'>
     <div className='flex flex-wrap justify-end gap-1.5'>
@@ -84,8 +82,8 @@ export default function AuditViewer({ identity, scope, onDenied, accessOnly = fa
     </div>
     {showFilters && <div className='p-4 border border-ui-border rounded-2xl space-y-3'>
       <div className='grid grid-cols-1 sm:grid-cols-2 gap-3'>
-        <label className='block space-y-1 text-xs text-ui-text-3'><span>{t('Result')}</span><Select width='full' aria-label={t('Result')} value={draft.success} onChange={(value) => set('success', value)} options={[{ value: '', label: t('All results') }, { value: 'true', label: t('Success') }, { value: 'false', label: t('Failed') }]} /></label>
-        {!accessOnly && <label className='block space-y-1 text-xs text-ui-text-3'><span>{t('Category')}</span><Select width='full' aria-label={t('Category')} value={draft.category} onChange={(value) => set('category', value)} options={[{ value: '', label: t('All categories') }, { value: 'login', label: t('Login') }, { value: 'security', label: t('Account security') }, { value: 'operation', label: t('Operation audit') }, { value: 'access_token', label: t('Access Token') }]} /></label>}
+        <FormField label={<><span>{t('Result')}</span></>}><Select popover width='full' aria-label={t('Result')} value={draft.success} onChange={(value) => set('success', value)} options={[{ value: '', label: t('All results') }, { value: 'true', label: t('Success') }, { value: 'false', label: t('Failed') }]} /></FormField>
+        {!accessOnly && <FormField label={<><span>{t('Category')}</span></>}><Select popover width='full' aria-label={t('Category')} value={draft.category} onChange={(value) => set('category', value)} options={[{ value: '', label: t('All categories') }, { value: 'login', label: t('Login') }, { value: 'security', label: t('Account security') }, { value: 'operation', label: t('Operation audit') }, { value: 'access_token', label: t('Access Token') }]} /></FormField>}
         {input('start', 'Start time', 'datetime-local')}{input('end', 'End time', 'datetime-local')}
         {!accessOnly && <>{input('token_ref', 'Token identifier')}{input('request_id', 'Request ID')}</>}
         {scope === 'all' && input('username', 'Username')}
