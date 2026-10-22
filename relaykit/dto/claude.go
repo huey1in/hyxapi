@@ -11,10 +11,6 @@ import (
 	"github.com/QuantumNous/new-api/relaykit/types"
 )
 
-type ClaudeMetadata struct {
-	UserId string `json:"user_id"`
-}
-
 type ClaudeMediaMessage struct {
 	Type         string               `json:"type,omitempty"`
 	Text         *string              `json:"text,omitempty"`
@@ -96,11 +92,6 @@ func (c *ClaudeMediaMessage) GetStringContent() string {
 	}
 
 	return ""
-}
-
-func (c *ClaudeMediaMessage) GetJsonRowString() string {
-	jsonContent, _ := kitutil.Marshal(c)
-	return string(jsonContent)
 }
 
 func (c *ClaudeMediaMessage) SetContent(content any) {
@@ -412,21 +403,6 @@ func (c *ClaudeRequest) SetModelName(modelName string) {
 	}
 }
 
-// AddTool 添加工具到请求中
-func (c *ClaudeRequest) AddTool(tool any) {
-	if c.Tools == nil {
-		c.Tools = make([]any, 0)
-	}
-
-	switch tools := c.Tools.(type) {
-	case []any:
-		c.Tools = append(tools, tool)
-	default:
-		// 如果Tools不是[]any类型，重新初始化为[]any
-		c.Tools = []any{tool}
-	}
-}
-
 // GetTools 获取工具列表
 func (c *ClaudeRequest) GetTools() []any {
 	if c.Tools == nil {
@@ -540,13 +516,6 @@ func (c Thinking) MarshalJSON() ([]byte, error) {
 	return kitutil.Marshal(merged)
 }
 
-func (c *Thinking) GetBudgetTokens() int {
-	if c.BudgetTokens == nil {
-		return 0
-	}
-	return *c.BudgetTokens
-}
-
 func (c *ClaudeRequest) IsStringSystem() bool {
 	_, ok := c.System.(string)
 	return ok
@@ -566,12 +535,6 @@ func (c *ClaudeRequest) SetStringSystem(system string) {
 func (c *ClaudeRequest) ParseSystem() []ClaudeMediaMessage {
 	mediaContent, _ := kitutil.Any2Type[[]ClaudeMediaMessage](c.System)
 	return mediaContent
-}
-
-type ClaudeErrorWithStatusCode struct {
-	Error      types.ClaudeError `json:"error"`
-	StatusCode int               `json:"status_code"`
-	LocalError bool
 }
 
 type ClaudeResponse struct {
@@ -669,16 +632,6 @@ func (u *ClaudeUsage) GetCacheCreation1hTokens() int {
 		return 0
 	}
 	return u.CacheCreation.Ephemeral1hInputTokens
-}
-
-func (u *ClaudeUsage) GetCacheCreationTotalTokens() int {
-	if u == nil {
-		return 0
-	}
-	if u.CacheCreationInputTokens > 0 {
-		return u.CacheCreationInputTokens
-	}
-	return u.GetCacheCreation5mTokens() + u.GetCacheCreation1hTokens()
 }
 
 type ClaudeServerToolUse struct {

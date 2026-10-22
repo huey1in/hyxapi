@@ -4,11 +4,12 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"gorm.io/gorm"
 	"net/http"
 	"strconv"
 	"strings"
 	"unicode/utf8"
+
+	"gorm.io/gorm"
 
 	"github.com/QuantumNous/new-api/common"
 	"github.com/QuantumNous/new-api/constant"
@@ -46,11 +47,6 @@ type OpenAIModel struct {
 	} `json:"permission"`
 	Root   string `json:"root"`
 	Parent string `json:"parent"`
-}
-
-type OpenAIModelsResponse struct {
-	Data    []OpenAIModel `json:"data"`
-	Success bool          `json:"success"`
 }
 
 func parseStatusFilter(statusParam string) int {
@@ -109,13 +105,13 @@ func GetAllChannels(c *gin.Context) {
 	if enableTagMode {
 		tags, err := model.GetPaginatedChannelTags(buildChannelListQuery(groupFilter, statusFilter, typeFilter), pageInfo.GetStartIdx(), pageInfo.GetPageSize())
 		if err != nil {
-			common.SysError(common.LogText("failed to get paginated tags: %s", err.Error()))
+			common.SysError(fmt.Sprintf("failed to get paginated tags: %s", err.Error()))
 			common.ApiErrorT(c, "Failed to fetch tags. Please try again later")
 			return
 		}
 		total, err = model.CountChannelTags(buildChannelListQuery(groupFilter, statusFilter, typeFilter))
 		if err != nil {
-			common.SysError(common.LogText("failed to count tags: %s", err.Error()))
+			common.SysError(fmt.Sprintf("failed to count tags: %s", err.Error()))
 			common.ApiErrorT(c, "Failed to count tags. Please try again later")
 			return
 		}
@@ -128,7 +124,7 @@ func GetAllChannels(c *gin.Context) {
 				Omit("key").
 				Find(&tagChannels).Error
 			if err != nil {
-				common.SysError(common.LogText("failed to get channels by tag: %s", err.Error()))
+				common.SysError(fmt.Sprintf("failed to get channels by tag: %s", err.Error()))
 				common.ApiErrorT(c, "Failed to fetch channels with this tag. Please try again later")
 				return
 			}
@@ -136,7 +132,7 @@ func GetAllChannels(c *gin.Context) {
 		}
 	} else {
 		if err := buildChannelListQuery(groupFilter, statusFilter, typeFilter).Count(&total).Error; err != nil {
-			common.SysError(common.LogText("failed to count channels: %s", err.Error()))
+			common.SysError(fmt.Sprintf("failed to count channels: %s", err.Error()))
 			common.ApiErrorT(c, "Failed to count channels. Please try again later")
 			return
 		}
@@ -147,7 +143,7 @@ func GetAllChannels(c *gin.Context) {
 			Omit("key").
 			Find(&channelData).Error
 		if err != nil {
-			common.SysError(common.LogText("failed to get channels: %s", err.Error()))
+			common.SysError(fmt.Sprintf("failed to get channels: %s", err.Error()))
 			common.ApiErrorT(c, "Failed to fetch channels. Please try again later")
 			return
 		}
@@ -163,7 +159,7 @@ func GetAllChannels(c *gin.Context) {
 		Count int64
 	}
 	if err := countQuery.Select("type, count(*) as count").Group("type").Find(&results).Error; err != nil {
-		common.SysError(common.LogText("failed to count channel types: %s", err.Error()))
+		common.SysError(fmt.Sprintf("failed to count channel types: %s", err.Error()))
 		common.ApiErrorT(c, "Failed to count channel types. Please try again later")
 		return
 	}
@@ -442,23 +438,6 @@ func GetChannelKey(c *gin.Context) {
 	common.ApiSuccessT(c, "Fetched successfully", map[string]any{
 		"key": channel.Key,
 	})
-}
-
-// validateTwoFactorAuth 统一的2FA验证函数
-func validateTwoFactorAuth(twoFA *model.TwoFA, code string) bool {
-	// 尝试验证TOTP
-	if cleanCode, err := common.ValidateNumericCode(code); err == nil {
-		if isValid, _ := twoFA.ValidateTOTPAndUpdateUsage(cleanCode); isValid {
-			return true
-		}
-	}
-
-	// 尝试验证备用码
-	if isValid, err := twoFA.ValidateBackupCodeAndUpdateUsage(code); err == nil && isValid {
-		return true
-	}
-
-	return false
 }
 
 // validateChannel 通用的渠道校验函数

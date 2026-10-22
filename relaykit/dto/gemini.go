@@ -248,10 +248,6 @@ func (c *GeminiThinkingConfig) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
-func (c *GeminiThinkingConfig) SetThinkingBudget(budget int) {
-	c.ThinkingBudget = &budget
-}
-
 type GeminiInlineData struct {
 	MimeType string `json:"mimeType"`
 	Data     string `json:"data"`

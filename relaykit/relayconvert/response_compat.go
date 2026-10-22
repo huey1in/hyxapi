@@ -31,20 +31,12 @@ type GeminiHostedStreamBridge struct {
 	bridge *geminichat.GeminiHostedStreamBridge
 }
 
-func NormalizeCacheCreationSplit(totalTokens int, tokens5m int, tokens1h int) (int, int) {
-	return oaichat.NormalizeCacheCreationSplit(totalTokens, tokens5m, tokens1h)
-}
-
 func ResponseOpenAI2Claude(openAIResponse *dto.OpenAITextResponse, info convmeta.Meta) *dto.ClaudeResponse {
 	return oaichat.ResponseOpenAI2Claude(openAIResponse, info)
 }
 
 func StreamResponseOpenAI2Claude(openAIResponse *dto.ChatCompletionsStreamResponse, info convmeta.Meta) []*dto.ClaudeResponse {
 	return oaichat.StreamResponseOpenAI2Claude(openAIResponse, info)
-}
-
-func StopReasonClaudeToOpenAI(reason string) string {
-	return claudemessages.StopReasonClaudeToOpenAI(reason)
 }
 
 func StreamResponseClaude2OpenAI(claudeResponse *dto.ClaudeResponse) *dto.ChatCompletionsStreamResponse {
@@ -145,14 +137,6 @@ func StreamResponseGeminiChat2OpenAI(geminiResponse *dto.GeminiChatResponse) (*d
 	return geminichat.StreamResponseGeminiChat2OpenAI(geminiResponse)
 }
 
-func ChatCompletionsResponseToResponsesResponse(resp *dto.OpenAITextResponse, id string) (*dto.OpenAIResponsesResponse, *dto.Usage, error) {
-	return oaichat.ChatCompletionsResponseToResponsesResponse(resp, id)
-}
-
-func ResponsesStatusFromChatFinishReason(finishReason string) (string, *dto.IncompleteDetails) {
-	return oaichat.ResponsesStatusFromChatFinishReason(finishReason)
-}
-
 func UsageFromChatUsage(src *dto.Usage) *dto.Usage {
 	return oaichat.UsageFromChatUsage(src)
 }
@@ -169,10 +153,6 @@ func FinalizeChatCompletionsStreamToResponses(state *ChatToResponsesStreamState)
 	return oaichat.FinalizeChatCompletionsStreamToResponses(state)
 }
 
-func ResponsesFinishReasonFromStatus(resp *dto.OpenAIResponsesResponse) (string, bool) {
-	return oairesponses.ResponsesFinishReasonFromStatus(resp)
-}
-
 func ResponsesResponseToChatCompletionsResponse(resp *dto.OpenAIResponsesResponse, id string) (*dto.OpenAITextResponse, *dto.Usage, error) {
 	return oairesponses.ResponsesResponseToChatCompletionsResponse(resp, id)
 }
@@ -181,16 +161,8 @@ func UsageFromResponsesUsage(src *dto.Usage) *dto.Usage {
 	return oairesponses.UsageFromResponsesUsage(src)
 }
 
-func NormalizeResponsesUsage(src *dto.Usage) *dto.Usage {
-	return oairesponses.NormalizeResponsesUsage(src)
-}
-
 func ExtractOutputTextFromResponses(resp *dto.OpenAIResponsesResponse) string {
 	return oairesponses.ExtractOutputTextFromResponses(resp)
-}
-
-func ExtractReasoningTextFromResponses(resp *dto.OpenAIResponsesResponse) string {
-	return oairesponses.ExtractReasoningTextFromResponses(resp)
 }
 
 func NewResponsesToChatStreamState(model string, includeUsage bool) *ResponsesToChatStreamState {

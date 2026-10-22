@@ -2,7 +2,6 @@ package common
 
 import (
 	crand "crypto/rand"
-	"encoding/base64"
 	"fmt"
 	"log"
 	"math/big"
@@ -149,14 +148,6 @@ func GenerateRandomCharsKey(length int) (string, error) {
 	}
 
 	return string(b), nil
-}
-
-func GenerateRandomKey(length int) (string, error) {
-	bytes := make([]byte, length*3/4) // 对于48位的输出，这里应该是36
-	if _, err := crand.Read(bytes); err != nil {
-		return "", err
-	}
-	return base64.StdEncoding.EncodeToString(bytes), nil
 }
 
 func GenerateKey() (string, error) {

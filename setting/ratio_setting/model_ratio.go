@@ -1,6 +1,7 @@
 package ratio_setting
 
 import (
+	"fmt"
 	"maps"
 	"strings"
 
@@ -343,10 +344,6 @@ func InitRatioSettings() {
 	audioCompletionRatioMap.AddAll(defaultAudioCompletionRatio)
 }
 
-func GetModelPriceMap() map[string]float64 {
-	return modelPriceMap.ReadAll()
-}
-
 func ModelPrice2JSONString() string {
 	return modelPriceMap.MarshalJSONString()
 }
@@ -364,21 +361,13 @@ func GetModelPrice(name string, printErr bool) (float64, bool) {
 	}
 
 	if printErr {
-		common.SysError(common.LogText("model price not found: %s", name))
+		common.SysError(fmt.Sprintf("model price not found: %s", name))
 	}
 	return -1, false
 }
 
 func UpdateModelRatioByJSONString(jsonStr string) error {
 	return types.LoadFromJsonStringWithCallback(modelRatioMap, jsonStr, InvalidateExposedDataCache)
-}
-
-// 处理带有思考预算的模型名称，方便统一定价
-func handleThinkingBudgetModel(name, prefix, wildcard string) string {
-	if strings.HasPrefix(name, prefix) && strings.Contains(name, "-thinking-") {
-		return wildcard
-	}
-	return name
 }
 
 func GetModelRatio(name string) (float64, bool, string) {
@@ -394,7 +383,7 @@ func GetModelRatio(name string) (float64, bool, string) {
 func DefaultModelRatio2JSONString() string {
 	jsonBytes, err := common.Marshal(defaultModelRatio)
 	if err != nil {
-		common.SysError(common.LogText("error marshalling model ratio: %s", err.Error()))
+		common.SysError(fmt.Sprintf("error marshalling model ratio: %s", err.Error()))
 	}
 	return string(jsonBytes)
 }
@@ -623,18 +612,6 @@ func GetAudioCompletionRatio(name string) float64 {
 	return 1
 }
 
-func ContainsAudioRatio(name string) bool {
-	name = FormatMatchingModelName(name)
-	_, ok := audioRatioMap.Get(name)
-	return ok
-}
-
-func ContainsAudioCompletionRatio(name string) bool {
-	name = FormatMatchingModelName(name)
-	_, ok := audioCompletionRatioMap.Get(name)
-	return ok
-}
-
 func ModelRatio2JSONString() string {
 	return modelRatioMap.MarshalJSONString()
 }
@@ -717,16 +694,3 @@ func HasConfiguredModelRatio(name string) bool {
 }
 
 // 转换模型名，减少渠道必须配置各种带参数模型
-
-// result: 倍率or价格， usePrice， exist
-func GetModelRatioOrPrice(model string) (float64, bool, bool) { // price or ratio
-	price, usePrice := GetModelPrice(model, false)
-	if usePrice {
-		return price, true, true
-	}
-	modelRatio, success, _ := GetModelRatio(model)
-	if success {
-		return modelRatio, false, true
-	}
-	return 37.5, false, false
-}

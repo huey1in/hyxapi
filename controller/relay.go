@@ -3,13 +3,14 @@ package controller
 import (
 	"errors"
 	"fmt"
-	"github.com/QuantumNous/new-api/i18n"
-	pluginruntime "github.com/QuantumNous/new-api/pkg/jsplugin"
-	"github.com/QuantumNous/new-api/relay/channel/task/taskcommon"
 	"io"
 	"net/http"
 	"strings"
 	"time"
+
+	"github.com/QuantumNous/new-api/i18n"
+	pluginruntime "github.com/QuantumNous/new-api/pkg/jsplugin"
+	"github.com/QuantumNous/new-api/relay/channel/task/taskcommon"
 
 	"github.com/QuantumNous/new-api/common"
 	"github.com/QuantumNous/new-api/constant"
@@ -422,10 +423,6 @@ func relayGroupRetryAllowed(c *gin.Context, apiErr *types.NewAPIError, info *rel
 	return !pinned
 }
 
-func shouldRetry(c *gin.Context, apiErr *types.NewAPIError, retryTimes int) bool {
-	return service.ShouldRetryRelayError(c, apiErr, retryTimes)
-}
-
 func processChannelError(c *gin.Context, channelError types.ChannelError, err *types.NewAPIError) {
 	logger.LogError(c, fmt.Sprintf("channel error (channel #%d, status code: %d): %s", channelError.ChannelId, err.StatusCode, err.Error()))
 	// 不要使用context获取渠道信息，异步处理时可能会出现渠道信息不一致的情况
@@ -696,7 +693,7 @@ func executeTaskSubmissionWith(
 
 	useChannel := c.GetStringSlice("use_channel")
 	if len(useChannel) > 1 {
-		retryLogStr := common.LogText("retry: %s", strings.Trim(strings.Join(strings.Fields(fmt.Sprint(useChannel)), "->"), "[]"))
+		retryLogStr := fmt.Sprintf("retry: %s", strings.Trim(strings.Join(strings.Fields(fmt.Sprint(useChannel)), "->"), "[]"))
 		logger.LogInfo(c, retryLogStr)
 	}
 
@@ -721,7 +718,7 @@ func executeTaskSubmissionWith(
 		stage = "reserve"
 		diagnostics.reserve("reserve_start", result.Quota)
 		if reserveErr := relayInfo.Billing.Reserve(result.Quota); reserveErr != nil {
-			common.SysError(common.LogText("reserve adjusted task billing error: %s", reserveErr.Error()))
+			common.SysError(fmt.Sprintf("reserve adjusted task billing error: %s", reserveErr.Error()))
 			taskErr = service.TaskErrorWrapperLocal(errors.New("insufficient quota for adjusted task cost"), string(types.ErrorCodeInsufficientUserQuota), http.StatusForbidden)
 			diagnostics.failed("reserve", "insufficient_quota", taskErr, false)
 			return nil, taskErr
@@ -798,7 +795,7 @@ func executeTaskSubmissionWith(
 				task.PrivateData.ResultDiscarded = true
 				insertOmits = append(insertOmits, "data")
 			} else {
-				logger.LogWarn(c, common.LogText("task plugin route %s %s declares retainResult: false but returned an asynchronous result; retaining task %s", pinned.Route.Method, pinned.Route.Path, task.TaskID))
+				logger.LogWarn(c, fmt.Sprintf("task plugin route %s %s declares retainResult: false but returned an asynchronous result; retaining task %s", pinned.Route.Method, pinned.Route.Path, task.TaskID))
 			}
 		}
 	}
@@ -810,7 +807,7 @@ func executeTaskSubmissionWith(
 	}
 	diagnostics.insertStart(task)
 	if insertErr := task.InsertWithContext(c.Request.Context(), insertOmits...); insertErr != nil {
-		common.SysError(common.LogText("insert task error: %s", insertErr.Error()))
+		common.SysError(fmt.Sprintf("insert task error: %s", insertErr.Error()))
 		taskErr = service.TaskErrorWrapperLocal(errors.New("failed to persist task"), "task_insert_failed", http.StatusInternalServerError)
 		diagnostics.failed("insert", "database_error", taskErr, false)
 		return nil, taskErr
@@ -821,7 +818,7 @@ func executeTaskSubmissionWith(
 	diagnostics.settleStart(task, result.Quota)
 
 	if settleErr := service.SettleBilling(c, relayInfo, result.Quota); settleErr != nil {
-		common.SysError(common.LogText("settle task billing error: %s", settleErr.Error()))
+		common.SysError(fmt.Sprintf("settle task billing error: %s", settleErr.Error()))
 		taskErr = service.TaskErrorWrapperLocal(errors.New("failed to settle task billing"), "task_billing_settlement_failed", http.StatusInternalServerError)
 		diagnostics.failed("settle", "billing_error", taskErr, true)
 		return nil, taskErr
@@ -859,13 +856,13 @@ func presentTaskSubmission(c *gin.Context, outcome *taskSubmissionOutcome) {
 						c.JSON(http.StatusOK, body)
 						return
 					} else {
-						logger.LogError(c, common.LogText("task plugin native submit presenter failed: %s", callErr.Error()))
+						logger.LogError(c, fmt.Sprintf("task plugin native submit presenter failed: %s", callErr.Error()))
 					}
 				} else {
-					logger.LogError(c, common.LogText("encode task plugin native submit view failed: %s", valueErr.Error()))
+					logger.LogError(c, fmt.Sprintf("encode task plugin native submit view failed: %s", valueErr.Error()))
 				}
 			} else {
-				logger.LogError(c, common.LogText("build task plugin native submit view failed: %s", err.Error()))
+				logger.LogError(c, fmt.Sprintf("build task plugin native submit view failed: %s", err.Error()))
 			}
 		}
 	}
@@ -957,5 +954,3 @@ func decideTaskRetry(c *gin.Context, taskErr *hostdto.TaskError, retryTimes int)
 	}
 	return stop
 }
-
-func isSpecificChannel(c *gin.Context) bool { _, exists := c.Get("specific_channel_id"); return exists }

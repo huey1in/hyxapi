@@ -22,9 +22,8 @@ const (
 	ChannelTestModeAutoBanOnly     = "auto_ban_only"
 	ChannelTestModePassiveRecovery = "passive_recovery"
 
-	ChannelTestConcurrencyOptionKey = "monitor_setting.channel_test_concurrency"
-	DefaultChannelTestConcurrency   = 1
-	MaxChannelTestConcurrency       = 32
+	DefaultChannelTestConcurrency = 1
+	MaxChannelTestConcurrency     = 32
 )
 
 // 默认配置

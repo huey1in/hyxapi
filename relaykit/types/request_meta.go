@@ -14,7 +14,7 @@ type TokenType string
 const (
 	TokenTypeTextNumber TokenType = "text_number" // Text or number tokens
 	TokenTypeTokenizer  TokenType = "tokenizer"   // Tokenizer tokens
-	TokenTypeImage      TokenType = "image"       // Image tokens
+	// Image tokens
 )
 
 type TokenCountMeta struct {
@@ -35,14 +35,6 @@ type FileMeta struct {
 	FileType
 	Source FileSource // 统一的文件来源（URL 或 base64）
 	Detail string     // 图片细节级别（low/high/auto）
-}
-
-// NewFileMeta 创建新的 FileMeta
-func NewFileMeta(fileType FileType, source FileSource) *FileMeta {
-	return &FileMeta{
-		FileType: fileType,
-		Source:   source,
-	}
 }
 
 // NewImageFileMeta 创建图片类型的 FileMeta
@@ -74,11 +66,4 @@ func (f *FileMeta) GetRawData() string {
 		return f.Source.GetRawData()
 	}
 	return ""
-}
-
-type RequestMeta struct {
-	OriginalModelName string `json:"original_model_name"`
-	UserUsingGroup    string `json:"user_using_group"`
-	PromptTokens      int    `json:"prompt_tokens"`
-	PreConsumedQuota  int    `json:"pre_consumed_quota"`
 }

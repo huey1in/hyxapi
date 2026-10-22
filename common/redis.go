@@ -53,7 +53,6 @@ func InitRedisClient() (err error) {
 	return err
 }
 
-
 func RedisSet(key string, value string, expiration time.Duration) error {
 	if DebugEnabled {
 		SysLog(fmt.Sprintf("Redis SET: key=%s, value=%s, expiration=%v", key, value, expiration))
@@ -81,67 +80,12 @@ func RedisGet(key string) (string, error) {
 //	return RDB.GetSet(ctx, key, expiration).Result()
 //}
 
-
 func RedisDelKey(key string) error {
 	if DebugEnabled {
 		SysLog(fmt.Sprintf("Redis DEL Key: key=%s", key))
 	}
 	ctx := context.Background()
 	return RDB.Del(ctx, key).Err()
-}
-
-func RedisHSetObj(key string, obj interface{}, expiration time.Duration) error {
-	if DebugEnabled {
-		SysLog(fmt.Sprintf("Redis HSET: key=%s, obj=%+v, expiration=%v", key, obj, expiration))
-	}
-	ctx := context.Background()
-
-	data := make(map[string]interface{})
-
-	// 使用反射遍历结构体字段
-	v := reflect.ValueOf(obj).Elem()
-	t := v.Type()
-	for i := 0; i < v.NumField(); i++ {
-		field := t.Field(i)
-		value := v.Field(i)
-
-		// Skip DeletedAt field
-		if field.Type.String() == "gorm.DeletedAt" {
-			continue
-		}
-
-		// 处理指针类型
-		if value.Kind() == reflect.Ptr {
-			if value.IsNil() {
-				data[field.Name] = ""
-				continue
-			}
-			value = value.Elem()
-		}
-
-		// 处理布尔类型
-		if value.Kind() == reflect.Bool {
-			data[field.Name] = strconv.FormatBool(value.Bool())
-			continue
-		}
-
-		// 其他类型直接转换为字符串
-		data[field.Name] = fmt.Sprintf("%v", value.Interface())
-	}
-
-	txn := RDB.TxPipeline()
-	txn.HSet(ctx, key, data)
-
-	// 只有在 expiration 大于 0 时才设置过期时间
-	if expiration > 0 {
-		txn.Expire(ctx, key, expiration)
-	}
-
-	_, err := txn.Exec(ctx)
-	if err != nil {
-		return fmt.Errorf("failed to execute transaction: %w", err)
-	}
-	return nil
 }
 
 func RedisHGetObj(key string, obj interface{}) error {
@@ -252,60 +196,6 @@ func RedisIncr(key string, delta int64) error {
 		txn.Expire(ctx, key, ttl)
 
 		// 执行事务
-		_, err = txn.Exec(ctx)
-		return err
-	}
-	return nil
-}
-
-func RedisHIncrBy(key, field string, delta int64) error {
-	if DebugEnabled {
-		SysLog(fmt.Sprintf("Redis HINCRBY: key=%s, field=%s, delta=%d", key, field, delta))
-	}
-	ttlCmd := RDB.TTL(context.Background(), key)
-	ttl, err := ttlCmd.Result()
-	if err != nil && !errors.Is(err, redis.Nil) {
-		return fmt.Errorf("failed to get TTL: %w", err)
-	}
-
-	if ttl > 0 {
-		ctx := context.Background()
-		txn := RDB.TxPipeline()
-
-		incrCmd := txn.HIncrBy(ctx, key, field, delta)
-		if err := incrCmd.Err(); err != nil {
-			return err
-		}
-
-		txn.Expire(ctx, key, ttl)
-
-		_, err = txn.Exec(ctx)
-		return err
-	}
-	return nil
-}
-
-func RedisHSetField(key, field string, value interface{}) error {
-	if DebugEnabled {
-		SysLog(fmt.Sprintf("Redis HSET field: key=%s, field=%s, value=%v", key, field, value))
-	}
-	ttlCmd := RDB.TTL(context.Background(), key)
-	ttl, err := ttlCmd.Result()
-	if err != nil && !errors.Is(err, redis.Nil) {
-		return fmt.Errorf("failed to get TTL: %w", err)
-	}
-
-	if ttl > 0 {
-		ctx := context.Background()
-		txn := RDB.TxPipeline()
-
-		hsetCmd := txn.HSet(ctx, key, field, value)
-		if err := hsetCmd.Err(); err != nil {
-			return err
-		}
-
-		txn.Expire(ctx, key, ttl)
-
 		_, err = txn.Exec(ctx)
 		return err
 	}

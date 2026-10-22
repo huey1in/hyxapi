@@ -401,8 +401,6 @@ func (r *GeneralOpenAIRequest) GetSystemRoleName() string {
 	return "system"
 }
 
-const CustomType = "custom"
-
 type ToolCallRequest struct {
 	ID       string          `json:"id,omitempty"`
 	Type     string          `json:"type"`
@@ -644,17 +642,6 @@ func (m *Message) GetReasoningContent() string {
 	return *m.Reasoning
 }
 
-func (m *Message) GetPrefix() bool {
-	if m.Prefix == nil {
-		return false
-	}
-	return *m.Prefix
-}
-
-func (m *Message) SetPrefix(prefix bool) {
-	m.Prefix = &prefix
-}
-
 func (m *Message) ParseToolCalls() []ToolCallRequest {
 	if m.ToolCalls == nil {
 		return nil
@@ -692,11 +679,6 @@ func (m *Message) StringContent() string {
 	}
 
 	return ""
-}
-
-func (m *Message) SetNullContent() {
-	m.Content = nil
-	m.parsedContent = nil
 }
 
 func (m *Message) SetStringContent(content string) {

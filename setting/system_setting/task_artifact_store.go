@@ -63,12 +63,12 @@ func LoadTaskArtifactStoreConfig() TaskArtifactStoreConfig {
 		S3PresignTTLSeconds: common.GetEnvOrDefault(TaskArtifactStoreS3PresignTTLEnv, DefaultTaskArtifactStorePresignTTLSeconds),
 	}
 	if err := ValidateTaskArtifactStoreConfig(config); err != nil {
-		common.SysError(common.LogText("invalid task artifact store configuration: %s; using upstream mode", err.Error()))
+		common.SysError(fmt.Sprintf("invalid task artifact store configuration: %s; using upstream mode", err.Error()))
 		config.Mode = TaskArtifactStoreModeUpstream
 		return config
 	}
 	if config.Mode == TaskArtifactStoreModeS3 {
-		common.SysError(common.LogText("task artifact S3 storage is not implemented; using upstream mode"))
+		common.SysError(fmt.Sprintf("task artifact S3 storage is not implemented; using upstream mode"))
 		config.Mode = TaskArtifactStoreModeUpstream
 	}
 	return config

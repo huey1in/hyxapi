@@ -1,6 +1,8 @@
 package model
 
 import (
+	"fmt"
+
 	"github.com/QuantumNous/new-api/common"
 	"github.com/bytedance/gopkg/util/gopool"
 	"github.com/gin-gonic/gin"
@@ -39,7 +41,7 @@ func RecordLegacyAuditLog(c *gin.Context, action, resourceType string, resourceI
 			RequestId: requestID,
 		}
 		if err := createLog(log); err != nil {
-			common.SysError(common.LogText("failed to record legacy audit log: %s", err.Error()))
+			common.SysError(fmt.Sprintf("failed to record legacy audit log: %s", err.Error()))
 		}
 	})
 }

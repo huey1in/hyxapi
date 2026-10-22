@@ -111,7 +111,7 @@ func LoadCustomProviders() error {
 	// Load all custom providers from database
 	customProviders, err := model.GetAllCustomOAuthProviders()
 	if err != nil {
-		common.SysError(common.LogText("Failed to load custom OAuth providers: %s", err.Error()))
+		common.SysError(fmt.Sprintf("Failed to load custom OAuth providers: %s", err.Error()))
 		return err
 	}
 
@@ -124,16 +124,11 @@ func LoadCustomProviders() error {
 			conflict = err
 			continue
 		}
-		common.SysLog(common.LogText("Loaded custom OAuth provider: %s (%s)", config.Name, config.Slug))
+		common.SysLog(fmt.Sprintf("Loaded custom OAuth provider: %s (%s)", config.Name, config.Slug))
 	}
 
-	common.SysLog(common.LogText("Loaded %d custom OAuth providers", len(customProviders)))
+	common.SysLog(fmt.Sprintf("Loaded %d custom OAuth providers", len(customProviders)))
 	return conflict
-}
-
-// ReloadCustomProviders reloads all custom OAuth providers from the database
-func ReloadCustomProviders() error {
-	return LoadCustomProviders()
 }
 
 // RegisterOrUpdateCustomProvider registers or updates a single custom provider

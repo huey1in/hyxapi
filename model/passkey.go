@@ -3,6 +3,7 @@ package model
 import (
 	"encoding/base64"
 	"errors"
+	"fmt"
 	"strings"
 	"time"
 
@@ -123,7 +124,7 @@ func NewPasskeyCredentialFromWebAuthn(userID int, credential *webauthn.Credentia
 
 func GetPasskeyByUserID(userID int) (*PasskeyCredential, error) {
 	if userID == 0 {
-		common.SysLog(common.LogText("GetPasskeyByUserID: empty user ID"))
+		common.SysLog(fmt.Sprintf("GetPasskeyByUserID: empty user ID"))
 		return nil, ErrFriendlyPasskeyNotFound
 	}
 	var credential PasskeyCredential
@@ -133,7 +134,7 @@ func GetPasskeyByUserID(userID int) (*PasskeyCredential, error) {
 			return nil, ErrPasskeyNotFound
 		}
 		// 只有真正的数据库错误才记录日志
-		common.SysLog(common.LogText("GetPasskeyByUserID: database error for user %d: %v", userID, err))
+		common.SysLog(fmt.Sprintf("GetPasskeyByUserID: database error for user %d: %v", userID, err))
 		return nil, ErrFriendlyPasskeyNotFound
 	}
 	return &credential, nil
@@ -141,7 +142,7 @@ func GetPasskeyByUserID(userID int) (*PasskeyCredential, error) {
 
 func GetPasskeyByCredentialID(credentialID []byte) (*PasskeyCredential, error) {
 	if len(credentialID) == 0 {
-		common.SysLog(common.LogText("GetPasskeyByCredentialID: empty credential ID"))
+		common.SysLog(fmt.Sprintf("GetPasskeyByCredentialID: empty credential ID"))
 		return nil, ErrFriendlyPasskeyNotFound
 	}
 
@@ -149,10 +150,10 @@ func GetPasskeyByCredentialID(credentialID []byte) (*PasskeyCredential, error) {
 	var credential PasskeyCredential
 	if err := DB.Where("credential_id = ?", credIDStr).First(&credential).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			common.SysLog(common.LogText("GetPasskeyByCredentialID: passkey not found for credential ID length %d", len(credentialID)))
+			common.SysLog(fmt.Sprintf("GetPasskeyByCredentialID: passkey not found for credential ID length %d", len(credentialID)))
 			return nil, ErrFriendlyPasskeyNotFound
 		}
-		common.SysLog(common.LogText("GetPasskeyByCredentialID: database error for credential ID: %v", err))
+		common.SysLog(fmt.Sprintf("GetPasskeyByCredentialID: database error for credential ID: %v", err))
 		return nil, ErrFriendlyPasskeyNotFound
 	}
 
@@ -209,11 +210,11 @@ func UpdatePasskeyAssertionState(userID int, credential *webauthn.Credential, la
 
 func upsertPasskeyCredentialWithTx(tx *gorm.DB, credential *PasskeyCredential) error {
 	if err := tx.Unscoped().Where("user_id = ?", credential.UserID).Delete(&PasskeyCredential{}).Error; err != nil {
-		common.SysLog(common.LogText("UpsertPasskeyCredential: failed to delete existing credential for user %d: %v", credential.UserID, err))
+		common.SysLog(fmt.Sprintf("UpsertPasskeyCredential: failed to delete existing credential for user %d: %v", credential.UserID, err))
 		return errors.New("failed to save the Passkey, please try again")
 	}
 	if err := tx.Create(credential).Error; err != nil {
-		common.SysLog(common.LogText("UpsertPasskeyCredential: failed to create credential for user %d: %v", credential.UserID, err))
+		common.SysLog(fmt.Sprintf("UpsertPasskeyCredential: failed to create credential for user %d: %v", credential.UserID, err))
 		return errors.New("failed to save the Passkey, please try again")
 	}
 	return nil

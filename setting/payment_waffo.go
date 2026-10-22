@@ -39,18 +39,6 @@ func GetWaffoPayMethods() []constant.WaffoPayMethod {
 	return methods
 }
 
-// SetWaffoPayMethods 序列化 Waffo 支付方式配置并更新 OptionMap
-func SetWaffoPayMethods(methods []constant.WaffoPayMethod) error {
-	jsonBytes, err := common.Marshal(methods)
-	if err != nil {
-		return err
-	}
-	common.OptionMapRWMutex.Lock()
-	common.OptionMap["WaffoPayMethods"] = string(jsonBytes)
-	common.OptionMapRWMutex.Unlock()
-	return nil
-}
-
 func copyDefaultWaffoPayMethods() []constant.WaffoPayMethod {
 	cp := make([]constant.WaffoPayMethod, len(constant.DefaultWaffoPayMethods))
 	copy(cp, constant.DefaultWaffoPayMethods)

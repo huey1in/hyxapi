@@ -2,6 +2,7 @@ package common
 
 import (
 	"encoding/json"
+	"fmt"
 	"sync"
 )
 
@@ -34,7 +35,7 @@ func GetTopupGroupRatio(name string) float64 {
 	defer topupGroupRatioMutex.RUnlock()
 	ratio, ok := topupGroupRatio[name]
 	if !ok {
-		SysError(LogText("topup group ratio not found: %s", name))
+		SysError(fmt.Sprintf("topup group ratio not found: %s", name))
 		return 1
 	}
 	return ratio

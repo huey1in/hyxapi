@@ -40,7 +40,6 @@ export const affinityRuleSchema = z.looseObject({
   include_model_name: z.boolean().optional(),
   include_rule_name: z.boolean().optional(),
 });
-export type AffinityRule = z.output<typeof affinityRuleSchema>;
 export const settingJSON: Record<string, z.ZodType> = {
   GroupRatio: numericMap,
   UserUsableGroups: stringMap,

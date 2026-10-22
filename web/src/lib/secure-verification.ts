@@ -10,7 +10,6 @@ export class AuthOperationError extends Error {
     return new AuthOperationError(error instanceof Error ? error.message : fallback, undefined, { cause: error });
   }
 }
-export const authRequestOptions = { skipErrorHandler: true };
 export async function authResult<T>(request: Promise<{ data: { success: boolean; message?: string; code?: string; data?: T } }>): Promise<T> {
   try {
     const { data } = await request;

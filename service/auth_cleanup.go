@@ -1,6 +1,7 @@
 package service
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/QuantumNous/new-api/common"
@@ -30,9 +31,9 @@ func cleanupAuthArtifacts() {
 	now := time.Now()
 	count, err := model.CountUserSessionsCreatedSince(0, now.Add(-time.Hour).Unix())
 	if err != nil {
-		common.SysError(common.LogText("failed to count hourly user session issuance: %s", err.Error()))
+		common.SysError(fmt.Sprintf("failed to count hourly user session issuance: %s", err.Error()))
 	} else if count > int64(common.UserSessionHourlyAlertThreshold) {
-		common.SysError(common.LogText(
+		common.SysError(fmt.Sprintf(
 			"hourly user session issuance exceeded alert threshold: count=%d threshold=%d window_seconds=%d",
 			count,
 			common.UserSessionHourlyAlertThreshold,
@@ -40,16 +41,16 @@ func cleanupAuthArtifacts() {
 		))
 	}
 	if err := model.DeleteExpiredUserSessions(now.Unix()); err != nil {
-		common.SysError(common.LogText("failed to delete expired user sessions: %s", err.Error()))
+		common.SysError(fmt.Sprintf("failed to delete expired user sessions: %s", err.Error()))
 	}
 	if err := model.DeleteOldRevokedUserSessions(now.Unix()); err != nil {
-		common.SysError(common.LogText("failed to delete old revoked user sessions: %s", err.Error()))
+		common.SysError(fmt.Sprintf("failed to delete old revoked user sessions: %s", err.Error()))
 	}
 	if err := model.DeleteExpiredAuthFlows(now); err != nil {
-		common.SysError(common.LogText("failed to delete expired authentication flows: %s", err.Error()))
+		common.SysError(fmt.Sprintf("failed to delete expired authentication flows: %s", err.Error()))
 	}
 	accessTokenExpiredBefore := now.Unix() - int64(common.UserSessionRevokedRetentionDays)*24*60*60
 	if err := model.DeleteExpiredUserAccessTokens(accessTokenExpiredBefore); err != nil {
-		common.SysError(common.LogText("failed to delete expired access tokens: %s", err.Error()))
+		common.SysError(fmt.Sprintf("failed to delete expired access tokens: %s", err.Error()))
 	}
 }

@@ -782,17 +782,6 @@ func hostedItemFailed(item HostedResponseItem) bool {
 	return item.Status == "failed" || item.ErrorCode != "" || rawJSONPresent(item.Error) || item.IsError != nil && *item.IsError
 }
 
-func hostedErrorValue(item HostedResponseItem) json.RawMessage {
-	if len(item.Error) > 0 {
-		return append(json.RawMessage(nil), item.Error...)
-	}
-	if item.ErrorCode == "" {
-		return nil
-	}
-	encoded, _ := kitutil.Marshal(item.ErrorCode)
-	return encoded
-}
-
 func firstNonEmpty(values ...string) string {
 	for _, value := range values {
 		if value != "" {

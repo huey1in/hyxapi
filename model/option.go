@@ -2,11 +2,13 @@ package model
 
 import (
 	"errors"
-	"gorm.io/gorm"
+	"fmt"
 	"maps"
 	"strconv"
 	"strings"
 	"time"
+
+	"gorm.io/gorm"
 
 	"github.com/QuantumNous/new-api/common"
 	"github.com/QuantumNous/new-api/constant"
@@ -215,7 +217,7 @@ func loadOptionsFromDatabase() {
 	defer requestPolicyOptionMutex.Unlock()
 	defer func() {
 		if err := refreshRequestPolicySnapshot(); err != nil {
-			common.SysError(common.LogText("invalid request policy: %s", err.Error()))
+			common.SysError(fmt.Sprintf("invalid request policy: %s", err.Error()))
 		}
 	}()
 	passkeyOptionMutex.Lock()
@@ -241,7 +243,7 @@ func loadOptionsFromDatabase() {
 		}
 		err := updateOptionMap(option.Key, option.Value)
 		if err != nil {
-			common.SysLog(common.LogText("failed to update option map: %s", err.Error()))
+			common.SysLog(fmt.Sprintf("failed to update option map: %s", err.Error()))
 		}
 	}
 	applyPasskeyDomainOptions(passkeyOptions)

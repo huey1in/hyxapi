@@ -71,28 +71,6 @@ type ImgUrls struct {
 	Url string `json:"url"`
 }
 
-type MidjourneyStatus struct {
-	Status int `json:"status"`
-}
-type MidjourneyWithoutStatus struct {
-	Id          int    `json:"id"`
-	Code        int    `json:"code"`
-	UserId      int    `json:"user_id" gorm:"index"`
-	Action      string `json:"action"`
-	MjId        string `json:"mj_id" gorm:"index"`
-	Prompt      string `json:"prompt"`
-	PromptEn    string `json:"prompt_en"`
-	Description string `json:"description"`
-	State       string `json:"state"`
-	SubmitTime  int64  `json:"submit_time"`
-	StartTime   int64  `json:"start_time"`
-	FinishTime  int64  `json:"finish_time"`
-	ImageUrl    string `json:"image_url"`
-	Progress    string `json:"progress"`
-	FailReason  string `json:"fail_reason"`
-	ChannelId   int    `json:"channel_id"`
-}
-
 type ActionButton struct {
 	CustomId any `json:"customId"`
 	Emoji    any `json:"emoji"`

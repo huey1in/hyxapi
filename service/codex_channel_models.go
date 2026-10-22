@@ -11,10 +11,6 @@ import (
 	"github.com/QuantumNous/new-api/model"
 )
 
-func FetchCodexChannelModels(channel *model.Channel) ([]string, error) {
-	return FetchCodexChannelModelsWithContext(context.Background(), channel)
-}
-
 func FetchCodexChannelModelsWithContext(ctx context.Context, channel *model.Channel) ([]string, error) {
 	if channel == nil || channel.Type != constant.ChannelTypeCodex {
 		return nil, fmt.Errorf("channel type is not Codex")

@@ -27,15 +27,8 @@ import { applyAuthRotation, clearAuthentication, getFreshAuthHeaders, refreshAut
 import { operationForRequest } from '../lib/verification-operation';
 import { requestVerification } from '../lib/verification-request';
 import { useAuthStore } from '../stores/auth-store';
-import type { ApiEnvelope, OAuthProvider } from '../types/api';
+import type { ApiEnvelope } from '../types/api';
 import { normalizeLanguage } from '../i18n/language';
-
-interface OAuthOptions {
-  openInNewTab?: boolean;
-  shouldLogout?: boolean;
-  intent?: 'login' | 'bind';
-  proofToken?: string;
-}
 
 const apiBaseURL = import.meta.env.PUBLIC_API_BASE_URL || '';
 
@@ -47,18 +40,6 @@ export let API = axios.create({
     'Cache-Control': 'no-store',
   },
 });
-
-function redirectToOAuthUrl(url: string | URL, options: OAuthOptions = {}) {
-  const { openInNewTab = false } = options;
-  const targetUrl = typeof url === 'string' ? url : url.toString();
-
-  if (openInNewTab) {
-    window.open(targetUrl, '_blank');
-    return;
-  }
-
-  window.location.assign(targetUrl);
-}
 
 function patchAPIInstance(instance: AxiosInstance) {
   const originalGet = instance.get.bind(instance);
@@ -194,135 +175,6 @@ const handleUnauthorized = (error: AxiosError) => {
   } catch {}
 };
 
-// 原来components中的utils.js
-
-export async function getOAuthState(provider: string, options: OAuthOptions = {}) {
-  const aff = localStorage.getItem('aff') || '';
-  const res = await API.post<ApiEnvelope<{ flow_token: string; authorization_url?: string }>>('/api/oauth/state', {
-    provider, intent: options.intent || (options.openInNewTab ? 'bind' : 'login'),
-    ...((options.intent || (options.openInNewTab ? 'bind' : 'login')) === 'login' && aff ? { aff } : {}),
-  }, options.proofToken ? { headers: { 'X-Security-Proof': options.proofToken }, singleUseAuthorization: true } : undefined);
-  const { success, message, data } = res.data;
-  if (success) {
-    return data;
-  } else {
-    showError(message);
-    return null;
-  }
-}
-
-async function prepareOAuthState(provider: string, options: OAuthOptions = {}) {
-  const { shouldLogout = false } = options;
-  if (shouldLogout) {
-    try {
-      await logoutAuthentication();
-    } catch (err) {}
-    localStorage.removeItem('user');
-    updateAPI();
-  }
-  const result = await getOAuthState(provider, options);
-  return result?.flow_token;
-}
-
-export async function onDiscordOAuthClicked(client_id: string, options: OAuthOptions = {}) {
-  const state = await prepareOAuthState('discord', options);
-  if (!state) return;
-  const redirect_uri = `${window.location.origin}/oauth/discord`;
-  const response_type = 'code';
-  const scope = 'identify+openid';
-  redirectToOAuthUrl(
-    `https://discord.com/oauth2/authorize?client_id=${client_id}&redirect_uri=${redirect_uri}&response_type=${response_type}&scope=${scope}&state=${state}`, options,
-  );
-}
-
-export async function onOIDCClicked(
-  auth_url: string,
-  client_id: string,
-  openInNewTab = false,
-  options: OAuthOptions = {},
-) {
-  const state = await prepareOAuthState('oidc', options);
-  if (!state) return;
-  const url = new URL(auth_url);
-  url.searchParams.set('client_id', client_id);
-  url.searchParams.set('redirect_uri', `${window.location.origin}/oauth/oidc`);
-  url.searchParams.set('response_type', 'code');
-  url.searchParams.set('scope', 'openid profile email');
-  url.searchParams.set('state', state);
-  redirectToOAuthUrl(url, { openInNewTab });
-}
-
-export async function onGitHubOAuthClicked(github_client_id: string, options: OAuthOptions = {}) {
-  const state = await prepareOAuthState('github', options);
-  if (!state) return;
-  redirectToOAuthUrl(
-    `https://github.com/login/oauth/authorize?client_id=${github_client_id}&state=${state}&scope=user:email`, options,
-  );
-}
-
-export async function onLinuxDOOAuthClicked(
-  linuxdo_client_id: string,
-  options: OAuthOptions = { shouldLogout: false },
-) {
-  const state = await prepareOAuthState('linuxdo', options);
-  if (!state) return;
-  redirectToOAuthUrl(
-    `https://connect.linux.do/oauth2/authorize?response_type=code&client_id=${linuxdo_client_id}&state=${state}`, options,
-  );
-}
-
-/**
- * Initiate custom OAuth login
- * @param {Object} provider - Custom OAuth provider config from status API
- * @param {string} provider.slug - Provider slug (used for callback URL)
- * @param {string} provider.client_id - OAuth client ID
- * @param {string} provider.authorization_endpoint - Authorization URL
- * @param {string} provider.scopes - OAuth scopes (space-separated)
- * @param {Object} options - Options
- * @param {boolean} options.shouldLogout - Whether to logout first
- */
-export async function onCustomOAuthClicked(provider: OAuthProvider, options: OAuthOptions = {}) {
-  const state = await prepareOAuthState(provider.slug, options);
-  if (!state) return;
-
-  try {
-    const redirect_uri = `${window.location.origin}/oauth/${provider.slug}`;
-
-    // Check if authorization_endpoint is a full URL or relative path
-    let authUrl;
-    if (
-      provider.authorization_endpoint.startsWith('http://') ||
-      provider.authorization_endpoint.startsWith('https://')
-    ) {
-      authUrl = new URL(provider.authorization_endpoint);
-    } else {
-      // Relative path - this is a configuration error, show error message
-      console.error(
-        'Custom OAuth authorization_endpoint must be a full URL:',
-        provider.authorization_endpoint,
-      );
-      showError(
-        'OAuth 配置错误：授权端点必须是完整的 URL（以 http:// 或 https:// 开头）',
-      );
-      return;
-    }
-
-    authUrl.searchParams.set('client_id', provider.client_id);
-    authUrl.searchParams.set('redirect_uri', redirect_uri);
-    authUrl.searchParams.set('response_type', 'code');
-    authUrl.searchParams.set(
-      'scope',
-      provider.scopes || 'openid profile email',
-    );
-    authUrl.searchParams.set('state', state);
-
-    redirectToOAuthUrl(authUrl, options);
-  } catch (error) {
-    console.error('Failed to initiate custom OAuth:', error);
-    showError('OAuth 登录失败：' + (error instanceof Error ? error.message : '未知错误'));
-  }
-}
-
 let channelModels: Record<string, string[]> | undefined;
 
 export function getChannelModels(type: string | number): string[] {
@@ -341,11 +193,6 @@ export function getChannelModels(type: string | number): string[] {
     return channelModels[type];
   }
   return [];
-}
-
-export async function onTelegramOAuthClicked() {
-  const result = await getOAuthState('telegram');
-  if (result?.authorization_url) redirectToOAuthUrl(result.authorization_url);
 }
 
 export async function logoutAuthentication(signal?: AbortSignal) {

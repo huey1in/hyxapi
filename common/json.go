@@ -6,7 +6,6 @@ import (
 	"io"
 
 	kitutil "github.com/QuantumNous/new-api/relaykit/relayconvert/kitutil"
-	"github.com/gin-gonic/gin/binding"
 )
 
 type RawMessage = json.RawMessage
@@ -49,18 +48,6 @@ func UnmarshalJsonStr(data string, v any) error {
 
 func DecodeJson(reader io.Reader, v any) error {
 	return kitutil.DecodeJson(reader, v)
-}
-
-// DecodeJsonWithValidation decodes JSON and applies Gin's configured binding-tag
-// validator, including binding:"required" and any registered custom validators.
-func DecodeJsonWithValidation(reader io.Reader, v any) error {
-	if err := DecodeJson(reader, v); err != nil {
-		return err
-	}
-	if binding.Validator == nil {
-		return nil
-	}
-	return binding.Validator.ValidateStruct(v)
 }
 
 func Marshal(v any) ([]byte, error) {

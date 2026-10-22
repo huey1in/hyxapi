@@ -15,7 +15,7 @@ var userQuotaColumns = []string{"quota", "used_quota", "aff_quota", "aff_history
 // an existing wallet; operators must migrate it explicitly before starting.
 func ensureUserQuotaColumns(db *gorm.DB, dbType common.DatabaseType) error {
 	if common.GetEnvOrDefaultBool("SKIP_64BIT_QUOTA_SCHEMA_CHECK", false) {
-		common.SysLog(common.LogText("SKIP_64BIT_QUOTA_SCHEMA_CHECK=true; skipping user quota schema check"))
+		common.SysLog(fmt.Sprintf("SKIP_64BIT_QUOTA_SCHEMA_CHECK=true; skipping user quota schema check"))
 		return nil
 	}
 	if db == nil || dbType == common.DatabaseTypeSQLite {

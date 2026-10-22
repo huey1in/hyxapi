@@ -75,13 +75,3 @@ func AppendTaskPluginAuditInfo(other *model.LogOther, snapshot *model.TaskPlugin
 		"generation":  snapshot.Generation,
 	})
 }
-
-// AppendTaskPluginContextAuditInfo is used before a task row exists, such as
-// an upstream submission error log.
-func AppendTaskPluginContextAuditInfo(ctx *gin.Context, other *model.LogOther) {
-	execution := TaskExecutionSnapshotFromContext(ctx)
-	if execution == nil {
-		return
-	}
-	AppendTaskPluginAuditInfo(other, execution.TaskPlugin)
-}

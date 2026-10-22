@@ -67,20 +67,6 @@ func SetUserPermissionsInTx(tx *gorm.DB, userID int, permissions PermissionsMap)
 	return nil
 }
 
-func ClearUserPermissions(userID int) error {
-	e := currentEnforcer()
-	if e == nil {
-		return fmt.Errorf("authz enforcer is not initialized")
-	}
-
-	for _, resource := range registry {
-		if _, err := e.RemoveFilteredPolicy(0, UserSubject(userID), resource.Resource); err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
 func ClearUserPermissionsInTx(tx *gorm.DB, userID int) error {
 	for _, resource := range registry {
 		if err := tx.Where("ptype = ? AND v0 = ? AND v1 = ?", "p", UserSubject(userID), resource.Resource).Delete(&model.CasbinRule{}).Error; err != nil {
@@ -88,10 +74,6 @@ func ClearUserPermissionsInTx(tx *gorm.DB, userID int) error {
 		}
 	}
 	return nil
-}
-
-func ClearUserAuthorization(userID int) error {
-	return ClearUserPermissions(userID)
 }
 
 func ClearUserAuthorizationInTx(tx *gorm.DB, userID int) error {

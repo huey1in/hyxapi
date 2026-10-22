@@ -26,7 +26,6 @@ export const systemTaskSchema = z.object({
   updated_at: count.max(8640000000000), created_at: count.max(8640000000000), locked_by: z.string(), error: z.string(),
   state: z.record(z.string(), z.unknown()).nullable(), result: z.unknown(), payload: z.unknown(),
 });
-export type SystemTask = z.infer<typeof systemTaskSchema>;
 export const systemTaskListSchema = z.object({ success: z.literal(true), data: z.array(systemTaskSchema).nullable().transform((rows) => rows ?? []), total: count });
 export type SystemTaskFilters = { type: string; status: string; scope: string };
 export function systemTaskFilterParams(filters: SystemTaskFilters) { return Object.fromEntries(Object.entries(filters).filter(([, value]) => value)); }

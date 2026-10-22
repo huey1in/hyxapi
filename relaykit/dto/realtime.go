@@ -3,10 +3,7 @@ package dto
 import "github.com/QuantumNous/new-api/relaykit/types"
 
 const (
-	RealtimeEventTypeError              = "error"
 	RealtimeEventTypeSessionUpdate      = "session.update"
-	RealtimeEventTypeConversationCreate = "conversation.item.create"
-	RealtimeEventTypeResponseCreate     = "response.create"
 	RealtimeEventInputAudioBufferAppend = "input_audio_buffer.append"
 )
 
@@ -17,7 +14,6 @@ const (
 	RealtimeEventResponseAudioDelta                 = "response.audio.delta"
 	RealtimeEventResponseAudioTranscriptionDelta    = "response.audio_transcript.delta"
 	RealtimeEventResponseFunctionCallArgumentsDelta = "response.function_call_arguments.delta"
-	RealtimeEventResponseFunctionCallArgumentsDone  = "response.function_call_arguments.done"
 	RealtimeEventConversationItemCreated            = "conversation.item.created"
 )
 

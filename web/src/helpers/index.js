@@ -22,4 +22,3 @@ export * from './utils';
 export * from './api';
 export * from './render';
 export * from './data';
-export * from './passkey';

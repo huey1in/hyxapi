@@ -270,16 +270,6 @@ func ApiErrorI18n(c *gin.Context, key string, args ...map[string]any) {
 	})
 }
 
-// ApiSuccessI18n returns a translated success message based on the user's language preference
-func ApiSuccessI18n(c *gin.Context, key string, data any, args ...map[string]any) {
-	msg := TranslateMessage(c, key, args...)
-	c.JSON(http.StatusOK, gin.H{
-		"success": true,
-		"message": msg,
-		"data":    data,
-	})
-}
-
 // TranslateMessage is a helper function that calls i18n.T
 // This function is defined here to avoid circular imports
 // The actual implementation will be set during init

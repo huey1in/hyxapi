@@ -35,13 +35,6 @@ func RunExprWithRequest(exprStr string, params TokenParams, request RequestInput
 	return runProgram(entry.prog, entry.requestRules, entry.usedVars, params, request)
 }
 
-// RunExprByHash is like RunExpr but accepts a pre-computed hash for the cache
-// lookup, avoiding a redundant SHA-256 computation when the caller already
-// holds BillingSnapshot.ExprHash.
-func RunExprByHash(exprStr, hash string, params TokenParams) (float64, TraceResult, error) {
-	return RunExprByHashWithRequest(exprStr, hash, params, RequestInput{})
-}
-
 func RunExprByHashWithRequest(exprStr, hash string, params TokenParams, request RequestInput) (float64, TraceResult, error) {
 	entry, err := compileEntryFromCacheByHash(exprStr, hash)
 	if err != nil {

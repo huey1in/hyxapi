@@ -46,7 +46,3 @@ func DecideRelayRetry(c *gin.Context, err *types.NewAPIError, retryTimes int) Po
 	}
 	return PolicyDecision{Action: "stop", Reason: "status_not_retryable", Source: "global"}
 }
-
-func ShouldRetryRelayError(c *gin.Context, openaiErr *types.NewAPIError, retryTimes int) bool {
-	return DecideRelayRetry(c, openaiErr, retryTimes).Action == "retry"
-}

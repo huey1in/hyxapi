@@ -69,7 +69,7 @@ func VideoProxy(c *gin.Context) {
 
 	task, exists, err := getTaskForArtifactRequest(c, taskID)
 	if err != nil {
-		logger.LogError(c.Request.Context(), common.LogText("Failed to query task %s: %s", taskID, err.Error()))
+		logger.LogError(c.Request.Context(), fmt.Sprintf("Failed to query task %s: %s", taskID, err.Error()))
 		videoProxyError(c, http.StatusInternalServerError, "server_error", "Failed to query task")
 		return
 	}
@@ -101,13 +101,13 @@ func VideoProxy(c *gin.Context) {
 					}
 				}
 				if adaptorErr != nil {
-					logger.LogWarn(c.Request.Context(), common.LogText("Failed to resolve plugin video content for task %s: %v", taskID, adaptorErr))
+					logger.LogWarn(c.Request.Context(), fmt.Sprintf("Failed to resolve plugin video content for task %s: %v", taskID, adaptorErr))
 					descriptor = nil
 				}
 				break
 			}
 		} else {
-			logger.LogWarn(c.Request.Context(), common.LogText("Failed to project plugin video for task %s", taskID))
+			logger.LogWarn(c.Request.Context(), fmt.Sprintf("Failed to project plugin video for task %s", taskID))
 		}
 	}
 	if descriptor == nil {
@@ -291,7 +291,7 @@ func proxyTaskMedia(c *gin.Context, task *model.Task, descriptor *relaychannel.T
 			return nil
 		}
 		if _, err := io.Copy(c.Writer, resp.Body); err != nil {
-			logger.LogError(c.Request.Context(), common.LogText("Failed to stream task media: %v", err))
+			logger.LogError(c.Request.Context(), fmt.Sprintf("Failed to stream task media: %v", err))
 		}
 		return nil
 	case http.StatusUnauthorized, http.StatusForbidden:

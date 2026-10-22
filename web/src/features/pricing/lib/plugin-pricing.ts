@@ -16,48 +16,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 For commercial licensing, please contact support@quantumnous.com
 */
-import type {
-  BillingPluginVariant,
-  BillingUsageSchema,
-  PricingModel,
-} from '../types.ts'
-import { compileBillingExpression } from './billing-expression/parser.ts'
-import { visitExpression } from './billing-expression/types.ts'
-
-export function splitPluginBillingExprKey(
-  key: string
-): [string, string] | null {
-  const separator = key.indexOf('::')
-  if (separator < 1) return null
-  const plugin = key.slice(0, separator)
-  const model = key.slice(separator + 2)
-  if (!/^[a-z0-9][a-z0-9_-]{0,29}$/.test(plugin) || !model.trim()) return null
-  return [plugin, model]
-}
-
-// Undefined means the browser parser cannot check this expression; the server
-// remains authoritative for expression validation and pricing compatibility.
-export function taskExpressionCompatible(
-  expression: string,
-  schema: BillingUsageSchema
-): boolean | undefined {
-  if (!expression.trim()) return false
-  const compiled = compileBillingExpression(expression)
-  if (compiled.status !== 'ready') return undefined
-  let compatible = !compiled.functions.has('fixed')
-  visitExpression(compiled.ast, (node) => {
-    if (node.kind !== 'call' || node.name !== 'u') return
-    const key = node.args[0]
-    if (
-      key?.kind === 'literal' &&
-      typeof key.value === 'string' &&
-      !Object.hasOwn(schema, key.value)
-    ) {
-      compatible = false
-    }
-  })
-  return compatible
-}
+import type { BillingPluginVariant, PricingModel } from '../types.ts'
 
 export function withPluginPricing(
   model: PricingModel,
@@ -75,25 +34,4 @@ export function withPluginPricing(
     billing_usage_examples: variant.billing_usage_examples,
     billing_plugin_variants: undefined,
   }
-}
-
-export function pluginExpressionsEqual(
-  left: Record<string, string> = {},
-  right: Record<string, string> = {}
-): boolean {
-  const keys = Object.keys(left)
-  return (
-    keys.length === Object.keys(right).length &&
-    keys.every((key) => Object.hasOwn(right, key) && left[key] === right[key])
-  )
-}
-
-export function pluginUsageSchema(
-  model: PricingModel | undefined,
-  pluginKey: string | undefined
-): BillingUsageSchema | undefined {
-  const variant = model?.billing_plugin_variants?.find(
-    (item) => item.plugin_key === pluginKey
-  )
-  return variant?.billing_usage_schema ?? model?.billing_usage_schema
 }

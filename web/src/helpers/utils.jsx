@@ -19,20 +19,6 @@ For commercial licensing, please contact support@quantumnous.com
 
 import { showToast } from '../components/ui';
 
-export function isAdmin() {
-  let user = localStorage.getItem('user');
-  if (!user) return false;
-  user = JSON.parse(user);
-  return user.role >= 10;
-}
-
-export function isRoot() {
-  let user = localStorage.getItem('user');
-  if (!user) return false;
-  user = JSON.parse(user);
-  return user.role >= 100;
-}
-
 export function getSystemName() {
   // Brand is hardcoded for the HyxAPI build — do not read from server-side
   // Option/SystemName, which other operators may have set to "New API" etc.
@@ -125,10 +111,6 @@ export function showSuccess(message) {
   showToast({ type: 'success', message });
 }
 
-export function showInfo(message) {
-  showToast({ type: 'info', message });
-}
-
 export function timestamp2string(timestamp) {
   let date = new Date(timestamp * 1000);
   let year = date.getFullYear().toString();
@@ -156,59 +138,6 @@ export function timestamp2string(timestamp) {
     year + '-' + month + '-' + day + ' ' + hour + ':' + minute + ':' + second
   );
 }
-
-// 计算相对时间（几天前、几小时前等）
-export const getRelativeTime = (publishDate) => {
-  if (!publishDate) return '';
-
-  const now = new Date();
-  const pubDate = new Date(publishDate);
-
-  // 如果日期无效，返回原始字符串
-  if (isNaN(pubDate.getTime())) return publishDate;
-
-  const diffMs = now.getTime() - pubDate.getTime();
-  const diffSeconds = Math.floor(diffMs / 1000);
-  const diffMinutes = Math.floor(diffSeconds / 60);
-  const diffHours = Math.floor(diffMinutes / 60);
-  const diffDays = Math.floor(diffHours / 24);
-  const diffWeeks = Math.floor(diffDays / 7);
-  const diffMonths = Math.floor(diffDays / 30);
-  const diffYears = Math.floor(diffDays / 365);
-
-  // 如果是未来时间，显示具体日期
-  if (diffMs < 0) {
-    return formatDateString(pubDate);
-  }
-
-  // 根据时间差返回相应的描述
-  if (diffSeconds < 60) {
-    return '刚刚';
-  } else if (diffMinutes < 60) {
-    return `${diffMinutes} 分钟前`;
-  } else if (diffHours < 24) {
-    return `${diffHours} 小时前`;
-  } else if (diffDays < 7) {
-    return `${diffDays} 天前`;
-  } else if (diffWeeks < 4) {
-    return `${diffWeeks} 周前`;
-  } else if (diffMonths < 12) {
-    return `${diffMonths} 个月前`;
-  } else if (diffYears < 2) {
-    return '1 年前';
-  } else {
-    // 超过2年显示具体日期
-    return formatDateString(pubDate);
-  }
-};
-
-// 格式化日期字符串
-export const formatDateString = (date) => {
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, '0');
-  const day = String(date.getDate()).padStart(2, '0');
-  return `${year}-${month}-${day}`;
-};
 
 // -------------------------------
 // Direct model prices are stored in USD. Token prices are per 1M tokens;

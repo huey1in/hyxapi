@@ -1,7 +1,6 @@
 package service
 
 import (
-	"sort"
 	"strings"
 
 	"github.com/QuantumNous/new-api/common"
@@ -121,44 +120,4 @@ func GetGroupsEnabledModels(groups []string) []string {
 		}
 	}
 	return models
-}
-
-// GetUserGroupRatio 获取用户使用某个分组的倍率
-// userGroup 用户分组
-// group 需要获取倍率的分组
-func GetUserGroupRatio(userGroup, group string) float64 {
-	ratio, ok := ratio_setting.GetGroupGroupRatio(userGroup, group)
-	if ok {
-		return ratio
-	}
-	return ratio_setting.GetGroupRatio(group)
-}
-
-func CheapestGroupsForModel(modelName string) []string {
-	usable := GetUserUsableGroups("")
-	type candidate struct {
-		name  string
-		ratio float64
-	}
-	candidates := make([]candidate, 0, len(usable))
-	for group := range usable {
-		if !ratio_setting.ContainsGroupRatio(group) {
-			continue
-		}
-		channel, err := model.GetRandomSatisfiedChannel(group, modelName, 0, nil)
-		if err == nil && channel != nil {
-			candidates = append(candidates, candidate{name: group, ratio: ratio_setting.GetGroupRatio(group)})
-		}
-	}
-	sort.Slice(candidates, func(i, j int) bool {
-		if candidates[i].ratio == candidates[j].ratio {
-			return candidates[i].name < candidates[j].name
-		}
-		return candidates[i].ratio < candidates[j].ratio
-	})
-	groups := make([]string, len(candidates))
-	for i := range candidates {
-		groups[i] = candidates[i].name
-	}
-	return groups
 }

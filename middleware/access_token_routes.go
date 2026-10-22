@@ -2,8 +2,6 @@ package middleware
 
 import (
 	"fmt"
-	"maps"
-	"slices"
 	"sync"
 
 	"github.com/QuantumNous/new-api/service"
@@ -347,16 +345,6 @@ func AccessTokenRouteRule(key string) (accessTokenRouteRule, bool) {
 	defer permissionRouteRulesMu.RUnlock()
 	rule, ok := permissionRouteRules[key]
 	return rule, ok
-}
-
-// AccessTokenRouteRuleKeys lists every declared route key, sorted.
-func AccessTokenRouteRuleKeys() []string {
-	permissionRouteRulesMu.RLock()
-	keys := slices.Collect(maps.Keys(permissionRouteRules))
-	permissionRouteRulesMu.RUnlock()
-	keys = slices.AppendSeq(keys, maps.Keys(accessTokenRouteRules))
-	slices.Sort(keys)
-	return keys
 }
 
 // Scope returns the token scope the rule requires, or "" for any/session rules.

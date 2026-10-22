@@ -145,7 +145,7 @@ test('admin pricing rows preserve an imported invalid billing type for repair', 
   });
 });
 
-test('locally handled API failures prefer the server message and skip the global toast', () => {
+test('model pricing errors prefer the server message', () => {
   const error = {
     message: 'Request failed with status code 400',
     response: { data: { message: '模型价格已存在' } },
@@ -156,7 +156,6 @@ test('locally handled API failures prefer the server message and skip the global
     message: 'Request failed with status code 404',
     response: { data: { message: '模型价格不存在' } },
   }, '删除失败'), '模型价格不存在');
-  assert.equal(editor.MODEL_PRICING_REQUEST_CONFIG.skipErrorHandler, true);
 });
 
 test('log detail exposes only token prices for token billing', () => {

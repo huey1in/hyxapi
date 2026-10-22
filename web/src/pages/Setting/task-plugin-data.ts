@@ -10,8 +10,6 @@ export const pluginDetailSchema = z.object({ meta: pluginMetaSchema, source: tex
 export const pluginRuntimeSchema = z.object({ current_generation: count, generation_published_at: text, database_revision: text, database_error: text.optional(), last_rebuild: z.object({ status: text.min(1), attempted_at: text, generation: count, plugin_error_count: count, error: text.optional() }), plugin_errors: z.record(text, text).nullable().transform((errors) => errors ?? {}) });
 export const pluginSourcesSchema = z.array(z.object({ name: text.min(1), index_url: text.min(1) })).nullable().transform((rows) => rows ?? []);
 export const pluginUsageSchema = z.object({ channels: z.array(z.object({ id: count.positive(), name: text, type: count })).nullable().transform((rows) => rows ?? []), in_flight_count: count });
-export type PluginListItem = z.infer<typeof pluginListSchema>[number];
-export type PluginVersion = z.infer<typeof pluginVersionSchema>;
 export type PluginMeta = z.infer<typeof pluginMetaSchema>;
 export type PluginSource = z.infer<typeof pluginSourcesSchema>[number];
 export type PluginUsage = z.infer<typeof pluginUsageSchema>;

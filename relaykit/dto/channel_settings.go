@@ -91,14 +91,13 @@ func (s *ChannelSettings) ValidateHTTPTransport() error {
 type VertexKeyType string
 
 const (
-	VertexKeyTypeJSON   VertexKeyType = "json"
 	VertexKeyTypeAPIKey VertexKeyType = "api_key"
 )
 
 type AwsKeyType string
 
 const (
-	AwsKeyTypeAKSK   AwsKeyType = "ak_sk" // 默认
+	// 默认
 	AwsKeyTypeApiKey AwsKeyType = "api_key"
 )
 
@@ -302,12 +301,6 @@ func (c *AdvancedCustomConfig) BalanceRoute() (AdvancedCustomRoute, bool) {
 		}
 	}
 	return AdvancedCustomRoute{}, false
-}
-
-// SupportsPath reports whether any route matches requestPath.
-func (c *AdvancedCustomConfig) SupportsPath(requestPath string) bool {
-	_, ok := c.MatchPath(requestPath)
-	return ok
 }
 
 // SupportsPathForModel reports whether any route matches requestPath and model.

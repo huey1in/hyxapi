@@ -88,7 +88,7 @@ func redisRateLimitHandler(subject string, duration int64, totalMaxCount, succes
 		successKey := fmt.Sprintf("rateLimit:%s:%s", ModelRequestRateLimitSuccessCountMark, subject)
 		allowed, err := checkRedisRateLimit(ctx, rdb, successKey, successMaxCount, duration)
 		if err != nil {
-			fmt.Println(common.LogText("failed to check the successful request limit: %s", err.Error()))
+			fmt.Println(fmt.Sprintf("failed to check the successful request limit: %s", err.Error()))
 			abortWithOpenAiMessage(c, http.StatusInternalServerError, "rate_limit_check_failed")
 			return
 		}
@@ -111,7 +111,7 @@ func redisRateLimitHandler(subject string, duration int64, totalMaxCount, succes
 			)
 
 			if err != nil {
-				fmt.Println(common.LogText("failed to check the total request limit: %s", err.Error()))
+				fmt.Println(fmt.Sprintf("failed to check the total request limit: %s", err.Error()))
 				abortWithOpenAiMessage(c, http.StatusInternalServerError, "rate_limit_check_failed")
 				return
 			}

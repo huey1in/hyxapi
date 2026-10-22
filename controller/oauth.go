@@ -3,6 +3,7 @@ package controller
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
 	"slices"
 	"strconv"
@@ -451,7 +452,7 @@ func findOrCreateOAuthUser(c *gin.Context, provider oauth.Provider, oauthUser *o
 			if emailProvider, ok := provider.(oauth.VerifiedEmailProvider); ok && user.Email != "" {
 				emails, err := emailProvider.GetVerifiedEmails(c.Request.Context(), token)
 				if err != nil {
-					common.SysError(common.LogText("[OAuth] Failed to load verified emails for user %d: %s", user.Id, err.Error()))
+					common.SysError(fmt.Sprintf("[OAuth] Failed to load verified emails for user %d: %s", user.Id, err.Error()))
 					reason = "verified_emails_unavailable"
 				}
 				accountEmail := model.NormalizeEmail(user.Email)

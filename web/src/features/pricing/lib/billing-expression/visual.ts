@@ -16,14 +16,14 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 For commercial licensing, please contact support@quantumnous.com
 */
-import { flattenBinary } from './display.ts'
-import { compileBillingExpression } from './parser.ts'
+import { flattenBinary } from './display.ts';
+import { compileBillingExpression } from './parser.ts';
 import {
   TIME_FUNCTIONS,
   type ExpressionNode,
   type TimeFunction,
   type TokenVariable,
-} from './types.ts'
+} from './types.ts';
 
 type Origin = { id: string; origin?: ExpressionNode }
 export type VisualComparison = Origin & {
@@ -341,15 +341,6 @@ function writeVisualCondition(
     ])
   }
   return `(${probe} ${node.operator} ${node.value})`
-}
-
-export function visualConditionExpression(
-  node: VisualCondition,
-  source: string
-): string | null {
-  const issues: VisualBillingIssue[] = []
-  const expression = writeVisualCondition(node, source, issues)
-  return issues.length === 0 ? expression : null
 }
 
 function writeVisualPricing(

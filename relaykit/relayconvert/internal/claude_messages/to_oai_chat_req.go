@@ -13,12 +13,6 @@ import (
 	"github.com/QuantumNous/new-api/relaykit/types"
 )
 
-const (
-	webSearchMaxUsesLow    = 1
-	webSearchMaxUsesMedium = 5
-	webSearchMaxUsesHigh   = 10
-)
-
 type openRouterRequestReasoning struct {
 	Enabled   *bool  `json:"enabled,omitempty"`
 	Effort    string `json:"effort,omitempty"`

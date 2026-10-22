@@ -16,7 +16,6 @@ export const instancesSchema = z.array(instanceSchema).nullable().transform((row
 export type Instance = z.infer<typeof instanceSchema>;
 export const logFileSchema = z.object({ name: z.string().min(1), size: count, mod_time: z.string().refine((value) => Number.isFinite(new Date(value).getTime())), active: z.boolean() });
 export const logFilesSchema = z.object({ enabled: z.boolean(), log_dir: z.string(), file_count: count, total_size: count, files: z.array(logFileSchema).nullable().transform((rows) => rows ?? []) });
-export type LogFile = z.infer<typeof logFileSchema>;
 export const performanceSchema = z.object({
   cache_stats: z.object({ disk_cache_hits: count, memory_cache_hits: count }), memory_stats: z.object({ alloc: count, num_gc: count }),
   disk_cache_info: z.object({ path: z.string(), exists: z.boolean(), file_count: count, total_size: count }),

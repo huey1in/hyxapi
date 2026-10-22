@@ -16,20 +16,6 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 For commercial licensing, please contact support@quantumnous.com
 */
-export interface ApiResponse<T = unknown> {
-  success: boolean
-  message?: string
-  data?: T
-}
-
-export interface PasskeyStatus {
-  enabled: boolean
-  last_used_at?: string | null
-  backup_eligible?: boolean
-  backup_state?: boolean
-  [key: string]: unknown
-}
-
 export interface PasskeyOptionsPayload {
   rp_ids?: string[]
   options?: unknown

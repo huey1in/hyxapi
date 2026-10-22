@@ -196,12 +196,6 @@ func (c *CachedFileData) GetBase64Data() (string, error) {
 	return string(data), nil
 }
 
-func (c *CachedFileData) SetBase64Data(data string) {
-	if !c.isDisk {
-		c.base64Data = data
-	}
-}
-
 func (c *CachedFileData) IsDisk() bool {
 	return c.isDisk
 }

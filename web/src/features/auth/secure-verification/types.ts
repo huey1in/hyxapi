@@ -116,18 +116,6 @@ export interface VerificationRequirements {
   password_encryption_enabled: boolean
 }
 
-export type VerificationInput =
-  | { method: '2fa'; code: string }
-  | { method: 'password'; password: string }
-  | { method: 'passkey'; rpID?: string }
-  | { method: 'oauth'; provider: string }
-  | { method: 'session' }
-
-export type RequestVerificationOptions = VerificationOperation & {
-  title?: string
-  description?: string
-}
-
 export interface LoginChallenge {
   require_verification: true
   flow_token: string
@@ -135,26 +123,4 @@ export interface LoginChallenge {
   methods: VerificationRequirements['methods']
 }
 
-export interface RequestLoginVerificationOptions {
-  scope: 'auth.login'
-  challenge: LoginChallenge
-  title?: string
-  description?: string
-}
-
-export type VerificationRequest =
-  | RequestVerificationOptions
-  | RequestLoginVerificationOptions
 export type LoginResult = AuthBundle | LoginChallenge
-
-export type SecureVerificationState =
-  | { phase: 'idle' }
-  | { phase: 'loading'; request: VerificationRequest }
-  | { phase: 'error'; request: VerificationRequest; error: string }
-  | {
-      phase: 'ready' | 'verifying'
-      request: VerificationRequest
-      requirements: VerificationRequirements
-      input: VerificationInput | null
-      error?: string
-    }

@@ -16,7 +16,6 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 For commercial licensing, please contact support@quantumnous.com
 */
-import type { QueryClient } from '@tanstack/react-query'
 import axios from 'axios'
 import { t } from 'i18next'
 
@@ -194,14 +193,6 @@ export function clearAuthentication(
   if (synchronizeTabs && sid) {
     publishAuthSessionEvent('signed_out', sid)
   }
-}
-
-export function clearAuthenticatedClientState(
-  queryClient: QueryClient,
-  synchronizeTabs = true
-): void {
-  queryClient.clear()
-  clearAuthentication(synchronizeTabs)
 }
 
 function waitForRefreshRace(delay: number): Promise<void> {

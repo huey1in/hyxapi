@@ -118,16 +118,4 @@ return 1`
 	return common.RDB.Eval(context.Background(), script, []string{getTokenCacheKey(key)}, id, timestamp).Err()
 }
 
-// Compatibility entry points for existing token handlers. Metadata mutations
-// raise the fence before database writes; cold reads never overwrite quotas.
-func cacheSetToken(token Token) error   { _, err := cacheInitToken(token); return err }
 func cacheDeleteToken(key string) error { return invalidateTokenCacheForMutation(key) }
-func cacheIncrTokenQuota(key string, delta int64) error {
-	token, err := cacheGetTokenByKey(key)
-	if err != nil {
-		return nil
-	}
-	_, err = cacheApplyTokenQuotaDelta(token.Id, key, delta)
-	return err
-}
-func cacheDecrTokenQuota(key string, delta int64) error { return cacheIncrTokenQuota(key, -delta) }

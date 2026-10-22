@@ -70,10 +70,6 @@ type OllamaEmbeddingResponse struct {
 	PromptEvalCount int         `json:"prompt_eval_count,omitempty"`
 }
 
-type OllamaTagsResponse struct {
-	Models []OllamaModel `json:"models"`
-}
-
 type OllamaModel struct {
 	Name       string            `json:"name"`
 	Size       int64             `json:"size"`
@@ -89,11 +85,6 @@ type OllamaModelDetail struct {
 	Families          []string `json:"families,omitempty"`
 	ParameterSize     string   `json:"parameter_size,omitempty"`
 	QuantizationLevel string   `json:"quantization_level,omitempty"`
-}
-
-type OllamaPullRequest struct {
-	Name   string `json:"name"`
-	Stream bool   `json:"stream,omitempty"`
 }
 
 type OllamaPullResponse struct {

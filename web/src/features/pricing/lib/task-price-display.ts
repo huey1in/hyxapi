@@ -24,17 +24,14 @@ import {
 import type {
   BillingUsageFieldSchema,
   BillingUsageSchema,
-  PricingModel,
 } from '../types.ts'
 import {
-  splitBillingExprAndRequestRules,
   type ParsedTaskTier,
   type TaskTierCondition,
 } from './billing-expr.ts'
 import { formatBillingCondition } from './billing-expression/condition-display.ts'
 import { compileBillingExpression } from './billing-expression/parser.ts'
 import { visitExpression } from './billing-expression/types.ts'
-import { getTaskPricingDisplayTiers } from './task-matrix-display.ts'
 
 export function taskPriceLabel(
   description: LocalizedTextValue | undefined,
@@ -56,15 +53,6 @@ export function taskEnumLabel(
   return taskPriceLabel(definition?.enumLabels?.[value], value, language)
 }
 
-export function taskUsageUnitLabel(
-  definition: { unit?: string; unitLabel?: LocalizedTextValue } | undefined,
-  language: string,
-  fallback: string
-): string {
-  if (definition?.unit !== 'count') return fallback
-  return resolveLocalizedText(definition.unitLabel, language) || fallback
-}
-
 export function taskPricingConditions(
   conditions: TaskTierCondition[],
   schema: BillingUsageSchema | undefined,
@@ -82,23 +70,6 @@ export function taskPricingConditions(
       return optionLabel !== value ? optionLabel : `${label}: ${optionLabel}`
     })
     .join(' · ')
-}
-
-export function hasSimpleTaskPricing(model: PricingModel): boolean {
-  if (
-    !model.billing_usage_schema ||
-    model.billing_mode !== 'tiered_expr' ||
-    !model.billing_expr
-  ) {
-    return false
-  }
-  const split = splitBillingExprAndRequestRules(model.billing_expr)
-  if (split.requestRuleExpr?.trim()) return false
-  const tiers = getTaskPricingDisplayTiers(
-    split.billingExpr,
-    model.billing_usage_schema
-  )
-  return tiers.length === 1 && !tiers[0].conditionText
 }
 
 export function taskTierConditions(

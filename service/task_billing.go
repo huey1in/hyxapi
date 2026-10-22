@@ -103,7 +103,7 @@ func LogTaskConsumption(c *gin.Context, info *relaycommon.RelayInfo, task *model
 func resolveTokenKey(ctx context.Context, tokenId int, taskID string) string {
 	token, err := model.GetTokenById(tokenId)
 	if err != nil {
-		logger.LogWarn(ctx, common.LogText("failed to get token key (tokenId=%d, task=%s): %s", tokenId, taskID, err.Error()))
+		logger.LogWarn(ctx, fmt.Sprintf("failed to get token key (tokenId=%d, task=%s): %s", tokenId, taskID, err.Error()))
 		return ""
 	}
 	return token.Key
@@ -142,7 +142,7 @@ func taskAdjustTokenQuota(ctx context.Context, task *model.Task, delta int) {
 		err = model.IncreaseTokenQuota(task.PrivateData.TokenId, tokenKey, -delta)
 	}
 	if err != nil {
-		logger.LogWarn(ctx, common.LogText("failed to adjust token quota (delta=%d, task=%s): %s", delta, task.TaskID, err.Error()))
+		logger.LogWarn(ctx, fmt.Sprintf("failed to adjust token quota (delta=%d, task=%s): %s", delta, task.TaskID, err.Error()))
 	}
 }
 
@@ -167,7 +167,7 @@ func taskBillingOther(task *model.Task) *model.LogOther {
 		if priceData := taskBillingContextPriceData(bc); priceData != nil {
 			for k, v := range priceData.OtherRatios() {
 				if !other.SetPublic(k, v) {
-					common.SysError(common.LogText("task billing other ratio key rejected: %s", k))
+					common.SysError(fmt.Sprintf("task billing other ratio key rejected: %s", k))
 				}
 			}
 		}
@@ -300,7 +300,7 @@ func RefundTaskQuota(ctx context.Context, task *model.Task, reason string) bool 
 
 	// 1. 退还资金来源（钱包或订阅）
 	if err := taskAdjustFunding(task, -quota); err != nil {
-		logger.LogWarn(ctx, common.LogText("failed to refund the funding source, task %s: %s", task.TaskID, err.Error()))
+		logger.LogWarn(ctx, fmt.Sprintf("failed to refund the funding source, task %s: %s", task.TaskID, err.Error()))
 		return false
 	}
 
@@ -330,7 +330,7 @@ func RefundTaskQuota(ctx context.Context, task *model.Task, reason string) bool 
 	// 回写失败必须显式告警，避免漏掉潜在的重复退款风险。
 	task.Quota = 0
 	if err := task.UpdateQuota(); err != nil {
-		logger.LogError(ctx, common.LogText("refund succeeded but clearing the task quota failed, task %s: %s", task.TaskID, err.Error()))
+		logger.LogError(ctx, fmt.Sprintf("refund succeeded but clearing the task quota failed, task %s: %s", task.TaskID, err.Error()))
 	}
 	return true
 }
@@ -347,12 +347,12 @@ func RecalculateTaskQuota(ctx context.Context, task *model.Task, actualQuota int
 	quotaDelta := actualQuota - preConsumedQuota
 
 	if quotaDelta == 0 {
-		logger.LogInfo(ctx, common.LogText("task %s pre-consumed quota matches the actual quota (%s, %s)",
+		logger.LogInfo(ctx, fmt.Sprintf("task %s pre-consumed quota matches the actual quota (%s, %s)",
 			task.TaskID, logger.LogQuota(actualQuota), reason.Error()))
 		return
 	}
 
-	logger.LogInfo(ctx, common.LogText("task %s settles the difference: delta=%s (actual %s, pre-consumed %s, %s)",
+	logger.LogInfo(ctx, fmt.Sprintf("task %s settles the difference: delta=%s (actual %s, pre-consumed %s, %s)",
 		task.TaskID,
 		logger.LogQuota(quotaDelta),
 		logger.LogQuota(actualQuota),
@@ -362,7 +362,7 @@ func RecalculateTaskQuota(ctx context.Context, task *model.Task, actualQuota int
 
 	// 调整资金来源
 	if err := taskAdjustFunding(task, quotaDelta); err != nil {
-		logger.LogError(ctx, common.LogText("failed to adjust funding for the difference, task %s: %s", task.TaskID, err.Error()))
+		logger.LogError(ctx, fmt.Sprintf("failed to adjust funding for the difference, task %s: %s", task.TaskID, err.Error()))
 		return
 	}
 
@@ -371,7 +371,7 @@ func RecalculateTaskQuota(ctx context.Context, task *model.Task, actualQuota int
 
 	task.Quota = actualQuota
 	if err := task.UpdateQuota(); err != nil {
-		logger.LogError(ctx, common.LogText("failed to write back the settled task quota, task %s: %s", task.TaskID, err.Error()))
+		logger.LogError(ctx, fmt.Sprintf("failed to write back the settled task quota, task %s: %s", task.TaskID, err.Error()))
 	}
 
 	// 提交阶段已经累计过一次请求；结算阶段只调整最终用量。

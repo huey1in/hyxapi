@@ -2,8 +2,6 @@ package constant
 
 type ContextKey string
 
-const ContextKeyTokenAuditParams ContextKey = "token_audit_params"
-const ContextKeyTokenAuditSucceeded ContextKey = "token_audit_succeeded"
 const ContextKeyTokenAutoGroups ContextKey = "token_auto_groups"
 
 const (

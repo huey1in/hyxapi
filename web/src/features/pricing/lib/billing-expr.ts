@@ -163,29 +163,14 @@ export const BILLING_PRICING_VARS: BillingVar[] = BILLING_VARS.filter(
   (v) => !v.isConditionOnly
 )
 
-/** Vars valid in tier conditions (`p`, `c`, `len`) */
-export const BILLING_CONDITION_VARS: string[] = BILLING_VARS.filter(
-  (v) => v.isBase || v.isConditionOnly
-).map((v) => v.key)
-
 const BILLING_VAR_KEY_TO_FIELD = Object.fromEntries(
   BILLING_PRICING_VARS.map((v) => [v.key, v.field as string])
 ) as Record<string, string>
-
-export const BILLING_EXTRA_VARS: BillingVar[] = BILLING_VARS.filter(
-  (v) => !v.isBase && !v.isConditionOnly
-)
-
-export const BILLING_CACHE_VAR_MAP = BILLING_EXTRA_VARS.map((v) => ({
-  field: v.tierField as string,
-  exprVar: v.key,
-}))
 
 // ---------------------------------------------------------------------------
 // Request rule constants
 // ---------------------------------------------------------------------------
 
-export const SOURCE_PARAM = 'param'
 export const SOURCE_HEADER = 'header'
 export const SOURCE_TIME = 'time'
 
@@ -200,23 +185,6 @@ export const MATCH_RANGE = 'range'
 
 export const TIME_FUNCS = ['hour', 'minute', 'weekday', 'month', 'day'] as const
 export type TimeFunc = (typeof TIME_FUNCS)[number]
-
-export const COMMON_TIMEZONES: { value: string; label: string }[] = [
-  { value: 'Asia/Shanghai', label: 'UTC+8 Shanghai (Asia/Shanghai)' },
-  { value: 'UTC', label: 'UTC' },
-  { value: 'America/New_York', label: 'UTC-5 New York (America/New_York)' },
-  {
-    value: 'America/Los_Angeles',
-    label: 'UTC-8 Los Angeles (America/Los_Angeles)',
-  },
-  { value: 'America/Chicago', label: 'UTC-6 Chicago (America/Chicago)' },
-  { value: 'Europe/London', label: 'UTC+0 London (Europe/London)' },
-  { value: 'Europe/Berlin', label: 'UTC+1 Berlin (Europe/Berlin)' },
-  { value: 'Asia/Tokyo', label: 'UTC+9 Tokyo (Asia/Tokyo)' },
-  { value: 'Asia/Singapore', label: 'UTC+8 Singapore (Asia/Singapore)' },
-  { value: 'Asia/Seoul', label: 'UTC+9 Seoul (Asia/Seoul)' },
-  { value: 'Australia/Sydney', label: 'UTC+10 Sydney (Australia/Sydney)' },
-]
 
 const NUMERIC_LITERAL_REGEX = /^-?(?:\d+\.?\d*|\.\d+)(?:[eE][+-]?\d+)?$/
 
@@ -244,12 +212,6 @@ export type RequestRuleGroup = {
   multiplier: string
   conditionText?: string
   matched?: boolean
-}
-
-export type RequestRuleTrace = {
-  cond: string
-  multiplier: number
-  matched: boolean
 }
 
 export type TierCondition = {
@@ -333,15 +295,6 @@ export function parseTaskTiersFromExpr(
   const compiled = compileBillingExpression(billingExpr)
   if (compiled.status !== 'ready') return []
   return readTaskTierChain(compiled.ast, schema, includeBooleanConditions) ?? []
-}
-
-export function normalizeTierLabel(label: string | undefined): string {
-  if (!label) return ''
-  return label
-    .replaceAll(/<[=＝]?|≤|＜[=＝]?/g, '<')
-    .replaceAll(/>[=＝]?|≥|＞[=＝]?/g, '>')
-    .replaceAll(/\s+/g, '')
-    .toLowerCase()
 }
 
 // ---------------------------------------------------------------------------
@@ -558,20 +511,6 @@ function tryParseRuleGroupFactor(part: string): RequestRuleGroup | null {
   return { conditions, multiplier: m[2] }
 }
 
-export function requestRuleGroupsFromTrace(
-  requestRules: RequestRuleTrace[]
-): RequestRuleGroup[] {
-  return requestRules.map((rule) => {
-    const conditionText = rule.cond.trim()
-    return {
-      conditions: tryParseRequestConditions(conditionText) || [],
-      multiplier: String(rule.multiplier),
-      conditionText,
-      matched: rule.matched,
-    }
-  })
-}
-
 export function tryParseRequestRuleExpr(
   expr: string
 ): RequestRuleGroup[] | null {
@@ -668,10 +607,6 @@ export function createEmptyTimeCondition(): TimeCondition {
 
 export function createEmptyRuleGroup(): RequestRuleGroup {
   return { conditions: [createEmptyCondition()], multiplier: '' }
-}
-
-export function createEmptyTimeRuleGroup(): RequestRuleGroup {
-  return { conditions: [createEmptyTimeCondition()], multiplier: '' }
 }
 
 // ---------------------------------------------------------------------------

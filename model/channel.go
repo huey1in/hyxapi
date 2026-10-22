@@ -275,13 +275,6 @@ func (channel *Channel) Save() error {
 	return DB.Save(channel).Error
 }
 
-func (channel *Channel) SaveWithoutKey() error {
-	if channel.Id == 0 {
-		return errors.New("channel ID is 0")
-	}
-	return DB.Omit("key").Save(channel).Error
-}
-
 func GetAllChannels(startIdx int, num int, selectAll bool, idSort bool) ([]*Channel, error) {
 	var channels []*Channel
 	var err error
@@ -537,16 +530,6 @@ func (channel *Channel) UpdateResponseTime(responseTime int64) {
 	}
 }
 
-func (channel *Channel) UpdateBalance(balance float64) {
-	err := DB.Model(channel).Select("balance_updated_time", "balance").Updates(Channel{
-		BalanceUpdatedTime: common.GetTimestamp(),
-		Balance:            balance,
-	}).Error
-	if err != nil {
-		common.SysLog(fmt.Sprintf("failed to update balance: channel_id=%d, error=%v", channel.Id, err))
-	}
-}
-
 func (channel *Channel) Delete() error {
 	var err error
 	err = DB.Delete(channel).Error
@@ -590,7 +573,7 @@ func handlerMultiKeyUpdate(channel *Channel, usingKey string, status int, reason
 		}
 		if keyIndex < 0 {
 			if usingKey != "" {
-				common.SysLog(common.LogText("failed to update multi-key status: channel_id=%d, using key not found", channel.Id))
+				common.SysLog(fmt.Sprintf("failed to update multi-key status: channel_id=%d, using key not found", channel.Id))
 				return
 			}
 			channel.Status = status
@@ -672,7 +655,7 @@ func UpdateChannelStatus(channelId int, usingKey string, status int, reason stri
 		if shouldUpdateAbilities {
 			err := UpdateAbilityStatus(channelId, status == common.ChannelStatusEnabled)
 			if err != nil {
-				common.SysLog(common.LogText("failed to update ability status: channel_id=%d, error=%v", channelId, err))
+				common.SysLog(fmt.Sprintf("failed to update ability status: channel_id=%d, error=%v", channelId, err))
 			}
 		}
 	}()
@@ -705,7 +688,7 @@ func UpdateChannelStatus(channelId int, usingKey string, status int, reason stri
 		}
 		err = channel.saveStatusState()
 		if err != nil {
-			common.SysLog(common.LogText("failed to update channel status: channel_id=%d, status=%d, error=%v", channel.Id, status, err))
+			common.SysLog(fmt.Sprintf("failed to update channel status: channel_id=%d, status=%d, error=%v", channel.Id, status, err))
 			return false
 		}
 	}
@@ -730,12 +713,6 @@ func updateChannelUsedQuota(id int, quota int) {
 func DeleteDisabledChannel() (int64, error) {
 	result := DB.Where("status = ? or status = ?", common.ChannelStatusAutoDisabled, common.ChannelStatusManuallyDisabled).Delete(&Channel{})
 	return result.RowsAffected, result.Error
-}
-
-func GetPaginatedTags(offset int, limit int) ([]*string, error) {
-	var tags []*string
-	err := DB.Model(&Channel{}).Select("DISTINCT tag").Where("tag != ''").Offset(offset).Limit(limit).Find(&tags).Error
-	return tags, err
 }
 
 func SearchTags(keyword string, group string, model string, idSort bool) ([]*string, error) {
@@ -897,13 +874,6 @@ func GetChannelsByIds(ids []int) ([]*Channel, error) {
 	var channels []*Channel
 	err := DB.Where("id in (?)", ids).Find(&channels).Error
 	return channels, err
-}
-
-// CountAllTags returns number of non-empty distinct tags
-func CountAllTags() (int64, error) {
-	var total int64
-	err := DB.Model(&Channel{}).Where("tag is not null AND tag != ''").Distinct("tag").Count(&total).Error
-	return total, err
 }
 
 func hasEnabledMultiKey(keys []string, statusList map[int]int) bool {

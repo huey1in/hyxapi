@@ -42,7 +42,7 @@ export function PerformanceBadge({ model, history }: { model?: ModelSummary; his
 }
 
 function MetricsError({ retry }: { retry: () => void }) {
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
   return <div className='flex flex-wrap items-center gap-2 text-xs text-ui-text-3' role='status'>{t("Unable to load performance metrics")}<Button size='sm' variant='link' onClick={retry}>{t("Retry")}</Button></div>;
 }
 

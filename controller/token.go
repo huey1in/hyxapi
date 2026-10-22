@@ -32,7 +32,7 @@ func buildMaskedTokenResponse(token *model.Token) *tokenResponse {
 	maskedToken.Key = token.GetMaskedKey()
 	groups, err := token.GetAutoGroups()
 	if err != nil {
-		common.SysError(common.LogText("failed to parse auto groups for token %d: %v", token.Id, err))
+		common.SysError(fmt.Sprintf("failed to parse auto groups for token %d: %v", token.Id, err))
 	}
 	if len(groups) == 0 {
 		groups = nil

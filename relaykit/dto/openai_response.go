@@ -72,13 +72,6 @@ type FlexibleEmbeddingResponseItem struct {
 	Embedding any    `json:"embedding"`
 }
 
-type FlexibleEmbeddingResponse struct {
-	Object string                          `json:"object"`
-	Data   []FlexibleEmbeddingResponseItem `json:"data"`
-	Model  string                          `json:"model"`
-	Usage  `json:"usage"`
-}
-
 type ChatCompletionsStreamResponseChoice struct {
 	Delta        ChatCompletionsStreamResponseChoiceDelta `json:"delta"`
 	Logprobs     *any                                     `json:"logprobs"`
@@ -168,13 +161,6 @@ func (c *ChatCompletionsStreamResponse) IsToolCall() bool {
 	return len(c.Choices[0].Delta.ToolCalls) > 0
 }
 
-func (c *ChatCompletionsStreamResponse) GetFirstToolCall() *ToolCallResponse {
-	if c.IsToolCall() {
-		return &c.Choices[0].Delta.ToolCalls[0]
-	}
-	return nil
-}
-
 func (c *ChatCompletionsStreamResponse) ClearToolCalls() {
 	if !c.IsToolCall() {
 		return
@@ -213,11 +199,6 @@ func (c *ChatCompletionsStreamResponse) SetSystemFingerprint(s string) {
 	c.SystemFingerprint = &s
 }
 
-type ChatCompletionsStreamResponseSimple struct {
-	Choices []ChatCompletionsStreamResponseChoice `json:"choices"`
-	Usage   *Usage                                `json:"usage"`
-}
-
 type CompletionsStreamResponse struct {
 	Choices []struct {
 		Text         string `json:"text"`
@@ -247,16 +228,6 @@ type Usage struct {
 
 	// OpenRouter Params
 	Cost any `json:"cost,omitempty"`
-}
-
-type OpenAIVideoResponse struct {
-	Id        string `json:"id" example:"file-abc123"`
-	Object    string `json:"object" example:"file"`
-	Bytes     int64  `json:"bytes" example:"120000"`
-	CreatedAt int64  `json:"created_at" example:"1677610602"`
-	ExpiresAt int64  `json:"expires_at" example:"1677614202"`
-	Filename  string `json:"filename" example:"mydata.jsonl"`
-	Purpose   string `json:"purpose" example:"fine-tune"`
 }
 
 type InputTokenDetails struct {
@@ -569,8 +540,7 @@ const (
 )
 
 const (
-	ResponsesOutputTypeItemAdded = "response.output_item.added"
-	ResponsesOutputTypeItemDone  = "response.output_item.done"
+	ResponsesOutputTypeItemDone = "response.output_item.done"
 )
 
 // ResponsesStreamResponse 用于处理 /v1/responses 流式响应

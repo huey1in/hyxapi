@@ -13,16 +13,8 @@ import (
 	"github.com/QuantumNous/new-api/relaykit/types"
 )
 
-func ClaudeMessagesRequestToOpenAIChat(claudeRequest dto.ClaudeRequest, info convmeta.Meta) (*dto.GeneralOpenAIRequest, error) {
-	return convertCompatRequest[dto.GeneralOpenAIRequest](context.Background(), info, types.RelayFormatOpenAI, &claudeRequest)
-}
-
 func OpenAIChatRequestToClaudeMessages(c context.Context, info convmeta.Meta, textRequest dto.GeneralOpenAIRequest) (*dto.ClaudeRequest, error) {
 	return convertCompatRequest[dto.ClaudeRequest](c, info, types.RelayFormatClaude, &textRequest)
-}
-
-func GeminiGenerateContentRequestToOpenAIChat(geminiRequest *dto.GeminiChatRequest, info convmeta.Meta) (*dto.GeneralOpenAIRequest, error) {
-	return convertCompatRequest[dto.GeneralOpenAIRequest](context.Background(), info, types.RelayFormatOpenAI, geminiRequest)
 }
 
 func OpenAIChatRequestToGeminiGenerateContent(c context.Context, textRequest dto.GeneralOpenAIRequest, info convmeta.Meta) (*dto.GeminiChatRequest, error) {
@@ -55,14 +47,6 @@ func ApplyClaudeThinkingModel(claudeRequest *dto.ClaudeRequest, info convmeta.Me
 		recorder.RecordConversionDiagnostics(ctx, collector.Diagnostics())
 	}
 	return err
-}
-
-func ChatCompletionsRequestToResponsesRequest(req *dto.GeneralOpenAIRequest) (*dto.OpenAIResponsesRequest, error) {
-	return convertCompatRequest[dto.OpenAIResponsesRequest](context.Background(), nil, types.RelayFormatOpenAIResponses, req)
-}
-
-func ResponsesRequestToChatCompletionsRequest(req *dto.OpenAIResponsesRequest) (*dto.GeneralOpenAIRequest, error) {
-	return convertCompatRequest[dto.GeneralOpenAIRequest](context.Background(), nil, types.RelayFormatOpenAI, req)
 }
 
 func OpenAIResponsesRequestToClaudeMessages(c context.Context, info convmeta.Meta, req *dto.OpenAIResponsesRequest) (*dto.ClaudeRequest, error) {

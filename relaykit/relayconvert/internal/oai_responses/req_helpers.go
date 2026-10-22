@@ -153,17 +153,6 @@ func RequestFunctionDeclarations(raw []byte) ([]dto.FunctionRequest, error) {
 	return responsesRequestFunctionDeclarations(raw)
 }
 
-func responsesReasoningEffort(req *dto.OpenAIResponsesRequest) string {
-	if req == nil || req.Reasoning == nil {
-		return ""
-	}
-	return req.Reasoning.Effort
-}
-
-func ReasoningEffort(req *dto.OpenAIResponsesRequest) string {
-	return responsesReasoningEffort(req)
-}
-
 func responsesObjectValue(value any, fallbackKey string) map[string]any {
 	switch typed := value.(type) {
 	case nil:

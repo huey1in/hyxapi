@@ -27,16 +27,6 @@ func GetUserOAuthBindingsByUserId(userId int) ([]*UserOAuthBinding, error) {
 	return bindings, err
 }
 
-// GetUserOAuthBinding returns a specific binding for a user and provider
-func GetUserOAuthBinding(userId, providerId int) (*UserOAuthBinding, error) {
-	var binding UserOAuthBinding
-	err := DB.Where("user_id = ? AND provider_id = ?", userId, providerId).First(&binding).Error
-	if err != nil {
-		return nil, err
-	}
-	return &binding, nil
-}
-
 // GetUserByOAuthBinding finds a user by provider ID and provider user ID
 func GetUserByOAuthBinding(providerId int, providerUserId string) (*User, error) {
 	var binding UserOAuthBinding
@@ -60,27 +50,6 @@ func IsProviderUserIdTaken(providerId int, providerUserId string) bool {
 	return count > 0
 }
 
-// CreateUserOAuthBinding creates a new OAuth binding
-func CreateUserOAuthBinding(binding *UserOAuthBinding) error {
-	if binding.UserId == 0 {
-		return errors.New("user ID is required")
-	}
-	if binding.ProviderId == 0 {
-		return errors.New("provider ID is required")
-	}
-	if binding.ProviderUserId == "" {
-		return errors.New("provider user ID is required")
-	}
-
-	// Check if this provider user ID is already taken
-	if IsProviderUserIdTaken(binding.ProviderId, binding.ProviderUserId) {
-		return errors.New("this OAuth account is already bound to another user")
-	}
-
-	binding.CreatedAt = time.Now()
-	return DB.Create(binding).Error
-}
-
 // CreateUserOAuthBindingWithTx creates a new OAuth binding within a transaction
 func CreateUserOAuthBindingWithTx(tx *gorm.DB, binding *UserOAuthBinding) error {
 	if binding.UserId == 0 {
@@ -102,31 +71,6 @@ func CreateUserOAuthBindingWithTx(tx *gorm.DB, binding *UserOAuthBinding) error 
 
 	binding.CreatedAt = time.Now()
 	return tx.Create(binding).Error
-}
-
-// UpdateUserOAuthBinding updates an existing OAuth binding (e.g., rebind to different OAuth account)
-func UpdateUserOAuthBinding(userId, providerId int, newProviderUserId string) error {
-	// Check if the new provider user ID is already taken by another user
-	var existingBinding UserOAuthBinding
-	err := DB.Where("provider_id = ? AND provider_user_id = ?", providerId, newProviderUserId).First(&existingBinding).Error
-	if err == nil && existingBinding.UserId != userId {
-		return errors.New("this OAuth account is already bound to another user")
-	}
-
-	// Check if user already has a binding for this provider
-	var binding UserOAuthBinding
-	err = DB.Where("user_id = ? AND provider_id = ?", userId, providerId).First(&binding).Error
-	if err != nil {
-		// No existing binding, create new one
-		return CreateUserOAuthBinding(&UserOAuthBinding{
-			UserId:         userId,
-			ProviderId:     providerId,
-			ProviderUserId: newProviderUserId,
-		})
-	}
-
-	// Update existing binding
-	return DB.Model(&binding).Update("provider_user_id", newProviderUserId).Error
 }
 
 // DeleteUserOAuthBinding deletes an OAuth binding

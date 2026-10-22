@@ -143,18 +143,6 @@ func GetActiveSystemTask(taskType string) (*SystemTask, error) {
 	return &task, nil
 }
 
-func FindPendingSystemTasks(taskType string, limit int) ([]*SystemTask, error) {
-	var tasks []*SystemTask
-	if limit <= 0 {
-		limit = 1
-	}
-	err := DB.Where("type = ? AND status = ?", taskType, SystemTaskStatusPending).
-		Order("id asc").
-		Limit(limit).
-		Find(&tasks).Error
-	return tasks, err
-}
-
 func FindEarliestPendingSystemTasks(taskTypes []string) (map[string]*SystemTask, error) {
 	tasksByType := map[string]*SystemTask{}
 	if len(taskTypes) == 0 {

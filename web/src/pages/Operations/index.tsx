@@ -1,6 +1,6 @@
 import { ReportSection, StatCard, StatisticsSkeleton } from '../../components/layout/PageSkeletons';
 import { useState } from 'react';
-import type { CSSProperties, ReactNode } from 'react';
+import type { CSSProperties } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { useAuthStore } from '../../stores/auth-store';

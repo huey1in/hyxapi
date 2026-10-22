@@ -601,7 +601,7 @@ scanLoop:
 		}
 		err := query.Find(&channels).Error
 		if err != nil {
-			common.SysLog(common.LogText("upstream model update task query failed: %v", err))
+			common.SysLog(fmt.Sprintf("upstream model update task query failed: %v", err))
 			break
 		}
 		if len(channels) == 0 {
@@ -632,7 +632,7 @@ scanLoop:
 			if err != nil {
 				failedChannels++
 				failedChannelIDs = append(failedChannelIDs, channel.Id)
-				common.SysLog(common.LogText("upstream model update check failed: channel_id=%d channel_name=%s err=%v", channel.Id, channel.Name, err))
+				common.SysLog(fmt.Sprintf("upstream model update check failed: channel_id=%d channel_name=%s err=%v", channel.Id, channel.Name, err))
 				continue
 			}
 			currentAddModels := normalizeModelNames(settings.UpstreamModelUpdateLastDetectedModels)
@@ -692,7 +692,7 @@ scanLoop:
 	}
 
 	if checkedChannels > 0 || common.DebugEnabled {
-		common.SysLog(common.LogText(
+		common.SysLog(fmt.Sprintf(
 			"upstream model update task done: checked_channels=%d changed_channels=%d detected_add_models=%d detected_remove_models=%d failed_channels=%d auto_added_models=%d",
 			checkedChannels,
 			changedChannels,
@@ -705,7 +705,7 @@ scanLoop:
 	if changedChannels > 0 || failedChannels > 0 {
 		now := common.GetTimestamp()
 		if !shouldSendUpstreamModelUpdateNotification(now, changedChannels, failedChannels) {
-			common.SysLog(common.LogText(
+			common.SysLog(fmt.Sprintf(
 				"upstream model update notification skipped in 24h window: changed_channels=%d failed_channels=%d",
 				changedChannels,
 				failedChannels,

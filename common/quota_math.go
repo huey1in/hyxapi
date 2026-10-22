@@ -147,24 +147,11 @@ func QuotaRoundStrict(value float64) (int, error) {
 	return strictQuota(QuotaRoundChecked(value))
 }
 
-// QuotaFromDecimal converts a computed quota decimal to int with saturation.
-// The decimal is rounded (half away from zero) before conversion.
-func QuotaFromDecimal(d decimal.Decimal) int {
-	quota, _ := QuotaFromDecimalChecked(d)
-	return quota
-}
-
 // QuotaFromDecimalChecked is QuotaFromDecimal but also returns a non-nil
 // *QuotaClamp when the value was clamped, so billing callers can audit it.
 func QuotaFromDecimalChecked(d decimal.Decimal) (int, *QuotaClamp) {
 	f, _ := d.Round(0).Float64()
 	return saturateQuota(f, "QuotaFromDecimal")
-}
-
-// QuotaFromDecimalStrict converts an in-range single-request quota and rejects
-// a value that would otherwise be saturated at the int32 boundary.
-func QuotaFromDecimalStrict(d decimal.Decimal) (int, error) {
-	return strictQuota(QuotaFromDecimalChecked(d))
 }
 
 // WalletQuotaFromDecimalStrict converts wallet and top-up values within the

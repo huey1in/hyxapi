@@ -2,6 +2,7 @@ package model
 
 import (
 	"encoding/json"
+	"fmt"
 	"maps"
 	"slices"
 	"strings"
@@ -168,7 +169,7 @@ func (o *LogOther) jsonString() string {
 	}
 	data, err := common.Marshal(o.toMap())
 	if err != nil {
-		common.SysError(common.LogText("failed to marshal log other: %s", err.Error()))
+		common.SysError(fmt.Sprintf("failed to marshal log other: %s", err.Error()))
 		return ""
 	}
 	return string(data)

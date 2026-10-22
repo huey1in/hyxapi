@@ -21,12 +21,6 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// 上游地址
-const (
-	upstreamModelsURL  = "https://basellm.github.io/llm-metadata/api/newapi/models.json"
-	upstreamVendorsURL = "https://basellm.github.io/llm-metadata/api/newapi/vendors.json"
-)
-
 func normalizeLocale(locale string) (string, bool) {
 	switch strings.ToLower(strings.TrimSpace(locale)) {
 	case "", "zh", "zh-cn":

@@ -1,6 +1,7 @@
 package service
 
 import (
+	"fmt"
 	"math"
 	"sort"
 	"strings"
@@ -54,7 +55,7 @@ func mergeToolSurchargeItems(items []ToolSurchargeItem) []ToolSurchargeItem {
 			merged[lastIndex].Name == item.Name &&
 			merged[lastIndex].Price == item.Price {
 			if item.Count > math.MaxInt-merged[lastIndex].Count {
-				common.SysError(common.LogText("tool surcharge call count overflow for %s", item.Name))
+				common.SysError(fmt.Sprintf("tool surcharge call count overflow for %s", item.Name))
 				merged[lastIndex].Count = math.MaxInt
 			} else {
 				merged[lastIndex].Count += item.Count
@@ -80,7 +81,7 @@ func calculateTextToolCallSurcharge(ctx *gin.Context, relayInfo *relaycommon.Rel
 			}
 			count := tool.CallCount
 			if count > relaycommon.MaxBillableToolCallCount {
-				logger.LogWarn(ctx, common.LogText("tool surcharge call count clamped: tool=%s count=%d", name, count))
+				logger.LogWarn(ctx, fmt.Sprintf("tool surcharge call count clamped: tool=%s count=%d", name, count))
 				count = relaycommon.MaxBillableToolCallCount
 			}
 			items = collectToolSurchargeItem(items, name, count, modelName)

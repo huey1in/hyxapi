@@ -90,7 +90,3 @@ type TaskRootInfo struct {
 	UpstreamTaskID string                 `json:"upstream_task_id,omitempty"`
 	NodeName       string                 `json:"node_name,omitempty"`
 }
-
-type FetchReq struct {
-	IDs []string `json:"ids"`
-}

@@ -277,7 +277,7 @@ func geminiStreamHandler(c *gin.Context, info *relaycommon.RelayInfo, resp *http
 		return usage, types.NewOpenAIError(streamErr, types.ErrorCodeBadResponseBody, http.StatusInternalServerError)
 	}
 	if info.StreamStatus != nil && !info.StreamStatus.IsNormalEnd() {
-		logger.LogWarn(c, common.LogText("Gemini stream ended unexpectedly: %s", info.StreamStatus.Summary()))
+		logger.LogWarn(c, fmt.Sprintf("Gemini stream ended unexpectedly: %s", info.StreamStatus.Summary()))
 	}
 
 	return usage, nil
@@ -393,7 +393,7 @@ func GeminiChatStreamHandler(c *gin.Context, info *relaycommon.RelayInfo, resp *
 	}
 	handleErr := handleFinalStream(c, info, response)
 	if handleErr != nil {
-		common.SysLog(common.LogText("send final response failed: %s", handleErr.Error()))
+		common.SysLog(fmt.Sprintf("send final response failed: %s", handleErr.Error()))
 	}
 	return usage, nil
 }
@@ -584,10 +584,6 @@ func GeminiImageHandler(c *gin.Context, info *relaycommon.RelayInfo, resp *http.
 type GeminiModelsResponse struct {
 	Models        []dto.GeminiModel `json:"models"`
 	NextPageToken string            `json:"nextPageToken"`
-}
-
-func FetchGeminiModels(baseURL, apiKey string, setting dto.ChannelSettings) ([]string, error) {
-	return FetchGeminiModelsWithContext(context.Background(), baseURL, apiKey, setting)
 }
 
 func FetchGeminiModelsWithContext(ctx context.Context, baseURL, apiKey string, setting dto.ChannelSettings) ([]string, error) {

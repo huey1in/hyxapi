@@ -535,16 +535,6 @@ func SubscriptionRequestBalancePay(c *gin.Context) {
 	common.ApiSuccess(c, nil)
 }
 
-func subscriptionChangeSuccess(c *gin.Context, notice *common.Message) {
-	if notice == nil {
-		common.ApiSuccess(c, nil)
-		return
-	}
-	data := notice.Fields()
-	data["message"] = notice.Error()
-	common.ApiSuccess(c, data)
-}
-
 func resolveAdvanceResetTime(value *bool) bool {
 	if value == nil {
 		return true
@@ -603,7 +593,7 @@ func AdminResetPlanSubscriptions(c *gin.Context) {
 		return
 	}
 	recordSubscriptionResetUserLogs(c, result, auditOperatorInfo(c))
-	common.SysLog(common.LogText("admin reset subscription plan %d quota: reset_count=%d user_count=%d advance_reset_time=%t",
+	common.SysLog(fmt.Sprintf("admin reset subscription plan %d quota: reset_count=%d user_count=%d advance_reset_time=%t",
 		result.PlanId, result.ResetCount, result.UserCount, result.AdvanceResetTime))
 	recordManageAudit(c, "subscription.plan_reset", map[string]any{
 		"plan_id":            result.PlanId,

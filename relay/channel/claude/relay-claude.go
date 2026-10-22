@@ -21,10 +21,6 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func stopReasonClaude2OpenAI(reason string) string {
-	return relayconvert.StopReasonClaudeToOpenAI(reason)
-}
-
 func maybeMarkClaudeRefusal(c *gin.Context, info *relaycommon.RelayInfo, stopReason string) {
 	if c == nil {
 		return
@@ -35,26 +31,11 @@ func maybeMarkClaudeRefusal(c *gin.Context, info *relaycommon.RelayInfo, stopRea
 	}
 }
 
-func StreamResponseClaude2OpenAI(claudeResponse *dto.ClaudeResponse) *dto.ChatCompletionsStreamResponse {
-	return relayconvert.StreamResponseClaude2OpenAI(claudeResponse)
-}
-
 func ResponseClaude2OpenAI(claudeResponse *dto.ClaudeResponse) *dto.OpenAITextResponse {
 	return relayconvert.ResponseClaude2OpenAI(claudeResponse)
 }
 
 type ClaudeResponseInfo = relayconvert.ClaudeResponseInfo
-
-func cacheCreationTokensForOpenAIUsage(usage *dto.Usage) int {
-	if usage == nil {
-		return 0
-	}
-	openAIUsage := relayconvert.UsageFromClaudeUsage(usage)
-	if openAIUsage == nil {
-		return 0
-	}
-	return openAIUsage.PromptTokens - usage.PromptTokens - usage.PromptTokensDetails.CachedTokens
-}
 
 func buildOpenAIStyleUsageFromClaudeUsage(usage *dto.Usage) dto.Usage {
 	mapped := relayconvert.UsageFromClaudeUsage(usage)
@@ -90,7 +71,7 @@ func HandleStreamResponseData(c *gin.Context, info *relaycommon.RelayInfo, claud
 	var claudeResponse dto.ClaudeResponse
 	err := common.UnmarshalJsonStr(data, &claudeResponse)
 	if err != nil {
-		common.SysLog(common.LogText("error unmarshalling stream response: %s", err.Error()))
+		common.SysLog(fmt.Sprintf("error unmarshalling stream response: %s", err.Error()))
 		return types.NewError(err, types.ErrorCodeBadResponseBody)
 	}
 	if claudeError := claudeResponse.GetClaudeError(); claudeError != nil && claudeError.Type != "" {
@@ -146,7 +127,7 @@ func HandleStreamResponseData(c *gin.Context, info *relaycommon.RelayInfo, claud
 		}
 		err = helper.ObjectData(c, response)
 		if err != nil {
-			logger.LogError(c, common.LogText("send_stream_response_failed: %s", err.Error()))
+			logger.LogError(c, fmt.Sprintf("send_stream_response_failed: %s", err.Error()))
 		}
 	} else if info.RelayFormat == types.RelayFormatGemini {
 		state, err := claudeToGeminiStreamState(info)
@@ -281,7 +262,7 @@ func HandleStreamFinalResponse(c *gin.Context, info *relaycommon.RelayInfo, clau
 	missingOutputUsage := claudeInfo.Usage.CompletionTokens == 0 && claudeInfo.ResponseText.Len() > 0
 	if missingInputUsage || missingOutputUsage || !claudeInfo.Done {
 		if common.DebugEnabled {
-			common.SysLog(common.LogText("claude response usage is not complete, maybe upstream error"))
+			common.SysLog(fmt.Sprintf("claude response usage is not complete, maybe upstream error"))
 		}
 		// 只补缺失字段，不整份覆盖——保留 message_start 已拿到的 cache 字段
 		fallback := service.ResponseText2Usage(c, claudeInfo.ResponseText.String(), info.UpstreamModelName, info.GetEstimatePromptTokens())
@@ -310,23 +291,23 @@ func HandleStreamFinalResponse(c *gin.Context, info *relaycommon.RelayInfo, clau
 			response := helper.GenerateFinalUsageResponse(claudeInfo.ResponseId, claudeInfo.Created, info.UpstreamModelName, openAIUsage)
 			err := helper.ObjectData(c, response)
 			if err != nil {
-				common.SysLog(common.LogText("send final response failed: %s", err.Error()))
+				common.SysLog(fmt.Sprintf("send final response failed: %s", err.Error()))
 			}
 		}
 		helper.Done(c)
 	} else if info.RelayFormat == types.RelayFormatGemini {
 		state, err := claudeToGeminiStreamState(info)
 		if err != nil {
-			common.SysLog(common.LogText("error creating Gemini stream state: %s", err.Error()))
+			common.SysLog(fmt.Sprintf("error creating Gemini stream state: %s", err.Error()))
 			return
 		}
 		results, err := service.FinalizeStreamResponse(c, info, state)
 		if err != nil {
-			common.SysLog(common.LogText("error finalizing Gemini stream response: %s", err.Error()))
+			common.SysLog(fmt.Sprintf("error finalizing Gemini stream response: %s", err.Error()))
 			return
 		}
 		if sendErr := sendGeminiStreamResults(c, results); sendErr != nil {
-			common.SysLog(common.LogText("send final Gemini stream response failed: %s", sendErr.Error()))
+			common.SysLog(fmt.Sprintf("send final Gemini stream response failed: %s", sendErr.Error()))
 		}
 	}
 }

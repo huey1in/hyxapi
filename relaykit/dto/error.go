@@ -14,12 +14,6 @@ import (
 //	Code    any    `json:"code"`
 //}
 
-type OpenAIErrorWithStatusCode struct {
-	Error      types.OpenAIError `json:"error"`
-	StatusCode int               `json:"status_code"`
-	LocalError bool
-}
-
 type GeneralErrorResponse struct {
 	Error    json.RawMessage `json:"error"`
 	Message  string          `json:"message"`

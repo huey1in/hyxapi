@@ -3,6 +3,7 @@ package model
 import (
 	"context"
 	"errors"
+	"fmt"
 	"math/rand"
 	"time"
 
@@ -119,7 +120,7 @@ func UserCheckinContext(ctx context.Context, userId int) (*Checkin, error) {
 	// Apply only this committed reward, preserving outstanding reservations.
 	if quotaAwarded > 0 {
 		if err := cacheIncrUserQuota(userId, int64(quotaAwarded)); err != nil {
-			common.SysError(common.LogText("failed to sync check-in reward for user %d: %s", userId, err))
+			common.SysError(fmt.Sprintf("failed to sync check-in reward for user %d: %s", userId, err))
 		}
 	}
 

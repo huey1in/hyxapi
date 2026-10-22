@@ -295,7 +295,7 @@ func enforceAccessTokenRoute(c *gin.Context, lookup *accessTokenLookup, abort bo
 	case lookup.legacy:
 		return true
 	case !declared:
-		common.SysError(common.LogText("access token route is not declared: %s", key))
+		common.SysError(fmt.Sprintf("access token route is not declared: %s", key))
 		code, reason, message = "ACCESS_TOKEN_ROUTE_UNDECLARED", "route_undeclared", common.NewMessage("Unauthorized, insufficient privileges")
 	case rule.kind == accessTokenRuleAny, service.AccessTokenScopeGranted(lookup.token.GetScopes(), rule.scope):
 		return true
@@ -336,7 +336,7 @@ func setAccessTokenContext(c *gin.Context, lookup *accessTokenLookup) {
 		return
 	}
 	if err := model.TouchUserAccessToken(lookup.token.Id, c.ClientIP(), common.GetTimestamp()); err != nil {
-		logger.LogError(c.Request.Context(), common.LogText("access token last-use update failed (token_id=%d): %v", lookup.token.Id, err))
+		logger.LogError(c.Request.Context(), fmt.Sprintf("access token last-use update failed (token_id=%d): %v", lookup.token.Id, err))
 	}
 }
 
@@ -401,7 +401,7 @@ func writeDashboardAuthError(c *gin.Context, err error) {
 		abortWithWebMessage(c, http.StatusUnauthorized, "AUTH_UNAUTHORIZED", common.NewMessage("Unauthorized, invalid access token"))
 		return
 	}
-	common.SysLog(common.LogText("dashboard authentication error: %s", err.Error()))
+	common.SysLog(fmt.Sprintf("dashboard authentication error: %s", err.Error()))
 	abortWithWebMessage(c, http.StatusInternalServerError, "AUTH_INTERNAL_ERROR", common.NewMessage("Database error, please contact the administrator"))
 }
 
@@ -429,39 +429,6 @@ func RequirePermission(permission authz.Permission) func(c *gin.Context) {
 	}
 }
 
-func WssAuth(c *gin.Context) {
-
-}
-
-// TokenOrUserAuth allows either session-based user auth or API token auth.
-// Used for endpoints that need to be accessible from both the dashboard and API clients.
-func TokenOrUserAuth() func(c *gin.Context) {
-	return func(c *gin.Context) {
-		raw, ok := authorizationToken(c.GetHeader("Authorization"))
-		if ok {
-			identity, internal, err := service.ParseDashboardAccessToken(raw)
-			if !internal {
-				TokenAuth()(c)
-				return
-			}
-			if err != nil {
-				writeDashboardAuthError(c, err)
-				return
-			}
-			_, user, err := service.ValidateLoginSession(identity)
-			if err != nil {
-				writeDashboardAuthError(c, err)
-				return
-			}
-			setDashboardAuthContext(c, user, identity, false)
-			c.Next()
-			return
-		}
-		// Opaque credentials are relay API keys here, never dashboard PATs.
-		TokenAuth()(c)
-	}
-}
-
 // TokenAuthReadOnly 宽松版本的令牌认证中间件，用于只读查询接口。
 // 只验证令牌 key 是否存在，不检查过期时间和额度。
 // 即使令牌已过期或已耗尽，也允许访问；已禁用的令牌会被拒绝。
@@ -486,7 +453,7 @@ func TokenAuthReadOnly() func(c *gin.Context) {
 			if errors.Is(err, gorm.ErrRecordNotFound) {
 				common.ApiErrorStatus(c, http.StatusUnauthorized, errors.New(common.TranslateMessage(c, i18n.MsgTokenInvalid)))
 			} else {
-				common.SysLog(common.LogText("TokenAuthReadOnly GetTokenByKey database error: %s", err.Error()))
+				common.SysLog(fmt.Sprintf("TokenAuthReadOnly GetTokenByKey database error: %s", err.Error()))
 				common.ApiErrorStatus(c, http.StatusInternalServerError, errors.New(common.TranslateMessage(c, i18n.MsgDatabaseError)))
 			}
 			c.Abort()
@@ -516,7 +483,7 @@ func TokenAuthReadOnly() func(c *gin.Context) {
 
 		userCache, err := model.GetUserCache(token.UserId)
 		if err != nil {
-			common.SysLog(common.LogText("TokenAuthReadOnly GetUserCache error for user %d: %v", token.UserId, err))
+			common.SysLog(fmt.Sprintf("TokenAuthReadOnly GetUserCache error for user %d: %v", token.UserId, err))
 			common.ApiErrorStatus(c, http.StatusInternalServerError, errors.New(common.TranslateMessage(c, i18n.MsgDatabaseError)))
 			c.Abort()
 			return
@@ -662,7 +629,7 @@ func TokenAuth() func(c *gin.Context) {
 			return
 		}
 		if err := model.RecordTokenUsage(token); err != nil {
-			common.SysLog(common.LogText("failed to record token usage time: %s", err.Error()))
+			common.SysLog(fmt.Sprintf("failed to record token usage time: %s", err.Error()))
 		}
 		c.Next()
 	}
@@ -720,7 +687,7 @@ func SetupContextForToken(c *gin.Context, token *model.Token, parts ...string) e
 	if group == "auto" && token.AutoGroups != "" {
 		groups, err := token.GetAutoGroups()
 		if err != nil {
-			common.SysError(common.LogText("failed to parse auto groups for token %d: %v", token.Id, err))
+			common.SysError(fmt.Sprintf("failed to parse auto groups for token %d: %v", token.Id, err))
 			groups = []string{}
 		}
 		if err != nil || len(groups) > 0 {

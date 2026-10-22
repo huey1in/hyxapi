@@ -422,7 +422,7 @@ func GetTokenByKey(key string, fromDB bool) (token *Token, err error) {
 		// 冷缓存时用数据库快照初始化；已存在的哈希只刷新 TTL，
 		// 避免快照覆盖 Redis 中已被原子预扣的余额。初始化失败不影响本次读取。
 		if _, cacheErr := cacheInitToken(*token); cacheErr != nil {
-			common.SysLog(common.LogText("failed to init token cache: %s", cacheErr.Error()))
+			common.SysLog(fmt.Sprintf("failed to init token cache: %s", cacheErr.Error()))
 		}
 	}
 	return token, nil
@@ -475,7 +475,7 @@ func RecordTokenUsage(token *Token) error {
 	}
 	if common.RedisEnabled {
 		if err := cacheRecordTokenUsage(token.Id, token.Key, now); err != nil {
-			common.SysLog(common.LogText("failed to cache token usage time: %s", err.Error()))
+			common.SysLog(fmt.Sprintf("failed to cache token usage time: %s", err.Error()))
 		}
 	}
 	return nil
@@ -526,7 +526,7 @@ func IncreaseTokenQuota(tokenId int, key string, quota int) (err error) {
 			// 守卫式增量：哈希不存在时跳过，由下次读取从数据库水合，
 			// 绝不创建只有配额字段的残缺哈希。
 			if _, err := cacheApplyTokenQuotaDelta(tokenId, key, int64(quota)); err != nil {
-				common.SysLog(common.LogText("failed to increase token quota: %s", err.Error()))
+				common.SysLog(fmt.Sprintf("failed to increase token quota: %s", err.Error()))
 			}
 		})
 	}
@@ -554,7 +554,7 @@ func DecreaseTokenQuota(id int, key string, quota int) (err error) {
 	if common.RedisEnabled {
 		gopool.Go(func() {
 			if _, err := cacheApplyTokenQuotaDelta(id, key, int64(-quota)); err != nil {
-				common.SysLog(common.LogText("failed to decrease token quota: %s", err.Error()))
+				common.SysLog(fmt.Sprintf("failed to decrease token quota: %s", err.Error()))
 			}
 		})
 	}

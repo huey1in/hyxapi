@@ -980,20 +980,6 @@ func (t *TaskSubmitReq) UnmarshalJSON(data []byte) error {
 
 	return nil
 }
-func (t *TaskSubmitReq) UnmarshalMetadata(v any) error {
-	metadata := t.Metadata
-	if metadata != nil {
-		metadataBytes, err := common.Marshal(metadata)
-		if err != nil {
-			return fmt.Errorf("marshal metadata failed: %w", err)
-		}
-		err = common.Unmarshal(metadataBytes, v)
-		if err != nil {
-			return fmt.Errorf("unmarshal metadata to target failed: %w", err)
-		}
-	}
-	return nil
-}
 
 type TaskInfo struct {
 	Code             int             `json:"code"`

@@ -170,12 +170,6 @@ func CompileFromCache(exprStr string) (*vm.Program, error) {
 	return compileFromCacheByHash(exprStr, ExprHashString(exprStr))
 }
 
-// CompileFromCacheByHash is like CompileFromCache but accepts a pre-computed
-// hash, useful when the caller already has the BillingSnapshot.ExprHash.
-func CompileFromCacheByHash(exprStr, hash string) (*vm.Program, error) {
-	return compileFromCacheByHash(exprStr, hash)
-}
-
 func compileFromCacheByHash(exprStr, hash string) (*vm.Program, error) {
 	entry, err := compileEntryFromCacheByHash(exprStr, hash)
 	if err != nil {

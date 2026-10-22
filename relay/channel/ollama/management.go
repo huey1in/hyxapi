@@ -194,20 +194,3 @@ func (client ManagementClient) Pull(ctx context.Context, model string, stream bo
 	}
 	return fmt.Errorf("model pull did not complete: no success status received")
 }
-
-// Compatibility helpers for existing model discovery callers.
-func FetchOllamaModels(baseURL, apiKey string) ([]OllamaModel, error) {
-	return (ManagementClient{BaseURL: baseURL, APIKey: apiKey}).Models(context.Background())
-}
-func PullOllamaModel(baseURL, apiKey, model string) error {
-	return (ManagementClient{BaseURL: baseURL, APIKey: apiKey}).Pull(context.Background(), model, false, nil)
-}
-func PullOllamaModelStream(baseURL, apiKey, model string, progress func(OllamaPullResponse)) error {
-	return (ManagementClient{BaseURL: baseURL, APIKey: apiKey}).Pull(context.Background(), model, true, progress)
-}
-func DeleteOllamaModel(baseURL, apiKey, model string) error {
-	return (ManagementClient{BaseURL: baseURL, APIKey: apiKey}).Delete(context.Background(), model)
-}
-func FetchOllamaVersion(baseURL, apiKey string) (string, error) {
-	return (ManagementClient{BaseURL: baseURL, APIKey: apiKey}).Version(context.Background())
-}

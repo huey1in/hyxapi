@@ -33,7 +33,3 @@ export function setStatusData(data) {
   // Remove the retired documentation link from existing browser profiles.
   localStorage.removeItem('docs_link');
 }
-
-export function setUserData(data) {
-  localStorage.setItem('user', JSON.stringify(data));
-}

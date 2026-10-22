@@ -6,34 +6,8 @@ package dto
 // https://developers.openai.com/api/docs/deprecations#2025-11-14-dalle-model-snapshots
 
 import (
-	"errors"
 	"strings"
 )
-
-// NormalizeLegacyDalleImageRequest preserves the retired models' request
-// validation and defaults. Other models, including aliases, are unchanged.
-func (i *ImageRequest) NormalizeLegacyDalleImageRequest() error {
-	switch i.Model {
-	case "dall-e-2", "dall-e":
-		if i.Size != "" && i.Size != "256x256" && i.Size != "512x512" && i.Size != "1024x1024" {
-			return errors.New("size must be one of 256x256, 512x512, or 1024x1024 for dall-e-2 or dall-e")
-		}
-		if i.Size == "" {
-			i.Size = "1024x1024"
-		}
-	case "dall-e-3":
-		if i.Size != "" && i.Size != "1024x1024" && i.Size != "1024x1792" && i.Size != "1792x1024" {
-			return errors.New("size must be one of 1024x1024, 1024x1792 or 1792x1024 for dall-e-3")
-		}
-		if i.Quality == "" {
-			i.Quality = "standard"
-		}
-		if i.Size == "" {
-			i.Size = "1024x1024"
-		}
-	}
-	return nil
-}
 
 func (i *ImageRequest) legacyDallePriceRatio() float64 {
 	if !strings.HasPrefix(i.Model, "dall-e") {

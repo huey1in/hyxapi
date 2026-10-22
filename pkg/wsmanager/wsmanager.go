@@ -13,7 +13,6 @@ import (
 )
 
 const (
-	KindRealtime  = "realtime"
 	KindResponses = "responses"
 
 	defaultCloseReason = "channel disabled or deleted"
@@ -84,10 +83,6 @@ func Register(channelID int, kind string, close func(reason string)) func() {
 			}
 		})
 	}
-}
-
-func CloseChannel(channelID int, reason string) int {
-	return CloseChannels([]int{channelID}, reason)
 }
 
 func CloseChannels(channelIDs []int, reason string) int {

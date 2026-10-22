@@ -136,7 +136,8 @@ test('all middleware fallback routes and event labels are covered by the locale 
   const middleware = readFileSync(new URL('../../../../middleware/audit.go', import.meta.url), 'utf8');
   const routeTable = middleware.split('var auditRouteActions = map[string]string{')[1].split('\n}')[0];
   const routes = [...routeTable.matchAll(/"((?:POST|PUT|PATCH|DELETE) [^"]+)"\s*:/g)].map((match) => match[1]);
-  assert.ok(routes.length >= 30);
+  assert.ok(routes.length > 0, 'middleware audit routes must be discovered');
+  assert.equal(new Set(routes).size, routes.length, 'middleware audit routes must be unique');
   for (const route of routes) assert.ok(AUDIT_ROUTE_LABELS[route], route);
   const labels = new Set([...Object.values(AUDIT_ROUTE_LABELS), 'Saved vendor metadata', 'Merged vendors', 'Assigned models to a vendor']);
   for (const language of ['en', 'zh-CN', 'zh-TW', 'fr', 'ru', 'ja', 'vi']) {

@@ -2,7 +2,6 @@ package setting
 
 import (
 	"fmt"
-	"slices"
 	"strconv"
 	"sync"
 	"sync/atomic"
@@ -24,10 +23,6 @@ var maxTokenAutoGroups atomic.Int64
 
 func init() {
 	maxTokenAutoGroups.Store(DefaultMaxTokenAutoGroups)
-}
-
-func ContainsAutoGroup(group string) bool {
-	return slices.Contains(GetAutoGroups(), group)
 }
 
 func UpdateAutoGroupsByJsonString(jsonString string) error {

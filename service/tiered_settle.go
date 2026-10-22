@@ -1,6 +1,7 @@
 package service
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/QuantumNous/new-api/common"
@@ -10,9 +11,6 @@ import (
 	"github.com/QuantumNous/new-api/relaykit/types"
 	"github.com/gin-gonic/gin"
 )
-
-// TieredResultWrapper wraps billingexpr.TieredResult for use at the service layer.
-type TieredResultWrapper = billingexpr.TieredResult
 
 func noteQuotaClamp(info *relaycommon.RelayInfo, clamp *common.QuotaClamp) {
 	if info != nil && clamp != nil && info.QuotaClamp == nil {
@@ -69,7 +67,7 @@ func BuildTieredTokenParams(usage *dto.Usage, isClaudeUsageSemantic bool, usedVa
 				cr -= imgCR
 				img -= imgCR
 			} else {
-				common.SysError(common.LogText("invalid image cache token breakdown; using aggregate cache billing"))
+				common.SysError(fmt.Sprintf("invalid image cache token breakdown; using aggregate cache billing"))
 			}
 		}
 	}

@@ -2,7 +2,6 @@ package service
 
 import (
 	"errors"
-	"fmt"
 	"net/http"
 	"strings"
 	"time"
@@ -157,28 +156,6 @@ func ValidateStepUpIdentity(identity AuthIdentity) error {
 	}
 	_, _, err := ValidateLoginSession(identity)
 	return err
-}
-
-// ValidateSessionReference validates a server-side flow bound to an existing
-// dashboard session without requiring an access token on the callback request.
-func ValidateSessionReference(userID int, sid string) (AuthIdentity, error) {
-	if userID <= 0 || strings.TrimSpace(sid) == "" {
-		return AuthIdentity{}, ErrLoginSessionInvalid
-	}
-	session, err := model.GetUserSessionCached(sid)
-	if err != nil {
-		return AuthIdentity{}, err
-	}
-	identity := AuthIdentity{
-		UserID:          userID,
-		SessionID:       sid,
-		UserAuthVersion: session.UserAuthVersion,
-		SessionVersion:  session.Version,
-	}
-	if _, _, err := ValidateLoginSession(identity); err != nil {
-		return AuthIdentity{}, err
-	}
-	return identity, nil
 }
 
 // AdvanceCurrentSessionSecurity increments the user's global auth version,
@@ -483,11 +460,4 @@ func authSessionErrorCode(err error) (int, string) {
 
 func AuthSessionErrorCode(err error) (int, string) {
 	return authSessionErrorCode(err)
-}
-
-func FormatAuthError(err error) string {
-	if err == nil {
-		return ""
-	}
-	return fmt.Sprintf("authentication failed: %v", err)
 }

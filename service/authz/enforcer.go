@@ -88,7 +88,7 @@ func StartPolicySync(frequency int) {
 	for {
 		time.Sleep(time.Duration(frequency) * time.Second)
 		if err := ReloadPolicy(); err != nil {
-			common.SysError(common.LogText("failed to reload authz policy: %s", err.Error()))
+			common.SysError(fmt.Sprintf("failed to reload authz policy: %s", err.Error()))
 		}
 	}
 }

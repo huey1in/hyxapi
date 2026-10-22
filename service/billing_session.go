@@ -71,7 +71,7 @@ func (s *BillingSession) Settle(actualQuota int) error {
 	}
 	if tokenErr != nil {
 		// 资金来源已提交，令牌调整失败只能记录日志；标记 settled 防止 Refund 误退资金
-		common.SysLog(common.LogText("error adjusting token quota after funding settled (userId=%d, tokenId=%d, delta=%d): %s",
+		common.SysLog(fmt.Sprintf("error adjusting token quota after funding settled (userId=%d, tokenId=%d, delta=%d): %s",
 			s.relayInfo.UserId, s.relayInfo.TokenId, delta, tokenErr.Error()))
 	}
 	// 3) 更新 relayInfo 上的订阅 PostDelta（用于日志）
@@ -92,7 +92,7 @@ func (s *BillingSession) Refund(c *gin.Context) {
 	s.refunded = true
 	s.mu.Unlock()
 
-	logger.LogInfo(c, common.LogText("user %d request failed, refunding the pre-consumed quota (token_quota=%s, funding=%s)",
+	logger.LogInfo(c, fmt.Sprintf("user %d request failed, refunding the pre-consumed quota (token_quota=%s, funding=%s)",
 		s.relayInfo.UserId,
 		logger.FormatQuota(s.tokenConsumed),
 		s.funding.Source(),
@@ -109,17 +109,17 @@ func (s *BillingSession) Refund(c *gin.Context) {
 	gopool.Go(func() {
 		// 1) 退还资金来源
 		if err := funding.Refund(); err != nil {
-			common.SysLog(common.LogText("error refunding billing source: %s", err.Error()))
+			common.SysLog(fmt.Sprintf("error refunding billing source: %s", err.Error()))
 		}
 		if extraReserved > 0 && funding.Source() == BillingSourceSubscription && subscriptionId > 0 {
 			if err := model.PostConsumeUserSubscriptionDelta(subscriptionId, -int64(extraReserved)); err != nil {
-				common.SysLog(common.LogText("error refunding subscription extra reserved quota: %s", err.Error()))
+				common.SysLog(fmt.Sprintf("error refunding subscription extra reserved quota: %s", err.Error()))
 			}
 		}
 		// 2) 退还令牌额度
 		if tokenConsumed > 0 {
 			if err := model.IncreaseTokenQuota(tokenId, tokenKey, tokenConsumed); err != nil {
-				common.SysLog(common.LogText("error refunding token quota: %s", err.Error()))
+				common.SysLog(fmt.Sprintf("error refunding token quota: %s", err.Error()))
 			}
 		}
 	})
@@ -201,9 +201,9 @@ func (s *BillingSession) preConsume(c *gin.Context, quota int) *types.NewAPIErro
 	if s.shouldTrust(c) {
 		s.trusted = true
 		effectiveQuota = 0
-		logger.LogInfo(c, common.LogText("user %d has enough quota, trusted without pre-consume (funding=%s)", s.relayInfo.UserId, s.funding.Source()))
+		logger.LogInfo(c, fmt.Sprintf("user %d has enough quota, trusted without pre-consume (funding=%s)", s.relayInfo.UserId, s.funding.Source()))
 	} else if effectiveQuota > 0 {
-		logger.LogInfo(c, common.LogText("user %d needs pre-consume %s (funding=%s)", s.relayInfo.UserId, logger.FormatQuota(effectiveQuota), s.funding.Source()))
+		logger.LogInfo(c, fmt.Sprintf("user %d needs pre-consume %s (funding=%s)", s.relayInfo.UserId, logger.FormatQuota(effectiveQuota), s.funding.Source()))
 	}
 
 	// ---- 1) 预扣令牌额度 ----
@@ -219,7 +219,7 @@ func (s *BillingSession) preConsume(c *gin.Context, quota int) *types.NewAPIErro
 		// 预扣费失败，回滚令牌额度
 		if s.tokenConsumed > 0 {
 			if rollbackErr := model.IncreaseTokenQuota(s.relayInfo.TokenId, s.relayInfo.TokenKey, s.tokenConsumed); rollbackErr != nil {
-				common.SysLog(common.LogText("error rolling back token quota (userId=%d, tokenId=%d, amount=%d, fundingErr=%s): %s",
+				common.SysLog(fmt.Sprintf("error rolling back token quota (userId=%d, tokenId=%d, amount=%d, fundingErr=%s): %s",
 					s.relayInfo.UserId, s.relayInfo.TokenId, s.tokenConsumed, err.Error(), rollbackErr.Error()))
 			}
 			s.tokenConsumed = 0
@@ -293,13 +293,13 @@ func (s *BillingSession) rollbackFundingReserve(delta int) {
 	switch funding := s.funding.(type) {
 	case *WalletFunding:
 		if err := model.IncreaseUserQuota(funding.userId, delta, false); err != nil {
-			common.SysLog(common.LogText("error rolling back wallet funding reserve: %s", err.Error()))
+			common.SysLog(fmt.Sprintf("error rolling back wallet funding reserve: %s", err.Error()))
 		} else {
 			funding.consumed -= delta
 		}
 	case *SubscriptionFunding:
 		if err := model.PostConsumeUserSubscriptionDelta(funding.subscriptionId, -int64(delta)); err != nil {
-			common.SysLog(common.LogText("error rolling back subscription funding reserve: %s", err.Error()))
+			common.SysLog(fmt.Sprintf("error rolling back subscription funding reserve: %s", err.Error()))
 		}
 	}
 }

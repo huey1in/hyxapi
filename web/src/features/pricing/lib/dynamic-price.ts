@@ -16,9 +16,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 For commercial licensing, please contact support@quantumnous.com
 */
-import { formatBillingCurrencyFromUSD, getDisplayGroupRatio } from './display-format.ts'
-
-const TOKEN_UNIT_DIVISORS = { M: 1, K: 1000 } as const
+import { formatBillingCurrencyFromUSD } from './display-format.ts'
 import type {
   BillingUsageSchema,
   BillingUsageUnit,
@@ -43,6 +41,8 @@ import {
   tryParseTaskVisualConfig,
 } from './task-expr.ts'
 import { getTaskPricingDisplayTiers } from './task-matrix-display.ts'
+
+const TOKEN_UNIT_DIVISORS = { M: 1, K: 1000 } as const
 
 export type DynamicPriceOptions = {
   formatUSD?: (value: number) => string
@@ -101,37 +101,6 @@ export type DynamicPricingSummary = {
   hasUnconfiguredProviders?: boolean
 }
 
-export function getTaskUsageQuantityUnitLabelKey(
-  unit: BillingUsageUnit | undefined
-): string {
-  if (unit === 'second') return 's'
-  if (unit === 'token') return 'token (unit)'
-  if (unit === 'credit') return 'credit'
-  return 'unit'
-}
-
-export function getTaskUsagePriceUnitLabelKey(
-  unit: BillingUsageUnit | undefined
-): string {
-  if (unit === 'second') return 'second'
-  if (unit === 'token') return '1M token'
-  if (unit === 'credit') return 'credit'
-  return 'unit'
-}
-
-export function getDynamicPriceUnitLabelKey(
-  entry: DynamicPriceEntry
-): string | null {
-  if (entry.unit === 'second') return 's'
-  if (entry.unit === 'count') return 'unit'
-  if (entry.unit === 'credit') return 'credit'
-  // Chat token entries also use unit 'token' but keep the 1M-token label.
-  if (entry.unit === 'token' && !entry.variable) return '1M token'
-  if (entry.unit === 'request') return 'request'
-  if (entry.unit === 'image') return 'image'
-  return null
-}
-
 const PRIMARY_DYNAMIC_FIELDS = new Set(['inputPrice', 'outputPrice'])
 
 function isTaskPricingTier(tier: DynamicPricingTier): tier is ParsedTaskTier {
@@ -172,20 +141,6 @@ export function isUnconfiguredTaskUsageModel(model: PricingModel): boolean {
     hasTaskUsageSchema(model) &&
     !isDynamicPricingModel(model)
   )
-}
-
-export function getTaskPricingUnit(
-  model: PricingModel
-): BillingUsageUnit | null {
-  const primaryField = getTaskNumberFields(model.billing_usage_schema)[0]
-  return primaryField?.[1].unit ?? null
-}
-
-export function getDynamicDisplayGroupRatio(
-  model: PricingModel,
-  selectedGroup?: string
-): number {
-  return getDisplayGroupRatio(model, selectedGroup)
 }
 
 function applyRechargeRate(

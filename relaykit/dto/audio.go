@@ -54,14 +54,6 @@ type AudioResponse struct {
 	Text string `json:"text"`
 }
 
-type WhisperVerboseJSONResponse struct {
-	Task     string    `json:"task,omitempty"`
-	Language string    `json:"language,omitempty"`
-	Duration float64   `json:"duration,omitempty"`
-	Text     string    `json:"text,omitempty"`
-	Segments []Segment `json:"segments,omitempty"`
-}
-
 type Segment struct {
 	Id               int     `json:"id"`
 	Seek             int     `json:"seek"`

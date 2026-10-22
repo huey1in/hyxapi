@@ -77,27 +77,10 @@ func GetAllCustomOAuthProviders() ([]*CustomOAuthProvider, error) {
 	return providers, err
 }
 
-// GetEnabledCustomOAuthProviders returns all enabled custom OAuth providers
-func GetEnabledCustomOAuthProviders() ([]*CustomOAuthProvider, error) {
-	var providers []*CustomOAuthProvider
-	err := DB.Where("enabled = ?", true).Order("id asc").Find(&providers).Error
-	return providers, err
-}
-
 // GetCustomOAuthProviderById returns a custom OAuth provider by ID
 func GetCustomOAuthProviderById(id int) (*CustomOAuthProvider, error) {
 	var provider CustomOAuthProvider
 	err := DB.First(&provider, id).Error
-	if err != nil {
-		return nil, err
-	}
-	return &provider, nil
-}
-
-// GetCustomOAuthProviderBySlug returns a custom OAuth provider by slug
-func GetCustomOAuthProviderBySlug(slug string) (*CustomOAuthProvider, error) {
-	var provider CustomOAuthProvider
-	err := DB.Where("slug = ?", slug).First(&provider).Error
 	if err != nil {
 		return nil, err
 	}

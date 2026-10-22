@@ -52,16 +52,6 @@ func (v *Vendor) insertRecord() error {
 	return err
 }
 
-// IsVendorNameDuplicated 检查供应商名称是否重复（排除自身 ID）
-func IsVendorNameDuplicated(id int, name string) (bool, error) {
-	if name == "" {
-		return false, nil
-	}
-	var cnt int64
-	err := DB.Model(&Vendor{}).Where("name = ? AND id <> ?", name, id).Count(&cnt).Error
-	return cnt > 0, err
-}
-
 // Update 更新供应商记录
 func (v *Vendor) Update() error {
 	err := metadataTransaction(func(tx *gorm.DB) error {
@@ -100,12 +90,6 @@ func GetVendorByID(id int) (*Vendor, error) {
 	}
 	v.Version = VendorRecordVersion(&v)
 	return &v, nil
-}
-
-// GetAllVendors 获取全部供应商（分页）
-func GetAllVendors(offset int, limit int) ([]*Vendor, error) {
-	vendors, _, err := SearchVendors("", offset, limit)
-	return vendors, err
 }
 
 // SearchVendors filters persisted vendor records and counts actual model assignments.

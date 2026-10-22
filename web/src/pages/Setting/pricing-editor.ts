@@ -23,7 +23,6 @@ export const upstreamPricePreviewSchema = z.array(z.object({
 }));
 export type SyncPreview = z.infer<typeof upstreamPricePreviewSchema>[number];
 
-export const MODEL_PRICING_REQUEST_CONFIG = Object.freeze({ skipErrorHandler: true });
 const defaults: DirectPrice = { id: 0, model_name: '', billing_type: TOKEN_BILLING, input_price: 0, output_price: 0, cache_read_price: 0, cache_write_price: 0, image_price: 0, audio_input_price: 0, audio_output_price: 0, request_price: 0, enabled: true };
 let nextLocalPricingKey = 0;
 export const createBlankPricingRow = (): PricingRow => ({ ...defaults, _new: true, _dirty: true, _key: `local-${++nextLocalPricingKey}` });

@@ -582,7 +582,7 @@ func mutateModelPricingOptions(mutate func(*gorm.DB, map[string]map[string]any) 
 			return err
 		}
 		if len(duplicated) > 0 {
-			common.SysError(common.LogText("options table has duplicate pricing keys [%s]; the table is missing a primary key", strings.Join(duplicated, ", ")))
+			common.SysError(fmt.Sprintf("options table has duplicate pricing keys [%s]; the table is missing a primary key", strings.Join(duplicated, ", ")))
 		}
 		defaults := defaultPricingMaps()
 		for _, key := range modelPricingOptionKeys {

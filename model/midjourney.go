@@ -147,20 +147,6 @@ func GetByMJIds(userId int, mjIds []string) []*Midjourney {
 	return mj
 }
 
-func GetMjByuId(id int) *Midjourney {
-	var mj *Midjourney
-	var err error
-	err = DB.Where("id = ?", id).First(&mj).Error
-	if err != nil {
-		return nil
-	}
-	return mj
-}
-
-func UpdateProgress(id int, progress string) error {
-	return DB.Model(&Midjourney{}).Where("id = ?", id).Update("progress", progress).Error
-}
-
 func (midjourney *Midjourney) Insert() error {
 	var err error
 	err = DB.Create(midjourney).Error

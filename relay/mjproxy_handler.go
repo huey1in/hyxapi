@@ -93,7 +93,7 @@ func RelayMidjourneyImage(c *gin.Context) {
 	// 将图片流式传输到响应体
 	_, err = io.Copy(c.Writer, resp.Body)
 	if err != nil {
-		log.Println(common.LogText("Failed to stream image: %v", err))
+		log.Println(fmt.Sprintf("Failed to stream image: %v", err))
 	}
 	return
 }
@@ -261,7 +261,7 @@ func RelaySwapFace(c *gin.Context, info *relaycommon.RelayInfo) *dto.MidjourneyR
 		mjResp.StatusCode == http.StatusOK && midjResponse.Code == 1,
 	)
 	if billingErr != nil {
-		common.SysLog(common.LogText("error consuming Midjourney quota: %s", billingErr.Error()))
+		common.SysLog(fmt.Sprintf("error consuming Midjourney quota: %s", billingErr.Error()))
 	}
 	err = midjourneyTask.Insert()
 	if err != nil {
@@ -269,7 +269,7 @@ func RelaySwapFace(c *gin.Context, info *relaycommon.RelayInfo) *dto.MidjourneyR
 	}
 	billingApplied, billingErr := service.SettleMidjourneyTaskBilling(info, midjourneyTask, billingPrepared)
 	if billingErr != nil {
-		common.SysLog(common.LogText("error settling Midjourney quota: %s", billingErr.Error()))
+		common.SysLog(fmt.Sprintf("error settling Midjourney quota: %s", billingErr.Error()))
 	}
 	if accepted {
 		service.MarkRequestPolicySuccess(c, nil)
@@ -587,7 +587,7 @@ func RelayMidjourneySubmit(c *gin.Context, relayInfo *relaycommon.RelayInfo) *dt
 		//无实例账号自动禁用渠道（No available account instance）
 		channel, err := model.GetChannelById(midjourneyTask.ChannelId, true)
 		if err != nil {
-			common.SysLog(common.LogText("get_channel_null: %s", err.Error()))
+			common.SysLog(fmt.Sprintf("get_channel_null: %s", err.Error()))
 		}
 		if channel != nil && channel.GetAutoBan() && common.AutomaticDisableChannelEnabled {
 			if model.UpdateChannelStatus(midjourneyTask.ChannelId, "", common.ChannelStatusManuallyDisabled, "No available account instance") {
@@ -636,7 +636,7 @@ func RelayMidjourneySubmit(c *gin.Context, relayInfo *relaycommon.RelayInfo) *dt
 		consumeQuota && midjResponseWithStatus.StatusCode == http.StatusOK,
 	)
 	if billingErr != nil {
-		common.SysLog(common.LogText("error consuming Midjourney quota: %s", billingErr.Error()))
+		common.SysLog(fmt.Sprintf("error consuming Midjourney quota: %s", billingErr.Error()))
 	}
 	err = midjourneyTask.Insert()
 	if err != nil {
@@ -647,7 +647,7 @@ func RelayMidjourneySubmit(c *gin.Context, relayInfo *relaycommon.RelayInfo) *dt
 	}
 	billingApplied, billingErr := service.SettleMidjourneyTaskBilling(relayInfo, midjourneyTask, billingPrepared)
 	if billingErr != nil {
-		common.SysLog(common.LogText("error settling Midjourney quota: %s", billingErr.Error()))
+		common.SysLog(fmt.Sprintf("error settling Midjourney quota: %s", billingErr.Error()))
 	}
 	if accepted {
 		service.MarkRequestPolicySuccess(c, nil)
@@ -705,12 +705,6 @@ func RelayMidjourneySubmit(c *gin.Context, relayInfo *relaycommon.RelayInfo) *dt
 		}
 	}
 	return nil
-}
-
-type taskChangeParams struct {
-	ID     string
-	Action string
-	Index  int
 }
 
 func getMjRequestPath(path string) string {

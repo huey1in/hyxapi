@@ -134,27 +134,14 @@ func RecordLogWithAdminInfo(userId int, logType int, content string, adminInfo *
 	if adminInfo != nil || operation != nil {
 		data, err := common.Marshal(AuditOther{AdminInfo: adminInfo, Op: operation})
 		if err != nil {
-			common.SysError(common.LogText("failed to encode log admin info: %s", err.Error()))
+			common.SysError(fmt.Sprintf("failed to encode log admin info: %s", err.Error()))
 			return
 		}
 		log.Other = string(data)
 	}
 	if err := createLog(log); err != nil {
-		common.SysLog(common.LogText("failed to record log: %s", err.Error()))
+		common.SysLog(fmt.Sprintf("failed to record log: %s", err.Error()))
 	}
-}
-
-// buildOpField 构建语言无关的操作描述（写入 Other.op）。
-// 前端依据 action(稳定操作标识) + params(结构化参数) 在渲染期用 i18n 本地化展示，
-// 因此不在数据库中存储自然语言句子。
-func buildOpField(action string, params map[string]interface{}) map[string]interface{} {
-	op := map[string]interface{}{
-		"action": action,
-	}
-	if len(params) > 0 {
-		op["params"] = params
-	}
-	return op
 }
 
 // RecordOperationAuditLog 记录管理/高危操作审计日志（type=LogTypeManage）。

@@ -5,6 +5,13 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"net/http"
+	"net/http/httptest"
+	"strings"
+	"sync/atomic"
+	"testing"
+	"time"
+
 	"github.com/QuantumNous/new-api/common"
 	"github.com/QuantumNous/new-api/constant"
 	relaycommon "github.com/QuantumNous/new-api/relay/common"
@@ -14,12 +21,6 @@ import (
 	"github.com/gorilla/websocket"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"net/http"
-	"net/http/httptest"
-	"strings"
-	"sync/atomic"
-	"testing"
-	"time"
 )
 
 func normalizeResponsesWSTestMessage(message []byte) (responsesWSCreateRequest, string, error) {
@@ -223,12 +224,6 @@ func TestResponsesWSInvalidRequestErrorUsesBadRequestStatus(t *testing.T) {
 	if data.Status != http.StatusBadRequest {
 		t.Fatalf("status = %d, want %d", data.Status, http.StatusBadRequest)
 	}
-}
-
-func newTestResponsesWSTarget(t *testing.T) (*websocket.Conn, func()) {
-	t.Helper()
-	target, _, cleanup := newTestWebSocketPair(t)
-	return target, cleanup
 }
 
 func newTestWebSocketPair(t *testing.T) (*websocket.Conn, *websocket.Conn, func()) {

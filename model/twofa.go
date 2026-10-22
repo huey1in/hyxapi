@@ -53,15 +53,6 @@ func GetTwoFAByUserId(userId int) (*TwoFA, error) {
 	return &twoFA, nil
 }
 
-// IsTwoFAEnabled 检查用户是否启用了2FA
-func IsTwoFAEnabled(userId int) (bool, error) {
-	twoFA, err := GetTwoFAByUserId(userId)
-	if err != nil {
-		return false, err
-	}
-	return twoFA != nil && twoFA.IsEnabled, nil
-}
-
 func (t *TwoFA) updateUsageState() error {
 	if t.Id == 0 {
 		return errors.New("2FA record ID is empty")
@@ -71,13 +62,6 @@ func (t *TwoFA) updateUsageState() error {
 		"locked_until":    t.LockedUntil,
 		"last_used_at":    t.LastUsedAt,
 	}).Error
-}
-
-// ResetFailedAttempts 重置失败尝试次数
-func (t *TwoFA) ResetFailedAttempts() error {
-	t.FailedAttempts = 0
-	t.LockedUntil = nil
-	return t.updateUsageState()
 }
 
 // IncrementFailedAttempts 增加失败尝试次数

@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"errors"
+
 	"github.com/QuantumNous/new-api/common"
 	"github.com/QuantumNous/new-api/dto"
 	"github.com/QuantumNous/new-api/i18n"
@@ -49,7 +50,7 @@ func runMidjourneyTaskUpdateOnce(ctx context.Context, report func(processed, tot
 	}
 	summary.UnfinishedTasks = len(tasks)
 
-	logger.LogInfo(ctx, common.LogText("unfinished tasks found: %v", len(tasks)))
+	logger.LogInfo(ctx, fmt.Sprintf("unfinished tasks found: %v", len(tasks)))
 	taskChannelM := make(map[int][]string)
 	taskM := make(map[string]*model.Midjourney)
 	nullTaskIds := make([]int, 0)
@@ -69,9 +70,9 @@ func runMidjourneyTaskUpdateOnce(ctx context.Context, report func(processed, tot
 			"progress": "100%",
 		})
 		if err != nil {
-			logger.LogError(ctx, common.LogText("Fix null mj_id task error: %v", err))
+			logger.LogError(ctx, fmt.Sprintf("Fix null mj_id task error: %v", err))
 		} else {
-			logger.LogInfo(ctx, common.LogText("Fix null mj_id task success: %v", nullTaskIds))
+			logger.LogInfo(ctx, fmt.Sprintf("Fix null mj_id task success: %v", nullTaskIds))
 		}
 	}
 	if len(taskChannelM) == 0 {
@@ -89,20 +90,20 @@ func runMidjourneyTaskUpdateOnce(ctx context.Context, report func(processed, tot
 		}
 		processedChannels++
 		summary.ChannelsScanned++
-		logger.LogInfo(ctx, common.LogText("channel #%d has %d unfinished tasks", channelId, len(taskIds)))
+		logger.LogInfo(ctx, fmt.Sprintf("channel #%d has %d unfinished tasks", channelId, len(taskIds)))
 		if len(taskIds) == 0 {
 			continue
 		}
 		midjourneyChannel, err := model.CacheGetChannel(channelId)
 		if err != nil {
-			logger.LogError(ctx, common.LogText("CacheGetChannel: %v", err))
+			logger.LogError(ctx, fmt.Sprintf("CacheGetChannel: %v", err))
 			err := model.MjBulkUpdate(taskIds, map[string]any{
 				"fail_reason": "Failed to get the channel information. Please contact the administrator",
 				"status":      "FAILURE",
 				"progress":    "100%",
 			})
 			if err != nil {
-				logger.LogInfo(ctx, common.LogText("UpdateMidjourneyTask error: %v", err))
+				logger.LogInfo(ctx, fmt.Sprintf("UpdateMidjourneyTask error: %v", err))
 			}
 			continue
 		}
@@ -112,7 +113,7 @@ func runMidjourneyTaskUpdateOnce(ctx context.Context, report func(processed, tot
 			"ids": taskIds,
 		})
 		if err != nil {
-			logger.LogError(ctx, common.LogText("Get Task marshal body error: %v", err))
+			logger.LogError(ctx, fmt.Sprintf("Get Task marshal body error: %v", err))
 			continue
 		}
 		timeout := time.Second * 15
@@ -120,26 +121,26 @@ func runMidjourneyTaskUpdateOnce(ctx context.Context, report func(processed, tot
 		req, err := http.NewRequestWithContext(requestCtx, "POST", requestUrl, bytes.NewBuffer(body))
 		if err != nil {
 			cancel()
-			logger.LogError(ctx, common.LogText("Get Task error: %v", err))
+			logger.LogError(ctx, fmt.Sprintf("Get Task error: %v", err))
 			continue
 		}
 		req.Header.Set("Content-Type", "application/json")
 		req.Header.Set("mj-api-secret", midjourneyChannel.Key)
 		resp, err := service.GetHttpClient().Do(req)
 		if err != nil {
-			logger.LogError(ctx, common.LogText("Get Task Do req error: %v", err))
+			logger.LogError(ctx, fmt.Sprintf("Get Task Do req error: %v", err))
 			cancel()
 			continue
 		}
 		if resp.StatusCode != http.StatusOK {
-			logger.LogError(ctx, common.LogText("Get Task status code: %d", resp.StatusCode))
+			logger.LogError(ctx, fmt.Sprintf("Get Task status code: %d", resp.StatusCode))
 			resp.Body.Close()
 			cancel()
 			continue
 		}
 		responseBody, err := io.ReadAll(resp.Body)
 		if err != nil {
-			logger.LogError(ctx, common.LogText("Get Mjp Task parse body error: %v", err))
+			logger.LogError(ctx, fmt.Sprintf("Get Mjp Task parse body error: %v", err))
 			resp.Body.Close()
 			cancel()
 			continue
@@ -147,7 +148,7 @@ func runMidjourneyTaskUpdateOnce(ctx context.Context, report func(processed, tot
 		var responseItems []dto.MidjourneyDto
 		err = common.Unmarshal(responseBody, &responseItems)
 		if err != nil {
-			logger.LogError(ctx, common.LogText("Get Mjp Task parse body error2: %v, body: %s", err, string(responseBody)))
+			logger.LogError(ctx, fmt.Sprintf("Get Mjp Task parse body error2: %v, body: %s", err, string(responseBody)))
 			resp.Body.Close()
 			cancel()
 			continue
@@ -159,7 +160,7 @@ func runMidjourneyTaskUpdateOnce(ctx context.Context, report func(processed, tot
 		for _, responseItem := range responseItems {
 			task := taskM[responseItem.MjId]
 			if task == nil {
-				logger.LogWarn(ctx, common.LogText("Midjourney task response ignored: unknown mj_id=%s", responseItem.MjId))
+				logger.LogWarn(ctx, fmt.Sprintf("Midjourney task response ignored: unknown mj_id=%s", responseItem.MjId))
 				continue
 			}
 
@@ -198,7 +199,7 @@ func runMidjourneyTaskUpdateOnce(ctx context.Context, report func(processed, tot
 			if responseItem.VideoUrls != nil && len(responseItem.VideoUrls) > 0 {
 				videoUrlsStr, err := common.Marshal(responseItem.VideoUrls)
 				if err != nil {
-					logger.LogError(ctx, common.LogText("failed to serialize VideoUrls: %v", err))
+					logger.LogError(ctx, fmt.Sprintf("failed to serialize VideoUrls: %v", err))
 					task.VideoUrls = "[]" // 失败时设置为空数组
 				} else {
 					task.VideoUrls = string(videoUrlsStr)
@@ -209,7 +210,7 @@ func runMidjourneyTaskUpdateOnce(ctx context.Context, report func(processed, tot
 
 			shouldReturnQuota := false
 			if (task.Progress != "100%" && responseItem.FailReason != "") || (task.Progress == "100%" && task.Status == "FAILURE") {
-				logger.LogInfo(ctx, common.LogText("%s failed: %s", task.MjId, task.FailReason))
+				logger.LogInfo(ctx, fmt.Sprintf("%s failed: %s", task.MjId, task.FailReason))
 				task.Progress = "100%"
 				if task.Quota != 0 {
 					shouldReturnQuota = true
@@ -217,7 +218,7 @@ func runMidjourneyTaskUpdateOnce(ctx context.Context, report func(processed, tot
 			}
 			won, err := task.UpdateWithStatus(preStatus)
 			if err != nil {
-				logger.LogError(ctx, common.LogText("UpdateMidjourneyTask task error: %s", err.Error()))
+				logger.LogError(ctx, fmt.Sprintf("UpdateMidjourneyTask task error: %s", err.Error()))
 			} else if won && shouldReturnQuota {
 				service.RefundMidjourneyQuota(ctx, task, "Composition failed")
 			}
@@ -379,6 +380,6 @@ func RelayMidjourney(c *gin.Context) {
 			"code":        mjErr.Code,
 		})
 		channelId := c.GetInt("channel_id")
-		logger.LogError(c, common.LogText("relay error (channel #%d, status code %d): %s", channelId, statusCode, fmt.Sprintf("%s %s", mjErr.Description, mjErr.Result)))
+		logger.LogError(c, fmt.Sprintf("relay error (channel #%d, status code %d): %s", channelId, statusCode, fmt.Sprintf("%s %s", mjErr.Description, mjErr.Result)))
 	}
 }

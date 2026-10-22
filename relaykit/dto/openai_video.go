@@ -34,12 +34,6 @@ func (m *OpenAIVideo) SetProgressStr(progress string) {
 	progress = strings.TrimSuffix(progress, "%")
 	m.Progress, _ = strconv.Atoi(progress)
 }
-func (m *OpenAIVideo) SetMetadata(k string, v any) {
-	if m.Metadata == nil {
-		m.Metadata = make(map[string]any)
-	}
-	m.Metadata[k] = v
-}
 func NewOpenAIVideo() *OpenAIVideo {
 	return &OpenAIVideo{
 		Object: "video",

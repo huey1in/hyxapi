@@ -1,6 +1,9 @@
 package common
 
-import "math"
+import (
+	"fmt"
+	"math"
+)
 
 var PasswordLoginEncryptionEnabled bool
 
@@ -30,7 +33,7 @@ func initUserSessionSettings() {
 
 	const secondsPerDay = 24 * 60 * 60
 	if int64(UserSessionRevokedRetentionDays) > math.MaxInt64/secondsPerDay {
-		SysError(LogText(
+		SysError(fmt.Sprintf(
 			"USER_SESSION_REVOKED_RETENTION_DAYS is too large, using default value: %d",
 			DefaultUserSessionRevokedRetentionDays,
 		))
@@ -40,7 +43,7 @@ func initUserSessionSettings() {
 	if UserSessionIssuanceWindowSeconds > retentionSeconds {
 		configuredWindow := UserSessionIssuanceWindowSeconds
 		UserSessionIssuanceWindowSeconds = retentionSeconds
-		SysError(LogText(
+		SysError(fmt.Sprintf(
 			"USER_SESSION_ISSUANCE_WINDOW_SECONDS exceeds revoked retention; configured_window_seconds=%d revoked_retention_seconds=%d effective_window_seconds=%d",
 			configuredWindow,
 			retentionSeconds,
@@ -52,7 +55,7 @@ func initUserSessionSettings() {
 func positiveUserSessionEnv(name string, fallback int) int {
 	value := GetEnvOrDefault(name, fallback)
 	if value <= 0 {
-		SysError(LogText("%s must be positive, using default value: %d", name, fallback))
+		SysError(fmt.Sprintf("%s must be positive, using default value: %d", name, fallback))
 		return fallback
 	}
 	return value

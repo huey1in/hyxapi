@@ -155,7 +155,7 @@ func repairOptionPrimaryKey(db *gorm.DB) error {
 	if !unique {
 		return fmt.Errorf("options table still has no unique key after rebuild")
 	}
-	common.SysLog(common.LogText("rebuilt options table with primary key from %d rows into %d keys; previous rows kept in %s", len(rows)-skippedEmpty, len(deduped), backup))
+	common.SysLog(fmt.Sprintf("rebuilt options table with primary key from %d rows into %d keys; previous rows kept in %s", len(rows)-skippedEmpty, len(deduped), backup))
 	return nil
 }
 
@@ -170,7 +170,7 @@ func dedupeOptionRows(rows []Option) ([]Option, int) {
 		}
 		if i, ok := seen[row.Key]; ok {
 			if deduped[i].Value != row.Value {
-				common.SysError(common.LogText("options key %q had conflicting values; keeping the last row", row.Key))
+				common.SysError(fmt.Sprintf("options key %q had conflicting values; keeping the last row", row.Key))
 			}
 			deduped[i].Value = row.Value
 			continue
@@ -179,7 +179,7 @@ func dedupeOptionRows(rows []Option) ([]Option, int) {
 		deduped = append(deduped, Option{Key: row.Key, Value: row.Value})
 	}
 	if skippedEmpty > 0 {
-		common.SysError(common.LogText("skipped %d options rows with empty keys while rebuilding the primary key", skippedEmpty))
+		common.SysError(fmt.Sprintf("skipped %d options rows with empty keys while rebuilding the primary key", skippedEmpty))
 	}
 	return deduped, skippedEmpty
 }

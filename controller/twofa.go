@@ -2,6 +2,7 @@ package controller
 
 import (
 	"errors"
+	"fmt"
 	"net/http"
 	"strconv"
 
@@ -108,7 +109,7 @@ func Get2FAStatus(c *gin.Context) {
 			// 获取剩余备用码数量
 			backupCount, err := model.GetUnusedBackupCodeCount(userId)
 			if err != nil {
-				common.SysLog(common.LogText("failed to count backup codes: %s", err.Error()))
+				common.SysLog(fmt.Sprintf("failed to count backup codes: %s", err.Error()))
 			} else {
 				status["backup_codes_remaining"] = backupCount
 			}
@@ -133,14 +134,14 @@ func RegenerateBackupCodes(c *gin.Context) {
 	backupCodes, err := common.GenerateBackupCodes()
 	if err != nil {
 		common.ApiErrorT(c, "Failed to regenerate backup codes")
-		common.SysLog(common.LogText("failed to generate backup codes: %s", err.Error()))
+		common.SysLog(fmt.Sprintf("failed to generate backup codes: %s", err.Error()))
 		return
 	}
 
 	// 保存新的备用码并原子推进用户鉴权版本
 	if err := model.ReplaceBackupCodesForSession(identity, backupCodes); err != nil {
 		common.ApiErrorT(c, "Failed to save backup codes")
-		common.SysLog(common.LogText("failed to save backup codes: %s", err.Error()))
+		common.SysLog(fmt.Sprintf("failed to save backup codes: %s", err.Error()))
 		return
 	}
 	bundle, err := service.AdvanceCurrentSessionToUserVersion(identity, "twofa_backup_codes_regenerated")

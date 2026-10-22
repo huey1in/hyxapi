@@ -184,23 +184,3 @@ func recordUserSecurityAudit(c *gin.Context, userId int, action string, params m
 	}
 	model.RecordOperationAuditLog(userId, c.GetInt("role"), auditContentEN(action, params), c.ClientIP(), action, params, nil, auditInfo, c)
 }
-
-func tokenAuditParams(c *gin.Context) model.AuditFields {
-	params, ok := common.GetContextKeyType[model.AuditFields](c, constant.ContextKeyTokenAuditParams)
-	if !ok {
-		params = model.AuditFields{}
-		common.SetContextKey(c, constant.ContextKeyTokenAuditParams, params)
-	}
-	return params
-}
-
-func tokenBatchAuditParams(c *gin.Context, ids []int) model.AuditFields {
-	params := tokenAuditParams(c)
-	params["total"] = len(ids)
-	// Bound audit payloads without changing the batch operation's limits.
-	params["requested_ids"] = append([]int{}, ids[:min(len(ids), 100)]...)
-	if len(ids) > 100 {
-		params["requested_ids_truncated"] = true
-	}
-	return params
-}

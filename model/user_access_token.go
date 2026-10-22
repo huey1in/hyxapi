@@ -2,6 +2,7 @@ package model
 
 import (
 	"errors"
+	"fmt"
 	"strconv"
 	"strings"
 	"sync/atomic"
@@ -62,7 +63,7 @@ func (token *UserAccessToken) GetScopes() []string {
 	}
 	var scopes []string
 	if err := common.UnmarshalJsonStr(token.Scopes, &scopes); err != nil {
-		common.SysError(common.LogText("invalid access token scopes: %s", err.Error()))
+		common.SysError(fmt.Sprintf("invalid access token scopes: %s", err.Error()))
 		return nil
 	}
 	return scopes

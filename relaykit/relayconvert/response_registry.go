@@ -315,14 +315,6 @@ func NewResponseStreamState(from types.RelayFormat, target types.RelayFormat, op
 	return newResponseStreamStateFromSpec(from, target, options, spec)
 }
 
-func NewResponseStreamStateByID(converter string, options ResponseStreamOptions) (*ResponseStreamState, error) {
-	spec, ok := LookupResponseConverter(converter)
-	if !ok {
-		return nil, fmt.Errorf("response converter %q is not registered", strings.TrimSpace(converter))
-	}
-	return newResponseStreamStateFromSpec(spec.From, spec.To, options, spec)
-}
-
 func ConvertStreamResponseChunk(c context.Context, info convmeta.Meta, state *ResponseStreamState, response any) ([]ResponseResult, error) {
 	if state == nil {
 		return nil, errors.New("response stream state is required")

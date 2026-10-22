@@ -586,11 +586,6 @@ func TaskBulkUpdateByID(ids []int64, params map[string]any) error {
 		Updates(params).Error
 }
 
-type TaskQuotaUsage struct {
-	Mode  string  `json:"mode"`
-	Count float64 `json:"count"`
-}
-
 // TaskCountAllTasks returns total tasks that match the given query params (admin usage)
 func TaskCountAllTasks(queryParams SyncTaskQueryParams) int64 {
 	var total int64

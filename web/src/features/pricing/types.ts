@@ -20,13 +20,6 @@ For commercial licensing, please contact support@quantumnous.com
 // Pricing Types
 // ----------------------------------------------------------------------------
 
-export type PricingVendor = {
-  id: number
-  name: string
-  icon?: string
-  description?: string
-}
-
 export type BillingUsageUnit = 'second' | 'count' | 'token' | 'credit'
 
 export type BillingUsageFieldSchema = {
@@ -132,24 +125,4 @@ export type ModelCapability =
   | 'caching'
   | 'embeddings'
 
-export type PricingData = {
-  success: boolean
-  message?: string
-  data: PricingModel[]
-  vendors: PricingVendor[]
-  group_ratio: Record<string, number>
-  usable_group: Record<string, string>
-  supported_endpoint: Record<string, { path: string; method: string }>
-  auto_groups?: string[]
-}
-
 export type TokenUnit = 'M' | 'K'
-export type PriceType =
-  | 'input'
-  | 'output'
-  | 'cache'
-  | 'create_cache'
-  | 'image'
-  | 'audio_input'
-  | 'audio_output'
-export type QuotaType = 0 | 1 // 0: token-based, 1: per-request

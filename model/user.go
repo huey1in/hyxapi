@@ -137,11 +137,6 @@ func (user *User) GetAccessToken() string {
 	return *user.AccessToken
 }
 
-// Deprecated: 旧版面板访问令牌，仅在升级后的过渡期内使用；删除 users.access_token 列时一并移除。
-func (user *User) SetAccessToken(token string) {
-	user.AccessToken = &token
-}
-
 // RevokeUserAccessToken returns the generation actually revoked under the row lock.
 //
 // Deprecated: 旧版面板访问令牌，仅在升级后的过渡期内使用；删除 users.access_token 列时一并移除。
@@ -166,7 +161,7 @@ func (user *User) GetSetting() dto.UserSetting {
 	if user.Setting != "" {
 		err := common.Unmarshal([]byte(user.Setting), &setting)
 		if err != nil {
-			common.SysLog(common.LogText("failed to unmarshal setting: %s", err.Error()))
+			common.SysLog(fmt.Sprintf("failed to unmarshal setting: %s", err.Error()))
 		}
 	}
 	return setting
@@ -175,7 +170,7 @@ func (user *User) GetSetting() dto.UserSetting {
 func (user *User) SetSetting(setting dto.UserSetting) {
 	settingBytes, err := common.Marshal(setting)
 	if err != nil {
-		common.SysLog(common.LogText("failed to marshal setting: %s", err.Error()))
+		common.SysLog(fmt.Sprintf("failed to marshal setting: %s", err.Error()))
 		return
 	}
 	user.Setting = string(settingBytes)
@@ -204,20 +199,6 @@ var userBindColumns = map[string]bool{
 	"oidc_id":     true,
 	"linux_do_id": true,
 	"wechat_id":   true,
-}
-
-// UpdateUserBindColumn 第三方账号绑定字段的专用更新。
-// 绑定操作必须只写绑定列：若改为“读取完整用户 → 改一个字段 → 整体更新”，
-// 读快照期间并发发生的封禁、降权或分组变更会被旧快照覆盖恢复。
-// 角色、状态、分组只允许通过各自带锁/CAS 的专用方法修改。
-func UpdateUserBindColumn(userId int, column string, value string) error {
-	if userId <= 0 {
-		return common.NewMessage("ID is empty!")
-	}
-	if !userBindColumns[column] {
-		return fmt.Errorf("invalid user bind column: %s", column)
-	}
-	return DB.Model(&User{}).Where("id = ?", userId).Update(column, value).Error
 }
 
 // CheckUserExistOrDeleted reports whether a username or email is already taken.
@@ -486,16 +467,6 @@ func GetUserIdByAffCode(affCode string) (int, error) {
 	return user.Id, err
 }
 
-// DeleteUserById soft-deletes a user and returns how many scoped access tokens
-// were deleted with it.
-func DeleteUserById(id int) (int64, error) {
-	if id == 0 {
-		return 0, common.NewMessage("ID is empty!")
-	}
-	user := User{Id: id}
-	return user.Delete()
-}
-
 // HardDeleteUserById permanently deletes a user and returns how many scoped
 // access tokens were deleted with it.
 func HardDeleteUserById(id int) (int64, error) {
@@ -569,25 +540,6 @@ func (user *User) prepareForInsert(tx *gorm.DB) error {
 	var err error
 	user.Password, err = common.HashAccountPassword(user.Password)
 	return err
-}
-
-// BindEmailToUser atomically checks email availability and assigns it to the
-// user, serializing concurrent binds of the same email so two accounts cannot
-// end up sharing one address. The email is normalized before check and store.
-func BindEmailToUser(user *User, email string) error {
-	email = NormalizeEmail(email)
-	if err := DB.Transaction(func(tx *gorm.DB) error {
-		return withNormalizedEmailLock(tx, email, func(tx *gorm.DB) error {
-			if err := ensureEmailAvailableWithTx(tx, email, user.Id); err != nil {
-				return err
-			}
-			user.Email = email
-			return user.UpdateWithTx(tx, false)
-		})
-	}); err != nil {
-		return err
-	}
-	return updateUserCache(*user)
 }
 
 func ensureEmailAvailableWithTx(tx *gorm.DB, email string, excludeUserID int) error {
@@ -754,26 +706,6 @@ func (user *User) UpdateWithTx(tx *gorm.DB, updatePassword bool) error {
 	return tx.First(user, user.Id).Error
 }
 
-func (user *User) Edit(updatePassword bool) error {
-	var previousAuthVersion int64
-	if err := DB.Model(&User{}).Where("id = ?", user.Id).Select("auth_version").Find(&previousAuthVersion).Error; err != nil {
-		return err
-	}
-	if err := DB.Transaction(func(tx *gorm.DB) error {
-		return user.EditWithTx(tx, updatePassword)
-	}); err != nil {
-		return err
-	}
-	if err := updateUserCache(*user); err != nil {
-		return err
-	}
-	if user.AuthVersion > previousAuthVersion {
-		_, err := RevokeAllUserSessions(user.Id, "user_security_changed")
-		return err
-	}
-	return nil
-}
-
 func (user *User) EditWithTx(tx *gorm.DB, updatePassword bool) error {
 	var err error
 	if updatePassword {
@@ -931,13 +863,13 @@ func (user *User) HardDelete() (int64, error) {
 		return 0, err
 	}
 	if err := publishCommittedUserAuthVersion(user.Id, deletedAuthVersion); err != nil {
-		common.SysError(common.LogText("failed to publish auth tombstone after hard deleting user %d: %v", user.Id, err))
+		common.SysError(fmt.Sprintf("failed to publish auth tombstone after hard deleting user %d: %v", user.Id, err))
 	}
 	if err := invalidateTokensCache(tokens); err != nil {
-		common.SysError(common.LogText("failed to invalidate token cache after hard deleting user %d: %v", user.Id, err))
+		common.SysError(fmt.Sprintf("failed to invalidate token cache after hard deleting user %d: %v", user.Id, err))
 	}
 	if err := invalidateUserCache(user.Id); err != nil {
-		common.SysError(common.LogText("failed to invalidate user cache after hard deleting user %d: %v", user.Id, err))
+		common.SysError(fmt.Sprintf("failed to invalidate user cache after hard deleting user %d: %v", user.Id, err))
 	}
 	return revokedAccessTokens, nil
 }
@@ -997,14 +929,6 @@ func (user *User) FillUserById() error {
 	return nil
 }
 
-func (user *User) FillUserByEmail() error {
-	if user.Email == "" {
-		return common.NewMessage("Email is empty!")
-	}
-	DB.Where(User{Email: user.Email}).First(user)
-	return nil
-}
-
 func (user *User) FillUserByGitHubId() error {
 	if user.GitHubId == "" {
 		return common.NewMessage("GitHub ID is empty!")
@@ -1034,17 +958,6 @@ func (user *User) FillUserByWeChatId() error {
 		return common.NewMessage("WeChat ID is empty!")
 	}
 	DB.Where(User{WeChatId: user.WeChatId}).First(user)
-	return nil
-}
-
-func (user *User) FillUserByTelegramId() error {
-	if user.TelegramId == "" {
-		return common.NewMessage("Telegram ID is empty!")
-	}
-	err := DB.Where(User{TelegramId: user.TelegramId}).First(user).Error
-	if errors.Is(err, gorm.ErrRecordNotFound) {
-		return common.NewMessage("This Telegram account is not linked. Sign in using another method and link it first.")
-	}
 	return nil
 }
 
@@ -1126,7 +1039,7 @@ func IsAdmin(userId int) bool {
 	var user User
 	err := DB.Where("id = ?", userId).Select("role").Find(&user).Error
 	if err != nil {
-		common.SysLog(common.LogText("no such user %s", err.Error()))
+		common.SysLog(fmt.Sprintf("no such user %s", err.Error()))
 		return false
 	}
 	return user.Role >= common.RoleAdminUser
@@ -1173,11 +1086,6 @@ func GetUserUsedQuota(id int) (quota int, err error) {
 	return quota, err
 }
 
-func GetUserEmail(id int) (email string, err error) {
-	err = DB.Model(&User{}).Where("id = ?", id).Select("email").Find(&email).Error
-	return email, err
-}
-
 // GetUserGroup gets group from Redis first, falls back to DB if needed
 func GetUserGroup(id int, fromDB bool) (group string, err error) {
 	defer func() {
@@ -1185,7 +1093,7 @@ func GetUserGroup(id int, fromDB bool) (group string, err error) {
 		if shouldUpdateRedis(fromDB, err) {
 			gopool.Go(func() {
 				if err := RefreshUserGroupCache(id); err != nil {
-					common.SysLog(common.LogText("failed to update user group cache: %s", err.Error()))
+					common.SysLog(fmt.Sprintf("failed to update user group cache: %s", err.Error()))
 				}
 			})
 		}
@@ -1214,7 +1122,7 @@ func GetUserSetting(id int, fromDB bool) (settingMap dto.UserSetting, err error)
 		if shouldUpdateRedis(fromDB, err) {
 			gopool.Go(func() {
 				if err := updateUserSettingCache(id, setting); err != nil {
-					common.SysLog(common.LogText("failed to update user setting cache: %s", err.Error()))
+					common.SysLog(fmt.Sprintf("failed to update user setting cache: %s", err.Error()))
 				}
 			})
 		}
@@ -1255,7 +1163,7 @@ func IncreaseUserQuota(id int, quota int, db bool) (err error) {
 		addNewRecord(BatchUpdateTypeUserQuota, id, quota)
 		gopool.Go(func() {
 			if err := cacheIncrUserQuota(id, int64(quota)); err != nil {
-				common.SysLog(common.LogText("failed to increase user quota: %s", err.Error()))
+				common.SysLog(fmt.Sprintf("failed to increase user quota: %s", err.Error()))
 			}
 		})
 		return nil
@@ -1265,7 +1173,7 @@ func IncreaseUserQuota(id int, quota int, db bool) (err error) {
 	}
 	gopool.Go(func() {
 		if err := cacheIncrUserQuota(id, int64(quota)); err != nil {
-			common.SysLog(common.LogText("failed to increase user quota: %s", err.Error()))
+			common.SysLog(fmt.Sprintf("failed to increase user quota: %s", err.Error()))
 		}
 	})
 	return nil
@@ -1298,7 +1206,7 @@ func DecreaseUserQuota(id int, quota int, db bool) (err error) {
 	gopool.Go(func() {
 		err := cacheDecrUserQuota(id, int64(quota))
 		if err != nil {
-			common.SysLog(common.LogText("failed to decrease user quota: %s", err.Error()))
+			common.SysLog(fmt.Sprintf("failed to decrease user quota: %s", err.Error()))
 		}
 	})
 	if !db && common.BatchUpdateEnabled {
@@ -1316,17 +1224,6 @@ func decreaseUserQuota(id int, quota int) (err error) {
 	return err
 }
 
-func DeltaUpdateUserQuota(id int, delta int) (err error) {
-	if delta == 0 {
-		return nil
-	}
-	if delta > 0 {
-		return IncreaseUserQuota(id, delta, false)
-	} else {
-		return DecreaseUserQuota(id, -delta, false)
-	}
-}
-
 //func GetRootUserEmail() (email string) {
 //	DB.Model(&User{}).Where("role = ?", common.RoleRootUser).Select("email").Find(&email)
 //	return email
@@ -1334,7 +1231,7 @@ func DeltaUpdateUserQuota(id int, delta int) (err error) {
 
 func UpdateUserLastLoginAt(id int) {
 	if err := DB.Model(&User{}).Where("id = ?", id).Update("last_login_at", common.GetTimestamp()).Error; err != nil {
-		common.SysLog(common.LogText("failed to update user last_login_at: %s", err.Error()))
+		common.SysLog(fmt.Sprintf("failed to update user last_login_at: %s", err.Error()))
 	}
 }
 
@@ -1354,7 +1251,7 @@ func GetUsernameById(id int, fromDB bool) (username string, err error) {
 		if shouldUpdateRedis(fromDB, err) {
 			gopool.Go(func() {
 				if err := updateUserNameCache(id, username); err != nil {
-					common.SysLog(common.LogText("failed to update user name cache: %s", err.Error()))
+					common.SysLog(fmt.Sprintf("failed to update user name cache: %s", err.Error()))
 				}
 			})
 		}
@@ -1409,13 +1306,6 @@ func CountNewUsers(startTimestamp, endTimestamp int64) (int64, error) {
 	var count int64
 	err := tx.Count(&count).Error
 	return count, err
-}
-
-func (user *User) UpdateGitHubId(newGitHubId string) error {
-	if user.Id == 0 {
-		return errors.New("user id is empty")
-	}
-	return DB.Model(user).Update("github_id", newGitHubId).Error
 }
 
 func updateUserUsedQuota(id int, quota int) {

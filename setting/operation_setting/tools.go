@@ -2,6 +2,7 @@ package operation_setting
 
 import (
 	"encoding/json"
+	"fmt"
 	"math"
 	"sort"
 	"strings"
@@ -199,7 +200,7 @@ func ValidateToolPricesJSON(value string) error {
 func LoadToolPricesFromJSONString(value string) {
 	prices, err := decodeToolPricesJSON(value, true)
 	if err != nil {
-		common.SysError(common.LogText("failed to load tool prices, using hardcoded fallbacks: %s", err.Error()))
+		common.SysError(fmt.Sprintf("failed to load tool prices, using hardcoded fallbacks: %s", err.Error()))
 		prices = make(map[string]float64)
 	}
 	toolPriceSetting.Prices = prices
@@ -371,7 +372,3 @@ func GetGPTImage1PriceOnceCall(quality string, size string) float64 {
 }
 
 func GetClaudeWebSearchPricePerThousand() float64 { return GetToolPrice("web_search") }
-func GetFileSearchPricePerThousand() float64      { return GetToolPrice("file_search") }
-func GetWebSearchPricePerThousand(modelName, contextSize string) float64 {
-	return GetToolPriceForModel("web_search_preview", modelName)
-}

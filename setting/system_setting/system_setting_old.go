@@ -25,8 +25,6 @@ func WorkerSettingsSnapshot() WorkerSettings {
 	return WorkerSettings{URL: strings.TrimSpace(WorkerUrl), Key: WorkerValidKey, AllowHTTP: WorkerAllowHttpImageRequestEnabled}
 }
 
-func EnableWorker() bool { return WorkerSettingsSnapshot().URL != "" }
-
 func ValidateWorkerOption(key, value string) error {
 	switch key {
 	case "WorkerUrl":

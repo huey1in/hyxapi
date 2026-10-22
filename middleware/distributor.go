@@ -3,13 +3,14 @@ package middleware
 import (
 	"errors"
 	"fmt"
-	"github.com/tidwall/gjson"
 	"io"
 	"net/http"
 	"slices"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/tidwall/gjson"
 
 	"github.com/QuantumNous/new-api/common"
 	"github.com/QuantumNous/new-api/constant"
@@ -206,7 +207,7 @@ func noAvailableChannelMessage(c *gin.Context, group, modelName string) string {
 				}
 			}
 		}
-		logger.LogWarn(c, common.LogText("task_plugin subsystem=distribution event=no_available_channel group=%q model=%q plugins=%q reason=no_eligible_channel", group, modelName, strings.Join(keys, ",")))
+		logger.LogWarn(c, fmt.Sprintf("task_plugin subsystem=distribution event=no_available_channel group=%q model=%q plugins=%q reason=no_eligible_channel", group, modelName, strings.Join(keys, ",")))
 		return i18n.T(c, i18n.MsgDistributorNoAvailableChannelTaskPlugin, map[string]any{"Group": group, "Model": modelName})
 	}
 	return i18n.T(c, i18n.MsgDistributorNoAvailableChannel, map[string]any{"Group": group, "Model": modelName})

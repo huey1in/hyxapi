@@ -2,11 +2,13 @@ package config
 
 import (
 	"encoding/json"
-	"github.com/QuantumNous/new-api/common"
+	"fmt"
 	"reflect"
 	"strconv"
 	"strings"
 	"sync"
+
+	"github.com/QuantumNous/new-api/common"
 )
 
 // ConfigManager 统一管理所有配置
@@ -271,7 +273,7 @@ func (cm *ConfigManager) LoadFromDB(options map[string]string) error {
 		// 如果找到配置项，则更新配置
 		if len(configMap) > 0 {
 			if err := updateConfigFromMap(config, configMap); err != nil {
-				common.SysError(common.LogText("failed to update config %s: %s", name, err.Error()))
+				common.SysError(fmt.Sprintf("failed to update config %s: %s", name, err.Error()))
 				continue
 			}
 		}

@@ -1,6 +1,10 @@
 package system_setting
 
-import "github.com/QuantumNous/new-api/common"
+import (
+	"fmt"
+
+	"github.com/QuantumNous/new-api/common"
+)
 
 const (
 	DefaultTaskArtifactInvalidRateLimitPerMinute = 60
@@ -26,7 +30,7 @@ type TaskArtifactAccessLimits struct {
 func positiveTaskArtifactLimit(env string, defaultValue int) int {
 	value := common.GetEnvOrDefault(env, defaultValue)
 	if value <= 0 {
-		common.SysError(common.LogText("%s must be positive; using default", env))
+		common.SysError(fmt.Sprintf("%s must be positive; using default", env))
 		return defaultValue
 	}
 	return value

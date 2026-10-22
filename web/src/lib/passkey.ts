@@ -244,22 +244,3 @@ export async function isPasskeySupported(): Promise<boolean> {
   // cross-device Passkeys. Let the browser select an eligible authenticator.
   return typeof window !== 'undefined' && Boolean(window.PublicKeyCredential)
 }
-
-/**
- * Execute an async Passkey credential creation flow.
- */
-export async function createCredential(
-  options: PublicKeyCredentialCreationOptions,
-  signal?: AbortSignal
-) {
-  return navigator.credentials.create({ publicKey: options, signal })
-}
-
-/**
- * Execute an async Passkey credential request flow.
- */
-export async function getCredential(
-  options: PublicKeyCredentialRequestOptions
-) {
-  return navigator.credentials.get({ publicKey: options })
-}
