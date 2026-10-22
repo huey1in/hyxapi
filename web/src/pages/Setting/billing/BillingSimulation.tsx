@@ -5,7 +5,8 @@ import { compileBillingExpression } from '../../../features/pricing/lib/billing-
 import { TIME_FUNCTIONS, TOKEN_VARIABLES } from '../../../features/pricing/lib/billing-expression/types';
 import type { TokenVariable } from '../../../features/pricing/lib/billing-expression/types';
 import { buildEstimatorTokens } from '../../../features/pricing/lib/tier-expr';
-import { Input, Textarea, variableLabels } from './controls';
+import { Input, variableLabels } from './controls';
+import VisualConfigEditor from '../../../components/config/VisualConfigEditor';
 import { Select } from './controls';
 import { Button, FormField } from '../../../components/ui';
 import type { BillingUsageExample, BillingUsageSchema } from '../../../features/pricing/types';
@@ -19,6 +20,7 @@ export default function BillingSimulation({ expression, invalid, schema, example
   const [body, setBody] = useState('{}');
   const [headers, setHeaders] = useState('{}');
   const [usage, setUsage] = useState('{}');
+  const [invalidInputs, setInvalidInputs] = useState<Record<string, boolean>>({});
   const [time, setTime] = useState('');
   const [tick, setTick] = useState(0);
   const usageObject = useMemo(() => {
@@ -50,7 +52,7 @@ export default function BillingSimulation({ expression, invalid, schema, example
     return () => { clearTimeout(timer); document.removeEventListener('visibilitychange', visible); };
   }, [usesTime, time]);
   const simulation = useMemo(() => {
-    if (invalid) return { error: t('Correct the visual draft before simulating') };
+    if (invalid || Object.values(invalidInputs).some(Boolean)) return { error: t('Correct the visual draft before simulating') };
     try {
       const requestBody: unknown = JSON.parse(body);
       const requestHeaders: unknown = JSON.parse(headers);
@@ -76,7 +78,7 @@ export default function BillingSimulation({ expression, invalid, schema, example
       const task = compiled.status === 'ready' && compiled.functions.has('u');
       return { result, cost: result.cost / (task || result.billingUnit === 'request' ? 1 : 1_000_000) };
     } catch (cause) { return { error: cause instanceof Error ? cause.message : String(cause) }; }
-  }, [expression, invalid, body, headers, usage, time, tick, counts, tokens, imageCount, compiled, schema, t]);
+  }, [expression, invalid, invalidInputs, body, headers, usage, time, tick, counts, tokens, imageCount, compiled, schema, t]);
 
   return <details className='min-w-0 space-y-3 rounded-xl border border-ui-border p-3'>
     <summary className='cursor-pointer text-sm font-medium text-ui-text'>{t('Request simulation')}</summary>
@@ -111,17 +113,19 @@ export default function BillingSimulation({ expression, invalid, schema, example
                 value={String(usageObject?.[field] ?? '')} placeholder={t('Unspecified')} onChange={(value) => setUsageField(field, value === '' ? undefined : definition.type === 'number' ? Number(value) : value)} />}
         </FormField>)}
       </div>
-      {!usageObject && <p role='status' className='text-xs text-ui-danger'>{t('Correct the task usage JSON below before using the field form.')}</p>}
     </>}
-    <label className='grid gap-1 text-xs text-ui-text-3'>{t('Request body JSON')}
-      <Textarea aria-label={t('Simulation request body')} value={body} rows={4} onChange={setBody} />
-    </label>
-    <label className='grid gap-1 text-xs text-ui-text-3'>{t('Request headers JSON')}
-      <Textarea aria-label={t('Simulation request headers')} value={headers} rows={3} onChange={setHeaders} />
-    </label>
-    <label className='grid gap-1 text-xs text-ui-text-3'>{t('Task usage JSON (preserves booleans, strings and numbers)')}
-      <Textarea aria-label={t('Simulation task usage')} value={usage} rows={3} onChange={setUsage} />
-    </label>
+    <div className='space-y-2'><h4 className='text-xs text-ui-text-3'>{t('Request body')}</h4>
+      <VisualConfigEditor label='Simulation request body' value={body} shape={{ initial: {} }} onChange={setBody}
+        onInvalidChange={(invalid) => setInvalidInputs((current) => ({ ...current, body: invalid }))} />
+    </div>
+    <div className='space-y-2'><h4 className='text-xs text-ui-text-3'>{t('Request headers')}</h4>
+      <VisualConfigEditor label='Simulation request headers' value={headers} shape={{ type: 'object', keyLabel: 'Header name', entry: { type: 'string' } }} onChange={setHeaders}
+        onInvalidChange={(invalid) => setInvalidInputs((current) => ({ ...current, headers: invalid }))} />
+    </div>
+    <div className='space-y-2'><h4 className='text-xs text-ui-text-3'>{t('Additional task usage')}</h4>
+      <VisualConfigEditor label='Simulation task usage' value={usage} shape={{ type: 'object' }} onChange={setUsage}
+        onInvalidChange={(invalid) => setInvalidInputs((current) => ({ ...current, usage: invalid }))} />
+    </div>
     <label className='grid gap-1 text-xs text-ui-text-3'>{t('Simulation time (blank uses current time)')}
       <Input aria-label={t('Simulation time')} value={time} placeholder='2026-10-18T21:30:00+08:00' onChange={setTime} />
     </label>

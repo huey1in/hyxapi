@@ -65,6 +65,9 @@ export const settingJSON: Record<string, z.ZodType> = {
   'global.chat_completions_to_responses_policy': z.looseObject({
     enabled: z.boolean().optional(),
     all_channels: z.boolean().optional(),
+    channel_ids: z.array(count).nullish(),
+    channel_types: z.array(count).nullish(),
+    model_patterns: z.array(z.string()).nullish(),
   }),
   'channel_affinity_setting.rules': z.array(affinityRuleSchema),
   'console_setting.announcements': z.array(
@@ -134,7 +137,6 @@ export const domainKeys = [
   'passkey.rp_id',
   'passkey.legacy_rp_ids',
   'passkey.origins',
-  'ServerAddress',
 ];
 export const domainImpactSchema = z
   .object({

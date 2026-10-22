@@ -17,16 +17,20 @@ import (
 var setupMutex sync.Mutex
 var ErrSetupAlreadyInitialized = errors.New("The system is already initialized")
 
-// Keep the administrator, mode options and completion marker in one commit.
+// Keep the administrator, site address, mode options and completion marker in one commit.
 // ID 1 also fences concurrent initializers in separate server processes.
-func InitializeSetup(ctx context.Context, username, password, confirmation string, selfUse, demo bool) error {
+func InitializeSetup(ctx context.Context, username, password, confirmation string, selfUse, demo bool, serverAddress string) error {
 	setupMutex.Lock()
 	defer setupMutex.Unlock()
 	if selfUse && demo {
 		return errors.New("Select one usage mode")
 	}
-	values := map[string]string{"SelfUseModeEnabled": strconv.FormatBool(selfUse), "DemoSiteEnabled": strconv.FormatBool(demo)}
-	err := DB.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+	serverAddress, err := common.NormalizeOrigin(serverAddress)
+	if err != nil {
+		return errors.New("Invalid parameters")
+	}
+	values := map[string]string{"SelfUseModeEnabled": strconv.FormatBool(selfUse), "DemoSiteEnabled": strconv.FormatBool(demo), "ServerAddress": serverAddress}
+	err = DB.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
 		var completed int64
 		if err := tx.Model(&Setup{}).Count(&completed).Error; err != nil {
 			return err

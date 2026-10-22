@@ -25,9 +25,6 @@ type alipayCheckoutRequest struct {
 }
 
 func RequestAlipayCheckout(c *gin.Context) {
-	if !requirePaymentCompliance(c) {
-		return
-	}
 	if !operation_setting.AlipayEnabled {
 		common.ApiErrorMsg(c, "支付宝电脑网站支付未启用")
 		return
@@ -135,9 +132,6 @@ func epayMethodMinTopUp(payType string) (int, bool) {
 
 // RequestEpayCheckout 创建易支付订单并返回站内支付入口链接。
 func RequestEpayCheckout(c *gin.Context) {
-	if !requirePaymentCompliance(c) {
-		return
-	}
 	if !operation_setting.EpayEnabled {
 		common.ApiErrorMsg(c, "易支付未启用")
 		return

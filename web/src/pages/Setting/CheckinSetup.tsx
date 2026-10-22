@@ -27,10 +27,10 @@ export default function CheckinSetup({
     max < min;
   const currency = getCurrencyConfig();
   return (
-    <section className='rounded-[26px] border border-ui-border px-[22px] py-5'>
-      <h3 className='mb-4 text-[15px] font-semibold text-ui-text'>
+    <section className='min-w-0'>
+      <h2 className='mb-4 text-[15px] font-semibold text-ui-text'>
         {t('Daily Check-in')}
-      </h3>
+      </h2>
       <p className='mb-4 text-xs text-ui-text-3'>
         {t('Check in daily to earn quota rewards')}
       </p>

@@ -16,6 +16,7 @@ export const AUDIT_ROUTE_LABELS: Record<string, string> = {
   'POST /api/option/waffo-pancake/pair': 'Created payment provider pair',
   'POST /api/option/waffo-pancake/save': 'Saved payment provider configuration',
   'POST /api/option/waffo-pancake/subscription-product': 'Created subscription product',
+  // Label historical generic records for this retired route.
   'POST /api/option/payment_compliance': 'Confirmed payment compliance',
   'PATCH /api/option/model_pricing': 'Updated model pricing',
   'POST /api/option/model_pricing/convert': 'Previewed pricing conversion',

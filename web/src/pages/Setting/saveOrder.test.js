@@ -21,9 +21,9 @@ test('saves Alipay credentials before enabling Alipay', () => {
 });
 
 test('preserves the order of unrelated settings', () => {
-  assert.deepEqual(orderSettingKeysForSave(['RetryTimes', 'ServerAddress']), [
+  assert.deepEqual(orderSettingKeysForSave(['RetryTimes', 'SMTPServer']), [
     'RetryTimes',
-    'ServerAddress',
+    'SMTPServer',
   ]);
 });
 

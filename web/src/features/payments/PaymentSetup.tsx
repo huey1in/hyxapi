@@ -20,7 +20,6 @@ import { apiErrorMessage } from '../../lib/api-error';
 import { paymentSetupGroups } from './payment-setup-fields';
 import type { PaymentField } from './payment-setup-fields';
 import {
-  complianceConfirmationSchema,
   pancakeBindingSchema,
   pancakeCatalogSchema,
   PancakeOrphanStoreError,
@@ -28,6 +27,8 @@ import {
   validPaymentSetting,
 } from './payment-setup-data';
 import type { PancakeCredentials, PancakeStore } from './payment-setup-data';
+import VisualConfigEditor from '../../components/config/VisualConfigEditor';
+import { paymentConfigShapes } from './payment-config-shapes';
 
 type Props = {
   value: (key: string) => string;
@@ -122,7 +123,6 @@ export default function PaymentSetup({
   const { t } = useTranslation();
   const { busy, run } = useOwnedOperation();
   const formID = useId();
-  const [agreement, setAgreement] = useState('');
   const [stores, setStores] = useState<PancakeStore[]>([]);
   const [loaded, setLoaded] = useState(false);
   const [catalogError, setCatalogError] = useState('');
@@ -134,9 +134,6 @@ export default function PaymentSetup({
     return () => onBusyChange?.(false);
   }, [busy, confirmPair, onBusyChange]);
   const blocked = disabled || busy || Boolean(confirmPair);
-  const confirmed =
-    bool(value('payment_setting.compliance_confirmed')) &&
-    value('payment_setting.compliance_terms_version') === 'v1';
   const credentials = (): PancakeCredentials => ({
     merchant_id: value('WaffoPancakeMerchantID'),
     private_key: value('WaffoPancakePrivateKey'),
@@ -221,20 +218,17 @@ export default function PaymentSetup({
             data-setting-invalid={invalid ? 'true' : undefined}
             onChange={(next) => onChange(key, String(next))}
           />
-        ) : type === 'pem' || type?.startsWith('json') ? (
+        ) : type?.startsWith('json') ? (
+          <VisualConfigEditor configKey={key} label={label} value={text} shape={paymentConfigShapes[key]}
+            validate={(raw) => validPaymentSetting(key, raw)} onChange={(next) => onChange(key, next)} />
+        ) : type === 'pem' ? (
           <Textarea
             id={inputID}
             value={text}
             onChange={(next) => onChange(key, next)}
-            rows={type === 'pem' ? 3 : 5}
+            rows={3}
             spellCheck={false}
-            placeholder={
-              type === 'pem'
-                ? t('已保存的密钥不回显，留空保留原值')
-                : type === 'json-array'
-                  ? '[]'
-                  : '{}'
-            }
+            placeholder={t('已保存的密钥不回显，留空保留原值')}
             invalid={invalid}
             data-setting-invalid={invalid ? 'true' : undefined}
           />
@@ -253,110 +247,29 @@ export default function PaymentSetup({
         {invalid && (
           <span role='alert' className='text-xs text-ui-danger'>
             {t(
-              'Enter valid payment amounts, limits and JSON configuration before saving.',
+              'Complete valid payment amounts, limits and configuration before saving.',
             )}
           </span>
         )}
         {key === 'CreemProducts' && (
           <span className='block text-xs text-ui-text-3 break-all'>
-            {t('Creem example: {{example}}. quota uses internal quota units.', {
-              example:
-                '[{"productId":"prod_…","name":"Starter","price":10,"currency":"USD","quota":5000000}]',
-            })}
-          </span>
-        )}
-        {key === 'WaffoPayMethods' && (
-          <span className='block text-xs text-ui-text-3 break-all'>
-            {t('Example JSON')}:{' '}
-            {
-              '[{"name":"Card","payMethodType":"CREDITCARD,DEBITCARD","payMethodName":""}]'
-            }
+            {t('Quota uses internal quota units. For example, 5000000 credits $10 with the default quota rate.')}
           </span>
         )}
       </div>
     );
   };
   return (
-    <div className='space-y-5 min-w-0'>
-      <fieldset disabled={blocked} className='space-y-5 min-w-0'>
-        <div className='border border-ui-border rounded-[26px] p-5 space-y-3'>
-          <h2 className='text-base font-semibold text-ui-text'>
-            {t('支付与订阅')}
-          </h2>
-          {confirmed ? (
-            <p className='text-sm text-ui-text-3'>
-              {t(
-                'Payment statement confirmed ({{version}}). Use Save at the top of the page after changing configuration.',
-                { version: value('payment_setting.compliance_terms_version') },
-              )}
-            </p>
-          ) : (
-            <>
-              <p className='text-sm text-ui-text-2'>
-                {t('启用支付、兑换和邀请奖励前，请确认上游的运营声明：')}
-              </p>
-              <ol className='list-decimal pl-5 space-y-1 text-sm text-ui-text-3'>
-                <li>
-                  {t('已合法取得所接入 API、账户、密钥和额度的使用授权。')}
-                </li>
-                <li>
-                  {t(
-                    '在授权范围内提供服务，不进行未经授权的转售或其他违规使用。',
-                  )}
-                </li>
-                <li>
-                  {t(
-                    '面向中国大陆公众提供生成式 AI 服务时，履行适用的相关义务。',
-                  )}
-                </li>
-                <li>
-                  {t('遵守适用法律、平台规则，维护公共利益和第三方权益。')}
-                </li>
-                <li>{t('独立承担部署、运营和收费产生的法律责任。')}</li>
-                <li>
-                  {t(
-                    '本声明属于风险提示，不构成法律意见或合规保证；必要时咨询专业顾问。',
-                  )}
-                </li>
-              </ol>
-              <Input
-                value={agreement}
-                onChange={setAgreement}
-                placeholder={t('Type: {{confirmation}}', {
-                  confirmation: t('我已阅读并确认'),
-                })}
-                aria-label={t('支付声明确认文字')}
-              />
-              <Button
-                disabled={agreement !== t('我已阅读并确认')}
-                loading={busy}
-                onClick={() =>
-                  void run(async (signal) => {
-                    await paymentSetupRequest(
-                      'post',
-                      '/api/option/payment_compliance',
-                      complianceConfirmationSchema,
-                      signal,
-                      { confirmed: true },
-                    );
-                    showSuccess(t('已确认'));
-                    onConfirmed?.({});
-                  })
-                }
-              >
-                {t('确认支付服务声明')}
-              </Button>
-            </>
-          )}
-        </div>
+    <div className='min-w-0'>
+      <fieldset disabled={blocked} className='min-w-0 divide-y divide-ui-border'>
         {paymentSetupGroups.map(([title, fields]) => (
-          <details
+          <section
             key={title}
-            className='border border-ui-border rounded-[26px] p-5'
+            className='min-w-0 py-7 first:pt-0 last:pb-0'
           >
-            <summary className='cursor-pointer text-sm font-semibold text-ui-text'>
+            <h2 className='text-[15px] font-semibold text-ui-text'>
               {t(title)}
-            </summary>
+            </h2>
             <div className='grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4'>
               {fields.map(field)}
             </div>
@@ -445,7 +358,7 @@ export default function PaymentSetup({
                 )}
               </div>
             )}
-          </details>
+          </section>
         ))}
       </fieldset>
       {confirmPair && (

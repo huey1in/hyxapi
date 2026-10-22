@@ -55,7 +55,6 @@ func stripeSignature(body, secret string) string {
 
 func TestWaffoMinimumTopUpUsesCreditUnitsInAllDisplayModes(t *testing.T) {
 	user := paymentFixture(t)
-	confirmPaymentComplianceForTest(t)
 	previousDisplay := operation_setting.GetGeneralSetting().QuotaDisplayType
 	previousWaffoMin, previousPancakeMin := setting.WaffoMinTopUp, setting.WaffoPancakeMinTopUp
 	previousEnabled, previousSandbox := setting.WaffoEnabled, setting.WaffoSandbox
@@ -95,7 +94,6 @@ func TestWaffoMinimumTopUpUsesCreditUnitsInAllDisplayModes(t *testing.T) {
 
 func TestStripeTokensCheckoutUsesQuotedWholeQuantity(t *testing.T) {
 	user := paymentFixture(t)
-	confirmPaymentComplianceForTest(t)
 	previousKey, previousSecret, previousPrice := setting.StripeApiSecret, setting.StripeWebhookSecret, setting.StripePriceId
 	previousUnit, previousMin := setting.StripeUnitPrice, setting.StripeMinTopUp
 	previousDisplay := operation_setting.GetGeneralSetting().QuotaDisplayType
@@ -137,7 +135,6 @@ func TestStripeTokensCheckoutUsesQuotedWholeQuantity(t *testing.T) {
 
 func TestStripeSignedWebhooksCreditOnceAndRetryFailedSettlement(t *testing.T) {
 	user := paymentFixture(t)
-	confirmPaymentComplianceForTest(t)
 	previousKey, previousSecret, previousPrice := setting.StripeApiSecret, setting.StripeWebhookSecret, setting.StripePriceId
 	t.Cleanup(func() {
 		setting.StripeApiSecret, setting.StripeWebhookSecret, setting.StripePriceId = previousKey, previousSecret, previousPrice
@@ -168,7 +165,6 @@ func TestStripeSignedWebhooksCreditOnceAndRetryFailedSettlement(t *testing.T) {
 
 func TestCreemSignedWebhooksKeepRawQuotaAndSupportSubscriptionOnlyConfig(t *testing.T) {
 	user := paymentFixture(t)
-	confirmPaymentComplianceForTest(t)
 	key, secret, products := setting.CreemApiKey, setting.CreemWebhookSecret, setting.CreemProducts
 	t.Cleanup(func() { setting.CreemApiKey, setting.CreemWebhookSecret, setting.CreemProducts = key, secret, products })
 	setting.CreemApiKey, setting.CreemWebhookSecret, setting.CreemProducts = "fixture", "creem-secret", "[]"

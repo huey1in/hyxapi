@@ -17,7 +17,9 @@ func IsRemovedFeatureOption(key string) bool {
 	switch key {
 	case "About", "Chats", "ChatLink", "ChatLink2", "log_setting.max_range_days",
 		"ApiInfo", "FAQ", "console_setting.api_info", "console_setting.faq",
-		"console_setting.api_info_enabled", "console_setting.faq_enabled", "general_setting.docs_link":
+		"console_setting.api_info_enabled", "console_setting.faq_enabled", "general_setting.docs_link",
+		"payment_setting.compliance_confirmed", "payment_setting.compliance_terms_version",
+		"payment_setting.compliance_confirmed_at", "payment_setting.compliance_confirmed_by", "payment_setting.compliance_confirmed_ip":
 		return true
 	}
 	return strings.HasPrefix(key, "model_deployment.")

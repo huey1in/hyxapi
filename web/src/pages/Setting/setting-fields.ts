@@ -41,7 +41,6 @@ export const TABS = [
 
 export const TAB_KEYS: Record<string, string[]> = {
   platform: [
-    'ServerAddress',
     'HeaderNavModules',
     'legal.user_agreement',
     'legal.privacy_policy',
@@ -254,7 +253,6 @@ export const TAB_KEYS: Record<string, string[]> = {
 
 export const TAB_SECTIONS: Record<string, SettingSection[]> = {
   platform: [
-    { title: '基本信息', keys: ['ServerAddress'] },
     {
       title: 'Public site',
       component: 'SiteSettings',
@@ -273,7 +271,7 @@ export const TAB_SECTIONS: Record<string, SettingSection[]> = {
         'token_setting.max_user_tokens',
       ],
     },
-    { title: '支付与订阅', component: 'PaymentSetup', keys: [] },
+    { title: 'PaymentSetup', component: 'PaymentSetup', keys: [] },
     {
       title: '易支付 (Epay)',
       gateKey: 'EpayEnabled',
@@ -646,7 +644,7 @@ export const JSON_KEYS = new Set([
   'gemini.safety_settings',
   'gemini.version_settings',
 ]);
-export const RAW_JSON_KEYS = new Set([
+export const STRUCTURED_KEYS = new Set([
   'claude.model_headers_settings',
   'channel_affinity_setting.rules',
 ]);
@@ -785,7 +783,6 @@ export const LABELS: Record<string, string> = {
     '渠道不可用时保留会话绑定',
   'monitor_setting.channel_test_mode': '自动测试模式',
   'monitor_setting.channel_test_concurrency': '测试并发数（1–32）',
-  ServerAddress: '服务器地址',
   EpayEnabled: '启用易支付',
   AlipayEnabled: '启用支付宝电脑网站支付',
   AlipayAppId: '支付宝应用 App ID',
@@ -919,13 +916,13 @@ export const LABELS: Record<string, string> = {
   // 模型适配 - Claude
   'claude.thinking_adapter_enabled': '启用 Claude 思考适配',
   'claude.thinking_adapter_budget_tokens_percentage': 'Claude 思考预算百分比',
-  'claude.model_headers_settings': 'Claude 请求头追加（JSON）',
-  'claude.default_max_tokens': 'Claude 缺省 MaxTokens（JSON）',
+  'claude.model_headers_settings': 'Claude 请求头追加',
+  'claude.default_max_tokens': 'Claude 缺省 MaxTokens',
   // 模型适配 - Gemini
   'gemini.thinking_adapter_enabled': '启用 Gemini 思考适配',
   'gemini.thinking_adapter_budget_tokens_percentage': 'Gemini 思考预算占比',
-  'gemini.safety_settings': 'Gemini 安全设置（JSON）',
-  'gemini.version_settings': 'Gemini 版本设置（JSON）',
+  'gemini.safety_settings': 'Gemini 安全设置',
+  'gemini.version_settings': 'Gemini 版本设置',
   'gemini.supported_imagine_models': '支持的图像模型',
   'gemini.function_call_thought_signature_enabled':
     '启用 FunctionCall 思维签名填充',
@@ -938,7 +935,7 @@ export const LABELS: Record<string, string> = {
   'channel_affinity_setting.switch_on_success': '成功后切换亲和',
   'channel_affinity_setting.max_entries': '最大条目数',
   'channel_affinity_setting.default_ttl_seconds': '默认 TTL（秒）',
-  'channel_affinity_setting.rules': '亲和规则（JSON）',
+  'channel_affinity_setting.rules': '亲和规则',
   // 仪表盘
   'monitor_setting.auto_test_channel_enabled': '自动测试渠道',
   'monitor_setting.auto_test_channel_minutes': '自动测试间隔（分钟）',

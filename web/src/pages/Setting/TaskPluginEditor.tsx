@@ -5,6 +5,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { z } from 'zod';
 import { Button, ConfirmDialog, Input, Modal, Switch, Textarea, showSuccess } from '../../components/ui';
+import VisualConfigEditor from '../../components/config/VisualConfigEditor';
 import { useOwnedOperation } from '../../hooks/useOwnedOperation';
 import { apiErrorMessage } from '../../lib/api-error';
 import { pluginBase, pluginPath, pluginDetailSchema, pluginVersionsSchema, PluginUsageError } from './task-plugin-data';
@@ -33,6 +34,7 @@ export default function TaskPluginEditor({ identity, initial, onClose, onSaved }
   const { t } = useTranslation(); const { busy, run } = useOwnedOperation();
   const [draft, setDraft] = useState(initial); const [hook, setHook] = useState('buildSubmitRequest'); const [member, setMember] = useState(''); const [args, setArgs] = useState('[{}]'); const [output, setOutput] = useState('');
   const [confirmation, setConfirmation] = useState<PluginAction | null>(null); const [activate, setActivate] = useState<string | null>(null);
+  const [invalidArgs, setInvalidArgs] = useState(false);
   const sourceFile = useRef<HTMLInputElement>(null); const iconFile = useRef<HTMLInputElement>(null);
   const query = useQuery({ queryKey: ['task-plugin-editor', identity, initial.key], enabled: Boolean(initial.key), gcTime: 0, retry: false, staleTime: Infinity, queryFn: async ({ signal }) => {
     const key = initial.key!;
@@ -87,8 +89,8 @@ export default function TaskPluginEditor({ identity, initial, onClose, onSaved }
           {!version.active && <Button size='sm' variant='toggle' onClick={() => setActivate(version.version)}>{t('Switch version')}</Button>}<Button size='sm' variant='link' onClick={() => setConfirmation({ kind: 'delete', key: initial.key!, version: version.version })}>{t('Delete')}</Button>
         </div>)}</div></details>
         <details><summary className='cursor-pointer text-sm'>{t('Debug saved active version')}</summary><div className='mt-3 space-y-3'><p className='text-xs text-ui-text-3'>{t('Debug runs the saved active version. Unsaved source and previewed versions are not executed.')}</p>
-          <PluginField label={t('Exported function')}><Input value={hook} onChange={setHook} placeholder='buildSubmitRequest' /></PluginField><PluginField label={t('Member name (optional)')}><Input value={member} onChange={setMember} /></PluginField><PluginField label={t('Argument array (JSON)')}><Textarea value={args} onChange={setArgs} rows={5} spellCheck={false} /></PluginField>
-          <Button size='sm' variant='toggle' disabled={!hook.trim()} loading={busy} onClick={() => void run(async (signal) => { setOutput(''); const parsed: unknown = JSON.parse(args); if (!Array.isArray(parsed)) throw new Error('Debug arguments must be a JSON array'); const result = await pluginRequest('post', `${pluginPath(initial.key!)}/dryrun`, z.unknown(), signal, { hook: hook.trim(), member: member.trim(), args: parsed }); setOutput(JSON.stringify(result, null, 2) ?? 'null'); })}>{t('Run debug')}</Button>
+          <PluginField label={t('Exported function')}><Input value={hook} onChange={setHook} placeholder='buildSubmitRequest' /></PluginField><PluginField label={t('Member name (optional)')}><Input value={member} onChange={setMember} /></PluginField><PluginField label={t('Function arguments')}><VisualConfigEditor label='Function arguments' value={args} onChange={setArgs} shape={{ type: 'array', entry: { initial: {} } }} onInvalidChange={setInvalidArgs} /></PluginField>
+          <Button size='sm' variant='toggle' disabled={!hook.trim() || invalidArgs} loading={busy} onClick={() => void run(async (signal) => { setOutput(''); const parsed: unknown = JSON.parse(args); if (!Array.isArray(parsed)) throw new Error('Debug arguments must be a JSON array'); const result = await pluginRequest('post', `${pluginPath(initial.key!)}/dryrun`, z.unknown(), signal, { hook: hook.trim(), member: member.trim(), args: parsed }); setOutput(JSON.stringify(result, null, 2) ?? 'null'); })}>{t('Run debug')}</Button>
           {output && <pre className='whitespace-pre-wrap break-all text-xs'>{output}</pre>}
         </div></details>
       </>}

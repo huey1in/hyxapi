@@ -45,6 +45,7 @@ export default function Setup() {
       setError('');
       const response = await API.post<ApiEnvelope<unknown>>('/api/setup', {
         username: form.username.trim(), password: form.password, confirmPassword: form.confirm,
+        server_address: window.location.origin,
         SelfUseModeEnabled: usageMode === 'self', DemoSiteEnabled: usageMode === 'demo',
       }, { signal, skipAuthRefresh: true, skipErrorHandler: true });
       signal.throwIfAborted(); if (!response.data.success) throw new Error(response.data.message || 'Unable to initialize the system');
@@ -80,6 +81,7 @@ export default function Setup() {
             <li>{t('Database')}: {status.database_type || t('Ready')}</li>
             <li>{t('Administrator')}: {status.root_init ? t('Use the existing account') : form.username.trim()}</li>
             <li>{t('Usage mode')}: {t(modes.find((mode) => mode.value === usageMode)!.title)}</li>
+            <li className='break-all'>{t('服务器地址')}: {window.location.origin}</li>
           </ul>
         </div>}
         <div className='flex justify-between mt-8'>

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { SearchX } from 'lucide-react';
 import { isAxiosError } from 'axios';
@@ -7,13 +7,32 @@ import type { ApiEnvelope } from '../../../types/api';
 import { useAuthStore } from '../../../stores/auth-store';
 import { useOwnedOperation } from '../../../hooks/useOwnedOperation';
 import { Button, EmptyState, Modal, Pagination, TableSelection, showSuccess } from '../../../components/ui';
-import { Input, Select, Textarea } from './controls';
+import { Input, Select } from './controls';
+import VisualConfigEditor from '../../../components/config/VisualConfigEditor';
+import type { ConfigShape } from '../../../components/config/config-value';
 import { copyModelPricing, parsePricingBatch, serializePricingDraft, pricingSnapshotSchema, PricingConfigError } from './pricing-config';
 import type { PricingChange, PricingEntry, PricingSnapshot } from './pricing-config';
 import { getModelPricingErrorMessage } from '../pricing-editor';
 
 const requestConfig = { skipErrorHandler: true, disableDuplicate: true, timeout: 30000 };
 const pageSize = 20;
+const batchShape: ConfigShape = {
+  type: 'array', itemLabel: 'Model', entry: {
+    type: 'object', initial: { model_name: '', pricing: {} }, fields: {
+      model_name: { type: 'string', label: 'Model name' }, reset: { type: 'boolean', label: 'Restore upstream defaults' },
+      pricing: { type: 'object', label: 'Pricing', fields: {
+        ...Object.fromEntries([
+          ['ModelRatio', 'Input ratio'], ['CompletionRatio', 'Output ratio'], ['CacheRatio', 'Cache read ratio'],
+          ['CreateCacheRatio', 'Cache write ratio'], ['ImageRatio', 'Image ratio'], ['AudioRatio', 'Audio input ratio'],
+          ['AudioCompletionRatio', 'Audio output ratio'], ['ModelPrice', 'Price per request'],
+        ].map(([key, label]) => [key, { type: 'number', label, min: 0 }])),
+        'billing_setting.billing_mode': { type: 'string', label: 'Billing mode', initial: 'ratio', options: [{ value: 'ratio', label: 'Ratio' }, { value: 'tiered_expr', label: 'Expression' }] },
+        'billing_setting.billing_expr': { type: 'string', label: 'Billing expression' },
+        'billing_setting.plugin_billing_expr': { type: 'object', label: 'Plugin overrides', entry: { type: 'string' } },
+      } },
+    },
+  },
+};
 type Props = { open: boolean; onClose: () => void; onSaved: () => void; modelNames: string[] };
 
 function PricingBatchContent({ onClose, onSaved, modelNames }: Omit<Props, 'open'>) {
@@ -27,6 +46,9 @@ function PricingBatchContent({ onClose, onSaved, modelNames }: Omit<Props, 'open
   const [source, setSource] = useState('');
   const [page, setPage] = useState(1);
   const [raw, setRaw] = useState('[]');
+  const [invalidDraft, setInvalidDraft] = useState(false);
+  const [draftVersion, setDraftVersion] = useState(0);
+  const importFile = useRef<HTMLInputElement>(null);
   const { busy, run } = useOwnedOperation();
   const [error, setError] = useState('');
   const [generation, setGeneration] = useState(0);
@@ -61,7 +83,7 @@ function PricingBatchContent({ onClose, onSaved, modelNames }: Omit<Props, 'open
     const next = new Set(current); if (checked) next.add(name); else next.delete(name); return next;
   });
   const stage = (reset: boolean) => {
-    if (!snapshot || parsed.error) return;
+    if (!snapshot || parsed.error || invalidDraft) return;
     try {
       const origin = entries.find((entry) => entry.model_name === source.trim());
       if (!reset && (!origin || !Object.keys(origin.effective).length)) throw new Error('Select a source model with saved prices.');
@@ -80,7 +102,7 @@ function PricingBatchContent({ onClose, onSaved, modelNames }: Omit<Props, 'open
     setTimeout(() => URL.revokeObjectURL(url), 1000);
   };
   const save = () => {
-    if (!snapshot || parsed.error || !parsed.changes.length) return;
+    if (!snapshot || parsed.error || invalidDraft || !parsed.changes.length) return;
     setError('');
     void run(async (signal) => { try {
       const { data } = await API.patch<ApiEnvelope<unknown>>('/api/option/model_pricing', { changes: parsed.changes }, { ...requestConfig, signal });
@@ -96,7 +118,7 @@ function PricingBatchContent({ onClose, onSaved, modelNames }: Omit<Props, 'open
   const sourceLabel = (entry: PricingEntry) => t(({ direct: 'Direct prices', tiered_expr: 'Expression', ratio: 'Ratio', unset: 'Unconfigured' } as Record<string, string>)[entry.source] || entry.source);
   return <Modal open onClose={() => !busy && onClose()} title={t('Batch billing management')} width={880} onConfirm={save}
     footer={<div className='flex w-full flex-wrap justify-end gap-2.5'><Button disabled={busy} variant='secondary' onClick={onClose}>{t('Cancel')}</Button>
-      <Button loading={busy} disabled={!snapshot || Boolean(parsed.error) || !parsed.changes.length} onClick={save}>{t('Save batch ({{count}})', { count: parsed.changes.length })}</Button></div>}>
+      <Button loading={busy} disabled={!snapshot || Boolean(parsed.error) || invalidDraft || !parsed.changes.length} onClick={save}>{t('Save batch ({{count}})', { count: parsed.changes.length })}</Button></div>}>
     {error && <p role='alert' className='text-sm text-ui-danger'>{t(error)}</p>}
     {!snapshot ? <div className='text-sm text-ui-text-3'>{error ? <Button variant='secondary' onClick={() => setGeneration((value) => value + 1)}>{t('Retry')}</Button> : t('Loading pricing snapshot…')}</div> : <fieldset disabled={busy} className='min-w-0 space-y-4'>
       <p className='text-xs text-ui-text-3'>{t('Select target models to copy prices or restore defaults, then review the draft before saving. The batch applies atomically; conflicts or validation errors roll it back. Copies preserve each target’s plugin prices.')}</p>
@@ -126,13 +148,31 @@ function PricingBatchContent({ onClose, onSaved, modelNames }: Omit<Props, 'open
         <Input aria-label={t('Batch pricing copy source')} value={source} list='advanced-batch-pricing-source' onChange={setSource} />
       </label>
       <div className='flex flex-wrap gap-2'>
-        <Button size='sm' variant='secondary' disabled={!selected.size || Boolean(parsed.error)} onClick={() => stage(false)}>{t('Copy to selected model drafts')}</Button>
-        <Button size='sm' variant='secondary' disabled={!selected.size || Boolean(parsed.error)} onClick={() => stage(true)}>{t('Stage defaults for selected models')}</Button>
+        <Button size='sm' variant='secondary' disabled={!selected.size || Boolean(parsed.error) || invalidDraft} onClick={() => stage(false)}>{t('Copy to selected model drafts')}</Button>
+        <Button size='sm' variant='secondary' disabled={!selected.size || Boolean(parsed.error) || invalidDraft} onClick={() => stage(true)}>{t('Stage defaults for selected models')}</Button>
         <Button size='sm' variant='link' onClick={() => setGeneration((value) => value + 1)}>{t('Discard draft and reload')}</Button>
       </div>
-      <label className='grid min-w-0 gap-1 text-xs text-ui-text-3'>{t('Batch JSON draft (paste exported configurations)')}
-        <Textarea aria-label={t('Batch billing draft')} rows={10} value={raw} onChange={(value) => { setRaw(value); setError(''); }} />
-      </label>
+      <div className='min-w-0 space-y-3'>
+        <div className='flex flex-wrap items-center justify-between gap-2'>
+          <h3 className='text-sm font-medium'>{t('Batch billing draft')}</h3>
+          <Button size='sm' variant='toggle' onClick={() => importFile.current?.click()}>{t('Import configuration file')}</Button>
+        </div>
+        <input ref={importFile} type='file' accept='.json,application/json' hidden onChange={(event) => {
+          const file = event.target.files?.[0]; event.target.value = '';
+          if (!file || !snapshot) return;
+          void run(async (signal) => {
+            try {
+              if (file.size > 8 * 1024 * 1024) throw new Error('Configuration file exceeds 8 MiB');
+              const text = await file.text(); signal.throwIfAborted();
+              const changes = parsePricingBatch(text, snapshot);
+              setRaw(serializePricingDraft(changes)); setDraftVersion((version) => version + 1); setError('');
+            } catch (cause) { signal.throwIfAborted(); setError(formatError(cause, 'Invalid pricing draft')); }
+          });
+        }} />
+        <VisualConfigEditor key={draftVersion} label='Batch billing draft' value={raw} shape={batchShape} onInvalidChange={setInvalidDraft}
+          validate={(text) => { try { parsePricingBatch(text, snapshot); return true; } catch { return false; } }}
+          onChange={(value) => { setRaw(value); setError(''); }} />
+      </div>
       {parsed.error ? <p role='alert' className='text-xs text-ui-danger'>{parsed.error}</p> : <p aria-live='polite' className='break-words text-xs text-ui-text-3'>
         {t('Pending {{count}} models: {{models}}', { count: parsed.changes.length, models: parsed.changes.map((change) => `${change.model_name}${change.reset ? ` (${t('Restore upstream defaults')})` : ''}`).join(', ') || t('No changes') })}
       </p>}

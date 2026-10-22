@@ -8,7 +8,6 @@ import (
 	"github.com/QuantumNous/new-api/common"
 	"github.com/QuantumNous/new-api/i18n"
 	"github.com/QuantumNous/new-api/model"
-	"github.com/QuantumNous/new-api/setting/operation_setting"
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/require"
 	"gorm.io/gorm"
@@ -18,7 +17,6 @@ func TestRedemptionBatchRollsBackAllCodesWhenAnyInsertFails(t *testing.T) {
 	require.NoError(t, i18n.Init())
 	user := paymentFixture(t)
 	require.NoError(t, model.DB.AutoMigrate(&model.Redemption{}))
-	confirmPaymentComplianceForTest(t)
 	inserts := 0
 	require.NoError(t, model.DB.Callback().Create().Before("gorm:create").Register("fail_redemption_batch", func(tx *gorm.DB) {
 		if tx.Statement.Schema != nil && tx.Statement.Schema.Table == "redemptions" {
@@ -50,7 +48,6 @@ func TestRedemptionBatchRollsBackAllCodesWhenAnyInsertFails(t *testing.T) {
 func TestRedemptionCreationAndBatchValidation(t *testing.T) {
 	user := paymentFixture(t)
 	require.NoError(t, model.DB.AutoMigrate(&model.Redemption{}))
-	confirmPaymentComplianceForTest(t)
 	for _, body := range []string{
 		`{"name":"credit","count":1,"quota":0}`,
 		`{"name":"credit","count":1,"quota":-1}`,
@@ -83,18 +80,15 @@ func TestRedemptionCreationAndBatchValidation(t *testing.T) {
 	}
 }
 
-func TestRedemptionCreationRequiresComplianceAndUsedStatusCannotBeReset(t *testing.T) {
+func TestRedemptionCreationAndUsedStatusCannotBeReset(t *testing.T) {
 	user := paymentFixture(t)
 	require.NoError(t, model.DB.AutoMigrate(&model.Redemption{}))
-	confirmPaymentComplianceForTest(t)
-	setting := operation_setting.GetPaymentSetting()
-	setting.ComplianceConfirmed = false
 	response := paymentRequest(t, AddRedemption, user.Id, `{"name":"credit","count":1,"quota":10}`, "")
 	var result struct {
 		Success bool `json:"success"`
 	}
 	require.NoError(t, common.Unmarshal(response.Body.Bytes(), &result))
-	require.False(t, result.Success)
+	require.True(t, result.Success, response.Body.String())
 	code := model.Redemption{Key: "already-used", Quota: 10, Status: common.RedemptionCodeStatusUsed, UsedUserId: user.Id}
 	require.NoError(t, model.DB.Create(&code).Error)
 	for _, status := range []int{1, 2, 3, 99} {
@@ -104,4 +98,23 @@ func TestRedemptionCreationRequiresComplianceAndUsedStatusCannotBeReset(t *testi
 	}
 	require.NoError(t, model.DB.First(&code, code.Id).Error)
 	require.Equal(t, common.RedemptionCodeStatusUsed, code.Status)
+}
+
+func TestRedemptionCreditsWalletOnlyOnce(t *testing.T) {
+	user := paymentFixture(t)
+	require.NoError(t, model.DB.AutoMigrate(&model.Redemption{}))
+	code := model.Redemption{Key: "wallet-credit", Quota: 100, Status: common.RedemptionCodeStatusEnabled}
+	require.NoError(t, model.DB.Create(&code).Error)
+	for _, expected := range []bool{true, false} {
+		response := paymentRequest(t, TopUp, user.Id, `{"key":"wallet-credit"}`, "")
+		var result struct{ Success bool }
+		require.NoError(t, common.Unmarshal(response.Body.Bytes(), &result))
+		require.Equal(t, expected, result.Success, response.Body.String())
+		var stored model.User
+		require.NoError(t, model.DB.First(&stored, user.Id).Error)
+		require.Equal(t, user.Quota+100, stored.Quota)
+	}
+	require.NoError(t, model.DB.First(&code, code.Id).Error)
+	require.Equal(t, common.RedemptionCodeStatusUsed, code.Status)
+	require.Equal(t, user.Id, code.UsedUserId)
 }

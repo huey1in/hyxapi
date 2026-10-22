@@ -73,7 +73,7 @@ function TopUp({ identity }: { identity: string }) {
   };
   let otherLink = '';
   if (paymentInfo?.topup_link) { try { otherLink = safePaymentURL(paymentInfo.topup_link, window.location.origin); } catch { /* A malformed optional link is not actionable. */ } }
-  const canRedeem = paymentInfo?.enable_redemption === true;
+  const canRedeem = Boolean(paymentInfo);
   return <TopUpPage pending={info.isPending || offers.isPending}>
     <WalletBalanceCard user={user} pending={profile.isPending} onHistory={() => setShowHistory(true)} />
     <DailyCheckin identity={identity} />
@@ -96,7 +96,7 @@ function TopUp({ identity }: { identity: string }) {
     {otherLink && <a href={otherLink} target='_blank' rel='noopener noreferrer' className='text-sm text-ui-text-2 underline'>{t('Other top-up methods')}</a>}
     <SubscriptionOffers onPurchased={refreshUser} />
     {invitationRewardsEnabled && <InvitationRewards user={user} pending={profile.isPending} link={affLink} linkPending={affiliate.isPending}
-      transferDisabled={!user || !paymentInfo?.payment_compliance_confirmed || user.aff_quota < Math.ceil(paymentInfo.quota_per_unit)}
+      transferDisabled={!user || !paymentInfo || user.aff_quota < Math.ceil(paymentInfo.quota_per_unit)}
       onTransfer={() => setTransferOpen(true)} onCopy={async () => { if (await copy(affLink)) showSuccess(t('Invitation link copied')); }}>
       {affiliate.isError && <div role='alert' className='text-sm text-ui-danger'><p>{t(apiErrorMessage(affiliate.error, 'Unable to load invitation link'))}</p><Button variant='link' onClick={() => void affiliate.refetch()}>{t('Retry')}</Button></div>}
     </InvitationRewards>}

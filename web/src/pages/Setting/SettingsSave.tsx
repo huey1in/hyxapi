@@ -53,7 +53,6 @@ export default function SettingsSave({
             rp_id: value('passkey.rp_id'),
             legacy_rp_ids: value('passkey.legacy_rp_ids'),
             origins: value('passkey.origins'),
-            server_address: value('ServerAddress'),
           };
           if (!confirmation) {
             const { data } = await API.put(
@@ -82,7 +81,7 @@ export default function SettingsSave({
                 .filter((key: string) => domainKeys.includes(key))
                 .map((key: string) => [key, changes[key]]),
             ),
-            { 'passkey.rp_id': saved.rp_id, 'passkey.legacy_rp_ids': saved.legacy_rp_ids, 'passkey.origins': saved.origins, ServerAddress: body.server_address },
+            { 'passkey.rp_id': saved.rp_id, 'passkey.legacy_rp_ids': saved.legacy_rp_ids, 'passkey.origins': saved.origins },
           );
         }
         const policy = Object.fromEntries(

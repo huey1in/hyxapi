@@ -22,23 +22,17 @@ func TestRegistrationInvitationRewardsRespectFeatureSwitch(t *testing.T) {
 
 	for _, flow := range []string{"password", "oauth"} {
 		for _, fixture := range []struct {
-			name      string
-			enabled   bool
-			confirmed bool
-			version   string
-			credited  bool
+			name     string
+			enabled  bool
+			credited bool
 		}{
-			{"default disabled", false, true, operation_setting.CurrentComplianceTermsVersion, false},
-			{"enabled", true, true, operation_setting.CurrentComplianceTermsVersion, true},
-			{"unconfirmed", true, false, operation_setting.CurrentComplianceTermsVersion, false},
-			{"outdated terms", true, true, "outdated", false},
+			{"default disabled", false, false},
+			{"enabled", true, true},
 		} {
 			t.Run(flow+"/"+fixture.name, func(t *testing.T) {
 				truncateTables(t)
 				*payment = operation_setting.PaymentSetting{
 					InvitationRewardsEnabled: fixture.enabled,
-					ComplianceConfirmed:      fixture.confirmed,
-					ComplianceTermsVersion:   fixture.version,
 				}
 				inviter := &User{Username: "reward-inviter", Quota: 1000, AffQuota: 200, AffHistoryQuota: 300, AffCount: 3}
 				require.NoError(t, DB.Create(inviter).Error)

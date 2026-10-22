@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { paymentInfoSchema, paymentMethods, topUpRequest, checkoutDestination, safePaymentURL, subscriptionMethods } from './payment-core.ts';
 
-const info = { payment_compliance_confirmed: true, enable_online_topup: true, pay_methods: [{ type: 'alipay' }, { type: 'stripe' }, { type: 'alipay' }], min_topup: 2, enable_stripe_topup: true, stripe_min_topup: 1 };
+const info = { enable_online_topup: true, pay_methods: [{ type: 'alipay' }, { type: 'stripe' }, { type: 'alipay' }], min_topup: 2, enable_stripe_topup: true, stripe_min_topup: 1 };
 
 test('wallet invitation rewards require an explicit boolean opt-in', () => {
   const config = { ...info, quota_per_unit: 500000 };
@@ -11,8 +11,9 @@ test('wallet invitation rewards require an explicit boolean opt-in', () => {
   assert.equal(paymentInfoSchema.safeParse({ ...config, enable_invitation_rewards: 'true' }).success, false);
 });
 
-test('only enabled, confirmed providers produce selectable methods', () => {
-  assert.deepEqual(paymentMethods({ ...info, payment_compliance_confirmed: false }), []);
+test('only enabled providers produce selectable methods', () => {
+  assert.deepEqual(paymentMethods(null), []);
+  assert.deepEqual(paymentMethods({}), []);
   assert.deepEqual(paymentMethods(info).map((m) => m.id), ['epay:alipay', 'stripe']);
   assert.equal(paymentMethods({ ...info, enable_online_topup: false })[0].provider, 'stripe');
 });
@@ -51,7 +52,7 @@ test('checkout URLs and form fields reject active content and malformed results'
 });
 
 test('subscription payment choices respect per-plan IDs and disabled balance without requiring topup products', () => {
-  const config = { payment_compliance_confirmed: true, enable_stripe_subscription: true, enable_creem_subscription: true, enable_waffo_pancake_subscription: true };
+  const config = { enable_stripe_subscription: true, enable_creem_subscription: true, enable_waffo_pancake_subscription: true };
   const plan = { stripe_price_id: 'price_1', creem_product_id: 'prod_1', waffo_pancake_product_id: 'p1', allow_balance_pay: false };
   assert.deepEqual(subscriptionMethods(plan, config).map((m) => m.provider), ['stripe', 'creem', 'waffo_pancake']);
   assert.deepEqual(subscriptionMethods({}, config).map((m) => m.provider), ['balance']);

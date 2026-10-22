@@ -7,14 +7,7 @@ import (
 	"github.com/QuantumNous/new-api/setting/operation_setting"
 )
 
-func isPaymentComplianceConfirmed() bool {
-	return operation_setting.IsPaymentComplianceConfirmed()
-}
-
 func isStripeTopUpEnabled() bool {
-	if !isPaymentComplianceConfirmed() {
-		return false
-	}
 	return strings.TrimSpace(setting.StripeApiSecret) != "" &&
 		strings.TrimSpace(setting.StripeWebhookSecret) != "" &&
 		strings.TrimSpace(setting.StripePriceId) != ""
@@ -25,13 +18,10 @@ func isStripeWebhookConfigured() bool {
 }
 
 func isStripeWebhookEnabled() bool {
-	return isPaymentComplianceConfirmed() && strings.TrimSpace(setting.StripeApiSecret) != "" && isStripeWebhookConfigured()
+	return strings.TrimSpace(setting.StripeApiSecret) != "" && isStripeWebhookConfigured()
 }
 
 func isCreemTopUpEnabled() bool {
-	if !isPaymentComplianceConfirmed() {
-		return false
-	}
 	products := strings.TrimSpace(setting.CreemProducts)
 	return strings.TrimSpace(setting.CreemApiKey) != "" &&
 		products != "" &&
@@ -43,13 +33,10 @@ func isCreemWebhookConfigured() bool {
 }
 
 func isCreemWebhookEnabled() bool {
-	return isPaymentComplianceConfirmed() && strings.TrimSpace(setting.CreemApiKey) != "" && isCreemWebhookConfigured()
+	return strings.TrimSpace(setting.CreemApiKey) != "" && isCreemWebhookConfigured()
 }
 
 func isWaffoTopUpEnabled() bool {
-	if !isPaymentComplianceConfirmed() {
-		return false
-	}
 	if !setting.WaffoEnabled {
 		return false
 	}
@@ -74,9 +61,6 @@ func isWaffoWebhookEnabled() bool {
 }
 
 func isWaffoPancakeTopUpEnabled() bool {
-	if !isPaymentComplianceConfirmed() {
-		return false
-	}
 	// Presence-of-credentials = enabled. Webhook public keys ship inside
 	// the SDK; mode (test/prod) is read from each event.
 	return strings.TrimSpace(setting.WaffoPancakeMerchantID) != "" &&
@@ -85,7 +69,7 @@ func isWaffoPancakeTopUpEnabled() bool {
 }
 
 func isWaffoPancakeWebhookConfigured() bool {
-	return isPaymentComplianceConfirmed() && strings.TrimSpace(setting.WaffoPancakeMerchantID) != "" && strings.TrimSpace(setting.WaffoPancakePrivateKey) != ""
+	return strings.TrimSpace(setting.WaffoPancakeMerchantID) != "" && strings.TrimSpace(setting.WaffoPancakePrivateKey) != ""
 }
 
 func isWaffoPancakeWebhookEnabled() bool {
@@ -93,9 +77,6 @@ func isWaffoPancakeWebhookEnabled() bool {
 }
 
 func isEpayTopUpEnabled() bool {
-	if !isPaymentComplianceConfirmed() {
-		return false
-	}
 	return operation_setting.EpayEnabled && isEpayWebhookConfigured() && len(operation_setting.PayMethods) > 0
 }
 

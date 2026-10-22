@@ -48,7 +48,6 @@ var auditRouteActions = map[string]string{
 	"DELETE /api/user/:id/oauth/bindings/:provider_id": "user.oauth_unbind",
 
 	// 系统设置（root）
-	"POST /api/option/payment_compliance":       "option.payment_compliance",
 	"POST /api/option/rest_model_ratio":         "option.reset_ratio",
 	"DELETE /api/option/channel_affinity_cache": "option.clear_affinity_cache",
 

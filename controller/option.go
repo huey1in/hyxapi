@@ -26,7 +26,7 @@ func GetOptions(c *gin.Context) {
 	}
 	common.OptionMapRWMutex.Lock()
 	for k, v := range common.OptionMap {
-		if model.IsRemovedModelPricingOption(k) || model.IsRemovedFeatureOption(k) {
+		if k == "ServerAddress" || model.IsRemovedModelPricingOption(k) || model.IsRemovedFeatureOption(k) {
 			continue
 		}
 		value := common.Interface2String(v)
@@ -86,6 +86,11 @@ func UpdateOption(c *gin.Context) {
 			"success": false,
 			"message": "无效的参数",
 		})
+		return
+	}
+	// The canonical site address is detected and persisted by initial setup.
+	if option.Key == "ServerAddress" {
+		common.ApiErrorStatus(c, http.StatusBadRequest, common.NewMessage("Invalid parameters"))
 		return
 	}
 	switch option.Value.(type) {
@@ -283,7 +288,6 @@ func UpdatePasskeyDomains(c *gin.Context) {
 		RPID                *string `json:"rp_id"`
 		LegacyRPIDs         *string `json:"legacy_rp_ids"`
 		Origins             *string `json:"origins"`
-		ServerAddress       *string `json:"server_address"`
 		Preview             bool    `json:"preview"`
 		RemovalConfirmation string  `json:"removal_confirmation"`
 	}
@@ -293,9 +297,6 @@ func UpdatePasskeyDomains(c *gin.Context) {
 	}
 	values := map[string]string{
 		"passkey.rp_id": *request.RPID, "passkey.legacy_rp_ids": *request.LegacyRPIDs, "passkey.origins": *request.Origins,
-	}
-	if request.ServerAddress != nil {
-		values["ServerAddress"] = *request.ServerAddress
 	}
 	change, err := model.UpdatePasskeyDomainOptions(values, request.Preview, request.RemovalConfirmation)
 	if err != nil {

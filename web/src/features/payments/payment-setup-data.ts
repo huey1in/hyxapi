@@ -23,12 +23,6 @@ export const pancakeCatalogSchema = z.object({
     .transform((value) => value ?? []),
 });
 export const pancakeBindingSchema = z.object({ store_id: id, product_id: id });
-export const complianceConfirmationSchema = z.object({
-  confirmed: z.literal(true),
-  terms_version: id,
-  confirmed_at: z.number().int().positive().safe(),
-  confirmed_by: z.number().int().positive().safe(),
-});
 export type PancakeStore = z.output<
   typeof pancakeCatalogSchema
 >['stores'][number];

@@ -51,10 +51,10 @@ function TargetPermissions({ target, identity, catalog }: { target: Administrato
     </div>
     {details.error ? <div role='alert' className='space-y-3 text-sm text-ui-text-2'>
       <p>{t(apiErrorMessage(details.error, 'Unable to load administrator permissions'))}</p><Button variant='toggle' onClick={() => void details.refetch()}>{t('Retry')}</Button>
-    </div> : <LayoutSkeleton loading={details.isPending} className='[&>div]:space-y-5'>{catalog.resources.map((resource) => <div key={resource.resource} className='min-w-0 rounded-[26px] border border-ui-border px-[22px] py-5'>
+    </div> : <LayoutSkeleton loading={details.isPending} className='[&>div]:divide-y [&>div]:divide-ui-border'>{catalog.resources.map((resource) => <div key={resource.resource} className='min-w-0 py-7 first:pt-0 last:pb-0'>
       <h4 className='mb-1 text-[15px] font-semibold text-ui-text'>{t(resource.label_key)}</h4>
       <p className='mb-4 text-xs leading-relaxed text-ui-text-3'>{t('Changes override this administrator’s role defaults. Reset restores the defaults from the permission catalog.')}</p>
-      <div className='space-y-3'>{resource.actions.map((action) => <div key={action.action} className='flex items-center justify-between gap-4 rounded-xl border border-ui-border p-3'>
+      <div className='divide-y divide-ui-border'>{resource.actions.map((action) => <div key={action.action} className='flex items-center justify-between gap-4 py-3'>
         <div className='min-w-0'>
           <div className='flex flex-wrap items-center gap-2 text-sm text-ui-text'>
             <span>{t(action.label_key)}</span>

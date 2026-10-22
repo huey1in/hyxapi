@@ -46,7 +46,7 @@ import {
   JSON_ARRAY_TAG_KEYS,
   NEWLINE_TAG_KEYS,
   JSON_KEYS,
-  RAW_JSON_KEYS,
+  STRUCTURED_KEYS,
   POLICY_KEYS,
   LIST_EDITOR_KEYS,
   BOOL_KEYS,
@@ -66,10 +66,9 @@ import {
 import type { Settings } from './setting-data';
 import {
   SettingsDraftContext,
-  RatioEditor,
   GroupRatioEditor,
   PolicyEditor,
-  RawJSONEditor,
+  ConfigEditor,
   AffinityRulesEditor,
   ListEditor,
   EmailTemplateEditor,
@@ -249,7 +248,7 @@ function SettingPageContent() {
       WIDE_KEYS.has(key) ||
       TAG_KEYS.has(key) ||
       JSON_KEYS.has(key) ||
-      RAW_JSON_KEYS.has(key) ||
+      STRUCTURED_KEYS.has(key) ||
       POLICY_KEYS.has(key) ||
       LIST_EDITOR_KEYS.has(key);
     const numeric =
@@ -298,26 +297,15 @@ function SettingPageContent() {
               onChange={(value) => set(key, String(value))}
             />
           ) : JSON_KEYS.has(key) ? (
-            <RatioEditor
-              configKey={key}
-              value={val(key)}
-              onChange={(value) => set(key, value)}
-              numericValue={
-                ![
-                  'UserUsableGroups',
-                  'gemini.safety_settings',
-                  'gemini.version_settings',
-                ].includes(key)
-              }
-            />
-          ) : RAW_JSON_KEYS.has(key) ? (
+            <ConfigEditor configKey={key} value={val(key)} onChange={(value) => set(key, value)} />
+          ) : STRUCTURED_KEYS.has(key) ? (
             key === 'channel_affinity_setting.rules' ? (
               <AffinityRulesEditor
                 value={val(key)}
                 onChange={(value) => set(key, value)}
               />
             ) : (
-              <RawJSONEditor
+              <ConfigEditor
                 configKey={key}
                 value={val(key)}
                 onChange={(value) => set(key, value)}
@@ -336,10 +324,11 @@ function SettingPageContent() {
             />
           ) : TAG_KEYS.has(key) ? (
             tags === null ? (
-              <RawJSONEditor
+              <ConfigEditor
                 configKey={key}
                 value={val(key)}
                 schema={z.array(z.string())}
+                shape={{ type: 'array', entry: { type: 'string' } }}
                 onChange={(value) => set(key, value)}
               />
             ) : (
@@ -437,7 +426,7 @@ function SettingPageContent() {
     return (
       <section
         key={title}
-        className="min-w-0 rounded-[26px] border border-ui-border px-[22px] py-5"
+        className="min-w-0"
       >
         {component !== 'ModelPricingEditor' && (
           <h2 className="mb-4 text-[15px] font-semibold text-ui-text">
@@ -529,7 +518,7 @@ function SettingPageContent() {
         {policyError && !loading && !loadError && (
           <div
             role="alert"
-            className="space-y-2 rounded-2xl border border-ui-border p-4"
+            className="space-y-2 text-sm text-ui-text-2"
           >
             <p className="text-sm text-ui-text-2">{t(policyError)}</p>
             <Button
@@ -550,22 +539,24 @@ function SettingPageContent() {
           </div>
         ) : (
           <LayoutSkeleton loading={loading}>
-            <fieldset key={epoch} disabled={saving || loading} className="min-w-0 space-y-5">
-              {active === 'plugins' ? (
-                <>
-                  {renderSection('任务插件', ['TaskPluginEnabled'])}
-                  <TaskPluginManager />
-                </>
-              ) : sections ? (
-                sections.map((section) =>
-                  renderSection(section.title, section.keys, section),
-                )
-              ) : (
-                renderSection(
-                  TABS.find((tab) => tab.key === active)?.label || active,
-                  TAB_KEYS[active] || [],
-                )
-              )}
+            <fieldset key={epoch} data-settings-panel disabled={saving || loading} className="min-w-0 rounded-[26px] border border-ui-border px-4 sm:px-6">
+              <div className="min-w-0 divide-y divide-ui-border [&>*]:py-7">
+                {active === 'plugins' ? (
+                  <>
+                    {renderSection('任务插件', ['TaskPluginEnabled'])}
+                    <TaskPluginManager />
+                  </>
+                ) : sections ? (
+                  sections.map((section) =>
+                    renderSection(section.title, section.keys, section),
+                  )
+                ) : (
+                  renderSection(
+                    TABS.find((tab) => tab.key === active)?.label || active,
+                    TAB_KEYS[active] || [],
+                  )
+                )}
+              </div>
             </fieldset>
           </LayoutSkeleton>
         )}

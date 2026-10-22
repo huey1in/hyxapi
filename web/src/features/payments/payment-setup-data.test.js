@@ -6,7 +6,6 @@ const {
   entry0: {
     pancakeCatalogSchema,
     pancakeBindingSchema,
-    complianceConfirmationSchema,
     parsePaymentSetupReply,
     PancakeOrphanStoreError,
     validPaymentSetting,
@@ -14,7 +13,7 @@ const {
   },
 } = await loadTestModules(['./src/features/payments/payment-setup-data.ts']);
 
-test('Pancake configuration rejects malformed catalog, binding and compliance acknowledgements', () => {
+test('Pancake configuration rejects malformed catalog and binding acknowledgements', () => {
   assert.deepEqual(
     parsePaymentSetupReply(
       { message: 'success', data: { stores: null } },
@@ -42,12 +41,6 @@ test('Pancake configuration rejects malformed catalog, binding and compliance ac
         pancakeBindingSchema,
       ),
     );
-  assert.throws(() =>
-    parsePaymentSetupReply(
-      { success: true, data: { confirmed: false } },
-      complianceConfirmationSchema,
-    ),
-  );
 });
 test('an orphan store is retained only after validating the explicit failure response', () => {
   assert.throws(
@@ -120,12 +113,12 @@ test('provider confirmation clears only acknowledged settings and preserves unre
   assert.deepEqual(
     remainingSettingDrafts(
       {
-        ServerAddress: 'new',
+        Notice: 'new',
         WaffoPancakeStoreID: 'newer',
         WaffoPancakeProductID: 'saved',
       },
       { WaffoPancakeStoreID: 'old', WaffoPancakeProductID: 'saved' },
     ),
-    { ServerAddress: 'new', WaffoPancakeStoreID: 'newer' },
+    { Notice: 'new', WaffoPancakeStoreID: 'newer' },
   );
 });

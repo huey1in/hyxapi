@@ -5,13 +5,12 @@ const currency = z.string().regex(/^[A-Z]{3}$/);
 const positiveNumber = z.number().finite().positive();
 const minimum = z.number().finite().nonnegative();
 export const paymentInfoSchema = z.object({
-  payment_compliance_confirmed: z.boolean(),
   enable_invitation_rewards: z.boolean().default(false),
   enable_online_topup: z.boolean().optional(), enable_alipay_topup: z.boolean().optional(),
   enable_stripe_topup: z.boolean().optional(), enable_creem_topup: z.boolean().optional(),
   enable_waffo_topup: z.boolean().optional(), enable_waffo_pancake_topup: z.boolean().optional(),
   enable_stripe_subscription: z.boolean().optional(), enable_creem_subscription: z.boolean().optional(),
-  enable_waffo_pancake_subscription: z.boolean().optional(), enable_redemption: z.boolean().optional(),
+  enable_waffo_pancake_subscription: z.boolean().optional(),
   min_topup: minimum.optional(), alipay_min_topup: minimum.optional(),
   stripe_min_topup: minimum.optional(), waffo_min_topup: minimum.optional(),
   waffo_pancake_min_topup: minimum.optional(), waffo_currency: currency.optional(),
@@ -45,7 +44,7 @@ export type PaymentMethod = {
 const reserved = new Set(['stripe', 'creem', 'waffo', 'waffo_pancake', 'balance']);
 
 export function paymentMethods(info: Info | null): PaymentMethod[] {
-  if (!info?.payment_compliance_confirmed) return [];
+  if (!info) return [];
   const methods: PaymentMethod[] = [];
   if (info.enable_online_topup) {
     for (const method of array(info.pay_methods)) {
@@ -134,7 +133,6 @@ export function navigateCheckout(response: unknown, popup: Window, origin: strin
 }
 
 export function subscriptionMethods(plan: { allow_balance_pay?: boolean | null; stripe_price_id?: string; creem_product_id?: string; waffo_pancake_product_id?: string }, info: Info): PaymentMethod[] {
-  if (!info.payment_compliance_confirmed) return [];
   const result: PaymentMethod[] = [];
   const entry = (provider: PaymentMethod['provider'], name: string, type?: string): PaymentMethod => ({ id: type ? `${provider}:${type}` : provider, provider, name, type, min: 1, currency: provider === 'epay' ? 'CNY' : 'USD' });
   if (plan.allow_balance_pay !== false) result.push(entry('balance', 'Account balance'));

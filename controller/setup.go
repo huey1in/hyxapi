@@ -17,6 +17,7 @@ type SetupRequest struct {
 	Username           string `json:"username"`
 	Password           string `json:"password"`
 	ConfirmPassword    string `json:"confirmPassword"`
+	ServerAddress      string `json:"server_address"`
 	SelfUseModeEnabled bool   `json:"SelfUseModeEnabled"`
 	DemoSiteEnabled    bool   `json:"DemoSiteEnabled"`
 }
@@ -58,7 +59,16 @@ func PostSetup(c *gin.Context) {
 		common.ApiErrorT(c, "Invalid parameters")
 		return
 	}
-	if err := model.InitializeSetup(c.Request.Context(), req.Username, req.Password, req.ConfirmPassword, req.SelfUseModeEnabled, req.DemoSiteEnabled); err != nil {
+	if req.ServerAddress == "" {
+		// Older setup clients do not send the browser origin. Avoid trusting
+		// forwarded headers when falling back to the direct request address.
+		scheme := "http"
+		if c.Request.TLS != nil {
+			scheme = "https"
+		}
+		req.ServerAddress = scheme + "://" + c.Request.Host
+	}
+	if err := model.InitializeSetup(c.Request.Context(), req.Username, req.Password, req.ConfirmPassword, req.SelfUseModeEnabled, req.DemoSiteEnabled, req.ServerAddress); err != nil {
 		common.ApiErrorT(c, err.Error())
 		return
 	}
