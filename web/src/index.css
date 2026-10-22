@@ -545,8 +545,10 @@ input[type='number'] {
 .token-management-page { flex:1; min-height:0; gap:20px; }
 .token-management-page > .console-page-header,.token-page-toolbar,.token-page-pagination { flex-shrink:0; }
 .token-page-toolbar { display:flex; align-items:center; justify-content:flex-end; }
-/* Reserve one header and ten compact rows, shrinking only in short viewports. */
-.token-management-page .token-key-list { flex:0 1 calc(44px + 10 * 49px); min-height:0; }
+/* Keep a compact minimum table height with pagination below it. */
+.token-management-page .token-key-list { flex:0 0 auto; }
+.api-key-table { --api-key-table-height:400px; container-type:inline-size; min-height:var(--api-key-table-height); }
+.api-key-table .api-key-empty-state { position:sticky; left:12px; display:flex; align-items:center; justify-content:center; width:calc(100cqw - 24px); min-height:calc(var(--api-key-table-height) - 64px); }
 .api-key-table :is(th,td) { font-size:14px; line-height:20px; }
 .mobile-table-card { min-width:0; border:1px solid var(--ui-border); border-radius:16px; background:var(--page-bg); padding:16px; }
 .mobile-table-field { display:grid; grid-template-columns:minmax(0,0.8fr) minmax(0,1.2fr); align-items:start; gap:12px; }
@@ -573,10 +575,11 @@ input[type='number'] {
   .logs-table .mobile-table-value > :is(.flex,.inline-flex) { justify-content:flex-start; }
   .logs-table .mobile-table-card > .border-t { margin-top:8px; padding-top:8px; }
 }
-@media (max-width:767px) { .token-management-page .token-key-list { flex:0 0 auto; min-height:auto; } }
+@media (max-width:767px) {
+  .api-key-table { --api-key-table-height:320px; }
+  .api-key-table .api-key-empty-state { position:static; width:auto; min-height:calc(var(--api-key-table-height) - 34px); }
+}
 .token-management-page .token-key-list tbody tr { height:49px; }
-.token-management-page .token-key-list > :not(:last-child) { flex-shrink:0; }
-.token-management-page .token-key-list > :last-child { min-height:0; }
 .pricing-model-grid { grid-template-columns:repeat(auto-fill,minmax(min(100%,260px),1fr)); gap:12px; margin-bottom:16px; }
 .dashboard-primary-stats { display:grid; grid-template-columns:repeat(2, minmax(0, 1fr)); gap:12px; }
 .dashboard-primary-card { display:flex; align-items:center; justify-content:space-between; min-width:0; padding:26px 20px; border:1px solid var(--ui-border); border-radius:26px; }

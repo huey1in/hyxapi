@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next';
-import { Copy, Pencil, Power, Trash2 } from 'lucide-react';
-import { IconButton, Table } from '../../components/ui';
+import { Copy, PackageOpen, Pencil, Power, Trash2 } from 'lucide-react';
+import { EmptyState, IconButton, Table } from '../../components/ui';
 import type { TableColumn } from '../../components/ui/layout/Table';
 import { timestamp2string } from '../../helpers';
 import { TOKEN_PAGE_SIZE } from './token-management';
@@ -35,5 +35,7 @@ export default function TokenTable({ rows = [], loading = false, disabled = fals
   ];
 
   return <Table className='api-key-table' columns={columns} rows={rows} rowKey='id' size='sm' tableLayout='fixed' minWidth={848}
-    loading={loading} skeletonRows={TOKEN_PAGE_SIZE} emptyText={t('No API keys')} rowProps={(row) => ({ 'aria-label': row.name, 'data-token-id': row.id })} />;
+    loading={loading} skeletonRows={TOKEN_PAGE_SIZE}
+    emptyText={<div className='api-key-empty-state'><EmptyState icon={PackageOpen} iconVariant='plain' title={t('No API keys')} /></div>}
+    rowProps={(row) => ({ 'aria-label': row.name, 'data-token-id': row.id })} />;
 }
