@@ -28,7 +28,7 @@ func TestLogFeedHandlersKeepActorScopeRoleProjectionAndExportAllSources(t *testi
 				c, _ := gin.CreateTestContext(response)
 				c.Set("id", user.Id)
 				c.Set("role", role)
-				c.Request = httptest.NewRequest(http.MethodGet, "/api/log/feed?user_id=999&username=foreign&channel=999", nil)
+				c.Request = httptest.NewRequest(http.MethodGet, "/api/log/feed?user_id=999&username=foreign", nil)
 				// All-scope filters are real filters, whereas self never trusts these.
 				if all {
 					c.Request = httptest.NewRequest(http.MethodGet, "/api/log/feed", nil)
@@ -74,7 +74,7 @@ func TestLogFeedHandlersKeepActorScopeRoleProjectionAndExportAllSources(t *testi
 }
 
 func TestLogFeedRejectsMalformedFiltersBeforeQuerying(t *testing.T) {
-	for _, query := range []string{"source=other", "sources=tasks,other", "sources=usage,usage", "start_timestamp=bad", "start_timestamp=2&end_timestamp=1", "end_timestamp=-1", "type=9", "channel=-1", "size=0", "cursor=bad"} {
+	for _, query := range []string{"source=other", "sources=tasks,other", "sources=usage,usage", "start_timestamp=bad", "start_timestamp=2&end_timestamp=1", "end_timestamp=-1", "type=9", "size=0", "cursor=bad"} {
 		response := httptest.NewRecorder()
 		c, _ := gin.CreateTestContext(response)
 		c.Set("id", 1)

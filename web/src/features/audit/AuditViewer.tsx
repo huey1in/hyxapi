@@ -7,6 +7,7 @@ import { API } from '../../helpers';
 import { Button, IconButton, Input, Pagination, Select, Table } from '../../components/ui';
 import type { TableColumn } from '../../components/ui/layout/Table';
 import useIsMobile from '../../hooks/useIsMobile';
+import { useLiveSearch } from '../../hooks/useLiveSearch';
 import type { ApiEnvelope } from '../../types/api';
 import { apiErrorMessage } from '../../lib/api-error';
 import { accessAuditParams, auditPageSchema, auditParams, emptyAuditFilters, formatAuditDate } from './types';
@@ -44,10 +45,11 @@ export default function AuditViewer({ identity, scope, onDenied, accessOnly = fa
   const accessDenied = scope === 'all' && isAxiosError(query.error) && query.error.response?.status === 403;
   useEffect(() => { if (accessDenied) onDenied?.(); }, [accessDenied, onDenied]);
   const set = <K extends keyof AuditFilters>(key: K, value: AuditFilters[K]) => setDraft((previous) => ({ ...previous, [key]: value }));
-  const search = () => {
-    try { paramsFor(draft, 1); setValidationError(''); setSelected(null); setPage(1); setFilters({ ...draft }); setAttempt((value) => value + 1); }
+  const applyFilters = () => {
+    try { paramsFor(draft, 1); setValidationError(''); if (JSON.stringify(draft) === JSON.stringify(filters)) return; setSelected(null); setPage(1); setFilters({ ...draft }); }
     catch (error) { setValidationError(apiErrorMessage(error, 'Invalid audit filters')); }
   };
+  useLiveSearch(draft, applyFilters);
   const reset = () => { setTokenScope(defaultTokenScope); setDraft(emptyAuditFilters()); setFilters(emptyAuditFilters()); setValidationError(''); setSelected(null); setPage(1); setAttempt((value) => value + 1); };
   const refresh = () => { setSelected(null); setAttempt((value) => value + 1); };
   const rows = query.isError ? [] : query.data?.items ?? [];
@@ -80,7 +82,7 @@ export default function AuditViewer({ identity, scope, onDenied, accessOnly = fa
       <IconButton icon={Filter} title={t('Filters')} aria-label={t('Filters')} selected={showFilters} onClick={() => setShowFilters((value) => !value)} />
       <IconButton icon={RefreshCw} title={t('Refresh')} aria-label={t('Refresh')} disabled={query.isFetching} onClick={refresh} />
     </div>
-    {showFilters && <form onSubmit={(event) => { event.preventDefault(); if (!query.isFetching) search(); }} className='p-4 border border-ui-border rounded-2xl space-y-3'>
+    {showFilters && <div className='p-4 border border-ui-border rounded-2xl space-y-3'>
       <div className='grid grid-cols-1 sm:grid-cols-2 gap-3'>
         <label className='block space-y-1 text-xs text-ui-text-3'><span>{t('Result')}</span><Select width='full' aria-label={t('Result')} value={draft.success} onChange={(value) => set('success', value)} options={[{ value: '', label: t('All results') }, { value: 'true', label: t('Success') }, { value: 'false', label: t('Failed') }]} /></label>
         {!accessOnly && <label className='block space-y-1 text-xs text-ui-text-3'><span>{t('Category')}</span><Select width='full' aria-label={t('Category')} value={draft.category} onChange={(value) => set('category', value)} options={[{ value: '', label: t('All categories') }, { value: 'login', label: t('Login') }, { value: 'security', label: t('Account security') }, { value: 'operation', label: t('Operation audit') }, { value: 'access_token', label: t('Access Token') }]} /></label>}
@@ -89,8 +91,8 @@ export default function AuditViewer({ identity, scope, onDenied, accessOnly = fa
         {scope === 'all' && input('username', 'Username')}
       </div>
       {validationError && <p role='alert' className='text-sm text-ui-danger'>{t(validationError)}</p>}
-      <div className='flex justify-end gap-2'><Button variant='toggle' onClick={reset} disabled={query.isFetching}>{t('Reset')}</Button><Button type='submit' loading={query.isFetching}>{t('Search')}</Button></div>
-    </form>}
+      <div className='flex justify-end gap-2'><Button variant='toggle' onClick={reset}>{t('Reset')}</Button></div>
+    </div>}
     {error && <div role='alert' className='text-sm text-ui-text-2 flex items-center gap-3'><span>{t(error)}</span><Button variant='link' onClick={refresh}>{t('Retry')}</Button></div>}
     {<>
       <Table loading={query.isPending && canQuery} columns={columns} rows={rows} rowKey='event_id' size={isMobile ? 'sm' : 'md'} emptyIcon={ShieldCheck} emptyText={t(query.isError ? 'Failed to load audit records' : 'No audit records')} />

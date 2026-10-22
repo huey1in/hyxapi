@@ -1647,7 +1647,6 @@
     "Some legacy log details could not be read.": "部分历史日志详情无法读取。",
     "Unable to load logs": "无法加载日志",
     "Invalid time range": "时间范围无效",
-    "Channel ID must be a positive integer": "渠道 ID 必须是正整数",
     "Log export did not finish": "日志导出未完成",
     "Advanced billing · {{model}}": "高级计费 · {{model}}",
     "Restore upstream defaults": "恢复上游默认",

@@ -5,11 +5,12 @@ import (
 
 	"github.com/QuantumNous/new-api/common"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 // LogFilter is shared by paginated searches and keyset exports.
 type LogFilter struct {
-	Type, Channel, TokenID                                              int
+	Type, TokenID                                                       int
 	StartTimestamp, EndTimestamp                                        int64
 	ModelName, Username, TokenName, Group, RequestId, UpstreamRequestId string
 }
@@ -45,10 +46,7 @@ func buildLogQuery(f LogFilter, userID int) (*gorm.DB, error) {
 		}
 	}
 	if f.Group != "" {
-		q = q.Where("logs."+logGroupCol+" = ?", f.Group)
-	}
-	if f.Channel != 0 {
-		q = q.Where("logs.channel_id = ?", f.Channel)
+		q = q.Where(clause.Eq{Column: clause.Column{Table: "logs", Name: "group"}, Value: f.Group})
 	}
 	if f.TokenID > 0 {
 		q = q.Where("logs.token_id = ?", f.TokenID)

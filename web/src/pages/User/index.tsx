@@ -11,6 +11,7 @@ import type { ApiEnvelope } from '../../types/api';
 import { canManageUser, userPageSchema, userErrorMessage } from './user-management';
 import type { ManagedUser, UserAction, UserFilters, UserSort } from './user-management';
 import { useOwnedOperation } from '../../hooks/useOwnedOperation';
+import { useLiveSearch } from '../../hooks/useLiveSearch';
 import UserEditModal from './UserEditModal';
 import UserQuotaDialog from './UserQuotaDialog';
 import UserBindings from './UserBindings';
@@ -38,7 +39,7 @@ function UsersWorkspace({ actor }: { actor: AuthUser | null }) {
     queryFn: async ({ signal }) => {
       const params = new URLSearchParams({ ...filters, p: String(page), page_size: String(pageSize), sort_by: sort, sort_order: order });
       const searching = Object.values(filters).some(Boolean);
-      const { data } = await API.get<ApiEnvelope<unknown>>(`/api/user/${searching ? 'search' : ''}?${params}`, { signal, skipErrorHandler: true });
+      const { data } = await API.get<ApiEnvelope<unknown>>(`/api/user/${searching ? 'search' : ''}?${params}`, { signal, skipErrorHandler: true, disableDuplicate: true });
       signal.throwIfAborted(); if (!data.success) throw new Error(data.message || 'Unable to load users'); return userPageSchema.parse(data.data);
     },
     retry: false, gcTime: 0, refetchOnWindowFocus: false,
@@ -50,6 +51,9 @@ function UsersWorkspace({ actor }: { actor: AuthUser | null }) {
   const refresh = () => client.invalidateQueries({ queryKey: ['managed-users', identity] });
   const saved = () => { setWindowState(null); void refresh(); };
   const filter = (key: keyof UserFilters, value: string) => { setPage(1); setFilters((current) => ({ ...current, [key]: value })); };
+  useLiveSearch(keyword.trim(), (value) => {
+    if (value !== filters.keyword) filter('keyword', value);
+  });
   const act = (user: ManagedUser, action: UserAction) => run(async (signal) => {
     const { data } = await API.post<ApiEnvelope<unknown>>('/api/user/manage', { id: user.id, action }, { signal, skipErrorHandler: true });
     signal.throwIfAborted(); if (!data.success) throw new Error(data.message || 'Unable to manage user'); showSuccess(t('User updated')); if (action === 'delete') setWindowState(null); await refresh();
@@ -84,10 +88,10 @@ function UsersWorkspace({ actor }: { actor: AuthUser | null }) {
   if (!actor || actor.role < 10) return null;
   return <PageShell title={t('User management')} actions={<Button icon={Plus} onClick={() => setWindowState({ kind: 'create' })}>{t('Create user')}</Button>}>
     <Card className='mb-4'>
-      <form className='flex flex-wrap gap-2' onSubmit={(event) => { event.preventDefault(); filter('keyword', keyword.trim()); }}>
-        <div className='min-w-48 flex-1'><Input aria-label={t('Search users')} placeholder={t('Search username, display name, email or ID')} value={keyword} onChange={setKeyword} /></div>
-        <Button type='submit' icon={Search} disabled={list.isFetching}>{t('Search')}</Button><Button type='button' variant='toggle' onClick={() => { setKeyword(''); setFilters(emptyFilters); setPage(1); }}>{t('Reset')}</Button><Button type='button' variant='toggle' disabled={list.isFetching} onClick={() => void refresh()}>{t('Refresh')}</Button>
-      </form>
+      <div className='flex flex-wrap gap-2'>
+        <div className='min-w-48 flex-1'><Input aria-label={t('Search users')} placeholder={t('Search username, display name, email or ID')} value={keyword} onChange={setKeyword} prefix={<Search size={15} />} clearable /></div>
+        <Button variant='toggle' onClick={() => { setKeyword(''); setFilters(emptyFilters); setPage(1); }}>{t('Reset')}</Button><Button variant='toggle' disabled={list.isFetching} onClick={() => void refresh()}>{t('Refresh')}</Button>
+      </div>
       <div className='mt-3 flex flex-wrap gap-3'>
         <Select aria-label={t('Filter by group')} value={filters.group} onChange={(value) => filter('group', value)} options={[{ value: '', label: t('All groups') }, ...[...new Set([...(groupList.data ?? []), filters.group])].filter(Boolean).map((value) => ({ value, label: value }))]} width={150} size={30} />
         <Select aria-label={t('Filter by role')} value={filters.role} onChange={(value) => filter('role', value)} options={[{ value: '', label: t('All roles') }, { value: '1', label: t('Regular user') }, { value: '10', label: t('Administrator') }, { value: '100', label: t('Super administrator') }]} width={150} size={30} />

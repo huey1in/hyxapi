@@ -7,6 +7,7 @@ import { API, copy } from '../../helpers';
 import { Button, ConfirmDialog, EmptyState, IconButton, Input, Modal, NumberInput, Pagination, Select, Tag, showError, showSuccess, ContentSkeleton } from '../../components/ui';
 import type { ApiEnvelope } from '../../types/api';
 import { useOwnedOperation } from '../../hooks/useOwnedOperation';
+import { useLiveSearch } from '../../hooks/useLiveSearch';
 import { apiErrorMessage } from '../../lib/api-error';
 import { readWalletData, walletRequestConfig } from '../../features/payments/wallet-query';
 import { codeGenerationDraft, subscriptionCodesSchema } from './plan-data';
@@ -26,6 +27,7 @@ export default function CodesDialog({ identity, plan, onClose, inline = false }:
   const { t, i18n } = useTranslation(); const { busy, run } = useOwnedOperation();
   const [count, setCount] = useState<number | ''>(1); const [expiry, setExpiry] = useState(''); const [badExpiry, setBadExpiry] = useState(false);
   const [search, setSearch] = useState(''); const [keyword, setKeyword] = useState(''); const [filter, setFilter] = useState('all'); const [page, setPage] = useState(1);
+  useLiveSearch(search.trim(), (value) => { setKeyword(value); setPage(1); });
   const [generated, setGenerated] = useState<SubscriptionCode[] | null>(null); const [deleting, setDeleting] = useState<SubscriptionCode | 'invalid' | null>(null);
   const query = useQuery({ queryKey: ['subscription-codes', identity, plan.id, keyword], gcTime: 0, retry: false, queryFn: ({ signal }) => readWalletData(`/api/subscription/admin/plans/${plan.id}/codes`, subscriptionCodesSchema, signal, { keyword }, 'Invalid subscription data; reload and try again.') });
   const now = Date.now() / 1000; const pageSize = 20;
@@ -55,10 +57,10 @@ export default function CodesDialog({ identity, plan, onClose, inline = false }:
       {!draft && <p role='alert' className='text-xs text-ui-danger'>{t('Choose a whole count from 1 to 200 and a future expiry, or leave expiry empty.')}</p>}
     </fieldset>
     <div className='mb-4 h-px bg-ui-divider' />
-    <form className='grid min-w-0 grid-cols-[1fr_auto] gap-2 sm:grid-cols-[1fr_auto_140px]' onSubmit={(event) => { event.preventDefault(); setKeyword(search.trim()); setPage(1); if (keyword === search.trim()) void query.refetch(); }}>
-      <Input aria-label={t('Search code prefix')} placeholder={t('Search code prefix')} value={search} onChange={setSearch} disabled={busy} /><Button variant='secondary' type='submit' disabled={busy}>{t('Search')}</Button>
-      <div className='col-span-2 min-w-0 sm:col-span-1'><Select width='full' aria-label={t('Code status')} value={filter} onChange={(value) => { setFilter(value); setPage(1); }} options={Object.entries(statusLabels).map(([value, label]) => ({ value, label: t(label) }))} /></div>
-    </form>
+    <div className='grid min-w-0 grid-cols-1 gap-2 sm:grid-cols-[minmax(0,1fr)_140px]'>
+      <Input aria-label={t('Search code prefix')} placeholder={t('Search code prefix')} value={search} onChange={setSearch} clearable disabled={busy} />
+      <div className='min-w-0'><Select width='full' aria-label={t('Code status')} value={filter} onChange={(value) => { setFilter(value); setPage(1); }} options={Object.entries(statusLabels).map(([value, label]) => ({ value, label: t(label) }))} /></div>
+    </div>
     <div className='flex flex-wrap justify-end gap-2'><Button size='sm' variant='link' disabled={busy} onClick={() => void query.refetch()}>{t('Refresh')}</Button><Button size='sm' variant='link' disabled={busy} onClick={() => setDeleting('invalid')}>{t('Delete invalid codes')}</Button></div>
     {query.isPending ? <ContentSkeleton variant='tokens'><div className='max-h-80 space-y-2 overflow-auto'>{[0, 1, 2, 3].map((index) => <div key={index} className='flex flex-wrap items-center justify-between gap-2 rounded-lg border border-ui-border p-2'><div className='min-w-0 flex-1 space-y-1'><Skeleton width='65%' height={16} /><Skeleton width='40%' height={16} /></div><Skeleton width={55} height={20} /><Skeleton width={28} height={28} /><Skeleton width={28} height={28} /></div>)}</div></ContentSkeleton> : query.isError ? <div role='alert' className='space-y-2 text-sm text-ui-danger'><p>{t(apiErrorMessage(query.error, 'Unable to load activation codes'))}</p><Button onClick={() => void query.refetch()}>{t('Retry')}</Button></div> : <>
       <div className='max-h-80 space-y-2 overflow-auto'>{!visible.length && <EmptyState icon={Ticket} padding='sm' title={t('No activation codes')} />}{visible.map((code) => <div key={code.id} className='flex flex-wrap items-center justify-between gap-2 rounded-lg border border-ui-border p-2'>

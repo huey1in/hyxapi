@@ -240,15 +240,6 @@ function StatusCards({ data, isMobile }: { data: StatusData; isMobile: boolean }
         </Section>
       )}
 
-      {/* S7: All-time counters */}
-      <Section title={t('All-time counters')}>
-        <div style={grid(3)}>
-          <StatMini label={t('Total requests')} value={renderNumber(rs?.total_requests || 0)} />
-          <StatMini label={t('Total tokens')} value={fmtTokens(rs?.total_tokens)} />
-          <StatMini label={t('Total cost')} value={renderQuota(rs?.total_quota || 0)} />
-        </div>
-      </Section>
-
     </div>
   );
 }

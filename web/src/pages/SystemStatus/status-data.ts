@@ -11,7 +11,7 @@ export const systemStatusSchema = z.object({
   runtime: z.object({ heap_alloc: count, heap_sys: count, heap_idle: count, heap_inuse: count, stack_inuse: count, num_gc: count, gc_pause_avg_us: count }),
   database: poolSchema, log_database: poolSchema,
   redis: z.object({ enabled: z.boolean(), total_conns: count.optional(), idle_conns: count.optional(), timeouts: count.optional(), db_size: count.optional() }),
-  request_stats: z.object({ today_requests: count, today_tokens: count, today_quota: amount, total_requests: count, total_tokens: count, total_quota: amount }),
+  request_stats: z.object({ today_requests: count, today_tokens: count, today_quota: amount }),
   request_health: z.object({ rpm: amount, total_requests: count, error_requests: count, success_rate: percent, avg_latency_seconds: amount }),
   disk_cache: z.object({ active_disk_files: count, disk_usage_bytes: count, active_memory_bufs: count, memory_usage_bytes: count, disk_max_bytes: count }),
   channel_affinity: z.object({ enabled: z.boolean(), cache_algo: z.string(), total: count, cache_capacity: count }),

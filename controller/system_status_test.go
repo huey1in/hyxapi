@@ -54,13 +54,7 @@ func TestSystemStatusKeepsRequestHealthWithoutChannelInventory(t *testing.T) {
 	require.EqualValues(t, 1, requestHealth.ErrorRequests)
 	require.Equal(t, float64(50), requestHealth.SuccessRate)
 	require.Equal(t, float64(2), requestHealth.AvgLatencySeconds)
-	var stats struct {
-		Requests int `json:"today_requests"`
-		Tokens   int `json:"today_tokens"`
-		Quota    int `json:"today_quota"`
-	}
+	var stats map[string]int
 	require.NoError(t, json.Unmarshal(response.Data["request_stats"], &stats))
-	require.Equal(t, 1, stats.Requests)
-	require.Equal(t, 13, stats.Tokens)
-	require.Equal(t, 25, stats.Quota)
+	require.Equal(t, map[string]int{"today_requests": 1, "today_tokens": 13, "today_quota": 25}, stats)
 }

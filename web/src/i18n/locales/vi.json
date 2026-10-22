@@ -1606,7 +1606,6 @@
     "Some legacy log details could not be read.": "Không thể đọc một số chi tiết nhật ký cũ.",
     "Unable to load logs": "Không thể tải nhật ký",
     "Invalid time range": "Khoảng thời gian không hợp lệ",
-    "Channel ID must be a positive integer": "ID kênh phải là số nguyên dương",
     "Log export did not finish": "Quá trình xuất nhật ký chưa hoàn tất",
     "Advanced billing · {{model}}": "Tính phí nâng cao · {{model}}",
     "Restore upstream defaults": "Khôi phục mặc định thượng nguồn",

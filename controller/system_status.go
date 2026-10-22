@@ -79,12 +79,11 @@ func GetSystemStatus(c *gin.Context) {
 		cancel()
 	}
 
-	// Request stats — today + all time
+	// Today's usage and recent request health
 	now := time.Now()
 	todayStart := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location()).Unix()
 	windowStart := now.Add(-5 * time.Minute).Unix()
-	todayStat, _ := model.SumUsedQuota(0, todayStart, 0, "", "", "", 0, "")
-	totalStat, _ := model.SumUsedQuota(0, 0, 0, "", "", "", 0, "")
+	todayStat, _ := model.SumUsedQuota(0, todayStart, 0, "", "", "", "")
 	requestHealth, _ := model.GetRequestHealthStat(windowStart, now.Unix())
 
 	// Channel affinity cache
@@ -162,9 +161,6 @@ func GetSystemStatus(c *gin.Context) {
 				"today_requests": todayStat.Requests,
 				"today_tokens":   todayStat.Tokens,
 				"today_quota":    todayStat.Quota,
-				"total_requests": totalStat.Requests,
-				"total_tokens":   totalStat.Tokens,
-				"total_quota":    totalStat.Quota,
 			},
 			"request_health": requestHealth,
 			"disk_cache": gin.H{

@@ -10,6 +10,7 @@ import { normalizeAdminPermissions } from '../../lib/admin-permissions';
 import { apiErrorMessage } from '../../lib/api-error';
 import { useAuthStore } from '../../stores/auth-store';
 import { useOwnedOperation } from '../../hooks/useOwnedOperation';
+import { useLiveSearch } from '../../hooks/useLiveSearch';
 import { userPageSchema } from '../User/user-management';
 import { permissionCatalogSchema, permissionDetailsSchema } from './permission-settings';
 import { LayoutSkeleton } from '../../components/ui/feedback/ContentSkeleton';
@@ -73,6 +74,7 @@ function PermissionWorkspace({ identity }: { identity: string }) {
   const [keyword, setKeyword] = useState('');
   const [page, setPage] = useState(1);
   const [target, setTarget] = useState<Administrator | null>(null);
+  useLiveSearch(input.trim(), (value) => { setPage(1); setKeyword(value); });
   const catalog = useQuery({
     queryKey: ['administrator-permission-catalog', identity], gcTime: 0, retry: false, refetchOnWindowFocus: false,
     queryFn: async ({ signal }) => {
@@ -97,11 +99,11 @@ function PermissionWorkspace({ identity }: { identity: string }) {
   const rows = users.error ? [] : users.data?.items ?? [];
   const choices: Administrator[] = target && !rows.some((user) => user.id === target.id) ? [target, ...rows] : rows;
   return <div className='min-w-0 space-y-5'>
-    <form className='flex flex-wrap items-end gap-3' onSubmit={(event) => { event.preventDefault(); setPage(1); setKeyword(input.trim()); }}>
+    <div className='flex flex-wrap items-end gap-3'>
       <label className='min-w-0 flex-1 space-y-1.5 text-xs text-ui-text-3'>{t('Search administrators')}
-        <Input aria-label={t('Search administrators')} value={input} onChange={setInput} width='full' />
-      </label><Button icon={Search} type='submit'>{t('Search')}</Button>
-    </form>
+        <Input aria-label={t('Search administrators')} value={input} onChange={setInput} prefix={<Search size={15} />} clearable width='full' />
+      </label>
+    </div>
     {users.error ? <div role='alert' className='space-y-2 text-sm'><p>{t(apiErrorMessage(users.error, 'Unable to load administrators'))}</p><Button variant='toggle' onClick={() => void users.refetch()}>{t('Retry')}</Button></div> : <>
       <label className='block min-w-0 space-y-1.5 text-xs text-ui-text-3'>{t('Select administrator')}
         <Select aria-label={t('Select administrator')} options={choices.map((user) => ({ value: String(user.id), label: `#${user.id} ${user.username}` }))} value={target ? String(target.id) : ''} disabled={users.isFetching} placeholder={t(users.isFetching ? 'Loading administrators' : 'Choose an administrator to edit permissions')} emptyText={t('No administrators found')} width='full' onChange={(value) => setTarget(choices.find((user) => String(user.id) === value) ?? null)} />

@@ -7,6 +7,7 @@ import { API, copy, renderQuota, timestamp2string } from '../../helpers';
 import { quotaToDisplayAmount, displayAmountToQuota } from '../../helpers/quota';
 import { useAuthStore } from '../../stores/auth-store';
 import { useOwnedOperation } from '../../hooks/useOwnedOperation';
+import { useLiveSearch } from '../../hooks/useLiveSearch';
 import { apiErrorMessage } from '../../lib/api-error';
 import { readWalletData, walletRequestConfig } from '../payments/wallet-query';
 import { Button, Checkbox, ConfirmDialog, IconButton, Input, Modal, NumberInput, Pagination, Select, Table, Tag, showError, showSuccess } from '../../components/ui';
@@ -68,6 +69,9 @@ export default function QuotaCodesTab() {
   useEffect(() => { if (data && page > Math.max(1, Math.ceil(data.total / PAGE_SIZE))) setPage(Math.max(1, Math.ceil(data.total / PAGE_SIZE))); }, [data, page]);
   const refresh = () => { setSelected([]); void query.refetch(); };
   const search = (next = filters) => { setApplied({ ...next, keyword: next.keyword.trim() }); setPage(1); setSelected([]); if (page === 1 && JSON.stringify(applied) === JSON.stringify({ ...next, keyword: next.keyword.trim() })) refresh(); };
+  useLiveSearch(filters.keyword.trim(), (keyword) => {
+    if (keyword !== applied.keyword) search({ ...filters, keyword });
+  });
   const copied = async (text: string) => { if (await copy(text)) showSuccess(t('Copied')); else showError(t('Unable to copy codes')); };
   const generate = () => {
     const payload = validDraft(draft); if (!payload) return;
@@ -102,18 +106,18 @@ export default function QuotaCodesTab() {
   ];
   return <>
     <fieldset disabled={busy} className='mb-4 min-w-0 space-y-3 rounded-2xl border border-ui-border p-4'><QuotaFields draft={draft} onChange={setDraft} includeCount /><Button loading={busy} disabled={!validDraft(draft)} onClick={generate}>{t('Create Redemption Code')}</Button></fieldset>
-    <form className='mb-3 flex flex-wrap items-center justify-between gap-3' onSubmit={(event) => { event.preventDefault(); search(); }}>
+    <div className='mb-3 flex flex-wrap items-center justify-between gap-3'>
       <div className='flex max-w-full flex-wrap items-center gap-2'>
-        <Input aria-label={t('Search ID, name or redemption code')} value={filters.keyword} onChange={(keyword) => setFilters({ ...filters, keyword })} placeholder={t('Search ID, name or redemption code')} width={200} />
+        <Input aria-label={t('Search ID, name or redemption code')} value={filters.keyword} onChange={(keyword) => setFilters({ ...filters, keyword })} placeholder={t('Search ID, name or redemption code')} clearable width={200} />
         <Select aria-label={t('Quota code status')} value={filters.status} options={statuses} onChange={(value) => { const next = { ...filters, status: value as CodeStatus }; setFilters(next); search(next); }} width={130} />
-        <Button variant='toggle' type='submit' disabled={busy}>{t('Search')}</Button><Button variant='toggle' disabled={busy} loading={query.isFetching} onClick={refresh}>{t('Refresh codes')}</Button>
+        <Button variant='toggle' disabled={busy} loading={query.isFetching} onClick={refresh}>{t('Refresh codes')}</Button>
         {(filters.keyword || filters.status) && <Button variant='toggle' onClick={() => { const next = { keyword: '', status: '' } as const; setFilters(next); search(next); }}>{t('Clear')}</Button>}
       </div>
       <div className='flex flex-wrap gap-2'>
         <Button variant='toggle' disabled={busy || !selected.length || query.isError || query.isFetching} onClick={() => setConfirmation({ title: t('Delete {{count}} redemption codes?', { count: selected.length }), ids: [...selected] })}>{t('Delete selected redemption codes')} ({selected.length})</Button>
         <Button variant='toggle' disabled={busy} onClick={() => setConfirmation({ title: t('Delete Invalid Redemption Codes?'), invalid: true })}>{t('Delete invalid redemption codes')}</Button>
       </div>
-    </form>
+    </div>
     {query.isError ? <div role='alert' className='space-y-2 text-sm text-ui-danger'><p>{t(apiErrorMessage(query.error, 'Unable to load redemption codes'))}</p><Button onClick={refresh}>{t('Retry')}</Button></div> : <><Table loading={!data} columns={columns} rows={rows} rowKey='id' minWidth={1050} emptyIcon={Ticket} /><div className='mt-4 flex justify-end'><Pagination total={total} pageSize={PAGE_SIZE} page={page} onChange={setPage} /></div></>}
     {generated && <Modal open title={t('Redemption codes created')} onClose={() => setGenerated(undefined)} hideFooter width={520}><div className='space-y-3'><p className='text-sm text-ui-text-2'>{t('Save these redemption codes in a safe place:')}</p><pre className='max-h-64 overflow-auto whitespace-pre-wrap break-all rounded-lg bg-ui-bg-subtle p-3 font-mono text-xs'>{generated.join('\n')}</pre><div className='flex justify-end gap-2'><Button variant='toggle' onClick={() => void copied(generated.join('\n'))}>{t('Copy all')}</Button><Button onClick={() => setGenerated(undefined)}>{t('Done')}</Button></div></div></Modal>}
     {editing && <EditCode key={editing.id} code={editing} onClose={() => setEditing(undefined)} onSaved={refresh} />}

@@ -87,6 +87,11 @@ export function StatisticsSkeleton({ system = false }: { system?: boolean }) {
         {group.labels.map((label) => <StatCard key={label} label={t(label)} value={<div className={`flex items-center ${system && index === 1 && label !== 'Active connections' ? 'h-9' : 'h-[30px]'}`}><Skeleton width={85} height={20} /></div>} sub={!system || index === 0 || label === 'Active connections' || label === 'Errors in last 5 minutes' ? <Skeleton width={75} height={18} /> : index === 1 ? <Skeleton height={4} className='mt-1' /> : undefined} />)}
       </div>
     </section>)}
+    {!system && <ReportSection title={t('All-time counters')}>
+      <div style={{ display: 'grid', gridTemplateColumns: `repeat(${mobile ? 2 : 3}, minmax(0, 1fr))`, gap: mobile ? 8 : 12 }}>
+        {['Total requests', 'Total tokens', 'Total cost'].map((label) => <StatCard key={label} label={t(label)} value={<div className='flex h-[30px] items-center'><Skeleton width={85} height={20} /></div>} />)}
+      </div>
+    </ReportSection>}
     {!system && ['Charges by group', 'Charges by channel'].map((title, index) => <ReportSection key={title} title={t(title)}>
       <Table loading size='sm' skeletonRows={3} columns={['#', index === 0 ? 'Group' : 'Channel', 'Usage charges', 'Requests', 'Token', 'Share of charges'].map((label, column) => ({ key: label, title: t(label), align: column > 1 ? 'right' as const : 'left' as const, width: label === '#' ? 40 : label === 'Share of charges' ? 100 : undefined }))} />
     </ReportSection>)}

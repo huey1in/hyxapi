@@ -114,7 +114,11 @@ func GetEnhancedOperations(c *gin.Context) {
 	if fail(err) {
 		return
 	}
-	rangeConsumption, err := model.SumUsedQuota(model.LogTypeConsume, startTimestamp, endTimestamp, "", "", "", 0, "")
+	rangeConsumption, err := model.SumUsedQuota(model.LogTypeConsume, startTimestamp, endTimestamp, "", "", "", "")
+	if fail(err) {
+		return
+	}
+	allTimeConsumption, err := model.SumUsedQuota(model.LogTypeConsume, 0, 0, "", "", "", "")
 	if fail(err) {
 		return
 	}
@@ -156,6 +160,7 @@ func GetEnhancedOperations(c *gin.Context) {
 				},
 				"consumption": gin.H{
 					"range":       rangeConsumption,
+					"all_time":    allTimeConsumption,
 					"average_rpm": averageRPM,
 				},
 				"active": gin.H{

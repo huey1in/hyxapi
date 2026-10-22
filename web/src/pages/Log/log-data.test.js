@@ -34,15 +34,12 @@ test('cache creation durations do not double count legacy totals and explicit ze
   assert.equal(data.enrichLog(log(other), 1)._other.input_tokens_total, 40);
 });
 
-test('historical log ranges have no maximum span while invalid dates and channels are rejected', () => {
+test('historical log ranges have no maximum span while invalid dates are rejected', () => {
   const now = new Date('2026-10-20T12:00:00Z').getTime();
   const filters = { ...data.emptyLogFilters(), start_timestamp: '2020-10-01T00:00:00Z', end_timestamp: '2026-10-20T00:00:00Z' };
-  for (const admin of [false, true]) {
-    assert.equal(data.validateLogFilters(filters, admin, now), '');
-    assert.equal(data.validateLogFilters(data.emptyLogFilters(), admin, now), '');
-    assert.equal(data.validateLogFilters({ ...filters, start_timestamp: 'invalid' }, admin, now), 'Invalid time range');
-    assert.equal(data.validateLogFilters({ ...filters, start_timestamp: '2026-10-21T00:00:00Z' }, admin, now), 'Invalid time range');
-    assert.equal(data.validateLogFilters({ ...filters, start_timestamp: '1969-12-31T00:00:00Z' }, admin, now), 'Invalid time range');
-  }
-  assert.equal(data.validateLogFilters({ ...data.emptyLogFilters(), channel: '0' }, true), 'Channel ID must be a positive integer');
+  assert.equal(data.validateLogFilters(filters, now), '');
+  assert.equal(data.validateLogFilters(data.emptyLogFilters(), now), '');
+  assert.equal(data.validateLogFilters({ ...filters, start_timestamp: 'invalid' }, now), 'Invalid time range');
+  assert.equal(data.validateLogFilters({ ...filters, start_timestamp: '2026-10-21T00:00:00Z' }, now), 'Invalid time range');
+  assert.equal(data.validateLogFilters({ ...filters, start_timestamp: '1969-12-31T00:00:00Z' }, now), 'Invalid time range');
 });

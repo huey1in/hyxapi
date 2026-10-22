@@ -1606,7 +1606,6 @@
     "Some legacy log details could not be read.": "Certains détails d’anciens journaux sont illisibles.",
     "Unable to load logs": "Impossible de charger les journaux",
     "Invalid time range": "Période invalide",
-    "Channel ID must be a positive integer": "L’ID du canal doit être un entier positif",
     "Log export did not finish": "L’export des journaux ne s’est pas terminé",
     "Advanced billing · {{model}}": "Facturation avancée · {{model}}",
     "Restore upstream defaults": "Rétablir les valeurs amont",

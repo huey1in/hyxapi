@@ -65,6 +65,7 @@ function OperationsCards({ data, isMobile, selectedRangeLabel }: { data: Operati
   const active = summary.active;
   const rangeRev = rev.range;
   const rangeCon = con.range;
+  const allTimeCon = con.all_time;
   const averageRPM = con.average_rpm || 0;
 
   /* ── rankings ── */
@@ -128,12 +129,21 @@ function OperationsCards({ data, isMobile, selectedRangeLabel }: { data: Operati
         </div>
       </div>
 
-      {/* S2: 分组扣费 */}
+      {/* S2: 累计计数 */}
+      <Section title={t('All-time counters')}>
+        <div style={grid(3)}>
+          <StatMini label={t('Total requests')} value={renderNumber(allTimeCon.requests)} />
+          <StatMini label={t('Total tokens')} value={fmtTokens(allTimeCon.tokens)} />
+          <StatMini label={t('Total cost')} value={renderQuota(allTimeCon.quota)} />
+        </div>
+      </Section>
+
+      {/* S3: 分组扣费 */}
       <Section title={t('Charges by group')} right={`${selectedRangeLabel} Top ${groupRanking.length}`}>
         <Table columns={groupRankCols} rows={groupRanking} rowKey='group' size='sm' emptyIcon={ChartNoAxesCombined} emptyText={t('No group charges in this period')} />
       </Section>
 
-      {/* S3: 渠道扣费 */}
+      {/* S4: 渠道扣费 */}
       <Section title={t('Charges by channel')} right={`${selectedRangeLabel} Top ${channelRanking.length}`}>
         <Table columns={channelRankCols} rows={channelRanking} rowKey='channel_id' size='sm' emptyIcon={ChartColumn} emptyText={t('No channel charges in this period')} />
       </Section>

@@ -11,9 +11,7 @@ export function logQuery(filters: Partial<LogFilters>, admin: boolean, root = fa
     if (!Number.isFinite(timestamp) || timestamp < 0) throw new Error('Invalid time range');
     params.set(key, String(timestamp));
   });
-  if (admin) (['channel', 'username'] as const).forEach((key) => {
-    if (filters[key]) params.set(key, filters[key]);
-  });
+  if (admin && filters.username) params.set('username', filters.username);
   if (root && filters.upstream_request_id) params.set('upstream_request_id', filters.upstream_request_id);
   return params;
 }

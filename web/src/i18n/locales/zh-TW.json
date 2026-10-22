@@ -1606,7 +1606,6 @@
     "Some legacy log details could not be read.": "部分歷史日誌詳情無法讀取。",
     "Unable to load logs": "無法載入日誌",
     "Invalid time range": "時間範圍無效",
-    "Channel ID must be a positive integer": "渠道 ID 必須是正整數",
     "Log export did not finish": "日誌匯出未完成",
     "Advanced billing · {{model}}": "進階計費 · {{model}}",
     "Restore upstream defaults": "恢復上游預設",

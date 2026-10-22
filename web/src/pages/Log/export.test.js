@@ -20,18 +20,27 @@ test('mixed feed retains independent row identities and native time units', () =
 });
 
 test('source changes clear incompatible filters while retaining shared time and scope filters', () => {
-  const filters = { ...feed.emptyFeedFilters(), source: 'usage', request_id: 'request', token_name: 'key', type: 2, channel: '5', username: 'user', start_timestamp: '2026-10-20T00:00' };
+  const filters = { ...feed.emptyFeedFilters(), source: 'usage', request_id: 'request', token_name: 'key', type: 2, group: 'vip', username: 'user', start_timestamp: '2026-10-20T00:00' };
+  assert.equal('channel' in feed.emptyFeedFilters(), false);
+  for (const all of [false, true]) {
+    const params = feed.feedQuery({ ...filters, channel: '5' }, all, 100, ['usage', 'tasks', 'midjourney']);
+    assert.equal(params.get('group'), 'vip');
+    assert.equal(params.get('channel'), null);
+    assert.equal(feed.validateFeedFilters(filters), '');
+  }
+  const allSources = feed.changeFeedSource(filters, '');
+  assert.equal(allSources.group, 'vip');
+  assert.equal(feed.changeFeedSource(allSources, 'usage').group, 'vip');
   const changed = feed.changeFeedSource(filters, 'midjourney');
   assert.equal(changed.request_id, ''); assert.equal(changed.type, 0); assert.equal(changed.token_name, '');
-  assert.equal(changed.channel, '5'); assert.equal(changed.start_timestamp, filters.start_timestamp);
+  assert.equal(changed.group, ''); assert.equal(changed.start_timestamp, filters.start_timestamp);
   const params = feed.feedQuery(changed, false, 100, ['usage', 'tasks', 'midjourney']);
   assert.equal(params.get('source'), 'midjourney');
   assert.equal(params.get('username'), null); assert.equal(params.get('channel'), null);
   assert.equal(params.get('start_timestamp'), String(Math.floor(new Date(filters.start_timestamp).getTime() / 1000)));
   assert.equal(query.logQuery({ upstream_request_id: 'root' }, true, false).get('upstream_request_id'), null);
   assert.equal(query.logQuery({ upstream_request_id: 'root' }, true, true).get('upstream_request_id'), 'root');
-  for (const channel of ['-1', '0', '1.5', '9007199254740992']) assert.ok(feed.validateFeedFilters({ ...changed, channel }, true));
-  assert.ok(feed.validateFeedFilters({ ...changed, end_timestamp: '2025-01-01' }, false));
+  assert.ok(feed.validateFeedFilters({ ...changed, end_timestamp: '2025-01-01' }));
 });
 
 test('unified CSV includes every source, protects formulas and projects diagnostics by role', () => {

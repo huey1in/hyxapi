@@ -66,7 +66,7 @@ func TestLogFeedScopesFiltersAndCursorValidation(t *testing.T) {
 	setupFeedTest(t)
 	for _, id := range []int{71, 72} {
 		require.NoError(t, DB.Create(&User{Id: id, Username: fmt.Sprintf("feed-user-%d", id), AffCode: fmt.Sprint(id)}).Error)
-		require.NoError(t, LOG_DB.Create(&Log{UserId: id, Username: fmt.Sprintf("feed-user-%d", id), CreatedAt: 100, ModelName: "model", ChannelId: 5, Type: LogTypeConsume}).Error)
+		require.NoError(t, LOG_DB.Create(&Log{UserId: id, Username: fmt.Sprintf("feed-user-%d", id), CreatedAt: 100, ModelName: "model", ChannelId: 5, Group: "default", Type: LogTypeConsume}).Error)
 		require.NoError(t, DB.Create(&Task{UserId: id, TaskID: "task", SubmitTime: 100, Status: TaskStatusSuccess, ChannelId: 5, Platform: "suno"}).Error)
 		require.NoError(t, DB.Create(&Midjourney{UserId: id, MjId: "mj", SubmitTime: 100999, Status: "FAILURE", ChannelId: 5}).Error)
 	}
@@ -79,7 +79,9 @@ func TestLogFeedScopesFiltersAndCursorValidation(t *testing.T) {
 		{LogFeedFilter{LogFilter: LogFilter{Username: "feed-user-71"}}, 0, 3},
 		{LogFeedFilter{LogFilter: LogFilter{StartTimestamp: 100, EndTimestamp: 100}}, 71, 3},
 		{LogFeedFilter{LogFilter: LogFilter{ModelName: "model"}}, 71, 1},
-		{LogFeedFilter{LogFilter: LogFilter{Channel: 6}}, 0, 0},
+		{LogFeedFilter{LogFilter: LogFilter{Group: "default"}}, 0, 2},
+		{LogFeedFilter{LogFilter: LogFilter{Group: "default"}}, 71, 1},
+		{LogFeedFilter{LogFilter: LogFilter{Group: "other"}}, 0, 0},
 		{LogFeedFilter{Sources: []string{"tasks"}}, 71, 1},
 		{LogFeedFilter{Source: "midjourney", Status: "FAILURE"}, 71, 1},
 		{LogFeedFilter{Platform: "suno", Status: "SUCCESS"}, 71, 1},

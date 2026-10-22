@@ -77,11 +77,6 @@ func feedFilter(c *gin.Context, all bool) (model.LogFeedFilter, int, int, bool) 
 	}
 	f.ModelName, f.TokenName, f.Group, f.RequestId = c.Query("model_name"), c.Query("token_name"), c.Query("group"), c.Query("request_id")
 	if all {
-		f.Channel, err = strconv.Atoi(c.DefaultQuery("channel", "0"))
-		if err != nil || f.Channel < 0 {
-			common.ApiErrorMsg(c, "invalid channel")
-			return f, 0, 0, false
-		}
 		f.Username = c.Query("username")
 		userID = 0
 	} else {

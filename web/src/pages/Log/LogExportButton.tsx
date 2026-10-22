@@ -10,7 +10,7 @@ export default function LogExportButton({ filters, role, all, sources }: { filte
   const { t } = useTranslation();
   const { busy, run } = useOwnedOperation();
   const exportLogs = () => {
-    const error = validateFeedFilters(filters, all);
+    const error = validateFeedFilters(filters);
     if (error) { showError(t(error)); return; }
     void run(async (signal) => {
       const { data } = await API.get<string>(`${all ? '/api/log' : '/api/log/self'}/feed/export?${feedQuery(filters, all, role, sources)}`, {

@@ -49,7 +49,7 @@ func TestLogGroupStatisticsUseTheLogDatabaseDialect(t *testing.T) {
 			require.EqualValues(t, 2000, stats.AvgLatencyMs)
 			require.EqualValues(t, 1000, stats.PromptTokens)
 			require.EqualValues(t, 400, stats.CacheTokens)
-			quota, err := SumUsedQuota(0, 90, 110, "group%", "test_%", "", 0, "default")
+			quota, err := SumUsedQuota(0, 90, 110, "group%", "test_%", "", "default")
 			require.NoError(t, err)
 			require.Equal(t, 5000, quota.Quota)
 			require.EqualValues(t, 1000, quota.Tokens)
@@ -102,7 +102,6 @@ func TestLogUsagePreservesDateKeyFiltersAndImmutableUserScope(t *testing.T) {
 				func(log *Log) { log.Group = "other" },
 				func(log *Log) { log.ModelName = "unmatched" },
 				func(log *Log) { log.TokenName = "other" },
-				func(log *Log) { log.ChannelId = 3 },
 				func(log *Log) { log.Type = LogTypeError },
 			} {
 				other := base
@@ -111,7 +110,7 @@ func TestLogUsagePreservesDateKeyFiltersAndImmutableUserScope(t *testing.T) {
 				rows = append(rows, other)
 			}
 			require.NoError(t, db.Create(&rows).Error)
-			filter := LogFilter{StartTimestamp: now - 3700, EndTimestamp: now - 3500, ModelName: "model%", TokenName: "token", TokenID: 301, Channel: 2, Group: "default"}
+			filter := LogFilter{StartTimestamp: now - 3700, EndTimestamp: now - 3500, ModelName: "model%", TokenName: "token", TokenID: 301, Group: "default"}
 			userStat, err := SumLogUsage(context.Background(), filter, 71)
 			require.NoError(t, err)
 			require.Equal(t, 9, userStat.Quota)
@@ -120,7 +119,7 @@ func TestLogUsagePreservesDateKeyFiltersAndImmutableUserScope(t *testing.T) {
 			keys, err := GetLogTokenOptions(context.Background(), filter, 71)
 			require.NoError(t, err)
 			require.Equal(t, []LogTokenOption{{ID: 303, Name: "unused"}, {ID: 301, Name: "renamed-token"}}, keys, "only current owned keys remain selectable, using their latest names")
-			adminStat, err := SumUsedQuota(0, now-3700, now-3500, "model%", "current_user", "token", 2, "default")
+			adminStat, err := SumUsedQuota(0, now-3700, now-3500, "model%", "current_user", "token", "default")
 			require.NoError(t, err)
 			require.Zero(t, adminStat.Requests)
 			filter.TokenID = 99999

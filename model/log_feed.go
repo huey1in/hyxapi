@@ -113,9 +113,6 @@ func feedQuery(ctx context.Context, f LogFeedFilter, userID, index int, at int64
 			q = q.Where(field.column+" = ?", field.value)
 		}
 	}
-	if f.Channel > 0 {
-		q = q.Where("channel_id = ?", f.Channel)
-	}
 	q = q.Where(timeField+" >= ? AND "+timeField+" <= ?", start, end)
 	return q, timeField + " desc, " + idColumn + " desc", nil
 }

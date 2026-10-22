@@ -1606,7 +1606,6 @@
     "Some legacy log details could not be read.": "Не удалось прочитать часть старых сведений журнала.",
     "Unable to load logs": "Не удалось загрузить журналы",
     "Invalid time range": "Неверный период",
-    "Channel ID must be a positive integer": "ID канала должен быть положительным целым числом",
     "Log export did not finish": "Экспорт журналов не завершён",
     "Advanced billing · {{model}}": "Расширенная тарификация · {{model}}",
     "Restore upstream defaults": "Восстановить настройки по умолчанию",

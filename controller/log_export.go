@@ -65,7 +65,6 @@ func exportLogs(c *gin.Context, all bool) {
 	if all {
 		queryUserID = 0
 		filter.Username = c.Query("username")
-		filter.Channel, _ = strconv.Atoi(c.Query("channel"))
 	}
 	exportCtx, release, ok, err := service.AcquireLogExportLock(c.Request.Context(), userID)
 	if err != nil {

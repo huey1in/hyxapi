@@ -1606,7 +1606,6 @@
     "Some legacy log details could not be read.": "古いログの一部の詳細を読み取れませんでした。",
     "Unable to load logs": "ログを読み込めません",
     "Invalid time range": "期間が無効です",
-    "Channel ID must be a positive integer": "チャネルIDは正の整数で指定してください",
     "Log export did not finish": "ログのエクスポートが完了しませんでした",
     "Advanced billing · {{model}}": "詳細な課金設定 · {{model}}",
     "Restore upstream defaults": "上流の既定値に戻す",

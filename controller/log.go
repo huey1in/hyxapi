@@ -19,14 +19,13 @@ func GetAllLogs(c *gin.Context) {
 	username := c.Query("username")
 	tokenName := c.Query("token_name")
 	modelName := c.Query("model_name")
-	channel, _ := strconv.Atoi(c.Query("channel"))
 	group := c.Query("group")
 	requestId := c.Query("request_id")
 	upstreamRequestId := ""
 	if c.GetInt("role") >= common.RoleRootUser {
 		upstreamRequestId = c.Query("upstream_request_id")
 	}
-	logs, total, err := model.GetAllLogs(logType, startTimestamp, endTimestamp, modelName, username, tokenName, pageInfo.GetStartIdx(), pageInfo.GetPageSize(), channel, group, requestId, upstreamRequestId)
+	logs, total, err := model.GetAllLogs(logType, startTimestamp, endTimestamp, modelName, username, tokenName, pageInfo.GetStartIdx(), pageInfo.GetPageSize(), group, requestId, upstreamRequestId)
 	if err != nil {
 		common.ApiError(c, err)
 		return
@@ -122,7 +121,6 @@ func logUsageFilter(c *gin.Context, all bool) (model.LogFilter, int, bool) {
 		common.ApiErrorMsg(c, "invalid token_id")
 		return filter, 0, false
 	}
-	filter.Channel, _ = strconv.Atoi(c.Query("channel"))
 	userID := c.GetInt("id")
 	if userID <= 0 {
 		c.AbortWithStatus(http.StatusUnauthorized)

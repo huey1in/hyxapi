@@ -21,7 +21,7 @@ export const emptyFeedFilters = () => ({ ...emptyLogFilters(), source: '', task_
 export type FeedFilters = ReturnType<typeof emptyFeedFilters>;
 
 export function changeFeedSource(filters: FeedFilters, source: string): FeedFilters {
-  return { ...emptyFeedFilters(), source, start_timestamp: filters.start_timestamp, end_timestamp: filters.end_timestamp, channel: filters.channel, username: filters.username };
+  return { ...emptyFeedFilters(), source, start_timestamp: filters.start_timestamp, end_timestamp: filters.end_timestamp, username: filters.username, group: !source || source === 'usage' ? filters.group : '' };
 }
 
 export function feedQuery(filters: FeedFilters, all: boolean, role: number, sources: readonly string[]) {
@@ -31,11 +31,8 @@ export function feedQuery(filters: FeedFilters, all: boolean, role: number, sour
   return params;
 }
 
-export function validateFeedFilters(filters: FeedFilters, all: boolean) {
-  const error = validateLogFilters(filters, all);
-  if (error) return error;
-  if (all && filters.channel && !Number.isSafeInteger(Number(filters.channel))) return 'Channel ID must be a positive integer';
-  return '';
+export function validateFeedFilters(filters: FeedFilters) {
+  return validateLogFilters(filters);
 }
 
 export function feedModel(row: FeedRow) {

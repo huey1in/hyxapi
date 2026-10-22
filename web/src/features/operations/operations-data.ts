@@ -29,7 +29,7 @@ export const operationsReportSchema = z.object({
   period: z.object({ start_timestamp: timestamp, end_timestamp: timestamp }),
   summary: z.object({
     revenue: z.object({ range: z.object({ total_money: amount, total_amount: count, total_orders: count }) }),
-    consumption: z.object({ range: consumptionSchema, average_rpm: amount }),
+    consumption: z.object({ range: consumptionSchema, all_time: consumptionSchema, average_rpm: amount }),
     active: z.object({ users: count, new_users: count }),
   }),
   charges: z.object({ channels: z.array(channelConsumptionSchema).nullable().transform((rows) => rows ?? []), groups: z.array(groupConsumptionSchema).nullable().transform((rows) => rows ?? []) }),

@@ -8,6 +8,7 @@ import type { TableColumn } from '../../components/ui/layout/Table';
 import type { ApiEnvelope } from '../../types/api';
 import { apiErrorMessage } from '../../lib/api-error';
 import { useOwnedOperation } from '../../hooks/useOwnedOperation';
+import { useLiveSearch } from '../../hooks/useLiveSearch';
 import { topUpPageSchema } from './wallet-data';
 import type { TopUpRecord } from './wallet-data';
 import { readWalletData, walletRequestConfig } from './wallet-query';
@@ -27,6 +28,7 @@ export default function TopUpHistory({ identity, role, onClose, onSaved }: { ide
   const { t } = useTranslation(); const [scope, setScope] = useState('self');
   const [search, setSearch] = useState(''); const [keyword, setKeyword] = useState(''); const [page, setPage] = useState(1);
   const [complete, setComplete] = useState<TopUpRecord | null>(null);
+  useLiveSearch(search.trim(), (value) => { setKeyword(value); setPage(1); setComplete(null); });
   const pageSize = 20; const admin = role >= 10 && scope === 'all';
   const query = useQuery({ queryKey: ['wallet-history', identity, admin, keyword, page], gcTime: 0, retry: false,
     queryFn: ({ signal }) => readWalletData(admin ? '/api/user/topup' : '/api/user/topup/self', topUpPageSchema, signal, { p: page, page_size: pageSize, keyword }) });
@@ -39,11 +41,10 @@ export default function TopUpHistory({ identity, role, onClose, onSaved }: { ide
     ...(admin ? [{ key: 'actions', title: t('Actions'), mobileRole: 'actions' as const, render: (order: TopUpRecord) => order.status === 'pending' && <Button size='sm' variant='link' onClick={() => setComplete(order)}>{t('Complete order')}</Button> }] : []),
   ];
   return <Modal open title={t('Top-up history')} onClose={onClose} width={admin ? 640 : 520} hideFooter>
-    <form className={`grid min-w-0 grid-cols-[minmax(0,240px)_max-content] justify-start gap-2 ${role >= 10 ? 'sm:grid-cols-[150px_minmax(0,240px)_max-content]' : ''}`} onSubmit={(event) => { event.preventDefault(); setKeyword(search.trim()); setPage(1); if (keyword === search.trim() && page === 1) void query.refetch(); }}>
-      {role >= 10 && <div className='col-span-2 min-w-0 sm:col-span-1'><Select width='full' aria-label={t('Order scope')} value={scope} options={[{ value: 'self', label: t('My orders') }, { value: 'all', label: t('All orders') }]} onChange={(value) => { setScope(value); setPage(1); setComplete(null); }} /></div>}
-      <div className='min-w-0'><Input aria-label={t('Search trade number')} placeholder={t('Search trade number')} value={search} onChange={setSearch} /></div>
-      <Button type='submit' variant='secondary'>{t('Search')}</Button>
-    </form>
+    <div className={`grid min-w-0 grid-cols-[minmax(0,240px)] justify-start gap-2 ${role >= 10 ? 'sm:grid-cols-[150px_minmax(0,240px)]' : ''}`}>
+      {role >= 10 && <div className='min-w-0'><Select width='full' aria-label={t('Order scope')} value={scope} options={[{ value: 'self', label: t('My orders') }, { value: 'all', label: t('All orders') }]} onChange={(value) => { setScope(value); setPage(1); setComplete(null); }} /></div>}
+      <div className='min-w-0'><Input aria-label={t('Search trade number')} placeholder={t('Search trade number')} value={search} onChange={setSearch} clearable /></div>
+    </div>
     {query.isError ? <div role='alert' className='space-y-2 text-sm text-ui-danger'><p>{t(apiErrorMessage(query.error, 'Unable to load wallet data'))}</p><Button onClick={() => void query.refetch()}>{t('Retry')}</Button></div> : <>
       <div className='h-[200px] overflow-y-auto ui-scrollbar'><Table className='min-h-full' columns={columns} rows={data?.items ?? []} rowKey='id' loading={query.isPending} skeletonRows={4} emptyIcon={ReceiptText} emptyText={t('No top-up records')} /></div>
       <Pagination page={page} pageSize={pageSize} total={data?.total ?? 0} onChange={(value: number) => { setPage(value); setComplete(null); }} />

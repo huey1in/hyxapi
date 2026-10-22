@@ -331,8 +331,8 @@ func RecordConsumeLog(c *gin.Context, userId int, params RecordConsumeLogParams)
 	}
 }
 
-func GetAllLogs(logType int, startTimestamp int64, endTimestamp int64, modelName string, username string, tokenName string, startIdx int, num int, channel int, group string, requestId string, upstreamRequestIds ...string) (logs []*Log, total int64, err error) {
-	filter := LogFilter{Type: logType, StartTimestamp: startTimestamp, EndTimestamp: endTimestamp, ModelName: modelName, Username: username, TokenName: tokenName, Channel: channel, Group: group, RequestId: requestId}
+func GetAllLogs(logType int, startTimestamp int64, endTimestamp int64, modelName string, username string, tokenName string, startIdx int, num int, group string, requestId string, upstreamRequestIds ...string) (logs []*Log, total int64, err error) {
+	filter := LogFilter{Type: logType, StartTimestamp: startTimestamp, EndTimestamp: endTimestamp, ModelName: modelName, Username: username, TokenName: tokenName, Group: group, RequestId: requestId}
 	if len(upstreamRequestIds) > 0 {
 		filter.UpstreamRequestId = upstreamRequestIds[0]
 	}
@@ -498,8 +498,8 @@ type RequestHealthStat struct {
 	AvgLatencySeconds float64 `json:"avg_latency_seconds"`
 }
 
-func SumUsedQuota(logType int, startTimestamp int64, endTimestamp int64, modelName string, username string, tokenName string, channel int, group string) (stat Stat, err error) {
-	return SumLogUsage(context.Background(), LogFilter{StartTimestamp: startTimestamp, EndTimestamp: endTimestamp, ModelName: modelName, Username: username, TokenName: tokenName, Channel: channel, Group: group}, 0)
+func SumUsedQuota(logType int, startTimestamp int64, endTimestamp int64, modelName string, username string, tokenName string, group string) (stat Stat, err error) {
+	return SumLogUsage(context.Background(), LogFilter{StartTimestamp: startTimestamp, EndTimestamp: endTimestamp, ModelName: modelName, Username: username, TokenName: tokenName, Group: group}, 0)
 }
 
 // SumLogUsage aggregates only the selected interval. The caller supplies the

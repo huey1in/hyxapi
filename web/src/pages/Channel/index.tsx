@@ -49,6 +49,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { z } from 'zod';
 import type { TableColumn } from '../../components/ui/layout/Table';
 import { useOwnedOperation } from '../../hooks/useOwnedOperation';
+import { useLiveSearch } from '../../hooks/useLiveSearch';
 import { apiErrorMessage } from '../../lib/api-error';
 import { channelPageSchema, priorityOrderSchema } from './channel-data';
 import type { Channel, EditingChannel } from './channel-data';
@@ -180,6 +181,9 @@ function ChannelSession({ identity }: { identity: string }) {
     setApplied(next);
     if (JSON.stringify(next) === JSON.stringify(applied)) void query.refetch();
   };
+  useLiveSearch(keyword.trim(), (value) => {
+    if (value !== applied.keyword) load(applied, value);
+  });
   const changePage = (next: number) =>
     setApplied((current) => ({ ...current, page: next }));
   const toggleAll = () =>
@@ -544,28 +548,26 @@ function ChannelSession({ identity }: { identity: string }) {
         </>
       }
     >
-      <form className='channel-filter-panel mb-4 flex flex-wrap items-center gap-2 rounded-2xl border border-ui-border bg-[var(--page-bg)] p-4' onSubmit={(event) => { event.preventDefault(); load(); }}>
+      <div className='channel-filter-panel mb-4 flex flex-wrap items-center gap-2 rounded-2xl border border-ui-border bg-[var(--page-bg)] p-4'>
         <div className='min-w-0 basis-full sm:w-[320px] sm:basis-auto'>
           <Input
             placeholder={t('搜索渠道名称/key/分组')}
             aria-label={t('搜索渠道名称/key/分组')}
             value={keyword}
-            onChange={(value) => { setKeyword(value); if (!value) load(applied, ''); }}
+            onChange={setKeyword}
             prefix={<Search size={15} />}
             clearable
             width='full'
           />
         </div>
-        <Button type='submit' variant='toggle'>{t('Search')}</Button>
         <div className='ml-auto flex max-w-full flex-wrap items-center justify-end gap-2'>
           <Button ref={filtersButton} variant='toggle' icon={SlidersHorizontal} shrink={false} selected={activeFilters > 0} aria-label={t('Filters')} aria-haspopup='dialog' aria-expanded={filtersOpen} onClick={() => setFiltersOpen(true)}>
             {t('Filters')}{activeFilters > 0 && <span className='text-xs tabular-nums'>{activeFilters}</span>}
           </Button>
           {activeFilters > 0 && <Button variant='link' size='sm' onClick={() => { load(DEFAULT_CHANNEL_FILTERS); filtersButton.current?.focus(); }}>{t('Reset filters')}</Button>}
           <Button size='sm' variant='toggle' selected={applied.tag} icon={TagIcon} onClick={() => load(applied, keyword, !applied.tag)}>{t('标签视图')}</Button>
-          <IconButton icon={RefreshCw} title={t('Refresh')} onClick={refresh} />
         </div>
-      </form>
+      </div>
       {filtersOpen && <ChannelFiltersDialog initialValues={applied} onApply={(values) => { load(values); setFiltersOpen(false); }} onClose={() => setFiltersOpen(false)} />}
 
       {orderQuery.isError && (
@@ -591,9 +593,11 @@ function ChannelSession({ identity }: { identity: string }) {
       ) : (
         <>
           {dragMode && (
-            <div className='flex items-center gap-2 mb-3 text-sm'>
+            <div className='flex flex-wrap items-center gap-2 mb-3 text-sm'>
               <span>{t('拖放位置')}</span>
               <Select
+                width={160}
+                aria-label={t('拖放位置')}
                 value={placement}
                 onChange={(value) => setPlacement(value as Placement)}
                 options={[

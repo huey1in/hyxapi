@@ -60,7 +60,7 @@ func TestClickHouseLogPagingAndExportKeepRepeatedRequestIDs(t *testing.T) {
 		}
 		require.NoError(t, db.Exec("INSERT INTO logs (id,user_id,created_at,type,model_name,request_id,upstream_request_id,other) VALUES (0,?,100,2,'model',?,'upstream',?)", userID, fmt.Sprintf("request-%03d", i/2), `{"root_info":{"key":"hidden"},"cache_tokens":5}`).Error)
 	}
-	rows, total, err := GetAllLogs(2, 0, 0, "model", "", "", 20, 20, 0, "", "", "upstream")
+	rows, total, err := GetAllLogs(2, 0, 0, "model", "", "", 20, 20, "", "", "upstream")
 	require.NoError(t, err)
 	require.EqualValues(t, 507, total)
 	require.Len(t, rows, 20)
