@@ -72,7 +72,7 @@ export default function AuditViewer({ identity, scope, onDenied, accessOnly = fa
     { key: 'result', title: t('Result'), render: resultBadge },
     { key: 'details', title: t('Details'), mobileRole: 'actions', render: (row) => <Button variant='link' size='sm' onClick={() => setSelected(row)}>{t('Details')}</Button> },
   ];
-  const input = (key: keyof AuditFilters, label: string, type = 'text') => <FormField label={<><span>{t(label)}</span></>}><Input type={type} aria-label={t(label)} value={draft[key]} onChange={(value) => set(key, value)} width='full' step={type === 'datetime-local' ? 1 : undefined} /></FormField>;
+  const input = (key: keyof AuditFilters, label: string, type = 'text') => <FormField inline label={t(label)}><Input type={type} aria-label={t(label)} value={draft[key]} onChange={(value) => set(key, value)} width={type === 'datetime-local' ? 220 : 200} step={type === 'datetime-local' ? 1 : undefined} /></FormField>;
   const error = query.isError ? apiErrorMessage(query.error, 'Failed to load audit records') || 'Failed to load audit records' : '';
   return <div className='space-y-5'>
     <div className='flex flex-wrap justify-end gap-1.5'>
@@ -81,15 +81,17 @@ export default function AuditViewer({ identity, scope, onDenied, accessOnly = fa
       <IconButton icon={RefreshCw} title={t('Refresh')} aria-label={t('Refresh')} disabled={query.isFetching} onClick={refresh} />
     </div>
     {showFilters && <div className='p-4 border border-ui-border rounded-2xl space-y-3'>
-      <div className='grid grid-cols-1 sm:grid-cols-2 gap-3'>
-        <FormField label={<><span>{t('Result')}</span></>}><Select popover width='full' aria-label={t('Result')} value={draft.success} onChange={(value) => set('success', value)} options={[{ value: '', label: t('All results') }, { value: 'true', label: t('Success') }, { value: 'false', label: t('Failed') }]} /></FormField>
-        {!accessOnly && <FormField label={<><span>{t('Category')}</span></>}><Select popover width='full' aria-label={t('Category')} value={draft.category} onChange={(value) => set('category', value)} options={[{ value: '', label: t('All categories') }, { value: 'login', label: t('Login') }, { value: 'security', label: t('Account security') }, { value: 'operation', label: t('Operation audit') }, { value: 'access_token', label: t('Access Token') }]} /></FormField>}
+      <div className='flex flex-wrap items-center gap-3'>
         {input('start', 'Start time', 'datetime-local')}{input('end', 'End time', 'datetime-local')}
+        {!accessOnly && <FormField inline label={t('Category')}><Select popover aria-label={t('Category')} value={draft.category} onChange={(value) => set('category', value)} options={[{ value: '', label: t('All categories') }, { value: 'login', label: t('Login') }, { value: 'security', label: t('Account security') }, { value: 'operation', label: t('Operation audit') }, { value: 'access_token', label: t('Access Token') }]} /></FormField>}
         {!accessOnly && <>{input('token_ref', 'Token identifier')}{input('request_id', 'Request ID')}</>}
         {scope === 'all' && input('username', 'Username')}
+        <div className='flex max-w-full items-center gap-3'>
+          <FormField inline label={t('Result')}><Select popover aria-label={t('Result')} value={draft.success} onChange={(value) => set('success', value)} options={[{ value: '', label: t('All results') }, { value: 'true', label: t('Success') }, { value: 'false', label: t('Failed') }]} /></FormField>
+          <Button variant='toggle' onClick={reset}>{t('Reset')}</Button>
+        </div>
       </div>
       {validationError && <p role='alert' className='text-sm text-ui-danger'>{t(validationError)}</p>}
-      <div className='flex justify-end gap-2'><Button variant='toggle' onClick={reset}>{t('Reset')}</Button></div>
     </div>}
     {error && <div role='alert' className='text-sm text-ui-text-2 flex items-center gap-3'><span>{t(error)}</span><Button variant='link' onClick={refresh}>{t('Retry')}</Button></div>}
     {<>

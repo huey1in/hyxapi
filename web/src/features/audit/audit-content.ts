@@ -18,6 +18,7 @@ For commercial licensing, please contact support@quantumnous.com
 */
 import type { LogOtherData } from './types'
 import { buildQuotaAuditOperation } from './quota-audit-operation'
+import { AUDIT_ROUTE_LABELS } from './audit-route-labels'
 
 const AUDIT_TEMPLATES: Record<string, string> = {
   'token.create': 'API token creation',
@@ -41,6 +42,7 @@ const AUDIT_TEMPLATES: Record<string, string> = {
   'user.binding_bind': 'Account binding',
   'user.binding_unbind': 'Account unlinking',
   'user.email_binding_resend': 'Email confirmation code resend',
+  'user.notification_email_verify': 'Verified notification email',
 
   login: 'Logged in successfully via {{method}}',
   // User management
@@ -101,6 +103,7 @@ const AUDIT_TEMPLATES: Record<string, string> = {
     'Applied upstream model changes to channel (ID: {{id}})',
   'channel.upstream_apply_all':
     'Applied upstream model changes to {{count}} channels',
+  'channel.upstream_detect_all': 'Started upstream model detection',
   // Redemption codes
   'redemption.create':
     'Created {{count}} redemption codes named {{name}} ({{quota}} each)',
@@ -115,15 +118,25 @@ const AUDIT_TEMPLATES: Record<string, string> = {
   'vendor.create': 'Created a vendor',
   'vendor.update': 'Updated a vendor',
   'vendor.delete': 'Deleted a vendor',
+  'vendor.metadata.save': 'Saved vendor metadata',
+  'vendor.metadata.delete': 'Deleted a vendor',
+  'vendor.merge': 'Merged vendors',
+  'vendor.assign': 'Assigned models to a vendor',
   // Model metadata
   'model.create': 'Created a model',
   'model.update': 'Updated a model',
   'model.delete': 'Deleted a model',
   'model.sync_upstream': 'Synced upstream models',
+  'model.delete_batch': 'Batch deleted models',
+  'model.metadata.sync': 'Synced model metadata',
+  'model.pricing.update': 'Updated model pricing',
+  'model.pricing.reset_input_ratios': 'Reset model input ratios',
   // Subscriptions
   'subscription.plan_create': 'Created a subscription plan',
   'subscription.plan_update': 'Updated a subscription plan',
   'subscription.bind': 'Bound a subscription',
+  'subscription.plan_reset': 'Reset plan subscriptions',
+  'subscription.user_plan_reset': 'Reset user plan subscriptions',
   'subscription.user_quota_reset':
     'Administrator reset the quota of subscription plan {{plan_title}} (ID: {{plan_id}})',
   // Logs
@@ -138,7 +151,14 @@ export function renderAuditContent(
   t: (key: string, opts?: Record<string, unknown>) => string
 ): string | null {
   const op = other?.op
-  if (!op?.action) return null
+  const route = other?.audit_info?.route || String(op?.params?.route || '')
+  const method = other?.audit_info?.method || String(op?.params?.method || '')
+  const routeLabel = AUDIT_ROUTE_LABELS[`${method} ${route}`]
+  if (!op?.action || op.action === 'generic') {
+    return routeLabel ? t(routeLabel) : op?.action === 'generic' && method && route
+      ? t(AUDIT_TEMPLATES.generic, { ...op.params, method, route })
+      : null
+  }
   if (
     op.action === 'redemption.delete_batch' ||
     (op.action === 'redemption.delete' &&
@@ -169,5 +189,10 @@ export function renderAuditContent(
     return `${quotaOperation.summary} · ${quotaOperation.description}`
   }
   const params = { ...op.params }
+  // Middleware fallback events do not contain handler-specific fields.
+  // A route label avoids displaying summaries with empty names or counts.
+  if (routeLabel && [...template.matchAll(/{{(\w+)}}/g)].some(([, key]) => params[key] === undefined)) {
+    return t(routeLabel)
+  }
   return t(template, params)
 }

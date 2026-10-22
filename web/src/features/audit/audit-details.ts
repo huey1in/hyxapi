@@ -395,7 +395,7 @@ export function buildAuditDetails(
   const metadataUnavailable =
     entry.other != null && !isAuditDetailObject(entry.other)
   const op = isAuditDetailObject(metadata.op) ? metadata.op : {}
-  const action = typeof op.action === 'string' ? op.action : entry.action || ''
+  const action = typeof op.action === 'string' && op.action ? op.action : entry.action || ''
   const params = isAuditDetailObject(op.params) ? { ...op.params } : {}
   const tokenOperation = buildTokenAuditOperation(
     action,

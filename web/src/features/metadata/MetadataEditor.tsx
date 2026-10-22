@@ -33,7 +33,7 @@ export default function MetadataEditor({ model, vendor, vendors, onClose, onSave
     } catch (cause) { if (!controller.current?.signal.aborted) setError(errorText(cause)); }
     finally { busyRef.current = false; if (!controller.current?.signal.aborted) setBusy(false); }
   };
-  return <SlideOver open title={`${draft.id ? '编辑' : '新建'}${isModel ? '模型' : '供应商'}`} onClose={onClose} footer={<Button variant='primary' loading={busy} onClick={save}>保存</Button>}>
+  return <SlideOver open width={480} title={`${draft.id ? '编辑' : '新建'}${isModel ? '模型' : '供应商'}`} onClose={onClose} footer={<Button variant='primary' loading={busy} onClick={save}>保存</Button>}>
     <div className='space-y-5 p-5'>
       <ErrorMessage message={error} />
       <Field label={isModel ? '模型名称' : '供应商名称'}><Input width='full' maxLength={128} value={isModel ? draft.model_name : draft.name} aria-label={isModel ? '模型名称' : '供应商名称'} onChange={(value) => isModel ? update('model_name', value) : update('name', value)} /></Field>

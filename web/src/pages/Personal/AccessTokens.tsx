@@ -81,7 +81,7 @@ function Tokens({ identity }: { identity: string }) {
         <div className='flex flex-wrap justify-end gap-1.5 max-w-[180px] sm:max-w-none'><Button variant='toggle' disabled={busy} onClick={() => setRecords({ tokenRef: legacy.token_ref })}>{t('Access records')}</Button><Button variant='toggle' disabled={busy} onClick={() => setConfirm('legacy')}>{t('Revoke now')}</Button></div>
       </SettingRow>}
     </SettingGroup>
-    {records && <SlideOver open title={t('Access records')} width={1000} onClose={() => setRecords(null)}>
+    {records && <SlideOver open title={t('Access records')} width={640} onClose={() => setRecords(null)}>
       <div className='p-4 space-y-4'><p className='text-sm text-ui-text-2'>{t('Audit records start after this feature was enabled. Earlier records remain in Common Logs.')}</p>
         <AuditViewer key={records.tokenRef ?? 'all'} identity={identity} scope='self' accessOnly currentTokenRef={records.tokenRef} defaultTokenScope={records.tokenRef ? 'current' : 'all'} />
       </div>

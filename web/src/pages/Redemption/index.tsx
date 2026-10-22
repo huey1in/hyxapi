@@ -17,10 +17,10 @@ function SubscriptionCodesTab({ identity }: { identity: string }) {
   const plans = query.isError ? [] : query.data?.map((item) => item.plan) ?? [];
   const plan = plans.find((item) => item.id === selected) ?? plans[0];
   if (query.isError) return <div role='alert' className='space-y-2 text-sm text-ui-danger'><p>{t(apiErrorMessage(query.error, 'Unable to load plans'))}</p><Button onClick={() => void query.refetch()}>{t('Retry')}</Button></div>;
-  if (!query.data) return <ContentSkeleton variant='form'><div className='flex flex-wrap items-end justify-between gap-3 rounded-2xl border border-ui-border p-4'><div className='grid w-60 max-w-full gap-1.5 text-xs text-ui-text-3'>{t('Select plan')}<Skeleton height={36} rounded='rounded-full' /></div><Skeleton width={110} height={36} rounded='rounded-full' /></div></ContentSkeleton>;
+  if (!query.data) return <ContentSkeleton variant='form'><div className='flex flex-wrap items-center gap-3 rounded-2xl border border-ui-border p-4'><div className='flex max-w-full items-center gap-3 text-sm text-ui-text'>{t('Select plan')}<Skeleton width={160} height={36} rounded='rounded-full' /></div><Skeleton width={110} height={36} rounded='rounded-full' /></div></ContentSkeleton>;
   return <div className='space-y-4'>
-    <div className='flex flex-wrap items-end justify-between gap-3 rounded-2xl border border-ui-border p-4'>
-      <FormField label={t('Select plan')}><Select popover aria-label={t('Select plan')} width='full' value={plan ? String(plan.id) : ''} onChange={(value) => setSelected(Number(value))} options={plans.map((item) => ({ value: String(item.id), label: item.title }))} /></FormField>
+    <div className='flex flex-wrap items-center gap-3 rounded-2xl border border-ui-border p-4'>
+      <FormField inline label={t('Select plan')}><Select popover aria-label={t('Select plan')} width={240} value={plan ? String(plan.id) : ''} onChange={(value) => setSelected(Number(value))} options={plans.map((item) => ({ value: String(item.id), label: item.title }))} /></FormField>
       <Button variant='toggle' loading={query.isFetching} onClick={() => void query.refetch()}>{t('Refresh plans')}</Button>
     </div>
     {plan ? <CodesDialog key={`${identity}:${plan.id}`} identity={identity} plan={plan} inline onClose={() => {}} /> : <p className='text-sm text-ui-text-3'>{t('Create a subscription plan before generating activation codes.')}</p>}
