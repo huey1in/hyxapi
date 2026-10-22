@@ -49,7 +49,6 @@ func (a *Adaptor) Init(info *relaycommon.RelayInfo) {
 }
 
 func (a *Adaptor) GetRequestURL(info *relaycommon.RelayInfo) (string, error) {
-	// https://cloud.baidu.com/doc/WENXINWORKSHOP/s/clntwmv7t
 	suffix := "chat/"
 	if strings.HasPrefix(info.UpstreamModelName, "m3e") {
 		suffix = "embeddings"
@@ -70,8 +69,7 @@ func (a *Adaptor) ConvertOpenAIRequest(c *gin.Context, info *relaycommon.RelayIn
 	}
 	switch info.RelayMode {
 	case constant.RelayModeEmbeddings:
-		baiduEmbeddingRequest := embeddingRequestOpenAI2Moka(*request)
-		return baiduEmbeddingRequest, nil
+		return embeddingRequestOpenAI2Moka(*request), nil
 	default:
 		return nil, errors.New("not implemented")
 	}
@@ -95,9 +93,6 @@ func (a *Adaptor) DoResponse(c *gin.Context, resp *http.Response, info *relaycom
 	switch info.RelayMode {
 	case constant.RelayModeEmbeddings:
 		return mokaEmbeddingHandler(c, info, resp)
-	default:
-		// err, usage = mokaHandler(c, resp)
-
 	}
 	return
 }

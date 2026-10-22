@@ -98,20 +98,16 @@ func embeddingRequestOpenAI2Baidu(request dto.EmbeddingRequest) *BaiduEmbeddingR
 }
 
 func embeddingResponseBaidu2OpenAI(response *BaiduEmbeddingResponse) *dto.OpenAIEmbeddingResponse {
-	openAIEmbeddingResponse := dto.OpenAIEmbeddingResponse{
+	data := response.Data
+	if data == nil {
+		data = []dto.OpenAIEmbeddingResponseItem{}
+	}
+	return &dto.OpenAIEmbeddingResponse{
 		Object: "list",
-		Data:   make([]dto.OpenAIEmbeddingResponseItem, 0, len(response.Data)),
+		Data:   data,
 		Model:  "baidu-embedding",
 		Usage:  response.Usage,
 	}
-	for _, item := range response.Data {
-		openAIEmbeddingResponse.Data = append(openAIEmbeddingResponse.Data, dto.OpenAIEmbeddingResponseItem{
-			Object:    item.Object,
-			Index:     item.Index,
-			Embedding: item.Embedding,
-		})
-	}
-	return &openAIEmbeddingResponse
 }
 
 func baiduStreamHandler(c *gin.Context, info *relaycommon.RelayInfo, resp *http.Response) (*types.NewAPIError, *dto.Usage) {

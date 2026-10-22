@@ -74,14 +74,7 @@
             "headers": {}
           }
         },
-        "security": [
-          {
-            "Combination343": []
-          },
-          {
-            "Combination1243": []
-          }
-        ]
+        "security": []
       },
       "post": {
         "summary": "初始化系统",
@@ -114,14 +107,7 @@
             "headers": {}
           }
         },
-        "security": [
-          {
-            "Combination343": []
-          },
-          {
-            "Combination1243": []
-          }
-        ]
+        "security": []
       }
     },
     "/api/status": {
@@ -139,14 +125,7 @@
             "headers": {}
           }
         },
-        "security": [
-          {
-            "Combination343": []
-          },
-          {
-            "Combination1243": []
-          }
-        ]
+        "security": []
       }
     },
     "/api/status/test": {
@@ -163,15 +142,7 @@
             "description": "成功",
             "headers": {}
           }
-        },
-        "security": [
-          {
-            "Combination343": []
-          },
-          {
-            "Combination1243": []
-          }
-        ]
+        }
       }
     },
     "/api/uptime/status": {
@@ -189,14 +160,7 @@
             "headers": {}
           }
         },
-        "security": [
-          {
-            "Combination343": []
-          },
-          {
-            "Combination1243": []
-          }
-        ]
+        "security": []
       }
     },
     "/api/notice": {
@@ -214,14 +178,7 @@
             "headers": {}
           }
         },
-        "security": [
-          {
-            "Combination343": []
-          },
-          {
-            "Combination1243": []
-          }
-        ]
+        "security": []
       }
     },
     "/api/user-agreement": {
@@ -239,14 +196,7 @@
             "headers": {}
           }
         },
-        "security": [
-          {
-            "Combination343": []
-          },
-          {
-            "Combination1243": []
-          }
-        ]
+        "security": []
       }
     },
     "/api/privacy-policy": {
@@ -264,14 +214,7 @@
             "headers": {}
           }
         },
-        "security": [
-          {
-            "Combination343": []
-          },
-          {
-            "Combination1243": []
-          }
-        ]
+        "security": []
       }
     },
     "/api/pricing": {
@@ -297,11 +240,9 @@
           }
         },
         "security": [
+          {},
           {
-            "Combination343": []
-          },
-          {
-            "Combination1243": []
+            "DashboardBearer": []
           }
         ]
       }
@@ -320,15 +261,7 @@
             "description": "成功",
             "headers": {}
           }
-        },
-        "security": [
-          {
-            "Combination343": []
-          },
-          {
-            "Combination1243": []
-          }
-        ]
+        }
       }
     },
     "/api/verification": {
@@ -356,14 +289,7 @@
             "headers": {}
           }
         },
-        "security": [
-          {
-            "Combination343": []
-          },
-          {
-            "Combination1243": []
-          }
-        ]
+        "security": []
       }
     },
     "/api/reset_password": {
@@ -391,14 +317,7 @@
             "headers": {}
           }
         },
-        "security": [
-          {
-            "Combination343": []
-          },
-          {
-            "Combination1243": []
-          }
-        ]
+        "security": []
       }
     },
     "/api/user/reset": {
@@ -436,14 +355,7 @@
             "headers": {}
           }
         },
-        "security": [
-          {
-            "Combination343": []
-          },
-          {
-            "Combination1243": []
-          }
-        ]
+        "security": []
       }
     },
     "/api/user/register": {
@@ -487,14 +399,7 @@
             "headers": {}
           }
         },
-        "security": [
-          {
-            "Combination343": []
-          },
-          {
-            "Combination1243": []
-          }
-        ]
+        "security": []
       }
     },
     "/api/user/login": {
@@ -529,14 +434,7 @@
             "headers": {}
           }
         },
-        "security": [
-          {
-            "Combination343": []
-          },
-          {
-            "Combination1243": []
-          }
-        ]
+        "security": []
       }
     },
     "/api/user/login/2fa": {
@@ -568,14 +466,7 @@
             "headers": {}
           }
         },
-        "security": [
-          {
-            "Combination343": []
-          },
-          {
-            "Combination1243": []
-          }
-        ]
+        "security": []
       }
     },
     "/api/user/groups": {
@@ -593,14 +484,7 @@
             "headers": {}
           }
         },
-        "security": [
-          {
-            "Combination343": []
-          },
-          {
-            "Combination1243": []
-          }
-        ]
+        "security": []
       }
     },
     "/api/user/passkey/login/begin": {
@@ -618,14 +502,7 @@
             "headers": {}
           }
         },
-        "security": [
-          {
-            "Combination343": []
-          },
-          {
-            "Combination1243": []
-          }
-        ]
+        "security": []
       }
     },
     "/api/user/passkey/login/finish": {
@@ -643,14 +520,7 @@
             "headers": {}
           }
         },
-        "security": [
-          {
-            "Combination343": []
-          },
-          {
-            "Combination1243": []
-          }
-        ]
+        "security": []
       }
     },
     "/api/oauth/github": {
@@ -679,11 +549,9 @@
           }
         },
         "security": [
+          {},
           {
-            "Combination343": []
-          },
-          {
-            "Combination1243": []
+            "DashboardBearer": []
           }
         ]
       }
@@ -714,11 +582,9 @@
           }
         },
         "security": [
+          {},
           {
-            "Combination343": []
-          },
-          {
-            "Combination1243": []
+            "DashboardBearer": []
           }
         ]
       }
@@ -739,11 +605,9 @@
           }
         },
         "security": [
+          {},
           {
-            "Combination343": []
-          },
-          {
-            "Combination1243": []
+            "DashboardBearer": []
           }
         ]
       }
@@ -764,11 +628,9 @@
           }
         },
         "security": [
+          {},
           {
-            "Combination343": []
-          },
-          {
-            "Combination1243": []
+            "DashboardBearer": []
           }
         ]
       }
@@ -788,14 +650,7 @@
             "headers": {}
           }
         },
-        "security": [
-          {
-            "Combination343": []
-          },
-          {
-            "Combination1243": []
-          }
-        ]
+        "security": []
       }
     },
     "/api/oauth/telegram/login": {
@@ -813,14 +668,7 @@
             "headers": {}
           }
         },
-        "security": [
-          {
-            "Combination343": []
-          },
-          {
-            "Combination1243": []
-          }
-        ]
+        "security": []
       }
     },
     "/api/user/self/groups": {
@@ -837,15 +685,7 @@
             "description": "成功",
             "headers": {}
           }
-        },
-        "security": [
-          {
-            "Combination343": []
-          },
-          {
-            "Combination1243": []
-          }
-        ]
+        }
       }
     },
     "/api/user/self": {
@@ -862,15 +702,7 @@
             "description": "成功",
             "headers": {}
           }
-        },
-        "security": [
-          {
-            "Combination343": []
-          },
-          {
-            "Combination1243": []
-          }
-        ]
+        }
       },
       "put": {
         "summary": "更新当前用户信息",
@@ -908,15 +740,7 @@
             "description": "成功",
             "headers": {}
           }
-        },
-        "security": [
-          {
-            "Combination343": []
-          },
-          {
-            "Combination1243": []
-          }
-        ]
+        }
       },
       "delete": {
         "summary": "注销当前用户",
@@ -931,15 +755,7 @@
             "description": "成功",
             "headers": {}
           }
-        },
-        "security": [
-          {
-            "Combination343": []
-          },
-          {
-            "Combination1243": []
-          }
-        ]
+        }
       }
     },
     "/api/user/models": {
@@ -956,15 +772,7 @@
             "description": "成功",
             "headers": {}
           }
-        },
-        "security": [
-          {
-            "Combination343": []
-          },
-          {
-            "Combination1243": []
-          }
-        ]
+        }
       }
     },
     "/api/user/passkey": {
@@ -981,15 +789,7 @@
             "description": "成功",
             "headers": {}
           }
-        },
-        "security": [
-          {
-            "Combination343": []
-          },
-          {
-            "Combination1243": []
-          }
-        ]
+        }
       },
       "delete": {
         "summary": "删除Passkey",
@@ -1004,15 +804,7 @@
             "description": "成功",
             "headers": {}
           }
-        },
-        "security": [
-          {
-            "Combination343": []
-          },
-          {
-            "Combination1243": []
-          }
-        ]
+        }
       }
     },
     "/api/user/passkey/register/begin": {
@@ -1029,15 +821,7 @@
             "description": "成功",
             "headers": {}
           }
-        },
-        "security": [
-          {
-            "Combination343": []
-          },
-          {
-            "Combination1243": []
-          }
-        ]
+        }
       }
     },
     "/api/user/passkey/register/finish": {
@@ -1054,15 +838,7 @@
             "description": "成功",
             "headers": {}
           }
-        },
-        "security": [
-          {
-            "Combination343": []
-          },
-          {
-            "Combination1243": []
-          }
-        ]
+        }
       }
     },
     "/api/user/passkey/verify/begin": {
@@ -1079,15 +855,7 @@
             "description": "成功",
             "headers": {}
           }
-        },
-        "security": [
-          {
-            "Combination343": []
-          },
-          {
-            "Combination1243": []
-          }
-        ]
+        }
       }
     },
     "/api/user/passkey/verify/finish": {
@@ -1104,15 +872,7 @@
             "description": "成功",
             "headers": {}
           }
-        },
-        "security": [
-          {
-            "Combination343": []
-          },
-          {
-            "Combination1243": []
-          }
-        ]
+        }
       }
     },
     "/api/user/aff": {
@@ -1129,15 +889,7 @@
             "description": "成功",
             "headers": {}
           }
-        },
-        "security": [
-          {
-            "Combination343": []
-          },
-          {
-            "Combination1243": []
-          }
-        ]
+        }
       }
     },
     "/api/user/aff_transfer": {
@@ -1168,15 +920,7 @@
             "description": "成功",
             "headers": {}
           }
-        },
-        "security": [
-          {
-            "Combination343": []
-          },
-          {
-            "Combination1243": []
-          }
-        ]
+        }
       }
     },
     "/api/user/setting": {
@@ -1216,15 +960,7 @@
             "description": "成功",
             "headers": {}
           }
-        },
-        "security": [
-          {
-            "Combination343": []
-          },
-          {
-            "Combination1243": []
-          }
-        ]
+        }
       }
     },
     "/api/user/topup": {
@@ -1241,15 +977,7 @@
             "description": "成功",
             "headers": {}
           }
-        },
-        "security": [
-          {
-            "Combination343": []
-          },
-          {
-            "Combination1243": []
-          }
-        ]
+        }
       }
     },
     "/api/user/": {
@@ -1285,15 +1013,7 @@
             "description": "成功",
             "headers": {}
           }
-        },
-        "security": [
-          {
-            "Combination343": []
-          },
-          {
-            "Combination1243": []
-          }
-        ]
+        }
       },
       "post": {
         "summary": "创建用户",
@@ -1317,15 +1037,7 @@
             "description": "成功",
             "headers": {}
           }
-        },
-        "security": [
-          {
-            "Combination343": []
-          },
-          {
-            "Combination1243": []
-          }
-        ]
+        }
       },
       "put": {
         "summary": "更新用户",
@@ -1349,15 +1061,7 @@
             "description": "成功",
             "headers": {}
           }
-        },
-        "security": [
-          {
-            "Combination343": []
-          },
-          {
-            "Combination1243": []
-          }
-        ]
+        }
       }
     },
     "/api/user/topup/complete": {
@@ -1374,15 +1078,7 @@
             "description": "成功",
             "headers": {}
           }
-        },
-        "security": [
-          {
-            "Combination343": []
-          },
-          {
-            "Combination1243": []
-          }
-        ]
+        }
       }
     },
     "/api/user/search": {
@@ -1418,15 +1114,7 @@
             "description": "成功",
             "headers": {}
           }
-        },
-        "security": [
-          {
-            "Combination343": []
-          },
-          {
-            "Combination1243": []
-          }
-        ]
+        }
       }
     },
     "/api/user/{id}": {
@@ -1454,15 +1142,7 @@
             "description": "成功",
             "headers": {}
           }
-        },
-        "security": [
-          {
-            "Combination343": []
-          },
-          {
-            "Combination1243": []
-          }
-        ]
+        }
       },
       "delete": {
         "summary": "删除用户",
@@ -1488,15 +1168,7 @@
             "description": "成功",
             "headers": {}
           }
-        },
-        "security": [
-          {
-            "Combination343": []
-          },
-          {
-            "Combination1243": []
-          }
-        ]
+        }
       }
     },
     "/api/user/{id}/reset_passkey": {
@@ -1524,15 +1196,7 @@
             "description": "成功",
             "headers": {}
           }
-        },
-        "security": [
-          {
-            "Combination343": []
-          },
-          {
-            "Combination1243": []
-          }
-        ]
+        }
       }
     },
     "/api/user/{id}/2fa": {
@@ -1560,15 +1224,7 @@
             "description": "成功",
             "headers": {}
           }
-        },
-        "security": [
-          {
-            "Combination343": []
-          },
-          {
-            "Combination1243": []
-          }
-        ]
+        }
       }
     },
     "/api/user/manage": {
@@ -1609,15 +1265,7 @@
             "description": "成功",
             "headers": {}
           }
-        },
-        "security": [
-          {
-            "Combination343": []
-          },
-          {
-            "Combination1243": []
-          }
-        ]
+        }
       }
     },
     "/api/user/topup/info": {
@@ -1634,15 +1282,7 @@
             "description": "成功",
             "headers": {}
           }
-        },
-        "security": [
-          {
-            "Combination343": []
-          },
-          {
-            "Combination1243": []
-          }
-        ]
+        }
       }
     },
     "/api/user/topup/self": {
@@ -1659,15 +1299,7 @@
             "description": "成功",
             "headers": {}
           }
-        },
-        "security": [
-          {
-            "Combination343": []
-          },
-          {
-            "Combination1243": []
-          }
-        ]
+        }
       }
     },
     "/api/user/pay": {
@@ -1684,15 +1316,7 @@
             "description": "成功",
             "headers": {}
           }
-        },
-        "security": [
-          {
-            "Combination343": []
-          },
-          {
-            "Combination1243": []
-          }
-        ]
+        }
       }
     },
     "/api/user/amount": {
@@ -1709,15 +1333,7 @@
             "description": "成功",
             "headers": {}
           }
-        },
-        "security": [
-          {
-            "Combination343": []
-          },
-          {
-            "Combination1243": []
-          }
-        ]
+        }
       }
     },
     "/api/user/stripe/pay": {
@@ -1734,15 +1350,7 @@
             "description": "成功",
             "headers": {}
           }
-        },
-        "security": [
-          {
-            "Combination343": []
-          },
-          {
-            "Combination1243": []
-          }
-        ]
+        }
       }
     },
     "/api/user/stripe/amount": {
@@ -1759,15 +1367,7 @@
             "description": "成功",
             "headers": {}
           }
-        },
-        "security": [
-          {
-            "Combination343": []
-          },
-          {
-            "Combination1243": []
-          }
-        ]
+        }
       }
     },
     "/api/user/creem/pay": {
@@ -1784,15 +1384,7 @@
             "description": "成功",
             "headers": {}
           }
-        },
-        "security": [
-          {
-            "Combination343": []
-          },
-          {
-            "Combination1243": []
-          }
-        ]
+        }
       }
     },
     "/api/user/epay/notify": {
@@ -1810,14 +1402,7 @@
             "headers": {}
           }
         },
-        "security": [
-          {
-            "Combination343": []
-          },
-          {
-            "Combination1243": []
-          }
-        ]
+        "security": []
       }
     },
     "/api/stripe/webhook": {
@@ -1835,14 +1420,7 @@
             "headers": {}
           }
         },
-        "security": [
-          {
-            "Combination343": []
-          },
-          {
-            "Combination1243": []
-          }
-        ]
+        "security": []
       }
     },
     "/api/creem/webhook": {
@@ -1860,14 +1438,7 @@
             "headers": {}
           }
         },
-        "security": [
-          {
-            "Combination343": []
-          },
-          {
-            "Combination1243": []
-          }
-        ]
+        "security": []
       }
     },
     "/api/user/2fa/status": {
@@ -1884,15 +1455,7 @@
             "description": "成功",
             "headers": {}
           }
-        },
-        "security": [
-          {
-            "Combination343": []
-          },
-          {
-            "Combination1243": []
-          }
-        ]
+        }
       }
     },
     "/api/user/2fa/setup": {
@@ -1909,15 +1472,7 @@
             "description": "成功",
             "headers": {}
           }
-        },
-        "security": [
-          {
-            "Combination343": []
-          },
-          {
-            "Combination1243": []
-          }
-        ]
+        }
       }
     },
     "/api/user/2fa/enable": {
@@ -1948,15 +1503,7 @@
             "description": "成功",
             "headers": {}
           }
-        },
-        "security": [
-          {
-            "Combination343": []
-          },
-          {
-            "Combination1243": []
-          }
-        ]
+        }
       }
     },
     "/api/user/2fa/disable": {
@@ -1987,15 +1534,7 @@
             "description": "成功",
             "headers": {}
           }
-        },
-        "security": [
-          {
-            "Combination343": []
-          },
-          {
-            "Combination1243": []
-          }
-        ]
+        }
       }
     },
     "/api/user/2fa/backup_codes": {
@@ -2012,15 +1551,7 @@
             "description": "成功",
             "headers": {}
           }
-        },
-        "security": [
-          {
-            "Combination343": []
-          },
-          {
-            "Combination1243": []
-          }
-        ]
+        }
       }
     },
     "/api/user/2fa/stats": {
@@ -2037,15 +1568,7 @@
             "description": "成功",
             "headers": {}
           }
-        },
-        "security": [
-          {
-            "Combination343": []
-          },
-          {
-            "Combination1243": []
-          }
-        ]
+        }
       }
     },
     "/api/verify": {
@@ -2062,15 +1585,7 @@
             "description": "成功",
             "headers": {}
           }
-        },
-        "security": [
-          {
-            "Combination343": []
-          },
-          {
-            "Combination1243": []
-          }
-        ]
+        }
       }
     },
     "/api/channel/": {
@@ -2142,15 +1657,7 @@
             "description": "成功",
             "headers": {}
           }
-        },
-        "security": [
-          {
-            "Combination343": []
-          },
-          {
-            "Combination1243": []
-          }
-        ]
+        }
       },
       "post": {
         "summary": "添加渠道",
@@ -2187,15 +1694,7 @@
             "description": "成功",
             "headers": {}
           }
-        },
-        "security": [
-          {
-            "Combination343": []
-          },
-          {
-            "Combination1243": []
-          }
-        ]
+        }
       },
       "put": {
         "summary": "更新渠道",
@@ -2219,15 +1718,7 @@
             "description": "成功",
             "headers": {}
           }
-        },
-        "security": [
-          {
-            "Combination343": []
-          },
-          {
-            "Combination1243": []
-          }
-        ]
+        }
       }
     },
     "/api/channel/search": {
@@ -2272,15 +1763,7 @@
             "description": "成功",
             "headers": {}
           }
-        },
-        "security": [
-          {
-            "Combination343": []
-          },
-          {
-            "Combination1243": []
-          }
-        ]
+        }
       }
     },
     "/api/channel/models": {
@@ -2297,15 +1780,7 @@
             "description": "成功",
             "headers": {}
           }
-        },
-        "security": [
-          {
-            "Combination343": []
-          },
-          {
-            "Combination1243": []
-          }
-        ]
+        }
       }
     },
     "/api/channel/models_enabled": {
@@ -2322,15 +1797,7 @@
             "description": "成功",
             "headers": {}
           }
-        },
-        "security": [
-          {
-            "Combination343": []
-          },
-          {
-            "Combination1243": []
-          }
-        ]
+        }
       }
     },
     "/api/channel/{id}": {
@@ -2358,15 +1825,7 @@
             "description": "成功",
             "headers": {}
           }
-        },
-        "security": [
-          {
-            "Combination343": []
-          },
-          {
-            "Combination1243": []
-          }
-        ]
+        }
       },
       "delete": {
         "summary": "删除渠道",
@@ -2392,15 +1851,7 @@
             "description": "成功",
             "headers": {}
           }
-        },
-        "security": [
-          {
-            "Combination343": []
-          },
-          {
-            "Combination1243": []
-          }
-        ]
+        }
       }
     },
     "/api/channel/{id}/key": {
@@ -2428,15 +1879,7 @@
             "description": "成功",
             "headers": {}
           }
-        },
-        "security": [
-          {
-            "Combination343": []
-          },
-          {
-            "Combination1243": []
-          }
-        ]
+        }
       }
     },
     "/api/channel/test": {
@@ -2453,15 +1896,7 @@
             "description": "成功",
             "headers": {}
           }
-        },
-        "security": [
-          {
-            "Combination343": []
-          },
-          {
-            "Combination1243": []
-          }
-        ]
+        }
       }
     },
     "/api/channel/test/{id}": {
@@ -2489,15 +1924,7 @@
             "description": "成功",
             "headers": {}
           }
-        },
-        "security": [
-          {
-            "Combination343": []
-          },
-          {
-            "Combination1243": []
-          }
-        ]
+        }
       }
     },
     "/api/channel/update_balance": {
@@ -2514,15 +1941,7 @@
             "description": "成功",
             "headers": {}
           }
-        },
-        "security": [
-          {
-            "Combination343": []
-          },
-          {
-            "Combination1243": []
-          }
-        ]
+        }
       }
     },
     "/api/channel/update_balance/{id}": {
@@ -2550,15 +1969,7 @@
             "description": "成功",
             "headers": {}
           }
-        },
-        "security": [
-          {
-            "Combination343": []
-          },
-          {
-            "Combination1243": []
-          }
-        ]
+        }
       }
     },
     "/api/channel/disabled": {
@@ -2575,15 +1986,7 @@
             "description": "成功",
             "headers": {}
           }
-        },
-        "security": [
-          {
-            "Combination343": []
-          },
-          {
-            "Combination1243": []
-          }
-        ]
+        }
       }
     },
     "/api/channel/batch": {
@@ -2617,15 +2020,7 @@
             "description": "成功",
             "headers": {}
           }
-        },
-        "security": [
-          {
-            "Combination343": []
-          },
-          {
-            "Combination1243": []
-          }
-        ]
+        }
       }
     },
     "/api/channel/fix": {
@@ -2642,15 +2037,7 @@
             "description": "成功",
             "headers": {}
           }
-        },
-        "security": [
-          {
-            "Combination343": []
-          },
-          {
-            "Combination1243": []
-          }
-        ]
+        }
       }
     },
     "/api/channel/fetch_models/{id}": {
@@ -2678,15 +2065,7 @@
             "description": "成功",
             "headers": {}
           }
-        },
-        "security": [
-          {
-            "Combination343": []
-          },
-          {
-            "Combination1243": []
-          }
-        ]
+        }
       }
     },
     "/api/channel/fetch_models": {
@@ -2723,15 +2102,7 @@
             "description": "成功",
             "headers": {}
           }
-        },
-        "security": [
-          {
-            "Combination343": []
-          },
-          {
-            "Combination1243": []
-          }
-        ]
+        }
       }
     },
     "/api/channel/batch/tag": {
@@ -2768,15 +2139,7 @@
             "description": "成功",
             "headers": {}
           }
-        },
-        "security": [
-          {
-            "Combination343": []
-          },
-          {
-            "Combination1243": []
-          }
-        ]
+        }
       }
     },
     "/api/channel/tag/models": {
@@ -2803,15 +2166,7 @@
             "description": "成功",
             "headers": {}
           }
-        },
-        "security": [
-          {
-            "Combination343": []
-          },
-          {
-            "Combination1243": []
-          }
-        ]
+        }
       }
     },
     "/api/channel/tag/disabled": {
@@ -2842,15 +2197,7 @@
             "description": "成功",
             "headers": {}
           }
-        },
-        "security": [
-          {
-            "Combination343": []
-          },
-          {
-            "Combination1243": []
-          }
-        ]
+        }
       }
     },
     "/api/channel/tag/enabled": {
@@ -2881,15 +2228,7 @@
             "description": "成功",
             "headers": {}
           }
-        },
-        "security": [
-          {
-            "Combination343": []
-          },
-          {
-            "Combination1243": []
-          }
-        ]
+        }
       }
     },
     "/api/channel/tag": {
@@ -2929,15 +2268,7 @@
             "description": "成功",
             "headers": {}
           }
-        },
-        "security": [
-          {
-            "Combination343": []
-          },
-          {
-            "Combination1243": []
-          }
-        ]
+        }
       }
     },
     "/api/channel/copy/{id}": {
@@ -2983,15 +2314,7 @@
             "description": "成功",
             "headers": {}
           }
-        },
-        "security": [
-          {
-            "Combination343": []
-          },
-          {
-            "Combination1243": []
-          }
-        ]
+        }
       }
     },
     "/api/channel/multi_key/manage": {
@@ -3037,15 +2360,7 @@
             "description": "成功",
             "headers": {}
           }
-        },
-        "security": [
-          {
-            "Combination343": []
-          },
-          {
-            "Combination1243": []
-          }
-        ]
+        }
       }
     },
     "/api/token/": {
@@ -3081,15 +2396,7 @@
             "description": "成功",
             "headers": {}
           }
-        },
-        "security": [
-          {
-            "Combination343": []
-          },
-          {
-            "Combination1243": []
-          }
-        ]
+        }
       },
       "post": {
         "summary": "创建令牌",
@@ -3113,15 +2420,7 @@
             "description": "成功",
             "headers": {}
           }
-        },
-        "security": [
-          {
-            "Combination343": []
-          },
-          {
-            "Combination1243": []
-          }
-        ]
+        }
       },
       "put": {
         "summary": "更新令牌",
@@ -3145,15 +2444,7 @@
             "description": "成功",
             "headers": {}
           }
-        },
-        "security": [
-          {
-            "Combination343": []
-          },
-          {
-            "Combination1243": []
-          }
-        ]
+        }
       }
     },
     "/api/token/search": {
@@ -3180,15 +2471,7 @@
             "description": "成功",
             "headers": {}
           }
-        },
-        "security": [
-          {
-            "Combination343": []
-          },
-          {
-            "Combination1243": []
-          }
-        ]
+        }
       }
     },
     "/api/token/{id}": {
@@ -3216,15 +2499,7 @@
             "description": "成功",
             "headers": {}
           }
-        },
-        "security": [
-          {
-            "Combination343": []
-          },
-          {
-            "Combination1243": []
-          }
-        ]
+        }
       },
       "delete": {
         "summary": "删除令牌",
@@ -3250,15 +2525,7 @@
             "description": "成功",
             "headers": {}
           }
-        },
-        "security": [
-          {
-            "Combination343": []
-          },
-          {
-            "Combination1243": []
-          }
-        ]
+        }
       }
     },
     "/api/token/batch": {
@@ -3292,15 +2559,7 @@
             "description": "成功",
             "headers": {}
           }
-        },
-        "security": [
-          {
-            "Combination343": []
-          },
-          {
-            "Combination1243": []
-          }
-        ]
+        }
       }
     },
     "/api/usage/token/": {
@@ -3331,10 +2590,7 @@
         },
         "security": [
           {
-            "Combination343": []
-          },
-          {
-            "Combination1243": []
+            "APIKeyBearer": []
           }
         ]
       }
@@ -3372,15 +2628,7 @@
             "description": "成功",
             "headers": {}
           }
-        },
-        "security": [
-          {
-            "Combination343": []
-          },
-          {
-            "Combination1243": []
-          }
-        ]
+        }
       },
       "post": {
         "summary": "创建兑换码",
@@ -3404,15 +2652,7 @@
             "description": "成功",
             "headers": {}
           }
-        },
-        "security": [
-          {
-            "Combination343": []
-          },
-          {
-            "Combination1243": []
-          }
-        ]
+        }
       },
       "put": {
         "summary": "更新兑换码",
@@ -3436,15 +2676,7 @@
             "description": "成功",
             "headers": {}
           }
-        },
-        "security": [
-          {
-            "Combination343": []
-          },
-          {
-            "Combination1243": []
-          }
-        ]
+        }
       }
     },
     "/api/redemption/search": {
@@ -3471,15 +2703,7 @@
             "description": "成功",
             "headers": {}
           }
-        },
-        "security": [
-          {
-            "Combination343": []
-          },
-          {
-            "Combination1243": []
-          }
-        ]
+        }
       }
     },
     "/api/redemption/{id}": {
@@ -3507,15 +2731,7 @@
             "description": "成功",
             "headers": {}
           }
-        },
-        "security": [
-          {
-            "Combination343": []
-          },
-          {
-            "Combination1243": []
-          }
-        ]
+        }
       },
       "delete": {
         "summary": "删除兑换码",
@@ -3541,15 +2757,7 @@
             "description": "成功",
             "headers": {}
           }
-        },
-        "security": [
-          {
-            "Combination343": []
-          },
-          {
-            "Combination1243": []
-          }
-        ]
+        }
       }
     },
     "/api/redemption/invalid": {
@@ -3566,15 +2774,7 @@
             "description": "成功",
             "headers": {}
           }
-        },
-        "security": [
-          {
-            "Combination343": []
-          },
-          {
-            "Combination1243": []
-          }
-        ]
+        }
       }
     },
     "/api/log/": {
@@ -3610,15 +2810,7 @@
             "description": "成功",
             "headers": {}
           }
-        },
-        "security": [
-          {
-            "Combination343": []
-          },
-          {
-            "Combination1243": []
-          }
-        ]
+        }
       },
       "delete": {
         "summary": "删除历史日志",
@@ -3633,15 +2825,7 @@
             "description": "成功",
             "headers": {}
           }
-        },
-        "security": [
-          {
-            "Combination343": []
-          },
-          {
-            "Combination1243": []
-          }
-        ]
+        }
       }
     },
     "/api/log/stat": {
@@ -3658,15 +2842,7 @@
             "description": "成功",
             "headers": {}
           }
-        },
-        "security": [
-          {
-            "Combination343": []
-          },
-          {
-            "Combination1243": []
-          }
-        ]
+        }
       }
     },
     "/api/log/self/stat": {
@@ -3683,15 +2859,7 @@
             "description": "成功",
             "headers": {}
           }
-        },
-        "security": [
-          {
-            "Combination343": []
-          },
-          {
-            "Combination1243": []
-          }
-        ]
+        }
       }
     },
     "/api/log/self": {
@@ -3708,15 +2876,7 @@
             "description": "成功",
             "headers": {}
           }
-        },
-        "security": [
-          {
-            "Combination343": []
-          },
-          {
-            "Combination1243": []
-          }
-        ]
+        }
       }
     },
     "/api/log/token": {
@@ -3746,10 +2906,7 @@
         },
         "security": [
           {
-            "Combination343": []
-          },
-          {
-            "Combination1243": []
+            "APIKeyBearer": []
           }
         ]
       }
@@ -3768,15 +2925,7 @@
             "description": "成功",
             "headers": {}
           }
-        },
-        "security": [
-          {
-            "Combination343": []
-          },
-          {
-            "Combination1243": []
-          }
-        ]
+        }
       }
     },
     "/api/data/self": {
@@ -3793,15 +2942,7 @@
             "description": "成功",
             "headers": {}
           }
-        },
-        "security": [
-          {
-            "Combination343": []
-          },
-          {
-            "Combination1243": []
-          }
-        ]
+        }
       }
     },
     "/api/group/": {
@@ -3818,15 +2959,7 @@
             "description": "成功",
             "headers": {}
           }
-        },
-        "security": [
-          {
-            "Combination343": []
-          },
-          {
-            "Combination1243": []
-          }
-        ]
+        }
       }
     },
     "/api/prefill_group/": {
@@ -3843,15 +2976,7 @@
             "description": "成功",
             "headers": {}
           }
-        },
-        "security": [
-          {
-            "Combination343": []
-          },
-          {
-            "Combination1243": []
-          }
-        ]
+        }
       },
       "post": {
         "summary": "创建预填分组",
@@ -3866,15 +2991,7 @@
             "description": "成功",
             "headers": {}
           }
-        },
-        "security": [
-          {
-            "Combination343": []
-          },
-          {
-            "Combination1243": []
-          }
-        ]
+        }
       },
       "put": {
         "summary": "更新预填分组",
@@ -3889,15 +3006,7 @@
             "description": "成功",
             "headers": {}
           }
-        },
-        "security": [
-          {
-            "Combination343": []
-          },
-          {
-            "Combination1243": []
-          }
-        ]
+        }
       }
     },
     "/api/prefill_group/{id}": {
@@ -3925,15 +3034,7 @@
             "description": "成功",
             "headers": {}
           }
-        },
-        "security": [
-          {
-            "Combination343": []
-          },
-          {
-            "Combination1243": []
-          }
-        ]
+        }
       }
     },
     "/api/mj/": {
@@ -3950,15 +3051,7 @@
             "description": "成功",
             "headers": {}
           }
-        },
-        "security": [
-          {
-            "Combination343": []
-          },
-          {
-            "Combination1243": []
-          }
-        ]
+        }
       }
     },
     "/api/mj/self": {
@@ -3975,15 +3068,7 @@
             "description": "成功",
             "headers": {}
           }
-        },
-        "security": [
-          {
-            "Combination343": []
-          },
-          {
-            "Combination1243": []
-          }
-        ]
+        }
       }
     },
     "/api/task/": {
@@ -4000,15 +3085,7 @@
             "description": "成功",
             "headers": {}
           }
-        },
-        "security": [
-          {
-            "Combination343": []
-          },
-          {
-            "Combination1243": []
-          }
-        ]
+        }
       }
     },
     "/api/task/self": {
@@ -4025,15 +3102,7 @@
             "description": "成功",
             "headers": {}
           }
-        },
-        "security": [
-          {
-            "Combination343": []
-          },
-          {
-            "Combination1243": []
-          }
-        ]
+        }
       }
     },
     "/api/vendors/": {
@@ -4050,15 +3119,7 @@
             "description": "成功",
             "headers": {}
           }
-        },
-        "security": [
-          {
-            "Combination343": []
-          },
-          {
-            "Combination1243": []
-          }
-        ]
+        }
       },
       "post": {
         "summary": "创建供应商",
@@ -4073,15 +3134,7 @@
             "description": "成功",
             "headers": {}
           }
-        },
-        "security": [
-          {
-            "Combination343": []
-          },
-          {
-            "Combination1243": []
-          }
-        ]
+        }
       },
       "put": {
         "summary": "更新供应商",
@@ -4096,15 +3149,7 @@
             "description": "成功",
             "headers": {}
           }
-        },
-        "security": [
-          {
-            "Combination343": []
-          },
-          {
-            "Combination1243": []
-          }
-        ]
+        }
       }
     },
     "/api/vendors/search": {
@@ -4131,15 +3176,7 @@
             "description": "成功",
             "headers": {}
           }
-        },
-        "security": [
-          {
-            "Combination343": []
-          },
-          {
-            "Combination1243": []
-          }
-        ]
+        }
       }
     },
     "/api/vendors/{id}": {
@@ -4167,15 +3204,7 @@
             "description": "成功",
             "headers": {}
           }
-        },
-        "security": [
-          {
-            "Combination343": []
-          },
-          {
-            "Combination1243": []
-          }
-        ]
+        }
       },
       "delete": {
         "summary": "删除供应商",
@@ -4201,15 +3230,7 @@
             "description": "成功",
             "headers": {}
           }
-        },
-        "security": [
-          {
-            "Combination343": []
-          },
-          {
-            "Combination1243": []
-          }
-        ]
+        }
       }
     },
     "/api/models/": {
@@ -4226,15 +3247,7 @@
             "description": "成功",
             "headers": {}
           }
-        },
-        "security": [
-          {
-            "Combination343": []
-          },
-          {
-            "Combination1243": []
-          }
-        ]
+        }
       },
       "post": {
         "summary": "创建模型元数据",
@@ -4249,15 +3262,7 @@
             "description": "成功",
             "headers": {}
           }
-        },
-        "security": [
-          {
-            "Combination343": []
-          },
-          {
-            "Combination1243": []
-          }
-        ]
+        }
       },
       "put": {
         "summary": "更新模型元数据",
@@ -4272,15 +3277,7 @@
             "description": "成功",
             "headers": {}
           }
-        },
-        "security": [
-          {
-            "Combination343": []
-          },
-          {
-            "Combination1243": []
-          }
-        ]
+        }
       }
     },
     "/api/models/search": {
@@ -4307,15 +3304,7 @@
             "description": "成功",
             "headers": {}
           }
-        },
-        "security": [
-          {
-            "Combination343": []
-          },
-          {
-            "Combination1243": []
-          }
-        ]
+        }
       }
     },
     "/api/models/{id}": {
@@ -4343,15 +3332,7 @@
             "description": "成功",
             "headers": {}
           }
-        },
-        "security": [
-          {
-            "Combination343": []
-          },
-          {
-            "Combination1243": []
-          }
-        ]
+        }
       },
       "delete": {
         "summary": "删除模型",
@@ -4377,15 +3358,7 @@
             "description": "成功",
             "headers": {}
           }
-        },
-        "security": [
-          {
-            "Combination343": []
-          },
-          {
-            "Combination1243": []
-          }
-        ]
+        }
       }
     },
     "/api/models/sync_upstream/preview": {
@@ -4402,15 +3375,7 @@
             "description": "成功",
             "headers": {}
           }
-        },
-        "security": [
-          {
-            "Combination343": []
-          },
-          {
-            "Combination1243": []
-          }
-        ]
+        }
       }
     },
     "/api/models/sync_upstream": {
@@ -4427,15 +3392,7 @@
             "description": "成功",
             "headers": {}
           }
-        },
-        "security": [
-          {
-            "Combination343": []
-          },
-          {
-            "Combination1243": []
-          }
-        ]
+        }
       }
     },
     "/api/models/missing": {
@@ -4452,15 +3409,7 @@
             "description": "成功",
             "headers": {}
           }
-        },
-        "security": [
-          {
-            "Combination343": []
-          },
-          {
-            "Combination1243": []
-          }
-        ]
+        }
       }
     },
     "/api/option/": {
@@ -4477,15 +3426,7 @@
             "description": "成功",
             "headers": {}
           }
-        },
-        "security": [
-          {
-            "Combination343": []
-          },
-          {
-            "Combination1243": []
-          }
-        ]
+        }
       },
       "put": {
         "summary": "更新系统选项",
@@ -4500,15 +3441,7 @@
             "description": "成功",
             "headers": {}
           }
-        },
-        "security": [
-          {
-            "Combination343": []
-          },
-          {
-            "Combination1243": []
-          }
-        ]
+        }
       }
     },
     "/api/model-pricing": {
@@ -4547,15 +3480,7 @@
               }
             }
           }
-        },
-        "security": [
-          {
-            "Combination343": []
-          },
-          {
-            "Combination1243": []
-          }
-        ]
+        }
       },
       "post": {
         "summary": "保存模型原价",
@@ -4610,15 +3535,7 @@
               }
             }
           }
-        },
-        "security": [
-          {
-            "Combination343": []
-          },
-          {
-            "Combination1243": []
-          }
-        ]
+        }
       }
     },
     "/api/model-pricing/{id}": {
@@ -4674,15 +3591,7 @@
               }
             }
           }
-        },
-        "security": [
-          {
-            "Combination343": []
-          },
-          {
-            "Combination1243": []
-          }
-        ]
+        }
       }
     }
   },
@@ -5069,2697 +3978,23 @@
         }
       }
     },
-    "responses": {},
     "securitySchemes": {
-      "SessionAuth1": {
-        "type": "apiKey",
-        "in": "cookie",
-        "name": "session",
-        "description": "Session认证，通过登录接口获取"
-      },
-      "AccessToken1": {
-        "type": "apiKey",
-        "in": "header",
-        "name": "Authorization",
-        "description": "Access Token认证，格式: Bearer {access_token}，通过 /api/user/token 接口生成"
-      },
-      "NewApiUser1": {
-        "type": "apiKey",
-        "in": "header",
-        "name": "New-Api-User",
-        "description": "用户ID请求头，必须与当前登录用户ID匹配，使用Session或AccessToken认证时必须提供"
-      },
-      "Combination222": {
-        "group": [
-          {
-            "id": 573666
-          },
-          {
-            "id": 573668
-          }
-        ],
-        "type": "combination"
-      },
-      "Combination1122": {
-        "group": [
-          {
-            "id": 573667
-          },
-          {
-            "id": 573668
-          }
-        ],
-        "type": "combination"
-      },
-      "Combination223": {
-        "group": [
-          {
-            "id": "SessionAuth"
-          },
-          {
-            "id": "NewApiUser"
-          }
-        ],
-        "type": "combination"
-      },
-      "Combination1123": {
-        "group": [
-          {
-            "id": "AccessToken"
-          },
-          {
-            "id": "NewApiUser"
-          }
-        ],
-        "type": "combination"
-      },
-      "Combination224": {
-        "group": [
-          {
-            "id": "SessionAuth"
-          },
-          {
-            "id": "NewApiUser"
-          }
-        ],
-        "type": "combination"
-      },
-      "Combination1124": {
-        "group": [
-          {
-            "id": "AccessToken"
-          },
-          {
-            "id": "NewApiUser"
-          }
-        ],
-        "type": "combination"
-      },
-      "Combination225": {
-        "group": [
-          {
-            "id": "SessionAuth"
-          },
-          {
-            "id": "NewApiUser"
-          }
-        ],
-        "type": "combination"
-      },
-      "Combination1125": {
-        "group": [
-          {
-            "id": "AccessToken"
-          },
-          {
-            "id": "NewApiUser"
-          }
-        ],
-        "type": "combination"
-      },
-      "Combination226": {
-        "group": [
-          {
-            "id": "SessionAuth"
-          },
-          {
-            "id": "NewApiUser"
-          }
-        ],
-        "type": "combination"
-      },
-      "Combination1126": {
-        "group": [
-          {
-            "id": "AccessToken"
-          },
-          {
-            "id": "NewApiUser"
-          }
-        ],
-        "type": "combination"
-      },
-      "Combination227": {
-        "group": [
-          {
-            "id": "SessionAuth"
-          },
-          {
-            "id": "NewApiUser"
-          }
-        ],
-        "type": "combination"
-      },
-      "Combination1127": {
-        "group": [
-          {
-            "id": "AccessToken"
-          },
-          {
-            "id": "NewApiUser"
-          }
-        ],
-        "type": "combination"
-      },
-      "Combination228": {
-        "group": [
-          {
-            "id": "SessionAuth"
-          },
-          {
-            "id": "NewApiUser"
-          }
-        ],
-        "type": "combination"
-      },
-      "Combination1128": {
-        "group": [
-          {
-            "id": "AccessToken"
-          },
-          {
-            "id": "NewApiUser"
-          }
-        ],
-        "type": "combination"
-      },
-      "Combination229": {
-        "group": [
-          {
-            "id": "SessionAuth"
-          },
-          {
-            "id": "NewApiUser"
-          }
-        ],
-        "type": "combination"
-      },
-      "Combination1129": {
-        "group": [
-          {
-            "id": "AccessToken"
-          },
-          {
-            "id": "NewApiUser"
-          }
-        ],
-        "type": "combination"
-      },
-      "Combination230": {
-        "group": [
-          {
-            "id": "SessionAuth"
-          },
-          {
-            "id": "NewApiUser"
-          }
-        ],
-        "type": "combination"
-      },
-      "Combination1130": {
-        "group": [
-          {
-            "id": "AccessToken"
-          },
-          {
-            "id": "NewApiUser"
-          }
-        ],
-        "type": "combination"
-      },
-      "Combination231": {
-        "group": [
-          {
-            "id": "SessionAuth"
-          },
-          {
-            "id": "NewApiUser"
-          }
-        ],
-        "type": "combination"
-      },
-      "Combination1131": {
-        "group": [
-          {
-            "id": "AccessToken"
-          },
-          {
-            "id": "NewApiUser"
-          }
-        ],
-        "type": "combination"
-      },
-      "Combination232": {
-        "group": [
-          {
-            "id": "SessionAuth"
-          },
-          {
-            "id": "NewApiUser"
-          }
-        ],
-        "type": "combination"
-      },
-      "Combination1132": {
-        "group": [
-          {
-            "id": "AccessToken"
-          },
-          {
-            "id": "NewApiUser"
-          }
-        ],
-        "type": "combination"
-      },
-      "Combination233": {
-        "group": [
-          {
-            "id": "SessionAuth"
-          },
-          {
-            "id": "NewApiUser"
-          }
-        ],
-        "type": "combination"
-      },
-      "Combination1133": {
-        "group": [
-          {
-            "id": "AccessToken"
-          },
-          {
-            "id": "NewApiUser"
-          }
-        ],
-        "type": "combination"
-      },
-      "Combination234": {
-        "group": [
-          {
-            "id": "SessionAuth"
-          },
-          {
-            "id": "NewApiUser"
-          }
-        ],
-        "type": "combination"
-      },
-      "Combination1134": {
-        "group": [
-          {
-            "id": "AccessToken"
-          },
-          {
-            "id": "NewApiUser"
-          }
-        ],
-        "type": "combination"
-      },
-      "Combination235": {
-        "group": [
-          {
-            "id": "SessionAuth"
-          },
-          {
-            "id": "NewApiUser"
-          }
-        ],
-        "type": "combination"
-      },
-      "Combination1135": {
-        "group": [
-          {
-            "id": "AccessToken"
-          },
-          {
-            "id": "NewApiUser"
-          }
-        ],
-        "type": "combination"
-      },
-      "Combination236": {
-        "group": [
-          {
-            "id": "SessionAuth"
-          },
-          {
-            "id": "NewApiUser"
-          }
-        ],
-        "type": "combination"
-      },
-      "Combination1136": {
-        "group": [
-          {
-            "id": "AccessToken"
-          },
-          {
-            "id": "NewApiUser"
-          }
-        ],
-        "type": "combination"
-      },
-      "Combination237": {
-        "group": [
-          {
-            "id": "SessionAuth"
-          },
-          {
-            "id": "NewApiUser"
-          }
-        ],
-        "type": "combination"
-      },
-      "Combination1137": {
-        "group": [
-          {
-            "id": "AccessToken"
-          },
-          {
-            "id": "NewApiUser"
-          }
-        ],
-        "type": "combination"
-      },
-      "Combination238": {
-        "group": [
-          {
-            "id": "SessionAuth"
-          },
-          {
-            "id": "NewApiUser"
-          }
-        ],
-        "type": "combination"
-      },
-      "Combination1138": {
-        "group": [
-          {
-            "id": "AccessToken"
-          },
-          {
-            "id": "NewApiUser"
-          }
-        ],
-        "type": "combination"
-      },
-      "Combination239": {
-        "group": [
-          {
-            "id": "SessionAuth"
-          },
-          {
-            "id": "NewApiUser"
-          }
-        ],
-        "type": "combination"
-      },
-      "Combination1139": {
-        "group": [
-          {
-            "id": "AccessToken"
-          },
-          {
-            "id": "NewApiUser"
-          }
-        ],
-        "type": "combination"
-      },
-      "Combination240": {
-        "group": [
-          {
-            "id": "SessionAuth"
-          },
-          {
-            "id": "NewApiUser"
-          }
-        ],
-        "type": "combination"
-      },
-      "Combination1140": {
-        "group": [
-          {
-            "id": "AccessToken"
-          },
-          {
-            "id": "NewApiUser"
-          }
-        ],
-        "type": "combination"
-      },
-      "Combination241": {
-        "group": [
-          {
-            "id": "SessionAuth"
-          },
-          {
-            "id": "NewApiUser"
-          }
-        ],
-        "type": "combination"
-      },
-      "Combination1141": {
-        "group": [
-          {
-            "id": "AccessToken"
-          },
-          {
-            "id": "NewApiUser"
-          }
-        ],
-        "type": "combination"
-      },
-      "Combination242": {
-        "group": [
-          {
-            "id": "SessionAuth"
-          },
-          {
-            "id": "NewApiUser"
-          }
-        ],
-        "type": "combination"
-      },
-      "Combination1142": {
-        "group": [
-          {
-            "id": "AccessToken"
-          },
-          {
-            "id": "NewApiUser"
-          }
-        ],
-        "type": "combination"
-      },
-      "Combination243": {
-        "group": [
-          {
-            "id": "SessionAuth"
-          },
-          {
-            "id": "NewApiUser"
-          }
-        ],
-        "type": "combination"
-      },
-      "Combination1143": {
-        "group": [
-          {
-            "id": "AccessToken"
-          },
-          {
-            "id": "NewApiUser"
-          }
-        ],
-        "type": "combination"
-      },
-      "Combination244": {
-        "group": [
-          {
-            "id": "SessionAuth"
-          },
-          {
-            "id": "NewApiUser"
-          }
-        ],
-        "type": "combination"
-      },
-      "Combination1144": {
-        "group": [
-          {
-            "id": "AccessToken"
-          },
-          {
-            "id": "NewApiUser"
-          }
-        ],
-        "type": "combination"
-      },
-      "Combination245": {
-        "group": [
-          {
-            "id": "SessionAuth"
-          },
-          {
-            "id": "NewApiUser"
-          }
-        ],
-        "type": "combination"
-      },
-      "Combination1145": {
-        "group": [
-          {
-            "id": "AccessToken"
-          },
-          {
-            "id": "NewApiUser"
-          }
-        ],
-        "type": "combination"
-      },
-      "Combination246": {
-        "group": [
-          {
-            "id": "SessionAuth"
-          },
-          {
-            "id": "NewApiUser"
-          }
-        ],
-        "type": "combination"
-      },
-      "Combination1146": {
-        "group": [
-          {
-            "id": "AccessToken"
-          },
-          {
-            "id": "NewApiUser"
-          }
-        ],
-        "type": "combination"
-      },
-      "Combination247": {
-        "group": [
-          {
-            "id": "SessionAuth"
-          },
-          {
-            "id": "NewApiUser"
-          }
-        ],
-        "type": "combination"
-      },
-      "Combination1147": {
-        "group": [
-          {
-            "id": "AccessToken"
-          },
-          {
-            "id": "NewApiUser"
-          }
-        ],
-        "type": "combination"
-      },
-      "Combination248": {
-        "group": [
-          {
-            "id": "SessionAuth"
-          },
-          {
-            "id": "NewApiUser"
-          }
-        ],
-        "type": "combination"
-      },
-      "Combination1148": {
-        "group": [
-          {
-            "id": "AccessToken"
-          },
-          {
-            "id": "NewApiUser"
-          }
-        ],
-        "type": "combination"
-      },
-      "Combination249": {
-        "group": [
-          {
-            "id": "SessionAuth"
-          },
-          {
-            "id": "NewApiUser"
-          }
-        ],
-        "type": "combination"
-      },
-      "Combination1149": {
-        "group": [
-          {
-            "id": "AccessToken"
-          },
-          {
-            "id": "NewApiUser"
-          }
-        ],
-        "type": "combination"
-      },
-      "Combination250": {
-        "group": [
-          {
-            "id": "SessionAuth"
-          },
-          {
-            "id": "NewApiUser"
-          }
-        ],
-        "type": "combination"
-      },
-      "Combination1150": {
-        "group": [
-          {
-            "id": "AccessToken"
-          },
-          {
-            "id": "NewApiUser"
-          }
-        ],
-        "type": "combination"
-      },
-      "Combination251": {
-        "group": [
-          {
-            "id": "SessionAuth"
-          },
-          {
-            "id": "NewApiUser"
-          }
-        ],
-        "type": "combination"
-      },
-      "Combination1151": {
-        "group": [
-          {
-            "id": "AccessToken"
-          },
-          {
-            "id": "NewApiUser"
-          }
-        ],
-        "type": "combination"
-      },
-      "Combination252": {
-        "group": [
-          {
-            "id": "SessionAuth"
-          },
-          {
-            "id": "NewApiUser"
-          }
-        ],
-        "type": "combination"
-      },
-      "Combination1152": {
-        "group": [
-          {
-            "id": "AccessToken"
-          },
-          {
-            "id": "NewApiUser"
-          }
-        ],
-        "type": "combination"
-      },
-      "Combination253": {
-        "group": [
-          {
-            "id": "SessionAuth"
-          },
-          {
-            "id": "NewApiUser"
-          }
-        ],
-        "type": "combination"
-      },
-      "Combination1153": {
-        "group": [
-          {
-            "id": "AccessToken"
-          },
-          {
-            "id": "NewApiUser"
-          }
-        ],
-        "type": "combination"
-      },
-      "Combination254": {
-        "group": [
-          {
-            "id": "SessionAuth"
-          },
-          {
-            "id": "NewApiUser"
-          }
-        ],
-        "type": "combination"
-      },
-      "Combination1154": {
-        "group": [
-          {
-            "id": "AccessToken"
-          },
-          {
-            "id": "NewApiUser"
-          }
-        ],
-        "type": "combination"
-      },
-      "Combination255": {
-        "group": [
-          {
-            "id": "SessionAuth"
-          },
-          {
-            "id": "NewApiUser"
-          }
-        ],
-        "type": "combination"
-      },
-      "Combination1155": {
-        "group": [
-          {
-            "id": "AccessToken"
-          },
-          {
-            "id": "NewApiUser"
-          }
-        ],
-        "type": "combination"
-      },
-      "Combination256": {
-        "group": [
-          {
-            "id": "SessionAuth"
-          },
-          {
-            "id": "NewApiUser"
-          }
-        ],
-        "type": "combination"
-      },
-      "Combination1156": {
-        "group": [
-          {
-            "id": "AccessToken"
-          },
-          {
-            "id": "NewApiUser"
-          }
-        ],
-        "type": "combination"
-      },
-      "Combination257": {
-        "group": [
-          {
-            "id": "SessionAuth"
-          },
-          {
-            "id": "NewApiUser"
-          }
-        ],
-        "type": "combination"
-      },
-      "Combination1157": {
-        "group": [
-          {
-            "id": "AccessToken"
-          },
-          {
-            "id": "NewApiUser"
-          }
-        ],
-        "type": "combination"
-      },
-      "Combination258": {
-        "group": [
-          {
-            "id": "SessionAuth"
-          },
-          {
-            "id": "NewApiUser"
-          }
-        ],
-        "type": "combination"
-      },
-      "Combination1158": {
-        "group": [
-          {
-            "id": "AccessToken"
-          },
-          {
-            "id": "NewApiUser"
-          }
-        ],
-        "type": "combination"
-      },
-      "Combination259": {
-        "group": [
-          {
-            "id": "SessionAuth"
-          },
-          {
-            "id": "NewApiUser"
-          }
-        ],
-        "type": "combination"
-      },
-      "Combination1159": {
-        "group": [
-          {
-            "id": "AccessToken"
-          },
-          {
-            "id": "NewApiUser"
-          }
-        ],
-        "type": "combination"
-      },
-      "Combination260": {
-        "group": [
-          {
-            "id": "SessionAuth"
-          },
-          {
-            "id": "NewApiUser"
-          }
-        ],
-        "type": "combination"
-      },
-      "Combination1160": {
-        "group": [
-          {
-            "id": "AccessToken"
-          },
-          {
-            "id": "NewApiUser"
-          }
-        ],
-        "type": "combination"
-      },
-      "Combination261": {
-        "group": [
-          {
-            "id": "SessionAuth"
-          },
-          {
-            "id": "NewApiUser"
-          }
-        ],
-        "type": "combination"
-      },
-      "Combination1161": {
-        "group": [
-          {
-            "id": "AccessToken"
-          },
-          {
-            "id": "NewApiUser"
-          }
-        ],
-        "type": "combination"
-      },
-      "Combination262": {
-        "group": [
-          {
-            "id": "SessionAuth"
-          },
-          {
-            "id": "NewApiUser"
-          }
-        ],
-        "type": "combination"
-      },
-      "Combination1162": {
-        "group": [
-          {
-            "id": "AccessToken"
-          },
-          {
-            "id": "NewApiUser"
-          }
-        ],
-        "type": "combination"
-      },
-      "Combination263": {
-        "group": [
-          {
-            "id": "SessionAuth"
-          },
-          {
-            "id": "NewApiUser"
-          }
-        ],
-        "type": "combination"
-      },
-      "Combination1163": {
-        "group": [
-          {
-            "id": "AccessToken"
-          },
-          {
-            "id": "NewApiUser"
-          }
-        ],
-        "type": "combination"
-      },
-      "Combination264": {
-        "group": [
-          {
-            "id": "SessionAuth"
-          },
-          {
-            "id": "NewApiUser"
-          }
-        ],
-        "type": "combination"
-      },
-      "Combination1164": {
-        "group": [
-          {
-            "id": "AccessToken"
-          },
-          {
-            "id": "NewApiUser"
-          }
-        ],
-        "type": "combination"
-      },
-      "Combination265": {
-        "group": [
-          {
-            "id": "SessionAuth"
-          },
-          {
-            "id": "NewApiUser"
-          }
-        ],
-        "type": "combination"
-      },
-      "Combination1165": {
-        "group": [
-          {
-            "id": "AccessToken"
-          },
-          {
-            "id": "NewApiUser"
-          }
-        ],
-        "type": "combination"
-      },
-      "Combination266": {
-        "group": [
-          {
-            "id": "SessionAuth"
-          },
-          {
-            "id": "NewApiUser"
-          }
-        ],
-        "type": "combination"
-      },
-      "Combination1166": {
-        "group": [
-          {
-            "id": "AccessToken"
-          },
-          {
-            "id": "NewApiUser"
-          }
-        ],
-        "type": "combination"
-      },
-      "Combination267": {
-        "group": [
-          {
-            "id": "SessionAuth"
-          },
-          {
-            "id": "NewApiUser"
-          }
-        ],
-        "type": "combination"
-      },
-      "Combination1167": {
-        "group": [
-          {
-            "id": "AccessToken"
-          },
-          {
-            "id": "NewApiUser"
-          }
-        ],
-        "type": "combination"
-      },
-      "Combination268": {
-        "group": [
-          {
-            "id": "SessionAuth"
-          },
-          {
-            "id": "NewApiUser"
-          }
-        ],
-        "type": "combination"
-      },
-      "Combination1168": {
-        "group": [
-          {
-            "id": "AccessToken"
-          },
-          {
-            "id": "NewApiUser"
-          }
-        ],
-        "type": "combination"
-      },
-      "Combination269": {
-        "group": [
-          {
-            "id": "SessionAuth"
-          },
-          {
-            "id": "NewApiUser"
-          }
-        ],
-        "type": "combination"
-      },
-      "Combination1169": {
-        "group": [
-          {
-            "id": "AccessToken"
-          },
-          {
-            "id": "NewApiUser"
-          }
-        ],
-        "type": "combination"
-      },
-      "Combination270": {
-        "group": [
-          {
-            "id": "SessionAuth"
-          },
-          {
-            "id": "NewApiUser"
-          }
-        ],
-        "type": "combination"
-      },
-      "Combination1170": {
-        "group": [
-          {
-            "id": "AccessToken"
-          },
-          {
-            "id": "NewApiUser"
-          }
-        ],
-        "type": "combination"
-      },
-      "Combination271": {
-        "group": [
-          {
-            "id": "SessionAuth"
-          },
-          {
-            "id": "NewApiUser"
-          }
-        ],
-        "type": "combination"
-      },
-      "Combination1171": {
-        "group": [
-          {
-            "id": "AccessToken"
-          },
-          {
-            "id": "NewApiUser"
-          }
-        ],
-        "type": "combination"
-      },
-      "Combination272": {
-        "group": [
-          {
-            "id": "SessionAuth"
-          },
-          {
-            "id": "NewApiUser"
-          }
-        ],
-        "type": "combination"
-      },
-      "Combination1172": {
-        "group": [
-          {
-            "id": "AccessToken"
-          },
-          {
-            "id": "NewApiUser"
-          }
-        ],
-        "type": "combination"
-      },
-      "Combination273": {
-        "group": [
-          {
-            "id": "SessionAuth"
-          },
-          {
-            "id": "NewApiUser"
-          }
-        ],
-        "type": "combination"
-      },
-      "Combination1173": {
-        "group": [
-          {
-            "id": "AccessToken"
-          },
-          {
-            "id": "NewApiUser"
-          }
-        ],
-        "type": "combination"
-      },
-      "Combination274": {
-        "group": [
-          {
-            "id": "SessionAuth"
-          },
-          {
-            "id": "NewApiUser"
-          }
-        ],
-        "type": "combination"
-      },
-      "Combination1174": {
-        "group": [
-          {
-            "id": "AccessToken"
-          },
-          {
-            "id": "NewApiUser"
-          }
-        ],
-        "type": "combination"
-      },
-      "Combination275": {
-        "group": [
-          {
-            "id": "SessionAuth"
-          },
-          {
-            "id": "NewApiUser"
-          }
-        ],
-        "type": "combination"
-      },
-      "Combination1175": {
-        "group": [
-          {
-            "id": "AccessToken"
-          },
-          {
-            "id": "NewApiUser"
-          }
-        ],
-        "type": "combination"
-      },
-      "Combination276": {
-        "group": [
-          {
-            "id": "SessionAuth"
-          },
-          {
-            "id": "NewApiUser"
-          }
-        ],
-        "type": "combination"
-      },
-      "Combination1176": {
-        "group": [
-          {
-            "id": "AccessToken"
-          },
-          {
-            "id": "NewApiUser"
-          }
-        ],
-        "type": "combination"
-      },
-      "Combination277": {
-        "group": [
-          {
-            "id": "SessionAuth"
-          },
-          {
-            "id": "NewApiUser"
-          }
-        ],
-        "type": "combination"
-      },
-      "Combination1177": {
-        "group": [
-          {
-            "id": "AccessToken"
-          },
-          {
-            "id": "NewApiUser"
-          }
-        ],
-        "type": "combination"
-      },
-      "Combination278": {
-        "group": [
-          {
-            "id": "SessionAuth"
-          },
-          {
-            "id": "NewApiUser"
-          }
-        ],
-        "type": "combination"
-      },
-      "Combination1178": {
-        "group": [
-          {
-            "id": "AccessToken"
-          },
-          {
-            "id": "NewApiUser"
-          }
-        ],
-        "type": "combination"
-      },
-      "Combination279": {
-        "group": [
-          {
-            "id": "SessionAuth"
-          },
-          {
-            "id": "NewApiUser"
-          }
-        ],
-        "type": "combination"
-      },
-      "Combination1179": {
-        "group": [
-          {
-            "id": "AccessToken"
-          },
-          {
-            "id": "NewApiUser"
-          }
-        ],
-        "type": "combination"
-      },
-      "Combination280": {
-        "group": [
-          {
-            "id": "SessionAuth"
-          },
-          {
-            "id": "NewApiUser"
-          }
-        ],
-        "type": "combination"
-      },
-      "Combination1180": {
-        "group": [
-          {
-            "id": "AccessToken"
-          },
-          {
-            "id": "NewApiUser"
-          }
-        ],
-        "type": "combination"
-      },
-      "Combination281": {
-        "group": [
-          {
-            "id": "SessionAuth"
-          },
-          {
-            "id": "NewApiUser"
-          }
-        ],
-        "type": "combination"
-      },
-      "Combination1181": {
-        "group": [
-          {
-            "id": "AccessToken"
-          },
-          {
-            "id": "NewApiUser"
-          }
-        ],
-        "type": "combination"
-      },
-      "Combination282": {
-        "group": [
-          {
-            "id": "SessionAuth"
-          },
-          {
-            "id": "NewApiUser"
-          }
-        ],
-        "type": "combination"
-      },
-      "Combination1182": {
-        "group": [
-          {
-            "id": "AccessToken"
-          },
-          {
-            "id": "NewApiUser"
-          }
-        ],
-        "type": "combination"
-      },
-      "Combination283": {
-        "group": [
-          {
-            "id": "SessionAuth"
-          },
-          {
-            "id": "NewApiUser"
-          }
-        ],
-        "type": "combination"
-      },
-      "Combination1183": {
-        "group": [
-          {
-            "id": "AccessToken"
-          },
-          {
-            "id": "NewApiUser"
-          }
-        ],
-        "type": "combination"
-      },
-      "Combination284": {
-        "group": [
-          {
-            "id": "SessionAuth"
-          },
-          {
-            "id": "NewApiUser"
-          }
-        ],
-        "type": "combination"
-      },
-      "Combination1184": {
-        "group": [
-          {
-            "id": "AccessToken"
-          },
-          {
-            "id": "NewApiUser"
-          }
-        ],
-        "type": "combination"
-      },
-      "Combination285": {
-        "group": [
-          {
-            "id": "SessionAuth"
-          },
-          {
-            "id": "NewApiUser"
-          }
-        ],
-        "type": "combination"
-      },
-      "Combination1185": {
-        "group": [
-          {
-            "id": "AccessToken"
-          },
-          {
-            "id": "NewApiUser"
-          }
-        ],
-        "type": "combination"
-      },
-      "Combination286": {
-        "group": [
-          {
-            "id": "SessionAuth"
-          },
-          {
-            "id": "NewApiUser"
-          }
-        ],
-        "type": "combination"
-      },
-      "Combination1186": {
-        "group": [
-          {
-            "id": "AccessToken"
-          },
-          {
-            "id": "NewApiUser"
-          }
-        ],
-        "type": "combination"
-      },
-      "Combination287": {
-        "group": [
-          {
-            "id": "SessionAuth"
-          },
-          {
-            "id": "NewApiUser"
-          }
-        ],
-        "type": "combination"
-      },
-      "Combination1187": {
-        "group": [
-          {
-            "id": "AccessToken"
-          },
-          {
-            "id": "NewApiUser"
-          }
-        ],
-        "type": "combination"
-      },
-      "Combination288": {
-        "group": [
-          {
-            "id": "SessionAuth"
-          },
-          {
-            "id": "NewApiUser"
-          }
-        ],
-        "type": "combination"
-      },
-      "Combination1188": {
-        "group": [
-          {
-            "id": "AccessToken"
-          },
-          {
-            "id": "NewApiUser"
-          }
-        ],
-        "type": "combination"
-      },
-      "Combination289": {
-        "group": [
-          {
-            "id": "SessionAuth"
-          },
-          {
-            "id": "NewApiUser"
-          }
-        ],
-        "type": "combination"
-      },
-      "Combination1189": {
-        "group": [
-          {
-            "id": "AccessToken"
-          },
-          {
-            "id": "NewApiUser"
-          }
-        ],
-        "type": "combination"
-      },
-      "Combination290": {
-        "group": [
-          {
-            "id": "SessionAuth"
-          },
-          {
-            "id": "NewApiUser"
-          }
-        ],
-        "type": "combination"
-      },
-      "Combination1190": {
-        "group": [
-          {
-            "id": "AccessToken"
-          },
-          {
-            "id": "NewApiUser"
-          }
-        ],
-        "type": "combination"
-      },
-      "Combination291": {
-        "group": [
-          {
-            "id": "SessionAuth"
-          },
-          {
-            "id": "NewApiUser"
-          }
-        ],
-        "type": "combination"
-      },
-      "Combination1191": {
-        "group": [
-          {
-            "id": "AccessToken"
-          },
-          {
-            "id": "NewApiUser"
-          }
-        ],
-        "type": "combination"
-      },
-      "Combination292": {
-        "group": [
-          {
-            "id": "SessionAuth"
-          },
-          {
-            "id": "NewApiUser"
-          }
-        ],
-        "type": "combination"
-      },
-      "Combination1192": {
-        "group": [
-          {
-            "id": "AccessToken"
-          },
-          {
-            "id": "NewApiUser"
-          }
-        ],
-        "type": "combination"
-      },
-      "Combination293": {
-        "group": [
-          {
-            "id": "SessionAuth"
-          },
-          {
-            "id": "NewApiUser"
-          }
-        ],
-        "type": "combination"
-      },
-      "Combination1193": {
-        "group": [
-          {
-            "id": "AccessToken"
-          },
-          {
-            "id": "NewApiUser"
-          }
-        ],
-        "type": "combination"
-      },
-      "Combination294": {
-        "group": [
-          {
-            "id": "SessionAuth"
-          },
-          {
-            "id": "NewApiUser"
-          }
-        ],
-        "type": "combination"
-      },
-      "Combination1194": {
-        "group": [
-          {
-            "id": "AccessToken"
-          },
-          {
-            "id": "NewApiUser"
-          }
-        ],
-        "type": "combination"
-      },
-      "Combination295": {
-        "group": [
-          {
-            "id": "SessionAuth"
-          },
-          {
-            "id": "NewApiUser"
-          }
-        ],
-        "type": "combination"
-      },
-      "Combination1195": {
-        "group": [
-          {
-            "id": "AccessToken"
-          },
-          {
-            "id": "NewApiUser"
-          }
-        ],
-        "type": "combination"
-      },
-      "Combination296": {
-        "group": [
-          {
-            "id": "SessionAuth"
-          },
-          {
-            "id": "NewApiUser"
-          }
-        ],
-        "type": "combination"
-      },
-      "Combination1196": {
-        "group": [
-          {
-            "id": "AccessToken"
-          },
-          {
-            "id": "NewApiUser"
-          }
-        ],
-        "type": "combination"
-      },
-      "Combination297": {
-        "group": [
-          {
-            "id": "SessionAuth"
-          },
-          {
-            "id": "NewApiUser"
-          }
-        ],
-        "type": "combination"
-      },
-      "Combination1197": {
-        "group": [
-          {
-            "id": "AccessToken"
-          },
-          {
-            "id": "NewApiUser"
-          }
-        ],
-        "type": "combination"
-      },
-      "Combination298": {
-        "group": [
-          {
-            "id": "SessionAuth"
-          },
-          {
-            "id": "NewApiUser"
-          }
-        ],
-        "type": "combination"
-      },
-      "Combination1198": {
-        "group": [
-          {
-            "id": "AccessToken"
-          },
-          {
-            "id": "NewApiUser"
-          }
-        ],
-        "type": "combination"
-      },
-      "Combination299": {
-        "group": [
-          {
-            "id": "SessionAuth"
-          },
-          {
-            "id": "NewApiUser"
-          }
-        ],
-        "type": "combination"
-      },
-      "Combination1199": {
-        "group": [
-          {
-            "id": "AccessToken"
-          },
-          {
-            "id": "NewApiUser"
-          }
-        ],
-        "type": "combination"
-      },
-      "Combination300": {
-        "group": [
-          {
-            "id": "SessionAuth"
-          },
-          {
-            "id": "NewApiUser"
-          }
-        ],
-        "type": "combination"
-      },
-      "Combination1200": {
-        "group": [
-          {
-            "id": "AccessToken"
-          },
-          {
-            "id": "NewApiUser"
-          }
-        ],
-        "type": "combination"
-      },
-      "Combination301": {
-        "group": [
-          {
-            "id": "SessionAuth"
-          },
-          {
-            "id": "NewApiUser"
-          }
-        ],
-        "type": "combination"
-      },
-      "Combination1201": {
-        "group": [
-          {
-            "id": "AccessToken"
-          },
-          {
-            "id": "NewApiUser"
-          }
-        ],
-        "type": "combination"
-      },
-      "Combination302": {
-        "group": [
-          {
-            "id": "SessionAuth"
-          },
-          {
-            "id": "NewApiUser"
-          }
-        ],
-        "type": "combination"
-      },
-      "Combination1202": {
-        "group": [
-          {
-            "id": "AccessToken"
-          },
-          {
-            "id": "NewApiUser"
-          }
-        ],
-        "type": "combination"
-      },
-      "Combination303": {
-        "group": [
-          {
-            "id": "SessionAuth"
-          },
-          {
-            "id": "NewApiUser"
-          }
-        ],
-        "type": "combination"
-      },
-      "Combination1203": {
-        "group": [
-          {
-            "id": "AccessToken"
-          },
-          {
-            "id": "NewApiUser"
-          }
-        ],
-        "type": "combination"
-      },
-      "Combination304": {
-        "group": [
-          {
-            "id": "SessionAuth"
-          },
-          {
-            "id": "NewApiUser"
-          }
-        ],
-        "type": "combination"
-      },
-      "Combination1204": {
-        "group": [
-          {
-            "id": "AccessToken"
-          },
-          {
-            "id": "NewApiUser"
-          }
-        ],
-        "type": "combination"
-      },
-      "Combination305": {
-        "group": [
-          {
-            "id": "SessionAuth"
-          },
-          {
-            "id": "NewApiUser"
-          }
-        ],
-        "type": "combination"
-      },
-      "Combination1205": {
-        "group": [
-          {
-            "id": "AccessToken"
-          },
-          {
-            "id": "NewApiUser"
-          }
-        ],
-        "type": "combination"
-      },
-      "Combination306": {
-        "group": [
-          {
-            "id": "SessionAuth"
-          },
-          {
-            "id": "NewApiUser"
-          }
-        ],
-        "type": "combination"
-      },
-      "Combination1206": {
-        "group": [
-          {
-            "id": "AccessToken"
-          },
-          {
-            "id": "NewApiUser"
-          }
-        ],
-        "type": "combination"
-      },
-      "Combination307": {
-        "group": [
-          {
-            "id": "SessionAuth"
-          },
-          {
-            "id": "NewApiUser"
-          }
-        ],
-        "type": "combination"
-      },
-      "Combination1207": {
-        "group": [
-          {
-            "id": "AccessToken"
-          },
-          {
-            "id": "NewApiUser"
-          }
-        ],
-        "type": "combination"
-      },
-      "Combination308": {
-        "group": [
-          {
-            "id": "SessionAuth"
-          },
-          {
-            "id": "NewApiUser"
-          }
-        ],
-        "type": "combination"
-      },
-      "Combination1208": {
-        "group": [
-          {
-            "id": "AccessToken"
-          },
-          {
-            "id": "NewApiUser"
-          }
-        ],
-        "type": "combination"
-      },
-      "Combination309": {
-        "group": [
-          {
-            "id": "SessionAuth"
-          },
-          {
-            "id": "NewApiUser"
-          }
-        ],
-        "type": "combination"
-      },
-      "Combination1209": {
-        "group": [
-          {
-            "id": "AccessToken"
-          },
-          {
-            "id": "NewApiUser"
-          }
-        ],
-        "type": "combination"
-      },
-      "Combination310": {
-        "group": [
-          {
-            "id": "SessionAuth"
-          },
-          {
-            "id": "NewApiUser"
-          }
-        ],
-        "type": "combination"
-      },
-      "Combination1210": {
-        "group": [
-          {
-            "id": "AccessToken"
-          },
-          {
-            "id": "NewApiUser"
-          }
-        ],
-        "type": "combination"
-      },
-      "Combination311": {
-        "group": [
-          {
-            "id": "SessionAuth"
-          },
-          {
-            "id": "NewApiUser"
-          }
-        ],
-        "type": "combination"
-      },
-      "Combination1211": {
-        "group": [
-          {
-            "id": "AccessToken"
-          },
-          {
-            "id": "NewApiUser"
-          }
-        ],
-        "type": "combination"
-      },
-      "Combination312": {
-        "group": [
-          {
-            "id": "SessionAuth"
-          },
-          {
-            "id": "NewApiUser"
-          }
-        ],
-        "type": "combination"
-      },
-      "Combination1212": {
-        "group": [
-          {
-            "id": "AccessToken"
-          },
-          {
-            "id": "NewApiUser"
-          }
-        ],
-        "type": "combination"
-      },
-      "Combination313": {
-        "group": [
-          {
-            "id": "SessionAuth"
-          },
-          {
-            "id": "NewApiUser"
-          }
-        ],
-        "type": "combination"
-      },
-      "Combination1213": {
-        "group": [
-          {
-            "id": "AccessToken"
-          },
-          {
-            "id": "NewApiUser"
-          }
-        ],
-        "type": "combination"
-      },
-      "Combination314": {
-        "group": [
-          {
-            "id": "SessionAuth"
-          },
-          {
-            "id": "NewApiUser"
-          }
-        ],
-        "type": "combination"
-      },
-      "Combination1214": {
-        "group": [
-          {
-            "id": "AccessToken"
-          },
-          {
-            "id": "NewApiUser"
-          }
-        ],
-        "type": "combination"
-      },
-      "Combination315": {
-        "group": [
-          {
-            "id": "SessionAuth"
-          },
-          {
-            "id": "NewApiUser"
-          }
-        ],
-        "type": "combination"
-      },
-      "Combination1215": {
-        "group": [
-          {
-            "id": "AccessToken"
-          },
-          {
-            "id": "NewApiUser"
-          }
-        ],
-        "type": "combination"
-      },
-      "Combination316": {
-        "group": [
-          {
-            "id": "SessionAuth"
-          },
-          {
-            "id": "NewApiUser"
-          }
-        ],
-        "type": "combination"
-      },
-      "Combination1216": {
-        "group": [
-          {
-            "id": "AccessToken"
-          },
-          {
-            "id": "NewApiUser"
-          }
-        ],
-        "type": "combination"
-      },
-      "Combination317": {
-        "group": [
-          {
-            "id": "SessionAuth"
-          },
-          {
-            "id": "NewApiUser"
-          }
-        ],
-        "type": "combination"
-      },
-      "Combination1217": {
-        "group": [
-          {
-            "id": "AccessToken"
-          },
-          {
-            "id": "NewApiUser"
-          }
-        ],
-        "type": "combination"
-      },
-      "Combination318": {
-        "group": [
-          {
-            "id": "SessionAuth"
-          },
-          {
-            "id": "NewApiUser"
-          }
-        ],
-        "type": "combination"
-      },
-      "Combination1218": {
-        "group": [
-          {
-            "id": "AccessToken"
-          },
-          {
-            "id": "NewApiUser"
-          }
-        ],
-        "type": "combination"
-      },
-      "Combination319": {
-        "group": [
-          {
-            "id": "SessionAuth"
-          },
-          {
-            "id": "NewApiUser"
-          }
-        ],
-        "type": "combination"
-      },
-      "Combination1219": {
-        "group": [
-          {
-            "id": "AccessToken"
-          },
-          {
-            "id": "NewApiUser"
-          }
-        ],
-        "type": "combination"
-      },
-      "Combination320": {
-        "group": [
-          {
-            "id": "SessionAuth"
-          },
-          {
-            "id": "NewApiUser"
-          }
-        ],
-        "type": "combination"
-      },
-      "Combination1220": {
-        "group": [
-          {
-            "id": "AccessToken"
-          },
-          {
-            "id": "NewApiUser"
-          }
-        ],
-        "type": "combination"
-      },
-      "Combination321": {
-        "group": [
-          {
-            "id": "SessionAuth"
-          },
-          {
-            "id": "NewApiUser"
-          }
-        ],
-        "type": "combination"
-      },
-      "Combination1221": {
-        "group": [
-          {
-            "id": "AccessToken"
-          },
-          {
-            "id": "NewApiUser"
-          }
-        ],
-        "type": "combination"
-      },
-      "Combination322": {
-        "group": [
-          {
-            "id": "SessionAuth"
-          },
-          {
-            "id": "NewApiUser"
-          }
-        ],
-        "type": "combination"
-      },
-      "Combination1222": {
-        "group": [
-          {
-            "id": "AccessToken"
-          },
-          {
-            "id": "NewApiUser"
-          }
-        ],
-        "type": "combination"
-      },
-      "Combination323": {
-        "group": [
-          {
-            "id": "SessionAuth"
-          },
-          {
-            "id": "NewApiUser"
-          }
-        ],
-        "type": "combination"
-      },
-      "Combination1223": {
-        "group": [
-          {
-            "id": "AccessToken"
-          },
-          {
-            "id": "NewApiUser"
-          }
-        ],
-        "type": "combination"
-      },
-      "Combination324": {
-        "group": [
-          {
-            "id": "SessionAuth"
-          },
-          {
-            "id": "NewApiUser"
-          }
-        ],
-        "type": "combination"
-      },
-      "Combination1224": {
-        "group": [
-          {
-            "id": "AccessToken"
-          },
-          {
-            "id": "NewApiUser"
-          }
-        ],
-        "type": "combination"
-      },
-      "Combination325": {
-        "group": [
-          {
-            "id": "SessionAuth"
-          },
-          {
-            "id": "NewApiUser"
-          }
-        ],
-        "type": "combination"
-      },
-      "Combination1225": {
-        "group": [
-          {
-            "id": "AccessToken"
-          },
-          {
-            "id": "NewApiUser"
-          }
-        ],
-        "type": "combination"
-      },
-      "Combination326": {
-        "group": [
-          {
-            "id": "SessionAuth"
-          },
-          {
-            "id": "NewApiUser"
-          }
-        ],
-        "type": "combination"
-      },
-      "Combination1226": {
-        "group": [
-          {
-            "id": "AccessToken"
-          },
-          {
-            "id": "NewApiUser"
-          }
-        ],
-        "type": "combination"
-      },
-      "Combination327": {
-        "group": [
-          {
-            "id": "SessionAuth"
-          },
-          {
-            "id": "NewApiUser"
-          }
-        ],
-        "type": "combination"
-      },
-      "Combination1227": {
-        "group": [
-          {
-            "id": "AccessToken"
-          },
-          {
-            "id": "NewApiUser"
-          }
-        ],
-        "type": "combination"
-      },
-      "Combination328": {
-        "group": [
-          {
-            "id": "SessionAuth"
-          },
-          {
-            "id": "NewApiUser"
-          }
-        ],
-        "type": "combination"
-      },
-      "Combination1228": {
-        "group": [
-          {
-            "id": "AccessToken"
-          },
-          {
-            "id": "NewApiUser"
-          }
-        ],
-        "type": "combination"
-      },
-      "Combination329": {
-        "group": [
-          {
-            "id": "SessionAuth"
-          },
-          {
-            "id": "NewApiUser"
-          }
-        ],
-        "type": "combination"
-      },
-      "Combination1229": {
-        "group": [
-          {
-            "id": "AccessToken"
-          },
-          {
-            "id": "NewApiUser"
-          }
-        ],
-        "type": "combination"
-      },
-      "Combination330": {
-        "group": [
-          {
-            "id": "SessionAuth"
-          },
-          {
-            "id": "NewApiUser"
-          }
-        ],
-        "type": "combination"
-      },
-      "Combination1230": {
-        "group": [
-          {
-            "id": "AccessToken"
-          },
-          {
-            "id": "NewApiUser"
-          }
-        ],
-        "type": "combination"
-      },
-      "Combination331": {
-        "group": [
-          {
-            "id": "SessionAuth"
-          },
-          {
-            "id": "NewApiUser"
-          }
-        ],
-        "type": "combination"
-      },
-      "Combination1231": {
-        "group": [
-          {
-            "id": "AccessToken"
-          },
-          {
-            "id": "NewApiUser"
-          }
-        ],
-        "type": "combination"
-      },
-      "Combination332": {
-        "group": [
-          {
-            "id": "SessionAuth"
-          },
-          {
-            "id": "NewApiUser"
-          }
-        ],
-        "type": "combination"
-      },
-      "Combination1232": {
-        "group": [
-          {
-            "id": "AccessToken"
-          },
-          {
-            "id": "NewApiUser"
-          }
-        ],
-        "type": "combination"
-      },
-      "Combination333": {
-        "group": [
-          {
-            "id": "SessionAuth"
-          },
-          {
-            "id": "NewApiUser"
-          }
-        ],
-        "type": "combination"
-      },
-      "Combination1233": {
-        "group": [
-          {
-            "id": "AccessToken"
-          },
-          {
-            "id": "NewApiUser"
-          }
-        ],
-        "type": "combination"
-      },
-      "Combination334": {
-        "group": [
-          {
-            "id": "SessionAuth"
-          },
-          {
-            "id": "NewApiUser"
-          }
-        ],
-        "type": "combination"
-      },
-      "Combination1234": {
-        "group": [
-          {
-            "id": "AccessToken"
-          },
-          {
-            "id": "NewApiUser"
-          }
-        ],
-        "type": "combination"
-      },
-      "Combination335": {
-        "group": [
-          {
-            "id": "SessionAuth"
-          },
-          {
-            "id": "NewApiUser"
-          }
-        ],
-        "type": "combination"
-      },
-      "Combination1235": {
-        "group": [
-          {
-            "id": "AccessToken"
-          },
-          {
-            "id": "NewApiUser"
-          }
-        ],
-        "type": "combination"
-      },
-      "Combination336": {
-        "group": [
-          {
-            "id": "SessionAuth"
-          },
-          {
-            "id": "NewApiUser"
-          }
-        ],
-        "type": "combination"
-      },
-      "Combination1236": {
-        "group": [
-          {
-            "id": "AccessToken"
-          },
-          {
-            "id": "NewApiUser"
-          }
-        ],
-        "type": "combination"
-      },
-      "Combination337": {
-        "group": [
-          {
-            "id": "SessionAuth"
-          },
-          {
-            "id": "NewApiUser"
-          }
-        ],
-        "type": "combination"
-      },
-      "Combination1237": {
-        "group": [
-          {
-            "id": "AccessToken"
-          },
-          {
-            "id": "NewApiUser"
-          }
-        ],
-        "type": "combination"
-      },
-      "Combination338": {
-        "group": [
-          {
-            "id": "SessionAuth"
-          },
-          {
-            "id": "NewApiUser"
-          }
-        ],
-        "type": "combination"
-      },
-      "Combination1238": {
-        "group": [
-          {
-            "id": "AccessToken"
-          },
-          {
-            "id": "NewApiUser"
-          }
-        ],
-        "type": "combination"
-      },
-      "Combination339": {
-        "group": [
-          {
-            "id": "SessionAuth"
-          },
-          {
-            "id": "NewApiUser"
-          }
-        ],
-        "type": "combination"
-      },
-      "Combination1239": {
-        "group": [
-          {
-            "id": "AccessToken"
-          },
-          {
-            "id": "NewApiUser"
-          }
-        ],
-        "type": "combination"
-      },
-      "Combination340": {
-        "group": [
-          {
-            "id": "SessionAuth"
-          },
-          {
-            "id": "NewApiUser"
-          }
-        ],
-        "type": "combination"
-      },
-      "Combination1240": {
-        "group": [
-          {
-            "id": "AccessToken"
-          },
-          {
-            "id": "NewApiUser"
-          }
-        ],
-        "type": "combination"
-      },
-      "Combination341": {
-        "group": [
-          {
-            "id": "SessionAuth"
-          },
-          {
-            "id": "NewApiUser"
-          }
-        ],
-        "type": "combination"
-      },
-      "Combination1241": {
-        "group": [
-          {
-            "id": "AccessToken"
-          },
-          {
-            "id": "NewApiUser"
-          }
-        ],
-        "type": "combination"
-      },
-      "Combination342": {
-        "group": [
-          {
-            "id": "SessionAuth"
-          },
-          {
-            "id": "NewApiUser"
-          }
-        ],
-        "type": "combination"
-      },
-      "Combination1242": {
-        "group": [
-          {
-            "id": "AccessToken"
-          },
-          {
-            "id": "NewApiUser"
-          }
-        ],
-        "type": "combination"
+      "DashboardBearer": {
+        "type": "http",
+        "scheme": "bearer",
+        "description": "控制台登录访问令牌或具备对应路由权限的个人访问令牌。使用 Authorization: Bearer {token}；角色、权限与安全验证仍由各路由执行。"
+      },
+      "APIKeyBearer": {
+        "type": "http",
+        "scheme": "bearer",
+        "description": "转发 API Key，用于只读用量和日志查询，格式为 Authorization: Bearer sk-xxxxxx。"
       }
     }
   },
   "servers": [],
   "security": [
     {
-      "Combination343": []
-    },
-    {
-      "Combination1243": []
+      "DashboardBearer": []
     }
   ]
 }

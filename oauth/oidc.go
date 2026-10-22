@@ -23,15 +23,6 @@ func init() {
 // OIDCProvider implements OAuth for OIDC
 type OIDCProvider struct{}
 
-type oidcOAuthResponse struct {
-	AccessToken  string `json:"access_token"`
-	IDToken      string `json:"id_token"`
-	RefreshToken string `json:"refresh_token"`
-	TokenType    string `json:"token_type"`
-	ExpiresIn    int    `json:"expires_in"`
-	Scope        string `json:"scope"`
-}
-
 type oidcUser struct {
 	OpenID            string `json:"sub"`
 	Email             string `json:"email"`
@@ -83,7 +74,7 @@ func (p *OIDCProvider) ExchangeToken(ctx context.Context, code string, c *gin.Co
 
 	logger.LogDebug(ctx, "[OAuth-OIDC] ExchangeToken response status: %d", res.StatusCode)
 
-	var oidcResponse oidcOAuthResponse
+	var oidcResponse OAuthToken
 	err = json.NewDecoder(res.Body).Decode(&oidcResponse)
 	if err != nil {
 		logger.LogError(ctx, fmt.Sprintf("[OAuth-OIDC] ExchangeToken decode error: %s", err.Error()))
@@ -97,14 +88,7 @@ func (p *OIDCProvider) ExchangeToken(ctx context.Context, code string, c *gin.Co
 
 	logger.LogDebug(ctx, "[OAuth-OIDC] ExchangeToken success: scope=%s", oidcResponse.Scope)
 
-	return &OAuthToken{
-		AccessToken:  oidcResponse.AccessToken,
-		TokenType:    oidcResponse.TokenType,
-		RefreshToken: oidcResponse.RefreshToken,
-		ExpiresIn:    oidcResponse.ExpiresIn,
-		Scope:        oidcResponse.Scope,
-		IDToken:      oidcResponse.IDToken,
-	}, nil
+	return &oidcResponse, nil
 }
 
 func (p *OIDCProvider) GetUserInfo(ctx context.Context, token *OAuthToken) (*OAuthUser, error) {

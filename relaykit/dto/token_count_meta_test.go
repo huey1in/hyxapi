@@ -9,6 +9,28 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+func TestClaudeStringContentPreservesJSONTextBlocks(t *testing.T) {
+	for _, tc := range []struct {
+		name, raw, want string
+	}{
+		{"missing", `{}`, ""},
+		{"null", `{"content":null}`, ""},
+		{"string", `{"content":"hello"}`, "hello"},
+		{"blocks", `{"content":[{"type":"text","text":"first"},{"type":"image"},{"type":"text","text":"second"}]}`, "firstsecond"},
+		{"malformed blocks", `{"content":[null,42,{"type":"text","text":1},{"type":"image","text":"hidden"},{"type":"text","text":"visible"}]}`, "visible"},
+		{"unsupported shape", `{"content":{"type":"text","text":"hidden"}}`, ""},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			var message ClaudeMessage
+			var media ClaudeMediaMessage
+			require.NoError(t, kitutil.Unmarshal([]byte(tc.raw), &message))
+			require.NoError(t, kitutil.Unmarshal([]byte(tc.raw), &media))
+			require.Equal(t, tc.want, message.GetStringContent())
+			require.Equal(t, tc.want, media.GetStringContent())
+		})
+	}
+}
+
 // Agent loops replay tool definitions, tool calls, and tool output on every
 // turn; the prompt estimate must see all of them as the model reads them.
 func TestTokenCountMetaCountsAgentLoopContent(t *testing.T) {

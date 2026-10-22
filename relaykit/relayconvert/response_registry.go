@@ -68,11 +68,6 @@ type ResponseConverterSpec struct {
 	StepConverters     []string
 }
 
-type responseConverterRoute struct {
-	from types.RelayFormat
-	to   types.RelayFormat
-}
-
 type ResponseStreamOptions struct {
 	ID           string
 	Model        string
@@ -133,7 +128,7 @@ var (
 	responseConverterMu      sync.RWMutex
 	responseConverters       = make(map[string]ResponseConverterSpec)
 	responseConverterAliases = make(map[string]string)
-	responseConverterRoutes  = make(map[responseConverterRoute]string)
+	responseConverterRoutes  = make(map[converterRoute]string)
 )
 
 func registerBuiltinResponseConverter(spec ResponseConverterSpec) {
@@ -160,7 +155,7 @@ func registerBuiltinResponseConverter(spec ResponseConverterSpec) {
 	if _, exists := responseConverters[spec.ID]; exists {
 		panic(fmt.Sprintf("response converter %q is already registered", spec.ID))
 	}
-	route := responseConverterRoute{from: spec.From, to: spec.To}
+	route := converterRoute{from: spec.From, to: spec.To}
 	if existingID, exists := responseConverterRoutes[route]; exists {
 		panic(fmt.Sprintf("response converter route from %s to %s is already registered by %q", spec.From, spec.To, existingID))
 	}
@@ -779,7 +774,7 @@ func lookupResponseRoute(from types.RelayFormat, to types.RelayFormat) (Response
 	responseConverterMu.RLock()
 	defer responseConverterMu.RUnlock()
 
-	converterID, ok := responseConverterRoutes[responseConverterRoute{from: from, to: to}]
+	converterID, ok := responseConverterRoutes[converterRoute{from: from, to: to}]
 	if !ok {
 		return ResponseConverterSpec{}, false
 	}

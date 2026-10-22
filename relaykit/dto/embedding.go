@@ -21,15 +21,8 @@ type EmbeddingRequest struct {
 }
 
 func (r *EmbeddingRequest) GetTokenCountMeta() *types.TokenCountMeta {
-	var texts = make([]string, 0)
-
-	inputs := r.ParseInput()
-	for _, input := range inputs {
-		texts = append(texts, input)
-	}
-
 	return &types.TokenCountMeta{
-		CombineText: strings.Join(texts, "\n"),
+		CombineText: strings.Join(r.ParseInput(), "\n"),
 	}
 }
 
@@ -60,17 +53,4 @@ func (r *EmbeddingRequest) ParseInput() []string {
 		}
 	}
 	return input
-}
-
-type EmbeddingResponseItem struct {
-	Object    string    `json:"object"`
-	Index     int       `json:"index"`
-	Embedding []float64 `json:"embedding"`
-}
-
-type EmbeddingResponse struct {
-	Object string                  `json:"object"`
-	Data   []EmbeddingResponseItem `json:"data"`
-	Model  string                  `json:"model"`
-	Usage  `json:"usage"`
 }

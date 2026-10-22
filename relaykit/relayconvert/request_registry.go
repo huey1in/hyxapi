@@ -1,13 +1,13 @@
 package relayconvert
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"reflect"
 	"strings"
 	"sync"
 
-	"context"
 	"github.com/QuantumNous/new-api/relaykit/dto"
 	"github.com/QuantumNous/new-api/relaykit/relayconvert/convmeta"
 	claudemessages "github.com/QuantumNous/new-api/relaykit/relayconvert/internal/claude_messages"
@@ -54,7 +54,7 @@ type RequestConverterSpec struct {
 	StepConverters []string
 }
 
-type requestConverterRoute struct {
+type converterRoute struct {
 	from types.RelayFormat
 	to   types.RelayFormat
 }
@@ -62,8 +62,8 @@ type requestConverterRoute struct {
 var (
 	requestConverterMu           sync.RWMutex
 	requestConverters            = make(map[string]RequestConverterSpec)
-	requestConverterRoutes       = make(map[requestConverterRoute]string)
-	requestConverterDirectRoutes = make(map[requestConverterRoute]string)
+	requestConverterRoutes       = make(map[converterRoute]string)
+	requestConverterDirectRoutes = make(map[converterRoute]string)
 )
 
 const (
@@ -108,7 +108,7 @@ func registerBuiltinRequestConverter(spec RequestConverterSpec) {
 	if _, exists := requestConverters[spec.ID]; exists {
 		panic(fmt.Sprintf("request converter %q is already registered", spec.ID))
 	}
-	route := requestConverterRoute{from: spec.From, to: spec.To}
+	route := converterRoute{from: spec.From, to: spec.To}
 	if existingID, exists := requestConverterRoutes[route]; exists {
 		panic(fmt.Sprintf("request converter route from %s to %s is already registered by %q", spec.From, spec.To, existingID))
 	}
@@ -371,7 +371,7 @@ func lookupRequestRoute(from types.RelayFormat, to types.RelayFormat) (RequestCo
 	requestConverterMu.RLock()
 	defer requestConverterMu.RUnlock()
 
-	converterID, ok := requestConverterRoutes[requestConverterRoute{from: from, to: to}]
+	converterID, ok := requestConverterRoutes[converterRoute{from: from, to: to}]
 	if !ok {
 		return RequestConverterSpec{}, false
 	}
@@ -383,7 +383,7 @@ func lookupRequestDirectRoute(from types.RelayFormat, to types.RelayFormat) (Req
 	requestConverterMu.RLock()
 	defer requestConverterMu.RUnlock()
 
-	converterID, ok := requestConverterDirectRoutes[requestConverterRoute{from: from, to: to}]
+	converterID, ok := requestConverterDirectRoutes[converterRoute{from: from, to: to}]
 	if !ok {
 		return RequestConverterSpec{}, false
 	}

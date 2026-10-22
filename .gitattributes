@@ -1,0 +1,3 @@
+# Keep Go module metadata stable across Windows and Unix.
+*.mod text eol=lf
+*.sum text eol=lf

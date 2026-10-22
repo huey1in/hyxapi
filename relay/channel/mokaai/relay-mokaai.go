@@ -35,50 +35,30 @@ func embeddingRequestOpenAI2Moka(request dto.GeneralOpenAIRequest) *dto.Embeddin
 	}
 }
 
-func embeddingResponseMoka2OpenAI(response *dto.EmbeddingResponse) *dto.OpenAIEmbeddingResponse {
-	openAIEmbeddingResponse := dto.OpenAIEmbeddingResponse{
-		Object: "list",
-		Data:   make([]dto.OpenAIEmbeddingResponseItem, 0, len(response.Data)),
-		Model:  "baidu-embedding",
-		Usage:  response.Usage,
-	}
-	for _, item := range response.Data {
-		openAIEmbeddingResponse.Data = append(openAIEmbeddingResponse.Data, dto.OpenAIEmbeddingResponseItem{
-			Object:    item.Object,
-			Index:     item.Index,
-			Embedding: item.Embedding,
-		})
-	}
-	return &openAIEmbeddingResponse
-}
-
 func mokaEmbeddingHandler(c *gin.Context, info *relaycommon.RelayInfo, resp *http.Response) (*dto.Usage, *types.NewAPIError) {
-	var baiduResponse dto.EmbeddingResponse
+	var response dto.OpenAIEmbeddingResponse
 	responseBody, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return nil, types.NewError(err, types.ErrorCodeBadResponseBody)
 	}
 	service.CloseResponseBodyGracefully(resp)
-	err = json.Unmarshal(responseBody, &baiduResponse)
+	err = json.Unmarshal(responseBody, &response)
 	if err != nil {
 		return nil, types.NewError(err, types.ErrorCodeBadResponseBody)
 	}
-	// if baiduResponse.ErrorMsg != "" {
-	// 	return &dto.OpenAIErrorWithStatusCode{
-	// 		Error: dto.OpenAIError{
-	// 			Type:    "baidu_error",
-	// 			Param:   "",
-	// 		},
-	// 		StatusCode: resp.StatusCode,
-	// 	}, nil
-	// }
-	fullTextResponse := embeddingResponseMoka2OpenAI(&baiduResponse)
-	jsonResponse, err := common.Marshal(fullTextResponse)
+	response.Object = "list"
+	if response.Data == nil {
+		response.Data = []dto.OpenAIEmbeddingResponseItem{}
+	}
+	if response.Model == "" {
+		response.Model = info.UpstreamModelName
+	}
+	jsonResponse, err := common.Marshal(&response)
 	if err != nil {
 		return nil, types.NewError(err, types.ErrorCodeBadResponseBody)
 	}
 	c.Writer.Header().Set("Content-Type", "application/json")
 	c.Writer.WriteHeader(resp.StatusCode)
 	service.IOCopyBytesGracefully(c, resp, jsonResponse)
-	return &fullTextResponse.Usage, nil
+	return &response.Usage, nil
 }

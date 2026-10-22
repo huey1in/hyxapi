@@ -58,40 +58,12 @@ func (c *ClaudeMediaMessage) GetText() string {
 }
 
 func (c *ClaudeMediaMessage) IsStringContent() bool {
-	if c.Content == nil {
-		return false
-	}
 	_, ok := c.Content.(string)
-	if ok {
-		return true
-	}
-	return false
+	return ok
 }
 
 func (c *ClaudeMediaMessage) GetStringContent() string {
-	if c.Content == nil {
-		return ""
-	}
-	switch c.Content.(type) {
-	case string:
-		return c.Content.(string)
-	case []any:
-		var contentStr strings.Builder
-		for _, contentItem := range c.Content.([]any) {
-			contentMap, ok := contentItem.(map[string]any)
-			if !ok {
-				continue
-			}
-			if contentMap["type"] == ContentTypeText {
-				if subStr, ok := contentMap["text"].(string); ok {
-					contentStr.WriteString(subStr)
-				}
-			}
-		}
-		return contentStr.String()
-	}
-
-	return ""
+	return claudeStringContent(c.Content)
 }
 
 func (c *ClaudeMediaMessage) SetContent(content any) {
@@ -133,23 +105,21 @@ type ClaudeMessage struct {
 }
 
 func (c *ClaudeMessage) IsStringContent() bool {
-	if c.Content == nil {
-		return false
-	}
 	_, ok := c.Content.(string)
 	return ok
 }
 
 func (c *ClaudeMessage) GetStringContent() string {
-	if c.Content == nil {
-		return ""
-	}
-	switch c.Content.(type) {
+	return claudeStringContent(c.Content)
+}
+
+func claudeStringContent(content any) string {
+	switch value := content.(type) {
 	case string:
-		return c.Content.(string)
+		return value
 	case []any:
 		var contentStr strings.Builder
-		for _, contentItem := range c.Content.([]any) {
+		for _, contentItem := range value {
 			contentMap, ok := contentItem.(map[string]any)
 			if !ok {
 				continue

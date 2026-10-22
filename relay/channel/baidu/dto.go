@@ -51,18 +51,12 @@ type BaiduEmbeddingRequest struct {
 	Input []string `json:"input"`
 }
 
-type BaiduEmbeddingData struct {
-	Object    string    `json:"object"`
-	Embedding []float64 `json:"embedding"`
-	Index     int       `json:"index"`
-}
-
 type BaiduEmbeddingResponse struct {
-	Id      string               `json:"id"`
-	Object  string               `json:"object"`
-	Created int64                `json:"created"`
-	Data    []BaiduEmbeddingData `json:"data"`
-	Usage   dto.Usage            `json:"usage"`
+	Id      string                            `json:"id"`
+	Object  string                            `json:"object"`
+	Created int64                             `json:"created"`
+	Data    []dto.OpenAIEmbeddingResponseItem `json:"data"`
+	Usage   dto.Usage                         `json:"usage"`
 	Error
 }
 

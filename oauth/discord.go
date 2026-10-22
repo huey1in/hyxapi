@@ -23,15 +23,6 @@ func init() {
 // DiscordProvider implements OAuth for Discord
 type DiscordProvider struct{}
 
-type discordOAuthResponse struct {
-	AccessToken  string `json:"access_token"`
-	IDToken      string `json:"id_token"`
-	RefreshToken string `json:"refresh_token"`
-	TokenType    string `json:"token_type"`
-	ExpiresIn    int    `json:"expires_in"`
-	Scope        string `json:"scope"`
-}
-
 type discordUser struct {
 	UID  string `json:"id"`
 	ID   string `json:"username"`
@@ -81,7 +72,7 @@ func (p *DiscordProvider) ExchangeToken(ctx context.Context, code string, c *gin
 
 	logger.LogDebug(ctx, "[OAuth-Discord] ExchangeToken response status: %d", res.StatusCode)
 
-	var discordResponse discordOAuthResponse
+	var discordResponse OAuthToken
 	err = json.NewDecoder(res.Body).Decode(&discordResponse)
 	if err != nil {
 		logger.LogError(ctx, fmt.Sprintf("[OAuth-Discord] ExchangeToken decode error: %s", err.Error()))
@@ -95,14 +86,7 @@ func (p *DiscordProvider) ExchangeToken(ctx context.Context, code string, c *gin
 
 	logger.LogDebug(ctx, "[OAuth-Discord] ExchangeToken success: scope=%s", discordResponse.Scope)
 
-	return &OAuthToken{
-		AccessToken:  discordResponse.AccessToken,
-		TokenType:    discordResponse.TokenType,
-		RefreshToken: discordResponse.RefreshToken,
-		ExpiresIn:    discordResponse.ExpiresIn,
-		Scope:        discordResponse.Scope,
-		IDToken:      discordResponse.IDToken,
-	}, nil
+	return &discordResponse, nil
 }
 
 func (p *DiscordProvider) GetUserInfo(ctx context.Context, token *OAuthToken) (*OAuthUser, error) {
