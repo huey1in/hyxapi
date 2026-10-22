@@ -245,21 +245,6 @@ func (r AdvancedCustomRoute) IsNative() bool {
 	return converter == "" || converter == advancedCustomConverterNone
 }
 
-// MatchPath returns the first route whose IncomingPath matches requestPath.
-// Matching mirrors the relay adaptor: exact match, {model} placeholder, and
-// :generateContent <-> :streamGenerateContent equivalence.
-func (c *AdvancedCustomConfig) MatchPath(requestPath string) (AdvancedCustomRoute, bool) {
-	if c == nil {
-		return AdvancedCustomRoute{}, false
-	}
-	for _, route := range c.Routes {
-		if matchAdvancedCustomIncomingPath(strings.TrimSpace(route.IncomingPath), requestPath) {
-			return route, true
-		}
-	}
-	return AdvancedCustomRoute{}, false
-}
-
 // MatchPathForModel returns the first route whose IncomingPath and Models match.
 // An empty Models list is a catch-all fallback for that incoming path.
 func (c *AdvancedCustomConfig) MatchPathForModel(requestPath string, model string) (AdvancedCustomRoute, bool) {

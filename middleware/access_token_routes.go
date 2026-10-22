@@ -346,21 +346,3 @@ func AccessTokenRouteRule(key string) (accessTokenRouteRule, bool) {
 	rule, ok := permissionRouteRules[key]
 	return rule, ok
 }
-
-// Scope returns the token scope the rule requires, or "" for any/session rules.
-func (rule accessTokenRouteRule) Scope() string {
-	return rule.scope
-}
-
-// Kind names the rule category: "scope", "any" or "session".
-func (rule accessTokenRouteRule) Kind() string {
-	switch rule.kind {
-	case accessTokenRuleScope:
-		return "scope"
-	case accessTokenRuleAny:
-		return "any"
-	case accessTokenRuleSession:
-		return "session"
-	}
-	return ""
-}

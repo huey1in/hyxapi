@@ -66,12 +66,6 @@ type OpenAIEmbeddingResponse struct {
 	Usage  `json:"usage"`
 }
 
-type FlexibleEmbeddingResponseItem struct {
-	Object    string `json:"object"`
-	Index     int    `json:"index"`
-	Embedding any    `json:"embedding"`
-}
-
 type ChatCompletionsStreamResponseChoice struct {
 	Delta        ChatCompletionsStreamResponseChoiceDelta `json:"delta"`
 	Logprobs     *any                                     `json:"logprobs"`

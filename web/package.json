@@ -19,8 +19,8 @@
     "highlight.js": "^11.11.1",
     "i18next": "^23.16.8",
     "i18next-browser-languagedetector": "^7.2.0",
+    "katex": "^0.16.45",
     "lucide-react": "^0.511.0",
-    "marked": "^15.0.12",
     "node-forge": "^1.4.0",
     "prismjs": "^1.30.0",
     "qrcode.react": "^4.2.0",
@@ -34,7 +34,6 @@
     "remark-breaks": "^4.0.0",
     "remark-gfm": "^4.0.1",
     "remark-math": "^6.0.0",
-    "unist-util-visit": "^5.0.0",
     "zod": "^4.4.3",
     "zustand": "^5.0.14"
   },

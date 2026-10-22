@@ -8,91 +8,6 @@
   word-break: break-word;
 }
 
-/* 用户消息样式 - 白色字体适配蓝色背景 */
-.user-message {
-  color: white !important;
-}
-
-.user-message .markdown-body {
-  color: white !important;
-}
-
-.user-message h1,
-.user-message h2,
-.user-message h3,
-.user-message h4,
-.user-message h5,
-.user-message h6 {
-  color: white !important;
-}
-
-.user-message p {
-  color: white !important;
-}
-
-.user-message span {
-  color: white !important;
-}
-
-.user-message div {
-  color: white !important;
-}
-
-.user-message li {
-  color: white !important;
-}
-
-.user-message td,
-.user-message th {
-  color: white !important;
-}
-
-.user-message blockquote {
-  color: white !important;
-  border-left-color: rgba(255, 255, 255, 0.5) !important;
-  background-color: rgba(255, 255, 255, 0.1) !important;
-}
-
-.user-message code:not(pre code) {
-  color: #000 !important;
-  background-color: rgba(255, 255, 255, 0.9) !important;
-}
-
-.user-message a {
-  color: #87ceeb !important;
-  /* 浅蓝色链接 */
-}
-
-.user-message a:hover {
-  color: #b0e0e6 !important;
-  /* hover时更浅的蓝色 */
-}
-
-/* 表格在用户消息中的样式 */
-.user-message table {
-  border-color: rgba(255, 255, 255, 0.3) !important;
-}
-
-.user-message th {
-  background-color: rgba(255, 255, 255, 0.2) !important;
-  border-color: rgba(255, 255, 255, 0.3) !important;
-}
-
-.user-message td {
-  border-color: rgba(255, 255, 255, 0.3) !important;
-}
-
-/* 加载动画 */
-@keyframes spin {
-  0% {
-    transform: rotate(0deg);
-  }
-
-  100% {
-    transform: rotate(360deg);
-  }
-}
-
 /* 代码高亮主题 - 适配Semi Design */
 .hljs {
   display: block;
@@ -185,16 +100,6 @@
 
 .hljs-strong {
   font-weight: bold;
-}
-
-/* Mermaid容器样式 */
-.mermaid-container {
-  transition: all 0.2s ease;
-}
-
-.mermaid-container:hover {
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  transform: translateY(-1px);
 }
 
 /* ===== 代码块（纯黑背景 + 白字 + 语法高亮） ===== */
@@ -345,11 +250,6 @@
   font-family: 'JetBrains Mono', 'SF Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
 }
 
-.user-message .inline-code {
-  background: rgba(255, 255, 255, 0.18);
-  color: #ffffff;
-}
-
 /* 表格响应式 */
 @media (max-width: 768px) {
   .markdown-body table {
@@ -453,105 +353,4 @@
 .markdown-body li.task-list-item {
   list-style: none;
   margin-left: -20px;
-}
-
-/* 键盘按键样式 */
-.markdown-body kbd {
-  background-color: var(--semi-color-fill-0);
-  border: 1px solid var(--semi-color-border);
-  border-radius: 3px;
-  box-shadow: 0 1px 0 var(--semi-color-border);
-  color: var(--semi-color-text-0);
-  display: inline-block;
-  font-family: 'JetBrains Mono', 'SF Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-  font-size: 0.85em;
-  font-weight: 700;
-  line-height: 1;
-  padding: 2px 4px;
-  white-space: nowrap;
-}
-
-/* 详情折叠样式 */
-.markdown-body details {
-  border: 1px solid var(--semi-color-border);
-  border-radius: 6px;
-  padding: 12px;
-  margin: 12px 0;
-}
-
-.markdown-body summary {
-  cursor: pointer;
-  font-weight: bold;
-  color: var(--semi-color-primary);
-  margin-bottom: 8px;
-}
-
-.markdown-body summary:hover {
-  color: var(--semi-color-primary-hover);
-}
-
-/* 脚注样式 */
-.markdown-body .footnote-ref {
-  color: var(--semi-color-primary);
-  text-decoration: none;
-  font-weight: bold;
-}
-
-.markdown-body .footnote-ref:hover {
-  text-decoration: underline;
-}
-
-/* 警告块样式 */
-.markdown-body .warning {
-  background-color: var(--semi-color-warning-light-default);
-  border-left: 4px solid var(--semi-color-warning);
-  padding: 12px 16px;
-  margin: 12px 0;
-  border-radius: 0 6px 6px 0;
-}
-
-.markdown-body .info {
-  background-color: var(--semi-color-info-light-default);
-  border-left: 4px solid var(--semi-color-info);
-  padding: 12px 16px;
-  margin: 12px 0;
-  border-radius: 0 6px 6px 0;
-}
-
-.markdown-body .success {
-  background-color: var(--semi-color-success-light-default);
-  border-left: 4px solid var(--semi-color-success);
-  padding: 12px 16px;
-  margin: 12px 0;
-  border-radius: 0 6px 6px 0;
-}
-
-.markdown-body .danger {
-  background-color: var(--semi-color-danger-light-default);
-  border-left: 4px solid var(--semi-color-danger);
-  padding: 12px 16px;
-  margin: 12px 0;
-  border-radius: 0 6px 6px 0;
-}
-
-@keyframes fade-in {
-  0% {
-    opacity: 0;
-    transform: translateY(6px) scale(0.98);
-    filter: blur(3px);
-  }
-  60% {
-    opacity: 0.85;
-    filter: blur(0.5px);
-  }
-  100% {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-    filter: blur(0);
-  }
-}
-
-.animate-fade-in {
-  animation: fade-in 0.6s cubic-bezier(0.22, 1, 0.36, 1) both;
-  will-change: opacity, transform;
 }
