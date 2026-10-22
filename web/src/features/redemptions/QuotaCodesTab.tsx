@@ -8,9 +8,10 @@ import { quotaToDisplayAmount, displayAmountToQuota } from '../../helpers/quota'
 import { useAuthStore } from '../../stores/auth-store';
 import { useOwnedOperation } from '../../hooks/useOwnedOperation';
 import { useLiveSearch } from '../../hooks/useLiveSearch';
+import useIsMobile from '../../hooks/useIsMobile';
 import { apiErrorMessage } from '../../lib/api-error';
 import { readWalletData, walletRequestConfig } from '../payments/wallet-query';
-import { Button, Checkbox, ConfirmDialog, IconButton, Input, Modal, NumberInput, Pagination, Select, Table, Tag, showError, showSuccess } from '../../components/ui';
+import { Button, ConfirmDialog, IconButton, Input, Modal, NumberInput, Pagination, Select, Table, TableSelection, Tag, showError, showSuccess } from '../../components/ui';
 import type { TableColumn } from '../../components/ui/layout/Table';
 import type { ApiEnvelope } from '../../types/api';
 import { codeStatus, codesURL, localExpiry, redemptionPageSchema, serializeRedemptionDraft } from './codes';
@@ -58,6 +59,7 @@ function DeleteCodes({ confirmation, onClose, onSaved }: { confirmation: Confirm
 
 export default function QuotaCodesTab() {
   const { t } = useTranslation(); const { busy, run } = useOwnedOperation();
+  const mobile = useIsMobile();
   const identity = useAuthStore((state) => `${state.auth.user?.id}:${state.auth.session?.sid}:${state.auth.user?.role}`);
   const [filters, setFilters] = useState<CodeFilters>({ keyword: '', status: '' }); const [applied, setApplied] = useState(filters); const [page, setPage] = useState(1);
   const [selected, setSelected] = useState<number[]>([]); const [draft, setDraft] = useState(freshDraft); const [editing, setEditing] = useState<RedemptionCode>();
@@ -89,8 +91,9 @@ export default function QuotaCodesTab() {
     showSuccess(t('Updated')); refresh();
   });
   const allSelected = rows.length > 0 && rows.every((row) => selected.includes(row.id));
+  const pageSelection = { checked: allSelected, indeterminate: rows.some((row) => selected.includes(row.id)) && !allSelected, disabled: busy || query.isFetching || query.isError || !rows.length, 'aria-label': t('Select current page'), onChange: (checked: boolean) => setSelected(checked ? rows.map((row) => row.id) : []) };
   const columns: TableColumn<RedemptionCode>[] = [
-    { key: 'select', mobileRole: 'selection', title: <Checkbox checked={allSelected} indeterminate={selected.length > 0 && !allSelected} disabled={busy || !rows.length} aria-label={t('Select current page')} onChange={(checked) => setSelected(checked ? rows.map((row) => row.id) : [])} />, width: 45, render: (row) => <Checkbox checked={selected.includes(row.id)} disabled={busy} aria-label={t('Select redemption code #{{id}}', { id: row.id })} onChange={(checked) => setSelected((old) => checked ? [...old, row.id] : old.filter((id) => id !== row.id))} /> },
+    { key: 'select', mobileRole: 'selection', title: <TableSelection {...pageSelection} />, width: 45, render: (row) => <TableSelection checked={selected.includes(row.id)} disabled={busy || query.isFetching} aria-label={t('Select redemption code #{{id}}', { id: row.id })} onChange={(checked) => setSelected((old) => checked ? [...old, row.id] : old.filter((id) => id !== row.id))} /> },
     { key: 'id', title: 'ID', width: 65 }, { key: 'name', title: t('Name'), render: (row) => row.name || '—' },
     { key: 'key', title: t('Redemption Code'), render: (row) => <div className='flex items-center gap-2 font-mono text-xs'><span>{row.key.slice(0, 12)}…</span><IconButton icon={Copy} aria-label={t('Copy code #{{id}}', { id: row.id })} onClick={() => void copied(row.key)} /></div> },
     { key: 'quota', title: t('Value'), render: (row) => renderQuota(row.quota, 2) },
@@ -118,7 +121,7 @@ export default function QuotaCodesTab() {
         <Button variant='toggle' disabled={busy} onClick={() => setConfirmation({ title: t('Delete Invalid Redemption Codes?'), invalid: true })}>{t('Delete invalid redemption codes')}</Button>
       </div>
     </div>
-    {query.isError ? <div role='alert' className='space-y-2 text-sm text-ui-danger'><p>{t(apiErrorMessage(query.error, 'Unable to load redemption codes'))}</p><Button onClick={refresh}>{t('Retry')}</Button></div> : <><Table loading={!data} columns={columns} rows={rows} rowKey='id' minWidth={1050} emptyIcon={Ticket} /><div className='mt-4 flex justify-end'><Pagination total={total} pageSize={PAGE_SIZE} page={page} onChange={setPage} /></div></>}
+    {query.isError ? <div role='alert' className='space-y-2 text-sm text-ui-danger'><p>{t(apiErrorMessage(query.error, 'Unable to load redemption codes'))}</p><Button onClick={refresh}>{t('Retry')}</Button></div> : <><Table loading={!data} showMobileSelectionHeader={false} columns={columns} rows={rows} rowKey='id' minWidth={1050} emptyIcon={Ticket} /><div className='mt-4 md:flex md:justify-end'><Pagination total={total} pageSize={PAGE_SIZE} page={page} onChange={setPage} showRange={!mobile} leading={mobile && rows.length > 0 ? <TableSelection {...pageSelection} label={t('Select current page')} count={selected.length} /> : undefined} /></div></>}
     {generated && <Modal open title={t('Redemption codes created')} onClose={() => setGenerated(undefined)} hideFooter width={520}><div className='space-y-3'><p className='text-sm text-ui-text-2'>{t('Save these redemption codes in a safe place:')}</p><pre className='max-h-64 overflow-auto whitespace-pre-wrap break-all rounded-lg bg-ui-bg-subtle p-3 font-mono text-xs'>{generated.join('\n')}</pre><div className='flex justify-end gap-2'><Button variant='toggle' onClick={() => void copied(generated.join('\n'))}>{t('Copy all')}</Button><Button onClick={() => setGenerated(undefined)}>{t('Done')}</Button></div></div></Modal>}
     {editing && <EditCode key={editing.id} code={editing} onClose={() => setEditing(undefined)} onSaved={refresh} />}
     {confirmation && <DeleteCodes confirmation={confirmation} onClose={() => setConfirmation(undefined)} onSaved={refresh} />}

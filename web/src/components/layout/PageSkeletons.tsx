@@ -141,7 +141,7 @@ export function PricingCardsSkeleton() {
 export function PricingDetailSkeleton() {
   return <ContentSkeleton variant='cards'><div className='flex flex-col gap-4'>
     <Card><div className='flex items-center gap-4'><Skeleton width={56} height={56} /><div className='flex-1 space-y-3'><Skeleton width={220} height={28} /><div className='flex gap-2'><Skeleton width={70} height={20} /><Skeleton width={80} height={20} /></div></div><Skeleton width={32} height={32} /></div><div className='mt-4 border-t border-ui-divider pt-4'><Skeleton height={16} /><Skeleton className='mt-2' width='70%' height={16} /></div></Card>
-    <Card><div className='space-y-4'><Skeleton width={140} height={20} /><Skeleton width={180} height={36} />{[0, 1, 2].map((row) => <div key={row} className='flex justify-between gap-4 border-t border-ui-divider pt-3'><Skeleton width='30%' height={20} /><Skeleton width='35%' height={20} /></div>)}</div></Card>
+    <Card><div className='space-y-4'><div className='flex flex-wrap items-center justify-between gap-x-4 gap-y-3'><Skeleton width={140} height={20} /><div className='flex w-full min-w-0 flex-wrap justify-end gap-3 sm:ml-auto sm:w-auto'>{[62, 90, 80].map((width) => <Skeleton key={width} width={width} height={12} className='my-2' />)}</div></div><Skeleton width={180} height={36} />{[0, 1, 2].map((row) => <div key={row} className='flex justify-between gap-4 border-t border-ui-divider pt-3'><Skeleton width='30%' height={20} /><Skeleton width='35%' height={20} /></div>)}</div></Card>
   </div></ContentSkeleton>;
 }
 

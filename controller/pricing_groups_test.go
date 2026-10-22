@@ -39,7 +39,11 @@ func TestPricingUsesAccountGroupsAndDiscountsWithoutChangingPublicQuotes(t *test
 	require.NoError(t, db.Create(&[]model.Ability{
 		{ChannelId: 1, Group: "default", Model: "pricing-public", Enabled: true},
 		{ChannelId: 1, Group: "vip_only", Model: "pricing-private", Enabled: true},
+		{ChannelId: 1, Group: "default", Model: "pricing-unconfigured", Enabled: true},
+		{ChannelId: 1, Group: "all", Model: "pricing-unconfigured-all", Enabled: true},
 	}).Error)
+	require.NoError(t, model.SaveModelPricing(&model.ModelPricing{ModelName: "pricing-public", Enabled: true, InputPrice: 1, OutputPrice: 2}))
+	require.NoError(t, model.SaveModelPricing(&model.ModelPricing{ModelName: "pricing-private", Enabled: true}))
 	model.InvalidatePricingCache()
 	engine := gin.New()
 	engine.GET("/pricing", func(c *gin.Context) {
@@ -71,11 +75,14 @@ func TestPricingUsesAccountGroupsAndDiscountsWithoutChangingPublicQuotes(t *test
 	public := request(false)
 	require.Len(t, public.Data, 1)
 	require.Equal(t, "pricing-public", public.Data[0].ModelName)
+	require.True(t, public.Data[0].Configured)
 	require.Equal(t, map[string]float64{"default": 2}, public.Ratios)
 	require.Equal(t, []string{"default"}, public.Auto)
 	account := request(true)
 	require.Len(t, account.Data, 1)
 	require.Equal(t, "pricing-private", account.Data[0].ModelName)
+	require.True(t, account.Data[0].Configured)
+	require.Zero(t, account.Data[0].InputPrice, "explicitly configured free prices remain visible")
 	require.Equal(t, map[string]float64{"vip_only": 0.5}, account.Ratios)
 	require.NotContains(t, account.Groups, "default")
 	require.Equal(t, "Private group", account.Groups["vip_only"])

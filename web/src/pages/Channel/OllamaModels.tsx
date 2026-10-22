@@ -4,11 +4,12 @@ import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { z } from 'zod';
 import { API } from '../../helpers';
-import { Button, ConfirmDialog, Input, Modal, Table } from '../../components/ui';
+import { Button, ConfirmDialog, Input, Modal, Table, TableSelection } from '../../components/ui';
 import type { TableColumn } from '../../components/ui/layout/Table';
 import { hasPermission } from '../../lib/admin-permissions';
 import { getFreshAuthHeaders } from '../../lib/auth-session';
 import { useAuthStore } from '../../stores/auth-store';
+import useIsMobile from '../../hooks/useIsMobile';
 import { downloadPercent, readOllamaProgress } from './ollama-progress';
 import type { OllamaProgress } from './ollama-progress';
 
@@ -30,6 +31,7 @@ function bytes(value: number): string {
 
 export default function OllamaModels({ channel, onClose, onChanged }: Props) {
   const { t, i18n } = useTranslation();
+  const mobile = useIsMobile();
   const user = useAuthStore((state) => state.auth.user);
   const canManage = hasPermission(user, 'channel', 'sensitive_write');
   const canWrite = hasPermission(user, 'channel', 'write');
@@ -83,6 +85,7 @@ export default function OllamaModels({ channel, onClose, onChanged }: Props) {
     for (const row of visible) { if (allVisibleSelected) next.delete(row.name); else next.add(row.name); }
     return next;
   });
+  const visibleSelection = { checked: allVisibleSelected, indeterminate: !allVisibleSelected && visible.some((row) => selected.has(row.name)), disabled: disabled || !visible.length, 'aria-label': t('Select visible models'), onChange: toggleVisible };
   const request = (operation: Operation) => {
     if (disabled || (['add', 'remove'].includes(operation.action) && !canWrite)) return;
     setFeedback(undefined); setConfirmation(operation);
@@ -133,7 +136,7 @@ export default function OllamaModels({ channel, onClose, onChanged }: Props) {
     }
   };
   const columns: TableColumn<ModelRow>[] = [
-    { key: 'select', mobileRole: 'selection', title: <input className='accent-ui-accent' type='checkbox' aria-label={t('Select visible models')} checked={allVisibleSelected} disabled={disabled} onChange={toggleVisible} />, render: (row) => <input className='accent-ui-accent' type='checkbox' aria-label={`${t('Select model')} ${row.name}`} checked={selected.has(row.name)} disabled={disabled} onChange={() => toggle(row.name)} /> },
+    { key: 'select', mobileRole: 'selection', title: <TableSelection {...visibleSelection} />, render: (row) => <TableSelection aria-label={`${t('Select model')} ${row.name}`} checked={selected.has(row.name)} disabled={disabled} onChange={() => toggle(row.name)} /> },
     { key: 'name', title: t('Model'), render: (row) => <code className='break-all'>{row.name}</code> },
     { key: 'details', title: t('Details'), render: (row) => <span className='break-words'>{[row.model?.details?.family, row.model?.details?.parameter_size, row.model?.details?.quantization_level].filter(Boolean).join(' · ') || '—'}</span> },
     { key: 'size', title: t('Size'), render: (row) => row.model ? bytes(row.model.size) : '—' },
@@ -177,16 +180,17 @@ export default function OllamaModels({ channel, onClose, onChanged }: Props) {
       {query.isError && <p role='alert' className='text-sm text-ui-danger break-words'>{query.error.message}{snapshot && ` · ${t('Previous model snapshot; refresh before making changes')}`}</p>}
       {snapshot && <>
         <Input aria-label={t('Search models')} placeholder={t('Search models')} value={search} onChange={setSearch} disabled={busy} />
-        <div className='flex flex-wrap items-center gap-2'>
-          <span className='text-sm text-ui-text-2'>{t('Selected')}: {selected.size}</span>
+        {selected.size > 0 && <div className='flex flex-wrap items-center gap-2'>
+          <span className='hidden text-sm text-ui-text-2 md:inline'>{t('Selected')}: {selected.size}</span>
           <Button size='sm' variant='secondary' disabled={busy || !selected.size} onClick={() => setSelected(new Set())}>{t('Clear selection')}</Button>
           {canWrite && <>
             <Button size='sm' variant='secondary' disabled={disabled || !selected.size || selected.size > 1000} onClick={() => request({ action: 'add', names: [...selected] })}>{t('Add selected to channel')}</Button>
             <Button size='sm' variant='secondary' disabled={disabled || !selected.size || selected.size > 1000} onClick={() => request({ action: 'remove', names: [...selected] })}>{t('Remove selected from channel')}</Button>
           </>}
-        </div>
+        </div>}
         {selected.size > 1000 && <p role='alert'>{t('Select at most 1000 models')}</p>}
-        <Table columns={columns} rows={visible} rowKey='name' minWidth={920} emptyIcon={Boxes} emptyText={t('No matching models')} />
+        <Table showMobileSelectionHeader={false} columns={columns} rows={visible} rowKey='name' minWidth={920} emptyIcon={Boxes} emptyText={t('No matching models')} />
+        {mobile && visible.length > 0 && <div className='border-t border-ui-border pt-3'><TableSelection {...visibleSelection} label={t('Select visible models')} count={selected.size} /></div>}
       </>}
     </Modal>
     {confirmation && <ConfirmDialog open title={t(title)} description={<><span>{t(description)}</span><span className='block mt-2 text-sm break-all'>{'name' in confirmation ? confirmation.name : `${t('Selected')}: ${confirmation.names.length}`}</span></>}

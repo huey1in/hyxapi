@@ -3,7 +3,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { Plus, Search, Pencil, Trash2, ShieldCheck, ShieldOff, ArrowUp, ArrowDown, CreditCard, DollarSign, MoreHorizontal, Copy, UsersRound } from 'lucide-react';
 import { API, copy, showSuccess, renderQuota } from '../../helpers';
-import { PageShell, Card, Button, IconButton, Input, Table, Pagination, Tag, Modal, ConfirmDialog, Select } from '../../components/ui';
+import { PageShell, Button, IconButton, Input, Table, Pagination, Tag, Modal, ConfirmDialog, Select } from '../../components/ui';
 import type { TableColumn } from '../../components/ui/layout/Table';
 import { useAuthStore } from '../../stores/auth-store';
 import type { AuthUser } from '../../stores/auth-store';
@@ -87,21 +87,21 @@ function UsersWorkspace({ actor }: { actor: AuthUser | null }) {
   ];
   if (!actor || actor.role < 10) return null;
   return <PageShell title={t('User management')} actions={<Button icon={Plus} onClick={() => setWindowState({ kind: 'create' })}>{t('Create user')}</Button>}>
-    <Card className='mb-4'>
-      <div className='flex flex-wrap gap-2'>
-        <div className='w-40 min-w-0 max-w-full sm:min-w-48 sm:flex-1'><Input aria-label={t('Search users')} placeholder={t('Search username, display name, email or ID')} value={keyword} onChange={setKeyword} prefix={<Search size={15} />} clearable /></div>
+    <div className='mb-4'>
+      <div className='flex flex-wrap items-center gap-3'>
+        <div className='w-40 min-w-0 max-w-full sm:w-60'><Input aria-label={t('Search users')} placeholder={t('Search username, display name, email or ID')} value={keyword} onChange={setKeyword} prefix={<Search size={15} />} clearable /></div>
         <Button variant='toggle' onClick={() => { setKeyword(''); setFilters(emptyFilters); setPage(1); }}>{t('Reset')}</Button><Button variant='toggle' disabled={list.isFetching} onClick={() => void refresh()}>{t('Refresh')}</Button>
       </div>
-      <div className='mt-3 flex flex-wrap gap-3'>
-        <Select aria-label={t('Filter by group')} value={filters.group} onChange={(value) => filter('group', value)} options={[{ value: '', label: t('All groups') }, ...[...new Set([...(groupList.data ?? []), filters.group])].filter(Boolean).map((value) => ({ value, label: value }))]} width={150} size={30} />
-        <Select aria-label={t('Filter by role')} value={filters.role} onChange={(value) => filter('role', value)} options={[{ value: '', label: t('All roles') }, { value: '1', label: t('Regular user') }, { value: '10', label: t('Administrator') }, { value: '100', label: t('Super administrator') }]} width={150} size={30} />
-        <Select aria-label={t('Filter by status')} value={filters.status} onChange={(value) => filter('status', value)} options={[{ value: '', label: t('All statuses') }, { value: '1', label: t('Enabled') }, { value: '2', label: t('Disabled') }, { value: '-1', label: t('Deleted') }]} width={150} size={30} />
-        <Select aria-label={t('Sort users by')} value={sort} onChange={(value) => { setPage(1); setSort(value); }} options={([{ value: 'id', label: 'ID' }, { value: 'username', label: t('Username') }, { value: 'quota', label: t('Quota') }, { value: 'group', label: t('User group') }, { value: 'created_at', label: t('Created time') }, { value: 'last_login_at', label: t('Last login') }] satisfies { value: UserSort; label: string }[])} width={150} size={30} />
-        <Select aria-label={t('Sort direction')} value={order} onChange={(value) => { setPage(1); setOrder(value); }} options={[{ value: 'desc', label: t('Descending') }, { value: 'asc', label: t('Ascending') }]} width={140} size={30} />
-        <Select aria-label={t('Users per page')} value={pageSize} onChange={(value) => { setPage(1); setPageSize(value); }} options={[20, 50, 100]} width={80} size={30} />
+      <div className='mt-3 flex flex-wrap items-center gap-3'>
+        <Select aria-label={t('Filter by group')} value={filters.group} onChange={(value) => filter('group', value)} options={[{ value: '', label: t('All groups') }, ...[...new Set([...(groupList.data ?? []), filters.group])].filter(Boolean).map((value) => ({ value, label: value }))]} width={150} />
+        <Select aria-label={t('Filter by role')} value={filters.role} onChange={(value) => filter('role', value)} options={[{ value: '', label: t('All roles') }, { value: '1', label: t('Regular user') }, { value: '10', label: t('Administrator') }, { value: '100', label: t('Super administrator') }]} width={150} />
+        <Select aria-label={t('Filter by status')} value={filters.status} onChange={(value) => filter('status', value)} options={[{ value: '', label: t('All statuses') }, { value: '1', label: t('Enabled') }, { value: '2', label: t('Disabled') }, { value: '-1', label: t('Deleted') }]} width={150} />
+        <Select aria-label={t('Sort users by')} value={sort} onChange={(value) => { setPage(1); setSort(value); }} options={([{ value: 'id', label: 'ID' }, { value: 'username', label: t('Username') }, { value: 'quota', label: t('Quota') }, { value: 'group', label: t('User group') }, { value: 'created_at', label: t('Created time') }, { value: 'last_login_at', label: t('Last login') }] satisfies { value: UserSort; label: string }[])} width={150} />
+        <Select aria-label={t('Sort direction')} value={order} onChange={(value) => { setPage(1); setOrder(value); }} options={[{ value: 'desc', label: t('Descending') }, { value: 'asc', label: t('Ascending') }]} width={140} />
+        <Select aria-label={t('Users per page')} value={pageSize} onChange={(value) => { setPage(1); setPageSize(value); }} options={[20, 50, 100]} width={80} />
       </div>
       {groupList.isError && <p role='alert' className='mt-2 text-xs text-ui-danger'>{t('Group filters could not be loaded. Refresh this page to retry.')}</p>}
-    </Card>
+    </div>
     {list.isError && <p role='alert' className='mb-3 text-sm text-ui-danger'>{t(userErrorMessage(list.error))}</p>}
     <Table loading={list.isPending} columns={columns} rows={rows} minWidth={1360} emptyIcon={UsersRound} emptyText={t('No users')} />
     <div className='mt-4 flex justify-end'><Pagination total={total} pageSize={pageSize} page={page} onChange={setPage} /></div>

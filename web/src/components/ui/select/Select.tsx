@@ -8,6 +8,7 @@
  * prefix:     触发器内部左侧提示
  * width:      最大宽度；控件按内容收缩，默认上限 320px
  * size:       sm | md (默认) | lg
+ * variant:    default（描边）| text（无边框文本）
  * placement:  bottom-start | bottom-end | top-start | top-end
  * popover:    使用顶层浮层，避免被弹窗或滚动容器裁剪
  * disabled
@@ -35,6 +36,7 @@ export interface SelectProps<V extends SelectValue> {
   placement?: 'bottom-start' | 'bottom-end' | 'top-start' | 'top-end';
   popover?: boolean;
   disabled?: boolean;
+  variant?: 'default' | 'text';
   size?: number;
   width?: CSSProperties['width'] | 'full';
   id?: string;
@@ -51,6 +53,7 @@ function Select<V extends SelectValue>({
   placement = 'bottom-start',
   popover = true,
   disabled = false,
+  variant = 'default',
   size = 36,
   width,
   id,
@@ -85,12 +88,12 @@ function Select<V extends SelectValue>({
         aria-haspopup='true'
         disabled={disabled}
         onClick={() => !disabled && setOpen((o) => !o)}
-        style={s.style}
+        style={variant === 'text' ? { ...s.style, paddingLeft: 0, paddingRight: 0 } : s.style}
         className={cn(
-          s.className,
+          variant === 'text' ? 'rounded-sm border-0 bg-transparent text-ui-text-2 transition-colors hover:text-ui-text disabled:opacity-50' : s.className,
           'w-full min-w-0 inline-flex items-center justify-between cursor-pointer text-left',
           prefix ? 'gap-1.5' : 'gap-2',
-          open && 'border-ui-text-3',
+          open && (variant === 'text' ? 'text-ui-text' : 'border-ui-text-3'),
           FOCUS_RING,
           disabled && 'cursor-not-allowed',
         )}

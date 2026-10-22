@@ -1,4 +1,4 @@
-import { useId, useRef, useState } from 'react';
+import { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   Plus,
@@ -8,8 +8,6 @@ import {
   PowerOff,
   Activity,
   RefreshCw,
-  CheckSquare,
-  Square,
   Tag as TagIcon,
   Gauge,
   KeyRound,
@@ -28,6 +26,7 @@ import {
   Input,
   Select,
   Table,
+  TableSelection,
   Pagination,
   Tag,
   ConfirmDialog,
@@ -77,7 +76,6 @@ type Filters = ChannelFilterValues & {
 function ChannelSession({ identity }: { identity: string }) {
   const { t } = useTranslation();
   const mobile = useIsMobile();
-  const selectionID = useId();
   const client = useQueryClient();
   const { busy, run } = useOwnedOperation();
   const [keyword, setKeyword] = useState('');
@@ -277,38 +275,22 @@ function ChannelSession({ identity }: { identity: string }) {
       key: '_sel',
       mobileRole: 'selection',
       title: (
-        <button
-          id={selectionID}
-          type='button'
-          role='checkbox'
+        <TableSelection
           aria-label={t('Select visible channels')}
-          aria-checked={allVisibleSelected ? true : rows.some((row) => selected.has(row.id)) ? 'mixed' : false}
-          onClick={toggleAll}
-          className='inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-lg text-ui-text-2 hover:bg-ui-bg-subtle focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ui-text md:h-4 md:w-4'
-        >
-          {allVisibleSelected ? (
-            <CheckSquare size={16} />
-          ) : (
-            <Square size={16} />
-          )}
-        </button>
+          checked={allVisibleSelected}
+          indeterminate={!allVisibleSelected && rows.some((row) => selected.has(row.id))}
+          disabled={loading || busy || !rows.length}
+          onChange={toggleAll}
+        />
       ),
       width: 36,
       render: (r) => (
-        <button
-          type='button'
-          role='checkbox'
+        <TableSelection
           aria-label={`${t('Select channel')} ${r.id}`}
-          aria-checked={selected.has(r.id)}
-          onClick={() => toggleOne(r.id)}
-          className='inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-lg text-ui-text-2 hover:bg-ui-bg-subtle focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ui-text md:h-4 md:w-4'
-        >
-          {selected.has(r.id) ? (
-            <CheckSquare size={16} />
-          ) : (
-            <Square size={16} />
-          )}
-        </button>
+          checked={selected.has(r.id)}
+          disabled={busy}
+          onChange={() => toggleOne(r.id)}
+        />
       ),
     },
     { key: 'id', title: 'ID', width: 70 },
@@ -508,8 +490,8 @@ function ChannelSession({ identity }: { identity: string }) {
         </>
       }
     >
-      <div className='channel-filter-panel mb-4 flex flex-wrap items-center gap-2 rounded-2xl border border-ui-border bg-[var(--page-bg)] p-4'>
-        <div className='w-40 min-w-0 max-w-full sm:w-[320px]'>
+      <div className='channel-filter-panel mb-4 flex flex-wrap items-center gap-3'>
+        <div className='w-40 min-w-0 max-w-full sm:w-60'>
           <Input
             placeholder={t('搜索渠道名称/key/分组')}
             aria-label={t('搜索渠道名称/key/分组')}
@@ -676,13 +658,7 @@ function ChannelSession({ identity }: { identity: string }) {
               onChange={(p: number) => changePage(p)}
               showRange={!mobile}
               leading={mobile && !loading && rows.length > 0 ? (
-                <div className='flex min-h-10 min-w-0 items-center gap-2'>
-                  {columns[0].title}
-                  <div className='min-w-0'>
-                    <label htmlFor={selectionID} className='inline-block cursor-pointer py-2 text-ui-text-2'>{t('Select current page')}</label>
-                    {selected.size > 0 && <span className='ml-2 inline-block whitespace-nowrap text-xs text-ui-text-3'>{t('已选')}{selected.size} {t('项')}</span>}
-                  </div>
-                </div>
+                <TableSelection aria-label={t('Select visible channels')} label={t('Select current page')} count={selected.size} checked={allVisibleSelected} indeterminate={!allVisibleSelected && rows.some((row) => selected.has(row.id))} disabled={busy} onChange={toggleAll} />
               ) : undefined}
             />
           </div>

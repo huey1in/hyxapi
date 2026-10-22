@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Boxes, Factory, Plus, Pencil, Trash2, RefreshCw } from 'lucide-react';
 import { useAuthStore } from '../../stores/auth-store';
+import useIsMobile from '../../hooks/useIsMobile';
 import PricingConfigDialog from '../../pages/Setting/PricingConfigDialog';
 import MetadataEditor from './MetadataEditor';
 import MetadataSyncDialog from './MetadataSyncDialog';
@@ -8,12 +9,13 @@ import ModelDeleteDialog from './ModelDeleteDialog';
 import VendorOperationDialog from './VendorOperationDialog';
 import { request, errorText, ruleOptions, stateLabels } from './catalog';
 import type { Model, Vendor, Page, Operation } from './catalog';
-import { Button, Checkbox, ErrorMessage, IconButton, Input, PageShell, Pagination, Select, Table, Tag } from './ui';
+import { Button, Checkbox, ErrorMessage, IconButton, Input, PageShell, Pagination, Select, Table, TableSelection, Tag } from './ui';
 
 const newModel: Model = { id: 0, model_name: '', status: 1, sync_official: 1, name_rule: 0 };
 const pageSize = 20;
 
 function CatalogSession({ kind, root }: { kind: 'models' | 'vendors'; root: boolean }) {
+  const mobile = useIsMobile();
   const [models, setModels] = useState<Model[]>([]);
   const [vendors, setVendors] = useState<Vendor[]>([]);
   const [vendorOptions, setVendorOptions] = useState<Vendor[]>([]);
@@ -56,7 +58,10 @@ function CatalogSession({ kind, root }: { kind: 'models' | 'vendors'; root: bool
   }, [kind, page, keyword, filter, revision]);
   const change = (key: keyof typeof filter, value: string) => { setFilter((current) => ({ ...current, [key]: value })); setPage(1); };
   const toggle = (id: number, checked: boolean) => setSelected((current) => checked ? [...current, id] : current.filter((value) => value !== id));
-  const selectAll = (checked: boolean) => setSelected(checked ? (kind === 'models' ? models : vendors).filter((item) => item.id > 0).map((item) => item.id) : []);
+  const selectable = (kind === 'models' ? models : vendors).filter((item) => item.id > 0);
+  const selectedOnPage = selectable.filter((item) => selected.includes(item.id)).length;
+  const selectAll = (checked: boolean) => setSelected(checked ? selectable.map((item) => item.id) : []);
+  const pageSelection = { checked: selectable.length > 0 && selectedOnPage === selectable.length, indeterminate: selectedOnPage > 0 && selectedOnPage < selectable.length, disabled: loading || busy || !!error || !selectable.length, onChange: selectAll, 'aria-label': '选择当前页' };
   const toggleStatus = async (model: Model) => {
     if (busyRef.current) return;
     busyRef.current = true; setBusy(true); setError('');
@@ -72,37 +77,38 @@ function CatalogSession({ kind, root }: { kind: 'models' | 'vendors'; root: bool
   </div>;
   return <PageShell title={kind === 'models' ? '模型管理' : '供应商管理'} actions={actions}>
     <div className='space-y-4'>
-      <div className='grid gap-3 sm:grid-cols-2 xl:grid-cols-3'>
-        <Input width='full' value={keyword} placeholder='搜索名称或描述' aria-label='搜索名称或描述' onChange={(value) => { setKeyword(value); setPage(1); }} />
-        {kind === 'models' ? <>
-          <Select width='full' value={filter.vendor} onChange={(value) => change('vendor', value)} options={[{ value: '', label: '全部供应商' }, { value: '0', label: '未分配' }, ...vendorOptions.map((vendor) => ({ value: String(vendor.id), label: vendor.name }))]} />
-          <Select width='full' value={filter.square_state} onChange={(value) => change('square_state', value)} options={[{ value: '', label: '全部广场状态' }, ...Object.entries(stateLabels).map(([value, label]) => ({ value, label }))]} />
-          <Select width='full' value={filter.status} onChange={(value) => change('status', value)} options={[{ value: '', label: '全部可见性' }, { value: '1', label: '允许显示' }, { value: '0', label: '隐藏' }]} />
-          <Select width='full' value={filter.sync_official} onChange={(value) => change('sync_official', value)} options={[{ value: '', label: '全部同步状态' }, { value: '1', label: '允许同步' }, { value: '0', label: '关闭同步' }]} />
-        </> : <Select width='full' value={filter.association} onChange={(value) => change('association', value)} options={[{ value: '', label: '全部关联状态' }, { value: 'linked', label: '已有模型' }, { value: 'unlinked', label: '未关联模型' }]} />}
-      </div>
       <div className='flex flex-wrap items-center gap-3'>
-        <Checkbox label='选择本页' checked={selected.length > 0 && selected.length === (kind === 'models' ? models : vendors).filter((item) => item.id > 0).length} disabled={loading} onChange={selectAll} />
-        <span className='text-xs text-ui-text-3'>已选 {selected.length} 项</span>
-        {kind === 'models' ? <><Button disabled={!selected.length || loading} onClick={() => setOperation({ action: 'assign', model_ids: selected })}>分配供应商</Button><Button disabled={!selected.length || loading} onClick={() => setDeleting(models.filter((item) => selected.includes(item.id)))}>删除所选</Button></> : <><Button disabled={!selected.length || loading} onClick={() => setOperation({ action: 'merge', vendor_ids: selected })}>合并所选</Button><Button disabled={!selected.length || loading} onClick={() => setOperation({ action: 'delete', vendor_ids: selected })}>删除所选</Button></>}
+        <div className='w-40 min-w-0 max-w-full sm:w-60'>
+          <Input width='full' value={keyword} placeholder='搜索名称或描述' aria-label='搜索名称或描述' onChange={(value) => { setKeyword(value); setPage(1); }} />
+        </div>
+        {kind === 'models' ? <>
+          <Select aria-label='供应商' value={filter.vendor} onChange={(value) => change('vendor', value)} options={[{ value: '', label: '全部供应商' }, { value: '0', label: '未分配' }, ...vendorOptions.map((vendor) => ({ value: String(vendor.id), label: vendor.name }))]} />
+          <Select aria-label='广场状态' value={filter.square_state} onChange={(value) => change('square_state', value)} options={[{ value: '', label: '全部广场状态' }, ...Object.entries(stateLabels).map(([value, label]) => ({ value, label }))]} />
+          <Select aria-label='可见性' value={filter.status} onChange={(value) => change('status', value)} options={[{ value: '', label: '全部可见性' }, { value: '1', label: '允许显示' }, { value: '0', label: '隐藏' }]} />
+          <Select aria-label='同步状态' value={filter.sync_official} onChange={(value) => change('sync_official', value)} options={[{ value: '', label: '全部同步状态' }, { value: '1', label: '允许同步' }, { value: '0', label: '关闭同步' }]} />
+        </> : <Select aria-label='关联状态' value={filter.association} onChange={(value) => change('association', value)} options={[{ value: '', label: '全部关联状态' }, { value: 'linked', label: '已有模型' }, { value: 'unlinked', label: '未关联模型' }]} />}
       </div>
+      {selected.length > 0 && <div className='flex flex-wrap items-center gap-3'>
+        <span className='hidden text-xs text-ui-text-3 md:inline'>已选 {selected.length} 项</span>
+        {kind === 'models' ? <><Button disabled={!selected.length || loading} onClick={() => setOperation({ action: 'assign', model_ids: selected })}>分配供应商</Button><Button disabled={!selected.length || loading} onClick={() => setDeleting(models.filter((item) => selected.includes(item.id)))}>删除所选</Button></> : <><Button disabled={!selected.length || loading} onClick={() => setOperation({ action: 'merge', vendor_ids: selected })}>合并所选</Button><Button disabled={!selected.length || loading} onClick={() => setOperation({ action: 'delete', vendor_ids: selected })}>删除所选</Button></>}
+      </div>}
       <ErrorMessage message={error} />
-      {kind === 'models' ? <Table<Model> loading={loading} rows={models} rowKey={(item) => item.id || `channel:${item.model_name}`} minWidth={800} emptyIcon={Boxes} columns={[
-        { key: 'select', mobileRole: 'selection', title: '', width: 40, render: (item) => <Checkbox checked={selected.includes(item.id)} disabled={!item.id} aria-label={`选择 ${item.model_name}`} onChange={(checked) => toggle(item.id, checked)} /> },
+      {kind === 'models' ? <Table<Model> loading={loading} showMobileSelectionHeader={false} rows={models} rowKey={(item) => item.id || `channel:${item.model_name}`} minWidth={800} emptyIcon={Boxes} columns={[
+        { key: 'select', mobileRole: 'selection', title: <TableSelection {...pageSelection} />, width: 40, render: (item) => <TableSelection checked={selected.includes(item.id)} disabled={!item.id || loading || busy} aria-label={`选择 ${item.model_name}`} onChange={(checked) => toggle(item.id, checked)} /> },
         { key: 'model_name', title: '模型', render: (item) => <div className='max-w-72 break-all'><p>{item.model_name}</p><p className='mt-1 text-xs text-ui-text-3'>{ruleOptions[item.name_rule]?.label}{!item.has_metadata && ' · 尚无元数据'}</p></div> },
         { key: 'vendor', title: '供应商', render: (item) => vendorOptions.find((vendor) => vendor.id === item.vendor_id)?.name || '未分配' },
         { key: 'square_state', title: '广场状态', render: (item) => <Tag>{stateLabels[item.square_state || ''] || '不可用'}</Tag> },
         { key: 'channels', title: '接入渠道', render: (item) => item.configured_channel_count || 0 },
         { key: 'visible', title: '允许显示', render: (item) => <Checkbox checked={item.status === 1} disabled={!item.id || busy} aria-label={`${item.model_name} 允许显示`} onChange={() => toggleStatus(item)} /> },
         { key: 'ops', mobileRole: 'actions' as const, title: '操作', align: 'right', render: (item) => <div className='flex justify-end gap-1'><IconButton icon={Pencil} title={item.id ? '编辑' : '补充元数据'} onClick={() => setEditing(item.id ? item : { ...item, status: 1, sync_official: 1 })} />{root && <Button size='sm' onClick={() => setPricing(item.model_name)}>价格</Button>}{item.id > 0 && <IconButton icon={Trash2} title='删除' onClick={() => setDeleting([item])} />}</div> },
-      ]} /> : <Table<Vendor> loading={loading} rows={vendors} minWidth={600} emptyIcon={Factory} columns={[
-        { key: 'select', mobileRole: 'selection', title: '', width: 40, render: (item) => <Checkbox checked={selected.includes(item.id)} aria-label={`选择 ${item.name}`} onChange={(checked) => toggle(item.id, checked)} /> },
+      ]} /> : <Table<Vendor> loading={loading} showMobileSelectionHeader={false} rows={vendors} minWidth={600} emptyIcon={Factory} columns={[
+        { key: 'select', mobileRole: 'selection', title: <TableSelection {...pageSelection} />, width: 40, render: (item) => <TableSelection checked={selected.includes(item.id)} disabled={loading || busy} aria-label={`选择 ${item.name}`} onChange={(checked) => toggle(item.id, checked)} /> },
         { key: 'name', title: '供应商', render: (item) => <span className='break-all'>{item.name}</span> },
         { key: 'description', title: '描述', render: (item) => <span className='inline-block max-w-80 break-words'>{item.description || '—'}</span> },
         { key: 'model_count', title: '关联模型', render: (item) => item.model_count || 0 },
         { key: 'ops', mobileRole: 'actions' as const, title: '操作', align: 'right', render: (item) => <div className='flex justify-end gap-1'><IconButton icon={Pencil} title='编辑' onClick={() => setEditing(item)} /><IconButton icon={Trash2} title='删除' onClick={() => setOperation({ action: 'delete', vendor_ids: [item.id] })} /></div> },
       ]} />}
-      <Pagination page={page} pageSize={pageSize} total={total} onChange={setPage} />
+      <div className='md:flex md:justify-end'><Pagination page={page} pageSize={pageSize} total={total} onChange={setPage} showRange={!mobile} leading={mobile && !loading && !error && selectable.length > 0 ? <TableSelection {...pageSelection} label='选择当前页' count={selected.length} /> : undefined} /></div>
     </div>
     {editing && <MetadataEditor model={kind === 'models' ? editing as Model : undefined} vendor={kind === 'vendors' ? editing as Vendor : undefined} vendors={vendorOptions} onClose={() => setEditing(undefined)} onSaved={saved} />}
     {sync && <MetadataSyncDialog onClose={() => setSync(false)} onSaved={saved} />}

@@ -6,7 +6,7 @@ import { API } from '../../../helpers';
 import type { ApiEnvelope } from '../../../types/api';
 import { useAuthStore } from '../../../stores/auth-store';
 import { useOwnedOperation } from '../../../hooks/useOwnedOperation';
-import { Button, Checkbox, EmptyState, Modal, showSuccess } from '../../../components/ui';
+import { Button, EmptyState, Modal, Pagination, TableSelection, showSuccess } from '../../../components/ui';
 import { Input, Select, Textarea } from './controls';
 import { copyModelPricing, parsePricingBatch, serializePricingDraft, pricingSnapshotSchema, PricingConfigError } from './pricing-config';
 import type { PricingChange, PricingEntry, PricingSnapshot } from './pricing-config';
@@ -51,6 +51,7 @@ function PricingBatchContent({ onClose, onSaved, modelNames }: Omit<Props, 'open
     ? Object.keys(entry.configured).length === 0 && entry.source !== 'direct' : entry.source === filter)));
   const maxPage = Math.max(1, Math.ceil(filtered.length / pageSize));
   const visible = filtered.slice((Math.min(page, maxPage) - 1) * pageSize, Math.min(page, maxPage) * pageSize);
+  const selectedOnPage = visible.filter((entry) => selected.has(entry.model_name)).length;
   const parsed = useMemo(() => {
     if (!snapshot) return { changes: [] as PricingChange[], error: '' };
     try { return { changes: parsePricingBatch(raw, snapshot), error: '' }; }
@@ -105,27 +106,21 @@ function PricingBatchContent({ onClose, onSaved, modelNames }: Omit<Props, 'open
           { value: 'all', label: t('All billing modes') }, { value: 'tiered_expr', label: t('Expression') }, { value: 'ratio', label: t('Ratio') }, { value: 'direct', label: t('Direct prices') }, { value: 'unset', label: t('No custom pricing') },
         ]} />
       </div>
-      <div className='flex flex-wrap items-center gap-2 text-xs text-ui-text-3'>
-        <Checkbox aria-label={t('Select billing models on this page')} checked={visible.length > 0 && visible.every((entry) => selected.has(entry.model_name))} onChange={(checked) => setSelected((current) => {
-          const next = new Set(current); visible.forEach((entry) => checked ? next.add(entry.model_name) : next.delete(entry.model_name)); return next;
-        })} />
-        <span>{t('Current page · {{count}} selected', { count: selected.size })}</span>
+      {selected.size > 0 && <div className='flex flex-wrap items-center gap-2 text-xs text-ui-text-3'>
         <Button size='sm' variant='link' onClick={() => setSelected(new Set())}>{t('Clear selection')}</Button>
         <Button size='sm' variant='secondary' disabled={!selected.size} onClick={exportSelected}>{t('Export selected billing configurations')}</Button>
-      </div>
+      </div>}
       <div className='min-w-0 divide-y divide-ui-border'>
         {visible.map((entry) => <label key={entry.model_name} className='flex min-w-0 items-center gap-3 py-2 text-xs text-ui-text'>
-          <Checkbox aria-label={t('Select billing model {{model}}', { model: entry.model_name })} checked={selected.has(entry.model_name)} onChange={(checked) => toggle(entry.model_name, checked)} />
+          <TableSelection aria-label={t('Select billing model {{model}}', { model: entry.model_name })} checked={selected.has(entry.model_name)} onChange={(checked) => toggle(entry.model_name, checked)} />
           <span className='min-w-0 flex-1 break-all'>{entry.model_name}</span>
           <span className='shrink-0 text-ui-text-3'>{sourceLabel(entry)}{entry.configured['billing_setting.plugin_billing_expr'] ? ` · ${t('Plugin overrides')}` : ''}</span>
         </label>)}
         {!visible.length && <EmptyState icon={SearchX} padding='sm' title={t('No matching models.')} />}
       </div>
-      <div className='flex flex-wrap items-center justify-between gap-2 text-xs text-ui-text-3'>
-        <span>{t('{{count}} models · page {{page}} / {{pages}}', { count: filtered.length, page: Math.min(page, maxPage), pages: maxPage })}</span>
-        <div className='flex gap-2'><Button size='sm' variant='secondary' disabled={page <= 1} onClick={() => setPage((value) => value - 1)}>{t('Previous page')}</Button>
-          <Button size='sm' variant='secondary' disabled={page >= maxPage} onClick={() => setPage((value) => value + 1)}>{t('Next page')}</Button></div>
-      </div>
+      <Pagination total={filtered.length} pageSize={pageSize} page={Math.min(page, maxPage)} onChange={setPage} showRange={false} leading={visible.length > 0 ? <TableSelection aria-label={t('Select billing models on this page')} label={t('Select current page')} count={selected.size} checked={selectedOnPage === visible.length} indeterminate={selectedOnPage > 0 && selectedOnPage < visible.length} onChange={(checked) => setSelected((current) => {
+        const next = new Set(current); visible.forEach((entry) => checked ? next.add(entry.model_name) : next.delete(entry.model_name)); return next;
+      })} /> : undefined} />
       <datalist id='advanced-batch-pricing-source'>{entries.map((entry) => <option key={entry.model_name} value={entry.model_name} />)}</datalist>
       <label className='grid min-w-0 gap-1 text-xs text-ui-text-3'>{t('Copy source (saved model default prices)')}
         <Input aria-label={t('Batch pricing copy source')} value={source} list='advanced-batch-pricing-source' onChange={setSource} />

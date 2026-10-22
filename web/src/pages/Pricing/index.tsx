@@ -111,8 +111,10 @@ const Pricing = () => {
 
   const performance = usePerformanceSummary(pagedRows.map((row: PricingModel) => row.model_name), !loading && !error && models.length > 0);
   const performanceModels = new Map((performance.data?.models || []).map((model) => [model.model_name, model]));
+  const performanceHistory = (row: PricingModel) => performance.data?.recent_success_series?.[row.model_name] || performanceModels.get(row.model_name)?.recent_success_series;
+  const hasPerformance = (row: PricingModel) => performanceModels.has(row.model_name) || !!performanceHistory(row)?.length;
   const renderPerformance = (row: PricingModel) => <PerformanceBadge model={performanceModels.get(row.model_name)}
-    history={performance.data?.recent_success_series?.[row.model_name] || performanceModels.get(row.model_name)?.recent_success_series} />;
+    history={performanceHistory(row)} />;
 
   const renderPriceCell = (row: PricingModel) => {
     const pd = priceOf(row);
@@ -157,7 +159,7 @@ const Pricing = () => {
             </div>
           </div>
 
-          <div className='mt-3'>{renderPerformance(row)}</div>
+          {hasPerformance(row) && <div className='mt-3'>{renderPerformance(row)}</div>}
 
           {row.description && (
             <p className='mt-4 mb-0 min-h-10 text-xs leading-5 text-ui-text-3 line-clamp-2'>
@@ -217,7 +219,7 @@ const Pricing = () => {
       title: t("Pricing"),
       render: renderPriceCell,
     },
-    { key: 'performance', title: t("Performance"), render: renderPerformance },
+    ...(pagedRows.some(hasPerformance) ? [{ key: 'performance', title: t("Performance"), render: renderPerformance }] : []),
     {
       key: 'groups',
       title: t("Available groups"),
@@ -238,8 +240,8 @@ const Pricing = () => {
     <div className='console-content-page'>
       <ConsolePageHeader title={t('Models')} />
       <div>
-        <div className='pricing-filter-panel flex flex-wrap items-center gap-2 rounded-2xl border border-ui-border bg-[var(--page-bg)] p-4'>
-          <div className='w-40 min-w-0 max-w-full sm:w-[320px]'>
+        <div className='pricing-filter-panel flex flex-wrap items-center gap-3'>
+          <div className='w-40 min-w-0 max-w-full sm:w-60'>
             <Input value={searchValue} aria-label={t('Search models, vendors or tags')} onChange={(value) => { handleChange(value); updateQuery('search', value); }} placeholder={t('Search models, vendors or tags')} prefix={<Search size={15} />} clearable width='full' />
           </div>
           <div className='ml-auto flex shrink-0 items-center gap-1 sm:gap-2'>

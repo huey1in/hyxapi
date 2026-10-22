@@ -34,7 +34,7 @@ function SuccessHistory({ points }: { points: SuccessPoint[] }) {
 
 export function PerformanceBadge({ model, history }: { model?: ModelSummary; history?: SuccessPoint[] }) {
   const { t, i18n } = useTranslation();
-  if (!model && !history?.length) return <span className='text-xs text-ui-text-3'>{t("No performance samples")}</span>;
+  if (!model && !history?.length) return null;
   return <div className='flex flex-wrap items-center gap-2'>
     {model && <Tag tone={successTone(model.success_rate)}>{formatSuccessRate(model.success_rate, i18n.language)} {' '}{t("Success")}</Tag>}
     {!!history?.length && <SuccessHistory points={history} />}
@@ -68,6 +68,7 @@ export function ModelPerformance({ model }: { model: string }) {
   const [hours, setHours] = useState('24');
   const metrics = useModelPerformance(model, Number(hours));
   const summary = metrics.data?.summary;
+  if (metrics.isSuccess && !summary) return null;
   return <Card><section className='space-y-4' aria-label={t("Model performance")}>
     <div className='flex flex-wrap items-center justify-between gap-2'>
       <h2 className='text-sm font-medium text-ui-text'>{t("Model performance")}</h2>
@@ -81,17 +82,15 @@ export function ModelPerformance({ model }: { model: string }) {
         <Stat label={t("Average request latency")}>{formatLatency(summary?.avg_latency_ms, i18n.language)}</Stat>
         <Stat label={t("Output throughput")}>{formatThroughput(summary?.avg_tps, i18n.language)}</Stat>
       </div>
-      {!summary ? <p className='text-xs text-ui-text-3'>{t("No actual call samples for this period")}</p> : <>
-        <div className='space-y-2'><h3 className='text-xs text-ui-text-3'>{t("Average time to first token")}</h3><LatencyTrend points={metrics.data?.series ?? []} /></div>
-        <div className='space-y-2'><h3 className='text-xs text-ui-text-3'>{t("Success rate history (last 24 hours with samples)")}</h3><SuccessHistory points={metrics.data?.series ?? []} /></div>
-        <Table rows={metrics.data?.groups ?? []} rowKey='group' size='sm' emptyIcon={Gauge} columns={[
-          { key: 'group', title: t('Group') },
-          { key: 'ttft', title: t('Time to first token'), render: (group) => formatLatency(group.avg_ttft_ms, i18n.language) },
-          { key: 'latency', title: t('Request latency'), render: (group) => formatLatency(group.avg_latency_ms, i18n.language) },
-          { key: 'success', title: t('Success rate'), render: (group) => formatSuccessRate(group.success_rate, i18n.language) },
-          { key: 'throughput', title: t('Throughput'), render: (group) => formatThroughput(group.avg_tps, i18n.language) },
-        ]} />
-      </>}
+      <div className='space-y-2'><h3 className='text-xs text-ui-text-3'>{t("Average time to first token")}</h3><LatencyTrend points={metrics.data?.series ?? []} /></div>
+      <div className='space-y-2'><h3 className='text-xs text-ui-text-3'>{t("Success rate history (last 24 hours with samples)")}</h3><SuccessHistory points={metrics.data?.series ?? []} /></div>
+      <Table rows={metrics.data?.groups ?? []} rowKey='group' size='sm' emptyIcon={Gauge} columns={[
+        { key: 'group', title: t('Group') },
+        { key: 'ttft', title: t('Time to first token'), render: (group) => formatLatency(group.avg_ttft_ms, i18n.language) },
+        { key: 'latency', title: t('Request latency'), render: (group) => formatLatency(group.avg_latency_ms, i18n.language) },
+        { key: 'success', title: t('Success rate'), render: (group) => formatSuccessRate(group.success_rate, i18n.language) },
+        { key: 'throughput', title: t('Throughput'), render: (group) => formatThroughput(group.avg_tps, i18n.language) },
+      ]} />
       <p className='text-xs text-ui-text-3'>{t("Based on actual calls. Business rejections and user cancellations are excluded from success rates. Empty periods have no samples.")}</p>
     </>}
   </section></Card>;

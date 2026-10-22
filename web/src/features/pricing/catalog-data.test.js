@@ -12,6 +12,12 @@ test('public pricing normalizes legacy types and null lists without inventing pr
   assert.equal(result.models[0].billing_type, 'tokens');assert.equal(result.models[0].input_price, 0);assert.equal(result.models[0].output_price, undefined);
   assert.equal(result.models[0].vendor_name, 'Provider');assert.deepEqual(result.models[0].enable_groups, []);assert.equal(raw.data[0].billing_type, 0);
   assert.deepEqual(parsePricingData({ ...raw, data: null, vendors: null }).models, []);
+  const visible = parsePricingData({ ...raw, data: [
+    { ...raw.data[0], configured: true },
+    { ...raw.data[0], model_name: 'unconfigured', configured: false },
+    { ...raw.data[0], model_name: 'expression', configured: true, billing_type: 'expression', billing_mode: 'tiered_expr', billing_expr: 'tier("free", p * 0)' },
+  ] });
+  assert.deepEqual(visible.models.map((model) => model.model_name), ['free', 'expression']);
   const plugin = pricingModelSchema.parse({ ...raw.data[0], billing_plugin_variants: [{ plugin_key: 'plain', plugin_name: 'Plain', billing_expr: '', billing_mode: 'ratio', billing_usage_schema: null }] });
   assert.deepEqual(plugin.billing_plugin_variants[0].billing_usage_schema, {});
   assert.throws(() => parsePricingData({ ...raw, data: [{ ...raw.data[0], input_price: -1 }] }));

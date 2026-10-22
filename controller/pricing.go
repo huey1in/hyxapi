@@ -18,7 +18,7 @@ func ResetModelRatio(c *gin.Context) {
 	common.ApiSuccessT(c, "Model ratios reset", nil)
 }
 
-func filterPricingByUsableGroups(pricing []model.Pricing, usableGroup map[string]string) []model.Pricing {
+func filterPublicPricing(pricing []model.Pricing, usableGroup map[string]string) []model.Pricing {
 	if len(pricing) == 0 {
 		return pricing
 	}
@@ -28,6 +28,9 @@ func filterPricingByUsableGroups(pricing []model.Pricing, usableGroup map[string
 
 	filtered := make([]model.Pricing, 0, len(pricing))
 	for _, item := range pricing {
+		if !item.Configured {
+			continue
+		}
 		if common.StringsContains(item.EnableGroup, "all") {
 			filtered = append(filtered, item)
 			continue
@@ -65,7 +68,7 @@ func GetPricing(c *gin.Context) {
 		}
 	}
 	usableGroup = service.GetUserUsableGroups(userGroup)
-	pricing = filterPricingByUsableGroups(pricing, usableGroup)
+	pricing = filterPublicPricing(pricing, usableGroup)
 	// check groupRatio contains usableGroup
 	for group := range ratio_setting.GetGroupRatioCopy() {
 		if _, ok := usableGroup[group]; !ok {

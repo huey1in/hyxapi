@@ -51,6 +51,7 @@ export { default as Drawer }        from './modal/Drawer';
 
 export { default as Tabs }       from './layout/Tabs';
 export { default as Table }      from './layout/Table';
+export { default as TableSelection } from './layout/TableSelection';
 export { default as Pagination } from './layout/Pagination';
 export { default as Steps }      from './layout/Steps';
 export { default as Breadcrumb } from './layout/Breadcrumb';

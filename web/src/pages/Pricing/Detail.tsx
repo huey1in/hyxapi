@@ -9,7 +9,7 @@ import type { TableColumn } from '../../components/ui/layout/Table';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { ArrowLeft, Coins, Copy, SearchX } from 'lucide-react';
-import { PageShell, Card, Tag, Table, Button, Divider, EmptyState, Select } from '../../components/ui';
+import { PageShell, Card, Tag, Table, Button, Divider, EmptyState, Select, Breadcrumb } from '../../components/ui';
 import { useModelPricingData } from '../../hooks/model-pricing/useModelPricingData';
 import { usePageTitle } from '../../hooks/common/usePageTitle';
 import { API, calculateModelPrice, getModelPriceItems, getLobeHubIcon, getModelIcon } from '../../helpers';
@@ -130,13 +130,8 @@ const PricingDetail = () => {
   return (
     <PageShell maxWidth='960px'>
       <div style={{ minHeight: 'calc(100vh - 220px)' }}>
-        <div className='mb-4 flex flex-wrap items-center justify-between gap-3'>
+        <div className='mb-4'>
           <Button variant='link' icon={ArrowLeft} onClick={back}>{t('Back to models')}</Button>
-          <div className='flex flex-wrap gap-2'>
-            <Select aria-label={t('Currency')} value={currency} options={[{ value: 'USD' as const, label: 'USD ($)' }, { value: 'CNY' as const, label: 'CNY (¥)' }, { value: 'CUSTOM' as const, label: t('Custom currency') }]} onChange={setCurrency} />
-            <Select aria-label={t('Token price unit')} value={tokenUnit} options={[{ value: 'M' as const, label: t('Per 1M tokens') }, { value: 'K' as const, label: t('Per 1K tokens') }]} onChange={setTokenUnit} />
-            <Select aria-label={t('Price basis')} value={showRechargePrice ? 'recharge' : 'standard'} options={[{ value: 'standard', label: t('Standard price') }, { value: 'recharge', label: t('Recharge price') }]} onChange={(value) => setShowRechargePrice(value === 'recharge')} />
-          </div>
         </div>
         {error ? (<Card><div role='alert' className='space-y-3'><p>{t('Unable to load model pricing')}</p><Button onClick={() => void refresh()}>{t('Retry')}</Button></div></Card>) : loading && !model ? (
           <PricingDetailSkeleton />
@@ -181,11 +176,20 @@ const PricingDetail = () => {
             {/* 价格（按分组） */}
             <Card>
               <div className='flex flex-col gap-3'>
-                <div className='flex items-center justify-between gap-2'>
-                  <SectionLabel>{t("Price details")}</SectionLabel>
-                  {groupPricing.length > 1 && (
-                    <span className='text-xs text-ui-text-3'>{t("{{count}} groups", { count: groupPricing.length })}</span>
-                  )}
+                <div className='flex flex-wrap items-center justify-between gap-x-4 gap-y-3'>
+                  <div className='flex min-w-0 items-center gap-2'>
+                    <SectionLabel>{t("Price details")}</SectionLabel>
+                    {groupPricing.length > 1 && (
+                      <span className='text-xs text-ui-text-3'>{t("{{count}} groups", { count: groupPricing.length })}</span>
+                    )}
+                  </div>
+                  <div className='w-full min-w-0 sm:ml-auto sm:w-auto'>
+                    <Breadcrumb aria-label={t('Price details')} className='flex-wrap justify-end gap-y-1' items={[
+                      { content: <Select variant='text' size={28} aria-label={t('Currency')} value={currency} options={[{ value: 'USD' as const, label: 'USD ($)' }, { value: 'CNY' as const, label: 'CNY (¥)' }, { value: 'CUSTOM' as const, label: t('Custom currency') }]} onChange={setCurrency} /> },
+                      { content: <Select variant='text' size={28} aria-label={t('Token price unit')} value={tokenUnit} options={[{ value: 'M' as const, label: t('Per 1M tokens') }, { value: 'K' as const, label: t('Per 1K tokens') }]} onChange={setTokenUnit} /> },
+                      { content: <Select variant='text' size={28} aria-label={t('Price basis')} value={showRechargePrice ? 'recharge' : 'standard'} options={[{ value: 'standard', label: t('Standard price') }, { value: 'recharge', label: t('Recharge price') }]} onChange={(value) => setShowRechargePrice(value === 'recharge')} /> },
+                    ]} />
+                  </div>
                 </div>
 
                 {autoChain.length > 0 && <div aria-label={t('Auto group chain')} className='flex flex-wrap items-center gap-2 text-xs text-ui-text-3'>

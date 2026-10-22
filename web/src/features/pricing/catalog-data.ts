@@ -20,7 +20,7 @@ const pricingEnvelopeSchema = z.object({ success: z.literal(true), data: z.array
 export function parsePricingData(raw: unknown) {
   const snapshot = pricingEnvelopeSchema.parse(raw);
   const vendors = new Map((snapshot.vendors ?? []).map((vendor) => [vendor.id, vendor]));
-  const models: PricingModel[] = (snapshot.data ?? []).map((model) => {
+  const models: PricingModel[] = (snapshot.data ?? []).filter((model) => model.configured !== false).map((model) => {
     const vendor = model.vendor_id === undefined ? undefined : vendors.get(model.vendor_id);
     return { ...model, key: model.model_name, ...(vendor ? { vendor_name: vendor.name, vendor_icon: vendor.icon, vendor_description: vendor.description } : {}) };
   });
