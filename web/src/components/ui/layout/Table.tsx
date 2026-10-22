@@ -64,6 +64,7 @@ export interface TableProps<T extends object> {
   minWidth?: CSSProperties['minWidth'];
   loading?: boolean;
   skeletonRows?: number;
+  showMobileSelectionHeader?: boolean;
 }
 
 function Table<T extends object>({
@@ -84,6 +85,7 @@ function Table<T extends object>({
   minWidth,
   loading = false,
   skeletonRows = 6,
+  showMobileSelectionHeader = true,
 }: TableProps<T>) {
   const { t } = useTranslation();
   const mobile = useIsMobile();
@@ -103,12 +105,15 @@ function Table<T extends object>({
     const cell = (column: TableColumn<T>, row: T, index: number) => column.render ? column.render(row, index) : Reflect.get(row, column.key) as ReactNode;
     return <div className={cn('mobile-table min-w-0 w-full space-y-3', className)} data-table-view='cards'
       role={loading ? 'status' : undefined} aria-label={loading ? t('Loading...') : undefined} aria-busy={loading || undefined} data-loading-skeleton={loading ? 'cards' : undefined}>
-      {selectionHeadings.length > 0 && (loading || rows.length > 0) && <div className='flex items-center gap-2 px-1 text-sm text-ui-text-2' inert={loading || undefined}>
-        {selectionHeadings.map((column) => <React.Fragment key={column.key}>{column.title}</React.Fragment>)}<span>{t('Select current page')}</span>
+      {showMobileSelectionHeader && selectionHeadings.length > 0 && (loading || rows.length > 0) && <div className='flex flex-wrap items-center gap-2 text-sm text-ui-text-2' inert={loading || undefined}>
+        {selectionHeadings.map((column) => <label key={column.key} className='inline-flex min-h-10 max-w-full cursor-pointer items-center gap-2 rounded-lg pr-3'>{column.title}<span>{t('Select current page')}</span></label>)}
       </div>}
       {loading ? Array.from({ length: skeletonRows }, (_, index) => <div key={index} aria-hidden='true' className='mobile-table-card space-y-3'>
         {fields.map((column) => <div key={column.key} className={cn('mobile-table-field', column.mobileRole === 'wide' && 'mobile-table-field-wide')}><Skeleton height={14} width={column.mobileRole === 'wide' ? '40%' : '75%'} /><Skeleton height={18} width='85%' className={column.mobileRole === 'wide' ? undefined : 'ml-auto'} /></div>)}
-        {actions.length > 0 && <div className='flex justify-end gap-2 border-t border-ui-divider pt-3'><Skeleton height={30} width={60} /><Skeleton height={30} width={60} /></div>}
+        {(selection.length > 0 || actions.length > 0) && <div className='flex items-end gap-3 border-t border-ui-divider pt-3'>
+          {selection.length > 0 && <Skeleton height={18} width={18} className='shrink-0' />}
+          {actions.length > 0 && <div className='flex flex-1 justify-end gap-2'><Skeleton height={30} width={60} /><Skeleton height={30} width={60} /></div>}
+        </div>}
       </div>) : rows.length === 0 ? <div className={cn('mobile-table-card text-center text-sm text-ui-text-3', !textEmptyState && 'py-8')}>{emptyContent}</div> : rows.map((row, index) => {
         const key = keyOf(row, index);
         const expanded = expandedKey != null && key === expandedKey;
@@ -124,12 +129,14 @@ function Table<T extends object>({
             onKeyDown?.(event);
             if (!event.defaultPrevented && onRowClick && (event.key === 'Enter' || event.key === ' ')) { event.preventDefault(); onRowClick(row, index); }
           }}>
-          {selection.length > 0 && <div className='mb-3 flex justify-end gap-2'>{selection.map((column) => <React.Fragment key={column.key}>{cell(column, row, index)}</React.Fragment>)}</div>}
           <dl className='space-y-3'>{fields.map((column, columnIndex) => <div key={column.key} className={cn('mobile-table-field', column.mobileRole === 'wide' && 'mobile-table-field-wide')}>
             <dt className='min-w-0 text-xs leading-5 text-ui-text-3'>{column.title}</dt>
             <dd className={cn('mobile-table-value m-0 text-sm leading-5 text-ui-text', column.mobileRole === 'wide' ? 'text-left' : 'text-right', columnIndex === 0 && 'font-medium')}>{cell(column, row, index)}</dd>
           </div>)}</dl>
-          {actions.length > 0 && <div className='mt-3 flex flex-wrap justify-end gap-2 border-t border-ui-divider pt-3'>{actions.map((column) => <div key={column.key} className='mobile-table-value' aria-label={typeof column.title === 'string' ? column.title : undefined}>{cell(column, row, index)}</div>)}</div>}
+          {(selection.length > 0 || actions.length > 0) && <div className='mt-3 flex items-end gap-3 border-t border-ui-divider pt-3'>
+            {selection.length > 0 && <div className='flex shrink-0 items-center gap-2'>{selection.map((column) => <React.Fragment key={column.key}>{cell(column, row, index)}</React.Fragment>)}</div>}
+            {actions.length > 0 && <div className='flex min-w-0 flex-1 flex-wrap items-center justify-end gap-2'>{actions.map((column) => <div key={column.key} className='mobile-table-value' aria-label={typeof column.title === 'string' ? column.title : undefined}>{cell(column, row, index)}</div>)}</div>}
+          </div>}
           {expanded && renderExpanded && <div className='mt-3 border-t border-ui-divider pt-3'>{renderExpanded(row, index)}</div>}
         </article>;
       })}

@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useId, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   Plus,
@@ -50,6 +50,7 @@ import { z } from 'zod';
 import type { TableColumn } from '../../components/ui/layout/Table';
 import { useOwnedOperation } from '../../hooks/useOwnedOperation';
 import { useLiveSearch } from '../../hooks/useLiveSearch';
+import useIsMobile from '../../hooks/useIsMobile';
 import { apiErrorMessage } from '../../lib/api-error';
 import { channelPageSchema, priorityOrderSchema } from './channel-data';
 import type { Channel, EditingChannel } from './channel-data';
@@ -75,6 +76,8 @@ type Filters = ChannelFilterValues & {
 };
 function ChannelSession({ identity }: { identity: string }) {
   const { t } = useTranslation();
+  const mobile = useIsMobile();
+  const selectionID = useId();
   const client = useQueryClient();
   const { busy, run } = useOwnedOperation();
   const [keyword, setKeyword] = useState('');
@@ -275,9 +278,13 @@ function ChannelSession({ identity }: { identity: string }) {
       mobileRole: 'selection',
       title: (
         <button
+          id={selectionID}
+          type='button'
+          role='checkbox'
           aria-label={t('Select visible channels')}
+          aria-checked={allVisibleSelected ? true : rows.some((row) => selected.has(row.id)) ? 'mixed' : false}
           onClick={toggleAll}
-          className='inline-flex items-center text-ui-text-2 hover:text-ui-text-1'
+          className='inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-lg text-ui-text-2 hover:bg-ui-bg-subtle focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ui-text md:h-4 md:w-4'
         >
           {allVisibleSelected ? (
             <CheckSquare size={16} />
@@ -289,9 +296,12 @@ function ChannelSession({ identity }: { identity: string }) {
       width: 36,
       render: (r) => (
         <button
+          type='button'
+          role='checkbox'
           aria-label={`${t('Select channel')} ${r.id}`}
+          aria-checked={selected.has(r.id)}
           onClick={() => toggleOne(r.id)}
-          className='inline-flex items-center text-ui-text-2 hover:text-ui-text-1'
+          className='inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-lg text-ui-text-2 hover:bg-ui-bg-subtle focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ui-text md:h-4 md:w-4'
         >
           {selected.has(r.id) ? (
             <CheckSquare size={16} />
@@ -476,56 +486,6 @@ function ChannelSession({ identity }: { identity: string }) {
               {t('撤销排序')}
             </Button>
           )}
-          {selected.size > 0 && (
-            <>
-              <span className='text-xs text-ui-text-3 mr-1'>
-                {t('已选')}
-                {selected.size} {t('项')}
-              </span>
-              <AssignChannelTag
-                key={userID}
-                ids={[...selected]}
-                onChanged={() => {
-                  setSelected(new Set());
-                  refresh();
-                }}
-              />
-              {canOperate && (
-                <Button
-                  size='sm'
-                  variant='toggle'
-                  onClick={() => batch('enable')}
-                >
-                  {t('批量启用')}
-                </Button>
-              )}
-              {canOperate && (
-                <Button
-                  size='sm'
-                  variant='toggle'
-                  onClick={() => batch('disable')}
-                >
-                  {t('批量禁用')}
-                </Button>
-              )}
-              {canSensitive && (
-                <Button
-                  size='sm'
-                  variant='toggle'
-                  onClick={() =>
-                    setConfirm({
-                      title: t('Delete {{count}} selected channels?', {
-                        count: selected.size,
-                      }),
-                      ids: [...selected],
-                    })
-                  }
-                >
-                  {t('批量删除')}
-                </Button>
-              )}
-            </>
-          )}
           {canSensitive && (
             <Button
               icon={Plus}
@@ -565,7 +525,6 @@ function ChannelSession({ identity }: { identity: string }) {
             {t('Filters')}{activeFilters > 0 && <span className='text-xs tabular-nums'>{activeFilters}</span>}
           </Button>
           {activeFilters > 0 && <Button variant='link' size='sm' onClick={() => { load(DEFAULT_CHANNEL_FILTERS); filtersButton.current?.focus(); }}>{t('Reset filters')}</Button>}
-          <Button size='sm' variant='toggle' selected={applied.tag} icon={TagIcon} onClick={() => load(applied, keyword, !applied.tag)}>{t('标签视图')}</Button>
         </div>
       </div>
       {filtersOpen && <ChannelFiltersDialog initialValues={applied} onApply={(values) => { load(values); setFiltersOpen(false); }} onClose={() => setFiltersOpen(false)} />}
@@ -584,7 +543,58 @@ function ChannelSession({ identity }: { identity: string }) {
           key={`balances:${userID}`}
           onChanged={() => refresh()}
         />
+        <Button size='sm' variant='toggle' selected={applied.tag} icon={TagIcon} onClick={() => load(applied, keyword, !applied.tag)}>{t('标签视图')}</Button>
       </SystemTaskActions>
+      {selected.size > 0 && (
+        <div className='mb-3 flex flex-wrap items-center gap-2'>
+          <span className='mr-1 hidden text-xs text-ui-text-3 md:inline'>
+            {t('已选')}
+            {selected.size} {t('项')}
+          </span>
+          <AssignChannelTag
+            key={userID}
+            ids={[...selected]}
+            onChanged={() => {
+              setSelected(new Set());
+              refresh();
+            }}
+          />
+          {canOperate && (
+            <Button
+              size='sm'
+              variant='toggle'
+              onClick={() => batch('enable')}
+            >
+              {t('批量启用')}
+            </Button>
+          )}
+          {canOperate && (
+            <Button
+              size='sm'
+              variant='toggle'
+              onClick={() => batch('disable')}
+            >
+              {t('批量禁用')}
+            </Button>
+          )}
+          {canSensitive && (
+            <Button
+              size='sm'
+              variant='toggle'
+              onClick={() =>
+                setConfirm({
+                  title: t('Delete {{count}} selected channels?', {
+                    count: selected.size,
+                  }),
+                  ids: [...selected],
+                })
+              }
+            >
+              {t('批量删除')}
+            </Button>
+          )}
+        </div>
+      )}
       {query.isError ? (
         <div role='alert' className='space-y-2 text-sm text-ui-danger'>
           <p>{t(apiErrorMessage(query.error, 'Unable to load channels'))}</p>
@@ -614,6 +624,7 @@ function ChannelSession({ identity }: { identity: string }) {
           <Table
             emptyIcon={Radio}
             loading={loading}
+            showMobileSelectionHeader={false}
             columns={columns}
             rows={
               dragMode
@@ -657,12 +668,22 @@ function ChannelSession({ identity }: { identity: string }) {
                 : undefined
             }
           />
-          <div className='mt-4 flex justify-end'>
+          <div className='mt-4 md:flex md:justify-end'>
             <Pagination
               total={total}
               pageSize={PAGE_SIZE}
               page={page}
               onChange={(p: number) => changePage(p)}
+              showRange={!mobile}
+              leading={mobile && !loading && rows.length > 0 ? (
+                <div className='flex min-h-10 min-w-0 items-center gap-2'>
+                  {columns[0].title}
+                  <div className='min-w-0'>
+                    <label htmlFor={selectionID} className='inline-block cursor-pointer py-2 text-ui-text-2'>{t('Select current page')}</label>
+                    {selected.size > 0 && <span className='ml-2 inline-block whitespace-nowrap text-xs text-ui-text-3'>{t('已选')}{selected.size} {t('项')}</span>}
+                  </div>
+                </div>
+              ) : undefined}
             />
           </div>
         </>
