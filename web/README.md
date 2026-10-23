@@ -1,7 +1,7 @@
 # HyxAPI frontend
 
-Use Node.js 22.12 or later and Bun. The application uses React 19, Rsbuild 2 and
-Tailwind CSS 4. Run these commands from `web/`:
+Use Node.js 22.12 or later and Bun. The application uses React 19, TypeScript,
+Rsbuild 2 and Tailwind CSS 4. Run these commands from `web/`:
 
 ```sh
 bun install --frozen-lockfile
@@ -16,8 +16,8 @@ bun run build-storybook # static component previews
 
 Start the backend with `go run .` from the repository root after building the
 frontend. No container is required. Production serves the frontend and API from
-the same origin. Optional `PUBLIC_API_BASE_URL` replaces the old
-`VITE_REACT_APP_SERVER_URL`; leave it empty for normal deployments.
+the same origin. Leave `PUBLIC_API_BASE_URL` empty for normal deployments;
+see [.env.example](.env.example) for the optional API base URL.
 
 New modules use `.ts` or `.tsx`. Shared API types, requests, authentication state,
 theme state and the primary button are checked strictly. Existing JavaScript
@@ -27,3 +27,5 @@ not covered by `typecheck` until converted.
 Define design tokens with `@theme inline` in `src/index.css`. Dark mode follows
 the `.dark` class. Keep static resources in `public/` and reference them by their
 root URL, such as `/fonts/example.woff2`. Application imports are extensionless.
+
+See the [documentation index](../docs/README.md) for deployment and backend tests.

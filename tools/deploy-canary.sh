@@ -52,7 +52,6 @@ build_args() {
     -v "$DATA":/data
     -v "$LOGS":/app/logs
     -e BATCH_UPDATE_ENABLED=true
-    -e GEO_BLOCK_ENABLED=true
     -e GLOBAL_WEB_RATE_LIMIT_ENABLE=false
     -e NODE_NAME=new-api-node-canary
     -e NODE_TYPE=slave

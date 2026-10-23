@@ -1,10 +1,10 @@
 # Third-Party Licenses
 
 This file summarizes direct third-party dependencies used by this project.
-Keep it with distributed binaries, frontend bundles, and Electron installers.
+Keep it with distributed binaries and frontend bundles.
 
 Scope: direct dependencies from the root, `relaykit/`, and `tokenkit/` Go modules,
-`web/package.json`, and `electron/package.json`. Versions reflect the resolved
+and `web/package.json`. Versions reflect the resolved
 Go module graphs and committed Bun locks. Development and test dependencies are
 listed separately from production dependencies. Transitive dependencies require
 an additional inventory before a final external release.
@@ -127,8 +127,6 @@ an additional inventory before a final external release.
 | web | development | npm | `storybook-react-rsbuild` | `3.6.1` | MIT |
 | web | development | npm | `tailwindcss` | `4.3.3` | MIT |
 | web | development | npm | `typescript` | `6.0.3` | Apache-2.0 |
-| electron | production | npm | `electron` | `41.10.6` | MIT |
-| electron | development | npm | `electron-builder` | `26.15.3` | MIT |
 
 ## License Texts
 

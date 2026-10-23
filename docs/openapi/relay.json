@@ -786,7 +786,7 @@
       "post": {
         "summary": "Kling 文生视频",
         "deprecated": false,
-        "description": "?????????????????kling??\n\n使用 Kling 模型从文本描述生成视频。\n\n支持的模型：kling-v1, kling-v1-5 等\n",
+        "description": "由内置 kling 任务插件提供。\n\n使用 Kling 模型从文本描述生成视频。\n\n支持的模型：kling-v1, kling-v1-5 等\n",
         "operationId": "createKlingText2Video",
         "tags": [
           "视频生成/Kling格式"
@@ -840,7 +840,7 @@
       "get": {
         "summary": "获取 Kling 文生视频任务状态",
         "deprecated": false,
-        "description": "?????????????????kling??\n\n查询 Kling 文生视频任务的状态和结果。",
+        "description": "由内置 kling 任务插件提供。\n\n查询 Kling 文生视频任务的状态和结果。",
         "operationId": "getKlingText2Video",
         "tags": [
           "视频生成/Kling格式"
@@ -888,7 +888,7 @@
       "post": {
         "summary": "Kling 图生视频",
         "deprecated": false,
-        "description": "?????????????????kling??\n\n使用 Kling 模型从图片生成视频。\n\n支持通过 image 参数传入图片 URL 或 Base64 编码的图片数据。\n",
+        "description": "由内置 kling 任务插件提供。\n\n使用 Kling 模型从图片生成视频。\n\n支持通过 image 参数传入图片 URL 或 Base64 编码的图片数据。\n",
         "operationId": "createKlingImage2Video",
         "tags": [
           "视频生成/Kling格式"
@@ -942,7 +942,7 @@
       "get": {
         "summary": "获取 Kling 图生视频任务状态",
         "deprecated": false,
-        "description": "?????????????????kling??\n\n查询 Kling 图生视频任务的状态和结果。",
+        "description": "由内置 kling 任务插件提供。\n\n查询 Kling 图生视频任务的状态和结果。",
         "operationId": "getKlingImage2Video",
         "tags": [
           "视频生成/Kling格式"
@@ -990,7 +990,7 @@
       "post": {
         "summary": "即梦视频生成",
         "deprecated": false,
-        "description": "?????????????????jimeng??\n\n即梦官方 API 格式的视频生成接口。\n\n支持通过 Action 参数指定操作类型：\n- `CVSync2AsyncSubmitTask`: 提交视频生成任务\n- `CVSync2AsyncGetResult`: 获取任务结果\n\n需要在查询参数中指定 Action 和 Version。\n",
+        "description": "由内置 jimeng 任务插件提供。\n\n即梦官方 API 格式的视频生成接口。\n\n支持通过 Action 参数指定操作类型：\n- `CVSync2AsyncSubmitTask`: 提交视频生成任务\n- `CVSync2AsyncGetResult`: 获取任务结果\n\n需要在查询参数中指定 Action 和 Version。\n",
         "operationId": "createJimengVideo",
         "tags": [
           "视频生成/即梦格式"

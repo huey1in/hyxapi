@@ -168,12 +168,6 @@ func main() {
 	server.Use(middleware.CORSWithCredentials())
 	server.Use(middleware.I18n())
 
-	// 地理封锁中间件（可通过环境变量启用）
-	if os.Getenv("GEO_BLOCK_ENABLED") == "true" {
-		server.Use(middleware.GeoBlock())
-		common.SysLog("geo blocking enabled")
-	}
-
 	middleware.SetUpLogger(server)
 
 	InjectUmamiAnalytics()

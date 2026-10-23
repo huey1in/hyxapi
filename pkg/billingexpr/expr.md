@@ -431,11 +431,9 @@ Frontend Editor → Storage → Pre-consume → Settlement → Log Display
 
 ### 1. Frontend Editor
 
-**File**: `web/src/pages/Setting/Ratio/components/TieredPricingEditor.jsx`
+**Files**: `web/src/pages/Setting/PricingConfigDialog.tsx`, `web/src/pages/Setting/billing/VisualBillingEditor.tsx`
 
-Two editing modes:
-- **Visual mode**: Fill in prices per variable, conditions per tier. Generates expression via `generateExprFromVisualConfig()`.
-- **Raw mode**: Edit the expression string directly. Includes preset templates for common models.
+The visual editor reads and writes expressions through `parseVisualBillingDocument()` and `serializeVisualBillingDocument()`. Task usage and request rules have dedicated editors. `PricingConfigDialog` manages validation, preview, conversion, and version-checked saves.
 
 The editor outputs a billing expression string and an optional request rule expression string. These are combined via `combineBillingExpr(billingExpr, requestRuleExpr)` before storage.
 
@@ -443,9 +441,11 @@ The editor outputs a billing expression string and an optional request rule expr
 
 **File**: `setting/billing_setting/tiered_billing.go`
 
-Two option maps stored in the `options` DB table:
-- `ModelBillingMode`: `{ "model-name": "tiered_expr" }` — activates tiered billing for a model
-- `ModelBillingExpr`: `{ "model-name": "tier(\"base\", p * 2.5 + c * 15)" }` — the expression
+Option maps stored in the `options` DB table:
+
+- `billing_setting.billing_mode`: `{ "model-name": "tiered_expr" }` — activates expression billing for a model
+- `billing_setting.billing_expr`: `{ "model-name": "tier(\"base\", p * 2.5 + c * 15)" }` — the model expression
+- `billing_setting.plugin_billing_expr`: plugin-specific overrides, managed through the pricing API
 
 On save, the expression is validated:
 1. Compiled via `billingexpr.CompileFromCache()` — syntax check
@@ -453,7 +453,7 @@ On save, the expression is validated:
 
 ### 3. Pre-consume (Quota Estimation)
 
-**File**: `relay/helper/price.go` → `modelPriceHelperTiered()`
+**File**: `relay/helper/price_modes.go` → `modelPriceHelperTiered()`
 
 When a request arrives and the model uses `tiered_expr` billing:
 1. Loads expression from `billing_setting.GetBillingExpr()`
@@ -483,11 +483,11 @@ After the upstream response returns with actual token usage:
 
 ### 5. Log Display
 
-**Files**: `service/log_info_generate.go`, `web/src/helpers/render.jsx`
+**Files**: `service/tiered_log.go`, `web/src/features/pricing/ExpressionBillingLog.tsx`
 
 Backend: `InjectTieredBillingInfo()` adds `billing_mode`, `expr_b64` (base64 expression), `matched_tier`, and the structured `request_rules` trace list to the log's `other` JSON.
 
-Frontend: Detects `billing_mode === "tiered_expr"`, decodes `expr_b64`, parses tiers via shared `parseTiersFromExpr()`, and renders request multipliers from `request_rules` when present. Without log traces, it falls back to parsing the stored expression.
+Frontend: Decodes `expr_b64` and renders it through `DynamicPricingDetails`, highlighting `matched_tier`. Structured `request_rules` display the conditions and multipliers used for this request; `usage_facts` exposes task usage where present.
 
 ---
 
@@ -544,10 +544,10 @@ This enables future evolution without breaking existing expressions.
 |-------|-------|
 | Expression engine | `pkg/billingexpr/compile.go`, `run.go`, `settle.go`, `round.go`, `types.go` |
 | Storage | `setting/billing_setting/tiered_billing.go` |
-| Pre-consume | `relay/helper/price.go`, `relay/helper/billing_expr_request.go` |
+| Pre-consume | `relay/helper/price_modes.go`, `relay/helper/billing_expr_request.go` |
 | Settlement | `service/tiered_settle.go`, `service/quota.go` |
-| Log injection | `service/log_info_generate.go` |
-| Frontend editor | `web/src/pages/Setting/Ratio/components/TieredPricingEditor.jsx` |
-| Frontend display | `web/src/helpers/render.jsx`, `web/src/helpers/utils.jsx` |
-| Model detail | `web/src/components/table/model-pricing/modal/components/DynamicPricingBreakdown.jsx` |
-| Log display | `web/src/hooks/usage-logs/useUsageLogsData.jsx`, `web/src/components/table/usage-logs/UsageLogsColumnDefs.jsx` |
+| Log injection | `service/tiered_log.go`, `service/task_billing.go` |
+| Frontend editor | `web/src/pages/Setting/PricingConfigDialog.tsx`, `web/src/pages/Setting/billing/` |
+| Expression parsing | `web/src/features/pricing/lib/billing-expr.ts`, `web/src/features/pricing/lib/billing-expression/` |
+| Model detail | `web/src/features/pricing/DynamicPricingDetails.tsx` |
+| Log display | `web/src/pages/Log/RequestLogDetail.tsx`, `web/src/features/pricing/ExpressionBillingLog.tsx` |

@@ -47,12 +47,14 @@ reasoning effort、thinking budget 和是否返回思考内容用 `dto.Reasoning
 
 JSON 编解码默认用 `encoding/json`，宿主可以在启动时用 `kitutil.SetCodec` 换成别的实现，DTO 上自定义的 `MarshalJSON` 和 `UnmarshalJSON` 也走同一个编解码器。数据形状异常的日志通过 `kitutil.SetLogging` 和 `kitutil.SetSystemErrorLogging` 交给宿主，默认写到 stderr。
 
-## 安装
+## 接入本仓库版本
 
-RelayKit 要求 Go 1.25.1 或更高版本。tag 的形式是 `relaykit/vX.Y.Z`，`@latest` 解析到最新的一个。
+RelayKit 要求 Go 1.25.1 或更高版本。HyxAPI 根模块已通过本地 `replace` 使用本目录。其他项目使用本仓库版本时，在自己的 `go.mod` 中配置实际检出路径，例如：
 
-```bash
-go get github.com/QuantumNous/new-api/relaykit@latest
+```go
+require github.com/QuantumNous/new-api/relaykit v0.0.0
+
+replace github.com/QuantumNous/new-api/relaykit => ../api/relaykit
 ```
 
 | 包 | 内容 |
@@ -271,19 +273,19 @@ relayconvert.SetMediaResolver(relayconvert.MediaResolver{
 在 `relaykit` 目录运行：
 
 ```bash
-GOWORK=off go build ./...
-GOWORK=off go test ./...
+go build ./...
+go test ./...
 ```
 
-`GOWORK=off` 让模块脱离仓库的 workspace 单独构建，这是 new-api 对 RelayKit 改动的检查项。转换矩阵由 golden test 覆盖，协议输出变化确认是预期行为后更新快照：
+根模块的测试不会遍历本模块。若自行配置了 Go workspace，独立验证时设置 `GOWORK=off`。转换矩阵由 golden test 覆盖，协议输出变化确认是预期行为后更新快照：
 
 ```bash
-GOWORK=off go test ./relayconvert -run TestGolden -update
+go test ./relayconvert -run TestGolden -update
 ```
 
-## 版本
+## 升级检查
 
-RelayKit 处于 `v0.x`。公开 API 和 DTO 可能在小版本里变化，升级前对照发布说明和序列化结果。每对协议都有对方没有的字段，建议对业务里用到的工具调用、多模态、推理和流式场景加端到端测试。
+公开 API、DTO 和序列化行为随仓库变更。升级前检查实际提交和转换输出，对业务中使用的工具调用、多模态、推理和流式场景补充端到端验证。
 
 ## 许可证
 

@@ -53,26 +53,3 @@ func TestTrustedProxyConfigurationRejectsInvalidSettings(t *testing.T) {
 	require.NoError(t, err)
 	require.NotEqual(t, "changed", next[0], "default configuration must be copied for each engine")
 }
-
-func TestGeoBlockPageUsesTrustedClientIPAndEscapesMetadata(t *testing.T) {
-	t.Setenv("TRUSTED_PROXIES", "none")
-	engine := gin.New()
-	require.NoError(t, ConfigureTrustedProxies(engine))
-	engine.GET("/blocked", func(c *gin.Context) {
-		c.Data(http.StatusForbidden, "text/html; charset=utf-8", renderGeoBlockedPage(c))
-	})
-	request := httptest.NewRequest(http.MethodGet, "/blocked", nil)
-	request.RemoteAddr = "198.51.100.12:1234"
-	request.Header.Set("X-Forwarded-For", `<script>alert(1)</script>`)
-	request.Header.Set("CF-Connecting-IP", "203.0.113.99")
-	request.Header.Set("CF-Ray", `<img src=x onerror=alert(2)>`)
-	request.Header.Set("CF-IPCountry", `<script>alert(3)</script>`)
-	w := httptest.NewRecorder()
-	engine.ServeHTTP(w, request)
-	page := w.Body.String()
-	require.Contains(t, page, "198.51.100.12")
-	require.NotContains(t, page, "203.0.113.99")
-	require.NotContains(t, page, "<script>")
-	require.NotContains(t, page, "<img")
-	require.Contains(t, page, "&lt;img")
-}
