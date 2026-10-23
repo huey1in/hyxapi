@@ -21,3 +21,4 @@ docs
 logs
 test_redis
 /data
+/hyxapi

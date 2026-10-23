@@ -1,0 +1,19 @@
+# File path: /etc/systemd/system/hyxapi.service
+# sudo systemctl daemon-reload
+# sudo systemctl start hyxapi
+# sudo systemctl enable hyxapi
+# sudo systemctl status hyxapi
+[Unit]
+Description=HyxAPI Service
+After=network.target
+
+[Service]
+# Change the user, paths, and port for your installation.
+User=ubuntu
+WorkingDirectory=/path/to/hyxapi
+ExecStart=/path/to/hyxapi/hyxapi --port 3000 --log-dir /path/to/hyxapi/logs
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

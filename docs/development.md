@@ -17,10 +17,10 @@ go test ./...
 cd ../tokenkit
 go test ./...
 cd ..
-go build -o new-api .
+go build -o hyxapi .
 ```
 
-Windows 编译时使用 `go build -o new-api.exe .`。根模块测试不会遍历嵌套模块；RelayKit 和 TokenKit 必须保持独立可构建。协议转换的 golden 输出变更须人工核对，更新方式见 [RelayKit](../relaykit/README.md#开发)。
+Windows 编译时使用 `go build -o hyxapi.exe .`。根模块测试不会遍历嵌套模块；RelayKit 和 TokenKit 必须保持独立可构建。协议转换的 golden 输出变更须人工核对，更新方式见 [RelayKit](../relaykit/README.md#开发)。
 
 ## 前端验证
 
