@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"net/http"
+	"net/url"
 	"strconv"
 	"strings"
 	"time"
@@ -146,6 +147,9 @@ func GenerateOAuthCode(c *gin.Context) {
 	if flowPayload.Google != nil {
 		data["authorization_url"] = flowPayload.Google.AuthorizationURL(state)
 	}
+	if request.Provider == "linuxdo" {
+		data["authorization_url"] = oauth.LinuxDOAuthorizationURL(state)
+	}
 	c.JSON(http.StatusOK, gin.H{
 		"success": true,
 		"message": "",
@@ -169,6 +173,20 @@ func HandleOAuth(c *gin.Context) {
 	})
 	if err != nil {
 		writeAccountStatusError(c, http.StatusForbidden, "State parameter is empty or mismatched")
+		return
+	}
+	// Providers may still send browser callbacks to the registered API URL.
+	// Let the frontend popup return the code to its authenticated opener before
+	// checking the session or consuming state. JSON exchanges stay session-bound.
+	if c.GetHeader("Sec-Fetch-Mode") == "navigate" || strings.Contains(c.GetHeader("Accept"), "text/html") {
+		params := url.Values{"state": {state}}
+		for _, key := range []string{"code", "error", "error_description"} {
+			if value := c.Query(key); value != "" {
+				params.Set(key, value)
+			}
+		}
+		c.Header("Referrer-Policy", "no-referrer")
+		c.Redirect(http.StatusSeeOther, "/oauth/"+url.PathEscape(providerName)+"?"+params.Encode())
 		return
 	}
 

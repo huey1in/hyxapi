@@ -4,7 +4,8 @@ import { authResult } from './secure-verification';
 interface OAuthState { flow_token: string; authorization_url?: string }
 
 export function authorizationURL(provider: string, state: string, status: Record<string, unknown>): string {
-  const redirect = `${window.location.origin}/oauth/${encodeURIComponent(provider)}`;
+  const callbackPath = provider === 'linuxdo' ? '/api/oauth/linuxdo' : `/oauth/${encodeURIComponent(provider)}`;
+  const redirect = `${window.location.origin}${callbackPath}`;
   let endpoint: string;
   let client: string;
   let scope = 'openid profile email';

@@ -14,6 +14,7 @@ import (
 	"github.com/QuantumNous/new-api/common"
 	"github.com/QuantumNous/new-api/logger"
 	"github.com/QuantumNous/new-api/model"
+	"github.com/QuantumNous/new-api/setting/system_setting"
 	"github.com/gin-gonic/gin"
 )
 
@@ -41,6 +42,21 @@ func (p *LinuxDOProvider) IsEnabled() bool {
 	return common.LinuxDOOAuthEnabled
 }
 
+// Keep the registered API callback, which forwards browser navigations to the
+// frontend. Both protocol steps use the public URL even behind a TLS proxy.
+func LinuxDORedirectURI() string {
+	return strings.TrimRight(system_setting.ServerAddress, "/") + "/api/oauth/linuxdo"
+}
+
+func LinuxDOAuthorizationURL(state string) string {
+	params := url.Values{
+		"client_id": {common.LinuxDOClientId}, "state": {state},
+		"redirect_uri": {LinuxDORedirectURI()}, "response_type": {"code"},
+		"scope": {"openid profile email"},
+	}
+	return "https://connect.linux.do/oauth2/authorize?" + params.Encode()
+}
+
 func (p *LinuxDOProvider) ExchangeToken(ctx context.Context, code string, c *gin.Context) (*OAuthToken, error) {
 	if code == "" {
 		return nil, NewOAuthError(common.NewMessage(msgInvalidCode))
@@ -51,12 +67,7 @@ func (p *LinuxDOProvider) ExchangeToken(ctx context.Context, code string, c *gin
 	credentials := common.LinuxDOClientId + ":" + common.LinuxDOClientSecret
 	basicAuth := "Basic " + base64.StdEncoding.EncodeToString([]byte(credentials))
 
-	// Get redirect URI from request
-	scheme := "http"
-	if c.Request.TLS != nil {
-		scheme = "https"
-	}
-	redirectURI := fmt.Sprintf("%s://%s/api/oauth/linuxdo", scheme, c.Request.Host)
+	redirectURI := LinuxDORedirectURI()
 
 	logger.LogDebug(ctx, "[OAuth-LinuxDO] ExchangeToken: token_endpoint=%s, redirect_uri=%s", tokenEndpoint, redirectURI)
 

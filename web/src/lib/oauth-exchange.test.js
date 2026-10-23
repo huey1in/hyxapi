@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { loadTestModules } from '../../scripts/load-test-modules.mjs';
 
 globalThis.localStorage = { getItem: () => null, setItem() {}, removeItem() {} };
-const { entry0: { oauthExchange }, entry1: { API }, entry2: { authResult }, entry3: { applyAuthBundle } } = await loadTestModules(['./src/lib/oauth-exchange.ts', './src/helpers/api.ts', './src/lib/secure-verification.ts', './src/lib/auth-session.ts']);
+const { entry0: { oauthExchange, authorizationURL }, entry1: { API }, entry2: { authResult }, entry3: { applyAuthBundle } } = await loadTestModules(['./src/lib/oauth-exchange.ts', './src/helpers/api.ts', './src/lib/secure-verification.ts', './src/lib/auth-session.ts']);
 
 function popupFixture() {
   const handlers = new Set();
@@ -73,4 +73,15 @@ test('cancelling an OAuth exchange closes its popup and cannot submit a stale ca
 test('authentication helpers preserve cancellation for callers to handle quietly', async () => {
   const abort = new DOMException('cancelled', 'AbortError');
   await assert.rejects(authResult(Promise.reject(abort)), (error) => error === abort);
+});
+
+test('LinuxDO authorization preserves state and uses the registered callback URL', () => {
+  popupFixture();
+  const url = new URL(authorizationURL('linuxdo', 'state+/with=special&characters', { linuxdo_client_id: 'configured-client' }));
+  assert.equal(url.origin + url.pathname, 'https://connect.linux.do/oauth2/authorize');
+  assert.equal(url.searchParams.get('client_id'), 'configured-client');
+  assert.equal(url.searchParams.get('state'), 'state+/with=special&characters');
+  assert.equal(url.searchParams.get('redirect_uri'), 'https://gateway.example/api/oauth/linuxdo');
+  const github = new URL(authorizationURL('github', 'state', { github_client_id: 'configured-client' }));
+  assert.equal(github.searchParams.get('redirect_uri'), 'https://gateway.example/oauth/github');
 });
