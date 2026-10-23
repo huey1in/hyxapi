@@ -40,9 +40,3 @@ export function feedModel(row: FeedRow) {
   if (row.source === 'tasks') return row.task.properties?.origin_model_name || row.task.platform;
   return 'Midjourney';
 }
-
-export function feedStatus(row: FeedRow) {
-  if (row.source === 'tasks') return row.task.status;
-  if (row.source === 'midjourney') return row.midjourney.status || 'NOT_START';
-  return row.log.type === 5 ? 'FAILURE' : row.log.type === 2 ? 'SUCCESS' : '';
-}

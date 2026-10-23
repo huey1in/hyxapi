@@ -32,7 +32,7 @@ export function operationForRequest(config: AxiosRequestConfig, hasPassword = tr
   if (method === 'PUT' && (found = match(/^\/api\/authz\/user\/(\d+)\/permissions$/))) return { scope: 'admin.user.update', context: { user_id: Number(found[1]) } };
   if (method === 'POST' && path === '/api/user/manage') {
     if (body.action === 'delete') return { scope: 'admin.user.delete', context: { user_id: userID } };
-    if (['disable', 'enable', 'promote', 'demote', 'support'].includes(String(body.action))) return { scope: 'admin.user.manage', context: { user_id: userID, action: body.action as 'disable' | 'enable' | 'promote' | 'demote' | 'support' } };
+    if (['disable', 'enable'].includes(String(body.action))) return { scope: 'admin.user.manage', context: { user_id: userID, action: body.action as 'disable' | 'enable' } };
   }
   if (method === 'DELETE' && (found = match(/^\/api\/user\/(\d+)$/))) return { scope: 'admin.user.delete', context: { user_id: Number(found[1]) } };
   if (method === 'DELETE' && (found = match(/^\/api\/user\/(\d+)\/reset_passkey$/))) return { scope: 'admin.user.passkey.reset', context: { user_id: Number(found[1]) } };

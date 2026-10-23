@@ -40,6 +40,7 @@ func accessTokenScopeRule(scope string) accessTokenRouteRule {
 // DeclareAccessTokenPermissionRoute when they are registered.
 var accessTokenRouteRules = map[string]accessTokenRouteRule{
 	"GET /api/tickets":                    accessTokenSessionRule,
+	"GET /api/tickets/manage":             accessTokenSessionRule,
 	"GET /api/tickets/agents":             accessTokenSessionRule,
 	"GET /api/tickets/:id":                accessTokenSessionRule,
 	"POST /api/tickets":                   accessTokenSessionRule,

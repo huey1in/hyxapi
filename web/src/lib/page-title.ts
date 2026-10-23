@@ -1,5 +1,6 @@
 const PAGE_TITLES: Record<string, string> = {
   '/tickets': 'Support tickets',
+  '/console/tickets': 'Ticket management',
   '/': 'Home',
   '/setup': 'System initialization',
   '/user/reset': 'Reset password',

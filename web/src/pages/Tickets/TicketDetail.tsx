@@ -6,7 +6,7 @@ import { apiErrorMessage } from '../../lib/api-error';
 import { useOwnedOperation } from '../../hooks/useOwnedOperation';
 import { readTickets, ticketAgentsSchema, ticketDetailSchema, ticketLabels, writeTicket } from './ticket-data';
 
-export default function TicketDetail({ id, userID, role, identity, onClose, onChanged }: { id: number; userID: number; role: number; identity: string; onClose: () => void; onChanged: () => void }) {
+export default function TicketDetail({ id, userID, role, identity, management, onClose, onChanged }: { id: number; userID: number; role: number; identity: string; management: boolean; onClose: () => void; onChanged: () => void }) {
   const { t, i18n } = useTranslation();
   const { busy, run } = useOwnedOperation();
   const [body, setBody] = useState('');
@@ -17,10 +17,10 @@ export default function TicketDetail({ id, userID, role, identity, onClose, onCh
     getNextPageParam: (last) => last.has_more ? last.messages.at(-1)?.id : undefined,
     gcTime: 0, retry: false, refetchInterval: 15000,
   });
-  const agents = useQuery({ queryKey: ['ticket-agents', identity], enabled: role >= 10, gcTime: 0, retry: false,
+  const agents = useQuery({ queryKey: ['ticket-agents', identity], enabled: management && role >= 10, gcTime: 0, retry: false,
     queryFn: ({ signal }) => readTickets('/api/tickets/agents', ticketAgentsSchema, signal) });
   const ticket = query.data?.pages[0]?.ticket;
-  const handle = query.data?.pages[0]?.can_handle === true;
+  const handle = management && query.data?.pages[0]?.can_handle === true;
   const owner = ticket?.user_id === userID;
   const change = (payload: Record<string, unknown>, clear = false) => run(async (signal) => {
     await writeTicket(`/api/tickets/${id}`, 'patch', payload, signal);
@@ -37,9 +37,9 @@ export default function TicketDetail({ id, userID, role, identity, onClose, onCh
           <div className='flex items-center justify-between gap-3'><span className='text-ui-text-3'>{t('Status')}</span><Tag>{t(ticketLabels[ticket.status])}</Tag></div>
           {(handle || owner) && <div className='flex items-center justify-between gap-3'><span>{t('Change status')}</span><Select popover aria-label={t('Change status')} value={ticket.status} disabled={busy} options={(handle ? ['open', 'waiting_user', 'resolved', 'closed'] : ['open', 'closed']).map((value) => ({ value, label: t(ticketLabels[value]) }))} onChange={(status) => void change({ status })} /></div>}
           {handle && <div className='flex items-center justify-between gap-3'><span>{t('Priority')}</span><Select popover aria-label={t('Priority')} value={ticket.priority} disabled={busy} options={['low', 'normal', 'high'].map((value) => ({ value, label: t(ticketLabels[value]) }))} onChange={(priority) => void change({ priority })} /></div>}
-          {role >= 10 && <div className='flex items-center justify-between gap-3'><span>{t('Assigned support')}</span><Select popover aria-label={t('Assigned support')} value={ticket.assignee_id} disabled={busy || agents.isPending || agents.isError} options={[{ value: 0, label: t('Unassigned') }, ...(agents.data ?? []).filter((agent) => agent.id !== ticket.user_id).map((agent) => ({ value: agent.id, label: agent.username }))]} onChange={(assignee_id) => void change({ assignee_id })} /></div>}
+          {management && role >= 10 && <div className='flex items-center justify-between gap-3'><span>{t('Assigned support')}</span><Select popover aria-label={t('Assigned support')} value={ticket.assignee_id} disabled={busy || agents.isPending || agents.isError} options={[{ value: 0, label: t('Unassigned') }, ...(agents.data ?? []).filter((agent) => agent.id !== ticket.user_id).map((agent) => ({ value: agent.id, label: agent.username }))]} onChange={(assignee_id) => void change({ assignee_id })} /></div>}
           {agents.isError && <p role='alert' className='text-xs text-ui-danger'>{t('Unable to load support agents')}</p>}
-          {role >= 5 && ticket.assignee_id === 0 && !owner && <div className='flex justify-end'><Button disabled={busy} onClick={() => void change({ claim: true })}>{t('Claim ticket')}</Button></div>}
+          {management && ticket.assignee_id === 0 && !owner && <div className='flex justify-end'><Button disabled={busy} onClick={() => void change({ claim: true })}>{t('Claim ticket')}</Button></div>}
         </div>
         <div className='space-y-4'>
           {query.hasNextPage && <Button size='sm' variant='link' loading={query.isFetchingNextPage} onClick={() => void query.fetchNextPage()}>{t('Load earlier messages')}</Button>}

@@ -15,6 +15,7 @@ export default function RouteSkeleton() {
   const { pathname, search } = useLocation();
   const { t } = useTranslation();
   if (pathname === '/tickets') return <TicketsLoading />;
+  if (pathname === '/console/tickets') return <TicketsLoading management />;
   if (pathname === '/personal') return <PersonalSkeleton tab={personalSettingsTab(search)} />;
   if (pathname === '/topup') return <TopUpSkeleton />;
   if (pathname === '/log') return <div className='console-content-page'>

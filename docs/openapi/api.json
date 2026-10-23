@@ -1042,7 +1042,7 @@
       "put": {
         "summary": "更新用户",
         "deprecated": false,
-        "description": "👨‍💼 需要管理员权限（Admin）",
+        "description": "需要管理员权限，仅可调整低于自身等级的用户。角色变更通过 role 提交，并需 admin.user.update 安全验证；成功后旧登录会话失效。超级管理员账号不能在此降级或新授予。",
         "tags": [
           "用户管理"
         ],
@@ -1250,9 +1250,7 @@
                     "enum": [
                       "disable",
                       "enable",
-                      "delete",
-                      "promote",
-                      "demote"
+                      "delete"
                     ]
                   }
                 }
@@ -3865,7 +3863,9 @@
             "type": "string"
           },
           "role": {
-            "type": "integer"
+            "type": "integer",
+            "enum": [1, 5, 10, 100],
+            "description": "用户、客服、管理员、超级管理员；创建或变更角色时仅允许低于操作者等级，超级管理员账号受保护。"
           },
           "status": {
             "type": "integer"

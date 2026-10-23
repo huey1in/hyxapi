@@ -18,7 +18,7 @@ export const userPageSchema = z.object({ items: z.array(managedUserSchema), tota
 export type ManagedUser = z.infer<typeof managedUserSchema>;
 export type UserFilters = { keyword: string; group: string; role: string; status: string };
 export type UserSort = 'id' | 'username' | 'quota' | 'group' | 'created_at' | 'last_login_at';
-export type UserAction = 'enable' | 'disable' | 'promote' | 'demote' | 'support' | 'delete';
+export type UserAction = 'enable' | 'disable' | 'delete';
 export type UserForm = { username: string; display_name: string; password: string; role: number; group: string; remark: string; admin_permissions?: AdminPermissionMatrix };
 
 export function canManageUser(actorRole: number, user: Pick<ManagedUser, 'role' | 'DeletedAt'>): boolean {
@@ -26,16 +26,16 @@ export function canManageUser(actorRole: number, user: Pick<ManagedUser, 'role' 
 }
 
 export function userUpdatePayload(form: UserForm, original: ManagedUser | null, catalog?: PermissionCatalog) {
-  const role = original?.role ?? form.role;
+  const role = form.role;
   const payload: { username: string; display_name: string; password?: string; id?: number; role?: number; group?: string; remark?: string; admin_permissions?: AdminPermissionMatrix } = {
     username: form.username.trim(), display_name: form.display_name || form.username.trim(),
   };
   if (form.password) payload.password = form.password;
   if (original) { payload.id = original.id; payload.group = form.group; payload.remark = form.remark; }
-  else payload.role = role;
+  if (!original || role !== original.role) payload.role = role;
   if (role === 10 && catalog?.resources.length && form.admin_permissions) {
     const permissions = normalizeAdminPermissions(form.admin_permissions, catalog);
-    if (!original || JSON.stringify(permissions) !== JSON.stringify(normalizeAdminPermissions(original.admin_permissions, catalog))) payload.admin_permissions = permissions;
+    if (!original || role !== original.role || JSON.stringify(permissions) !== JSON.stringify(normalizeAdminPermissions(original.admin_permissions, catalog))) payload.admin_permissions = permissions;
   }
   return payload;
 }

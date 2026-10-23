@@ -31,6 +31,7 @@ export function canOpenConsolePage(path: string, user: AuthUser | null | undefin
   if (!user || user.role < ROLE.USER) return false;
   const page = path.startsWith('/console/') ? path.split('/')[2] : '';
   if (page === 'setting') return user.role >= ROLE.SUPER_ADMIN;
+  if (page === 'tickets') return user.role >= ROLE.SUPPORT;
   if (adminPages.has(page) && user.role < ROLE.ADMIN) return false;
   if (page === 'channel' && !hasPermission(user, 'channel', 'read')) return false;
   return true;

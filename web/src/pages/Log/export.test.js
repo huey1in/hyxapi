@@ -13,7 +13,6 @@ test('mixed feed retains independent row identities and native time units', () =
   assert.equal(new Set(page.items.map((row) => row.key)).size, 3);
   assert.deepEqual(page.items.map((row) => row.time), [100900, 100500, 100000]);
   assert.equal(feed.feedModel(task), 'suno');
-  assert.equal(feed.feedStatus(task), 'SUCCESS');
   assert.equal(feed.feedItemSchema.safeParse({ ...task, task: undefined }).success, false);
   assert.equal(feed.feedItemSchema.safeParse({ ...task, task: { ...task.task, quota: -1 } }).success, false);
   assert.equal(feed.feedPageSchema.safeParse({ items: null, total: 0, next_cursor: '' }).success, false);

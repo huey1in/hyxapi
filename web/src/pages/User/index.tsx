@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
-import { Plus, Search, Pencil, Trash2, ShieldCheck, ShieldOff, ArrowUp, ArrowDown, CreditCard, DollarSign, MoreHorizontal, Copy, UsersRound } from 'lucide-react';
+import { Plus, Search, Pencil, Trash2, ShieldCheck, ShieldOff, CreditCard, DollarSign, MoreHorizontal, Copy, UsersRound } from 'lucide-react';
 import { API, copy, showSuccess, renderQuota } from '../../helpers';
 import { PageShell, Button, IconButton, Input, Table, Pagination, Tag, Modal, ConfirmDialog, Select } from '../../components/ui';
 import type { TableColumn } from '../../components/ui/layout/Table';
@@ -79,8 +79,6 @@ function UsersWorkspace({ actor }: { actor: AuthUser | null }) {
       <IconButton icon={Pencil} title={t('Edit')} disabled={busy} onClick={() => setWindowState({ kind: 'edit', user })} />
       {user.role !== 100 && <>
         <IconButton icon={user.status === 1 ? ShieldOff : ShieldCheck} title={t(user.status === 1 ? 'Disable' : 'Enable')} disabled={busy} onClick={() => void act(user, user.status === 1 ? 'disable' : 'enable')} />
-        {user.role < 10 && <Button size='sm' variant='link' disabled={busy} onClick={() => void act(user, user.role === 5 ? 'demote' : 'support')}>{t(user.role === 5 ? 'Remove support role' : 'Assign support role')}</Button>}
-        {actor.role === 100 && <IconButton icon={user.role === 10 ? ArrowDown : ArrowUp} title={t(user.role === 10 ? 'Demote' : 'Promote')} disabled={busy} onClick={() => void act(user, user.role === 10 ? 'demote' : 'promote')} />}
       </>}
       <IconButton icon={MoreHorizontal} title={t('Account security')} disabled={busy} onClick={() => setWindowState({ kind: 'security', user })} />
       {user.role !== 100 && <IconButton icon={Trash2} variant='danger' title={t('Delete')} disabled={busy} onClick={() => setWindowState({ kind: 'delete', user })} />}

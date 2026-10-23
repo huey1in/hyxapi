@@ -50,6 +50,7 @@ func SetApiRouter(router *gin.Engine) {
 		apiRouter.POST("/usdt/notify", anonymousRequestBodyLimit, controller.USDTNotify)
 		tickets := apiRouter.Group("/tickets", middleware.DisableCache(), middleware.UserAuth())
 		tickets.GET("", controller.ListTickets)
+		tickets.GET("/manage", middleware.SupportAuth(), controller.ListManagedTickets)
 		tickets.GET("/agents", controller.TicketAgents)
 		tickets.GET("/:id", controller.GetTicket)
 		tickets.POST("", middleware.UserCriticalRateLimit("ticket-create"), controller.CreateTicket)

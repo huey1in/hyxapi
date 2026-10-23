@@ -24,7 +24,7 @@ const LS_KEY = 'sidebar-collapsed';
 const EXPANDED = 256;
 const COLLAPSED = 57;
 
-type NavItem = { to: string; label: string; icon: LucideIcon; end?: boolean; admin?: boolean; root?: boolean; divider?: false } | { divider: true; admin?: boolean; root?: boolean; to?: never; label?: never; icon?: never; end?: never };
+type NavItem = { to: string; label: string; icon: LucideIcon; end?: boolean; support?: boolean; admin?: boolean; root?: boolean; divider?: false } | { divider: true; support?: boolean; admin?: boolean; root?: boolean; to?: never; label?: never; icon?: never; end?: never };
 const NAV_ITEMS: NavItem[] = [
   { to: '/console',            label: '概览',     icon: BarChart3, end: true },
   { to: '/pricing',    label: 'Models',   icon: Store },
@@ -35,7 +35,8 @@ const NAV_ITEMS: NavItem[] = [
   { to: '/notices',    label: '通知',     icon: Bell },
   { to: '/tickets', label: 'Support tickets', icon: Headset },
   { to: '/personal',   label: '设置',     icon: User },
-  { divider: true, admin: true },
+  { divider: true, support: true },
+  { to: '/console/tickets', label: 'Ticket management', icon: Headset, support: true },
   { to: '/console/operations',   label: '线索运营',   icon: TrendingUp, admin: true },
   { to: '/console/system-status', label: '系统状态',   icon: Activity,   admin: true },
   { to: '/console/channel',      label: '渠道管理',   icon: Radio,      admin: true },
@@ -53,6 +54,7 @@ const SiderBar = ({ loading = false }: { loading?: boolean }) => {
   const { t } = useTranslation();
   const [statusState] = useContext(StatusContext);
   const currentUser = useAuthStore((state) => state.auth.user);
+  const support = (currentUser?.role ?? 0) >= 5;
   const admin = (currentUser?.role ?? 0) >= 10;
   const root = (currentUser?.role ?? 0) >= 100;
   const isMobile = useIsMobile();
@@ -91,7 +93,7 @@ const SiderBar = ({ loading = false }: { loading?: boolean }) => {
   };
 
   const adminModules = parseSidebarModules(statusState?.status?.SidebarModulesAdmin);
-  const items = filterSidebarItems(NAV_ITEMS, { admin, root, isVisible: (route) => canOpenConsolePage(route, currentUser) && isSidebarModuleVisible(route, adminModules) });
+  const items = filterSidebarItems(NAV_ITEMS, { support, admin, root, isVisible: (route) => canOpenConsolePage(route, currentUser) && isSidebarModuleVisible(route, adminModules) });
   const compact = collapsed && !isMobile;
   const itemClass = cn(
     'flex min-w-0 items-center rounded-lg text-base leading-6 whitespace-nowrap',

@@ -26,6 +26,7 @@ func TestSupportRoleHasTicketAccessWithoutAdministratorPrivileges(t *testing.T) 
 	router := gin.New()
 	allowed := func(c *gin.Context) { c.Status(http.StatusOK) }
 	router.GET("/api/tickets", UserAuth(), allowed)
+	router.GET("/api/tickets/manage", UserAuth(), SupportAuth(), allowed)
 	router.GET("/api/user/", AdminAuth(), allowed)
 	router.GET("/api/option/", RootAuth(), allowed)
 	for _, test := range []struct {
@@ -33,14 +34,29 @@ func TestSupportRoleHasTicketAccessWithoutAdministratorPrivileges(t *testing.T) 
 		status      int
 	}{
 		{"/api/tickets", token, http.StatusOK},
+		{"/api/tickets/manage", token, http.StatusOK},
 		{"/api/user/", token, http.StatusForbidden},
 		{"/api/option/", token, http.StatusForbidden},
 		{"/api/tickets", "support-legacy-token", http.StatusForbidden},
+		{"/api/tickets/manage", "support-legacy-token", http.StatusForbidden},
 	} {
 		request := httptest.NewRequest(http.MethodGet, test.path, nil)
 		request.Header.Set("Authorization", "Bearer "+test.token)
 		response := httptest.NewRecorder()
 		router.ServeHTTP(response, request)
 		require.Equal(t, test.status, response.Code, response.Body.String())
+	}
+	for _, role := range []int{common.RoleCommonUser, common.RoleAdminUser, common.RoleRootUser} {
+		require.NoError(t, model.DB.Model(user).Update("role", role).Error)
+		require.NoError(t, model.PublishUserAuthCache(user.Id))
+		request := httptest.NewRequest(http.MethodGet, "/api/tickets/manage", nil)
+		request.Header.Set("Authorization", "Bearer "+token)
+		response := httptest.NewRecorder()
+		router.ServeHTTP(response, request)
+		want := http.StatusOK
+		if role == common.RoleCommonUser {
+			want = http.StatusForbidden
+		}
+		require.Equal(t, want, response.Code, response.Body.String())
 	}
 }

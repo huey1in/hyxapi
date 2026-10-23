@@ -66,6 +66,7 @@ const App = () => (
       <Route path='/console/setting'          element={<Setting />} />
       <Route path='/personal'                 element={<Personal />} />
       <Route path='/tickets' element={<Tickets />} />
+      <Route path='/console/tickets' element={<Tickets management />} />
       <Route path='/notices'                  element={<Notices />} />
 
       <Route path='*' element={<Navigate to='/' replace />} />

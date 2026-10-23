@@ -30,6 +30,17 @@ test('pricing retains public access and uses the console layout when signed in',
   }
 });
 
+test('ticket management starts at support level without granting other administration access', () => {
+  for (const role of [1, 5, 10, 100]) {
+    const user = { id: 7, username: 'agent', role };
+    assert.equal(canOpenConsolePage('/tickets', user), true);
+    assert.equal(canOpenConsolePage('/console/tickets', user), role >= 5);
+    assert.equal(canOpenConsolePage('/console/tickets/nested', user), role >= 5);
+    assert.equal(canOpenConsolePage('/console/user', user), role >= 10);
+  }
+  assert.equal(canOpenConsolePage('/console/tickets', null), false);
+});
+
 test('legacy client paths preserve nested paths and encoded model names', () => {
   for (const [previous, current] of Object.entries(CLIENT_ROUTE_REDIRECTS)) {
     assert.equal(canonicalClientPath(previous), current);

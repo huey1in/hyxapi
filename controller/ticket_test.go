@@ -84,3 +84,56 @@ func TestTicketListKeepsOwnershipPaginationAndUnicodeSearch(t *testing.T) {
 	require.Len(t, rows, 1)
 	require.Equal(t, subject, rows[0].Subject)
 }
+
+func TestTicketQueuesSeparatePersonalOwnershipFromStaffAccess(t *testing.T) {
+	user, identity := setupSecurityEnrollmentTest(t)
+	require.NoError(t, model.DB.AutoMigrate(&model.Ticket{}, &model.TicketMessage{}))
+	for _, item := range []model.Ticket{
+		{UserID: user.Id, Subject: "Personal", Category: "other", Status: "open"},
+		{UserID: user.Id + 1, Subject: "Unassigned", Category: "other", Status: "open"},
+		{UserID: user.Id + 1, Subject: "Assigned to me", Category: "other", Status: "open", AssigneeID: user.Id},
+		{UserID: user.Id + 1, Subject: "Assigned to another agent", Category: "other", Status: "open", AssigneeID: user.Id + 2},
+	} {
+		require.NoError(t, model.DB.Create(&item).Error)
+	}
+	for _, role := range []int{common.RoleCommonUser, common.RoleSupportUser, common.RoleAdminUser, common.RoleRootUser} {
+		for _, management := range []bool{false, true} {
+			response := securityEnrollmentRequest("GET", "/api/tickets", "", "", identity, func(c *gin.Context) {
+				c.Set("role", role)
+				if management {
+					ListManagedTickets(c)
+				} else {
+					ListTickets(c)
+				}
+			})
+			if management && role == common.RoleCommonUser {
+				require.Equal(t, http.StatusForbidden, response.Code)
+				continue
+			}
+			var reply struct {
+				Success bool `json:"success"`
+				Data    struct {
+					Total int64          `json:"total"`
+					Items []model.Ticket `json:"items"`
+				} `json:"data"`
+			}
+			require.NoError(t, json.Unmarshal(response.Body.Bytes(), &reply))
+			require.True(t, reply.Success)
+			want := 1
+			if management {
+				want = 3
+				if role >= common.RoleAdminUser {
+					want = 4
+				}
+			}
+			require.EqualValues(t, want, reply.Data.Total)
+			for _, ticket := range reply.Data.Items {
+				if !management {
+					require.Equal(t, user.Id, ticket.UserID)
+				} else if role == common.RoleSupportUser {
+					require.True(t, ticket.UserID == user.Id || ticket.AssigneeID == 0 || ticket.AssigneeID == user.Id)
+				}
+			}
+		}
+	}
+}

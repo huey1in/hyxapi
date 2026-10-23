@@ -4,7 +4,7 @@ import { loadTestModules } from '../../../scripts/load-test-modules.mjs';
 const { entry0 } = await loadTestModules(['./src/pages/User/user-management.ts']);
 const { canManageUser, managedUserSchema, userUpdatePayload } = entry0;
 
-test('user profile payload preserves live balance, bindings, role and unchanged permission matrix', () => {
+test('user profile payload preserves live balance, bindings and unchanged authorization', () => {
   const catalog = { resources: [{ resource: 'channel', actions: [{ action: 'read' }, { action: 'write' }] }], roles: [{ key: 'admin', grants: { channel: { read: true, write: false } } }] };
   const original = managedUserSchema.parse({ id: 4, username: 'admin', role: 10, status: 1, quota: 123, group: 'premium', admin_permissions: { channel: { read: true, write: false } } });
   const form = { ...original, password: '', display_name: 'Updated', remark: '' };
@@ -14,6 +14,11 @@ test('user profile payload preserves live balance, bindings, role and unchanged 
   assert.deepEqual(changed.admin_permissions, { channel: { read: true, write: true } });
   assert.equal(userUpdatePayload(form, original).admin_permissions, undefined);
   assert.deepEqual(userUpdatePayload({ ...form, role: 1 }, null), { username: 'admin', display_name: 'Updated', role: 1 });
+  assert.deepEqual(userUpdatePayload({ ...form, role: 5 }, original, catalog), { id: 4, username: 'admin', display_name: 'Updated', group: 'premium', remark: '', role: 5 });
+  const support = { ...original, role: 5, admin_permissions: {} };
+  const promoted = userUpdatePayload({ ...form, admin_permissions: { channel: { read: true, write: false } } }, support, catalog);
+  assert.equal(promoted.role, 10);
+  assert.deepEqual(promoted.admin_permissions, { channel: { read: true, write: false } });
 });
 
 test('user controls distinguish deleted users and enforce the actor role hierarchy', () => {

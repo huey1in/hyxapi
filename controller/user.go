@@ -23,6 +23,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 type LoginRequest struct {
@@ -581,14 +582,18 @@ func UpdateUser(c *gin.Context) {
 		common.ApiError(c, err)
 		return
 	}
-	if updatedUser.Role != common.RoleGuestUser && updatedUser.Role != originUser.Role {
-		common.ApiErrorT(c, "Invalid parameters")
-		return
+	if updatedUser.Role == common.RoleGuestUser {
+		updatedUser.Role = originUser.Role
 	}
-	updatedUser.Role = originUser.Role
 	myRole := c.GetInt("role")
 	if !canManageTargetRole(myRole, originUser.Role) {
 		common.ApiErrorT(c, "No permission to update users of same or higher permission level")
+		return
+	}
+	roleChanged := updatedUser.Role != originUser.Role
+	if roleChanged && (originUser.Role == common.RoleRootUser || updatedUser.Role >= myRole ||
+		(updatedUser.Role != common.RoleCommonUser && updatedUser.Role != common.RoleSupportUser && updatedUser.Role != common.RoleAdminUser)) {
+		common.ApiErrorT(c, "Invalid parameters")
 		return
 	}
 	updatePassword := updatedUser.Password != ""
@@ -596,9 +601,8 @@ func UpdateUser(c *gin.Context) {
 		"username": originUser.Username,
 		"id":       updatedUser.Id,
 	}
-	// Resetting a password or rewriting the admin permission matrix changes what
-	// the managed account can do or who can sign in to it.
-	if updatePassword || updatedUser.AdminPermissions != nil {
+	// Role, password and permission changes all require a target-bound proof.
+	if roleChanged || updatePassword || updatedUser.AdminPermissions != nil {
 		authorization := requireAdminUserProof(c, service.VerificationScopeAdminUserUpdate, service.AdminUserContext{UserID: updatedUser.Id})
 		if authorization == nil {
 			return
@@ -606,13 +610,24 @@ func UpdateUser(c *gin.Context) {
 		auditParams["verification_method"] = authorization.Method
 		auditParams["password_reset"] = updatePassword
 		auditParams["admin_permissions_updated"] = updatedUser.AdminPermissions != nil
+		if roleChanged {
+			auditParams["previous_role"] = originUser.Role
+			auditParams["role"] = updatedUser.Role
+		}
 	}
 	authzTouched := false
 	if err := model.DB.Transaction(func(tx *gorm.DB) error {
+		var current model.User
+		if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).First(&current, updatedUser.Id).Error; err != nil {
+			return err
+		}
+		if current.Role != originUser.Role {
+			return common.NewMessage("Invalid parameters")
+		}
 		if err := updatedUser.EditWithTx(tx, updatePassword); err != nil {
 			return err
 		}
-		touched, err := updateAdminPermissionsForUserInTx(c, tx, updatedUser.Id, originUser.Role, updatedUser.AdminPermissions)
+		touched, err := updateAdminPermissionsForUserInTx(c, tx, updatedUser.Id, updatedUser.Role, updatedUser.AdminPermissions)
 		authzTouched = touched
 		return err
 	}); err != nil {
@@ -634,6 +649,11 @@ func UpdateUser(c *gin.Context) {
 	if err := model.PublishUserAuthCache(updatedUser.Id); err != nil {
 		common.ApiError(c, err)
 		return
+	}
+	if roleChanged {
+		if err := model.InvalidateUserTokensCache(updatedUser.Id); err != nil {
+			common.SysLog(fmt.Sprintf("failed to invalidate tokens cache for user %d: %s", updatedUser.Id, err.Error()))
+		}
 	}
 	recordManageAuditFor(c, updatedUser.Id, "user.update", auditParams)
 	c.JSON(http.StatusOK, gin.H{
@@ -951,7 +971,7 @@ func CreateUser(c *gin.Context) {
 
 func updateAdminPermissionsForUserInTx(c *gin.Context, tx *gorm.DB, userID int, userRole int, permissions map[string]map[string]bool) (bool, error) {
 	if permissions == nil {
-		if userRole < common.RoleAdminUser && c.GetInt("role") == common.RoleRootUser {
+		if userRole < common.RoleAdminUser {
 			return true, authz.ClearUserAuthorizationInTx(tx, userID)
 		}
 		return false, nil
@@ -1039,32 +1059,6 @@ func ManageUser(c *gin.Context) {
 			"message": "",
 		})
 		return
-	case "support":
-		if user.Role >= common.RoleAdminUser {
-			common.ApiErrorT(c, "Invalid parameters")
-			return
-		}
-		user.Role = common.RoleSupportUser
-	case "promote":
-		if myRole != common.RoleRootUser {
-			common.ApiErrorT(c, "Regular administrators cannot promote other users to administrator")
-			return
-		}
-		if user.Role >= common.RoleAdminUser {
-			common.ApiErrorT(c, "This user is already an administrator")
-			return
-		}
-		user.Role = common.RoleAdminUser
-	case "demote":
-		if user.Role == common.RoleRootUser {
-			common.ApiErrorT(c, "Cannot demote super administrator user")
-			return
-		}
-		if user.Role == common.RoleCommonUser {
-			common.ApiErrorT(c, "This user is already a common user")
-			return
-		}
-		user.Role = common.RoleCommonUser
 	default:
 		common.ApiErrorT(c, "Invalid parameters")
 		return
@@ -1074,35 +1068,11 @@ func ManageUser(c *gin.Context) {
 	if authorization == nil {
 		return
 	}
-	if req.Action == "demote" || req.Action == "support" {
-		if err := model.DB.Transaction(func(tx *gorm.DB) error {
-			if err := user.UpdateWithTx(tx, false); err != nil {
-				return err
-			}
-			return authz.ClearUserAuthorizationInTx(tx, user.Id)
-		}); err != nil {
-			common.ApiError(c, err)
-			return
-		}
-		if err := authz.ReloadPolicy(); err != nil {
-			common.ApiError(c, err)
-			return
-		}
-		if err := model.PublishUserAuthCache(user.Id); err != nil {
-			common.ApiError(c, err)
-			return
-		}
-		if _, err := model.RevokeAllUserSessions(user.Id, "admin_demote"); err != nil {
-			common.ApiError(c, err)
-			return
-		}
-	} else {
-		if err := user.Update(false); err != nil {
-			common.ApiError(c, err)
-			return
-		}
+	if err := user.Update(false); err != nil {
+		common.ApiError(c, err)
+		return
 	}
-	// Update/UpdateWithTx has already published the new user hash and revoked
+	// Update has already published the new user hash and revoked
 	// browser sessions exactly once. Only PAT/relay token caches still need an
 	// explicit invalidation; deleting the user hash here would discard the
 	// freshly published auth-version floor.

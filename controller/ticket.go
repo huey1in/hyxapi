@@ -24,6 +24,18 @@ func ticketError(c *gin.Context, err error) {
 }
 
 func ListTickets(c *gin.Context) {
+	listTickets(c, model.DB.Model(&model.Ticket{}).Where("user_id = ?", c.GetInt("id")), false)
+}
+
+func ListManagedTickets(c *gin.Context) {
+	if c.GetInt("role") < common.RoleSupportUser {
+		c.AbortWithStatus(http.StatusForbidden)
+		return
+	}
+	listTickets(c, model.TicketScope(model.DB.Model(&model.Ticket{}), c.GetInt("id"), c.GetInt("role")), true)
+}
+
+func listTickets(c *gin.Context, q *gorm.DB, management bool) {
 	page, _ := strconv.Atoi(c.DefaultQuery("p", "1"))
 	if page < 1 {
 		page = 1
@@ -31,18 +43,19 @@ func ListTickets(c *gin.Context) {
 	if page > 100000 {
 		page = 100000
 	}
-	q := model.TicketScope(model.DB.Model(&model.Ticket{}), c.GetInt("id"), c.GetInt("role"))
 	if status := c.Query("status"); status != "" {
 		q = q.Where("status = ?", status)
 	}
-	if c.GetInt("role") >= common.RoleSupportUser {
+	if management {
 		switch c.Query("queue") {
 		case "mine":
 			q = q.Where("assignee_id = ?", c.GetInt("id"))
 		case "unassigned":
 			q = q.Where("assignee_id = 0")
-		case "personal":
-			q = q.Where("user_id = ?", c.GetInt("id"))
+		case "":
+		default:
+			ticketError(c, model.ErrTicketInvalid)
+			return
 		}
 	}
 	if keyword := []rune(c.Query("keyword")); len(keyword) != 0 {
