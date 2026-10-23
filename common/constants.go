@@ -139,7 +139,7 @@ var RelayMaxIdleConnsPerHost int
 var CohereSafetySetting string
 
 const (
-	RequestIdKey         = "X-Oneapi-Request-Id"
+	RequestIdKey         = "X-Request-Id"
 	UpstreamRequestIdKey = "X-Upstream-Request-Id"
 )
 

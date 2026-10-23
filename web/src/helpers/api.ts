@@ -17,10 +17,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 
-import {
-  getUserIdFromLocalStorage,
-  showError,
-} from './utils';
+import { showError } from './utils';
 import axios from 'axios';
 import type { AxiosError, AxiosInstance, AxiosRequestConfig, AxiosResponse } from 'axios';
 import { applyAuthRotation, clearAuthentication, getFreshAuthHeaders, refreshAuthentication } from '../lib/auth-session';
@@ -36,7 +33,6 @@ export let API = axios.create({
   baseURL: apiBaseURL,
   withCredentials: true,
   headers: {
-    'New-API-User': getUserIdFromLocalStorage(),
     'Cache-Control': 'no-store',
   },
 });
@@ -142,7 +138,6 @@ export function updateAPI() {
     baseURL: apiBaseURL,
     withCredentials: true,
     headers: {
-      'New-API-User': getUserIdFromLocalStorage(),
       'Cache-Control': 'no-store',
     },
   });

@@ -472,7 +472,7 @@ func processChannelError(c *gin.Context, channelError types.ChannelError, err *t
 func RelayNotImplemented(c *gin.Context) {
 	err := types.OpenAIError{
 		Message: "API not implemented",
-		Type:    "new_api_error",
+		Type:    "api_error",
 		Param:   "",
 		Code:    "api_not_implemented",
 	}
@@ -504,7 +504,7 @@ func RelayTaskPluginEndpoint(c *gin.Context, fallback gin.HandlerFunc) {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": gin.H{
 				"message": "Task protocol request failed",
-				"type":    "new_api_error",
+				"type":    "api_error",
 				"code":    "task_protocol_error",
 			},
 		})
@@ -832,13 +832,6 @@ func executeTaskSubmissionWith(
 
 func presentTaskSubmission(c *gin.Context, outcome *taskSubmissionOutcome) {
 	diagnostics := newTaskPluginSubmitDiagnostics(c)
-	otherRatios := outcome.RelayInfo.PriceData.OtherRatios()
-	if otherRatios == nil {
-		otherRatios = map[string]float64{}
-	}
-	if ratiosJSON, err := common.Marshal(otherRatios); err == nil {
-		c.Header("X-New-Api-Other-Ratios", string(ratiosJSON))
-	}
 	if pinnedValue, exists := c.Get(pluginruntime.ContextKeyPinnedRoute); exists {
 		if pinned, ok := pinnedValue.(pluginruntime.PinnedRoute); ok && pinned.Plugin != nil && pinned.Route.Render != "" {
 			view, err := service.BuildTaskPluginView(outcome.Task)

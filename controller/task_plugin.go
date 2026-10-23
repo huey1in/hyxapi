@@ -30,7 +30,7 @@ const maxTaskPluginSourceBytes = 8 << 20
 func taskPluginCompileError(c *gin.Context, err error) {
 	var unknownField *jsplugin.UnknownMetaFieldError
 	if errors.As(err, &unknownField) {
-		common.ApiErrorT(c, "Plugin metadata contains an unknown field \"{{field}}\". If this plugin was downloaded from the official marketplace, it may require a newer version of new-api. Try updating new-api and installing the plugin again.", map[string]any{"field": unknownField.Field})
+		common.ApiErrorT(c, "Plugin metadata contains an unknown field \"{{field}}\". Check that the plugin supports this version of HyxAPI.", map[string]any{"field": unknownField.Field})
 		return
 	}
 	common.ApiError(c, err)

@@ -20,16 +20,8 @@ For commercial licensing, please contact support@quantumnous.com
 import { showToast } from '../components/ui';
 
 export function getSystemName() {
-  // Brand is hardcoded for the HyxAPI build — do not read from server-side
-  // Option/SystemName, which other operators may have set to "New API" etc.
+  // Keep the application brand consistent with the HyxAPI frontend.
   return 'HyxAPI';
-}
-
-export function getUserIdFromLocalStorage() {
-  let user = localStorage.getItem('user');
-  if (!user) return -1;
-  user = JSON.parse(user);
-  return user.id;
 }
 
 export async function copy(text) {

@@ -46,18 +46,11 @@ func CORSWithCredentials() gin.HandlerFunc {
 		h.Add("Vary", "Origin")
 		if c.Request.Method == http.MethodOptions {
 			h.Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
-			h.Set("Access-Control-Allow-Headers", "Origin, Content-Type, Accept, Authorization, New-API-User, Cache-Control, Accept-Language")
+			h.Set("Access-Control-Allow-Headers", "Origin, Content-Type, Accept, Authorization, Cache-Control, Accept-Language")
 			h.Set("Access-Control-Max-Age", "86400")
 			c.AbortWithStatus(http.StatusNoContent)
 			return
 		}
-		c.Next()
-	}
-}
-
-func PoweredBy() gin.HandlerFunc {
-	return func(c *gin.Context) {
-		c.Header("X-New-Api-Version", common.Version)
 		c.Next()
 	}
 }

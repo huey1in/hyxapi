@@ -313,7 +313,7 @@ async function performRefreshWithBrowserLock(
       return runRefresh(refreshEpoch)
     }
     return navigator.locks.request(
-      'new-api:auth-refresh',
+      'hyxapi:auth-refresh',
       { mode: 'exclusive' },
       () => runRefresh(refreshEpoch)
     )

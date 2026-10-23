@@ -2,7 +2,7 @@
 
 RelayKit 是一个 Go 模块，在 OpenAI Chat Completions、OpenAI Responses、Anthropic Messages 和 Gemini `generateContent` 四种协议之间转换请求、非流式响应和流式事件。
 
-它从 [new-api](https://github.com/QuantumNous/new-api) 中拆出，模块路径是 `github.com/QuantumNous/new-api/relaykit`，运行时依赖是 uuid、lo、gjson 和 sjson 四个包。它做协议数据的建模和转换，HTTP 收发、SSE 读写、渠道选择、鉴权和计费由宿主程序完成，所以可以嵌进其他 Go 网关或代理。
+它做协议数据的建模和转换，运行时依赖 uuid、lo、gjson 和 sjson。HTTP 收发、SSE 读写、渠道选择、鉴权和计费由宿主程序完成，可以嵌入其他 Go 网关或代理。
 
 ## 支持矩阵
 
@@ -59,7 +59,7 @@ replace github.com/QuantumNous/new-api/relaykit => ../api/relaykit
 
 | 包 | 内容 |
 |---|---|
-| `relaykit/dto` | 四种协议的请求、响应、流式事件和 usage 结构，以及 new-api 宿主共用的渠道、定价和用户设置结构 |
+| `relaykit/dto` | 四种协议的请求、响应、流式事件和 usage 结构，以及宿主共用的渠道、定价和用户设置结构 |
 | `relaykit/types` | 协议格式、错误、诊断、文件来源等共享类型 |
 | `relaykit/relayconvert` | 请求、响应和流式转换入口 |
 | `relaykit/relayconvert/convmeta` | 转换上下文接口 `Meta`、默认实现 `Values` 和选项 `Options` |
@@ -289,4 +289,4 @@ go test ./relayconvert -run TestGolden -update
 
 ## 许可证
 
-RelayKit 是 new-api 项目的一部分，遵循项目根目录中的 [GNU Affero General Public License v3.0](../LICENSE)。
+本模块遵循根目录中的 [GNU Affero General Public License v3.0](../LICENSE)，来源与版权声明见 [NOTICE](../NOTICE)。

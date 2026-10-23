@@ -26,7 +26,7 @@ type ClaudeError struct {
 type ErrorType string
 
 const (
-	ErrorTypeNewAPIError ErrorType = "new_api_error"
+	ErrorTypeNewAPIError ErrorType = "api_error"
 	ErrorTypeOpenAIError ErrorType = "openai_error"
 	ErrorTypeClaudeError ErrorType = "claude_error"
 )

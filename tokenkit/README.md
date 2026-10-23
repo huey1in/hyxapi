@@ -4,7 +4,7 @@ TokenKit 是仓库内独立的 Go 模块，用于文本 Token 计数及图片 To
 
 ## 接入
 
-要求 Go 1.26 或更高版本。模块路径沿用 `github.com/QuantumNous/new-api/tokenkit`，HyxAPI 根模块已通过 `replace` 引用本目录。其他项目使用本仓库版本时，在自己的 `go.mod` 中配置本地路径，例如：
+要求 Go 1.26 或更高版本。HyxAPI 根模块已通过 `replace` 引用本目录。其他项目使用本仓库版本时，在自己的 `go.mod` 中配置本地路径，例如：
 
 ```go
 require github.com/QuantumNous/new-api/tokenkit v0.0.0
@@ -74,4 +74,4 @@ go build ./...
 
 ## 许可证
 
-本模块继承 New API，遵循根目录中的 [GNU Affero General Public License v3.0](../LICENSE)。
+本模块遵循根目录中的 [GNU Affero General Public License v3.0](../LICENSE)，来源与版权声明见 [NOTICE](../NOTICE)。

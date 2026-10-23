@@ -1,7 +1,7 @@
 # 宝塔面板部署 HyxAPI
 
 本文使用仓库中的 `Dockerfile` 和 `docker-compose.yml` 构建、部署 HyxAPI。
-宝塔应用商店中的 New API 和上游镜像不会包含本项目的修改。
+请从本仓库构建镜像，避免安装其他项目的应用商店版本。
 
 ## 准备代码
 
