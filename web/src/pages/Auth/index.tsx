@@ -228,16 +228,6 @@ const Auth = () => {
           </div>}
           {turnstileEnabled && <div className='cursor-auth-turnstile'><TurnstileChallenge key={`${mode}:${turnstileAttempt}`} siteKey={status.turnstile_site_key!} onToken={setTurnstileToken} /></div>}
           {!isReset && !passwordFormEnabled && legalConsent}
-          {!isReset && oauthEnabled && <div className='cursor-auth-oauth-list'>
-            {oauthProviders.map(({ id, label, icon }) => <button className='cursor-auth-oauth' type='button' key={id} onClick={() => continueWithOAuth(id)} disabled={busy || !legalReady}>
-              <ProviderIcon src={icon} label={label} />
-              {operation === `oauth:${id}` ? t('auth.github.redirecting') : t('auth.oauth.continueWith', { provider: label })}
-            </button>)}
-            {wechatEnabled && <button type='button' className='cursor-auth-oauth' onClick={() => { if (checkLegal()) setWechat(true); }} disabled={busy || !legalReady}>{t('auth.oauth.continueWith', { provider: 'WeChat' })}</button>}
-            {isLogin && passkeyEnabled && <button type='button' className='cursor-auth-oauth' onClick={loginWithPasskey} disabled={busy || !legalReady}>{t("Sign in with Passkey")}</button>}
-            {isLogin && passkeyEnabled && domains.rpIDs.length > 1 && <Select aria-label={t('Passkey domain')} value={rpID || domains.rpID} disabled={busy} options={domains.rpIDs.map((id) => ({ value: id, label: id }))} onChange={setRPID} />}
-          </div>}
-          {!isReset && oauthEnabled && passwordFormEnabled && <div className='cursor-auth-divider'><span>{t('auth.or')}</span></div>}
           {isReset ? <>
             {resetSent ? <div className='cursor-auth-reset-sent'><strong>{t('auth.reset.checkEmail')}</strong><span>{t('auth.reset.sentDescription')}</span></div> : <form onSubmit={requestPasswordReset} className='auth-form'>
               <label>{t('auth.fields.email')}<input value={resetEmail} onChange={(event) => { setFeedback(null); setResetEmail(event.target.value); }} type='email' autoComplete='email' placeholder={t('auth.fields.emailPlaceholder')} /></label>
@@ -257,6 +247,16 @@ const Auth = () => {
           </form> : <p role='status' className='text-sm text-ui-text-2'>{t(!registerEnabled && !isLogin ? 'New user registration is disabled' : 'Password authentication is disabled. Use an available sign-in method.')}</p>}
           {!isLogin && passwordFormEnabled && registerStep > 1 && <button className='cursor-auth-forgot' disabled={busy} onClick={() => { setRegisterStep((step) => step === 3 && !emailVerificationEnabled ? 1 : step - 1); setFeedback(null); }}>{t("Previous")}</button>}
           {isLogin && passwordLoginEnabled && <button className='cursor-auth-forgot' onClick={() => changeMode('reset')}>{t('auth.login.forgotPassword')}</button>}
+          {oauthEnabled && passwordFormEnabled && <div className='cursor-auth-divider'><span>{t('auth.or')}</span></div>}
+          {oauthEnabled && <div className='cursor-auth-oauth-list'>
+            {oauthProviders.map(({ id, label, icon }) => <button className='cursor-auth-oauth' type='button' key={id} onClick={() => continueWithOAuth(id)} disabled={busy || !legalReady}>
+              <ProviderIcon src={icon} label={label} />
+              {operation === `oauth:${id}` ? t('auth.github.redirecting') : t('auth.oauth.continueWith', { provider: label })}
+            </button>)}
+            {wechatEnabled && <button type='button' className='cursor-auth-oauth' onClick={() => { if (checkLegal()) setWechat(true); }} disabled={busy || !legalReady}>{t('auth.oauth.continueWith', { provider: 'WeChat' })}</button>}
+            {isLogin && passkeyEnabled && <button type='button' className='cursor-auth-oauth' onClick={loginWithPasskey} disabled={busy || !legalReady}>{t("Sign in with Passkey")}</button>}
+            {isLogin && passkeyEnabled && domains.rpIDs.length > 1 && <Select aria-label={t('Passkey domain')} value={rpID || domains.rpID} disabled={busy} options={domains.rpIDs.map((id) => ({ value: id, label: id }))} onChange={setRPID} />}
+          </div>}
           {(!isLogin || registerEnabled) && <p className='cursor-auth-switch'>{t(isLogin ? 'auth.login.noAccount' : 'auth.register.hasAccount')} <button onClick={() => changeMode(isLogin ? 'register' : 'login')}>{t(isLogin ? 'auth.register.action' : 'auth.login.action')}</button></p>}
           </>}
         </div>
