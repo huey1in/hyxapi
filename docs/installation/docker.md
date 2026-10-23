@@ -117,6 +117,17 @@ location / {
 }
 ```
 
+### 客户端 IP 与 Cloudflare
+
+按 IP 的限流依赖真实访问者地址。`TRUSTED_PROXIES` 留空时只信任回环、私有 IPv4 和 IPv6 ULA 地址；设置为 `none` 时忽略转发头；显式填写 IP / CIDR 列表会替换默认值，因此需要同时包含实际的 Nginx / Docker 代理地址。
+
+对于 `Cloudflare → Nginx → 应用`，上面的 Nginx 配置会保留 `X-Forwarded-For` 链。如果应用只信任本机代理，会在 Cloudflare 节点处停止解析，导致多个用户共用同一 IP 限流额度，登录状态刷新也可能返回 429。可选择以下一种配置方式：
+
+- 在 Nginx 中按 [Cloudflare 官方说明](https://developers.cloudflare.com/support/troubleshooting/restoring-visitor-ips/restoring-original-visitor-ips/)配置真实 IP 模块，仅信任 Cloudflare 官方网段提供的 `CF-Connecting-IP`，并向应用传递校验后的访问者地址。
+- 保留转发链，在应用的 `.env` 中将本机 / Docker 代理地址和 Cloudflare 的全部官方 [IPv4](https://www.cloudflare.com/ips-v4/) / [IPv6](https://www.cloudflare.com/ips-v6/) 网段一起填入 `TRUSTED_PROXIES`，以逗号分隔，再执行 `docker compose up -d --no-deps --wait new-api` 重建应用容器。
+
+代理需要把实际连接方地址追加到转发链，不能直接透传客户端提供的任意 IP。不要设置 `0.0.0.0/0` 或 `::/0` 信任所有来源。调整后检查应用日志中的客户端 IP，并验证同一 Cloudflare 节点后的不同访问者分别计数、外部请求伪造转发头无效。官方代理网段变动后需同步配置。
+
 健康检查接口为 `GET /api/status`。首页暂未完成设计，`/` 自动跳转控制台 `/console`，属于预期行为。
 
 ## 更新与备份
