@@ -8,6 +8,7 @@ import { useSetTheme, useTheme } from '../../context/Theme';
 import { StatusContext } from '../../context/Status';
 import HeaderBar from '../../components/layout/HeaderBar';
 import LegalDocumentDialog from '../../components/layout/LegalDocumentDialog';
+import GrainBanner from './GrainBanner';
 import { API } from '../../helpers';
 import { extractSupportedModelBrands } from './modelBrands';
 import type { ModelBrand } from './modelBrands';
@@ -145,16 +146,14 @@ const HomeContent = () => {
       <HeaderBar />
 
       <main>
-        <section className='studio-hero'>
+        <GrainBanner>
           <div className='studio-hero-copy'>
-            <h1>{t('HyxAPI is the unified model gateway for AI applications.')}</h1>
+            <h1 id='home-title'>{t('HyxAPI is the unified model gateway for AI applications.')}</h1>
             <div className='studio-actions'>
               <Link to={startLink}>{t(isLoggedIn ? 'Go to Console' : registerEnabled ? 'Get started with HyxAPI' : 'Sign in')} <ArrowRight size={16} /></Link>
             </div>
           </div>
-        </section>
-
-        <div id='inside' className='home-gradient-banner' aria-hidden='true' />
+        </GrainBanner>
 
         <section className='model-trust'>
           <h2>{t('Works with the models you already use')}</h2>
