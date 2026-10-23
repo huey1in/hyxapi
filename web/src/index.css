@@ -557,8 +557,11 @@ input[type='number'] {
 .api-key-table { --api-key-table-height:400px; container-type:inline-size; min-height:var(--api-key-table-height); }
 .api-key-table .api-key-empty-state { position:sticky; left:12px; display:flex; align-items:center; justify-content:center; width:calc(100cqw - 24px); min-height:calc(var(--api-key-table-height) - 64px); }
 .api-key-table :is(th,td) { font-size:14px; line-height:20px; }
-.logs-table th { font-size:14px; line-height:22px; }
-.logs-table td { font-size:15px; line-height:22px; }
+.logs-table :is(th,td) { padding-inline:8px; }
+.logs-table :is(th,td):first-child { padding-left:12px; }
+.logs-table :is(th,td):last-child { padding-right:12px; }
+.logs-table th { font-size:14px; line-height:22px; white-space:normal; }
+.logs-table td { font-size:15px; line-height:22px; overflow-wrap:anywhere; }
 .mobile-table-card { min-width:0; border:1px solid var(--ui-border); border-radius:16px; background:var(--page-bg); padding:16px; }
 .mobile-table-field { display:grid; grid-template-columns:minmax(0,0.8fr) minmax(0,1.2fr); align-items:start; gap:12px; }
 .mobile-table-field-wide { grid-template-columns:minmax(0,1fr); gap:6px; }
