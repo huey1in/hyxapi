@@ -3067,6 +3067,20 @@
     "Disable session binding": "Disable session binding",
     "Prefer the bound channel": "Prefer the bound channel",
     "Require the bound channel": "Require the bound channel",
-    "Add custom field": "Add custom field"
+    "Add custom field": "Add custom field",
+    "Import to CC Switch": "Nhập vào CC Switch",
+    "Open CC Switch": "Mở CC Switch",
+    "Application": "Ứng dụng",
+    "Primary model": "Mô hình chính",
+    "Haiku model": "Mô hình Haiku",
+    "Sonnet model": "Mô hình Sonnet",
+    "Opus model": "Mô hình Opus",
+    "Optional": "Không bắt buộc",
+    "No models available for this API key": "Không có mô hình nào cho khóa API này",
+    "Install CC Switch on this device before importing.": "Cài đặt CC Switch trên thiết bị này trước khi nhập.",
+    "Unable to prepare CC Switch import": "Không thể chuẩn bị nhập vào CC Switch",
+    "Invalid CC Switch application": "Ứng dụng CC Switch không hợp lệ",
+    "Please select a primary model": "Vui lòng chọn mô hình chính",
+    "Invalid API server address": "Địa chỉ máy chủ API không hợp lệ"
   }
 }

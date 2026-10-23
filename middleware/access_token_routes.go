@@ -250,6 +250,7 @@ var accessTokenRouteRules = map[string]accessTokenRouteRule{
 	"GET /api/token/search":      accessTokenScopeRule("api_key:read"),
 	"GET /api/token/auto-groups": accessTokenScopeRule("api_key:read"),
 	"GET /api/token/:id":         accessTokenScopeRule("api_key:read"),
+	"GET /api/token/:id/models":  accessTokenScopeRule("api_key:read"),
 	"POST /api/token/:id/key":    accessTokenScopeRule("api_key:reveal"),
 	"POST /api/token/":           accessTokenScopeRule("api_key:write"),
 	"PUT /api/token/":            accessTokenScopeRule("api_key:write"),

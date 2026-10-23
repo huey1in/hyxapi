@@ -3067,6 +3067,20 @@
     "Disable session binding": "Disable session binding",
     "Prefer the bound channel": "Prefer the bound channel",
     "Require the bound channel": "Require the bound channel",
-    "Add custom field": "Add custom field"
+    "Add custom field": "Add custom field",
+    "Import to CC Switch": "Импорт в CC Switch",
+    "Open CC Switch": "Открыть CC Switch",
+    "Application": "Приложение",
+    "Primary model": "Основная модель",
+    "Haiku model": "Модель Haiku",
+    "Sonnet model": "Модель Sonnet",
+    "Opus model": "Модель Opus",
+    "Optional": "Необязательно",
+    "No models available for this API key": "Для этого API-ключа нет доступных моделей",
+    "Install CC Switch on this device before importing.": "Перед импортом установите CC Switch на это устройство.",
+    "Unable to prepare CC Switch import": "Не удалось подготовить импорт в CC Switch",
+    "Invalid CC Switch application": "Недопустимое приложение CC Switch",
+    "Please select a primary model": "Выберите основную модель",
+    "Invalid API server address": "Недопустимый адрес сервера API"
   }
 }

@@ -5,10 +5,11 @@ import ConsolePageHeader from '../../components/layout/ConsolePageHeader';
 import { StatusContext } from '../../context/Status';
 import { useTranslation } from 'react-i18next';
 import { useTokenManagement } from './use-token-management';
-import type { ManagedToken } from './token-management';
+import type { ManagedToken, TokenListItem } from './token-management';
 import TokenListControls from './TokenListControls';
 import TokenTable from './TokenTable';
 import TokenEditModal from './TokenEditModal';
+import CCSwitchModal from './CCSwitchModal';
 
 const TokenPage = () => {
   const [statusState] = useContext(StatusContext);
@@ -16,9 +17,10 @@ const TokenPage = () => {
   const management = useTokenManagement();
   const { rows, loading } = management;
   const [editing, setEditing] = useState<Partial<ManagedToken> | null>(null);
+  const [importing, setImporting] = useState<TokenListItem | null>(null);
   const [confirm, setConfirm] = useState<{ title: string; description: string; onOk: () => Promise<void> } | null>(null);
 
-  useEffect(() => { setEditing(null); setConfirm(null); }, [management.identity]);
+  useEffect(() => { setEditing(null); setImporting(null); setConfirm(null); }, [management.identity]);
   const requestDelete = (token: { id: number; name: string }) => {
     setConfirm({ title: t('Delete API key?'),
       description: `${token.name}\n${t('Clients using this API key will stop working.')}`,
@@ -47,6 +49,7 @@ const TokenPage = () => {
         <TokenListControls key={management.identity} management={management} />
         <TokenTable rows={rows} loading={loading} disabled={management.busy}
           onToggle={management.changeStatus} onCopy={management.copyToken} onDelete={requestDelete}
+          onImport={setImporting}
           onEdit={async (row) => { const token = await management.loadToken(row); if (token) setEditing(token); }} />
       </div>
 
@@ -60,6 +63,8 @@ const TokenPage = () => {
         onSaved={() => { setEditing(null); management.refresh(); }}
         onChanged={() => { void management.refresh(); }}
       />
+
+      {importing && <CCSwitchModal key={`${management.identity}:${importing.id}`} token={importing} onClose={() => setImporting(null)} />}
 
       {confirm && (
         <ConfirmDialog open title={confirm.title} description={confirm.description} onConfirm={confirm.onOk}

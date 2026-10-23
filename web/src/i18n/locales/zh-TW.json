@@ -3155,6 +3155,20 @@
     "Read": "讀取",
     "Write": "寫入",
     "Use the following code to verify your email. The code expires in 10 minutes.": "請輸入以下驗證碼完成信箱驗證，驗證碼將在 10 分鐘後失效。",
-    "If you did not request this, do not share this code.": "如果這不是您本人的操作，請勿將驗證碼告訴任何人。"
+    "If you did not request this, do not share this code.": "如果這不是您本人的操作，請勿將驗證碼告訴任何人。",
+    "Import to CC Switch": "匯入至 CC Switch",
+    "Open CC Switch": "開啟 CC Switch",
+    "Application": "應用程式",
+    "Primary model": "主要模型",
+    "Haiku model": "Haiku 模型",
+    "Sonnet model": "Sonnet 模型",
+    "Opus model": "Opus 模型",
+    "Optional": "選填",
+    "No models available for this API key": "目前 API Key 沒有可用模型",
+    "Install CC Switch on this device before importing.": "請先在目前裝置安裝 CC Switch，再匯入設定。",
+    "Unable to prepare CC Switch import": "無法準備 CC Switch 匯入設定",
+    "Invalid CC Switch application": "無效的 CC Switch 應用程式",
+    "Please select a primary model": "請選擇主要模型",
+    "Invalid API server address": "API 伺服器位址無效"
   }
 }

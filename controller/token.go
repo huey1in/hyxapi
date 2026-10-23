@@ -10,6 +10,7 @@ import (
 	"github.com/QuantumNous/new-api/common"
 	"github.com/QuantumNous/new-api/constant"
 	"github.com/QuantumNous/new-api/i18n"
+	"github.com/QuantumNous/new-api/middleware"
 	"github.com/QuantumNous/new-api/model"
 	"github.com/QuantumNous/new-api/service"
 	"github.com/QuantumNous/new-api/setting"
@@ -113,6 +114,36 @@ func GetTokenKey(c *gin.Context) {
 	common.ApiSuccess(c, gin.H{
 		"key": token.GetFullKey(),
 	})
+}
+
+// GetTokenModels uses the relay's discovery policy without authenticating with the
+// API key, so configuring a client does not count as a use of that key.
+func GetTokenModels(c *gin.Context) {
+	id, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		common.ApiError(c, err)
+		return
+	}
+	token, err := model.GetTokenByIds(id, c.GetInt("id"))
+	if err != nil {
+		common.ApiError(c, err)
+		return
+	}
+	user, err := model.GetUserCache(token.UserId)
+	if err != nil {
+		common.ApiError(c, err)
+		return
+	}
+	token.NormalizeGroupPolicy()
+	if len(token.Groups) > 0 && token.Groups[0] != "auto" && !service.IsUserSelectableGroup(user.Group, token.Groups[0]) {
+		common.ApiSuccess(c, []any{})
+		return
+	}
+	user.WriteContext(c)
+	if err := middleware.SetupContextForToken(c, token); err != nil {
+		return
+	}
+	ListModels(c, constant.ChannelTypeOpenAI)
 }
 
 func GetTokenUsage(c *gin.Context) {

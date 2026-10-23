@@ -3183,6 +3183,20 @@
     "Read": "Read",
     "Write": "Write",
     "Use the following code to verify your email. The code expires in 10 minutes.": "Use the following code to verify your email. The code expires in 10 minutes.",
-    "If you did not request this, do not share this code.": "If you did not request this, do not share this code."
+    "If you did not request this, do not share this code.": "If you did not request this, do not share this code.",
+    "Import to CC Switch": "Import to CC Switch",
+    "Open CC Switch": "Open CC Switch",
+    "Application": "Application",
+    "Primary model": "Primary model",
+    "Haiku model": "Haiku model",
+    "Sonnet model": "Sonnet model",
+    "Opus model": "Opus model",
+    "Optional": "Optional",
+    "No models available for this API key": "No models available for this API key",
+    "Install CC Switch on this device before importing.": "Install CC Switch on this device before importing.",
+    "Unable to prepare CC Switch import": "Unable to prepare CC Switch import",
+    "Invalid CC Switch application": "Invalid CC Switch application",
+    "Please select a primary model": "Please select a primary model",
+    "Invalid API server address": "Invalid API server address"
   }
 }

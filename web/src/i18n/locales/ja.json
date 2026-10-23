@@ -3067,6 +3067,20 @@
     "Disable session binding": "Disable session binding",
     "Prefer the bound channel": "Prefer the bound channel",
     "Require the bound channel": "Require the bound channel",
-    "Add custom field": "Add custom field"
+    "Add custom field": "Add custom field",
+    "Import to CC Switch": "CC Switch にインポート",
+    "Open CC Switch": "CC Switch を開く",
+    "Application": "アプリ",
+    "Primary model": "メインモデル",
+    "Haiku model": "Haiku モデル",
+    "Sonnet model": "Sonnet モデル",
+    "Opus model": "Opus モデル",
+    "Optional": "任意",
+    "No models available for this API key": "この API キーで利用できるモデルはありません",
+    "Install CC Switch on this device before importing.": "インポート前に、このデバイスに CC Switch をインストールしてください。",
+    "Unable to prepare CC Switch import": "CC Switch のインポートを準備できません",
+    "Invalid CC Switch application": "無効な CC Switch アプリです",
+    "Please select a primary model": "メインモデルを選択してください",
+    "Invalid API server address": "API サーバーのアドレスが無効です"
   }
 }

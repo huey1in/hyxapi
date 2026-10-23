@@ -12,6 +12,9 @@ import useDropdownState from './useDropdownState';
 import useDropdownLayout from './useDropdownLayout';
 import { selectorStyle } from './selectorSizing';
 
+/**
+ * @param {{ options?: (string | { value: string, label: string })[], value?: string, onChange?: (value: string) => void, placeholder?: string, searchPlaceholder?: string, emptyText?: string, disabled?: boolean, size?: number, width?: import('react').CSSProperties['width'] | 'full', id?: string, 'aria-label'?: string, popover?: boolean, placement?: 'bottom-start' | 'bottom-end' | 'top-start' | 'top-end' }} props
+ */
 const Combobox = ({
   options = [],
   value,
@@ -25,6 +28,7 @@ const Combobox = ({
   id,
   'aria-label': ariaLabel,
   popover = true,
+  placement = 'bottom-start',
 }) => {
   const [keyword, setKeyword] = useState('');
   const ref = useRef(null);
@@ -35,7 +39,7 @@ const Combobox = ({
   const search = useRef(null);
   const menuId = useId();
 
-  useDropdownLayout({ open, popover, trigger, menu, content, minMenuWidth: 180, search });
+  useDropdownLayout({ open, popover, trigger, menu, content, placement, minMenuWidth: 180, search });
 
   const list = options.map((o) => (typeof o === 'string' ? { value: o, label: o } : o));
   const current = list.find((o) => o.value === value);
@@ -74,7 +78,7 @@ const Combobox = ({
       {open && (
         <div
           ref={menu} id={menuId} popover={popover ? 'manual' : undefined}
-          className={cn('border border-ui-border rounded-xl shadow-lg overflow-hidden animate-dropdown', !popover && 'absolute z-30 top-full mt-1.5 left-0 w-max min-w-full max-w-[min(320px,calc(100vw_-_16px))]')}
+          className={cn('border border-ui-border rounded-xl shadow-lg overflow-hidden animate-dropdown', !popover && ['absolute z-30 w-max min-w-full max-w-[min(320px,calc(100vw_-_16px))]', placement.endsWith('end') ? 'right-0' : 'left-0', placement.startsWith('top') ? 'bottom-full mb-1.5' : 'top-full mt-1.5'])}
           style={{ backgroundColor: 'var(--page-bg)', ...(popover ? { position: 'fixed', inset: 'auto', margin: 0, padding: 0 } : {}) }}
         >
           <div className='p-2 border-b border-ui-divider'>
