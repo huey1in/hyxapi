@@ -17,33 +17,35 @@
 [![Rsbuild 2](https://img.shields.io/badge/Rsbuild-2-FF8A42?style=flat-square)](web/rsbuild.config.ts)
 [![Tailwind CSS 4](https://img.shields.io/badge/Tailwind_CSS-4-06B6D4?style=flat-square&logo=tailwindcss&logoColor=white)](web/package.json)
 
-[快速开始](#-快速开始) · [项目文档](docs/README.md) · [开发指南](docs/development.md) · [上游项目](https://github.com/QuantumNous/new-api)
+[快速开始](#快速开始) · [项目文档](docs/README.md) · [开发指南](docs/development.md) · [上游项目](https://github.com/QuantumNous/new-api)
 
 </div>
 
 ---
 
-## ✨ 项目介绍
+## 项目介绍
 
 HyxAPI 基于 [New API](https://github.com/QuantumNous/new-api) 二次开发，沿用上游的开源协议，围绕统一站点、用户控制台和管理后台持续完善。项目重新设计了界面与移动端交互，提供模型接入、API Key 管理、计费、充值订阅、日志和工单等功能。
 
 首页、用户页面、管理后台与 API 由同一个 Go 服务提供；前端构建后嵌入可执行文件，支持原生部署。
 
-## 🧩 功能一览
+HyxAPI 将长期跟随 New API 的迭代方向，持续跟进上游的模型与协议适配、核心能力、安全修复和稳定性改进。上游更新会结合本项目的界面、权限和运营需求进行适配与回归验证，持续整合到 HyxAPI。
+
+## 功能一览
 
 | 能力 | 说明 |
 | --- | --- |
-| 🔌 多协议接入 | 接入多个模型供应商，支持 OpenAI、Anthropic、Gemini 等协议及流式响应 |
-| 🔑 API Key 管理 | 配置额度、有效期、模型、分组与 IP 限制，管理分组优先级 |
-| 🧮 计费与用量 | 支持模型定价、分组倍率、表达式计费及缓存 Token 用量记录 |
-| 📊 概览与日志 | 按时间和 API Key 查看消费趋势，统一查询调用与任务日志，支持 CSV 导出 |
-| 🗂️ 模型页面 | 展示模型价格、能力与成功率历史，支持搜索和筛选 |
-| 💳 充值与订阅 | 管理余额、充值记录与订阅，支持接入自托管 Epusdt 网关收取 USDT |
-| 🎫 工单服务 | 用户提交工单，客服认领与回复，管理员指派处理，支持内部备注 |
-| 🛡️ 认证与权限 | 区分用户、客服、管理员和超级管理员，支持第三方登录、Passkey 与双重身份验证 |
-| 📱 响应式界面 | 桌面端表格与移动端卡片适配，提供骨架屏、通知和主题设置 |
+| 多协议接入 | 接入多个模型供应商，支持 OpenAI、Anthropic、Gemini 等协议及流式响应 |
+| API Key 管理 | 配置额度、有效期、模型、分组与 IP 限制，管理分组优先级 |
+| 计费与用量 | 支持模型定价、分组倍率、表达式计费及缓存 Token 用量记录 |
+| 概览与日志 | 按时间和 API Key 查看消费趋势，统一查询调用与任务日志，支持 CSV 导出 |
+| 模型页面 | 展示模型价格、能力与成功率历史，支持搜索和筛选 |
+| 充值与订阅 | 管理余额、充值记录与订阅，支持接入自托管 Epusdt 网关收取 USDT |
+| 工单服务 | 用户提交工单，客服认领与回复，管理员指派处理，支持内部备注 |
+| 认证与权限 | 区分用户、客服、管理员和超级管理员，支持第三方登录、Passkey 与双重身份验证 |
+| 响应式界面 | 桌面端表格与移动端卡片适配，提供骨架屏、通知和主题设置 |
 
-## 🚀 快速开始
+## 快速开始
 
 ### 环境要求
 
@@ -57,8 +59,8 @@ HyxAPI 基于 [New API](https://github.com/QuantumNous/new-api) 二次开发，�
 ### 获取代码与配置
 
 ```sh
-git clone https://github.com/huey1in/api.git
-cd api
+git clone https://github.com/huey1in/hyxapi.git
+cd hyxapi
 cp .env.example .env
 ```
 
@@ -78,7 +80,7 @@ go run .
 
 > 前端资源通过 Go 嵌入，首次启动和运行后端测试前，需要先构建 `web/dist/`。正式部署的 HTTPS、反向代理、备份与更新步骤见 [原生部署指南](docs/installation/native.md)。
 
-## 🛠️ 本地开发
+## 本地开发
 
 保持后端运行，在另一个终端进入 `web/` 执行 `bun run dev`。前端开发地址为 `http://localhost:5173`，API 请求代理至本地 `3000` 端口。
 
@@ -94,7 +96,7 @@ go run .
 
 更多验证命令及 Redis 集成测试说明见 [开发与测试](docs/development.md)。
 
-## 🏗️ 项目结构
+## 项目结构
 
 ```text
 .
@@ -113,7 +115,7 @@ go run .
 └── docs/          # 部署、配置与接口文档
 ```
 
-## 📚 文档导航
+## 文档导航
 
 - [文档目录](docs/README.md)
 - [原生部署与更新](docs/installation/native.md)
@@ -122,11 +124,11 @@ go run .
 - [前端开发](web/README.md)
 - [接口参考](docs/openapi/README.md)
 
-## 🤝 参与贡献
+## 参与贡献
 
 欢迎提交 Issue 或 Pull Request。请说明问题、预期行为与复现步骤；代码修改请附上验证结果，界面修改请提供截图。涉及计费、认证、权限或协议行为时，补充对应的回归测试，并同步相关文档。
 
-## 📄 开源协议与致谢
+## 开源协议与致谢
 
 HyxAPI 是 [New API](https://github.com/QuantumNous/new-api) 的衍生项目，沿用上游的 **GNU Affero General Public License v3.0（AGPL-3.0）**，并保留 [NOTICE](NOTICE) 中的附加归属声明与版权要求。完整条款见 [LICENSE](LICENSE)，第三方组件许可见 [THIRD-PARTY-LICENSES.md](THIRD-PARTY-LICENSES.md)。
 
