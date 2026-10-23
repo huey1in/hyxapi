@@ -23,7 +23,7 @@ var (
 
 func printHelp() {
 	fmt.Println("HyxAPI " + Version + " - AI API gateway")
-	fmt.Println("Project: https://github.com/huey1in/api")
+	fmt.Println("Project: https://github.com/huey1in/hyxapi")
 	fmt.Println("Usage: hyxapi [--port <port>] [--log-dir <log directory>] [--version] [--help]")
 }
 

@@ -4,7 +4,6 @@ export interface ApiEnvelope<T> {
   data: T;
 }
 
-export type { AuthBundle, LoginSession } from '../stores/auth-store';
 export type User = import('../stores/auth-store').AuthUser;
 
 export interface OAuthProvider {

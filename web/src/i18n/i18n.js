@@ -56,5 +56,3 @@ i18n
 
 i18n.on('languageChanged', (language) => { document.documentElement.lang = normalizeLanguage(language) || 'en'; });
 document.documentElement.lang = normalizeLanguage(i18n.resolvedLanguage || i18n.language) || 'en';
-
-export default i18n;

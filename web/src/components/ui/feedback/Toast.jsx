@@ -132,5 +132,3 @@ const ToastItem = ({ item, onDismiss }) => {
     </div>
   );
 };
-
-export default ToastContainer;
