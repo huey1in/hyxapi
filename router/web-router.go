@@ -22,6 +22,7 @@ func SetWebRouter(router *gin.Engine, buildFS embed.FS, indexPage []byte, plugin
 	})
 	router.Use(middleware.GlobalWebRateLimit(frontendFS))
 	router.Use(middleware.Cache())
+	router.Use(middleware.PublicHomePageAccess())
 	router.Static("/uploads", "./uploads")
 	router.Use(middleware.ServeFrontendFiles(frontendFS))
 	router.NoRoute(append(pluginHandlers, func(c *gin.Context) {

@@ -1,6 +1,8 @@
 package middleware
 
 import (
+	"net/http"
+	"path"
 	"strings"
 
 	"github.com/QuantumNous/new-api/common"
@@ -96,6 +98,21 @@ func parseHeaderNavBool(value any, fallback bool) bool {
 		return fallback
 	default:
 		return fallback
+	}
+}
+
+// PublicHomePageAccess applies the home switch before the SPA or its index file is served.
+func PublicHomePageAccess() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		if c.Request.Method != http.MethodGet && c.Request.Method != http.MethodHead {
+			return
+		}
+		page := path.Clean(c.Request.URL.Path)
+		if (page == "/" || page == "/index.html") && !getHeaderNavAccess("home").Enabled {
+			c.Header("Cache-Control", "private, no-store")
+			c.Redirect(http.StatusFound, "/console")
+			c.Abort()
+		}
 	}
 }
 

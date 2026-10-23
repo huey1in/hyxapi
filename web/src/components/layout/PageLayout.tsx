@@ -47,7 +47,7 @@ export default function PageLayout() {
   const isConsoleLayout = isConsoleRoute || (module === 'pricing' && !authReady && hasSessionHint());
   const modules = parseHeaderNavModules(statusState.status?.HeaderNavModules);
   const moduleAccess = module ? publicModuleAccess(modules, module, Boolean(user)) : 'allowed';
-  const needsAuthentication = isConsoleRoute || Boolean(module && modules[module].enabled && modules[module].requireAuth);
+  const needsAuthentication = isConsoleRoute || Boolean(module === 'pricing' && modules.pricing.enabled && modules.pricing.requireAuth);
   const ready = authReady && resolvedAuthMode === needsAuthentication;
   const isStandaloneRoute = ['/', '/auth', '/setup', '/user/reset'].includes(location.pathname) || location.pathname.startsWith('/oauth/');
   const showHeader = !isStandaloneRoute && !isConsoleLayout;
@@ -91,7 +91,7 @@ export default function PageLayout() {
   let content: ReactNode;
   if (needsSetup) content = <Navigate to='/setup' replace />;
   else if (module && (!statusState.status || statusError)) content = <RouteSkeleton />;
-  else if (moduleAccess === 'disabled') content = <Navigate to='/' replace />;
+  else if (moduleAccess === 'disabled') content = <Navigate to={modules.home ? '/' : '/console'} replace />;
   else if (needsAuthentication && !ready) content = authError ? <div role='alert' className='p-8 space-y-3'>
     <p>{t(authError)}</p><Button onClick={() => setAuthAttempt((value) => value + 1)}>{t('Retry')}</Button>
   </div> : <RouteSkeleton />;

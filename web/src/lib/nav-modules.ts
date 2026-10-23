@@ -29,15 +29,18 @@ export function parseHeaderNavModules(raw: unknown): HeaderNavModules {
     const entry = record(config[key]);
     return entry ? { enabled: flag(entry.enabled, true), requireAuth: flag(entry.requireAuth, false) } : { enabled: flag(config[key], true), requireAuth: false };
   };
-  return { home: flag(config.home, true), console: flag(config.console, true), pricing: access('pricing') };
+  const home = record(config.home);
+  return { home: flag(home ? home.enabled : config.home, true), console: flag(config.console, true), pricing: access('pricing') };
 }
 
-export function publicModuleAccess(config: HeaderNavModules, module: 'pricing', authenticated: boolean): 'allowed' | 'disabled' | 'sign-in' {
+export function publicModuleAccess(config: HeaderNavModules, module: 'home' | 'pricing', authenticated: boolean): 'allowed' | 'disabled' | 'sign-in' {
+  if (module === 'home') return config.home ? 'allowed' : 'disabled';
   const access = config[module];
   return !access.enabled ? 'disabled' : access.requireAuth && !authenticated ? 'sign-in' : 'allowed';
 }
 
-export function publicRouteModule(path: string): 'pricing' | null {
+export function publicRouteModule(path: string): 'home' | 'pricing' | null {
+  if (path === '/' || path === '/index.html') return 'home';
   if (path === '/pricing' || path.startsWith('/pricing/')) return 'pricing';
   return null;
 }

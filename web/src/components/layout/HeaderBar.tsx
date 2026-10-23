@@ -47,7 +47,7 @@ export default function HeaderBar() {
   }, [location.pathname]);
 
   return <header ref={headerRef} className='public-header'>
-    <Link to='/' className='home-brand'>HyxAPI</Link>
+    <Link to={modules.home ? '/' : '/console'} className='home-brand'>HyxAPI</Link>
     <nav ref={publicNav} id='home-navigation' aria-label={t('Main navigation')} className={`home-nav-links public-site-navigation${publicMenu ? ' is-open' : ''}`} onKeyDown={(event) => { if (event.key === 'Escape' && publicMenu) { setPublicMenu(false); publicMenuButton.current?.focus(); } }}>
       <PublicNavigation>
         <PublicNavLinks status={status.status} includeHome={false} includePricing={showPublicModels} onNavigate={() => setPublicMenu(false)} />

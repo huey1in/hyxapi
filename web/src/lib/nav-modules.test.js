@@ -17,9 +17,29 @@ test('public navigation accepts persisted legacy switches and fails back on malf
 });
 
 test('public module guards include details and exclude console routes and prefix lookalikes', () => {
+  assert.equal(publicRouteModule('/'), 'home');
+  assert.equal(publicRouteModule('/index.html'), 'home');
   assert.equal(publicRouteModule('/pricing'), 'pricing');
   assert.equal(publicRouteModule('/pricing/model/gpt'), 'pricing');
   assert.equal(publicRouteModule('/rankings'), null);
   assert.equal(publicRouteModule('/pricing-extra'), null);
   assert.equal(publicRouteModule('/console/pricing'), null);
+  assert.equal(publicRouteModule('/auth'), null);
+  assert.equal(publicRouteModule('/setup'), null);
+  assert.equal(publicRouteModule('/user/reset'), null);
+  assert.equal(publicRouteModule('/oauth/github'), null);
+  assert.equal(publicRouteModule('/privacy-policy'), null);
+  assert.equal(publicRouteModule('/assets/index.html'), null);
+});
+
+test('disabled home is inaccessible to anonymous and signed-in visitors', () => {
+  for (const home of [false, 0, 'false', ' 0 ', { enabled: false }, { enabled: 'false' }]) {
+    const config = parseHeaderNavModules(JSON.stringify({ home }));
+    for (const authenticated of [false, true]) {
+      assert.equal(publicModuleAccess(config, 'home', authenticated), 'disabled');
+    }
+  }
+  for (const raw of [null, '', '{}', '{"home":true}', '{"home":{"enabled":true}}', 'broken']) {
+    assert.equal(publicModuleAccess(parseHeaderNavModules(raw), 'home', false), 'allowed');
+  }
 });
