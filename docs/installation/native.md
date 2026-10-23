@@ -40,6 +40,16 @@ bun -e "console.log(require('node:crypto').randomBytes(32).toString('hex'))"
 
 健康检查：`GET /api/status`。Linux 可使用进程管理器或 systemd；仓库提供 [`hyxapi.service`](../../hyxapi.service) 示例。安装前按实际部署修改 `User`、`WorkingDirectory` 和 `ExecStart`，确保启动 `hyxapi` 可执行文件并加载原有环境配置。
 
+Linux 修改好服务文件后安装并启动：
+
+```sh
+sudo install -m 644 hyxapi.service /etc/systemd/system/hyxapi.service
+sudo systemctl daemon-reload
+sudo systemctl enable --now hyxapi
+sudo systemctl status hyxapi
+sudo journalctl -u hyxapi -f
+```
+
 已有 systemd 部署先停止并禁用旧服务，再安装和启用 `hyxapi.service`。保留原工作目录、数据库路径及密钥，避免新旧服务同时运行。
 
 ## 更新与备份

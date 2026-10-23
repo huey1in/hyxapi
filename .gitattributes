@@ -1,3 +1,6 @@
 # Keep Go module metadata stable across Windows and Unix.
 *.mod text eol=lf
 *.sum text eol=lf
+
+# Deployment scripts must remain executable by Unix shells after checkout.
+*.sh text eol=lf

@@ -10,6 +10,8 @@
 
 [![License: AGPL-3.0](https://img.shields.io/badge/License-AGPL--3.0-18181b?style=flat-square&logo=gnu&logoColor=white)](LICENSE)
 [![Based on New API](https://img.shields.io/badge/Based_on-New_API-18181b?style=flat-square&logo=github&logoColor=white)](https://github.com/QuantumNous/new-api)
+[![Docker build](https://github.com/huey1in/hyxapi/actions/workflows/docker.yml/badge.svg)](https://github.com/huey1in/hyxapi/actions/workflows/docker.yml)
+[![GHCR](https://img.shields.io/badge/GHCR-Docker-2496ED?style=flat-square&logo=docker&logoColor=white)](https://github.com/huey1in/hyxapi/pkgs/container/hyxapi)
 
 [![Go 1.26+](https://img.shields.io/badge/Go-1.26%2B-00ADD8?style=flat-square&logo=go&logoColor=white)](go.mod)
 [![React 19](https://img.shields.io/badge/React-19-149ECA?style=flat-square&logo=react&logoColor=white)](web/package.json)
@@ -27,7 +29,7 @@
 
 HyxAPI 基于 [New API](https://github.com/QuantumNous/new-api) 二次开发，沿用上游的开源协议，围绕统一站点、用户控制台和管理后台持续完善。项目重新设计了界面与移动端交互，提供模型接入、API Key 管理、计费、充值订阅、日志和工单等功能。
 
-首页、用户页面、管理后台与 API 由同一个 Go 服务提供；前端构建后嵌入可执行文件，支持原生部署。
+用户页面、管理后台与 API 由同一个 Go 服务提供；前端构建后嵌入可执行文件，支持容器与原生部署。首页暂未完成设计，访问 `/` 会跳转控制台。
 
 HyxAPI 将长期跟随 New API 的迭代方向，持续跟进上游的模型与协议适配、核心能力、安全修复和稳定性改进。上游更新会结合本项目的界面、权限和运营需求进行适配与回归验证，持续整合到 HyxAPI。
 
@@ -47,7 +49,57 @@ HyxAPI 将长期跟随 New API 的迭代方向，持续跟进上游的模型与�
 
 ## 快速开始
 
-### 环境要求
+| 部署方式 | 适用场景 | 要求 |
+| --- | --- | --- |
+| [一键部署](#一键部署linux) | 自动生成配置和持久密钥，启动单实例 | Linux、Docker Compose、curl、OpenSSL |
+| [Docker 部署](#docker-部署) | 使用预构建镜像管理服务 | Docker Engine、Compose 2.20+ |
+| [手动部署](#手动部署) | 不使用容器，从源码构建运行 | Go、Node.js、Bun |
+
+### 一键部署（Linux）
+
+先安装 [Docker Engine](https://docs.docker.com/engine/install/) 和 [Compose 插件](https://docs.docker.com/compose/install/)，再执行：
+
+```sh
+curl -fsSL https://raw.githubusercontent.com/huey1in/hyxapi/main/tools/install.sh -o install-hyxapi.sh \
+  && bash install-hyxapi.sh
+```
+
+默认安装到 `~/hyxapi-deploy`，使用 SQLite，自动生成随机 `SESSION_SECRET`，保留已有配置与数据，并等待健康检查通过。默认仅监听本机 `127.0.0.1:3000`。
+
+已准备 HTTPS 域名时，可在首次安装时指定站点和目录：
+
+```sh
+HYXAPI_SITE_URL=https://api.example.com bash install-hyxapi.sh /opt/hyxapi
+```
+
+安装目录需有写入权限。远程访问先配置 HTTPS 反向代理；需要直接开放端口测试时，在首次运行脚本前设置 `HYXAPI_BIND_ADDRESS=0.0.0.0`。完整参数见 [一键与 Docker 部署指南](docs/installation/docker.md)。
+
+### Docker 部署
+
+镜像地址为 **`ghcr.io/huey1in/hyxapi:latest`**，支持 **AMD64 / ARM64**。无需在服务器安装 Go、Node.js 或 Bun。
+
+在新的部署目录中执行：
+
+```sh
+mkdir -p hyxapi-deploy && cd hyxapi-deploy
+curl -fsSL https://raw.githubusercontent.com/huey1in/hyxapi/main/deploy/compose.yml -o compose.yml
+(umask 077; test -e .env || printf 'SESSION_SECRET=%s\n' "$(openssl rand -hex 32)" > .env)
+docker compose up -d --wait
+```
+
+配置保存在 `.env`，SQLite 数据和日志分别保存在 `./data`、`./logs`。查看日志与更新：
+
+```sh
+docker compose logs -f hyxapi
+# 更新前先备份数据库与 .env
+docker compose pull && docker compose up -d --wait
+```
+
+`latest` 跟随 `main`；发布版本可固定为 `:v1.2.3`，也支持 `:sha-完整提交哈希`。标签需已由工作流构建。PostgreSQL + Redis、`docker run`、源码构建镜像与备份步骤见 [Docker 部署指南](docs/installation/docker.md)。
+
+### 手动部署
+
+构建环境要求：
 
 | 工具 | 要求 |
 | --- | --- |
@@ -56,29 +108,33 @@ HyxAPI 将长期跟随 New API 的迭代方向，持续跟进上游的模型与�
 | Bun | 用于前端依赖安装与脚本执行 |
 | 数据库 | 默认 SQLite，也可配置 MySQL 或 PostgreSQL；Redis 按需配置 |
 
-### 获取代码与配置
-
 ```sh
 git clone https://github.com/huey1in/hyxapi.git
 cd hyxapi
 cp .env.example .env
+openssl rand -hex 32
 ```
 
-编辑 `.env`，设置持久的随机 `SESSION_SECRET`，并按需配置数据库。已有部署请保留原有密钥与数据；配置项见 [环境变量示例](.env.example)。
-
-### 构建与启动
+将生成的随机值写入 `.env` 的 `SESSION_SECRET`，并按需配置数据库；已有部署保留原密钥。然后构建并启动：
 
 ```sh
 cd web
 bun install --frozen-lockfile
 bun run build
 cd ..
-go run .
+go build -trimpath -o hyxapi .
+./hyxapi --port 3000
 ```
 
 首次访问 **<http://localhost:3000/setup>** 创建超级管理员。默认端口为 `3000`，健康检查地址为 `/api/status`。
 
-> 前端资源通过 Go 嵌入，首次启动和运行后端测试前，需要先构建 `web/dist/`。正式部署的 HTTPS、反向代理、备份与更新步骤见 [原生部署指南](docs/installation/native.md)。
+> 首次部署请通过最终 HTTPS 域名访问 `/setup`，站点地址会在初始化时自动检测。HTTPS、systemd 常驻运行、备份与更新见 [手动部署指南](docs/installation/native.md)。前端资源通过 Go 嵌入，首次启动和运行后端测试前需先构建 `web/dist/`。
+
+### GitHub 自动构建镜像
+
+仓库内置 [Docker 工作流](.github/workflows/docker.yml)：推送 `main`、推送 `v*` 标签或在 Actions 手动运行时，先验证容器启动和页面路由，再发布多架构镜像到 GHCR；Pull Request 只构建验证。
+
+使用内置 `GITHUB_TOKEN`，无需配置 Docker Hub 账号。首次发布后，在 GitHub **Packages → hyxapi → Package settings → Change visibility** 将镜像设为 **Public**，即可匿名拉取；公开代码仓库不会自动公开已有镜像。[GitHub 容器仓库说明](https://docs.github.com/en/packages/working-with-a-github-packages-registry/working-with-the-container-registry)。
 
 ## 本地开发
 
@@ -118,6 +174,7 @@ go run .
 ## 文档导航
 
 - [文档目录](docs/README.md)
+- [一键部署与 Docker](docs/installation/docker.md)
 - [原生部署与更新](docs/installation/native.md)
 - [功能与配置](docs/configuration.md)
 - [工单权限与自托管 USDT 收款](docs/support-and-usdt.md)

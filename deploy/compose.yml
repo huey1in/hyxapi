@@ -1,0 +1,24 @@
+# Single-instance deployment with SQLite. Keep .env and data/ between updates.
+services:
+  hyxapi:
+    image: ${HYXAPI_IMAGE:-ghcr.io/huey1in/hyxapi:latest}
+    restart: unless-stopped
+    ports:
+      - '${HYXAPI_BIND_ADDRESS:-127.0.0.1}:${HYXAPI_PORT:-3000}:3000'
+    env_file: .env
+    environment:
+      SESSION_SECRET: ${SESSION_SECRET:?Set a persistent random SESSION_SECRET in .env}
+      SQLITE_PATH: /data/one-api.db
+      BIND_ADDRESS: 0.0.0.0
+      PORT: '3000'
+      TZ: ${TZ:-UTC}
+      NODE_NAME: ${NODE_NAME:-hyxapi-1}
+    volumes:
+      - ./data:/data
+      - ./logs:/data/logs
+    healthcheck:
+      test: ['CMD-SHELL', 'wget -q -O - http://127.0.0.1:3000/api/status | grep -Eq ''"success"[[:space:]]*:[[:space:]]*true''']
+      interval: 30s
+      timeout: 5s
+      start_period: 60s
+      retries: 3

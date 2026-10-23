@@ -4,6 +4,7 @@
 
 ## 部署与运维
 
+- [一键与 Docker 部署](installation/docker.md)：安装脚本、公开镜像、Compose、PostgreSQL / Redis 和升级备份。
 - [原生部署](installation/native.md)：不使用容器的启动、初始化、备份和更新。
 - [宝塔面板部署](installation/BT.md)：从本仓库构建镜像并配置反向代理。
 - [功能与配置](configuration.md)：渠道、令牌、日志、下载与连接设置。
