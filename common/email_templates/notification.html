@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="x-apple-disable-message-reformatting" />
+    <meta name="format-detection" content="telephone=no, date=no, address=no, email=no" />
+    <meta name="color-scheme" content="light" />
+    <meta name="supported-color-schemes" content="light" />
+    <title>{{siteName}} · {{title}}</title>
+    <style>
+      /* Core layout and colors are inline so the email also works without this stylesheet. */
+      table, td { mso-table-lspace: 0pt; mso-table-rspace: 0pt; }
+      a[x-apple-data-detectors] { color: inherit !important; text-decoration: none !important; }
+      @media screen and (max-width: 600px) {
+        .email-outer { padding: 36px 20px !important; }
+        .email-heading { font-size: 26px !important; line-height: 36px !important; }
+      }
+    </style>
+  </head>
+  <body style="margin: 0; padding: 0; width: 100%; background-color: #ffffff; color: #080808; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', Arial, sans-serif; -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%;">
+    <!-- Supported template variables: siteName, title, bodyHTML. -->
+    <div aria-hidden="true" style="display: none; max-height: 0; max-width: 0; overflow: hidden; opacity: 0; color: #ffffff; font-size: 1px; line-height: 1px; mso-hide: all;">
+      {{siteName}} · {{title}}
+    </div>
+
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#ffffff" style="width: 100%; border-collapse: collapse; background-color: #ffffff;">
+      <tr>
+        <td class="email-outer" align="center" style="padding: 64px 24px;">
+          <!--[if mso]>
+          <table role="presentation" width="560" cellpadding="0" cellspacing="0" border="0"><tr><td>
+          <![endif]-->
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="width: 100%; max-width: 560px; border-collapse: collapse; table-layout: fixed;">
+            <tr>
+              <td style="padding: 0 0 28px; text-align: left;">
+                <p style="margin: 0; color: #080808; font-size: 28px; font-weight: 700; line-height: 36px; letter-spacing: -0.6px; overflow-wrap: break-word;">{{siteName}}</p>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding: 36px 0 28px; border-top: 1px solid #eeeeee; text-align: left;">
+                <h1 class="email-heading" style="margin: 0 0 12px; color: #080808; font-size: 28px; font-weight: 600; line-height: 38px; letter-spacing: -0.5px;">{{title}}</h1>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding: 0 0 32px; text-align: left;">
+                <div style="margin: 0; color: #666666; font-size: 15px; line-height: 26px; overflow-wrap: break-word;">{{bodyHTML}}</div>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding: 24px 0 0; border-top: 1px solid #eeeeee; text-align: left;">
+                <p style="margin: 0; color: #767676; font-size: 12px; line-height: 22px;">此邮件由 {{siteName}} 自动发送，请勿直接回复。</p>
+              </td>
+            </tr>
+          </table>
+          <!--[if mso]>
+          </td></tr></table>
+          <![endif]-->
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>

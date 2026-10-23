@@ -1,6 +1,7 @@
 package common
 
 import (
+	_ "embed"
 	"fmt"
 	"html"
 	"strconv"
@@ -8,117 +9,23 @@ import (
 	"time"
 )
 
-// Default email templates with {{variable}} placeholders
+// Built-in templates use the site's current custom email layout. Verification
+// copy remains contextual for registration, account binding and notifications.
 
-const EmailHead = `<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"></head>
-<body style="margin:0;padding:0;background-color:#f5f3ed;-webkit-text-size-adjust:100%;">
-<table role="presentation" bgcolor="#f5f3ed" width="100%" cellpadding="0" cellspacing="0" style="background-color:#f5f3ed;">
-<tr><td height="32" style="font-size:1px;line-height:1px;">&nbsp;</td></tr>
-<tr><td align="center">
-<table role="presentation" bgcolor="#fffdf7" cellpadding="0" cellspacing="0" width="600" style="max-width:600px;width:100%;background-color:#fffdf7;border-radius:5px;">`
+//go:embed email_templates/verification.html
+var DefaultEmailVerificationTemplate string
 
-const EmailFoot = `<tr><td height="20" style="font-size:1px;line-height:1px;">&nbsp;</td></tr>
-<tr>
-  <td width="48" style="font-size:1px;">&nbsp;</td>
-  <td bgcolor="#e6ebf1" height="1" style="font-size:1px;line-height:1px;">&nbsp;</td>
-  <td width="48" style="font-size:1px;">&nbsp;</td>
-</tr>
-<tr><td height="31" style="font-size:1px;line-height:1px;">&nbsp;</td></tr>
-<tr>
-  <td width="48" style="font-size:1px;">&nbsp;</td>
-  <td style="font-size:12px;line-height:16px;color:#707070;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',sans-serif;">{{siteName}}</td>
-  <td width="48" style="font-size:1px;">&nbsp;</td>
-</tr>
-<tr><td height="64" style="font-size:1px;line-height:1px;">&nbsp;</td></tr>
-</table>
-</td></tr>
-<tr><td height="64" style="font-size:1px;line-height:1px;">&nbsp;</td></tr>
-</table></body></html>`
+//go:embed email_templates/password_reset.html
+var DefaultPasswordResetTemplate string
 
-const emailFont = `-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif`
+//go:embed email_templates/notification.html
+var defaultNotificationEmailTemplate string
 
-const DefaultEmailVerificationTemplate = EmailHead + `
-<tr><td colspan="3" height="40" style="font-size:1px;line-height:1px;">&nbsp;</td></tr>
-<tr>
-  <td width="48" style="font-size:1px;">&nbsp;</td>
-  <td><p style="margin:0;font-size:12px;font-weight:500;letter-spacing:0.5px;text-transform:uppercase;color:#ababab;font-family:` + emailFont + `;">{{siteName}}</p></td>
-  <td width="48" style="font-size:1px;">&nbsp;</td>
-</tr>
-<tr><td colspan="3" height="28" style="font-size:1px;line-height:1px;">&nbsp;</td></tr>
-<tr>
-  <td width="48" style="font-size:1px;">&nbsp;</td>
-  <td>
-    <h1 style="margin:0 0 16px;font-size:21px;font-weight:400;color:#1a1a1a;font-family:` + emailFont + `;">{{title}}</h1>
-    <p style="margin:0;font-size:15px;line-height:1.6;color:#525252;font-family:` + emailFont + `;">{{description}}</p>
-  </td>
-  <td width="48" style="font-size:1px;">&nbsp;</td>
-</tr>
-<tr><td colspan="3" height="28" style="font-size:1px;line-height:1px;">&nbsp;</td></tr>
-<tr>
-  <td width="48" style="font-size:1px;">&nbsp;</td>
-  <td><code style="font-size:30px;font-weight:600;letter-spacing:4px;color:#1a1a1a;font-family:'SF Mono',SFMono-Regular,ui-monospace,Menlo,monospace;">{{code}}</code></td>
-  <td width="48" style="font-size:1px;">&nbsp;</td>
-</tr>
-<tr><td colspan="3" height="28" style="font-size:1px;line-height:1px;">&nbsp;</td></tr>
-<tr>
-  <td width="48" style="font-size:1px;">&nbsp;</td>
-  <td><p style="margin:0;font-size:13px;line-height:1.6;color:#ababab;font-family:` + emailFont + `;">{{notice}}</p></td>
-  <td width="48" style="font-size:1px;">&nbsp;</td>
-</tr>
-` + EmailFoot
-
-const DefaultPasswordResetTemplate = EmailHead + `
-<tr><td colspan="3" height="40" style="font-size:1px;line-height:1px;">&nbsp;</td></tr>
-<tr>
-  <td width="48" style="font-size:1px;">&nbsp;</td>
-  <td><p style="margin:0;font-size:12px;font-weight:500;letter-spacing:0.5px;text-transform:uppercase;color:#ababab;font-family:` + emailFont + `;">{{siteName}}</p></td>
-  <td width="48" style="font-size:1px;">&nbsp;</td>
-</tr>
-<tr><td colspan="3" height="28" style="font-size:1px;line-height:1px;">&nbsp;</td></tr>
-<tr>
-  <td width="48" style="font-size:1px;">&nbsp;</td>
-  <td>
-    <h1 style="margin:0 0 16px;font-size:21px;font-weight:400;color:#1a1a1a;font-family:` + emailFont + `;">重置您的密码</h1>
-    <p style="margin:0;font-size:15px;line-height:1.6;color:#525252;font-family:` + emailFont + `;">我们收到了您的密码重置请求。如果是您本人操作，请点击下方按钮。链接将在 {{expireMinutes}} 分钟后失效。</p>
-  </td>
-  <td width="48" style="font-size:1px;">&nbsp;</td>
-</tr>
-<tr><td colspan="3" height="28" style="font-size:1px;line-height:1px;">&nbsp;</td></tr>
-<tr>
-  <td width="48" style="font-size:1px;">&nbsp;</td>
-  <td><a href="{{resetLink}}" style="display:inline-block;padding:11px 24px;background-color:#1a1a1a;color:#ffffff;border-radius:6px;font-size:14px;font-weight:500;text-decoration:none;font-family:` + emailFont + `;">重置密码</a></td>
-  <td width="48" style="font-size:1px;">&nbsp;</td>
-</tr>
-<tr><td colspan="3" height="28" style="font-size:1px;line-height:1px;">&nbsp;</td></tr>
-<tr>
-  <td width="48" style="font-size:1px;">&nbsp;</td>
-  <td>
-    <p style="margin:0 0 8px;font-size:13px;line-height:1.6;color:#ababab;font-family:` + emailFont + `;">如果按钮无法点击，请复制以下链接到浏览器中打开：</p>
-    <p style="margin:0 0 20px;font-size:13px;line-height:1.5;color:#525252;word-break:break-all;font-family:'SF Mono',SFMono-Regular,ui-monospace,Menlo,monospace;">{{resetLink}}</p>
-    <p style="margin:0;font-size:13px;line-height:1.6;color:#ababab;font-family:` + emailFont + `;">如果这不是您本人的操作，请忽略此邮件。</p>
-  </td>
-  <td width="48" style="font-size:1px;">&nbsp;</td>
-</tr>
-` + EmailFoot
-
-const DefaultTestEmailTemplate = EmailHead + `
-<tr><td colspan="3" height="40" style="font-size:1px;line-height:1px;">&nbsp;</td></tr>
-<tr>
-  <td width="48" style="font-size:1px;">&nbsp;</td>
-  <td><p style="margin:0;font-size:12px;font-weight:500;letter-spacing:0.5px;text-transform:uppercase;color:#ababab;font-family:` + emailFont + `;">{{siteName}}</p></td>
-  <td width="48" style="font-size:1px;">&nbsp;</td>
-</tr>
-<tr><td colspan="3" height="28" style="font-size:1px;line-height:1px;">&nbsp;</td></tr>
-<tr>
-  <td width="48" style="font-size:1px;">&nbsp;</td>
-  <td>
-    <h1 style="margin:0 0 16px;font-size:21px;font-weight:400;color:#1a1a1a;font-family:` + emailFont + `;">测试邮件</h1>
-    <p style="margin:0;font-size:15px;line-height:1.6;color:#525252;font-family:` + emailFont + `;">SMTP 邮件服务配置正常，此邮件仅用于验证发信功能。</p>
-    <p style="margin:20px 0 0;font-size:13px;line-height:1.6;color:#ababab;font-family:` + emailFont + `;">{{time}}</p>
-  </td>
-  <td width="48" style="font-size:1px;">&nbsp;</td>
-</tr>
-` + EmailFoot
+var DefaultTestEmailTemplate = strings.NewReplacer(
+	"{{title}}", "测试邮件",
+	"{{bodyHTML}}", `<p style="margin: 0;">SMTP 邮件服务配置正常，此邮件仅用于验证发信功能。</p>
+<p style="margin: 20px 0 0; color: #767676; font-size: 13px; line-height: 24px;">{{time}}</p>`,
+).Replace(defaultNotificationEmailTemplate)
 
 // Email template option keys
 const (
@@ -190,7 +97,7 @@ func RenderVerificationEmail(mail VerificationEmail) string {
 func RenderTestEmail() (string, string) {
 	subject := fmt.Sprintf("%s 测试邮件", SystemName)
 	content := RenderTemplate(DefaultTestEmailTemplate, map[string]string{
-		"siteName": SystemName,
+		"siteName": html.EscapeString(SystemName),
 		"time":     time.Now().Format("2006-01-02 15:04:05"),
 	})
 	return subject, content
@@ -200,25 +107,11 @@ func RenderTestEmail() (string, string) {
 // template shell. Used by notification emails (quota remind, channel alerts, etc.)
 // so every outbound email shares the same visual style.
 func WrapEmailShell(title string, bodyHTML string) string {
-	font := emailFont
-	shell := EmailHead + `
-<tr><td colspan="3" height="40" style="font-size:1px;line-height:1px;">&nbsp;</td></tr>
-<tr>
-  <td width="48" style="font-size:1px;">&nbsp;</td>
-  <td><p style="margin:0;font-size:12px;font-weight:500;letter-spacing:0.5px;text-transform:uppercase;color:#ababab;font-family:` + font + `;">` + SystemName + `</p></td>
-  <td width="48" style="font-size:1px;">&nbsp;</td>
-</tr>
-<tr><td colspan="3" height="28" style="font-size:1px;line-height:1px;">&nbsp;</td></tr>
-<tr>
-  <td width="48" style="font-size:1px;">&nbsp;</td>
-  <td><h1 style="margin:0 0 16px;font-size:21px;font-weight:400;color:#1a1a1a;font-family:` + font + `;">` + title + `</h1></td>
-  <td width="48" style="font-size:1px;">&nbsp;</td>
-</tr>
-<tr>
-  <td width="48" style="font-size:1px;">&nbsp;</td>
-  <td><div style="font-size:15px;line-height:1.6;color:#525252;font-family:` + font + `;">` + bodyHTML + `</div></td>
-  <td width="48" style="font-size:1px;">&nbsp;</td>
-</tr>
-` + RenderTemplate(EmailFoot, map[string]string{"siteName": SystemName})
-	return shell
+	// Replace once so HTML supplied by callers is preserved without treating
+	// any template-looking text inside it as another template variable.
+	return strings.NewReplacer(
+		"{{siteName}}", html.EscapeString(SystemName),
+		"{{title}}", html.EscapeString(title),
+		"{{bodyHTML}}", bodyHTML,
+	).Replace(defaultNotificationEmailTemplate)
 }
