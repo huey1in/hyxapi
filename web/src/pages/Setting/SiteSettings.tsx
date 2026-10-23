@@ -24,7 +24,8 @@ export default function SiteSettings({ value, onChange, disabled = false }: { va
     const next = auth || key === 'pricing' ? { ...(record(before) ? before : {}), ...(key === 'pricing' ? config[key] : {}), [auth ? 'requireAuth' : 'enabled']: enabled } : enabled;
     onChange('HeaderNavModules', JSON.stringify({ ...parsed, [key]: next }));
   };
-  const modules: { key: keyof typeof config; label: string }[] = [{ key: 'home', label: 'Home' }, { key: 'console', label: 'Console' }, { key: 'pricing', label: 'Models' }];
+  // TODO: 首页暂未完成设计，公开站点暂时只提供控制台和模型配置。
+  const modules: { key: 'console' | 'pricing'; label: string }[] = [{ key: 'console', label: 'Console' }, { key: 'pricing', label: 'Models' }];
   const documents = [{ key: 'legal.user_agreement', title: 'Terms of Service' }, { key: 'legal.privacy_policy', title: 'Privacy Policy' }];
   return <section className='min-w-0 space-y-6'>
     <div><h2 className='text-[15px] font-semibold text-ui-text'>{t('Public site')}</h2><p className='mt-2 text-xs text-ui-text-3'>{t('Configure public navigation and documents. Save changes with the page Save button.')}</p></div>

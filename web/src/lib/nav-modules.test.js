@@ -32,14 +32,16 @@ test('public module guards include details and exclude console routes and prefix
   assert.equal(publicRouteModule('/assets/index.html'), null);
 });
 
-test('disabled home is inaccessible to anonymous and signed-in visitors', () => {
-  for (const home of [false, 0, 'false', ' 0 ', { enabled: false }, { enabled: 'false' }]) {
-    const config = parseHeaderNavModules(JSON.stringify({ home }));
+test('unfinished homepage stays disabled regardless of persisted settings or sign-in', () => {
+  const settings = [null, '', '{}', 'broken'];
+  for (const home of [false, true, 0, 1, 'false', 'true', ' 0 ', { enabled: false }, { enabled: true }, { enabled: 'false' }, { enabled: 'true' }]) {
+    settings.push(JSON.stringify({ home }));
+  }
+  for (const raw of settings) {
+    const config = parseHeaderNavModules(raw);
+    assert.equal(config.home, false);
     for (const authenticated of [false, true]) {
       assert.equal(publicModuleAccess(config, 'home', authenticated), 'disabled');
     }
-  }
-  for (const raw of [null, '', '{}', '{"home":true}', '{"home":{"enabled":true}}', 'broken']) {
-    assert.equal(publicModuleAccess(parseHeaderNavModules(raw), 'home', false), 'allowed');
   }
 });

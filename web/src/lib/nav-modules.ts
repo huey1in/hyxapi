@@ -29,8 +29,8 @@ export function parseHeaderNavModules(raw: unknown): HeaderNavModules {
     const entry = record(config[key]);
     return entry ? { enabled: flag(entry.enabled, true), requireAuth: flag(entry.requireAuth, false) } : { enabled: flag(config[key], true), requireAuth: false };
   };
-  const home = record(config.home);
-  return { home: flag(home ? home.enabled : config.home, true), console: flag(config.console, true), pricing: access('pricing') };
+  // TODO: 首页暂未完成设计，保留原配置但暂不开放首页入口。
+  return { home: false, console: flag(config.console, true), pricing: access('pricing') };
 }
 
 export function publicModuleAccess(config: HeaderNavModules, module: 'home' | 'pricing', authenticated: boolean): 'allowed' | 'disabled' | 'sign-in' {

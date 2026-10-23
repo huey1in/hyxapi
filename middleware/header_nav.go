@@ -101,14 +101,14 @@ func parseHeaderNavBool(value any, fallback bool) bool {
 	}
 }
 
-// PublicHomePageAccess applies the home switch before the SPA or its index file is served.
+// TODO: 首页暂未完成设计，完成前统一跳转控制台，不允许旧配置重新开放首页。
 func PublicHomePageAccess() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		if c.Request.Method != http.MethodGet && c.Request.Method != http.MethodHead {
 			return
 		}
 		page := path.Clean(c.Request.URL.Path)
-		if (page == "/" || page == "/index.html") && !getHeaderNavAccess("home").Enabled {
+		if page == "/" || page == "/index.html" {
 			c.Header("Cache-Control", "private, no-store")
 			c.Redirect(http.StatusFound, "/console")
 			c.Abort()

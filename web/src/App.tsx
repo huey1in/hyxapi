@@ -27,18 +27,19 @@ const Forbidden = lazy(() => import('./pages/Forbidden'));
 const PasswordReset = lazy(() => import('./pages/PasswordReset'));
 const Pricing = lazy(() => import('./pages/Pricing'));
 const PricingDetail = lazy(() => import('./pages/Pricing/Detail'));
-const Home = lazy(() => import('./pages/Home'));
 const Auth = lazy(() => import('./pages/Auth'));
 const PublicDocument = lazy(() => import('./features/public-pages/PublicDocument'));
 const OAuthCallback = lazy(() => import('./pages/OAuthCallback'));
 
 const App = () => (
   <Routes>
+    {/* TODO: 首页暂未完成设计，保留 pages/Home，完成设计后恢复路由。 */}
+    <Route path='/' element={<Navigate to='/console' replace />} />
+    <Route path='/index.html' element={<Navigate to='/console' replace />} />
     {Object.keys(CLIENT_ROUTE_REDIRECTS).map((path) => <Route key={path} path={`${path}/*`} element={<ClientRouteRedirect />} />)}
     <Route path='/console/task' element={<LegacyLogRedirect />} />
     <Route path='/console/midjourney' element={<LegacyLogRedirect />} />
     <Route element={<PageLayout />}>
-      <Route path='/'                   element={<Home />} />
       <Route path='/auth'               element={<Auth />} />
       <Route path='/oauth/:provider'    element={<OAuthCallback />} />
       <Route path='/setup'              element={<Setup />} />

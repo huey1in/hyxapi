@@ -23,7 +23,7 @@ func TestSetRouterServesPagesOnCurrentSite(t *testing.T) {
 	engine := gin.New()
 	index := []byte("<!doctype html><title>HyxAPI</title>")
 	SetRouter(engine, embed.FS{}, index)
-	for _, path := range []string{"/", "/auth?mode=login", "/console", "/pricing", "/token", "/log", "/topup", "/subscription", "/personal", "/notices", "/console/subscription", "/oauth/github?code=test&state=test"} {
+	for _, path := range []string{"/auth?mode=login", "/console", "/pricing", "/token", "/log", "/topup", "/subscription", "/personal", "/notices", "/console/subscription", "/oauth/github?code=test&state=test"} {
 		t.Run(path, func(t *testing.T) {
 			recorder := httptest.NewRecorder()
 			engine.ServeHTTP(recorder, httptest.NewRequest(http.MethodGet, path, nil))
@@ -37,7 +37,7 @@ func TestSetRouterServesPagesOnCurrentSite(t *testing.T) {
 	}
 }
 
-func TestWebHomePageFollowsVisibility(t *testing.T) {
+func TestWebHomePageIsTemporarilyDisabled(t *testing.T) {
 	previousMode := gin.Mode()
 	gin.SetMode(gin.TestMode)
 	t.Cleanup(func() { gin.SetMode(previousMode) })
@@ -54,7 +54,7 @@ func TestWebHomePageFollowsVisibility(t *testing.T) {
 	engine := gin.New()
 	index := []byte("<!doctype html><title>HyxAPI</title>")
 	SetWebRouter(engine, embed.FS{}, index)
-	for _, setting := range []string{`{"home":false}`, `{"home":"false"}`, `{"home":0}`, `{"home":{"enabled":false}}`} {
+	for _, setting := range []string{"", `{}`, `broken`, `{"home":false}`, `{"home":"false"}`, `{"home":0}`, `{"home":{"enabled":false}}`, `{"home":true}`, `{"home":"true"}`, `{"home":1}`, `{"home":{"enabled":true}}`} {
 		common.OptionMapRWMutex.Lock()
 		common.OptionMap["HeaderNavModules"] = setting
 		common.OptionMapRWMutex.Unlock()
@@ -76,20 +76,6 @@ func TestWebHomePageFollowsVisibility(t *testing.T) {
 		engine.ServeHTTP(response, httptest.NewRequest(http.MethodGet, target, nil))
 		if response.Code != http.StatusOK || response.Body.String() != string(index) {
 			t.Fatalf("home switch blocked unrelated page %s: %d", target, response.Code)
-		}
-	}
-	for _, setting := range []string{"", `{}`, `{"home":true}`, `{"home":false}`, `{"home":true}`} {
-		common.OptionMapRWMutex.Lock()
-		common.OptionMap["HeaderNavModules"] = setting
-		common.OptionMapRWMutex.Unlock()
-		response := httptest.NewRecorder()
-		engine.ServeHTTP(response, httptest.NewRequest(http.MethodGet, "/", nil))
-		want := http.StatusOK
-		if setting == `{"home":false}` {
-			want = http.StatusFound
-		}
-		if response.Code != want {
-			t.Fatalf("live home setting %s returned %d, want %d", setting, response.Code, want)
 		}
 	}
 }
