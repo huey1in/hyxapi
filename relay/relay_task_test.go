@@ -64,7 +64,6 @@ func TestApplyChannelPinPreservesOriginTasksAndRetryMode(t *testing.T) {
 		tokenPin bool
 		apply    func(*gin.Context, *relaycommon.RelayInfo) *dto.TaskError
 	}{
-		{name: "origin affinity", apply: ApplyOriginTaskAffinity},
 		{name: "same channel retry", apply: ApplyChannelPin},
 		{name: "token pin suppresses channel lock", tokenPin: true, apply: ApplyChannelPin},
 	} {

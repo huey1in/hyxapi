@@ -146,7 +146,7 @@ function Table<T extends object>({
   return (
     <div role={loading ? 'status' : undefined} aria-label={loading ? t('Loading...') : undefined} aria-busy={loading || undefined}
       data-loading-skeleton={loading ? 'table' : undefined} data-table-view='table'
-      className={cn('w-full overflow-x-auto rounded-2xl border border-ui-border bg-[var(--page-bg)] ui-scrollbar', className)}>
+      className={cn('w-full overflow-x-auto rounded-2xl border border-ui-border bg-[var(--page-bg)]', className)}>
       <table
         className='w-full border-collapse'
         style={{

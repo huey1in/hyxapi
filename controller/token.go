@@ -321,6 +321,24 @@ func AddToken(c *gin.Context) {
 		})
 		return
 	}
+	if token.Group == "" && token.Groups == nil {
+		if setting.DefaultUseAutoGroup {
+			token.Group = "auto"
+			token.CrossGroupRetry = true
+		} else {
+			userGroup, err := getTokenRequestUserGroup(c)
+			if err != nil {
+				common.ApiError(c, err)
+				return
+			}
+			groups := service.GetUserSelectableGroups(userGroup)
+			if len(groups) == 0 {
+				common.ApiErrorT(c, "No groups are available")
+				return
+			}
+			token.Group = groups[0]
+		}
+	}
 	key, err := common.GenerateKey()
 	if err != nil {
 		common.ApiErrorI18n(c, i18n.MsgTokenGenerateFailed)
@@ -439,11 +457,13 @@ func UpdateToken(c *gin.Context) {
 	if request.AllowUserQuotaQuery != nil {
 		cleanToken.AllowUserQuotaQuery = *request.AllowUserQuotaQuery
 	}
-	cleanToken.Group = token.Group
-	cleanToken.CrossGroupRetry = token.CrossGroupRetry
-	cleanToken.Groups = token.Groups
-	cleanToken.GroupSwitchCodes = token.GroupSwitchCodes
-	cleanToken.GroupSwitchRetryCount = token.GroupSwitchRetryCount
+	if token.Group != "" || token.Groups != nil {
+		cleanToken.Group = token.Group
+		cleanToken.CrossGroupRetry = token.CrossGroupRetry
+		cleanToken.Groups = token.Groups
+		cleanToken.GroupSwitchCodes = token.GroupSwitchCodes
+		cleanToken.GroupSwitchRetryCount = token.GroupSwitchRetryCount
+	}
 	cleanToken.NormalizeGroupPolicy()
 	if !cleanToken.UsesAutoGroups() {
 		_ = cleanToken.SetAutoGroups(nil)

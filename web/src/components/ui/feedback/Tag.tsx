@@ -30,19 +30,17 @@ const TONE_DOT: Record<string, string> = {
   grey:    'bg-ui-text-3',
 };
 
-interface TagProps { children?: ReactNode; tone?: string; color?: string; size?: keyof typeof SIZE; dot?: boolean; closable?: boolean; onClose?: MouseEventHandler<HTMLButtonElement> }
+interface TagProps { children?: ReactNode; tone?: string; size?: keyof typeof SIZE; dot?: boolean; closable?: boolean; onClose?: MouseEventHandler<HTMLButtonElement> }
 
 const Tag = ({
   children,
   tone = 'default',
-  /* 旧 API 兼容 */
-  color,
   size = 'sm',
   dot = false,
   closable = false,
   onClose,
 }: TagProps) => {
-  const t = TONE_DOT[tone] ? tone : (color && TONE_DOT[color] ? color : 'default');
+  const t = TONE_DOT[tone] ? tone : 'default';
   const dotCls = TONE_DOT[t];
 
   if (dot) {

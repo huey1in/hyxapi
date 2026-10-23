@@ -113,9 +113,9 @@ type ChannelSelectError struct {
 
 // SelectChannelForRequest resolves the channel for one attempt with the rules
 // shared by the HTTP distributor and the Responses WebSocket relay: a pinned
-// channel wins, then session affinity (first attempt only), then a random
-// eligible channel; every candidate must satisfy the request's channel
-// filters. The group the channel was chosen from is returned for auto-group
+// channel wins; Auto selects the cheapest eligible group before applying
+// session affinity (first attempt only) within that group. Every candidate
+// must satisfy the request's channel filters. The selected group is returned for auto-group
 // callers. The caller still applies SetupContextForSelectedChannel.
 func SelectChannelForRequest(c *gin.Context, modelName string, retry *RetryParam) (*model.Channel, string, *ChannelSelectError) {
 	if retry.Ctx == nil {
@@ -149,7 +149,15 @@ func SelectChannelForRequest(c *gin.Context, modelName string, retry *RetryParam
 	usingGroup := retry.TokenGroup
 	var channel *model.Channel
 	var selectGroup string
-	if retry.GetRetry() == 0 {
+	firstAttempt := retry.GetRetry() == 0
+	if usingGroup == "auto" {
+		var selectErr *ChannelSelectError
+		channel, selectGroup, selectErr = selectChannelFromGroups(c, modelName, retry)
+		if selectErr != nil {
+			return nil, selectGroup, selectErr
+		}
+	}
+	if firstAttempt {
 		if preferredChannelID, found := GetPreferredChannelByAffinity(c, modelName, usingGroup); found {
 			affinityUsable := false
 			preferred, err := model.CacheGetChannel(preferredChannelID)
@@ -159,16 +167,14 @@ func SelectChannelForRequest(c *gin.Context, modelName string, retry *RetryParam
 			}
 			if affinitySatisfied {
 				if usingGroup == "auto" {
-					userGroup := common.GetContextKeyString(c, constant.ContextKeyUserGroup)
-					for _, g := range GetRequestAutoGroups(c, userGroup) {
-						if model.IsChannelEnabledForGroupModel(g, modelName, preferred.Id) {
-							selectGroup = g
-							common.SetContextKey(c, constant.ContextKeyAutoGroup, g)
-							channel = preferred
-							affinityUsable = true
-							MarkChannelAffinityUsed(c, g, preferred.Id)
-							break
-						}
+					// Affinity may choose a channel within the selected cheapest
+					// group, but cannot move the request to a more expensive one.
+					lockedID := c.GetInt("responses_ws_channel_id")
+					webSocketReady := !c.GetBool("responses_websocket") || model.SupportsResponsesWebSocket(preferred, modelName)
+					if model.IsChannelEnabledForGroupModel(selectGroup, modelName, preferred.Id) && webSocketReady && (lockedID == 0 || lockedID == preferred.Id) {
+						channel = preferred
+						affinityUsable = true
+						MarkChannelAffinityUsed(c, selectGroup, preferred.Id)
 					}
 				} else if model.IsChannelEnabledForGroupModel(usingGroup, modelName, preferred.Id) {
 					channel = preferred
@@ -187,23 +193,10 @@ func SelectChannelForRequest(c *gin.Context, modelName string, retry *RetryParam
 	}
 
 	if channel == nil {
-		var err error
-		channel, selectGroup, err = CacheGetRandomSatisfiedChannel(retry)
-		if err != nil {
-			showGroup := usingGroup
-			if usingGroup == "auto" {
-				showGroup = fmt.Sprintf("auto(%s)", selectGroup)
-			}
-			return nil, selectGroup, &ChannelSelectError{
-				StatusCode: http.StatusServiceUnavailable, Code: types.ErrorCodeModelNotFound, MessageID: i18n.MsgDistributorGetChannelFailed,
-				Params: map[string]any{"Group": showGroup, "Model": modelName, "Error": err.Error()},
-			}
-		}
-		if channel == nil {
-			return nil, selectGroup, &ChannelSelectError{
-				StatusCode: http.StatusServiceUnavailable, Code: types.ErrorCodeModelNotFound, MessageID: i18n.MsgDistributorNoAvailableChannel,
-				Params: map[string]any{"Group": usingGroup, "Model": modelName}, NoAvailableChannel: true,
-			}
+		var selectErr *ChannelSelectError
+		channel, selectGroup, selectErr = selectChannelFromGroups(c, modelName, retry)
+		if selectErr != nil {
+			return nil, selectGroup, selectErr
 		}
 	}
 	if ok, kind := model.ChannelSatisfiesFilters(channel, modelName, constraints.Filters); !ok {
@@ -214,6 +207,27 @@ func SelectChannelForRequest(c *gin.Context, modelName string, retry *RetryParam
 		}
 	}
 	return channel, selectGroup, nil
+}
+
+func selectChannelFromGroups(c *gin.Context, modelName string, retry *RetryParam) (*model.Channel, string, *ChannelSelectError) {
+	channel, group, err := CacheGetRandomSatisfiedChannel(retry)
+	if err != nil {
+		showGroup := retry.TokenGroup
+		if showGroup == "auto" {
+			showGroup = fmt.Sprintf("auto(%s)", group)
+		}
+		return nil, group, &ChannelSelectError{
+			StatusCode: http.StatusServiceUnavailable, Code: types.ErrorCodeModelNotFound, MessageID: i18n.MsgDistributorGetChannelFailed,
+			Params: map[string]any{"Group": showGroup, "Model": modelName, "Error": err.Error()},
+		}
+	}
+	if channel == nil {
+		return nil, group, &ChannelSelectError{
+			StatusCode: http.StatusServiceUnavailable, Code: types.ErrorCodeModelNotFound, MessageID: i18n.MsgDistributorNoAvailableChannel,
+			Params: map[string]any{"Group": retry.TokenGroup, "Model": modelName}, NoAvailableChannel: true,
+		}
+	}
+	return channel, group, nil
 }
 
 // Origin-task pins report a fixed code so task polling can tell a retired

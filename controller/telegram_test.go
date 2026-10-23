@@ -418,15 +418,7 @@ func TestTelegramOAuthConfigurationAndLegacyEndpoints(t *testing.T) {
 			oauth.UnregisterCustomProvider("telegram")
 		})
 	}
-	for _, endpoint := range []struct{ method, path string }{
-		{"GET", "/api/oauth/telegram/login"},
-		{"POST", "/api/oauth/telegram/bind/start"},
-		{"GET", "/api/oauth/telegram/bind/old-flow"},
-	} {
-		response := securityEnrollmentRequest(endpoint.method, endpoint.path, "", "", fixture.identity, TelegramLegacyAuth)
-		assert.Equal(t, http.StatusGone, response.Code)
-		assert.Contains(t, response.Body.String(), "TELEGRAM_LEGACY_AUTH_REMOVED")
-	}
+
 }
 
 func TestTelegramOAuthConcurrentBindingHasSingleOwner(t *testing.T) {

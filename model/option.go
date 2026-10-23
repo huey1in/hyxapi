@@ -81,7 +81,6 @@ func InitOptionMap() {
 	common.OptionMap["AutomaticDisableChannelEnabled"] = strconv.FormatBool(common.AutomaticDisableChannelEnabled)
 	common.OptionMap["AutomaticEnableChannelEnabled"] = strconv.FormatBool(common.AutomaticEnableChannelEnabled)
 	common.OptionMap["LogConsumeEnabled"] = strconv.FormatBool(common.LogConsumeEnabled)
-	common.OptionMap["DisplayInCurrencyEnabled"] = strconv.FormatBool(common.DisplayInCurrencyEnabled)
 	common.OptionMap["DisplayTokenStatEnabled"] = strconv.FormatBool(common.DisplayTokenStatEnabled)
 	common.OptionMap["DataExportEnabled"] = strconv.FormatBool(common.DataExportEnabled)
 	common.OptionMap["ChannelDisableThreshold"] = strconv.FormatFloat(common.ChannelDisableThreshold, 'f', -1, 64)
@@ -223,17 +222,8 @@ func loadOptionsFromDatabase() {
 	passkeyOptionMutex.Lock()
 	defer passkeyOptionMutex.Unlock()
 	options, _ := AllOption()
-	persistedKeys := make(map[string]bool, len(options))
-	for _, option := range options {
-		persistedKeys[option.Key] = true
-	}
 	passkeyOptions := make(map[string]string)
 	for _, option := range options {
-		// Existing installations may contain both names. The original option is
-		// authoritative until the next save removes the old config alias.
-		if key := canonicalGroupRatioOption(option.Key); key != option.Key && persistedKeys[key] {
-			continue
-		}
 		if IsRemovedModelPricingOption(option.Key) || IsRemovedFeatureOption(option.Key) {
 			continue
 		}
@@ -263,7 +253,7 @@ func UpdateOption(key string, value string) error {
 	} else if key == "HeaderNavModules" {
 		value = CleanHeaderNavModules(value)
 	}
-	if groupRatioOptionAlias(canonicalGroupRatioOption(key)) != "" {
+	if key == "GroupRatio" || key == "GroupGroupRatio" {
 		return UpdateOptionsBulk(map[string]string{key: value})
 	}
 	if IsRequestPolicyOption(key) {
@@ -328,14 +318,10 @@ func updateOptionMap(key string, value string) (err error) {
 	} else if key == "HeaderNavModules" {
 		value = CleanHeaderNavModules(value)
 	}
-	key = canonicalGroupRatioOption(key)
-	if groupRatioOptionAlias(key) != "" {
+	if key == "GroupRatio" || key == "GroupGroupRatio" {
 		if err := validateOptionValue(key, value); err != nil {
 			return err
 		}
-	}
-	if key == legacyAccessTokenRetireAtKey {
-		return nil
 	}
 	if IsRemovedModelPricingOption(key) {
 		return ErrRemovedModelPricingOption
@@ -343,9 +329,6 @@ func updateOptionMap(key string, value string) (err error) {
 	common.OptionMapRWMutex.Lock()
 	defer common.OptionMapRWMutex.Unlock()
 	common.OptionMap[key] = value
-	if alias := groupRatioOptionAlias(key); alias != "" {
-		common.OptionMap[alias] = value
-	}
 	if key == setting.TaskPluginDisabledFactoryKeysKey {
 		jsplugin.DefaultRegistry.SetDisabledFactoryKeys(setting.ParseTaskPluginDisabledFactoryKeys(value))
 	}
@@ -425,16 +408,6 @@ func updateOptionMap(key string, value string) (err error) {
 			common.QuotaRemindEnabled = boolValue
 		case "LogConsumeEnabled":
 			common.LogConsumeEnabled = boolValue
-		case "DisplayInCurrencyEnabled":
-			// 兼容旧字段：同步到新配置 general_setting.quota_display_type（运行时生效）
-			// true -> USD, false -> TOKENS
-			newVal := "USD"
-			if !boolValue {
-				newVal = "TOKENS"
-			}
-			if cfg := config.GlobalConfig.Get("general_setting"); cfg != nil {
-				_ = config.UpdateConfigFromMap(cfg, map[string]string{"quota_display_type": newVal})
-			}
 		case "DisplayTokenStatEnabled":
 			common.DisplayTokenStatEnabled = boolValue
 		case "DataExportEnabled":
@@ -729,10 +702,6 @@ func UpdateOptionsBulk(values map[string]string) error {
 		values = maps.Clone(values)
 		values["HeaderNavModules"] = CleanHeaderNavModules(value)
 	}
-	values, err := normalizedGroupRatioOptions(values)
-	if err != nil {
-		return err
-	}
 	pricingKeys := 0
 	for key := range values {
 		if IsModelPricingOption(key) {
@@ -776,14 +745,7 @@ func UpdateOptionsBulk(values map[string]string) error {
 		}
 	}
 
-	err = DB.Transaction(func(tx *gorm.DB) error {
-		for key := range values {
-			if alias := groupRatioOptionAlias(key); alias != "" {
-				if err := tx.Delete(&Option{Key: alias}).Error; err != nil {
-					return err
-				}
-			}
-		}
+	err := DB.Transaction(func(tx *gorm.DB) error {
 		for k, v := range values {
 			option := Option{Key: k}
 			if err := tx.FirstOrCreate(&option, Option{Key: k}).Error; err != nil {

@@ -54,7 +54,7 @@ export default function NotificationEmailSettings({ user, refresh }: { user: Aut
   const verified = !!settings.notification_email && settings.notification_email_verified;
   return <>
     <SettingRow title={t('Notification Email')} description={<span className='break-all'>{address || t('No email linked')}</span>} last>
-      <div className='flex items-center gap-2'><Tag color={verified ? 'green' : 'grey'}>{t(verified ? 'Verified' : 'Not verified')}</Tag><Button variant='toggle' onClick={() => setEditing(true)}>{t(verified ? 'Change' : 'Verify')}</Button></div>
+      <div className='flex items-center gap-2'><Tag tone={verified ? 'green' : 'grey'}>{t(verified ? 'Verified' : 'Not verified')}</Tag><Button variant='toggle' onClick={() => setEditing(true)}>{t(verified ? 'Change' : 'Verify')}</Button></div>
     </SettingRow>
     {editing && <VerifyNotificationEmail initial={address} refresh={refresh} close={() => setEditing(false)} />}
   </>;

@@ -4,7 +4,7 @@ import { API, showSuccess } from '../../helpers';
 import { quotaToDisplayAmount, displayAmountToQuota } from '../../helpers/quota';
 import { Button, Input, NumberInput, Switch, Select, MultiSelect, SlideOver, showError as notifyError } from '../../components/ui';
 import SortableMultiSelect from '../../components/ui/select/SortableMultiSelect';
-import { autoGroupsPayload, manualTokenGroups, reconcileAutoGroups, validateAutoGroups } from './autoGroups';
+import { autoGroupsPayload, initialTokenGroupSelection, reconcileAutoGroups, validateAutoGroups } from './autoGroups';
 import type { AutoGroupMode } from './autoGroups';
 import type { ManagedToken } from './token-management';
 import { tokenErrorMessage } from './token-management';
@@ -50,15 +50,15 @@ const TokenEditModal = ({ open, token, onClose, onSaved, onChanged }: Props) => 
 
   useEffect(() => {
     if (!token) return;
-    const tokenGroups = manualTokenGroups(token);
+    const selection = initialTokenGroupSelection(token);
     setForm({
       ...token,
       model_limits_enabled: token.model_limits_enabled || false,
       model_limits: token.model_limits || '',
       allow_ips: token.allow_ips || '',
       cross_group_retry: !!token.cross_group_retry,
-      groups: tokenGroups,
-      automatic: tokenGroups.length === 0,
+      groups: selection.groups,
+      automatic: selection.automatic,
       auto_groups_mode: token.auto_groups?.length ? 'custom' : 'inherit',
       auto_groups: token.auto_groups || [],
       group_switch_status_codes: token.group_switch_status_codes || [429, 500, 502, 503, 504],
@@ -69,6 +69,7 @@ const TokenEditModal = ({ open, token, onClose, onSaved, onChanged }: Props) => 
   useEffect(() => {
     if (!open || !token) return;
     const owner = new AbortController();
+    setGroups([]);
     setGroupsLoading(true);
     setGroupsError('');
     setAutoNotice(false);
@@ -81,7 +82,12 @@ const TokenEditModal = ({ open, token, onClose, onSaved, onChanged }: Props) => 
       setGroups(available);
       setAutoConfig(config);
       setAutoNotice(selection.changed);
-      setForm((previous) => ({ ...previous, auto_groups_mode: selection.mode, auto_groups: selection.groups }));
+      setForm((previous) => ({
+        ...previous,
+        groups: initialTokenGroupSelection({ ...token, group: previous.automatic ? 'auto' : '', groups: previous.groups }, available).groups,
+        auto_groups_mode: selection.mode,
+        auto_groups: selection.groups,
+      }));
     }).catch((error) => { if (!owner.signal.aborted) setGroupsError((error instanceof Error ? error.message : '') || t('Failed to load groups. Close and retry.')); })
       .finally(() => { if (!owner.signal.aborted) setGroupsLoading(false); });
     return () => owner.abort();
@@ -104,8 +110,8 @@ const TokenEditModal = ({ open, token, onClose, onSaved, onChanged }: Props) => 
     const count = isEdit ? 1 : Number(createCount);
     if (!Number.isInteger(count) || count < 1 || count > 1000) return showError(t('Create between 1 and 1000 API keys'));
     if (new TextEncoder().encode(form.name.trim()).length > (count > 1 ? 43 : 50)) return showError(t('Key name is too long for the requested creation count'));
+    if (groupsLoading || groupsError) return showError(groupsError || t('Loading group configuration…'));
     if (form.automatic) {
-      if (groupsLoading || groupsError) return showError(groupsError || t('Loading Auto group configuration'));
       const error = validateAutoGroups(form.auto_groups_mode, form.auto_groups || [], autoConfig.max_count, groups, (key, options) => t(key, options ?? {}));
       if (error) return showError(error);
     } else if (!form.groups?.length) return showError(t('Select at least one group or use automatic groups'));
@@ -161,7 +167,7 @@ const TokenEditModal = ({ open, token, onClose, onSaved, onChanged }: Props) => 
       footer={
         <>
           <Button variant='toggle' onClick={onClose}>{t('Cancel')}</Button>
-          <Button onClick={save} loading={saving}>{isEdit ? t('Save') : t('Create')}</Button>
+          <Button onClick={save} loading={saving} disabled={groupsLoading || !!groupsError || !form.automatic && !form.groups.length}>{isEdit ? t('Save') : t('Create')}</Button>
         </>
       }
     >
@@ -185,7 +191,7 @@ const TokenEditModal = ({ open, token, onClose, onSaved, onChanged }: Props) => 
           <div className='flex w-[min(220px,calc(100%_-_88px))] min-w-0 shrink-0 justify-end'>
             <Select id='token-group-mode' popover value={form.automatic ? 'auto' : 'manual'} options={[
               { value: 'auto', label: t('Automatic groups') }, { value: 'manual', label: t('Ordered groups') },
-            ]} onChange={(value) => u('automatic')(value === 'auto')} width='full' />
+            ]} onChange={(value) => setForm((previous) => ({ ...previous, automatic: value === 'auto', groups: previous.groups.length ? previous.groups : groups.slice(0, 1), cross_group_retry: value === 'auto' || previous.cross_group_retry }))} width='full' />
           </div>
         </div>
 
@@ -195,7 +201,7 @@ const TokenEditModal = ({ open, token, onClose, onSaved, onChanged }: Props) => 
               <label htmlFor='token-auto-group-config' className='min-w-0 flex-1 text-sm text-ui-text'>{t('Auto group configuration')}</label>
               <div className='flex w-[min(220px,calc(100%_-_88px))] min-w-0 shrink-0 justify-end'>
                 {groupsLoading ? <p className='text-xs text-ui-text-3'>{t('Loading group configuration…')}</p> : groupsError ? <p role='alert' className='text-xs text-ui-danger'>{groupsError}</p> : <Select id='token-auto-group-config' popover value={form.auto_groups_mode || 'inherit'} options={[
-                  { value: 'inherit', label: t('Inherit global Auto groups') }, { value: 'custom', label: t('Custom Auto groups') },
+                  { value: 'inherit', label: t('All available groups') }, { value: 'custom', label: t('Custom Auto groups') },
                 ]} onChange={u('auto_groups_mode')} width='full' />}
               </div>
             </div>
@@ -208,8 +214,8 @@ const TokenEditModal = ({ open, token, onClose, onSaved, onChanged }: Props) => 
                     <SortableMultiSelect id='token-group-priority' label={t('Group priority')} options={groups} value={form.auto_groups || []} onChange={u('auto_groups')} maxSelected={autoConfig.max_count} placeholder={t('Add Auto group')} />
                   </div>
                 </div>
-                <p className='text-xs text-ui-text-3'>{t('Route in list order, up to {{count}} groups. This list is independent of global changes; group permissions are still checked for each request.', { count: autoConfig.max_count })}</p>
-              </> : <p className='text-xs text-ui-text-3 break-words'>{t('Global order: {{groups}}. Administrator changes apply automatically.', { groups: autoConfig.groups.join(' → ') || t('No groups are available; Auto routing will fail') })}</p>}
+                <p className='text-xs text-ui-text-3'>{t('Choose up to {{count}} groups. Auto routing prefers the lowest effective billing multiplier; list order breaks ties.', { count: autoConfig.max_count })}</p>
+              </> : <p className='text-xs text-ui-text-3 break-words'>{t('Automatically choose the lowest billing multiplier among available groups for the requested model. No manual group selection is required.')}</p>}
               <div className='flex items-center justify-between gap-3'>
                 <span className='text-sm text-ui-text'>{t('Switch to the next group after retries are exhausted')}</span>
                 <Switch checked={!!form.cross_group_retry} onChange={u('cross_group_retry')} />
@@ -226,6 +232,7 @@ const TokenEditModal = ({ open, token, onClose, onSaved, onChanged }: Props) => 
             </div>
           </div>
         )}
+        {!form.automatic && groupsError && <p role='alert' className='text-xs text-ui-danger'>{groupsError}</p>}
 
         {selectedGroups.length > 1 && (
           <div>

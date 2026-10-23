@@ -192,13 +192,9 @@ func (t *Task) GetUpstreamTaskID() string {
 	return t.TaskID
 }
 
-// GetResultURL 获取任务结果 URL（视频地址等）
-// 新数据存在 PrivateData.ResultURL 中；旧数据回退到 FailReason（历史兼容）
+// GetResultURL returns the result URL stored by the task executor.
 func (t *Task) GetResultURL() string {
-	if t.PrivateData.ResultURL != "" {
-		return t.PrivateData.ResultURL
-	}
-	return t.FailReason
+	return t.PrivateData.ResultURL
 }
 
 // GenerateTaskID 生成对外暴露的 task_xxxx 格式 ID

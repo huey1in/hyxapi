@@ -34,7 +34,7 @@ func AdminSaveModelPricing(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"success": false, "message": err.Error()})
 		return
 	}
-	model.RecordLegacyAuditLog(c, model.AuditUpdate, "model_pricing", pricing.ID, "保存模型价格 "+pricing.ModelName)
+	model.RecordResourceAudit(c, model.AuditUpdate, "model_pricing", pricing.ID, "保存模型价格 "+pricing.ModelName)
 	c.JSON(http.StatusOK, gin.H{
 		"success": true,
 		"message": "",
@@ -56,6 +56,6 @@ func AdminDeleteModelPricing(c *gin.Context) {
 		common.ApiError(c, err)
 		return
 	}
-	model.RecordLegacyAuditLog(c, model.AuditDelete, "model_pricing", id, "删除模型价格")
+	model.RecordResourceAudit(c, model.AuditDelete, "model_pricing", id, "删除模型价格")
 	c.JSON(http.StatusOK, gin.H{"success": true, "message": ""})
 }

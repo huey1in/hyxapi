@@ -319,7 +319,7 @@ function ChannelSession({ identity }: { identity: string }) {
       title: t('状态'),
       render: (r) => {
         const s = STATUS_TAG[r.status] || STATUS_TAG[2];
-        return <Tag color={s.color}>{t(s.text)}</Tag>;
+        return <Tag tone={s.color}>{t(s.text)}</Tag>;
       },
     },
     { key: 'priority', title: t('优先级') },

@@ -4,13 +4,13 @@ import { subscriptionNamesSchema, subscriptionSelfSchema, userSubscriptionSchema
 
 const sub = { id: 1, user_id: 1, plan_id: 1, amount_total: 100, amount_used: 40, start_time: 100, end_time: 200, status: 'active', source: 'order', last_reset_time: 0, next_reset_time: 150, allowed_groups: '["pro"]', allowed_models: '["gpt-test"]', concurrent_limit: 2, rpm_limit: 10, allow_wallet_overflow: false, upgrade_group: 'pro', downgrade_group: '', prev_user_group: 'default' };
 test('subscription DTO validates actual quota, restrictions and billing preference', () => {
-  const data = subscriptionSelfSchema.parse({ billing_preference: 'subscription_first', subscriptions: [{ subscription: sub }], all_subscriptions: [{ subscription: sub }] });
+  const data = subscriptionSelfSchema.parse({ billing_preference: 'subscription_first', all_subscriptions: [{ subscription: sub }] });
   assert.deepEqual(data.all_subscriptions[0].subscription.allowed_groups, ['pro']); assert.equal(data.all_subscriptions[0].subscription.allow_wallet_overflow, false);
   for (const patch of [{ amount_used: -1 }, { amount_total: NaN }, { amount_total: '100' }, { allowed_models: '{}' }, { allowed_models: '[1]' }, { next_reset_time: Number.MAX_SAFE_INTEGER }, { allow_wallet_overflow: 'false' }]) assert.equal(userSubscriptionSchema.safeParse({ ...sub, ...patch }).success, false);
-  assert.equal(subscriptionSelfSchema.safeParse({ billing_preference: 'unrecognized', subscriptions: [], all_subscriptions: [] }).success, false);
-  assert.equal(subscriptionSelfSchema.safeParse({ billing_preference: 'wallet_only', subscriptions: [] }).success, false);
+  assert.equal(subscriptionSelfSchema.safeParse({ billing_preference: 'unrecognized', all_subscriptions: [] }).success, false);
+  assert.equal(subscriptionSelfSchema.safeParse({ billing_preference: 'wallet_only', }).success, false);
 });
-test('restriction lists accept empty legacy strings but reject objects and non-string names', () => {
+test('restriction lists accept empty restrictions but reject objects and non-string names', () => {
   assert.deepEqual(subscriptionNamesSchema.parse(''), []); assert.deepEqual(subscriptionNamesSchema.parse('[]'), []);
   for (const raw of ['null', '{}', '"pro"', '[null]', '[{}]', '[true]', '{invalid']) assert.equal(subscriptionNamesSchema.safeParse(raw).success, false);
 });

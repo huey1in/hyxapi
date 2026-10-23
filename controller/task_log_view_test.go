@@ -85,7 +85,7 @@ func TestTaskLogDTODoesNotInventHistoricalPluginProvenance(t *testing.T) {
 	assert.Nil(t, adminView.RootInfo)
 }
 
-func TestTaskLogDTOReplacesLegacyVideoURLWithAvailabilityFlag(t *testing.T) {
+func TestTaskLogDTOOmitsPrivateResultURLs(t *testing.T) {
 	task := &model.Task{
 		TaskID:     "task_legacy_video",
 		Platform:   "jimeng",
@@ -95,17 +95,16 @@ func TestTaskLogDTOReplacesLegacyVideoURLWithAvailabilityFlag(t *testing.T) {
 	}
 
 	view := tasksToDto([]*model.Task{task}, false, common.RoleCommonUser)[0]
-	assert.True(t, view.LegacyVideoAvailable)
 	assert.Empty(t, view.ResultURL)
 	assert.Empty(t, view.FailReason)
 	encoded, err := common.Marshal(view)
 	require.NoError(t, err)
 	assert.NotContains(t, string(encoded), "private-upstream.invalid")
 	assert.NotContains(t, string(encoded), "result_url")
-	assert.Contains(t, string(encoded), "legacy_video_available")
+	assert.NotContains(t, string(encoded), "legacy_video_available")
 }
 
-func TestTaskLogDTOKeepsFailureReasonAndDoesNotMarkPluginTaskLegacy(t *testing.T) {
+func TestTaskLogDTOKeepsFailureReasonAndHidesSuccessfulTaskDetails(t *testing.T) {
 	failed := &model.Task{
 		TaskID:     "task_failed",
 		Platform:   "jimeng",
@@ -115,7 +114,6 @@ func TestTaskLogDTOKeepsFailureReasonAndDoesNotMarkPluginTaskLegacy(t *testing.T
 	}
 	failedView := tasksToDto([]*model.Task{failed}, false, common.RoleCommonUser)[0]
 	assert.Equal(t, "provider rejected the request", failedView.FailReason)
-	assert.False(t, failedView.LegacyVideoAvailable)
 
 	pluginTask := &model.Task{
 		TaskID:     "task_plugin_video",
@@ -131,7 +129,6 @@ func TestTaskLogDTOKeepsFailureReasonAndDoesNotMarkPluginTaskLegacy(t *testing.T
 		},
 	}
 	pluginView := tasksToDto([]*model.Task{pluginTask}, false, common.RoleCommonUser)[0]
-	assert.False(t, pluginView.LegacyVideoAvailable)
 	assert.Empty(t, pluginView.ResultURL)
 	assert.Empty(t, pluginView.FailReason)
 }

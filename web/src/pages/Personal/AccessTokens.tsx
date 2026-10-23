@@ -24,7 +24,7 @@ function Tokens({ identity }: { identity: string }) {
   const { busy, run } = useOwnedOperation();
   const [editing, setEditing] = useState<{ original: PersonalToken | null; form: AccessTokenForm } | null>(null);
   const [secret, setSecret] = useState('');
-  const [confirm, setConfirm] = useState<PersonalToken | 'legacy' | null>(null);
+  const [confirm, setConfirm] = useState<PersonalToken | null>(null);
   const [records, setRecords] = useState<{ tokenRef?: string } | null>(null);
   const data = useQuery({
     queryKey: ['personal-access-tokens', identity],
@@ -37,7 +37,6 @@ function Tokens({ identity }: { identity: string }) {
     }, retry: false, gcTime: 0, refetchOnWindowFocus: false,
   });
   const items = data.data?.items ?? [];
-  const legacy = data.data?.legacy;
   const catalog = data.data?.catalog;
   const message = data.error && apiErrorMessage(data.error, 'Unable to load access tokens');
   const formatDate = (value: number) => new Date(value * 1000).toLocaleString(i18n.language);
@@ -58,7 +57,7 @@ function Tokens({ identity }: { identity: string }) {
   });
   const revoke = () => void run(async (signal) => {
     if (!confirm) return;
-    const response = await API.delete(`/api/user/access_tokens/${confirm === 'legacy' ? 'legacy' : confirm.id}`, { signal, skipErrorHandler: true });
+    const response = await API.delete(`/api/user/access_tokens/${confirm.id}`, { signal, skipErrorHandler: true });
     signal.throwIfAborted(); if (!response.data.success) throw new Error(response.data.message || 'Unable to revoke access token');
     setConfirm(null); showSuccess(t('Access token revoked')); await data.refetch();
   });
@@ -67,19 +66,16 @@ function Tokens({ identity }: { identity: string }) {
   const toggleScope = (scope: string, checked: boolean) => { if (editing) set('scopes', checked ? [...editing.form.scopes, scope] : editing.form.scopes.filter((value) => value !== scope)); };
   return <>
     <SettingGroup title={t('System access tokens')}>
-      <SettingRow title={t('Personal tokens for the management API')} description={t('Grant specific permissions; the full token is shown only once')} last={!items.length && !legacy}>
+      <SettingRow title={t('Personal tokens for the management API')} description={t('Grant specific permissions; the full token is shown only once')} last={!items.length}>
         <div className='flex flex-wrap justify-end gap-1.5 max-w-[180px] sm:max-w-none'><Button variant='toggle' onClick={() => setRecords({})} disabled={busy}>{t('Access records')}</Button><Button variant='toggle' onClick={() => open()} disabled={busy || !catalog || !!data.error || items.length >= catalog.max_tokens}>{t('Create')}</Button></div>
       </SettingRow>
       {data.isPending && <ProfileRowsSkeleton lines={3} />}
       {message && <div role='alert' className='p-4 text-sm text-ui-text-2'>{t(message)} <Button onClick={() => void data.refetch()} loading={data.isFetching}>{t('Retry')}</Button></div>}
-      {items.map((item, index) => <SettingRow key={item.id} last={index === items.length - 1 && !legacy}
-        title={<>{item.name} {item.expires_at > 0 && item.expires_at * 1000 <= Date.now() && <Tag color='grey'>{t('Expired')}</Tag>}</>}
+      {items.map((item, index) => <SettingRow key={item.id} last={index === items.length - 1}
+        title={<>{item.name} {item.expires_at > 0 && item.expires_at * 1000 <= Date.now() && <Tag tone='grey'>{t('Expired')}</Tag>}</>}
         description={<><span className='break-all'>{item.token_hint}… · {item.scopes.join(', ')}</span><br />{t('Expires')}: {item.expires_at ? formatDate(item.expires_at) : t('Never expires')}<br />{t('Last used')}: {item.last_used_at ? formatDate(item.last_used_at) : t('Never used')}</>}>
         <div className='flex flex-wrap justify-end gap-1.5 max-w-[180px] sm:max-w-none'><Button variant='toggle' disabled={busy} onClick={() => setRecords({ tokenRef: item.token_ref })}>{t('Access records')}</Button><Button variant='toggle' disabled={busy || !!data.error} onClick={() => open(item)}>{t('Edit')}</Button><Button variant='toggle' disabled={busy} onClick={() => setConfirm(item)}>{t('Revoke')}</Button></div>
       </SettingRow>)}
-      {legacy && <SettingRow title={t('Legacy access token')} description={t('Retires on {{date}}; migrate to a scoped token.', { date: formatDate(legacy.retire_at) })} last>
-        <div className='flex flex-wrap justify-end gap-1.5 max-w-[180px] sm:max-w-none'><Button variant='toggle' disabled={busy} onClick={() => setRecords({ tokenRef: legacy.token_ref })}>{t('Access records')}</Button><Button variant='toggle' disabled={busy} onClick={() => setConfirm('legacy')}>{t('Revoke now')}</Button></div>
-      </SettingRow>}
     </SettingGroup>
     {records && <SlideOver open title={t('Access records')} onClose={() => setRecords(null)}>
       <div className='p-4 space-y-4'><p className='text-sm text-ui-text-2'>{t('Audit records start after this feature was enabled. Earlier records remain in Common Logs.')}</p>

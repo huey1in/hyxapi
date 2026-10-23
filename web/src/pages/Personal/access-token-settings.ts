@@ -7,7 +7,6 @@ const personalTokenSchema = z.object({
 });
 export const personalTokensSchema = z.object({
   items: z.array(personalTokenSchema),
-  legacy: z.object({ token_hint: z.string(), token_ref: z.string().optional(), retire_at: z.number() }).nullish(),
 });
 export const tokenScopeCatalogSchema = z.object({
   groups: z.array(z.object({ group: z.string(), resources: z.array(z.object({

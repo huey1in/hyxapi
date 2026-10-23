@@ -1,7 +1,6 @@
 package service
 
 import (
-	"context"
 	"crypto/tls"
 	"fmt"
 	"net"
@@ -12,7 +11,6 @@ import (
 	"time"
 
 	"github.com/QuantumNous/new-api/common"
-	"github.com/QuantumNous/new-api/logger"
 	"github.com/QuantumNous/new-api/relaykit/dto"
 	"github.com/QuantumNous/new-api/setting/system_setting"
 
@@ -26,7 +24,6 @@ var (
 		clients: make(map[string]*http.Client),
 		aliases: make(map[string]string),
 	}
-	legacyProxyURLWarnings sync.Map
 )
 
 type proxyHTTPClientCache struct {
@@ -127,23 +124,9 @@ func newProxyURLConfig(parsedURL *url.URL) *proxyURLConfig {
 	}
 }
 
-func warnLegacyProxyURLOnce(config *proxyURLConfig) {
-	if _, loaded := legacyProxyURLWarnings.LoadOrStore(config.cacheKey, struct{}{}); loaded {
-		return
-	}
-	logger.LogWarn(
-		context.Background(),
-		fmt.Sprintf(
-			"legacy proxy URL suffix ignored at runtime: scheme=%s host=%s; update the channel proxy setting",
-			config.parsedURL.Scheme,
-			config.parsedURL.Host,
-		),
-	)
-}
-
 // NormalizeProxyURL uses the same canonical key as the runtime connection pool.
 func NormalizeProxyURL(rawProxyURL string) (string, error) {
-	parsedURL, legacySuffixStripped, err := common.ParseProxyURLRuntime(rawProxyURL)
+	parsedURL, err := common.ParseProxyURL(rawProxyURL)
 	if err != nil {
 		return "", err
 	}
@@ -151,9 +134,6 @@ func NormalizeProxyURL(rawProxyURL string) (string, error) {
 		return "", nil
 	}
 	config := newProxyURLConfig(parsedURL)
-	if legacySuffixStripped {
-		warnLegacyProxyURLOnce(config)
-	}
 	return config.cacheKey, nil
 }
 
@@ -341,14 +321,11 @@ func GetHttpClientWithProxySettings(rawProxyURL string, settings dto.ChannelSett
 		return client, nil
 	}
 
-	parsedURL, legacySuffixStripped, err := common.ParseProxyURLRuntime(trimmedProxyURL)
+	parsedURL, err := common.ParseProxyURL(trimmedProxyURL)
 	if err != nil {
 		return nil, err
 	}
 	config := newProxyURLConfig(parsedURL)
-	if legacySuffixStripped {
-		warnLegacyProxyURLOnce(config)
-	}
 	return proxyClients.getOrCreate(trimmedProxyURL, config, policy, func() (*http.Client, error) {
 		return newHTTPClientFromPolicy(policy, config.parsedURL, nil)
 	})
@@ -360,7 +337,7 @@ func getOrCreateDirectClient(policy HTTPTransportPolicy) (*http.Client, error) {
 		if client := GetHttpClient(); client != nil {
 			return client, nil
 		}
-		// Compatibility with pre-init callers: never assign httpClient outside InitHttpClient.
+		// Before initialization: never assign httpClient outside InitHttpClient.
 		return http.DefaultClient, nil
 	}
 
@@ -399,12 +376,6 @@ func ResetProxyClientCache() {
 	}
 	defaultClient.CloseIdleConnections()
 	proxyClients.store(clientCacheKey("", defaultHTTPTransportPolicy()), defaultClient)
-}
-
-// NewProxyHttpClient is kept for compatibility.
-// Deprecated: use GetHttpClientWithProxy.
-func NewProxyHttpClient(proxyURL string) (*http.Client, error) {
-	return GetHttpClientWithProxy(proxyURL)
 }
 
 func checkProtectedFetchRedirect(req *http.Request, via []*http.Request) error {

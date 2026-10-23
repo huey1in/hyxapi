@@ -57,7 +57,7 @@ export default function UserSubscriptionsPanel({ user, onClose }: { user: Manage
         {subs.map((subscription) => {
           const total = subscription.amount_total || 0; const used = subscription.amount_used || 0; const pct = total > 0 ? Math.min(100, used / total * 100) : 0;
           return <div key={subscription.id} className='rounded-xl border border-ui-border px-4 py-3.5 space-y-2'>
-            <div className='flex items-center justify-between gap-2'><span className='text-sm font-medium break-all'>{planName(subscription.plan_id)}</span><Tag color={subscription.status === 'active' ? 'green' : 'grey'}>{t(subscription.status === 'active' ? 'Active' : subscription.status === 'cancelled' ? 'Cancelled' : 'Expired')}</Tag></div>
+            <div className='flex items-center justify-between gap-2'><span className='text-sm font-medium break-all'>{planName(subscription.plan_id)}</span><Tag tone={subscription.status === 'active' ? 'green' : 'grey'}>{t(subscription.status === 'active' ? 'Active' : subscription.status === 'cancelled' ? 'Cancelled' : 'Expired')}</Tag></div>
             <p className='text-xs text-ui-text-3'>{new Date(subscription.start_time * 1000).toLocaleString(i18n.language)} ~ {new Date(subscription.end_time * 1000).toLocaleString(i18n.language)}</p>
             <div className='flex items-center gap-2'><div className='flex-1 h-1.5 rounded-sm bg-ui-bg-subtle overflow-hidden'><div className='h-full bg-ui-accent' style={{ width: `${pct}%` }} /></div><span className='text-xs text-ui-text-3 whitespace-nowrap'>{renderQuota(used, 2)} / {renderQuota(total, 2)}</span></div>
             <div className='flex flex-wrap gap-2'>

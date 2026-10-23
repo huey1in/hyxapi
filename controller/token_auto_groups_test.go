@@ -22,6 +22,8 @@ func configureTokenAutoGroupsTest(t *testing.T, maxCount string, autoGroups stri
 	originalAutoGroups := setting.AutoGroups2JsonString()
 	originalUsableGroups := setting.UserUsableGroups2JSONString()
 	originalRatios := ratio_setting.GroupRatio2JSONString()
+	originalDefaultAuto := setting.DefaultUseAutoGroup
+	setting.DefaultUseAutoGroup = false
 	require.NoError(t, setting.UpdateMaxTokenAutoGroups(maxCount))
 	require.NoError(t, setting.UpdateAutoGroupsByJsonString(autoGroups))
 	require.NoError(t, setting.UpdateUserUsableGroupsByJSONString(`{"default":"Default","vip":"VIP"}`))
@@ -31,6 +33,7 @@ func configureTokenAutoGroupsTest(t *testing.T, maxCount string, autoGroups stri
 		require.NoError(t, setting.UpdateAutoGroupsByJsonString(originalAutoGroups))
 		require.NoError(t, setting.UpdateUserUsableGroupsByJSONString(originalUsableGroups))
 		require.NoError(t, ratio_setting.UpdateGroupRatioByJSONString(originalRatios))
+		setting.DefaultUseAutoGroup = originalDefaultAuto
 	})
 }
 
@@ -71,7 +74,7 @@ func newTokenAutoGroupsAuthenticatedContext(t *testing.T, method string, target 
 	return ctx, recorder
 }
 
-func TestAddTokenEmptyAutoGroupsInheritGlobalAuto(t *testing.T) {
+func TestAddTokenEmptyAutoGroupsDiscoverAvailableGroups(t *testing.T) {
 	tests := []struct {
 		name         string
 		includeField bool
@@ -215,9 +218,11 @@ func TestAddTokenRejectsInvalidAutoGroups(t *testing.T) {
 	}
 }
 
-func TestGetTokenAutoGroupsReturnsFullFilteredGlobalOrderAndLimit(t *testing.T) {
+func TestGetTokenAutoGroupsDiscoversAllGroupsAndReturnsCustomLimit(t *testing.T) {
 	configureTokenAutoGroupsTest(t, "1", `["vip","missing","default"]`)
 	user := setupTokenAutoGroupsControllerTest(t)
+	require.NoError(t, setting.UpdateUserUsableGroupsByJSONString(`{"default":"Default","vip":"VIP","economy":"Economy"}`))
+	require.NoError(t, ratio_setting.UpdateGroupRatioByJSONString(`{"default":1,"vip":1,"economy":0.5}`))
 
 	ctx, recorder := newTokenAutoGroupsAuthenticatedContext(t, http.MethodGet, "/api/token/auto-groups", nil, user.Id)
 	GetTokenAutoGroups(ctx)
@@ -229,6 +234,71 @@ func TestGetTokenAutoGroupsReturnsFullFilteredGlobalOrderAndLimit(t *testing.T) 
 		MaxCount int      `json:"max_count"`
 	}
 	require.NoError(t, common.Unmarshal(response.Data, &data))
-	assert.Equal(t, []string{"vip", "default"}, data.Groups)
+	assert.Equal(t, []string{"economy", "vip", "default"}, data.Groups)
 	assert.Equal(t, 1, data.MaxCount)
+}
+
+func TestAddTokenUsesFirstAvailableGroupInsteadOfDefault(t *testing.T) {
+	for _, automatic := range []bool{false, true} {
+		t.Run(fmt.Sprintf("default_auto_%t", automatic), func(t *testing.T) {
+			configureTokenAutoGroupsTest(t, "5", `["default"]`)
+			user := setupTokenAutoGroupsControllerTest(t)
+			require.NoError(t, setting.UpdateUserUsableGroupsByJSONString(`{"production":"Production","vip":"VIP"}`))
+			require.NoError(t, ratio_setting.UpdateGroupRatioByJSONString(`{"production":2,"vip":1}`))
+			setting.DefaultUseAutoGroup = automatic
+			request := baseAutoTokenRequest("first-available")
+			delete(request, "group")
+			delete(request, "cross_group_retry")
+			ctx, recorder := newTokenAutoGroupsAuthenticatedContext(t, http.MethodPost, "/api/token/", request, user.Id)
+			AddToken(ctx)
+			response := decodeAPIResponse(t, recorder)
+			require.True(t, response.Success, response.Message)
+			var token model.Token
+			require.NoError(t, model.DB.Where("name = ?", "first-available").First(&token).Error)
+			if automatic {
+				require.Equal(t, "auto", token.Group)
+				require.True(t, token.CrossGroupRetry)
+				require.Empty(t, token.AutoGroups)
+			} else {
+				require.Equal(t, "production", token.Group, "manual defaults follow available-group order, not cheapest price")
+			}
+		})
+	}
+}
+
+func TestAddTokenWithoutAvailableGroupsDoesNotInventDefault(t *testing.T) {
+	configureTokenAutoGroupsTest(t, "5", `["default"]`)
+	user := setupTokenAutoGroupsControllerTest(t)
+	require.NoError(t, ratio_setting.UpdateGroupRatioByJSONString(`{}`))
+	request := baseAutoTokenRequest("no-groups")
+	delete(request, "group")
+	ctx, recorder := newTokenAutoGroupsAuthenticatedContext(t, http.MethodPost, "/api/token/", request, user.Id)
+	AddToken(ctx)
+	require.False(t, decodeAPIResponse(t, recorder).Success)
+	var count int64
+	require.NoError(t, model.DB.Model(&model.Token{}).Count(&count).Error)
+	require.Zero(t, count)
+}
+
+func TestUpdateTokenOmittedGroupPreservesExistingPolicy(t *testing.T) {
+	configureTokenAutoGroupsTest(t, "5", `["default"]`)
+	user := setupTokenAutoGroupsControllerTest(t)
+	token := seedToken(t, model.DB, user.Id, "preserve-auto", "preserve-auto-key")
+	token.Group = "auto"
+	token.CrossGroupRetry = true
+	require.NoError(t, token.SetAutoGroups([]string{"vip"}))
+	require.NoError(t, model.DB.Save(token).Error)
+	request := baseAutoTokenRequest("renamed-auto")
+	request["id"] = token.Id
+	delete(request, "group")
+	delete(request, "cross_group_retry")
+	ctx, recorder := newTokenAutoGroupsAuthenticatedContext(t, http.MethodPut, "/api/token/", request, user.Id)
+	UpdateToken(ctx)
+	response := decodeAPIResponse(t, recorder)
+	require.True(t, response.Success, response.Message)
+	var updated model.Token
+	require.NoError(t, model.DB.First(&updated, token.Id).Error)
+	require.Equal(t, "auto", updated.Group)
+	require.True(t, updated.CrossGroupRetry)
+	require.JSONEq(t, `["vip"]`, updated.AutoGroups)
 }

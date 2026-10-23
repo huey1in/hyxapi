@@ -42,7 +42,7 @@ func TestAccountGroupRulesValidateBeforeSingleAndBulkPersistence(t *testing.T) {
 	require.NoError(t, db.Model(&Option{}).Count(&count).Error)
 	require.Zero(t, count)
 	require.Empty(t, common.OptionMap)
-	require.NoError(t, UpdateOption("group_ratio_setting.group_group_ratio", `{"vip":{"default":0.8}}`))
+	require.NoError(t, UpdateOption("GroupGroupRatio", `{"vip":{"default":0.8}}`))
 	ratio, ok := ratio_setting.GetGroupGroupRatio("vip", "default")
 	require.True(t, ok)
 	require.Equal(t, 0.8, ratio)

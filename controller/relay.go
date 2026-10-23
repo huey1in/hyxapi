@@ -559,7 +559,7 @@ func RelayTask(c *gin.Context) {
 		respondTaskSubmissionError(c, taskErr)
 		return
 	}
-	if taskErr := relay.ApplyOriginTaskAffinity(c, relayInfo); taskErr != nil {
+	if taskErr := relay.ApplyChannelPin(c, relayInfo); taskErr != nil {
 		respondTaskSubmissionError(c, taskErr)
 		return
 	}

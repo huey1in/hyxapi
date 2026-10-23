@@ -280,7 +280,7 @@ func UpdateOption(c *gin.Context) {
 		}
 		return
 	}
-	model.RecordLegacyAuditLog(c, model.AuditUpdate, "setting", 0, fmt.Sprintf("更新系统设置 [%s]", option.Key))
+	model.RecordResourceAudit(c, model.AuditUpdate, "setting", 0, fmt.Sprintf("更新系统设置 [%s]", option.Key))
 	c.JSON(http.StatusOK, gin.H{
 		"success": true,
 		"message": "",

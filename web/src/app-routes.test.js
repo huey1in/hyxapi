@@ -3,18 +3,15 @@ import assert from 'node:assert/strict';
 import { createRoutesFromChildren, matchRoutes } from 'react-router-dom';
 import { loadTestModules } from '../scripts/load-test-modules.mjs';
 
-const { entry0: { default: App }, entry1: { CONSOLE_ROUTE_REDIRECTS } } = await loadTestModules(['./src/App.tsx', './src/lib/console-routes.ts']);
+const { entry0: { default: App } } = await loadTestModules(['./src/App.tsx']);
 const routes = createRoutesFromChildren(App().props.children);
 const routeAt = (path) => matchRoutes(routes, path)?.at(-1).route;
 
-test('all console destinations have registered canonical routes and old paths redirect', () => {
-  assert.equal(routeAt('/console').path, '/console');
-  for (const [previous, current] of Object.entries(CONSOLE_ROUTE_REDIRECTS)) {
-    assert.equal(routeAt(current).path, current, current);
-    assert.equal(routeAt(previous).path, `${previous}/*`, previous);
-    assert.notEqual(routeAt(previous).element.type, routeAt(current).element.type, previous);
+test('current routes are registered without old console redirects', () => {
+  for (const path of ['/console', '/token', '/pricing', '/log', '/topup', '/subscription', '/personal', '/notices', '/channel', '/models', '/vendors', '/user', '/operations', '/audit', '/system-status', '/redemption', '/subscription/manage', '/setting', '/tickets', '/tickets/manage', '/user/reset']) {
+    assert.equal(routeAt(path).path, path, path);
   }
-  assert.equal(routeAt('/user/reset').path, '/user/reset');
+  for (const path of ['/console/token', '/console/my-subscription', '/console/task', '/console/midjourney', '/console/tickets', '/index.html']) assert.equal(routeAt(path).path, '*', path);
 });
 
 test('management routes mount the correct subscription and ticket pages', () => {

@@ -44,21 +44,6 @@ func (p *sessionOAuthProvider) FillUserByProviderID(user *model.User, _ string) 
 	return nil
 }
 
-func TestHandleOAuthBrowserCallbackUsesCurrentSite(t *testing.T) {
-	previousMode := gin.Mode()
-	gin.SetMode(gin.TestMode)
-	t.Cleanup(func() { gin.SetMode(previousMode) })
-	engine := gin.New()
-	engine.GET("/api/oauth/:provider", HandleOAuth)
-	req := httptest.NewRequest(http.MethodGet, "/api/oauth/github?code=provider-code&state=valid-state", nil)
-	req.Header.Set("Accept", "text/html,application/xhtml+xml")
-	recorder := httptest.NewRecorder()
-	engine.ServeHTTP(recorder, req)
-	require.Equal(t, http.StatusFound, recorder.Code)
-	require.Equal(t, "/oauth/github?code=provider-code&state=valid-state", recorder.Header().Get("Location"))
-	require.Empty(t, recorder.Result().Cookies())
-}
-
 func TestHandleOAuthUsesSameOriginSession(t *testing.T) {
 	require.NoError(t, i18n.Init())
 	originalProvider := oauth.GetProvider("github")

@@ -142,7 +142,7 @@ func RecordLogWithAdminInfo(userId int, logType int, content string, adminInfo *
 	}
 }
 
-// RecordOperationAuditLog 记录管理/高危操作审计日志（type=LogTypeManage）。
+// RecordOperationAuditLog 记录管理/高危操作到独立的审计日志表。
 // logUserId 为日志归属者，管理审计日志应归属实际操作者。content 为英文兜底文本
 // （供导出使用）；action+params 写入 Other.op 供前端本地化渲染（普通用户可见）。
 // adminInfo 存放操作者身份（写入 Other.admin_info，普通用户查询时剥离）；

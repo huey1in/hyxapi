@@ -39,11 +39,6 @@ func GetGeneralSetting() *GeneralSetting {
 	return &generalSetting
 }
 
-// IsCurrencyDisplay 是否以货币形式展示（美元或人民币）
-func IsCurrencyDisplay() bool {
-	return generalSetting.QuotaDisplayType != QuotaDisplayTypeTokens
-}
-
 // GetQuotaDisplayType 返回额度展示类型
 func GetQuotaDisplayType() string {
 	return generalSetting.QuotaDisplayType

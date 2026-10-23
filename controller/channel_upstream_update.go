@@ -856,7 +856,7 @@ func ApplyChannelUpstreamModelUpdates(c *gin.Context) {
 	if modelsChanged {
 		refreshChannelRuntimeCache()
 	}
-	model.RecordLegacyAuditLog(c, model.AuditUpdate, "channel", channel.Id, "Applied selected upstream model changes")
+	model.RecordResourceAudit(c, model.AuditUpdate, "channel", channel.Id, "Applied selected upstream model changes")
 
 	c.JSON(http.StatusOK, gin.H{
 		"success": true,
@@ -1011,7 +1011,7 @@ func ApplyAllChannelUpstreamModelUpdates(c *gin.Context) {
 	if refreshNeeded {
 		refreshChannelRuntimeCache()
 	}
-	model.RecordLegacyAuditLog(c, model.AuditUpdate, "channel", 0, fmt.Sprintf("Applied staged upstream models: channels=%d added=%d removed=%d failed=%v", len(results), addedModelCount, removedModelCount, failed))
+	model.RecordResourceAudit(c, model.AuditUpdate, "channel", 0, fmt.Sprintf("Applied staged upstream models: channels=%d added=%d removed=%d failed=%v", len(results), addedModelCount, removedModelCount, failed))
 
 	c.JSON(http.StatusOK, gin.H{
 		"success": true,

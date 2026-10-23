@@ -9,8 +9,8 @@ export function TokenUsage({ row }: { row: EnrichedLog }) {
   const reported = row._cacheReadKnown || row._cacheWriteKnown;
   return <div className='space-y-0.5 tabular-nums'>
     <Num value={row._inputTokens + row.completion_tokens} />
-    <div className='text-xs text-ui-text-3'>{t('Input')} {row._inputTokens.toLocaleString(i18n.language)} · {t('Output')} {row.completion_tokens.toLocaleString(i18n.language)}</div>
-    {showCache && <div aria-label={t('Request cache')} className='flex flex-wrap items-baseline justify-start gap-x-2 gap-y-0.5 text-xs text-ui-text-3 md:justify-end'>
+    <div className='text-sm text-ui-text-3'>{t('Input')} {row._inputTokens.toLocaleString(i18n.language)} · {t('Output')} {row.completion_tokens.toLocaleString(i18n.language)}</div>
+    {showCache && <div aria-label={t('Request cache')} className='flex flex-wrap items-baseline justify-start gap-x-2 gap-y-0.5 text-sm text-ui-text-3 md:justify-end'>
       <span className='whitespace-nowrap'>{t(cacheStatusLabels[row._cacheStatus])}{row._cacheHitRate != null && row._cacheHit > 0 && <span className='ml-1'>{new Intl.NumberFormat(i18n.language, { style: 'percent', maximumFractionDigits: 1 }).format(row._cacheHitRate)}</span>}</span>
       {reported && <span>{t('Read')} {row._cacheReadKnown ? row._cacheHit.toLocaleString(i18n.language) : '—'} · {t('Write')} {row._cacheWriteKnown ? row._cacheWrite.toLocaleString(i18n.language) : '—'}</span>}
     </div>}
@@ -31,7 +31,7 @@ export const TypeBadge = ({ type }: { type: number }) => {
   return (
     <span title={t(TYPE_LABELS[type] || 'System')} style={{ display: 'inline-flex', alignItems: 'center', gap: 5, whiteSpace: 'nowrap', maxWidth: '100%', minWidth: 0 }}>
       <span style={{ width: 7, height: 7, borderRadius: '50%', background: color, flexShrink: 0 }} />
-      <span style={{ fontSize: 13, color: 'var(--ui-text)', overflow: 'hidden', textOverflow: 'ellipsis' }}>{t(TYPE_LABELS[type] || 'System')}</span>
+      <span style={{ fontSize: 15, color: 'var(--ui-text)', overflow: 'hidden', textOverflow: 'ellipsis' }}>{t(TYPE_LABELS[type] || 'System')}</span>
     </span>
   );
 };

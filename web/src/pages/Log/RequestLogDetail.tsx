@@ -22,13 +22,13 @@ export default function RequestLogDetail({ row, isAdmin, isRoot }: { row: Enrich
   return <DetailContent>
     <div className='min-w-0 space-y-3'>
       <div className='flex items-start justify-between gap-3'>
-        <div className='min-w-0'><h4 className='break-words text-base font-semibold leading-6 text-ui-text'>{row.model_name || t('System operation')}</h4><p className='mt-1 text-xs text-ui-text-3'>{timestamp2string(row.created_at)}</p></div>
+        <div className='min-w-0'><h4 className='break-words text-lg font-semibold leading-6 text-ui-text'>{row.model_name || t('System operation')}</h4><p className='mt-1 text-sm text-ui-text-3'>{timestamp2string(row.created_at)}</p></div>
         <TypeBadge type={row.type} />
       </div>
       <dl className='grid grid-cols-3 divide-x divide-ui-divider rounded-lg border border-ui-divider bg-ui-bg-subtle/40 py-3'>
-        <div className='min-w-0 px-3'><dt className='text-xs text-ui-text-3'>{t('Cost')}</dt><dd className='mt-1 break-all text-base font-semibold tabular-nums text-ui-text'><Quota row={row} /></dd></div>
-        <div className='min-w-0 px-3'><dt className='text-xs text-ui-text-3'>{t('Input tokens')}</dt><dd className='mt-1 break-all text-base font-semibold tabular-nums text-ui-text'>{renderNumber(row._inputTokens)}</dd></div>
-        <div className='min-w-0 px-3'><dt className='text-xs text-ui-text-3'>{t('Output tokens')}</dt><dd className='mt-1 break-all text-base font-semibold tabular-nums text-ui-text'>{renderNumber(row.completion_tokens)}</dd></div>
+        <div className='min-w-0 px-3'><dt className='text-sm text-ui-text-3'>{t('Cost')}</dt><dd className='mt-1 break-all text-lg font-semibold tabular-nums text-ui-text'><Quota row={row} /></dd></div>
+        <div className='min-w-0 px-3'><dt className='text-sm text-ui-text-3'>{t('Input tokens')}</dt><dd className='mt-1 break-all text-lg font-semibold tabular-nums text-ui-text'>{renderNumber(row._inputTokens)}</dd></div>
+        <div className='min-w-0 px-3'><dt className='text-sm text-ui-text-3'>{t('Output tokens')}</dt><dd className='mt-1 break-all text-lg font-semibold tabular-nums text-ui-text'>{renderNumber(row.completion_tokens)}</dd></div>
       </dl>
     </div>
     <DetailSection title={t('Basic information')}>

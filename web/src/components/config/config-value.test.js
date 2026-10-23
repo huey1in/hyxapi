@@ -34,7 +34,7 @@ test('incomplete and duplicate fields remain drafts instead of overwriting saved
 
 test('editing affinity sources and templates retains optional legacy flags and future fields', () => {
   const fixture = [{ name: 'session', key_sources: [{ type: 'gjson', path: 'metadata.session', future: ['keep'] }],
-    ttl_seconds: 0, session_mode: '', skip_retry_on_failure: true, model_regex: null,
+    ttl_seconds: 0, session_mode: 'inherit', model_regex: null,
     param_override_template: { temperature: 0, stream: false, metadata: { note: '123', flag: null } }, future: { keep: true } }];
   const node = values.configNode(fixture);
   const source = node.children[0].node.children.find((child) => child.key === 'key_sources').node.children[0].node;

@@ -65,7 +65,7 @@ export default function AuditDetails({ entry, identity, onClose }: { entry: Audi
     else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first?.focus(); }
   }}>
     <div className='flex items-center justify-between px-6 pt-5 pb-3'><h3 id={titleId} className='text-base font-semibold text-ui-text'>{t('Log Details')}</h3><IconButton icon={X} onClick={onClose} aria-label={t('Close')} /></div>
-    <div className='px-6 py-2 max-h-[70vh] overflow-y-auto space-y-4 ui-scrollbar'>
+    <div className='px-6 py-2 max-h-[70vh] overflow-y-auto space-y-4'>
     <p className='text-sm font-medium break-words'>{details.summary}</p>
     {details.operation?.description && <p className='text-sm text-ui-text-2 break-words'>{details.operation.description}</p>}
     {section(t('Operation Audit Info'), fields)}

@@ -15,7 +15,9 @@ var ErrRemovedFeatureOption = errors.New("this feature setting has been removed"
 // IsRemovedFeatureOption prevents obsolete settings from being restored by old clients.
 func IsRemovedFeatureOption(key string) bool {
 	switch key {
-	case "About", "Chats", "ChatLink", "ChatLink2", "log_setting.max_range_days",
+	case "About", "Chats", "ChatLink", "ChatLink2", "log_setting.max_range_days", "DisplayInCurrencyEnabled",
+		"group_ratio_setting.group_ratio", "group_ratio_setting.group_group_ratio",
+		"LegacyAccessTokenRetireAt", "theme.frontend", "Announcements", "UptimeKumaUrl", "UptimeKumaSlug",
 		"monitor_setting.model_health_enabled", "monitor_setting.model_health_interval_minutes",
 		"ApiInfo", "FAQ", "console_setting.api_info", "console_setting.faq",
 		"console_setting.api_info_enabled", "console_setting.faq_enabled", "general_setting.docs_link",

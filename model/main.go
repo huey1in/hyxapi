@@ -161,13 +161,7 @@ func InitDB() (err error) {
 		sqlDB.SetConnMaxLifetime(time.Second * time.Duration(common.GetEnvOrDefault("SQL_MAX_LIFETIME", 60)))
 
 		if !common.IsMasterNode {
-			if err := EnsureLegacyAccessTokenRetireAt(common.GetTimestamp()); err != nil {
-				common.SysError(err.Error())
-			}
 			return nil
-		}
-		if common.UsingMySQL {
-			//_, _ = sqlDB.Exec("ALTER TABLE channels MODIFY model_mapping TEXT;") // TODO: delete this line when most users have upgraded
 		}
 		common.SysLog("database migration started")
 		err = migrateDB()
@@ -286,6 +280,9 @@ func migrateDB() error {
 	if err != nil {
 		return err
 	}
+	if err := migrateRemovedUserAccessToken(DB); err != nil {
+		return err
+	}
 	if err := migrateRemovedUserRequestCount(DB); err != nil {
 		return err
 	}
@@ -295,9 +292,6 @@ func migrateDB() error {
 		return err
 	}
 	if err := InitializeUserAuthVersions(); err != nil {
-		return err
-	}
-	if err := EnsureLegacyAccessTokenRetireAt(common.GetTimestamp()); err != nil {
 		return err
 	}
 	if err := InitializeExternalIdentityClaims(); err != nil {

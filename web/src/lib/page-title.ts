@@ -30,7 +30,7 @@ const PAGE_TITLES: Record<string, string> = {
 // Null delegates to pages whose titles depend on their own content or state.
 export function pageTitleKey(pathname: string): string | null {
   const path = pathname.replace(/\/+$/, '') || '/';
-  if (['/auth', '/user-agreement', '/privacy-policy'].includes(path) || /^\/(?:console\/)?pricing\/model\//.test(pathname)) return null;
+  if (['/auth', '/user-agreement', '/privacy-policy'].includes(path) || /^\/pricing\/model\//.test(pathname)) return null;
   if (path.startsWith('/oauth/')) return 'Sign in';
   return PAGE_TITLES[path] ?? '';
 }

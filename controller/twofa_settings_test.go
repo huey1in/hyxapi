@@ -106,7 +106,7 @@ func TestSecurityLoginTwoFAFeatureSwitchPreservesEnrolledFactors(t *testing.T) {
 			require.Len(t, requirements.Methods, 1)
 			assert.Equal(t, service.VerificationMethodTwoFA, requirements.Methods[0].Method)
 			assert.True(t, requirements.Methods[0].Available)
-			challenge, err := service.StartLoginVerification(user, "password", nil)
+			challenge, err := service.StartLoginVerification(user, "password")
 			require.NoError(t, err)
 			require.NotNil(t, challenge, "disabling enrollment must not bypass existing MFA")
 			code, err := totp.GenerateCode(factor.Secret, time.Now())

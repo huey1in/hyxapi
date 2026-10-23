@@ -40,7 +40,7 @@ const Modal = ({
       <IconButton icon={X} onClick={onClose} aria-label='close' />
     </div>
 
-    <div className='px-6 py-2 max-h-[70vh] overflow-y-auto space-y-4 ui-scrollbar'>
+    <div className='px-6 py-2 max-h-[70vh] overflow-y-auto space-y-4'>
       {children}
     </div>
 

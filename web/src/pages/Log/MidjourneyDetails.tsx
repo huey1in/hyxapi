@@ -31,7 +31,7 @@ export default function MidjourneyDetails({ row }: { row: MidjourneyRow }) {
       <Button size='sm' variant='toggle' onClick={() => setPreview((value) => !value)}>{t(preview ? 'Hide results' : 'View generated results')}</Button>
       {preview && <div className='space-y-3'>
         {image && <a className='block' href={image} target='_blank' rel='noreferrer'><img src={image} alt={t('Midjourney generated result')} className='max-h-96 max-w-full rounded-xl' /></a>}
-        {videos.map((url, index) => <div key={url}><video src={url} controls preload='none' className='max-h-96 w-full rounded-xl' /><a href={url} target='_blank' rel='noreferrer' className='text-xs underline'>{t('Open / download video {{index}}', { index: index + 1 })}</a></div>)}
+        {videos.map((url, index) => <div key={url}><video src={url} controls preload='none' className='max-h-96 w-full rounded-xl' /><a href={url} target='_blank' rel='noreferrer' className='text-sm underline'>{t('Open / download video {{index}}', { index: index + 1 })}</a></div>)}
       </div>}
     </DetailSection>}
     {(row.buttons || row.properties) && <DetailCode title={t('Task parameters and actions')} value={JSON.stringify({ buttons: parseTaskMetadata(row.buttons), properties: parseTaskMetadata(row.properties) })} />}

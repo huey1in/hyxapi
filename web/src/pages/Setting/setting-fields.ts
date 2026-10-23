@@ -851,7 +851,7 @@ export const LABELS: Record<string, string> = {
   PasswordLoginEnabled: '密码登录',
   GroupRatio: '分组倍率',
   UserUsableGroups: '用户可选分组',
-  AutoGroups: '全局 Auto 分组（按先后顺序选路）',
+  AutoGroups: 'Auto 同倍率分组的优先顺序（自动发现所有可用分组）',
   DefaultUseAutoGroup: '新令牌默认使用 Auto 分组',
   MaxTokenAutoGroups: '每个令牌最多自定义 Auto 分组数',
   ChannelDisableThreshold: '渠道禁用阈值',

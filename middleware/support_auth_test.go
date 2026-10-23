@@ -16,7 +16,7 @@ import (
 func TestSupportRoleHasTicketAccessWithoutAdministratorPrivileges(t *testing.T) {
 	setupDashboardAuthMiddlewareTest(t)
 	gin.SetMode(gin.TestMode)
-	user := createMiddlewarePATUser(t, "support-agent", "support-legacy-token")
+	user := createMiddlewarePATUser(t, "support-agent")
 	require.NoError(t, model.DB.Model(user).Update("role", common.RoleSupportUser).Error)
 	now := time.Now().Unix()
 	session := &model.UserSession{SID: "support-session", UserID: user.Id, Version: 1, UserAuthVersion: user.AuthVersion, Status: model.UserSessionStatusActive, RefreshHash: "refresh-hash", LoginMethod: "password", LastActiveAt: now, ExpiresAt: now + 3600}
@@ -37,8 +37,8 @@ func TestSupportRoleHasTicketAccessWithoutAdministratorPrivileges(t *testing.T) 
 		{"/api/tickets/manage", token, http.StatusOK},
 		{"/api/user/", token, http.StatusForbidden},
 		{"/api/option/", token, http.StatusForbidden},
-		{"/api/tickets", "support-legacy-token", http.StatusForbidden},
-		{"/api/tickets/manage", "support-legacy-token", http.StatusForbidden},
+		{"/api/tickets", "support-legacy-token", http.StatusUnauthorized},
+		{"/api/tickets/manage", "support-legacy-token", http.StatusUnauthorized},
 	} {
 		request := httptest.NewRequest(http.MethodGet, test.path, nil)
 		request.Header.Set("Authorization", "Bearer "+test.token)

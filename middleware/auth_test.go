@@ -39,7 +39,6 @@ func setupDashboardAuthMiddlewareTest(t *testing.T) {
 	common.SetMainDatabaseType(common.DatabaseTypeSQLite)
 	common.RedisEnabled = false
 	common.SessionSecret = "middleware-auth-test-secret"
-	require.NoError(t, model.EnsureLegacyAccessTokenRetireAt(time.Now().Unix()))
 	t.Cleanup(func() {
 		model.DB = previousDB
 		model.LOG_DB = previousLogDB
@@ -80,11 +79,11 @@ func tamperDashboardToken(token string) string {
 	return token[:tamperAt] + replacement + token[tamperAt+1:]
 }
 
-func createMiddlewarePATUser(t *testing.T, username, token string) *model.User {
+func createMiddlewarePATUser(t *testing.T, username string) *model.User {
 	t.Helper()
 	user := &model.User{
 		Username: username, Password: "password-placeholder", Role: common.RoleCommonUser,
-		Status: common.UserStatusEnabled, Group: "default", AccessToken: &token, AuthVersion: 1,
+		Status: common.UserStatusEnabled, Group: "default", AuthVersion: 1,
 		AffCode: "middleware-aff-" + username,
 	}
 	require.NoError(t, model.DB.Create(user).Error)
@@ -114,25 +113,13 @@ func TestTokenAuthReadOnlyTranslatesErrors(t *testing.T) {
 	}
 }
 
-func TestUserAuthAllowsOpaqueDottedPAT(t *testing.T) {
+func TestUserAuthRejectsUnscopedOpaqueCredentials(t *testing.T) {
 	setupDashboardAuthMiddlewareTest(t)
-	user := createMiddlewarePATUser(t, "dotted-pat-user", "opaque.key.with-dots")
+	createMiddlewarePATUser(t, "dotted-pat-user")
 	router := gin.New()
-	router.GET("/protected", UserAuth(), func(c *gin.Context) {
-		c.JSON(http.StatusOK, gin.H{"id": c.GetInt("id")})
-	})
-	request := httptest.NewRequest(http.MethodGet, "/protected", nil)
-	request.Header.Set("Authorization", "Bearer opaque.key.with-dots")
-	response := httptest.NewRecorder()
-
-	router.ServeHTTP(response, request)
-
-	assert.Equal(t, http.StatusOK, response.Code)
-	var body struct {
-		ID int `json:"id"`
-	}
-	require.NoError(t, common.Unmarshal(response.Body.Bytes(), &body))
-	assert.Equal(t, user.Id, body.ID)
+	router.GET("/protected", UserAuth(), func(c *gin.Context) { c.Status(http.StatusNoContent) })
+	response := middlewareBearerRequest(router, "/protected", "opaque.key.with-dots")
+	assert.Equal(t, http.StatusUnauthorized, response.Code)
 }
 
 func TestUserAuthNeverFallsBackForRecognizedInvalidInternalJWT(t *testing.T) {
@@ -141,7 +128,7 @@ func TestUserAuthNeverFallsBackForRecognizedInvalidInternalJWT(t *testing.T) {
 	token, _, err := service.IssueAccessToken(identity)
 	require.NoError(t, err)
 	tampered := tamperDashboardToken(token)
-	createMiddlewarePATUser(t, "jwt-fallback-user", tampered)
+	createMiddlewarePATUser(t, "jwt-fallback-user")
 	router := gin.New()
 	router.GET("/protected", UserAuth(), func(c *gin.Context) {
 		c.Status(http.StatusNoContent)
@@ -160,8 +147,8 @@ func TestTryUserAuthCredentialClassification(t *testing.T) {
 	setupDashboardAuthMiddlewareTest(t)
 	gin.SetMode(gin.TestMode)
 
-	patUser := createMiddlewarePATUser(t, "optional-pat-user", "optional.pat.with-dots")
-	internalUser := createMiddlewarePATUser(t, "optional-session-user", "unrelated-pat")
+	patUser := createMiddlewarePATUser(t, "optional-pat-user")
+	internalUser := createMiddlewarePATUser(t, "optional-session-user")
 	scopedPAT, _ := createMiddlewareScopedToken(t, patUser.Id, 0, "profile:read")
 	now := time.Now().Unix()
 	session := &model.UserSession{
@@ -216,7 +203,7 @@ func TestTryUserAuthCredentialClassification(t *testing.T) {
 		{name: "opaque unmatched credential", token: "opaque-relay-key", wantStatus: http.StatusOK},
 		{name: "dotted unmatched credential", token: "ordinary.key.with-dots", wantStatus: http.StatusOK},
 		{name: "third party jwt", token: externalToken, wantStatus: http.StatusOK},
-		{name: "valid pat", token: "optional.pat.with-dots", wantStatus: http.StatusOK, wantUserID: patUser.Id, wantPAT: true},
+		{name: "unscoped opaque credential stays anonymous", token: "optional.pat.with-dots", wantStatus: http.StatusOK},
 		{name: "scoped pat outside its grant stays anonymous", token: scopedPAT, wantStatus: http.StatusOK},
 		{name: "valid internal access jwt", token: accessToken, wantStatus: http.StatusOK, wantUserID: internalUser.Id},
 		{name: "expired internal access jwt", token: issueExpiredDashboardAccessToken(t, identity), wantStatus: http.StatusUnauthorized, wantErrorCode: "AUTH_TOKEN_EXPIRED"},
@@ -262,12 +249,12 @@ func TestTryUserAuthCredentialClassification(t *testing.T) {
 			return
 		}
 		patUserQueries++
-		if patUserQueries == 2 {
+		if patUserQueries == 1 {
 			tx.AddError(forcedCacheError)
 		}
 	}))
 	cacheFailureRequest := httptest.NewRequest(http.MethodGet, "/optional", nil)
-	cacheFailureRequest.Header.Set("Authorization", "Bearer optional.pat.with-dots")
+	cacheFailureRequest.Header.Set("Authorization", "Bearer "+scopedPAT)
 	cacheFailureResponse := httptest.NewRecorder()
 	router.ServeHTTP(cacheFailureResponse, cacheFailureRequest)
 	model.DB.Callback().Query().Remove(callbackName)
@@ -278,7 +265,7 @@ func TestTryUserAuthCredentialClassification(t *testing.T) {
 	require.NoError(t, err)
 	require.NoError(t, sqlDB.Close())
 	databaseFailureRequest := httptest.NewRequest(http.MethodGet, "/optional", nil)
-	databaseFailureRequest.Header.Set("Authorization", "Bearer database-failure-key")
+	databaseFailureRequest.Header.Set("Authorization", "Bearer "+scopedPAT)
 	databaseFailureResponse := httptest.NewRecorder()
 	router.ServeHTTP(databaseFailureResponse, databaseFailureRequest)
 	assert.Equal(t, http.StatusInternalServerError, databaseFailureResponse.Code)
@@ -316,7 +303,7 @@ func TestUserAuthAppliesAccessTokenRouteRules(t *testing.T) {
 	DeclareAccessTokenPermissionRoute(http.MethodGet, "/api/channel/", authz.ChannelRead)
 
 	legacy := "middleware-legacy-token"
-	admin := createMiddlewarePATUser(t, "route-rule-admin", legacy)
+	admin := createMiddlewarePATUser(t, "route-rule-admin")
 	require.NoError(t, model.DB.Model(admin).Update("role", common.RoleAdminUser).Error)
 	profile, _ := createMiddlewareScopedToken(t, admin.Id, 0, "profile:read")
 	channel, _ := createMiddlewareScopedToken(t, admin.Id, time.Now().Unix()+3600, "channel:read")
@@ -341,8 +328,6 @@ func TestUserAuthAppliesAccessTokenRouteRules(t *testing.T) {
 		{name: "permission route with its scope", path: "/api/channel/", token: channel, status: http.StatusOK},
 		{name: "permission route without its scope", path: "/api/channel/", token: profile, status: http.StatusForbidden, code: "ACCESS_TOKEN_SCOPE_DENIED", reason: "scope_denied"},
 		{name: "expired token", path: "/api/user/self", token: expired, status: http.StatusUnauthorized, code: "ACCESS_TOKEN_EXPIRED", reason: "expired"},
-		{name: "legacy token before the deadline", path: "/api/user/self", token: legacy, status: http.StatusOK},
-		{name: "legacy token on a session route", path: "/api/user/access_tokens", token: legacy, status: http.StatusForbidden, code: "AUTH_SESSION_REQUIRED", reason: "session_required"},
 	} {
 		t.Run(test.name, func(t *testing.T) {
 			response := middlewareBearerRequest(router, test.path, test.token)
@@ -381,22 +366,17 @@ func TestUserAuthAppliesAccessTokenRouteRules(t *testing.T) {
 	require.NoError(t, model.DB.Model(admin).Update("status", common.UserStatusEnabled).Error)
 	assert.Equal(t, http.StatusOK, middlewareBearerRequest(router, "/api/user/self", profile).Code, "disabling a user keeps the token")
 
-	require.NoError(t, model.DB.Model(&model.Option{}).Where(&model.Option{Key: "LegacyAccessTokenRetireAt"}).Update("value", fmt.Sprint(time.Now().Unix()-1)).Error)
-	require.NoError(t, model.EnsureLegacyAccessTokenRetireAt(time.Now().Unix()))
 	response = middlewareBearerRequest(router, "/api/user/self", legacy)
 	assert.Equal(t, http.StatusUnauthorized, response.Code)
-	assert.Contains(t, response.Body.String(), `"code":"ACCESS_TOKEN_LEGACY_RETIRED"`)
 	response = middlewareBearerRequest(router, "/api/pricing", legacy)
-	assert.Equal(t, http.StatusOK, response.Code)
-	assert.JSONEq(t, `{"id":0}`, response.Body.String(), "optional authentication treats a retired token as anonymous")
-	assert.Equal(t, http.StatusOK, middlewareBearerRequest(router, "/api/user/self", profile).Code, "the deadline only retires legacy tokens")
+	assert.JSONEq(t, `{"id":0}`, response.Body.String(), "unknown credentials remain anonymous on public routes")
+
 }
 
 func TestAccessTokenIdentityAndSingleLookup(t *testing.T) {
 	setupDashboardAuthMiddlewareTest(t)
 	gin.SetMode(gin.TestMode)
-	legacy := "middleware-identity-legacy"
-	user := createMiddlewarePATUser(t, "identity-user", legacy)
+	user := createMiddlewarePATUser(t, "identity-user")
 	scoped, token := createMiddlewareScopedToken(t, user.Id, 0, "profile:read")
 
 	router := gin.New()
@@ -427,10 +407,8 @@ func TestAccessTokenIdentityAndSingleLookup(t *testing.T) {
 		name, token string
 		stepUp      bool
 		tokenTable  int
-		legacyQuery int
 	}{
 		{name: "scoped token", token: scoped, stepUp: true, tokenTable: 1},
-		{name: "legacy token", token: legacy, legacyQuery: 1},
 	} {
 		t.Run(test.name, func(t *testing.T) {
 			queries = nil
@@ -451,7 +429,7 @@ func TestAccessTokenIdentityAndSingleLookup(t *testing.T) {
 			// credential query plus the owner's user row.
 			assert.Len(t, queries, 2)
 			assert.Equal(t, test.tokenTable, countQueries("user_access_tokens", "token_hash"))
-			assert.Equal(t, test.legacyQuery, countQueries("users", "access_token = "))
+			assert.Zero(t, countQueries("users", "access_token = "))
 		})
 	}
 }

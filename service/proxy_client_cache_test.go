@@ -37,14 +37,14 @@ func TestInvalidateProxyRetiresAllPoliciesAndPreservesUnrelatedPools(t *testing.
 	}
 	unrelated := &retirementProbe{}
 	proxyClients.clients[clientCacheKey(other, defaultHTTPTransportPolicy())] = &http.Client{Transport: unrelated}
-	proxyClients.aliases["legacy-alias"] = key
-	InvalidateProxyClient("http://127.0.0.1:8123/legacy")
+	proxyClients.aliases["root-slash-alias"] = key
+	InvalidateProxyClient("http://127.0.0.1:8123/")
 	for _, probe := range probes {
 		require.Equal(t, 1, probe.closed)
 	}
 	require.Zero(t, unrelated.closed)
 	require.Len(t, proxyClients.clients, 1)
-	require.NotContains(t, proxyClients.aliases, "legacy-alias")
+	require.NotContains(t, proxyClients.aliases, "root-slash-alias")
 	InvalidateProxyClient("")
 	InvalidateProxyClient("not a proxy")
 	require.Len(t, proxyClients.clients, 1)

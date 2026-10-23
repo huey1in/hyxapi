@@ -404,7 +404,7 @@ func DoWssRequest(a Adaptor, c *gin.Context, info *common.RelayInfo, requestBody
 	common2.SetContextKey(c, appconstant.ContextKeyUpstreamRequestOrigin, targetURL.Scheme+"://"+targetURL.Host)
 	dialer := *websocket.DefaultDialer
 	if info.ChannelSetting.Proxy != "" {
-		proxyURL, _, err := common2.ParseProxyURLRuntime(info.ChannelSetting.Proxy)
+		proxyURL, err := common2.ParseProxyURL(info.ChannelSetting.Proxy)
 		if err != nil {
 			return nil, err
 		}

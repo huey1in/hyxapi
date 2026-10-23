@@ -102,7 +102,7 @@ func WeChatAuth(c *gin.Context) {
 		common.ApiErrorT(c, "User has been banned")
 		return
 	}
-	setupLogin(&user, nil, c)
+	setupLogin(&user, c)
 }
 
 type wechatBindRequest struct {

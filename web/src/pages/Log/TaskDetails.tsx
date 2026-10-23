@@ -41,18 +41,16 @@ export default function TaskDetails({ row, identity }: { row: TaskRow; identity:
     </DetailSection>
     {row.fail_reason && <DetailSection title={t('Failure reason')}><DetailText error>{row.fail_reason}</DetailText></DetailSection>}
     <DetailSection title={t('Task results')}>
-      {row.result_discarded ? <p className='text-sm text-ui-text-3'>{t('This task returned its result inline and has no saved download.')}</p> : row.status === 'SUCCESS' && <Button size='sm' variant='toggle' loading={query.isFetching} onClick={load}>{t(query.isError ? 'Retry task results' : 'Load task results')}</Button>}
-      {query.isError && <p role='alert' className='text-sm text-ui-danger'>{t(apiErrorMessage(query.error))}</p>}
+      {row.result_discarded ? <p className='text-[15px] text-ui-text-3'>{t('This task returned its result inline and has no saved download.')}</p> : row.status === 'SUCCESS' && <Button size='sm' variant='toggle' loading={query.isFetching} onClick={load}>{t(query.isError ? 'Retry task results' : 'Load task results')}</Button>}
+      {query.isError && <p role='alert' className='text-[15px] text-ui-danger'>{t(apiErrorMessage(query.error))}</p>}
       {artifacts && <div className='space-y-4'>
         {artifacts.artifacts.map((item) => <div key={item.key} className='space-y-2'>
-          <a className='break-all text-sm underline' href={item.content_url} target='_blank' rel='noreferrer'>{t('Open / download {{name}}', { name: item.key })}</a>
+          <a className='break-all text-[15px] underline' href={item.content_url} target='_blank' rel='noreferrer'>{t('Open / download {{name}}', { name: item.key })}</a>
           {item.type === 'video' && <video controls preload='none' src={item.content_url} style={{ display: 'block', width: '100%', aspectRatio: '16 / 9', objectFit: 'contain' }} className='max-h-96 rounded-xl' />}
           {item.type === 'audio' && <audio controls preload='none' src={item.content_url} className='w-full' />}
           {item.type === 'image' && <img loading='lazy' alt={item.key} src={item.content_url} className='max-h-96 max-w-full rounded-xl' />}
         </div>)}
-        {artifacts.legacy_content_url && <a className='block text-sm underline' href={artifacts.legacy_content_url} target='_blank' rel='noreferrer'>{t('Download video')}</a>}
-        {artifacts.legacy_audio_clips?.map((clip, index) => <div key={clip.id || index}><p className='text-sm'>{clip.title || t('Audio {{index}}', { index: index + 1 })}</p><audio controls preload='none' src={clip.audio_url} className='w-full' /></div>)}
-        {!artifacts.artifacts.length && !artifacts.legacy_content_url && !artifacts.legacy_audio_clips?.length && <EmptyState icon={FileDown} padding='sm' title={t('This task has no downloadable files.')} />}
+        {!artifacts.artifacts.length && <EmptyState icon={FileDown} padding='sm' title={t('This task has no downloadable files.')} />}
       </div>}
     </DetailSection>
     {(row.admin_info || row.root_info) && <DetailCode title={t('Runtime information')} value={JSON.stringify({ admin_info: row.admin_info, root_info: row.root_info })} />}

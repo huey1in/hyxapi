@@ -70,25 +70,7 @@ func ListAccessTokens(c *gin.Context) {
 	for i := range tokens {
 		items = append(items, newAccessTokenItem(&tokens[i]))
 	}
-	var legacy gin.H
-	if !model.LegacyAccessTokensRetired(common.GetTimestamp()) {
-		status, err := model.GetUserAccessTokenStatus(identity.UserID)
-		if err != nil {
-			writeSecurityOperationError(c, err)
-			return
-		}
-		if status.Exists {
-			legacy = gin.H{
-				"token_hint":   status.TokenHint,
-				"token_ref":    status.TokenRef,
-				"created_at":   status.CreatedAt,
-				"last_used_at": status.LastUsedAt,
-				"last_used_ip": status.LastUsedIp,
-				"retire_at":    model.LegacyAccessTokenRetireAt(),
-			}
-		}
-	}
-	common.ApiSuccess(c, gin.H{"items": items, "legacy": legacy})
+	common.ApiSuccess(c, gin.H{"items": items})
 }
 
 func GetAccessTokenCatalog(c *gin.Context) {
@@ -300,45 +282,6 @@ func DeleteAccessToken(c *gin.Context) {
 		return
 	}
 	recordUserSecurityAudit(c, identity.UserID, "access_token.revoke", map[string]any{"token_id": token.Id, "name": token.Name, "token_ref": token.TokenHash})
-	common.ApiSuccess(c, nil)
-}
-
-// RevokeLegacyAccessToken removes the pre-scope users.access_token credential.
-// After the transition deadline the legacy token no longer exists for callers.
-func RevokeLegacyAccessToken(c *gin.Context) {
-	identity, ok := requireBrowserSession(c)
-	if !ok {
-		return
-	}
-	if model.LegacyAccessTokensRetired(common.GetTimestamp()) {
-		writeAccessTokenError(c, http.StatusNotFound, "ACCESS_TOKEN_NOT_FOUND", model.ErrAccessTokenNotFound.Error())
-		return
-	}
-	status, err := model.GetUserAccessTokenStatus(identity.UserID)
-	if err != nil {
-		writeSecurityOperationError(c, err)
-		return
-	}
-	if !status.Exists {
-		writeAccessTokenError(c, http.StatusNotFound, "ACCESS_TOKEN_NOT_FOUND", model.ErrAccessTokenNotFound.Error())
-		return
-	}
-	proofContext, err := common.Marshal(service.AccessTokenRevokeContext{Legacy: true})
-	if err != nil {
-		writeSecurityOperationError(c, err)
-		return
-	}
-	if middleware.RequireSecurityProof(c, service.VerificationOperation{Scope: service.VerificationScopeAccessTokenRevoke, Context: proofContext}) == nil {
-		return
-	}
-	ref, err := model.RevokeUserAccessToken(identity.UserID)
-	if err != nil {
-		writeSecurityOperationError(c, err)
-		return
-	}
-	if ref != "" {
-		recordUserSecurityAudit(c, identity.UserID, "access_token.revoke", map[string]any{"legacy": true, "token_ref": ref})
-	}
 	common.ApiSuccess(c, nil)
 }
 

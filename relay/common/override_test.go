@@ -15,6 +15,15 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+func TestSyncFieldTargetsRequireExplicitKind(t *testing.T) {
+	_, err := parseSyncTarget("metadata.user_id")
+	require.Error(t, err)
+	for _, spec := range []string{"json:metadata.user_id", "header:X-Session"} {
+		_, err := parseSyncTarget(spec)
+		require.NoError(t, err)
+	}
+}
+
 func TestApplyParamOverrideTrimPrefix(t *testing.T) {
 	// trim_prefix example:
 	// {"operations":[{"path":"model","mode":"trim_prefix","value":"openai/"}]}

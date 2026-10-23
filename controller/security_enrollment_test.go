@@ -3,6 +3,8 @@ package controller
 import (
 	"bytes"
 	"context"
+	"crypto/aes"
+	"crypto/cipher"
 	"crypto/ecdsa"
 	"crypto/elliptic"
 	"crypto/rand"
@@ -80,7 +82,6 @@ func setupSecurityEnrollmentTest(t *testing.T) (*model.User, service.AuthIdentit
 	require.NoError(t, db.AutoMigrate(&model.User{}, &model.UserSession{}, &model.TwoFA{}, &model.TwoFABackupCode{}, &model.PasskeyCredential{}, &model.AuthFlow{}, &model.UserOAuthBinding{}, &model.Option{}, &model.UserAccessToken{}))
 	require.NoError(t, logDB.AutoMigrate(&model.AuditLog{}))
 	model.DB, model.LOG_DB = db, logDB
-	require.NoError(t, model.EnsureLegacyAccessTokenRetireAt(time.Now().Unix()))
 	dbType := common.DatabaseTypeSQLite
 	if dialect == "mysql" {
 		dbType = common.DatabaseTypeMySQL
@@ -164,13 +165,12 @@ func accessTokenMutationEndpoints(tokenID int) []accessTokenEndpoint {
 		{"create", "POST", "/api/user/access_tokens", `{"name":"ci","scopes":["profile:read"],"expires_at":0}`, service.VerificationScopeAccessTokenGenerate, []byte(`{"scopes":["profile:read"],"expires_at":0}`), CreateAccessToken},
 		{"update", "PATCH", fmt.Sprintf("/api/user/access_tokens/%d", tokenID), `{"name":"ci","scopes":["usage:read"]}`, service.VerificationScopeAccessTokenUpdate, []byte(fmt.Sprintf(`{"token_id":%d,"scopes":["usage:read"]}`, tokenID)), withAccessTokenID(UpdateAccessToken, tokenID)},
 		{"delete", "DELETE", fmt.Sprintf("/api/user/access_tokens/%d", tokenID), "", service.VerificationScopeAccessTokenRevoke, []byte(fmt.Sprintf(`{"token_id":%d}`, tokenID)), withAccessTokenID(DeleteAccessToken, tokenID)},
-		{"legacy", "DELETE", "/api/user/access_tokens/legacy", "", service.VerificationScopeAccessTokenRevoke, []byte(`{"legacy":true}`), RevokeLegacyAccessToken},
 	}
 }
 
 // assertAccessTokensUnchanged checks that the seeded scoped token keeps its
-// name and grant and that the legacy token still authenticates.
-func assertAccessTokensUnchanged(t *testing.T, userID int, scopedID int, legacy string) {
+// name and grant.
+func assertAccessTokensUnchanged(t *testing.T, userID int, scopedID int) {
 	t.Helper()
 	tokens, err := model.ListUserAccessTokens(userID)
 	require.NoError(t, err)
@@ -178,15 +178,11 @@ func assertAccessTokensUnchanged(t *testing.T, userID int, scopedID int, legacy 
 	assert.Equal(t, scopedID, tokens[0].Id)
 	assert.Equal(t, "test token", tokens[0].Name)
 	assert.Equal(t, []string{"profile:read"}, tokens[0].GetScopes())
-	stored, err := model.ValidateAccessToken(legacy)
-	require.NoError(t, err)
-	require.NotNil(t, stored)
-	assert.Equal(t, userID, stored.Id)
+
 }
 
 func TestSecurityEnrollmentAccessTokenRequiresProofBeforeMutation(t *testing.T) {
 	user, identity := setupSecurityEnrollmentTest(t)
-	require.NoError(t, model.DB.Model(user).Update("access_token", "existing-system-token").Error)
 	_, scoped := createScopedAccessToken(t, user.Id, 0, "profile:read")
 	for _, endpoint := range accessTokenMutationEndpoints(scoped.Id) {
 		t.Run(endpoint.name, func(t *testing.T) {
@@ -196,7 +192,7 @@ func TestSecurityEnrollmentAccessTokenRequiresProofBeforeMutation(t *testing.T) 
 			assert.Equal(t, http.StatusForbidden, response.Code)
 			assert.False(t, body.Success)
 			assert.Equal(t, "SECURITY_PROOF_REQUIRED", body.Code)
-			assertAccessTokensUnchanged(t, user.Id, scoped.Id, "existing-system-token")
+			assertAccessTokensUnchanged(t, user.Id, scoped.Id)
 		})
 	}
 }
@@ -284,7 +280,6 @@ func TestSecurityEnrollmentAccessTokenMethodPolicy(t *testing.T) {
 
 func TestSecurityEnrollmentAccessTokenLifecycleConsumesProofs(t *testing.T) {
 	user, identity := setupSecurityEnrollmentTest(t)
-	require.NoError(t, model.DB.Model(user).Update("access_token", "previous-token").Error)
 	createBody := `{"name":"ci","scopes":["profile:read"],"expires_at":0}`
 	var created []string
 	for range 2 {
@@ -292,8 +287,6 @@ func TestSecurityEnrollmentAccessTokenLifecycleConsumesProofs(t *testing.T) {
 			Scope: service.VerificationScopeAccessTokenGenerate, Context: []byte(`{"scopes":["profile:read"],"expires_at":0}`), Method: "password", Password: "enrollment-password",
 		})
 		require.NoError(t, err)
-		wrongScope := securityEnrollmentRequest("DELETE", "/api/user/access_tokens/legacy", "", proof.ProofToken, identity, RevokeLegacyAccessToken)
-		assert.Contains(t, wrongScope.Body.String(), `"code":"SECURITY_PROOF_SCOPE_MISMATCH"`)
 		response := securityEnrollmentRequest("POST", "/api/user/access_tokens", createBody, proof.ProofToken, identity, CreateAccessToken)
 		var body securityEnrollmentResponse
 		require.NoError(t, common.Unmarshal(response.Body.Bytes(), &body))
@@ -310,9 +303,6 @@ func TestSecurityEnrollmentAccessTokenLifecycleConsumesProofs(t *testing.T) {
 		assert.Contains(t, response.Body.String(), `"code":"SECURITY_PROOF_CONSUMED"`)
 		created = append(created, result.Token)
 	}
-	legacyUser, err := model.ValidateAccessToken("previous-token")
-	require.NoError(t, err)
-	require.NotNil(t, legacyUser, "creating scoped tokens leaves the legacy token alone")
 	tokens, err := model.ListUserAccessTokens(user.Id)
 	require.NoError(t, err)
 	require.Len(t, tokens, 2)
@@ -333,33 +323,22 @@ func TestSecurityEnrollmentAccessTokenLifecycleConsumesProofs(t *testing.T) {
 	require.NoError(t, err)
 	assert.NotNil(t, kept)
 
-	legacyProof := issueSecurityEnrollmentProof(t, identity, service.VerificationOperation{Scope: service.VerificationScopeAccessTokenRevoke, Context: []byte(`{"legacy":true}`)}, "password")
-	response = securityEnrollmentRequest("DELETE", "/api/user/access_tokens/legacy", "", legacyProof, identity, RevokeLegacyAccessToken)
-	require.NoError(t, common.Unmarshal(response.Body.Bytes(), &body))
-	require.True(t, body.Success, body.Message)
-	legacyUser, err = model.ValidateAccessToken("previous-token")
-	require.NoError(t, err)
-	assert.Nil(t, legacyUser)
-	response = securityEnrollmentRequest("DELETE", "/api/user/access_tokens/legacy", "", legacyProof, identity, RevokeLegacyAccessToken)
-	assert.Equal(t, http.StatusNotFound, response.Code, "there is nothing left to revoke")
-
 	var audits []model.AuditLog
 	require.NoError(t, model.LOG_DB.Order("id").Find(&audits).Error)
 	actions := make([]string, 0, len(audits))
 	for _, audit := range audits {
 		actions = append(actions, audit.Action)
 	}
-	assert.Equal(t, []string{"access_token.generate", "access_token.generate", "access_token.revoke", "access_token.revoke"}, actions)
+	assert.Equal(t, []string{"access_token.generate", "access_token.generate", "access_token.revoke"}, actions)
 	encoded, err := common.Marshal(audits)
 	require.NoError(t, err)
-	for _, secret := range append(created, "previous-token", proof, legacyProof) {
+	for _, secret := range append(created, proof) {
 		assert.NotContains(t, string(encoded), secret)
 	}
 }
 
 func TestSecurityEnrollmentAccessTokenRejectsInvalidProofs(t *testing.T) {
 	user, identity := setupSecurityEnrollmentTest(t)
-	require.NoError(t, model.DB.Model(user).Update("access_token", "unchanged-token").Error)
 	_, scoped := createScopedAccessToken(t, user.Id, 0, "profile:read")
 	for _, endpoint := range accessTokenMutationEndpoints(scoped.Id) {
 		for _, failure := range []string{"session", "user version", "expired"} {
@@ -379,7 +358,7 @@ func TestSecurityEnrollmentAccessTokenRejectsInvalidProofs(t *testing.T) {
 				response := securityEnrollmentRequest(endpoint.method, endpoint.path, endpoint.body, proof, requestIdentity, endpoint.handler)
 				assert.Equal(t, http.StatusForbidden, response.Code)
 				assert.Contains(t, response.Body.String(), code)
-				assertAccessTokensUnchanged(t, user.Id, scoped.Id, "unchanged-token")
+				assertAccessTokensUnchanged(t, user.Id, scoped.Id)
 			})
 		}
 	}
@@ -387,7 +366,6 @@ func TestSecurityEnrollmentAccessTokenRejectsInvalidProofs(t *testing.T) {
 
 func TestSecurityEnrollmentAccessTokenFailureDoesNotRestoreProof(t *testing.T) {
 	user, identity := setupSecurityEnrollmentTest(t)
-	require.NoError(t, model.DB.Model(user).Update("access_token", "unchanged-token").Error)
 	_, scoped := createScopedAccessToken(t, user.Id, 0, "profile:read")
 	failWrite := func(table string) func(tx *gorm.DB) {
 		return func(tx *gorm.DB) {
@@ -410,7 +388,7 @@ func TestSecurityEnrollmentAccessTokenFailureDoesNotRestoreProof(t *testing.T) {
 			assert.Contains(t, response.Body.String(), `"code":"SECURITY_PROOF_CONSUMED"`)
 		})
 	}
-	assertAccessTokensUnchanged(t, user.Id, scoped.Id, "unchanged-token")
+	assertAccessTokensUnchanged(t, user.Id, scoped.Id)
 }
 
 func decodeSecurityEnrollmentResponse(t *testing.T, response *httptest.ResponseRecorder) securityEnrollmentResponse {
@@ -488,7 +466,7 @@ func TestSecurityEnrollmentAccessTokenStepUpBoundaries(t *testing.T) {
 			{"verify without account security", readOnly, "/api/verify", `{"scope":"2fa.setup","method":"password","password":"enrollment-password"}`},
 			{"token creation", full, "/api/verify", `{"scope":"access_token.generate","method":"password","password":"enrollment-password","context":{"scopes":["profile:read"],"expires_at":0}}`},
 			{"token grant change", full, "/api/verify", `{"scope":"access_token.update","method":"password","password":"enrollment-password","context":{"token_id":1,"scopes":["profile:read"]}}`},
-			{"token revocation", full, "/api/verify", `{"scope":"access_token.revoke","method":"password","password":"enrollment-password","context":{"legacy":true}}`},
+			{"token revocation", full, "/api/verify", `{"scope":"access_token.revoke","method":"password","password":"enrollment-password","context":{"token_id":1}}`},
 		} {
 			method := http.MethodPost
 			if request.body == "" {
@@ -780,7 +758,7 @@ func TestSecurityEnrollmentOperationContext(t *testing.T) {
 		{"update access token empty grant", "access_token.update", `{"token_id":3,"scopes":[]}`, service.ErrVerificationContextInvalid},
 		{"update access token target injection", "access_token.update", `{"token_id":3,"scopes":["profile:read"],"user_id":42}`, service.ErrVerificationContextInvalid},
 		{"revoke access token", "access_token.revoke", `{"token_id":3}`, nil},
-		{"revoke legacy access token", "access_token.revoke", `{"legacy":true}`, nil},
+		{"reject removed access token format", "access_token.revoke", `{"legacy":true}`, service.ErrVerificationContextInvalid},
 		{"revoke access token without target", "access_token.revoke", ``, service.ErrVerificationContextInvalid},
 		{"revoke access token two targets", "access_token.revoke", `{"token_id":3,"legacy":true}`, service.ErrVerificationContextInvalid},
 		{"access token target injection", "access_token.revoke", `{"user_id":42}`, service.ErrVerificationContextInvalid},
@@ -1388,10 +1366,21 @@ func TestSecurityEnrollmentEncryptedPasswordVerification(t *testing.T) {
 	require.NoError(t, err)
 	publicKey, ok := parsed.(*rsa.PublicKey)
 	require.True(t, ok)
-	ciphertext, err := rsa.EncryptOAEP(sha256.New(), rand.Reader, publicKey, []byte("enrollment-password"), nil)
+	key, nonce := make([]byte, 32), make([]byte, 12)
+	_, err = rand.Read(key)
 	require.NoError(t, err)
+	_, err = rand.Read(nonce)
+	require.NoError(t, err)
+	wrappedKey, err := rsa.EncryptOAEP(sha256.New(), rand.Reader, publicKey, key, []byte("password-v2"))
+	require.NoError(t, err)
+	blockCipher, err := aes.NewCipher(key)
+	require.NoError(t, err)
+	gcm, err := cipher.NewGCM(blockCipher)
+	require.NoError(t, err)
+	ciphertext := gcm.Seal(nil, nonce, []byte("enrollment-password"), []byte("password-v2:"+keyID))
+	envelope := strings.Join([]string{"v2", base64.StdEncoding.EncodeToString(wrappedKey), base64.StdEncoding.EncodeToString(nonce), base64.StdEncoding.EncodeToString(ciphertext)}, ".")
 	common.PasswordLoginEncryptionEnabled = true
-	input := service.VerificationInput{Method: "password", Scope: "passkey.register", PasswordEncrypted: base64.StdEncoding.EncodeToString(ciphertext), EncryptionKeyID: keyID}
+	input := service.VerificationInput{Method: "password", Scope: "passkey.register", PasswordEncrypted: envelope, EncryptionKeyID: keyID}
 	proof, err := service.VerifySecurityInput(identity, input)
 	require.NoError(t, err)
 	_, err = service.ConsumeOperationProof(proof.ProofToken, identity, service.VerificationOperation{Scope: input.Scope})

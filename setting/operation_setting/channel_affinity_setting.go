@@ -20,9 +20,7 @@ type ChannelAffinityRule struct {
 
 	ParamOverrideTemplate map[string]any `json:"param_override_template,omitempty"`
 
-	SkipRetryOnFailure bool `json:"skip_retry_on_failure"`
 	// "inherit" uses the global default; off/prefer/strict override it.
-	// Empty preserves the legacy SkipRetryOnFailure behavior.
 	SessionMode string `json:"session_mode,omitempty"`
 
 	IncludeUsingGroup bool `json:"include_using_group"`
@@ -131,7 +129,7 @@ var channelAffinitySetting = ChannelAffinitySetting{
 			ValueRegex:            "",
 			TTLSeconds:            0,
 			ParamOverrideTemplate: buildCodexPassHeaderTemplate(),
-			SkipRetryOnFailure:    true,
+			SessionMode:           "strict",
 			IncludeUsingGroup:     true,
 			IncludeRuleName:       true,
 			UserAgentInclude:      nil,
@@ -146,7 +144,7 @@ var channelAffinitySetting = ChannelAffinitySetting{
 			ValueRegex:            "",
 			TTLSeconds:            0,
 			ParamOverrideTemplate: buildPassHeaderTemplate(claudeCliPassThroughHeaders),
-			SkipRetryOnFailure:    true,
+			SessionMode:           "strict",
 			IncludeUsingGroup:     true,
 			IncludeRuleName:       true,
 			UserAgentInclude:      nil,

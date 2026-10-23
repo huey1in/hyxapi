@@ -86,7 +86,7 @@ export type VerificationOperation =
     }
   | {
       scope: 'access_token.revoke'
-      context: { token_id: number } | { legacy: true }
+      context: { token_id: number }
     }
   | {
       scope: Exclude<

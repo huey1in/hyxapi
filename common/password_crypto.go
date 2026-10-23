@@ -95,10 +95,8 @@ func PasswordEncryptionPublicKey() (keyID string, publicKeyPEM string) {
 	return passwordEncryptionState.keyID, passwordEncryptionState.publicKey
 }
 
-// DecryptPassword accepts legacy RSA-OAEP/SHA-256 ciphertext and v2 envelopes.
-// V2 wraps a fresh AES-256 key with RSA-OAEP and encrypts the password with GCM,
-// allowing long Unicode passwords to work with existing 2048-bit server keys.
-// Both formats share one public error for all malformed inputs.
+// DecryptPassword opens an RSA-wrapped AES-256-GCM password envelope.
+// All malformed inputs share one public error.
 func DecryptPassword(ciphertextBase64 string, keyID string) (string, error) {
 	passwordEncryptionState.RLock()
 	privateKey := passwordEncryptionState.privateKey
@@ -107,50 +105,39 @@ func DecryptPassword(ciphertextBase64 string, keyID string) (string, error) {
 	if privateKey == nil || keyID == "" || keyID != activeKeyID {
 		return "", ErrPasswordEncryptionInvalid
 	}
-	if strings.HasPrefix(ciphertextBase64, "v2.") {
-		if len(ciphertextBase64) > 4096 {
-			return "", ErrPasswordEncryptionInvalid
-		}
-		parts := strings.Split(ciphertextBase64, ".")
-		if len(parts) != 4 {
-			return "", ErrPasswordEncryptionInvalid
-		}
-		wrappedKey, err := base64.StdEncoding.Strict().DecodeString(parts[1])
-		if err != nil || len(wrappedKey) != privateKey.Size() {
-			return "", ErrPasswordEncryptionInvalid
-		}
-		nonce, err := base64.StdEncoding.Strict().DecodeString(parts[2])
-		if err != nil || len(nonce) != 12 {
-			return "", ErrPasswordEncryptionInvalid
-		}
-		ciphertext, err := base64.StdEncoding.Strict().DecodeString(parts[3])
-		if err != nil || len(ciphertext) <= 16 || len(ciphertext) > MaxAccountPasswordLength*utf8.UTFMax+16 {
-			return "", ErrPasswordEncryptionInvalid
-		}
-		key, err := rsa.DecryptOAEP(sha256.New(), rand.Reader, privateKey, wrappedKey, []byte("password-v2"))
-		if err != nil || len(key) != 32 {
-			return "", ErrPasswordEncryptionInvalid
-		}
-		block, err := aes.NewCipher(key)
-		if err != nil {
-			return "", ErrPasswordEncryptionInvalid
-		}
-		gcm, err := cipher.NewGCM(block)
-		if err != nil {
-			return "", ErrPasswordEncryptionInvalid
-		}
-		plaintext, err := gcm.Open(nil, nonce, ciphertext, []byte("password-v2:"+keyID))
-		if err != nil {
-			return "", ErrPasswordEncryptionInvalid
-		}
-		return string(plaintext), nil
-	}
-	ciphertext, err := base64.StdEncoding.DecodeString(ciphertextBase64)
-	if err != nil || len(ciphertext) != privateKey.Size() {
+	if !strings.HasPrefix(ciphertextBase64, "v2.") || len(ciphertextBase64) > 4096 {
 		return "", ErrPasswordEncryptionInvalid
 	}
-	plaintext, err := rsa.DecryptOAEP(sha256.New(), rand.Reader, privateKey, ciphertext, nil)
-	if err != nil || len(plaintext) == 0 {
+	parts := strings.Split(ciphertextBase64, ".")
+	if len(parts) != 4 {
+		return "", ErrPasswordEncryptionInvalid
+	}
+	wrappedKey, err := base64.StdEncoding.Strict().DecodeString(parts[1])
+	if err != nil || len(wrappedKey) != privateKey.Size() {
+		return "", ErrPasswordEncryptionInvalid
+	}
+	nonce, err := base64.StdEncoding.Strict().DecodeString(parts[2])
+	if err != nil || len(nonce) != 12 {
+		return "", ErrPasswordEncryptionInvalid
+	}
+	ciphertext, err := base64.StdEncoding.Strict().DecodeString(parts[3])
+	if err != nil || len(ciphertext) <= 16 || len(ciphertext) > MaxAccountPasswordLength*utf8.UTFMax+16 {
+		return "", ErrPasswordEncryptionInvalid
+	}
+	key, err := rsa.DecryptOAEP(sha256.New(), rand.Reader, privateKey, wrappedKey, []byte("password-v2"))
+	if err != nil || len(key) != 32 {
+		return "", ErrPasswordEncryptionInvalid
+	}
+	block, err := aes.NewCipher(key)
+	if err != nil {
+		return "", ErrPasswordEncryptionInvalid
+	}
+	gcm, err := cipher.NewGCM(block)
+	if err != nil {
+		return "", ErrPasswordEncryptionInvalid
+	}
+	plaintext, err := gcm.Open(nil, nonce, ciphertext, []byte("password-v2:"+keyID))
+	if err != nil {
 		return "", ErrPasswordEncryptionInvalid
 	}
 	return string(plaintext), nil

@@ -97,7 +97,7 @@ export default function QuotaCodesTab() {
     { key: 'id', title: 'ID', width: 65 }, { key: 'name', title: t('Name'), render: (row) => row.name || '—' },
     { key: 'key', title: t('Redemption Code'), render: (row) => <div className='flex items-center gap-2 font-mono text-xs'><span>{row.key.slice(0, 12)}…</span><IconButton icon={Copy} aria-label={t('Copy code #{{id}}', { id: row.id })} onClick={() => void copied(row.key)} /></div> },
     { key: 'quota', title: t('Value'), render: (row) => renderQuota(row.quota, 2) },
-    { key: 'status', title: t('Status'), render: (row) => <Tag color={codeStatus(row) === '1' ? 'green' : codeStatus(row) === 'expired' ? 'red' : codeStatus(row) === '3' ? 'blue' : 'grey'}>{statuses.find((status) => status.value === codeStatus(row))?.label}</Tag> },
+    { key: 'status', title: t('Status'), render: (row) => <Tag tone={codeStatus(row) === '1' ? 'green' : codeStatus(row) === 'expired' ? 'red' : codeStatus(row) === '3' ? 'blue' : 'grey'}>{statuses.find((status) => status.value === codeStatus(row))?.label}</Tag> },
     { key: 'used_user_id', title: t('Redeemed by'), render: (row) => row.used_user_id || '—' },
     { key: 'expired_time', title: t('Expiry time'), render: (row) => row.expired_time ? timestamp2string(row.expired_time) : t('Never') },
     { key: 'created_time', title: t('Created time'), render: (row) => timestamp2string(row.created_time) },

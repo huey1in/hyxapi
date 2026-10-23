@@ -69,7 +69,7 @@ func serveTaskPluginImageProtocol(c *gin.Context, pinned pluginruntime.PinnedEnd
 		if taskErr = relay.ResolveOriginTask(c, relayInfo); taskErr != nil {
 			return
 		}
-		if taskErr = relay.ApplyOriginTaskAffinity(c, relayInfo); taskErr != nil {
+		if taskErr = relay.ApplyChannelPin(c, relayInfo); taskErr != nil {
 			return
 		}
 		outcome, taskErr = deps.submit(c, relayInfo)

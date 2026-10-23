@@ -95,7 +95,7 @@ const Combobox = ({
               />
             </div>
           </div>
-          <div ref={content} className='p-1 flex flex-col gap-0.5 max-h-72 overflow-y-auto ui-scrollbar'>
+          <div ref={content} className='p-1 flex flex-col gap-0.5 max-h-72 overflow-y-auto'>
             {filtered.length === 0 ? (
               <div className='py-3 text-center text-xs text-ui-text-3'>{emptyText}</div>
             ) : (

@@ -9,7 +9,7 @@ export const taskSchema = z.object({
   id: count, task_id: z.string().min(1), platform: z.string(), action: z.string(), status: z.string(), progress: z.string(),
   quota: count, created_at: seconds, submit_time: seconds, start_time: seconds, finish_time: seconds,
   user_id: count, channel_id: count, username: z.string().optional(), group: z.string().optional(), fail_reason: z.string(),
-  result_discarded: z.boolean().optional(), legacy_video_available: z.boolean().optional(),
+  result_discarded: z.boolean().optional(),
   properties: z.object({ origin_model_name: z.string().optional() }).nullish(),
   admin_info: z.object({ task_plugin: z.object({ name: z.string() }).passthrough().optional() }).passthrough().optional(),
   root_info: record.optional(),
@@ -31,7 +31,6 @@ export function safeTaskMediaURL(value: string, origin: string) {
 const mediaURL = z.string().min(1).refine((value) => Boolean(safeTaskMediaURL(value, 'https://local.invalid')), 'Invalid media URL');
 export const taskArtifactsSchema = z.object({
   task_id: z.string().min(1), artifacts: z.array(z.object({ key: z.string().min(1), type: z.enum(['video', 'audio', 'image', 'file']), content_url: mediaURL })),
-  legacy_content_url: mediaURL.optional(), legacy_audio_clips: z.array(z.object({ id: z.string().optional(), title: z.string().optional(), audio_url: mediaURL })).optional(),
 });
 export function projectTaskRow(row: TaskRow, role: number) { return { ...row, admin_info: role >= 10 ? row.admin_info : undefined, root_info: role >= 100 ? row.root_info : undefined }; }
 export function taskDate(timestamp: number, locale: string, millis = false) {

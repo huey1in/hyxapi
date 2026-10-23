@@ -71,12 +71,11 @@ export const settingConfigShapes: Record<string, ConfigShape> = {
         ttl_seconds: { ...number, label: 'TTL (seconds)' },
         value_regex: { ...text, label: 'Session value regex' },
         session_mode: { ...text, label: 'Session mode', options: [
-          { value: '', label: 'Legacy mode' }, { value: 'inherit', label: 'Inherit default session mode' },
+          { value: 'inherit', label: 'Inherit default session mode' },
           { value: 'off', label: 'Disable session binding' }, { value: 'prefer', label: 'Prefer the bound channel' },
           { value: 'strict', label: 'Require the bound channel' },
         ] },
         param_override_template: { type: 'object', label: 'Request transformation template' },
-        skip_retry_on_failure: { ...flag, label: 'Skip retry on failure' },
         include_using_group: { ...flag, label: 'Include group in session key' },
         include_model_name: { ...flag, label: 'Include model in session key' },
         include_rule_name: { ...flag, label: 'Include rule name in session key' },

@@ -59,7 +59,7 @@ func writeSecurityOperationError(c *gin.Context, err error) {
 	case errors.Is(err, model.ErrEmailBindingResendWait):
 		status = http.StatusTooManyRequests
 		code, message = "EMAIL_BINDING_RESEND_WAIT", err.Error()
-	case errors.Is(err, common.ErrAccountPasswordLength), errors.Is(err, common.ErrAccountPasswordSame), errors.Is(err, common.ErrPasswordLegacyLimit):
+	case errors.Is(err, common.ErrAccountPasswordLength), errors.Is(err, common.ErrAccountPasswordSame):
 		code, message = "PASSWORD_POLICY_REJECTED", err.Error()
 	case errors.Is(err, model.ErrCurrentPasswordInvalid):
 		code, message = "CURRENT_PASSWORD_INVALID", err.Error()

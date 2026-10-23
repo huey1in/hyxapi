@@ -278,7 +278,7 @@ func serveTaskPluginProtocol(
 		if taskErr = relay.ResolveOriginTask(c, relayInfo); taskErr != nil {
 			return
 		}
-		if taskErr = relay.ApplyOriginTaskAffinity(c, relayInfo); taskErr != nil {
+		if taskErr = relay.ApplyChannelPin(c, relayInfo); taskErr != nil {
 			return
 		}
 

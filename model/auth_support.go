@@ -39,9 +39,9 @@ func validateOptionValue(key, value string) error {
 		if value != "true" && value != "false" {
 			return fmt.Errorf("console panel enabled must be true or false")
 		}
-	case "GroupRatio", "group_ratio_setting.group_ratio":
+	case "GroupRatio":
 		return ratio_setting.CheckGroupRatio(value)
-	case "GroupGroupRatio", "group_ratio_setting.group_group_ratio":
+	case "GroupGroupRatio":
 		return ratio_setting.ValidateGroupGroupRatio(value)
 	case "group_ratio_setting.group_special_usable_group":
 		return ratio_setting.ValidateGroupSpecialUsableGroups(value)
@@ -50,9 +50,6 @@ func validateOptionValue(key, value string) error {
 	case "AutoGroups":
 		var groups []string
 		return common.UnmarshalJsonStr(value, &groups)
-	}
-	if key == legacyAccessTokenRetireAtKey {
-		return errLegacyRetireAtReadOnly
 	}
 	if err := operation_setting.ValidateQuotaOption(key, value); err != nil {
 		return err

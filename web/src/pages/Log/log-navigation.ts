@@ -11,10 +11,3 @@ export type LogSourceOption = typeof LOG_SOURCES[number];
 export function visibleLogSources(admin: SidebarModules) {
   return LOG_SOURCES.filter((source) => isSidebarModuleEnabled('console', source.module, admin));
 }
-
-export function logLocation(search = '', hash = ''): string {
-  const params = new URLSearchParams(search);
-  params.delete('tab');
-  const query = params.toString();
-  return `/log${query ? `?${query}` : ''}${hash}`;
-}

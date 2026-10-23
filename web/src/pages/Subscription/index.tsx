@@ -43,8 +43,8 @@ function SubscriptionPage({ identity }: { identity: string }) {
     { key: 'duration', title: t('Duration'), render: (plan) => `${plan.duration_unit === 'custom' ? plan.custom_seconds : plan.duration_value} ${t(({ month: 'Months', year: 'Years', day: 'Days', hour: 'Hours', custom: 'Seconds' })[plan.duration_unit])}` },
     { key: 'quota', title: t('Credit'), render: (plan) => plan.total_amount ? renderQuota(plan.total_amount) : t('Unlimited') },
     { key: 'rpm', title: 'RPM', render: (plan) => plan.rpm_limit || t('Unlimited') },
-    { key: 'groups', title: t('Allowed groups'), render: (plan) => <div className='flex flex-wrap gap-1'>{plan.allowed_groups.map((group) => <Tag key={group} color='blue'>{group}</Tag>)}</div> },
-    { key: 'status', title: t('Status'), render: (plan) => <button aria-label={t('Change status of plan #{{id}}', { id: plan.id })} onClick={() => setAction({ kind: 'toggle', plan })}><Tag color={plan.enabled ? 'green' : 'grey'}>{t(plan.enabled ? 'Enabled' : 'Disabled')}</Tag></button> },
+    { key: 'groups', title: t('Allowed groups'), render: (plan) => <div className='flex flex-wrap gap-1'>{plan.allowed_groups.map((group) => <Tag key={group} tone='blue'>{group}</Tag>)}</div> },
+    { key: 'status', title: t('Status'), render: (plan) => <button aria-label={t('Change status of plan #{{id}}', { id: plan.id })} onClick={() => setAction({ kind: 'toggle', plan })}><Tag tone={plan.enabled ? 'green' : 'grey'}>{t(plan.enabled ? 'Enabled' : 'Disabled')}</Tag></button> },
     { key: 'ops', mobileRole: 'actions' as const, title: t('Actions'), align: 'right', render: (plan) => <div className='flex justify-end gap-1'>
       <IconButton icon={RotateCcw} title={t('Reset subscription quota')} onClick={() => setReset(plan)} /><IconButton icon={KeyRound} title={t('Activation codes')} onClick={() => setCodes(plan)} /><IconButton icon={Pencil} title={t('Edit')} onClick={() => setEditing(plan)} /><IconButton icon={Trash2} variant='danger' title={t('Delete')} onClick={() => setAction({ kind: 'delete', plan })} />
     </div> },

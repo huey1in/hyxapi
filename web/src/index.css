@@ -514,8 +514,6 @@ body[theme-mode='dark'] .cursor-home .footer-language-menu button:hover,body[the
   background-clip: content-box;
 }
 
-/* 兼容旧的 .ui-scrollbar 类名（行为相同） */
-.ui-scrollbar { /* noop */ }
 
 /* 隐藏 number 输入的上下箭头 */
 input[type='number']::-webkit-outer-spin-button,
@@ -559,6 +557,8 @@ input[type='number'] {
 .api-key-table { --api-key-table-height:400px; container-type:inline-size; min-height:var(--api-key-table-height); }
 .api-key-table .api-key-empty-state { position:sticky; left:12px; display:flex; align-items:center; justify-content:center; width:calc(100cqw - 24px); min-height:calc(var(--api-key-table-height) - 64px); }
 .api-key-table :is(th,td) { font-size:14px; line-height:20px; }
+.logs-table th { font-size:14px; line-height:22px; }
+.logs-table td { font-size:15px; line-height:22px; }
 .mobile-table-card { min-width:0; border:1px solid var(--ui-border); border-radius:16px; background:var(--page-bg); padding:16px; }
 .mobile-table-field { display:grid; grid-template-columns:minmax(0,0.8fr) minmax(0,1.2fr); align-items:start; gap:12px; }
 .mobile-table-field-wide { grid-template-columns:minmax(0,1fr); gap:6px; }
@@ -578,8 +578,8 @@ input[type='number'] {
   .logs-table .mobile-table-field > .ml-auto { margin-left:0; }
   .logs-table .mobile-table-field { grid-template-columns:minmax(0,1fr); gap:2px; margin-block:0; }
   .logs-table .mobile-table-field-wide { grid-column:1 / -1; }
-  .logs-table .mobile-table-field > dt { line-height:16px; }
-  .logs-table .mobile-table-value { text-align:left; font-size:13px; line-height:18px; }
+  .logs-table .mobile-table-field > dt { font-size:14px; line-height:20px; }
+  .logs-table .mobile-table-value { text-align:left; font-size:15px; line-height:22px; }
   .logs-table .mobile-table-field-wide .mobile-table-value .truncate { overflow:hidden; white-space:nowrap; text-overflow:ellipsis; }
   .logs-table .mobile-table-value > :is(.flex,.inline-flex) { justify-content:flex-start; }
   .logs-table .mobile-table-card > .border-t { margin-top:8px; padding-top:8px; }

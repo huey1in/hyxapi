@@ -243,7 +243,7 @@ func FixChannelsAbilities(c *gin.Context) {
 		common.ApiError(c, err)
 		return
 	}
-	model.RecordLegacyAuditLog(c, model.AuditUpdate, "channel", 0, fmt.Sprintf("修复渠道能力，成功 %d，失败 %d", success, fails))
+	model.RecordResourceAudit(c, model.AuditUpdate, "channel", 0, fmt.Sprintf("修复渠道能力，成功 %d，失败 %d", success, fails))
 	c.JSON(http.StatusOK, gin.H{
 		"success": true,
 		"message": "",
@@ -678,7 +678,7 @@ func DeleteChannel(c *gin.Context) {
 	}
 	model.InitChannelCache()
 	service.InvalidateProxyClient(proxy)
-	model.RecordLegacyAuditLog(c, model.AuditDelete, "channel", id, fmt.Sprintf("删除渠道 #%d", id))
+	model.RecordResourceAudit(c, model.AuditDelete, "channel", id, fmt.Sprintf("删除渠道 #%d", id))
 	c.JSON(http.StatusOK, gin.H{
 		"success": true,
 		"message": "",
@@ -693,7 +693,7 @@ func DeleteDisabledChannel(c *gin.Context) {
 		return
 	}
 	model.InitChannelCache()
-	model.RecordLegacyAuditLog(c, model.AuditDelete, "channel", 0, fmt.Sprintf("删除所有已禁用渠道，共 %d 个", rows))
+	model.RecordResourceAudit(c, model.AuditDelete, "channel", 0, fmt.Sprintf("删除所有已禁用渠道，共 %d 个", rows))
 	c.JSON(http.StatusOK, gin.H{
 		"success": true,
 		"message": "",
@@ -730,7 +730,7 @@ func DisableTagChannels(c *gin.Context) {
 		return
 	}
 	model.InitChannelCache()
-	model.RecordLegacyAuditLog(c, model.AuditDisable, "channel", 0, fmt.Sprintf("禁用标签 [%s] 下的渠道", channelTag.Tag))
+	model.RecordResourceAudit(c, model.AuditDisable, "channel", 0, fmt.Sprintf("禁用标签 [%s] 下的渠道", channelTag.Tag))
 	c.JSON(http.StatusOK, gin.H{
 		"success": true,
 		"data":    count,
@@ -755,7 +755,7 @@ func EnableTagChannels(c *gin.Context) {
 		return
 	}
 	model.InitChannelCache()
-	model.RecordLegacyAuditLog(c, model.AuditEnable, "channel", 0, fmt.Sprintf("启用标签 [%s] 下的渠道", channelTag.Tag))
+	model.RecordResourceAudit(c, model.AuditEnable, "channel", 0, fmt.Sprintf("启用标签 [%s] 下的渠道", channelTag.Tag))
 	c.JSON(http.StatusOK, gin.H{
 		"success": true,
 		"data":    count,
@@ -814,7 +814,7 @@ func EditTagChannels(c *gin.Context) {
 		return
 	}
 	model.InitChannelCache()
-	model.RecordLegacyAuditLog(c, model.AuditUpdate, "channel", 0, fmt.Sprintf("批量编辑标签 [%s] 下的渠道", channelTag.Tag))
+	model.RecordResourceAudit(c, model.AuditUpdate, "channel", 0, fmt.Sprintf("批量编辑标签 [%s] 下的渠道", channelTag.Tag))
 	c.JSON(http.StatusOK, gin.H{
 		"success": true,
 		"data":    count,
@@ -844,7 +844,7 @@ func DeleteChannelBatch(c *gin.Context) {
 		return
 	}
 	model.InitChannelCache()
-	model.RecordLegacyAuditLog(c, model.AuditDelete, "channel", 0, fmt.Sprintf("批量删除渠道，共 %d 个", len(channelBatch.Ids)))
+	model.RecordResourceAudit(c, model.AuditDelete, "channel", 0, fmt.Sprintf("批量删除渠道，共 %d 个", len(channelBatch.Ids)))
 	c.JSON(http.StatusOK, gin.H{
 		"success": true,
 		"message": "",
@@ -1183,7 +1183,7 @@ func BatchSetChannelTag(c *gin.Context) {
 	if channelBatch.Tag != nil {
 		tagValue = *channelBatch.Tag
 	}
-	model.RecordLegacyAuditLog(c, model.AuditUpdate, "channel", 0, fmt.Sprintf("批量设置标签 [%s]，共 %d 个渠道", tagValue, len(channelBatch.Ids)))
+	model.RecordResourceAudit(c, model.AuditUpdate, "channel", 0, fmt.Sprintf("批量设置标签 [%s]，共 %d 个渠道", tagValue, len(channelBatch.Ids)))
 	c.JSON(http.StatusOK, gin.H{
 		"success": true,
 		"message": "",
@@ -1296,7 +1296,7 @@ func CopyChannel(c *gin.Context) {
 		return
 	}
 	model.InitChannelCache()
-	model.RecordLegacyAuditLog(c, model.AuditCreate, "channel", clone.Id, fmt.Sprintf("复制渠道 #%d → #%d", id, clone.Id))
+	model.RecordResourceAudit(c, model.AuditCreate, "channel", clone.Id, fmt.Sprintf("复制渠道 #%d → #%d", id, clone.Id))
 	c.JSON(http.StatusOK, gin.H{"success": true, "message": "", "data": gin.H{"id": clone.Id}})
 }
 
@@ -1339,7 +1339,7 @@ func UpdateChannelStatus(c *gin.Context) {
 	if req.Status == common.ChannelStatusEnabled {
 		action = model.AuditEnable
 	}
-	model.RecordLegacyAuditLog(c, action, "channel", id, fmt.Sprintf("手动更新渠道状态为 %d（changed=%t）", req.Status, changed))
+	model.RecordResourceAudit(c, action, "channel", id, fmt.Sprintf("手动更新渠道状态为 %d（changed=%t）", req.Status, changed))
 	c.JSON(http.StatusOK, gin.H{
 		"success": true,
 		"message": "",
@@ -1366,7 +1366,7 @@ func BatchUpdateChannelStatus(c *gin.Context) {
 	if req.Status == common.ChannelStatusEnabled {
 		action = model.AuditEnable
 	}
-	model.RecordLegacyAuditLog(c, action, "channel", 0, fmt.Sprintf("批量更新渠道状态为 %d（changed=%d/%d）", req.Status, changedCount, len(req.Ids)))
+	model.RecordResourceAudit(c, action, "channel", 0, fmt.Sprintf("批量更新渠道状态为 %d（changed=%d/%d）", req.Status, changedCount, len(req.Ids)))
 	c.JSON(http.StatusOK, gin.H{
 		"success": true,
 		"message": "",

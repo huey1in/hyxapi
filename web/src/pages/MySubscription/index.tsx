@@ -23,10 +23,10 @@ function SubscriptionCard({ subscription: sub, title, mobile, now }: { subscript
   const sourceLabels: Record<string, string> = { admin: 'Assigned by administrator', redemption: 'Activated with code', balance: 'Purchased with balance', order: 'Purchased online' };
   const planLabel = `${title ? `${title} · ` : ''}${t('Plan #{{id}}', { id: sub.plan_id })}`;
   if (!active) return <div data-subscription-id={sub.id} className='flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-ui-border px-4 py-3 opacity-60'>
-    <div className='min-w-0'><div className='break-words text-[15px] font-medium text-ui-text'>{planLabel}</div><div className='mt-0.5 text-[13px] text-ui-text-3'>{date(sub.start_time)} ~ {date(sub.end_time)}</div></div><Tag color={state === 'Expired' ? 'red' : 'grey'}>{t(state)}</Tag>
+    <div className='min-w-0'><div className='break-words text-[15px] font-medium text-ui-text'>{planLabel}</div><div className='mt-0.5 text-[13px] text-ui-text-3'>{date(sub.start_time)} ~ {date(sub.end_time)}</div></div><Tag tone={state === 'Expired' ? 'red' : 'grey'}>{t(state)}</Tag>
   </div>;
   return <div data-subscription-id={sub.id} className={mobile ? 'space-y-4' : 'rounded-[26px] border border-ui-border px-6 py-5'}>
-    <div className='mb-3.5 flex flex-wrap items-center justify-between gap-2'><div className='flex min-w-0 flex-wrap items-center gap-2.5'><span className='break-words text-lg font-semibold text-ui-text'>{planLabel}</span><Tag color='green'>{t('Active')}</Tag></div>{!mobile && <span className='text-[13px] text-ui-text-3'>ID: {sub.id}</span>}</div>
+    <div className='mb-3.5 flex flex-wrap items-center justify-between gap-2'><div className='flex min-w-0 flex-wrap items-center gap-2.5'><span className='break-words text-lg font-semibold text-ui-text'>{planLabel}</span><Tag tone='green'>{t('Active')}</Tag></div>{!mobile && <span className='text-[13px] text-ui-text-3'>ID: {sub.id}</span>}</div>
     <div className={`grid min-w-0 gap-4 ${mobile ? 'grid-cols-1' : 'grid-cols-2'}`}>
       <InfoItem label={t('Validity')}>{date(sub.start_time)} ~ {date(sub.end_time)}</InfoItem><InfoItem label={t('Source')}>{t(sourceLabels[sub.source] || sub.source)}</InfoItem>
       <div><div className='mb-1.5 text-[13px] text-ui-text-3'>{t('Credit usage')}</div>{usage.unlimited ? <span className='text-[15px] text-ui-text'>{t('Unlimited credit')}</span> : <>
@@ -40,8 +40,8 @@ function SubscriptionCard({ subscription: sub, title, mobile, now }: { subscript
       {sub.upgrade_group && <InfoItem label={t('Upgraded group')}>{sub.upgrade_group}</InfoItem>}{(sub.downgrade_group || sub.prev_user_group) && <InfoItem label={t('Group after expiry')}>{sub.downgrade_group || sub.prev_user_group}</InfoItem>}
     </div>
     {(sub.allowed_groups.length > 0 || sub.allowed_models.length > 0) && <div className='mt-3.5 space-y-2.5 border-t border-ui-divider pt-3.5'>
-      {sub.allowed_groups.length > 0 && <InfoItem label={t('Allowed groups')}><div className='flex flex-wrap gap-1.5'>{sub.allowed_groups.map((group) => <Tag key={group} color='blue'><span className='whitespace-normal break-all'>{group}</span></Tag>)}</div></InfoItem>}
-      {sub.allowed_models.length > 0 && <InfoItem label={t('Allowed models')}><div className='flex flex-wrap gap-1.5'>{sub.allowed_models.map((model) => <Tag key={model} color='grey'><span className='whitespace-normal break-all'>{model}</span></Tag>)}</div></InfoItem>}
+      {sub.allowed_groups.length > 0 && <InfoItem label={t('Allowed groups')}><div className='flex flex-wrap gap-1.5'>{sub.allowed_groups.map((group) => <Tag key={group} tone='blue'><span className='whitespace-normal break-all'>{group}</span></Tag>)}</div></InfoItem>}
+      {sub.allowed_models.length > 0 && <InfoItem label={t('Allowed models')}><div className='flex flex-wrap gap-1.5'>{sub.allowed_models.map((model) => <Tag key={model} tone='grey'><span className='whitespace-normal break-all'>{model}</span></Tag>)}</div></InfoItem>}
     </div>}
   </div>;
 }

@@ -35,7 +35,7 @@ func ReorderChannelPriority(c *gin.Context) {
 	}
 	if !move.Preview && len(order.Changes) > 0 {
 		model.InitChannelCache()
-		model.RecordLegacyAuditLog(c, model.AuditUpdate, "channel", move.ID, "Reordered channel priorities")
+		model.RecordResourceAudit(c, model.AuditUpdate, "channel", move.ID, "Reordered channel priorities")
 	}
 	c.JSON(http.StatusOK, gin.H{"success": true, "data": order})
 }

@@ -531,7 +531,7 @@ func UpdateModelPricing(changes []ModelPricingChange) error {
 	})
 }
 
-// UpdateModelPricingOptions keeps legacy single-option callers on the same
+// UpdateModelPricingOptions applies global pricing settings through the same
 // locking, validation and transaction path as the model-level API.
 func UpdateModelPricingOptions(updates map[string]string) error {
 	return mutateModelPricingOptions(func(tx *gorm.DB, values map[string]map[string]any) error {

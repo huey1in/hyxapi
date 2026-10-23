@@ -28,7 +28,6 @@ import type { PropsWithChildren } from 'react';
 
 type Theme = 'light' | 'dark';
 type ThemeMode = Theme | 'auto';
-type ThemeInput = ThemeMode | boolean;
 
 const normalizeTheme = (value: unknown): ThemeMode =>
   value === 'light' || value === 'dark' ? value : 'auto';
@@ -36,7 +35,7 @@ const normalizeTheme = (value: unknown): ThemeMode =>
 const ThemeContext = createContext<ThemeMode>('auto');
 export const useTheme = () => useContext(ThemeContext);
 
-const SetThemeContext = createContext<(theme: ThemeInput) => void>(() => {});
+const SetThemeContext = createContext<(theme: ThemeMode) => void>(() => {});
 export const useSetTheme = () => useContext(SetThemeContext);
 
 // 检测系统主题偏好
@@ -92,21 +91,9 @@ export const ThemeProvider = ({ children }: PropsWithChildren) => {
     }
   }, [actualTheme]);
 
-  const setTheme = useCallback((newTheme: ThemeInput) => {
-    let themeValue: ThemeMode;
-
-    if (typeof newTheme === 'boolean') {
-      // 向后兼容原有的 boolean 参数
-      themeValue = newTheme ? 'dark' : 'light';
-    } else if (typeof newTheme === 'string') {
-      // 新的字符串参数支持 'light', 'dark', 'auto'
-      themeValue = normalizeTheme(newTheme);
-    } else {
-      themeValue = 'auto';
-    }
-
-    _setTheme(themeValue);
-    localStorage.setItem('theme-mode', themeValue);
+  const setTheme = useCallback((newTheme: ThemeMode) => {
+    _setTheme(newTheme);
+    localStorage.setItem('theme-mode', newTheme);
   }, []);
 
   return (

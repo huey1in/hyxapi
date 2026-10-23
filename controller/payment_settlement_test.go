@@ -8,7 +8,6 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
-	"net/url"
 	"strconv"
 	"strings"
 	"testing"
@@ -16,7 +15,6 @@ import (
 
 	"github.com/QuantumNous/new-api/common"
 	"github.com/QuantumNous/new-api/model"
-	"github.com/QuantumNous/new-api/service"
 	"github.com/QuantumNous/new-api/setting"
 	"github.com/QuantumNous/new-api/setting/operation_setting"
 	"github.com/gin-gonic/gin"
@@ -178,36 +176,4 @@ func TestCreemSignedWebhooksKeepRawQuotaAndSupportSubscriptionOnlyConfig(t *test
 	var updated model.User
 	require.NoError(t, model.DB.First(&updated, user.Id).Error)
 	require.Equal(t, 1250010, updated.Quota)
-}
-
-func TestLegacyEpayCallbacksValidateMerchantAmountAndCreditOnce(t *testing.T) {
-	user := paymentFixture(t)
-	previousID, previousKey := operation_setting.EpayId, operation_setting.EpayKey
-	t.Cleanup(func() { operation_setting.EpayId, operation_setting.EpayKey = previousID, previousKey })
-	operation_setting.EpayId, operation_setting.EpayKey = "12345", "legacy-epay-fixture"
-	order := &model.TopUp{UserId: user.Id, Amount: 2, Money: 4, TradeNo: "legacy-epay-signed", PaymentMethod: model.PaymentMethodEpay, PaymentProvider: model.PaymentProviderEpay, Status: common.TopUpStatusPending}
-	require.NoError(t, order.Insert())
-	callback := func(pid, amount string) string {
-		fields := map[string]string{"pid": pid, "money": amount, "out_trade_no": order.TradeNo, "trade_status": "TRADE_SUCCESS"}
-		fields["sign"] = service.EpaySign(fields, operation_setting.EpayKey)
-		values := url.Values{}
-		for key, value := range fields {
-			values.Set(key, value)
-		}
-		recorder := httptest.NewRecorder()
-		ctx, _ := gin.CreateTestContext(recorder)
-		ctx.Request = httptest.NewRequest(http.MethodPost, "/api/payment/epay/notify", strings.NewReader(values.Encode()))
-		ctx.Request.Header.Set("Content-Type", "application/x-www-form-urlencoded")
-		LegacyEpayNotify(ctx)
-		return recorder.Body.String()
-	}
-	require.Equal(t, "fail", callback("another-merchant", "4.00"))
-	require.Equal(t, "fail", callback(operation_setting.EpayId, "0.01"))
-	require.Equal(t, common.TopUpStatusPending, model.GetTopUpByTradeNo(order.TradeNo).Status)
-	for range 2 {
-		require.Equal(t, "success", callback(operation_setting.EpayId, "4.00"))
-	}
-	var updated model.User
-	require.NoError(t, model.DB.First(&updated, user.Id).Error)
-	require.Equal(t, 10+int(2*common.QuotaPerUnit), updated.Quota)
 }

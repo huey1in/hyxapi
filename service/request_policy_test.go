@@ -110,14 +110,12 @@ func TestSessionRulesInheritOrOverrideGlobalDefault(t *testing.T) {
 	for _, globalMode := range []string{"", "off", "prefer", "strict"} {
 		for _, tc := range []struct {
 			name, mode, expected string
-			skipRetry            bool
 		}{
 			{name: "inherit", mode: "inherit", expected: globalMode},
 			{name: "override-strict", mode: "strict", expected: "strict"},
-			{name: "override-prefer", mode: "prefer", expected: "prefer", skipRetry: true},
-			{name: "override-off", mode: "off", expected: "off", skipRetry: true},
-			{name: "legacy-strict", expected: "strict", skipRetry: true},
-			{name: "legacy-prefer", expected: "prefer"},
+			{name: "override-prefer", mode: "prefer", expected: "prefer"},
+			{name: "override-off", mode: "off", expected: "off"},
+			{name: "unspecified", expected: globalMode},
 		} {
 			t.Run(globalMode+"/"+tc.name, func(t *testing.T) {
 				expected := tc.expected
@@ -125,13 +123,13 @@ func TestSessionRulesInheritOrOverrideGlobalDefault(t *testing.T) {
 					expected = "prefer"
 				}
 				source := "session_rule"
-				if tc.mode == "inherit" {
+				if tc.mode == "" || tc.mode == "inherit" {
 					source = "global"
 				}
 				rule := operation_setting.ChannelAffinityRule{
 					Name: tc.name, ModelRegex: []string{"^test-model$"},
-					KeySources:  []operation_setting.ChannelAffinityKeySource{{Type: "request_header", Key: "X-Session"}},
-					SessionMode: tc.mode, SkipRetryOnFailure: tc.skipRetry,
+					KeySources:            []operation_setting.ChannelAffinityKeySource{{Type: "request_header", Key: "X-Session"}},
+					SessionMode:           tc.mode,
 					ParamOverrideTemplate: map[string]any{"temperature": 0}, IncludeRuleName: true,
 				}
 				encoded, err := common.Marshal([]operation_setting.ChannelAffinityRule{rule})

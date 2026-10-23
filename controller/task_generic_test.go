@@ -138,7 +138,7 @@ func TestTaskArtifactAuthorizationKeepsForeignTasksHidden(t *testing.T) {
 	assert.False(t, exists)
 }
 
-func TestDashboardTaskArtifactsReturnsLegacyCapabilityWithoutUpstreamURL(t *testing.T) {
+func TestDashboardTaskArtifactsRequiresPluginExecution(t *testing.T) {
 	task := setupGenericTaskTest(t)
 	previousSecret := common.CryptoSecret
 	previousPublicAddress := system_setting.TaskPublicAddress
@@ -173,21 +173,12 @@ func TestDashboardTaskArtifactsReturnsLegacyCapabilityWithoutUpstreamURL(t *test
 	require.NoError(t, common.Unmarshal(recorder.Body.Bytes(), &response))
 	assert.True(t, response.Success)
 	assert.Empty(t, response.Data.Artifacts)
-	contentURL, err := url.Parse(response.Data.LegacyContentURL)
-	require.NoError(t, err)
-	assert.Equal(t, "/prefix/v1/tasks/"+task.TaskID+"/artifacts/video/content", contentURL.Path)
-	assert.True(t, service.VerifyTaskArtifactAccess(
-		contentURL.Query().Get(service.TaskArtifactAccessQueryParameter),
-		task.TaskID,
-		"video",
-	))
+	assert.Empty(t, response.Data.LegacyContentURL)
 	assert.NotContains(t, recorder.Body.String(), "upstream.invalid")
 	assert.NotContains(t, recorder.Body.String(), "signature=secret")
 }
 
-// Task lists no longer carry the persisted snapshot, so the dashboard reads a
-// legacy Suno task's playable clips from the artifacts endpoint instead.
-func TestDashboardTaskArtifactsProjectsLegacySunoAudioClips(t *testing.T) {
+func TestDashboardTaskArtifactsDoesNotExposePrePluginSnapshot(t *testing.T) {
 	task := setupGenericTaskTest(t)
 	task.Platform = constant.TaskPlatformSuno
 	task.Action = "MUSIC"
@@ -214,9 +205,7 @@ func TestDashboardTaskArtifactsProjectsLegacySunoAudioClips(t *testing.T) {
 	require.NoError(t, common.Unmarshal(recorder.Body.Bytes(), &response))
 	assert.True(t, response.Success)
 	assert.Empty(t, response.Data.Artifacts)
-	require.Len(t, response.Data.LegacyAudioClips, 1)
-	assert.Equal(t, "https://cdn.example/a.mp3", response.Data.LegacyAudioClips[0]["audio_url"])
-	assert.Equal(t, "Song", response.Data.LegacyAudioClips[0]["title"])
+	assert.Empty(t, response.Data.LegacyAudioClips)
 	assert.NotContains(t, recorder.Body.String(), "private")
 }
 
@@ -313,14 +302,10 @@ func TestTaskArtifactAccessRejectsAmbiguousHistoricalTaskID(t *testing.T) {
 	assert.NotContains(t, recorder.Body.String(), "upstream.invalid")
 }
 
-func TestLegacyVideoArtifactContentUsesGetResultURL(t *testing.T) {
+func TestTaskArtifactContentRejectsTasksWithoutPluginExecution(t *testing.T) {
 	task := setupGenericTaskTest(t)
 	upstream := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		assert.Equal(t, "bytes=0-3", r.Header.Get("Range"))
-		w.Header().Set("Content-Type", "video/mp4")
-		w.Header().Set("Content-Range", "bytes 0-3/4")
-		w.WriteHeader(http.StatusPartialContent)
-		_, _ = w.Write([]byte("data"))
+		t.Error("task without plugin execution must not fetch upstream content")
 	}))
 	defer upstream.Close()
 	allowPrivateTaskMediaTest(t)
@@ -346,9 +331,8 @@ func TestLegacyVideoArtifactContentUsesGetResultURL(t *testing.T) {
 
 	TaskArtifactContent(c)
 
-	assert.Equal(t, http.StatusPartialContent, recorder.Code)
-	assert.Equal(t, "data", recorder.Body.String())
-	assert.Equal(t, "bytes 0-3/4", recorder.Header().Get("Content-Range"))
+	assert.Equal(t, http.StatusNotFound, recorder.Code)
+	assert.NotContains(t, recorder.Body.String(), "stale.invalid")
 }
 
 func TestDisabledArtifactStorePreservesPluginUpstreamContent(t *testing.T) {

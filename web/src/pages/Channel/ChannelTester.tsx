@@ -156,11 +156,11 @@ export default function ChannelTestModal({
       title: t('状态'),
       width: 96,
       render: (r) => {
-        if (r.status === 'pending') return <Tag color='grey'>{t('等待')}</Tag>;
+        if (r.status === 'pending') return <Tag tone='grey'>{t('等待')}</Tag>;
         if (r.status === 'running')
-          return <Tag color='blue'>{t('测试中')}</Tag>;
-        if (r.status === 'ok') return <Tag color='green'>{t('通过')}</Tag>;
-        return <Tag color='red'>{t('失败')}</Tag>;
+          return <Tag tone='blue'>{t('测试中')}</Tag>;
+        if (r.status === 'ok') return <Tag tone='green'>{t('通过')}</Tag>;
+        return <Tag tone='red'>{t('失败')}</Tag>;
       },
     },
     {
@@ -312,7 +312,7 @@ export default function ChannelTestModal({
         </div>
 
         {results.length > 0 && (
-          <div className='max-h-80 overflow-auto ui-scrollbar'>
+          <div className='max-h-80 overflow-auto'>
             <Table
               emptyIcon={FlaskConical}
               columns={resultColumns}

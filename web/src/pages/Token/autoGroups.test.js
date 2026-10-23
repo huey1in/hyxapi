@@ -1,6 +1,20 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { autoGroupsPayload, manualTokenGroups, reconcileAutoGroups, validateAutoGroups } from './autoGroups.ts';
+import { autoGroupsPayload, initialTokenGroupSelection, manualTokenGroups, reconcileAutoGroups, validateAutoGroups } from './autoGroups.ts';
+
+test('new manual keys select the first available group without inventing default', () => {
+  assert.deepEqual(initialTokenGroupSelection({}, ['production', 'vip']), { automatic: false, groups: ['production'] });
+  assert.deepEqual(initialTokenGroupSelection({}), { automatic: false, groups: [] });
+  assert.deepEqual(initialTokenGroupSelection({}, []), { automatic: false, groups: [] });
+});
+
+test('initial group selection preserves saved policies and explicit automatic defaults', () => {
+  assert.deepEqual(initialTokenGroupSelection({ id: 1, group: 'vip' }, ['production']), { automatic: false, groups: ['vip'] });
+  assert.deepEqual(initialTokenGroupSelection({ id: 1, groups: ['vip', 'production'] }, ['production', 'vip']), { automatic: false, groups: ['vip', 'production'] });
+  for (const token of [{ group: 'auto' }, { id: 1, group: 'auto' }, { id: 1, group: '[]' }, { id: 1, groups: [] }]) {
+    assert.deepEqual(initialTokenGroupSelection(token, ['production']), { automatic: true, groups: [] });
+  }
+});
 
 test('Auto group inheritance and legacy manual priorities remain distinct', () => {
   for (const stored of [undefined, null, []]) assert.equal(reconcileAutoGroups(stored, ['default'], 5).mode, 'inherit');

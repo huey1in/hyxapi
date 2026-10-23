@@ -1371,11 +1371,7 @@ func parseSyncTarget(spec string) (syncTarget, error) {
 
 	idx := strings.Index(raw, ":")
 	if idx < 0 {
-		// Backward compatibility: treat bare value as JSON path.
-		return syncTarget{
-			kind: "json",
-			key:  raw,
-		}, nil
+		return syncTarget{}, fmt.Errorf("sync_fields target must include json: or header: prefix")
 	}
 
 	kind := strings.ToLower(strings.TrimSpace(raw[:idx]))

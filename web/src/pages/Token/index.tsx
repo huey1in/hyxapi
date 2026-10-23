@@ -33,7 +33,7 @@ const TokenPage = () => {
       <ConsolePageHeader title='API keys' />
       <div className='token-page-toolbar'><button
         disabled={management.busy}
-        onClick={() => setEditing({ name: '', allow_user_quota_query: true, unlimited_quota: true, remain_quota: 500000, expired_time: -1, group: statusState.status?.default_use_auto_group ? 'auto' : 'default', cross_group_retry: !!statusState.status?.default_use_auto_group })}
+        onClick={() => setEditing({ name: '', allow_user_quota_query: true, unlimited_quota: true, remain_quota: 500000, expired_time: -1, group: statusState.status?.default_use_auto_group ? 'auto' : '', cross_group_retry: !!statusState.status?.default_use_auto_group })}
         style={{
           cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 6,
           height: 32, paddingInline: 16, border: '1px solid var(--ui-text)', borderRadius: 24,

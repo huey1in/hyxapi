@@ -50,7 +50,7 @@ export default function ChannelFiltersDialog({ initialValues, onApply, onClose }
         <h2 id={`${id}-title`} className='text-base font-semibold text-ui-text'>{t('Filters')}</h2>
         <IconButton icon={X} aria-label={t('Close')} onClick={onClose} />
       </header>
-      <div className='min-h-0 overflow-y-auto overscroll-contain px-6 py-3 ui-scrollbar'>
+      <div className='min-h-0 overflow-y-auto overscroll-contain px-6 py-3'>
         <div className='space-y-4'>
           {field('status', 'Status', [{ value: 'all', label: t('全部状态') }, { value: '1', label: t('启用') }, { value: '2', label: t('禁用') }, { value: '3', label: t('自动禁用') }])}
           {field('type', 'Type', [{ value: 'all', label: t('全部类型') }, ...CHANNEL_TYPE_OPTIONS.map((option) => ({ value: String(option.value), label: option.label }))])}

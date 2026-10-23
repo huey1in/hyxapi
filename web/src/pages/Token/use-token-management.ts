@@ -35,7 +35,7 @@ export function useTokenManagement() {
     queryKey: ['managed-tokens', identity, page],
     enabled: !!userID,
     queryFn: async ({ signal }) => {
-      const params = new URLSearchParams({ p: String(page), size: String(pageSize) });
+      const params = new URLSearchParams({ p: String(page), page_size: String(pageSize) });
       const { data } = await API.get<ApiEnvelope<unknown>>(`/api/token/?${params}`, { signal, skipErrorHandler: true });
       signal.throwIfAborted();
       if (!data.success) throw new Error(data.message || 'Unable to load API keys');

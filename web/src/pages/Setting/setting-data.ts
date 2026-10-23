@@ -35,7 +35,6 @@ const affinityRuleSchema = z.looseObject({
   value_regex: z.string().optional(),
   session_mode: z.enum(['', 'inherit', 'off', 'prefer', 'strict']).optional(),
   param_override_template: jsonObject.nullish(),
-  skip_retry_on_failure: z.boolean().optional(),
   include_using_group: z.boolean().optional(),
   include_model_name: z.boolean().optional(),
   include_rule_name: z.boolean().optional(),

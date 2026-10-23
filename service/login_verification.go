@@ -17,21 +17,10 @@ type LoginChallenge struct {
 	Methods             []VerificationMethodOption `json:"methods"`
 }
 
-// LegacyGitHubMigration is a GitHub binding rewrite from the stored login name
-// to the numeric account ID. On the login path it waits for the login
-// verification and is written in the transaction that issues the session.
-type LegacyGitHubMigration struct {
-	GitHubID string
-	LegacyID string
-}
-
 // loginFlowPayload stays comparable; completion compares it with the bound copy.
 type loginFlowPayload struct {
 	AuthVersion int64  `json:"auth_version"`
 	LoginMethod string `json:"login_method"`
-	// The GitHub binding rewrite waiting for this verification, if any.
-	PendingGitHubID       string `json:"pending_github_id,omitempty"`
-	PendingGitHubLegacyID string `json:"pending_github_legacy_id,omitempty"`
 }
 
 // LoginVerification is server-owned state read from a primary-authenticated flow.
@@ -42,7 +31,7 @@ type LoginVerification struct {
 	payload loginFlowPayload
 }
 
-func StartLoginVerification(user *model.User, loginMethod string, migration *LegacyGitHubMigration) (*LoginChallenge, error) {
+func StartLoginVerification(user *model.User, loginMethod string) (*LoginChallenge, error) {
 	if user == nil || user.Id <= 0 || user.AuthVersion <= 0 || loginMethod == "" {
 		return nil, model.ErrAuthFlowInvalid
 	}
@@ -55,11 +44,6 @@ func StartLoginVerification(user *model.User, loginMethod string, migration *Leg
 	}
 	methods, err := securityVerificationPolicy(VerificationScopeLogin, *state)
 	if err != nil || len(methods) == 0 {
-		if err == nil && migration != nil {
-			// The rewrite is written only after a verification, so a login that
-			// no longer requires one cannot carry it.
-			return nil, ErrVerificationUnavailable
-		}
 		return nil, err
 	}
 	available := false
@@ -70,9 +54,6 @@ func StartLoginVerification(user *model.User, loginMethod string, migration *Leg
 		return nil, ErrVerificationUnavailable
 	}
 	payload := loginFlowPayload{AuthVersion: state.AuthVersion, LoginMethod: loginMethod}
-	if migration != nil {
-		payload.PendingGitHubID, payload.PendingGitHubLegacyID = migration.GitHubID, migration.LegacyID
-	}
 	encoded, err := common.Marshal(payload)
 	if err != nil {
 		return nil, err
@@ -127,36 +108,33 @@ func requireLoginVerificationMethod(state *model.UserVerificationState, method s
 	return ErrProofMethod
 }
 
-func VerifyLoginCode(token, code, ip, userAgent string) (*AuthBundle, *LegacyGitHubMigration, error) {
+func VerifyLoginCode(token, code, ip, userAgent string) (*AuthBundle, error) {
 	verification, err := RequireLoginVerification(token, VerificationMethodTwoFA)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 	twoFA, err := model.GetTwoFAByUserId(verification.State.UserID)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 	if err := VerifyTwoFactorCode(twoFA, code); err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 	return CompleteLoginVerification(token, verification, VerificationMethodTwoFA, ip, userAgent)
 }
 
 // CompleteLoginVerification must only run after a concrete factor ceremony.
 // Recheck the bound version and method while consuming the flow and creating the
-// session atomically; a different request cannot reuse this authorization. The
-// returned migration is non-nil when the flow's pending GitHub binding rewrite
-// was written together with the session.
-func CompleteLoginVerification(token string, verification *LoginVerification, method, ip, userAgent string) (*AuthBundle, *LegacyGitHubMigration, error) {
+// session atomically; a different request cannot reuse this authorization.
+func CompleteLoginVerification(token string, verification *LoginVerification, method, ip, userAgent string) (*AuthBundle, error) {
 	if verification == nil || verification.Flow == nil || verification.State == nil {
-		return nil, nil, model.ErrAuthFlowInvalid
+		return nil, model.ErrAuthFlowInvalid
 	}
 	session, refreshSecret, err := newLoginSession(verification.State.UserID, verification.payload.AuthVersion, verification.payload.LoginMethod, ip, userAgent)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
-	var migration *LegacyGitHubMigration
-	if err := model.CreateUserSessionFromLoginFlow(token, session, func(tx *gorm.DB, flow *model.AuthFlow, state *model.UserVerificationState) error {
+	if err := model.CreateUserSessionFromLoginFlow(token, session, func(_ *gorm.DB, flow *model.AuthFlow, state *model.UserVerificationState) error {
 		var payload loginFlowPayload
 		if flow.Id != verification.Flow.Id || common.UnmarshalJsonStr(flow.Payload, &payload) != nil || payload != verification.payload {
 			return model.ErrAuthFlowInvalid
@@ -164,26 +142,15 @@ func CompleteLoginVerification(token string, verification *LoginVerification, me
 		if err := requireLoginVerificationMethod(state, method); err != nil {
 			return err
 		}
-		if payload.PendingGitHubID == "" {
-			return nil
-		}
-		// A binding that was relinked while the challenge was open is left as it
-		// is and the login continues without the rewrite.
-		written, err := model.MigrateLegacyGitHubBindingWithTx(tx, state.UserID, payload.PendingGitHubLegacyID, payload.PendingGitHubID)
-		if err != nil {
-			return err
-		}
-		if written {
-			migration = &LegacyGitHubMigration{GitHubID: payload.PendingGitHubID, LegacyID: payload.PendingGitHubLegacyID}
-		}
+
 		return nil
 	}); err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 	bundle, err := issueAuthBundle(session, session.SID+"."+refreshSecret, true)
 	if err != nil {
 		_, _ = model.RevokeUserSession(session.UserID, session.SID, "token_issue_failed")
-		return nil, nil, err
+		return nil, err
 	}
-	return bundle, migration, nil
+	return bundle, nil
 }

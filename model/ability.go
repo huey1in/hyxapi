@@ -62,7 +62,7 @@ func getChannelWithExclusions(group, model string, retry int, filters []dto.Chan
 		retry = 0
 	}
 	var abilities []Ability
-	err := DB.Where(commonGroupCol+" = ? and model = ? and enabled = ?", group, model, true).Order("priority DESC, weight DESC").Find(&abilities).Error
+	err := DB.Where(clause.Eq{Column: "group", Value: group}).Where("model = ? and enabled = ?", model, true).Order("priority DESC, weight DESC").Find(&abilities).Error
 	if err != nil {
 		return nil, err
 	}
@@ -70,7 +70,7 @@ func getChannelWithExclusions(group, model string, retry int, filters []dto.Chan
 	// Like the memory cache, retry with the routing name (for example without
 	// @ modifiers) when no channel serves the exact name.
 	if normalized := ratio_setting.RoutingMatchModelName(model); len(abilities) == 0 && normalized != "" && normalized != model {
-		err = DB.Where(commonGroupCol+" = ? and model = ? and enabled = ?", group, normalized, true).Order("priority DESC, weight DESC").Find(&abilities).Error
+		err = DB.Where(clause.Eq{Column: "group", Value: group}).Where("model = ? and enabled = ?", normalized, true).Order("priority DESC, weight DESC").Find(&abilities).Error
 		if err != nil {
 			return nil, err
 		}

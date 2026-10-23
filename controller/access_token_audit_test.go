@@ -17,6 +17,7 @@ import (
 	"gorm.io/driver/clickhouse"
 
 	"github.com/QuantumNous/new-api/common"
+	"github.com/QuantumNous/new-api/constant"
 	"github.com/QuantumNous/new-api/i18n"
 	"github.com/QuantumNous/new-api/middleware"
 	"github.com/QuantumNous/new-api/model"
@@ -43,7 +44,6 @@ func setupAccessTokenAudit(t *testing.T) (*model.User, string) {
 		&model.AuthFlow{}, &model.TwoFA{}, &model.TwoFABackupCode{}, &model.PasskeyCredential{}, &model.UserOAuthBinding{}))
 	model.DB, model.LOG_DB = db, db
 	common.SetDatabaseTypes(common.DatabaseTypeSQLite, common.DatabaseTypeSQLite)
-	require.NoError(t, model.EnsureLegacyAccessTokenRetireAt(time.Now().Unix()))
 	common.RedisEnabled = false
 	previousMaster := common.IsMasterNode
 	common.IsMasterNode = true
@@ -55,7 +55,7 @@ func setupAccessTokenAudit(t *testing.T) (*model.User, string) {
 		common.RedisEnabled = previousRedis
 	})
 	token := "legacy-opaque-token"
-	user := &model.User{Username: "audit-owner", Password: "placeholder", Role: common.RoleAdminUser, Status: common.UserStatusEnabled, Group: "default", AccessToken: &token, AuthVersion: 1, AffCode: "audit-owner"}
+	user := &model.User{Username: "audit-owner", Password: "placeholder", Role: common.RoleAdminUser, Status: common.UserStatusEnabled, Group: "default", AuthVersion: 1, AffCode: "audit-owner"}
 	require.NoError(t, db.Create(user).Error)
 	return user, token
 }
@@ -90,7 +90,6 @@ func newAccessTokenTestRouter() *gin.Engine {
 	tokenRoute.POST("", CreateAccessToken)
 	tokenRoute.PATCH("/:id", UpdateAccessToken)
 	tokenRoute.DELETE("/:id", DeleteAccessToken)
-	tokenRoute.DELETE("/legacy", RevokeLegacyAccessToken)
 	adminRoute := userRoute.Group("/", middleware.AdminAuth())
 	adminRoute.DELETE("/:id", DeleteUser)
 	return router
@@ -153,15 +152,6 @@ func issueAccessTokenUpdateProof(t *testing.T, identity service.AuthIdentity, to
 	return issueSecurityEnrollmentProof(t, identity, service.VerificationOperation{Scope: service.VerificationScopeAccessTokenUpdate, Context: context}, "password")
 }
 
-// setLegacyAccessTokenRetireAt moves the stored transition deadline the way an
-// operator restoring the option row would, then reloads it.
-func setLegacyAccessTokenRetireAt(t *testing.T, retireAt int64) {
-	t.Helper()
-	require.NoError(t, model.DB.Model(&model.Option{}).Where(&model.Option{Key: "LegacyAccessTokenRetireAt"}).Update("value", fmt.Sprint(retireAt)).Error)
-	require.NoError(t, model.EnsureLegacyAccessTokenRetireAt(time.Now().Unix()))
-	require.Equal(t, retireAt, model.LegacyAccessTokenRetireAt())
-}
-
 type accessTokenListResponse struct {
 	Success bool   `json:"success"`
 	Code    string `json:"code"`
@@ -172,10 +162,6 @@ type accessTokenListResponse struct {
 			TokenRef string   `json:"token_ref"`
 			Scopes   []string `json:"scopes"`
 		} `json:"items"`
-		Legacy *struct {
-			TokenRef string `json:"token_ref"`
-			RetireAt int64  `json:"retire_at"`
-		} `json:"legacy"`
 	} `json:"data"`
 }
 
@@ -185,10 +171,10 @@ func TestAccessTokenLifecycleAndLateRequests(t *testing.T) {
 	identity, browser := createAccessTokenTestSession(t, user.Id, "lifecycle-session")
 	scoped, scopedToken := createScopedAccessToken(t, user.Id, 0, "profile:read")
 	tokenPath := fmt.Sprintf("/api/user/access_tokens/%d", scopedToken.Id)
-	for _, credential := range []string{scoped, legacy} {
+	for _, credential := range []string{scoped} {
 		for _, endpoint := range []struct{ method, path string }{
 			{"GET", "/api/user/access_tokens"}, {"GET", "/api/user/access_tokens/catalog"}, {"GET", "/api/user/access_tokens/scopes"}, {"POST", "/api/user/access_tokens"},
-			{"PATCH", tokenPath}, {"DELETE", tokenPath}, {"DELETE", "/api/user/access_tokens/legacy"},
+			{"PATCH", tokenPath}, {"DELETE", tokenPath},
 		} {
 			response := accessTokenRequest(router, endpoint.method, endpoint.path, credential, "", `{"name":"renamed","scopes":["profile:read"],"expires_at":0}`)
 			assert.Equal(t, http.StatusForbidden, response.Code, endpoint.method+" "+endpoint.path)
@@ -210,9 +196,7 @@ func TestAccessTokenLifecycleAndLateRequests(t *testing.T) {
 	require.Len(t, listed.Data.Items, 1)
 	assert.Equal(t, scopedToken.TokenHash, listed.Data.Items[0].TokenRef)
 	assert.Equal(t, []string{"profile:read"}, listed.Data.Items[0].Scopes)
-	require.NotNil(t, listed.Data.Legacy)
-	assert.Equal(t, model.AccessTokenFingerprint(legacy), listed.Data.Legacy.TokenRef)
-	assert.Equal(t, model.LegacyAccessTokenRetireAt(), listed.Data.Legacy.RetireAt)
+	assert.NotContains(t, response.Body.String(), `"legacy"`)
 
 	// A token id only resolves among the caller's own tokens.
 	other := &model.User{Username: "audit-other", Password: "placeholder", Role: common.RoleCommonUser, Status: common.UserStatusEnabled, Group: "default", AuthVersion: 1, AffCode: "audit-other"}
@@ -226,9 +210,6 @@ func TestAccessTokenLifecycleAndLateRequests(t *testing.T) {
 
 	// A revoke proof names one target and is not spent on another one.
 	proof := issueAccessTokenRevokeProof(t, identity, service.AccessTokenRevokeContext{TokenID: scopedToken.Id})
-	response = accessTokenRequest(router, "DELETE", "/api/user/access_tokens/legacy", browser, proof, "")
-	assert.Contains(t, response.Body.String(), `"code":"SECURITY_PROOF_CONTEXT_MISMATCH"`)
-	assert.Equal(t, http.StatusOK, accessTokenRequest(router, "GET", "/api/user/self", legacy, "", "").Code)
 	response = accessTokenRequest(router, "DELETE", tokenPath, browser, proof, "")
 	require.Equal(t, http.StatusOK, response.Code, response.Body.String())
 	assert.Equal(t, http.StatusUnauthorized, accessTokenRequest(router, "GET", "/api/user/self", scoped, "", "").Code)
@@ -236,43 +217,13 @@ func TestAccessTokenLifecycleAndLateRequests(t *testing.T) {
 	assert.Equal(t, http.StatusNotFound, response.Code)
 	assert.Contains(t, response.Body.String(), `"code":"ACCESS_TOKEN_NOT_FOUND"`)
 
-	legacyProof := issueAccessTokenRevokeProof(t, identity, service.AccessTokenRevokeContext{Legacy: true})
-	response = accessTokenRequest(router, "DELETE", "/api/user/access_tokens/legacy", browser, legacyProof, "")
-	require.Equal(t, http.StatusOK, response.Code, response.Body.String())
 	assert.Equal(t, http.StatusUnauthorized, accessTokenRequest(router, "GET", "/api/user/self", legacy, "", "").Code)
-	response = accessTokenRequest(router, "GET", "/api/user/access_tokens", browser, "", "")
-	listed = accessTokenListResponse{}
-	require.NoError(t, common.Unmarshal(response.Body.Bytes(), &listed))
-	assert.Empty(t, listed.Data.Items)
-	assert.Nil(t, listed.Data.Legacy)
-
-	// After the deadline a stored legacy value is inert: it is neither listed,
-	// revocable nor accepted, and the column itself is left untouched.
-	require.NoError(t, model.DB.Model(&model.User{}).Where("id = ?", user.Id).Update("access_token", legacy).Error)
-	assert.Equal(t, http.StatusOK, accessTokenRequest(router, "GET", "/api/user/self", legacy, "", "").Code)
-	retireAt := model.LegacyAccessTokenRetireAt()
-	setLegacyAccessTokenRetireAt(t, time.Now().Unix()-1)
-	t.Cleanup(func() { setLegacyAccessTokenRetireAt(t, retireAt) })
-	response = accessTokenRequest(router, "GET", "/api/user/access_tokens", browser, "", "")
-	listed = accessTokenListResponse{}
-	require.NoError(t, common.Unmarshal(response.Body.Bytes(), &listed))
-	assert.Nil(t, listed.Data.Legacy)
-	legacyProof = issueAccessTokenRevokeProof(t, identity, service.AccessTokenRevokeContext{Legacy: true})
-	response = accessTokenRequest(router, "DELETE", "/api/user/access_tokens/legacy", browser, legacyProof, "")
-	assert.Equal(t, http.StatusNotFound, response.Code)
-	response = accessTokenRequest(router, "GET", "/api/user/self", legacy, "", "")
-	assert.Equal(t, http.StatusUnauthorized, response.Code)
-	assert.Contains(t, response.Body.String(), `"code":"ACCESS_TOKEN_LEGACY_RETIRED"`)
-	stored, err := model.GetUserById(user.Id, true)
-	require.NoError(t, err)
-	assert.Equal(t, legacy, stored.GetAccessToken())
 
 	var revoked []model.AuditLog
 	require.NoError(t, model.LOG_DB.Where("action = ?", "access_token.revoke").Order("id").Find(&revoked).Error)
-	require.Len(t, revoked, 2)
+	require.Len(t, revoked, 1)
 	for i, want := range []string{
 		fmt.Sprintf(`"token_ref":"%s"`, scopedToken.TokenHash),
-		fmt.Sprintf(`"legacy":true,"token_ref":"%s"`, model.AccessTokenFingerprint(legacy)),
 	} {
 		require.NotNil(t, revoked[i].Other.Op)
 		params, err := common.Marshal(revoked[i].Other.Op.Params)
@@ -283,7 +234,7 @@ func TestAccessTokenLifecycleAndLateRequests(t *testing.T) {
 	require.NoError(t, model.LOG_DB.Find(&history).Error)
 	encoded, err := common.Marshal(history)
 	require.NoError(t, err)
-	for _, secret := range []string{scoped, legacy, browser, proof, legacyProof, otherRaw, otherProof, "Authorization"} {
+	for _, secret := range []string{scoped, legacy, browser, proof, otherRaw, otherProof, "Authorization"} {
 		assert.NotContains(t, string(encoded), secret)
 	}
 }
@@ -330,7 +281,7 @@ func TestAccessTokenScopeDictionaryIgnoresTheViewersGrants(t *testing.T) {
 }
 
 func TestAccessTokenCreationChecksGrantBeforeConsumingProof(t *testing.T) {
-	user, legacy := setupAccessTokenAudit(t)
+	user, _ := setupAccessTokenAudit(t)
 	router := newAccessTokenTestRouter()
 	identity, browser := createAccessTokenTestSession(t, user.Id, "create-session")
 	response := accessTokenRequest(router, "POST", "/api/user/access_tokens", browser, "", `{"name":"ci","scopes":["profile:read"],"expires_at":0}`)
@@ -402,9 +353,6 @@ func TestAccessTokenCreationChecksGrantBeforeConsumingProof(t *testing.T) {
 	response = accessTokenRequest(router, "POST", "/api/user/access_tokens", browser, proof, `{"name":"ci","scopes":["profile:read","usage:read"],"expires_at":0}`)
 	assert.Contains(t, response.Body.String(), `"code":"SECURITY_PROOF_CONSUMED"`)
 	assert.Equal(t, http.StatusOK, accessTokenRequest(router, "GET", "/api/user/self", raw, "", "").Code)
-	stored, err := model.GetUserById(user.Id, true)
-	require.NoError(t, err)
-	assert.Equal(t, legacy, stored.GetAccessToken(), "creating a token never replaces the legacy token")
 
 	var generated model.AuditLog
 	require.NoError(t, model.LOG_DB.Where("action = ?", "access_token.generate").First(&generated).Error)
@@ -516,12 +464,16 @@ func TestAccessTokenUpdateRenamesFreelyAndChangesGrantOnlyWithProof(t *testing.T
 }
 
 func TestAccessTokenAuditsResultsAndExcludesBrowserSessions(t *testing.T) {
-	user, pat := setupAccessTokenAudit(t)
+	user, _ := setupAccessTokenAudit(t)
+	pat, _ := createScopedAccessToken(t, user.Id, 0, "profile:read", "audit:read", "usage:read")
 	router := gin.New()
 	router.Use(middleware.RequestId(), middleware.AccessTokenAudit())
 	router.NoRoute(func(c *gin.Context) { c.JSON(404, gin.H{"success": false}) })
 	router.GET("/public", func(c *gin.Context) { c.JSON(200, gin.H{"success": true}) })
 	router.GET("/rate-limited", func(c *gin.Context) { c.AbortWithStatusJSON(429, gin.H{"success": false}) }, middleware.UserAuth())
+	middleware.DeclareAccessTokenPermissionRoute("GET", "/read/:id", authz.AuditRead)
+	middleware.DeclareAccessTokenPermissionRoute("POST", "/write", authz.AuditRead)
+	middleware.DeclareAccessTokenPermissionRoute("POST", "/business-failure", authz.AuditRead)
 	router.GET("/read/:id", middleware.UserAuth(), func(c *gin.Context) { c.JSON(200, gin.H{"success": true}) })
 	router.POST("/write", middleware.AdminAuth(), func(c *gin.Context) {
 		recordManageAudit(c, "option.update", map[string]any{"key": "safe-setting"})
@@ -567,7 +519,8 @@ func TestAccessTokenAuditsResultsAndExcludesBrowserSessions(t *testing.T) {
 }
 
 func TestAuditIsolationVisibilityAndFailureContracts(t *testing.T) {
-	user, pat := setupAccessTokenAudit(t)
+	user, _ := setupAccessTokenAudit(t)
+	pat, _ := createScopedAccessToken(t, user.Id, 0, "profile:read", "audit:read", "usage:read")
 	metadata := model.AuditOther{
 		Op:        &model.AuditOperation{Action: "generic"},
 		AdminInfo: &model.AuditAdminInfo{AdminID: 1},
@@ -579,6 +532,7 @@ func TestAuditIsolationVisibilityAndFailureContracts(t *testing.T) {
 	router := gin.New()
 	router.Use(middleware.RequestId(), middleware.AccessTokenAudit())
 	router.GET("/api/audit/self", middleware.UserAuth(), GetAuditLogs)
+	middleware.DeclareAccessTokenPermissionRoute("GET", "/api/audit", authz.AuditRead)
 	router.GET("/api/audit", middleware.AdminAuth(), middleware.RequirePermission(authz.AuditRead), GetAuditLogs)
 	response := auditRequest(router, "GET", "/api/audit/self?username=other&user_id=2&category=security&success=false&page_size=1", pat)
 	var result struct {
@@ -617,23 +571,18 @@ func TestAuditIsolationVisibilityAndFailureContracts(t *testing.T) {
 			tx.AddError(errors.New("audit store unavailable"))
 		}
 	}))
-	_, err := model.GetUserAccessTokenStatus(user.Id)
-	require.Error(t, err, "audit query failure must not look like never used")
+	_, _, err := model.GetAuditLogs(model.AuditLogFilter{UserId: user.Id}, 0, 10, common.RoleRootUser)
+	require.Error(t, err, "audit query failure must be surfaced")
 	model.LOG_DB.Callback().Query().Remove("audit:fail")
-	require.NoError(t, model.DB.Callback().Update().Before("gorm:update").Register("audit:write-fail", func(tx *gorm.DB) { tx.AddError(errors.New("write unavailable")) }))
-	_, err = model.RevokeUserAccessToken(user.Id)
-	require.Error(t, err)
-	model.DB.Callback().Update().Remove("audit:write-fail")
-	status, err := model.GetUserAccessTokenStatus(user.Id)
-	require.NoError(t, err)
-	assert.Equal(t, model.AccessTokenFingerprint(pat), status.TokenRef)
+
 }
 
 func TestAuditRoleVisibilityAndPermissions(t *testing.T) {
-	admin, pat := setupAccessTokenAudit(t)
-	rootToken := "root-audit-token"
-	root := &model.User{Username: "root-audit", Role: common.RoleRootUser, Status: common.UserStatusEnabled, AuthVersion: 1, AccessToken: &rootToken, AffCode: "root-audit"}
+	admin, _ := setupAccessTokenAudit(t)
+	pat, _ := createScopedAccessToken(t, admin.Id, 0, "profile:read", "audit:read", "usage:read")
+	root := &model.User{Username: "root-audit", Role: common.RoleRootUser, Status: common.UserStatusEnabled, AuthVersion: 1, AffCode: "root-audit"}
 	require.NoError(t, model.DB.Create(root).Error)
+	rootToken, _ := createScopedAccessToken(t, root.Id, 0, "audit:read", "usage:read")
 	metadata := model.AuditOther{
 		AdminInfo: &model.AuditAdminInfo{AdminID: 1},
 		RootInfo:  model.AuditFields{"private": "root-only"},
@@ -644,6 +593,7 @@ func TestAuditRoleVisibilityAndPermissions(t *testing.T) {
 	model.RecordAuditLog(nil, model.AuditLog{ActorRole: 100, UserId: root.Id, Username: root.Username, Category: model.AuditCategorySecurity, RequestId: "root-owned", Other: metadata})
 	router := gin.New()
 	router.Use(middleware.RequestId(), middleware.AccessTokenAudit())
+	middleware.DeclareAccessTokenPermissionRoute("GET", "/api/audit", authz.AuditRead)
 	router.GET("/api/audit", middleware.AdminAuth(), middleware.RequirePermission(authz.AuditRead), GetAuditLogs)
 	router.GET("/api/audit/self", middleware.UserAuth(), GetAuditLogs)
 	now := time.Now().Unix()
@@ -697,11 +647,13 @@ func TestAuditRoleVisibilityAndPermissions(t *testing.T) {
 }
 
 func TestAuditRoleSnapshotSurvivesActorChanges(t *testing.T) {
-	user, pat := setupAccessTokenAudit(t)
+	user, _ := setupAccessTokenAudit(t)
+	pat, _ := createScopedAccessToken(t, user.Id, 0, "profile:read", "audit:read", "usage:read")
 	user.Role = common.RoleRootUser
 	require.NoError(t, model.DB.Model(user).Update("role", user.Role).Error)
 	router := gin.New()
 	router.Use(middleware.RequestId(), middleware.AccessTokenAudit())
+	middleware.DeclareAccessTokenPermissionRoute("POST", "/change-role", authz.AuditRead)
 	router.POST("/change-role", middleware.UserAuth(), func(c *gin.Context) {
 		recordLoginAudit(user, c)
 		recordUserSecurityAudit(c, user.Id, "user.security_verify", nil)
@@ -714,9 +666,6 @@ func TestAuditRoleSnapshotSurvivesActorChanges(t *testing.T) {
 	require.NoError(t, err)
 	assert.Zero(t, total)
 	assert.Empty(t, entries)
-	status, err := model.GetUserAccessTokenStatus(user.Id)
-	require.NoError(t, err)
-	assert.Nil(t, status.LastUsedAt, "a root request must not leak through the last-use summary after demotion")
 	require.NoError(t, model.DB.Unscoped().Delete(user).Error)
 	entries, total, err = model.GetAuditLogs(model.AuditLogFilter{}, 0, 20, common.RoleRootUser)
 	require.NoError(t, err)
@@ -724,6 +673,39 @@ func TestAuditRoleSnapshotSurvivesActorChanges(t *testing.T) {
 	for _, entry := range entries {
 		assert.Equal(t, common.RoleRootUser, entry.ActorRole)
 	}
+}
+
+func TestResourceMutationsUseStructuredAuditStore(t *testing.T) {
+	user, _ := setupAccessTokenAudit(t)
+	for _, accessToken := range []bool{false, true} {
+		c, _ := gin.CreateTestContext(httptest.NewRecorder())
+		c.Request = httptest.NewRequest(http.MethodPut, "/api/channel/", nil)
+		c.Set("id", user.Id)
+		c.Set("username", user.Username)
+		c.Set("role", user.Role)
+		c.Set("use_access_token", accessToken)
+		model.RecordResourceAudit(c, model.AuditUpdate, "channel", 42, "Updated channel")
+		assert.True(t, c.GetBool(string(constant.ContextKeyAuditLogged)))
+	}
+	var entries []model.AuditLog
+	require.NoError(t, model.LOG_DB.Order("id").Find(&entries).Error)
+	require.Len(t, entries, 2)
+	for index, entry := range entries {
+		assert.Equal(t, model.AuditCategoryOperation, entry.Category)
+		assert.Equal(t, "channel.update", entry.Action)
+		assert.Equal(t, user.Role, entry.ActorRole)
+		require.NotNil(t, entry.Other.AdminInfo)
+		assert.Equal(t, user.Id, entry.Other.AdminInfo.AdminID)
+		expectedMethod := "session"
+		if index == 1 {
+			expectedMethod = "access_token"
+		}
+		assert.Equal(t, expectedMethod, entry.AuthMethod)
+		assert.Equal(t, expectedMethod, entry.Other.AdminInfo.AuthMethod)
+	}
+	var usageLogs int64
+	require.NoError(t, model.LOG_DB.Model(&model.Log{}).Count(&usageLogs).Error)
+	assert.Zero(t, usageLogs)
 }
 
 func TestSecurityAndOperationEventsUseAuditTable(t *testing.T) {
@@ -1096,15 +1078,9 @@ func TestAuditDatabaseMatrix(t *testing.T) {
 					if !upgrade {
 						require.NoError(t, db.Create(&model.User{Username: "fresh-owner", Password: "placeholder", AffCode: "fresh-aff"}).Error)
 					}
-					status, err := model.GetUserAccessTokenStatus(1)
-					require.NoError(t, err)
-					assert.Equal(t, upgrade, status.Exists)
-					assert.Nil(t, status.CreatedAt)
+					assert.False(t, db.Migrator().HasColumn(&model.User{}, "access_token"))
+					assert.False(t, db.Migrator().HasColumn(&model.User{}, "access_token_created_at"))
 					if upgrade {
-						assert.Equal(t, model.AccessTokenFingerprint("released-token"), status.TokenRef)
-						legacyUser, validationErr := model.ValidateAccessToken("released-token")
-						require.NoError(t, validationErr)
-						require.NotNil(t, legacyUser)
 						var user model.User
 						require.NoError(t, db.First(&user, 1).Error)
 						assert.Equal(t, 1234, user.Quota)
@@ -1112,8 +1088,6 @@ func TestAuditDatabaseMatrix(t *testing.T) {
 						require.NoError(t, db.First(&old).Error)
 						assert.Equal(t, "historical login", old.Content)
 					}
-					require.NoError(t, db.Model(&model.User{}).Where("id = ?", 1).Update("access_token", "matrix-token").Error)
-					require.Error(t, db.Create(&model.User{Username: "duplicate", Password: "placeholder", AffCode: "duplicate-aff", AccessToken: common.GetPointer("matrix-token")}).Error, "PAT uniqueness must survive upgrade")
 					scoped, scopedToken := createScopedAccessToken(t, 1, 0, "profile:read")
 					found, err := model.FindUserAccessTokenByHash(model.AccessTokenFingerprint(scoped))
 					require.NoError(t, err)
@@ -1144,14 +1118,6 @@ func TestAuditDatabaseMatrix(t *testing.T) {
 					require.NoError(t, err)
 					require.Len(t, failed, 1)
 					assert.EqualValues(t, 102, failed[0].CreatedAt)
-					status, err = model.GetUserAccessTokenStatus(1)
-					require.NoError(t, err)
-					require.NotNil(t, status.LastUsedAt)
-					assert.EqualValues(t, 103, *status.LastUsedAt)
-					_, err = model.RevokeUserAccessToken(1)
-					require.NoError(t, err)
-					_, err = model.RevokeUserAccessToken(1)
-					require.NoError(t, err)
 					require.NoError(t, model.MigrateAuditLogs())
 					_, total, err = model.GetAuditLogs(model.AuditLogFilter{UserId: 1}, 0, 10, 1)
 					require.NoError(t, err)
@@ -1210,17 +1176,12 @@ func TestIndependentAuditLogStores(t *testing.T) {
 					require.NoError(t, model.LOG_DB.Where("request_id = ?", "legacy-split-request").Take(&old).Error)
 					assert.Equal(t, "retained historical login", old.Content)
 				}
-				require.NoError(t, model.DB.Model(&model.User{}).Where("id = ?", 1).Update("access_token", "independent-pat").Error)
 				model.RecordAuditLog(nil, model.AuditLog{ActorRole: common.RoleAdminUser, UserId: 1, Username: "independent", Category: model.AuditCategoryAccessToken, TokenRef: model.AccessTokenFingerprint("independent-pat"), Ip: "192.0.2.8", Success: false, Status: 403})
 				entries, total, err := model.GetAuditLogs(model.AuditLogFilter{UserId: 1}, 0, 20, common.RoleAdminUser)
 				require.NoError(t, err)
 				assert.EqualValues(t, 1, total)
 				require.Len(t, entries, 1)
 				assert.False(t, entries[0].Success)
-				status, err := model.GetUserAccessTokenStatus(1)
-				require.NoError(t, err)
-				require.NotNil(t, status.LastUsedAt)
-				assert.Equal(t, "192.0.2.8", status.LastUsedIp)
 				model.RecordLog(1, model.LogTypeTopup, common.NewMessage("independent business"))
 				_, err = model.DeleteOldLogBatch(context.Background(), time.Now().Unix()+1, 100)
 				require.NoError(t, err)

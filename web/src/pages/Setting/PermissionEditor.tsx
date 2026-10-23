@@ -58,7 +58,7 @@ function TargetPermissions({ target, identity, catalog }: { target: Administrato
         <div className='min-w-0'>
           <div className='flex flex-wrap items-center gap-2 text-sm text-ui-text'>
             <span>{t(action.label_key)}</span>
-            {Object.hasOwn(details.data?.overrides[resource.resource] ?? {}, action.action) && <Tag color='blue'>{t('Override')}</Tag>}
+            {Object.hasOwn(details.data?.overrides[resource.resource] ?? {}, action.action) && <Tag tone='blue'>{t('Override')}</Tag>}
           </div>
           <p className='mt-1 text-xs leading-relaxed text-ui-text-3'>{t(action.description_key)}</p>
         </div>

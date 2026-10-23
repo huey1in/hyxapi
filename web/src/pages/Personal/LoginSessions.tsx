@@ -40,7 +40,7 @@ function Sessions({ identity }: { identity: string }) {
       {sessions.isPending && <ProfileRowsSkeleton lines={4} />}
       {message && <div role='alert' className='p-4 text-sm text-ui-text-2'>{t(message)} <Button onClick={() => void sessions.refetch()} loading={sessions.isFetching}>{t('Retry')}</Button></div>}
       {sessions.data?.map((session, index) => <SettingRow key={session.sid} last={index === (sessions.data?.length ?? 0) - 1}
-        title={<span>{t(session.current ? 'Current device' : 'Other device')} {session.current && <Tag color='green'>{t('Current')}</Tag>}</span>}
+        title={<span>{t(session.current ? 'Current device' : 'Other device')} {session.current && <Tag tone='green'>{t('Current')}</Tag>}</span>}
         description={<><span className='break-all'>{session.user_agent || t('Unknown browser')}</span><br />{session.ip} · {session.login_method}<br />{t('Last active')}: {formatDate(session.last_active_at)}<br />{t('Expires')}: {formatDate(session.expires_at)}</>}>
         <Button variant='toggle' disabled={busy} onClick={() => setConfirm(session)}>{t('Sign out')}</Button>
       </SettingRow>)}

@@ -16,7 +16,7 @@ const (
 	// accessTokenRuleAny accepts every valid scoped token; the handler applies
 	// its own checks.
 	accessTokenRuleAny
-	// accessTokenRuleSession rejects every access token, legacy ones included.
+	// accessTokenRuleSession rejects every access token.
 	accessTokenRuleSession
 )
 
@@ -57,9 +57,7 @@ var accessTokenRouteRules = map[string]accessTokenRouteRule{
 	"GET /api/model-pricing":                       accessTokenScopeRule("model:read"),
 	"GET /api/subscription/admin/plans/:id/codes":  accessTokenScopeRule("billing:read"),
 	"GET /api/system-status":                       accessTokenScopeRule("ops:read"),
-	"GET /api/audit/legacy":                        accessTokenScopeRule("audit:read"),
 	"GET /api/task/":                               accessTokenScopeRule("log:read"),
-	"POST /api/user/payment/epay/checkout":         accessTokenScopeRule("wallet:write"),
 	"POST /api/user/payment/alipay/checkout":       accessTokenScopeRule("wallet:write"),
 	"POST /api/option/test_email":                  accessTokenScopeRule("option:write"),
 	"POST /api/subscription/admin/plans/:id/codes": accessTokenScopeRule("billing:write"),
@@ -106,7 +104,6 @@ var accessTokenRouteRules = map[string]accessTokenRouteRule{
 	"POST /api/user/access_tokens":                 accessTokenSessionRule,
 	"PATCH /api/user/access_tokens/:id":            accessTokenSessionRule,
 	"DELETE /api/user/access_tokens/:id":           accessTokenSessionRule,
-	"DELETE /api/user/access_tokens/legacy":        accessTokenSessionRule,
 	"GET /api/user/passkey":                        accessTokenScopeRule("account_security:read"),
 	"POST /api/user/passkey/register/begin":        accessTokenScopeRule("account_security:write"),
 	"POST /api/user/passkey/register/finish":       accessTokenScopeRule("account_security:write"),

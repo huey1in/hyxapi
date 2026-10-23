@@ -53,7 +53,7 @@ export default function PricingFiltersDialog({ initialValues, groupOptions, vend
         <h2 id={`${id}-title`} className='text-base font-semibold text-ui-text'>{t('Filters')}</h2>
         <IconButton icon={X} aria-label={t('Close')} onClick={onClose} />
       </header>
-      <div className='min-h-0 overflow-y-auto overscroll-contain px-6 py-3 ui-scrollbar'>
+      <div className='min-h-0 overflow-y-auto overscroll-contain px-6 py-3'>
         <div className='space-y-4'>
           {field('group', 'Group', groupOptions)}
           {field('billing', 'Billing type', [{ value: 'all', label: t('All billing types') }, { value: 'tokens', label: t('Pay as you go') }, { value: 'request', label: t('Pay per request') }, { value: 'expression', label: t('Expression billing') }, { value: 'task', label: t('Task billing') }])}

@@ -74,7 +74,7 @@ func TestRequestPolicyDatabaseMatrix(t *testing.T) {
 			}
 			require.NoError(t, db.Raw(query).Scan(&version).Error)
 			t.Logf("database version: %s", version)
-			rules := `[{"name":"session","model_regex":[".*"],"key_sources":[{"type":"request_header","key":"X-Session"}],"ttl_seconds":0,"skip_retry_on_failure":false,"include_using_group":false,"param_override_template":{"temperature":0},"future_field":{"enabled":false}}]`
+			rules := `[{"name":"session","model_regex":[".*"],"key_sources":[{"type":"request_header","key":"X-Session"}],"ttl_seconds":0,"session_mode":"inherit","include_using_group":false,"param_override_template":{"temperature":0},"future_field":{"enabled":false}}]`
 			require.NoError(t, UpdateRequestPolicyOptions(map[string]string{"RetryTimes": "2", "channel_affinity_setting.rules": rules}))
 			assert.Equal(t, CurrentRequestPolicy().Affinity.Rules, operation_setting.GetChannelAffinitySetting().Rules, "runtime rules must not retain omitted fields from the previous configuration")
 			assert.Equal(t, 2, CurrentRequestPolicy().RetryTimes)
@@ -83,7 +83,7 @@ func TestRequestPolicyDatabaseMatrix(t *testing.T) {
 			assert.Equal(t, "429,500-503", CurrentRequestPolicy().Options["AutomaticRetryStatusCodes"])
 			assert.Equal(t, "429,500-503", operation_setting.AutomaticRetryStatusCodesToString())
 			assert.Error(t, UpdateRequestPolicyOptions(map[string]string{"request_policy_setting.mode": "off"}), "the removed mode switch is not a policy option")
-			assert.False(t, CurrentRequestPolicy().Affinity.Rules[0].SkipRetryOnFailure)
+			assert.Equal(t, "inherit", CurrentRequestPolicy().Affinity.Rules[0].SessionMode)
 			assert.Equal(t, rules, CurrentRequestPolicy().Options["channel_affinity_setting.rules"])
 			loadOptionsFromDatabase()
 			loadOptionsFromDatabase()

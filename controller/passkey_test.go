@@ -146,7 +146,7 @@ func TestPasskeyDomainsPreserveCredentialsAcrossVerificationFlows(t *testing.T) 
 			beginHandler, finishHandler := PasskeyLoginBegin, PasskeyLoginFinish
 			request := map[string]any{"rp_id": legacyRPID}
 			if kind == "login factor" {
-				pending, err := service.StartLoginVerification(user, "password", nil)
+				pending, err := service.StartLoginVerification(user, "password")
 				require.NoError(t, err)
 				request["flow_token"] = pending.FlowToken
 				beginPath, finishPath = "/api/user/login/passkey/begin", "/api/user/login/passkey/finish"
@@ -294,9 +294,6 @@ func TestPasskeyDomainChoicesRespectOriginAndConfiguration(t *testing.T) {
 func setupPasskeyDomainOptions(t *testing.T) {
 	t.Helper()
 	require.NoError(t, model.DB.AutoMigrate(&model.Option{}))
-	// These tests assert on the whole options table. The server-managed legacy
-	// access token deadline written by the enrollment fixture is unrelated.
-	require.NoError(t, model.DB.Delete(&model.Option{Key: "LegacyAccessTokenRetireAt"}).Error)
 	common.OptionMapRWMutex.RLock()
 	previousOptions := maps.Clone(common.OptionMap)
 	previousAddress := system_setting.ServerAddress

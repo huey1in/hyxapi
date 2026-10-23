@@ -101,7 +101,7 @@ export default function SecuritySettings({ identity, user, refresh }: { identity
       <PasswordSettings user={user} refresh={refresh} last={!passkeyEnabled && !twofaEnabled} />
       {message && <div role='alert' className='p-4 text-sm'>{t(message)} <Button onClick={() => void Promise.all(failedQueries.map((query) => query.refetch()))} loading={failedQueries.some((query) => query.isFetching)}>{t('Retry')}</Button></div>}
       {passkeyEnabled && <>
-        <SettingRow title={<span className='inline-flex items-center gap-2'><Fingerprint size={15} />Passkey <Tag color={passkey?.enabled ? 'green' : 'grey'}>{t(passkey?.enabled ? 'Enabled' : 'Not enabled')}</Tag></span>}
+        <SettingRow title={<span className='inline-flex items-center gap-2'><Fingerprint size={15} />Passkey <Tag tone={passkey?.enabled ? 'green' : 'grey'}>{t(passkey?.enabled ? 'Enabled' : 'Not enabled')}</Tag></span>}
           description={t(supported ? 'Sign in with a fingerprint or face recognition' : 'This browser does not support Passkey')} last={!twofaEnabled && !passkey?.enabled}>
           {supported && <Button onClick={register} loading={busy} disabled={passkeyDisabled}>{t(passkey?.enabled ? 'Replace' : 'Add')}</Button>}
         </SettingRow>
@@ -109,7 +109,7 @@ export default function SecuritySettings({ identity, user, refresh }: { identity
           <IconButton icon={Trash2} variant='danger' aria-label={t('Delete Passkey')} title={t('Delete Passkey')} disabled={passkeyDisabled} onClick={() => setConfirm('passkey')} />
         </SettingRow>}
       </>}
-      {twofaEnabled && <SettingRow title={<span className='inline-flex items-center gap-2'><KeyRound size={15} />{t('Two-factor authentication')} <Tag color={twofa?.enabled ? 'green' : 'grey'}>{t(twofa?.enabled ? 'Enabled' : 'Not enabled')}</Tag></span>}
+      {twofaEnabled && <SettingRow title={<span className='inline-flex items-center gap-2'><KeyRound size={15} />{t('Two-factor authentication')} <Tag tone={twofa?.enabled ? 'green' : 'grey'}>{t(twofa?.enabled ? 'Enabled' : 'Not enabled')}</Tag></span>}
         description={twofa?.enabled ? <>{t('Backup codes remaining: {{count}}', { count: twofa.backup_codes_remaining ?? 0 })} <Button variant='link' disabled={twofaDisabled} onClick={regenerate}>{t('Regenerate')}</Button></> : t('Protect sign-in with a TOTP app')} last>
         <Button variant='toggle' onClick={() => twofa?.enabled ? setConfirm('twofa') : startSetup()} loading={busy} disabled={twofaDisabled}>{t(twofa?.enabled ? 'Disable' : 'Enable')}</Button>
       </SettingRow>}

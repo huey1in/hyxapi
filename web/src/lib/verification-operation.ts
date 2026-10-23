@@ -25,7 +25,6 @@ export function operationForRequest(config: AxiosRequestConfig, hasPassword = tr
   if (method === 'DELETE' && (found = match(/^\/api\/user\/oauth\/bindings\/(\d+)$/))) return { scope: 'account.binding.unbind', context: { provider_id: Number(found[1]) } };
   if (method === 'POST' && path === '/api/user/access_tokens') return { scope: 'access_token.generate', context: { scopes: (body.scopes || []) as string[], expires_at: Number(body.expires_at || 0) } };
   if (method === 'PATCH' && (found = match(/^\/api\/user\/access_tokens\/(\d+)$/))) return { scope: 'access_token.update', context: { token_id: Number(found[1]), scopes: (body.scopes || []) as string[] } };
-  if (method === 'DELETE' && path === '/api/user/access_tokens/legacy') return { scope: 'access_token.revoke', context: { legacy: true } };
   if (method === 'DELETE' && (found = match(/^\/api\/user\/access_tokens\/(\d+)$/))) return { scope: 'access_token.revoke', context: { token_id: Number(found[1]) } };
   if (method === 'POST' && path === '/api/user') return { scope: 'admin.user.create', context: { role: Number(body.role) } };
   if (method === 'PUT' && path === '/api/user') return { scope: 'admin.user.update', context: { user_id: userID } };

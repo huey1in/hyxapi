@@ -133,7 +133,6 @@ func TestSecurityAccountDeletionAcceptsEitherFactorAndRevokesSessions(t *testing
 			}
 			otherSession, err := service.CreateLoginSession(user.Id, "password", "127.0.0.1", "second-session")
 			require.NoError(t, err)
-			require.NoError(t, model.DB.Model(&model.User{}).Where("id = ?", user.Id).Update("access_token", "account-delete-access-token").Error)
 			response := securityEnrollmentRequest("DELETE", "/api/user/self", "", proof, identity, DeleteSelf)
 			var result securityEnrollmentResponse
 			require.NoError(t, common.Unmarshal(response.Body.Bytes(), &result))
@@ -155,9 +154,6 @@ func TestSecurityAccountDeletionAcceptsEitherFactorAndRevokesSessions(t *testing
 			count, err := model.CountActiveUserSessions(user.Id, time.Now().Unix())
 			require.NoError(t, err)
 			assert.Zero(t, count)
-			tokenUser, err := model.ValidateAccessToken("account-delete-access-token")
-			require.NoError(t, err)
-			assert.Nil(t, tokenUser)
 			var audit model.AuditLog
 			require.NoError(t, model.LOG_DB.Where("action = ?", "user.account_delete").Last(&audit).Error)
 			assert.True(t, audit.Success)
@@ -420,7 +416,7 @@ func TestSecurityAccountProfileReadsPasswordStatusInOneQuery(t *testing.T) {
 		}
 		t.Run(name, func(t *testing.T) {
 			user, identity := setupSecurityEnrollmentTest(t)
-			updates := map[string]any{"access_token": "private-profile-token", "remark": "private-profile-remark"}
+			updates := map[string]any{"remark": "private-profile-remark"}
 			if !hasPassword {
 				updates["password"] = ""
 			}
@@ -434,7 +430,6 @@ func TestSecurityAccountProfileReadsPasswordStatusInOneQuery(t *testing.T) {
 			assert.Equal(t, 1, queries)
 			assert.Equal(t, hasPassword, profile.HasPassword)
 			assert.Empty(t, profile.Password)
-			assert.Nil(t, profile.AccessToken)
 			assert.Empty(t, profile.Remark)
 			assert.Equal(t, user.AuthVersion, profile.AuthVersion)
 			assert.Equal(t, user.Group, profile.Group)
@@ -459,7 +454,6 @@ func TestSecurityAccountProfileReadsPasswordStatusInOneQuery(t *testing.T) {
 			require.NoError(t, err)
 			assert.Equal(t, hasPassword, refreshed.HasPassword)
 			assert.Empty(t, refreshed.Password)
-			assert.Nil(t, refreshed.AccessToken)
 		})
 	}
 }
@@ -510,7 +504,6 @@ func TestSecurityAccountLongUnicodePasswordAndSessionRotation(t *testing.T) {
 }
 
 func TestSecurityAccountPasswordPolicyAndHashCompatibility(t *testing.T) {
-	t.Setenv("ACCOUNT_PASSWORD_HASH_ALGORITHM", "argon2id")
 	for _, test := range []struct {
 		name, password string
 		valid          bool
@@ -585,6 +578,10 @@ func TestSecurityAccountEncryptedLongPasswordLogin(t *testing.T) {
 	proof, err := service.VerifySecurityInput(identity, service.VerificationInput{Method: "password", Scope: service.VerificationScopePasswordChange, PasswordEncrypted: encrypted, EncryptionKeyID: keyID})
 	require.NoError(t, err)
 	assert.NotEmpty(t, proof.ProofToken)
+	rawRSA, err := rsa.EncryptOAEP(sha256.New(), rand.Reader, publicKey, []byte("short-password"), nil)
+	require.NoError(t, err)
+	_, err = common.DecryptPassword(base64.StdEncoding.EncodeToString(rawRSA), keyID)
+	require.ErrorIs(t, err, common.ErrPasswordEncryptionInvalid)
 	ciphertext[len(ciphertext)-1] ^= 1
 	parts[3] = base64.StdEncoding.EncodeToString(ciphertext)
 	for _, invalid := range []string{strings.Join(parts, "."), "v2.bad.bad.bad", "v2." + strings.Repeat("a", 4096)} {

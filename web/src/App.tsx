@@ -1,9 +1,6 @@
 import { lazy } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import PageLayout from './components/layout/PageLayout';
-import LegacyLogRedirect from './pages/Log/LegacyLogRedirect';
-import ConsoleRouteRedirect from './components/layout/ConsoleRouteRedirect';
-import { CONSOLE_ROUTE_REDIRECTS } from './lib/console-routes';
 
 const Dashboard = lazy(() => import('./pages/Dashboard'));
 const Channel = lazy(() => import('./pages/Channel'));
@@ -35,10 +32,6 @@ const App = () => (
   <Routes>
     {/* TODO: 首页暂未完成设计，保留 pages/Home，完成设计后恢复路由。 */}
     <Route path='/' element={<Navigate to='/console' replace />} />
-    <Route path='/index.html' element={<Navigate to='/console' replace />} />
-    {Object.keys(CONSOLE_ROUTE_REDIRECTS).map((path) => <Route key={path} path={`${path}/*`} element={<ConsoleRouteRedirect />} />)}
-    <Route path='/console/task' element={<LegacyLogRedirect />} />
-    <Route path='/console/midjourney' element={<LegacyLogRedirect />} />
     <Route element={<PageLayout />}>
       <Route path='/auth'               element={<Auth />} />
       <Route path='/oauth/:provider'    element={<OAuthCallback />} />

@@ -42,8 +42,6 @@ export const AUDIT_ROUTE_LABELS: Record<string, string> = {
   'POST /api/channel/:id/status': 'Updated channel status',
   'POST /api/channel/status/batch': 'Batch updated channel status',
   'POST /api/channel/priority/reorder': 'Reordered channel priorities',
-  'PUT /api/channel/priority': 'Updated channel priorities',
-  'PUT /api/channel/priority/move': 'Moved channel priority',
   'POST /api/channel/tag/disabled': 'Disabled channels by tag',
   'POST /api/channel/tag/enabled': 'Enabled channels by tag',
   'PUT /api/channel/tag': 'Edited channels by tag',

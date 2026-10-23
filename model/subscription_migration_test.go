@@ -32,7 +32,6 @@ func TestBillingMigrationPreservesWalletOverflowAndSelfUse(t *testing.T) {
 		}
 		t.Run(name, func(t *testing.T) {
 			previousDB, previousSQLite := DB, common.UsingSQLite
-			previousRetireAt := legacyAccessTokenRetireAt.Load()
 			db, err := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{})
 			require.NoError(t, err)
 			sqlDB, err := db.DB()
@@ -41,7 +40,6 @@ func TestBillingMigrationPreservesWalletOverflowAndSelfUse(t *testing.T) {
 			DB, common.UsingSQLite = db, true
 			t.Cleanup(func() {
 				DB, common.UsingSQLite = previousDB, previousSQLite
-				legacyAccessTokenRetireAt.Store(previousRetireAt)
 				_ = sqlDB.Close()
 			})
 			require.NoError(t, db.AutoMigrate(&Option{}))

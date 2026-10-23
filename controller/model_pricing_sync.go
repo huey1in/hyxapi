@@ -134,7 +134,7 @@ func AdminApplyModelPricingSync(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"success": false, "message": err.Error()})
 		return
 	}
-	model.RecordLegacyAuditLog(c, model.AuditUpdate, "model_pricing", 0, "同步上游模型价格")
+	model.RecordResourceAudit(c, model.AuditUpdate, "model_pricing", 0, "同步上游模型价格")
 	c.JSON(http.StatusOK, gin.H{
 		"success": true,
 		"message": "",

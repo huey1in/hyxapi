@@ -105,7 +105,7 @@ func ManageMultiKeys(c *gin.Context) {
 		if err := model.CommitChannelMultiKeyEdit(channel, revision); err != nil {
 			return err
 		}
-		model.RecordLegacyAuditLog(c, model.AuditUpdate, "channel", channel.Id, "多密钥管理操作: "+request.Action)
+		model.RecordResourceAudit(c, model.AuditUpdate, "channel", channel.Id, "多密钥管理操作: "+request.Action)
 		return nil
 	}
 

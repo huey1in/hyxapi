@@ -1,7 +1,6 @@
 package controller
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
@@ -46,12 +45,8 @@ func GetTask(c *gin.Context) {
 		videoProxyError(c, http.StatusNotFound, "invalid_request_error", "Task not found")
 		return
 	}
-	createdAt := task.CreatedAt
-	if createdAt == 0 {
-		createdAt = task.SubmitTime
-	}
 	failReason := task.FailReason
-	if task.Status == model.TaskStatusSuccess && taskFailReasonIsLegacyResultURL(task.FailReason) {
+	if task.Status == model.TaskStatusSuccess {
 		failReason = ""
 	}
 	c.JSON(http.StatusOK, gin.H{
@@ -60,7 +55,7 @@ func GetTask(c *gin.Context) {
 		"status":      task.Status,
 		"progress":    task.Progress,
 		"fail_reason": failReason,
-		"created_at":  createdAt,
+		"created_at":  task.CreatedAt,
 		"finished_at": task.FinishTime,
 	})
 }
@@ -113,55 +108,11 @@ func writeTaskArtifacts(c *gin.Context, task *model.Task, dashboard bool) {
 		})
 	}
 	response := gin.H{"task_id": task.TaskID, "artifacts": items}
-	if dashboard && task.Status == model.TaskStatusSuccess && task.Platform == constant.TaskPlatformSuno {
-		response["legacy_audio_clips"] = legacySunoAudioClips(task.Data)
-	}
-	if legacyVideoAvailable(task) {
-		legacyContentURL, buildErr := service.BuildTaskArtifactContentURL(task.TaskID, "video")
-		if buildErr != nil {
-			writeTaskArtifactError(c, http.StatusInternalServerError, "artifact_url_error", "Failed to build artifact content URL")
-			return
-		}
-		response["legacy_content_url"] = legacyContentURL
-	}
 	if dashboard {
 		common.ApiSuccess(c, response)
 		return
 	}
 	c.JSON(http.StatusOK, response)
-}
-
-// legacySunoAudioClips projects a pre-plugin Suno task's persisted snapshot
-// into the clips the dashboard audio preview renders. Task lists no longer
-// carry the snapshot, so the dashboard reads it here on demand. The snapshot
-// is either a clip array or a JSON string holding one; only clips with an
-// audio URL are kept and only preview fields are exposed.
-func legacySunoAudioClips(data json.RawMessage) []map[string]any {
-	clips := make([]map[string]any, 0)
-	if len(data) == 0 {
-		return clips
-	}
-	var items []map[string]any
-	if err := common.Unmarshal(data, &items); err != nil {
-		var encoded string
-		if common.Unmarshal(data, &encoded) != nil || common.UnmarshalJsonStr(encoded, &items) != nil {
-			return clips
-		}
-	}
-	for _, item := range items {
-		audioURL, _ := item["audio_url"].(string)
-		if strings.TrimSpace(audioURL) == "" {
-			continue
-		}
-		clip := map[string]any{"audio_url": audioURL}
-		for _, key := range []string{"clip_id", "id", "title", "tags", "duration", "image_url", "image_large_url", "metadata"} {
-			if value, ok := item[key]; ok {
-				clip[key] = value
-			}
-		}
-		clips = append(clips, clip)
-	}
-	return clips
 }
 
 func projectTaskArtifacts(task *model.Task) ([]relaychannel.TaskArtifact, error) {
@@ -250,24 +201,6 @@ func taskHasPluginExecution(task *model.Task) bool {
 		strings.TrimSpace(task.PrivateData.Execution.TaskPlugin.Key) != ""
 }
 
-func legacyVideoAvailable(task *model.Task) bool {
-	if task == nil || task.Status != model.TaskStatusSuccess ||
-		taskHasPluginExecution(task) || task.Platform == constant.TaskPlatformSuno ||
-		strings.TrimSpace(task.GetResultURL()) == "" {
-		return false
-	}
-	switch constant.NormalizeTaskAction(task.Action) {
-	case constant.TaskActionImageToVideo,
-		constant.TaskActionTextToVideo,
-		constant.TaskActionFirstTailToVideo,
-		constant.TaskActionReferenceToVideo,
-		constant.TaskActionRemix:
-		return true
-	default:
-		return false
-	}
-}
-
 func getTaskForArtifactRequest(c *gin.Context, taskID string) (*model.Task, bool, error) {
 	if middleware.IsTaskArtifactAccess(c) {
 		task, exists, err := model.GetUniqueByOnlyTaskId(taskID)
@@ -334,18 +267,7 @@ func TaskArtifactContent(c *gin.Context) {
 		return
 	}
 	if !taskHasPluginExecution(task) {
-		if artifactKey != "video" || !legacyVideoAvailable(task) {
-			writeTaskArtifactError(c, http.StatusNotFound, "artifact_not_found", "Task or artifact not found")
-			return
-		}
-		descriptor := &relaychannel.TaskContentRequest{
-			URL:            task.GetResultURL(),
-			Method:         c.Request.Method,
-			Credentialless: true,
-		}
-		if err := proxyTaskMedia(c, task, descriptor); err != nil {
-			writeTaskMediaProxyError(c, err)
-		}
+		writeTaskArtifactError(c, http.StatusNotFound, "artifact_not_found", "Task or artifact not found")
 		return
 	}
 	artifacts, err := projectTaskArtifacts(task)
@@ -457,13 +379,10 @@ func tasksToDto(tasks []*model.Task, fillUser bool, viewerRole int) []*dto.TaskD
 			}
 		}
 		item := relay.TaskModel2Dto(task)
-		item.LegacyVideoAvailable = legacyVideoAvailable(task)
 		item.ResultDiscarded = task.PrivateData.ResultDiscarded
 		if task.Status == model.TaskStatusSuccess {
 			item.ResultURL = ""
-			if taskFailReasonIsLegacyResultURL(task.FailReason) {
-				item.FailReason = ""
-			}
+			item.FailReason = ""
 		}
 		if viewerRole >= common.RoleAdminUser {
 			adminInfo := &dto.TaskAdminInfo{}
@@ -510,11 +429,4 @@ func tasksToDto(tasks []*model.Task, fillUser bool, viewerRole int) []*dto.TaskD
 		result[i] = item
 	}
 	return result
-}
-
-func taskFailReasonIsLegacyResultURL(value string) bool {
-	value = strings.TrimSpace(value)
-	return len(value) >= len("https://") && strings.EqualFold(value[:len("https://")], "https://") ||
-		len(value) >= len("http://") && strings.EqualFold(value[:len("http://")], "http://") ||
-		len(value) >= len("data:") && strings.EqualFold(value[:len("data:")], "data:")
 }

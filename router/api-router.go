@@ -42,11 +42,8 @@ func SetApiRouter(router *gin.Engine) {
 		apiRouter.GET("/verification", middleware.EmailVerificationRateLimit(), middleware.TurnstileCheck(), controller.SendEmailVerification)
 		apiRouter.GET("/reset_password", middleware.CriticalRateLimit(), middleware.TurnstileCheck(), controller.SendPasswordResetEmail)
 		apiRouter.POST("/user/reset", middleware.CriticalRateLimit(), anonymousRequestBodyLimit, controller.ResetPassword)
-		apiRouter.GET("/payment/epay/notify", controller.LegacyEpayNotify)
-		apiRouter.GET("/payment/epay/redirect", controller.EpayRedirect)
 		apiRouter.POST("/payment/alipay/notify", controller.AlipayNotify)
 		apiRouter.GET("/payment/alipay/return", controller.AlipayReturn)
-		apiRouter.POST("/payment/epay/notify", anonymousRequestBodyLimit, controller.LegacyEpayNotify)
 		apiRouter.POST("/usdt/notify", anonymousRequestBodyLimit, controller.USDTNotify)
 		tickets := apiRouter.Group("/tickets", middleware.DisableCache(), middleware.UserAuth())
 		tickets.GET("", controller.ListTickets)
@@ -67,9 +64,6 @@ func SetApiRouter(router *gin.Engine) {
 		// WeChat uses its existing authorization-code service.
 		apiRouter.GET("/oauth/wechat", middleware.CriticalRateLimit(), middleware.DisableCache(), controller.WeChatAuth)
 		apiRouter.POST("/oauth/wechat/bind", middleware.UserAuth(), middleware.CriticalRateLimit(), controller.WeChatBind)
-		apiRouter.GET("/oauth/telegram/login", middleware.CriticalRateLimit(), middleware.DisableCache(), controller.TelegramLegacyAuth)
-		apiRouter.POST("/oauth/telegram/bind/start", middleware.UserAuth(), middleware.CriticalRateLimit(), middleware.DisableCache(), controller.TelegramLegacyAuth)
-		apiRouter.GET("/oauth/telegram/bind/:flow_token", middleware.CriticalRateLimit(), middleware.DisableCache(), controller.TelegramLegacyAuth)
 		// Standard OAuth providers (GitHub, Discord, OIDC, LinuxDO, Telegram) - unified route
 		apiRouter.GET("/oauth/:provider", middleware.CriticalRateLimit(), middleware.DisableCache(), middleware.TryUserAuth(), controller.HandleOAuth)
 
@@ -118,7 +112,6 @@ func SetApiRouter(router *gin.Engine) {
 					accessTokenRoute.POST("", middleware.CriticalRateLimit(), middleware.UserCriticalRateLimit("access-token"), controller.CreateAccessToken)
 					accessTokenRoute.PATCH("/:id", middleware.CriticalRateLimit(), middleware.UserCriticalRateLimit("access-token"), controller.UpdateAccessToken)
 					accessTokenRoute.DELETE("/:id", middleware.CriticalRateLimit(), middleware.UserCriticalRateLimit("access-token"), controller.DeleteAccessToken)
-					accessTokenRoute.DELETE("/legacy", middleware.CriticalRateLimit(), middleware.UserCriticalRateLimit("access-token"), controller.RevokeLegacyAccessToken)
 				}
 				selfRoute.GET("/passkey", controller.PasskeyStatus)
 				selfRoute.POST("/passkey/register/begin", middleware.UserCriticalRateLimit("security-verification"), middleware.DisableCache(), controller.PasskeyRegisterBegin)
@@ -145,7 +138,6 @@ func SetApiRouter(router *gin.Engine) {
 				selfRoute.POST("/notification_email/start", middleware.CriticalRateLimit(), middleware.UserCriticalRateLimit("notification-email"), middleware.EmailVerificationRateLimit(), middleware.DisableCache(), controller.NotificationEmailStart)
 				selfRoute.POST("/notification_email/confirm", middleware.UserCriticalRateLimit("notification-email"), middleware.DisableCache(), controller.NotificationEmailConfirm)
 
-				selfRoute.POST("/payment/epay/checkout", middleware.CriticalRateLimit(), controller.RequestEpayCheckout)
 				selfRoute.POST("/payment/alipay/checkout", middleware.CriticalRateLimit(), controller.RequestAlipayCheckout)
 
 				// 2FA routes
@@ -354,7 +346,6 @@ func SetApiRouter(router *gin.Engine) {
 
 		handlePermissionRoute(apiRouter.Group("", middleware.DisableCache(), middleware.AdminAuth()), http.MethodGet, "/audit", authz.AuditRead, controller.GetAuditLogs)
 		apiRouter.GET("/audit/self", middleware.DisableCache(), middleware.UserAuth(), controller.GetAuditLogs)
-		apiRouter.GET("/audit/legacy", middleware.AdminAuth(), controller.GetLegacyAuditLogs)
 		apiRouter.GET("/system-status", middleware.AdminAuth(), controller.GetSystemStatus)
 
 		performanceRoute := apiRouter.Group("/performance", middleware.RootAuth())

@@ -54,7 +54,7 @@ function TicketWorkspace({ userID, role, identity, management }: { userID: numbe
   const columns: TableColumn<SupportTicket>[] = [
     { key: 'subject', title: t('Subject'), mobileRole: 'wide', render: (ticket) => <Button variant='link' onClick={(event) => { event.stopPropagation(); open(ticket.id); }}><span className='text-left break-words'>#{ticket.id} {ticket.subject}</span></Button> },
     { key: 'category', title: t('Category'), render: (ticket) => t(ticketLabels[ticket.category]) },
-    { key: 'status', title: t('Status'), render: (ticket) => <Tag color={ticket.status === 'resolved' ? 'green' : 'grey'}>{t(ticketLabels[ticket.status])}</Tag> },
+    { key: 'status', title: t('Status'), render: (ticket) => <Tag tone={ticket.status === 'resolved' ? 'green' : 'grey'}>{t(ticketLabels[ticket.status])}</Tag> },
     ...(management ? [{ key: 'user', title: t('Requester'), render: (ticket: SupportTicket) => `#${ticket.user_id}` }, { key: 'priority', title: t('Priority'), render: (ticket: SupportTicket) => t(ticketLabels[ticket.priority]) }, { key: 'assignee', title: t('Assigned support'), render: (ticket: SupportTicket) => ticket.assignee_id ? ticket.assignee_id === userID ? t('Me') : `#${ticket.assignee_id}` : t('Unassigned') }] : []),
     { key: 'updated_at', title: t('Updated time'), render: (ticket) => <span className='whitespace-nowrap text-ui-text-3'>{new Date(ticket.updated_at * 1000).toLocaleString(i18n.language)}</span> },
   ];

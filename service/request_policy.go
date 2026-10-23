@@ -144,22 +144,15 @@ func MarkRequestPolicySuccess(c *gin.Context, stream *relaycommon.StreamStatus) 
 	state.AddEvent(PolicyEvent{ChannelID: channelID, Decision: decision})
 }
 
-// Rules explicitly inherit the global default or override it. Rules without a
-// mode retain their legacy retry behavior until an administrator changes them.
+// Rules inherit the global default unless they explicitly select a mode.
 func EffectiveSessionMode(setting *operation_setting.ChannelAffinitySetting, rule operation_setting.ChannelAffinityRule) (mode, source string) {
-	if rule.SessionMode == "inherit" {
+	if rule.SessionMode == "" || rule.SessionMode == "inherit" {
 		if setting.SessionMode != "" {
 			return setting.SessionMode, "global"
 		}
 		return "prefer", "global"
 	}
-	if rule.SessionMode != "" {
-		return rule.SessionMode, "session_rule"
-	}
-	if rule.SkipRetryOnFailure {
-		return "strict", "session_rule"
-	}
-	return "prefer", "session_rule"
+	return rule.SessionMode, "session_rule"
 }
 
 // RecordRequestPolicyTermination appends the final decision after routing has

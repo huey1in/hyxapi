@@ -18,7 +18,7 @@ export const userSubscriptionSchema = z.object({
   upgrade_group: z.string(), downgrade_group: z.string(), prev_user_group: z.string(),
 });
 const summaries = z.array(z.object({ subscription: userSubscriptionSchema })).nullable().transform((rows) => rows ?? []);
-export const subscriptionSelfSchema = z.object({ billing_preference: billingPreferenceSchema, subscriptions: summaries, all_subscriptions: summaries });
+export const subscriptionSelfSchema = z.object({ billing_preference: billingPreferenceSchema, all_subscriptions: summaries });
 export type UserSubscription = z.infer<typeof userSubscriptionSchema>;
 export type SubscriptionSelf = z.infer<typeof subscriptionSelfSchema>;
 export function isActiveSubscription(subscription: Pick<UserSubscription, 'status' | 'end_time'>, now = Date.now() / 1000): boolean {

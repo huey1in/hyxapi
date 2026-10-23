@@ -146,7 +146,7 @@ func TestSessionLimitDoesNotRecordRejectedLoginAsSuccessful(t *testing.T) {
 	recorder := httptest.NewRecorder()
 	c, _ := gin.CreateTestContext(recorder)
 	c.Request = httptest.NewRequest(http.MethodPost, "/api/user/login", nil)
-	setupLogin(user, nil, c)
+	setupLogin(user, c)
 
 	assert.Equal(t, http.StatusConflict, recorder.Code)
 	var stored model.User

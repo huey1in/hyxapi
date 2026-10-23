@@ -33,7 +33,7 @@ func TestTokenAutoGroupsContextDoesNotBroadenInvalidSnapshots(t *testing.T) {
 	}{
 		{"inherit", "", []string{"default", "vip"}, false},
 		{"legacy empty snapshot", `[]`, []string{"default", "vip"}, false},
-		{"ordered snapshot", `["vip","default"]`, []string{"vip", "default"}, true},
+		{"snapshot sorted by billing multiplier", `["vip","default"]`, []string{"default", "vip"}, true},
 		{"revoked snapshot", `["removed"]`, []string{}, true},
 		{"malformed snapshot", `{`, []string{}, true},
 	} {

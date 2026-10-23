@@ -77,7 +77,7 @@ func OllamaPullModel(c *gin.Context) {
 		common.ApiError(c, err)
 		return
 	}
-	model.RecordLegacyAuditLog(c, model.AuditUpdate, "channel", channel.Id, "Ollama model pulled: "+request.ModelName)
+	model.RecordResourceAudit(c, model.AuditUpdate, "channel", channel.Id, "Ollama model pulled: "+request.ModelName)
 	common.ApiSuccess(c, nil)
 }
 
@@ -110,7 +110,7 @@ func OllamaPullModelStream(c *gin.Context) {
 	if err != nil {
 		send(gin.H{"error": err.Error()})
 	} else {
-		model.RecordLegacyAuditLog(c, model.AuditUpdate, "channel", channel.Id, "Ollama model pulled: "+request.ModelName)
+		model.RecordResourceAudit(c, model.AuditUpdate, "channel", channel.Id, "Ollama model pulled: "+request.ModelName)
 		send(gin.H{"message": fmt.Sprintf("Model %s pulled successfully", request.ModelName)})
 	}
 	_, _ = fmt.Fprint(c.Writer, "data: [DONE]\n\n")
@@ -130,7 +130,7 @@ func OllamaDeleteModel(c *gin.Context) {
 		common.ApiError(c, err)
 		return
 	}
-	model.RecordLegacyAuditLog(c, model.AuditUpdate, "channel", channel.Id, "Ollama model deleted: "+request.ModelName)
+	model.RecordResourceAudit(c, model.AuditUpdate, "channel", channel.Id, "Ollama model deleted: "+request.ModelName)
 	common.ApiSuccess(c, nil)
 }
 
@@ -178,6 +178,6 @@ func UpdateOllamaChannelModels(c *gin.Context) {
 		return
 	}
 	model.InitChannelCache()
-	model.RecordLegacyAuditLog(c, model.AuditUpdate, "channel", id, fmt.Sprintf("Ollama channel models %s: %v", request.Action, request.Models))
+	model.RecordResourceAudit(c, model.AuditUpdate, "channel", id, fmt.Sprintf("Ollama channel models %s: %v", request.Action, request.Models))
 	common.ApiSuccess(c, gin.H{"models": models})
 }

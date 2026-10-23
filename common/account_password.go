@@ -6,7 +6,6 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
-	"os"
 	"strings"
 	"unicode/utf8"
 
@@ -25,7 +24,6 @@ const (
 var (
 	ErrAccountPasswordLength = errors.New("Password must contain between 8 and 128 characters.")
 	ErrAccountPasswordSame   = errors.New("New password must be different from current password")
-	ErrPasswordLegacyLimit   = errors.New("Long passwords are unavailable until the password storage upgrade is complete.")
 )
 
 // ValidateNewAccountPassword applies only when a user chooses a new password.
@@ -38,22 +36,10 @@ func ValidateNewAccountPassword(password string) error {
 	return nil
 }
 
-// HashAccountPassword is for account passwords, not MFA backup codes. The
-// temporary bcrypt mode permits rolling out dual-format readers to all nodes
-// before enabling Argon2id writes. Existing hashes are never rewritten in bulk.
+// HashAccountPassword stores account passwords using Argon2id.
 func HashAccountPassword(password string) (string, error) {
 	if err := ValidateNewAccountPassword(password); err != nil {
 		return "", err
-	}
-	switch os.Getenv("ACCOUNT_PASSWORD_HASH_ALGORITHM") {
-	case "bcrypt":
-		if len(password) > 72 {
-			return "", ErrPasswordLegacyLimit
-		}
-		return Password2Hash(password)
-	case "", "argon2id":
-	default:
-		return "", errors.New("Unsupported account password hashing configuration.")
 	}
 	salt := make([]byte, accountPasswordSaltBytes)
 	if _, err := rand.Read(salt); err != nil {

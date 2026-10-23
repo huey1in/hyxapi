@@ -24,7 +24,9 @@ func TestRemovedFeatureSettingsArePurgedAndCannotBeRestored(t *testing.T) {
 	require.NoError(t, db.AutoMigrate(&Option{}))
 	keys := []string{
 		"model_deployment.ionet.enabled", "model_deployment.ionet.api_key",
-		"Chats", "ChatLink", "ChatLink2", "log_setting.max_range_days", "About",
+		"Chats", "ChatLink", "ChatLink2", "log_setting.max_range_days", "About", "DisplayInCurrencyEnabled",
+		"group_ratio_setting.group_ratio", "group_ratio_setting.group_group_ratio",
+		"theme.frontend", "Announcements", "UptimeKumaUrl", "UptimeKumaSlug", "LegacyAccessTokenRetireAt",
 		"monitor_setting.model_health_enabled", "monitor_setting.model_health_interval_minutes",
 		"ApiInfo", "FAQ", "console_setting.api_info", "console_setting.faq",
 		"console_setting.api_info_enabled", "console_setting.faq_enabled", "general_setting.docs_link",

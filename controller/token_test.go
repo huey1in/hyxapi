@@ -112,6 +112,7 @@ func newAuthenticatedContext(t *testing.T, method string, target string, body an
 		ctx.Request.Header.Set("Content-Type", "application/json")
 	}
 	ctx.Set("id", userID)
+	ctx.Set("group", "default")
 	return ctx, recorder
 }
 
@@ -134,7 +135,7 @@ func TestGetAllTokensMasksKeyInResponse(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	ctx, recorder := newAuthenticatedContext(t, http.MethodGet, "/api/token/?p=1&size=10", nil, 1)
+	ctx, recorder := newAuthenticatedContext(t, http.MethodGet, "/api/token/?p=1&page_size=10", nil, 1)
 	GetAllTokens(ctx)
 
 	response := decodeAPIResponse(t, recorder)
@@ -179,7 +180,7 @@ func TestSearchTokensMasksKeyInResponse(t *testing.T) {
 	db := setupTokenControllerTestDB(t)
 	token := seedToken(t, db, 1, "searchable-token", "ijkl1234mnop5678")
 
-	ctx, recorder := newAuthenticatedContext(t, http.MethodGet, "/api/token/search?keyword=searchable-token&p=1&size=10", nil, 1)
+	ctx, recorder := newAuthenticatedContext(t, http.MethodGet, "/api/token/search?keyword=searchable-token&p=1&page_size=10", nil, 1)
 	SearchTokens(ctx)
 
 	response := decodeAPIResponse(t, recorder)

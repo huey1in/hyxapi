@@ -10,6 +10,12 @@ export function manualTokenGroups(token: { groups?: string[]; group?: string }):
   return token.group.split(',').map((group) => group.trim()).filter(Boolean);
 }
 
+export function initialTokenGroupSelection(token: { id?: number; groups?: string[]; group?: string }, available: string[] = []) {
+  const groups = manualTokenGroups(token);
+  const automatic = token.group === 'auto' || token.group === '[]' || (!!token.id && groups.length === 0);
+  return { automatic, groups: groups.length || automatic || token.id ? groups : available.slice(0, 1) };
+}
+
 export function reconcileAutoGroups(stored: string[] | null | undefined, available: string[], max: number) {
   const original = Array.isArray(stored) ? stored : [];
   const allowed = new Set(available);
@@ -23,7 +29,7 @@ export function reconcileAutoGroups(stored: string[] | null | undefined, availab
 
 export function validateAutoGroups(mode: AutoGroupMode, groups: string[], max: number, available: string[], translate?: (key: string, options?: { count: number }) => string): string {
   if (mode === 'inherit') return '';
-  if (!groups.length) return translate?.('Select at least one Auto group or inherit global settings') ?? '请选择至少一个 Auto 分组，或切换为继承全局配置';
+  if (!groups.length) return translate?.('Select at least one Auto group or use all available groups') ?? '请选择至少一个 Auto 分组，或使用全部可用分组';
   if (groups.length > max) return translate?.('Select at most {{count}} Auto groups', { count: max }) ?? `最多选择 ${max} 个 Auto 分组`;
   if (new Set(groups).size !== groups.length) return translate?.('Auto groups must be unique') ?? 'Auto 分组不能重复';
   if (groups.some((group) => !available.includes(group))) return translate?.('Selected Auto groups are no longer available. Select again.') ?? '所选 Auto 分组已失效，请重新选择';

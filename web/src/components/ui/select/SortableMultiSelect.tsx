@@ -114,7 +114,7 @@ export default function SortableMultiSelect({ id, label, options, value, onChang
       onPointerMove={move} onPointerUp={(event) => finish(event, true)} onPointerCancel={(event) => finish(event, false)}
       onLostPointerCapture={() => { drag.current = null; setPreview(null); }}
       className='rounded-xl border border-ui-border bg-[var(--page-bg)] shadow-lg' style={{ position: 'fixed', inset: 'auto', margin: 0, padding: 0 }}>
-      <div ref={items} className='ui-scrollbar max-h-72 overflow-y-auto p-1'>
+      <div ref={items} className='max-h-72 overflow-y-auto p-1'>
         {!ordered.length && <p className='px-2 py-3 text-center text-xs text-ui-text-3'>{t('No matches')}</p>}
         {ordered.map((item, index) => {
           const checked = selectedSet.has(item);

@@ -828,10 +828,6 @@ func CompleteOnlineTopUp(tradeNo string, expectedPaymentMethod string, callerIp 
 	return nil
 }
 
-func CompleteEpayTopUp(tradeNo string, callerIp string) error {
-	return CompleteOnlineTopUp(tradeNo, PaymentMethodEpay, callerIp)
-}
-
 type RevenueSummary struct {
 	TotalMoney  float64 `json:"total_money"`
 	TotalAmount int64   `json:"total_amount"`
