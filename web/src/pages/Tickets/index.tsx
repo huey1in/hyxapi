@@ -52,7 +52,7 @@ function TicketWorkspace({ userID, role, identity, management }: { userID: numbe
   const changed = () => { void client.invalidateQueries({ queryKey: ['tickets', identity] }); };
   const open = (id: number | null) => { setSearchParams((params) => { if (id) params.set('ticket', String(id)); else params.delete('ticket'); return params; }); };
   const columns: TableColumn<SupportTicket>[] = [
-    { key: 'subject', title: t('Subject'), mobileRole: 'wide', render: (ticket) => <Button variant='link' onClick={() => open(ticket.id)}><span className='text-left break-words'>#{ticket.id} {ticket.subject}</span></Button> },
+    { key: 'subject', title: t('Subject'), mobileRole: 'wide', render: (ticket) => <Button variant='link' onClick={(event) => { event.stopPropagation(); open(ticket.id); }}><span className='text-left break-words'>#{ticket.id} {ticket.subject}</span></Button> },
     { key: 'category', title: t('Category'), render: (ticket) => t(ticketLabels[ticket.category]) },
     { key: 'status', title: t('Status'), render: (ticket) => <Tag color={ticket.status === 'resolved' ? 'green' : 'grey'}>{t(ticketLabels[ticket.status])}</Tag> },
     ...(management ? [{ key: 'user', title: t('Requester'), render: (ticket: SupportTicket) => `#${ticket.user_id}` }, { key: 'priority', title: t('Priority'), render: (ticket: SupportTicket) => t(ticketLabels[ticket.priority]) }, { key: 'assignee', title: t('Assigned support'), render: (ticket: SupportTicket) => ticket.assignee_id ? ticket.assignee_id === userID ? t('Me') : `#${ticket.assignee_id}` : t('Unassigned') }] : []),
@@ -67,7 +67,19 @@ function TicketWorkspace({ userID, role, identity, management }: { userID: numbe
       {!management && <div className='ml-auto'><Button icon={Plus} onClick={() => setCreating(true)}>{t('New ticket')}</Button></div>}
     </div>
     {query.isError && <div role='alert' className='mb-4 flex items-center gap-3 text-sm text-ui-danger'>{t(apiErrorMessage(query.error, 'Unable to load tickets'))}<Button onClick={() => void query.refetch()}>{t('Retry')}</Button></div>}
-    <div className='min-h-[320px]'><Table columns={columns} rows={query.isError ? [] : query.data?.items ?? []} loading={query.isPending} skeletonRows={5} emptyIcon={Headset} emptyText={t('No support tickets')} /></div>
+    <div className='min-h-[320px]'><Table columns={columns} rows={query.isError ? [] : query.data?.items ?? []} loading={query.isPending} skeletonRows={5} emptyIcon={Headset} emptyText={t('No support tickets')}
+      onRowClick={(ticket) => open(ticket.id)}
+      rowProps={(ticket) => ({
+        tabIndex: 0,
+        'aria-label': `#${ticket.id} ${ticket.subject}`,
+        onKeyDown: (event) => {
+          if (event.target === event.currentTarget && (event.key === 'Enter' || event.key === ' ')) {
+            event.preventDefault();
+            open(ticket.id);
+          }
+        },
+      })}
+    /></div>
     <div className='mt-4 flex justify-end'><Pagination page={page} pageSize={10} total={query.data?.total ?? 0} onChange={setPage} /></div>
     {filtering && <Modal open width={380} title={t('Filters')} onClose={() => setFiltering(false)} hideFooter>
       <div className='flex items-center justify-between gap-3 py-2 text-sm'><span>{t('Status')}</span><Select popover aria-label={t('Ticket status')} value={status} options={[{ value: '', label: t('All statuses') }, ...['open', 'waiting_user', 'resolved', 'closed'].map((value) => ({ value, label: t(ticketLabels[value]) }))]} onChange={(value) => { setStatus(value); setPage(1); }} /></div>
