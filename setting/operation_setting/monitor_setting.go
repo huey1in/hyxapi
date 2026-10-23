@@ -9,12 +9,10 @@ import (
 )
 
 type MonitorSetting struct {
-	ModelHealthEnabled         bool    `json:"model_health_enabled"`
-	ModelHealthIntervalMinutes float64 `json:"model_health_interval_minutes"`
-	AutoTestChannelEnabled     bool    `json:"auto_test_channel_enabled"`
-	AutoTestChannelMinutes     float64 `json:"auto_test_channel_minutes"`
-	ChannelTestMode            string  `json:"channel_test_mode"`
-	ChannelTestConcurrency     int     `json:"channel_test_concurrency"`
+	AutoTestChannelEnabled bool    `json:"auto_test_channel_enabled"`
+	AutoTestChannelMinutes float64 `json:"auto_test_channel_minutes"`
+	ChannelTestMode        string  `json:"channel_test_mode"`
+	ChannelTestConcurrency int     `json:"channel_test_concurrency"`
 }
 
 const (
@@ -28,12 +26,10 @@ const (
 
 // 默认配置
 var monitorSetting = MonitorSetting{
-	ModelHealthEnabled:         true,
-	ModelHealthIntervalMinutes: 0.25,
-	AutoTestChannelEnabled:     false,
-	AutoTestChannelMinutes:     10,
-	ChannelTestMode:            ChannelTestModeScheduledAll,
-	ChannelTestConcurrency:     DefaultChannelTestConcurrency,
+	AutoTestChannelEnabled: false,
+	AutoTestChannelMinutes: 10,
+	ChannelTestMode:        ChannelTestModeScheduledAll,
+	ChannelTestConcurrency: DefaultChannelTestConcurrency,
 }
 
 func init() {

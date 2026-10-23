@@ -466,6 +466,9 @@ func ManualCompleteTopUp(tradeNo string, callerIp string) error {
 		if err := lockForUpdate(tx).Where(refCol+" = ?", tradeNo).First(topUp).Error; err != nil {
 			return common.NewMessage("Top-up order does not exist")
 		}
+		if topUp.PaymentProvider == "epusdt" {
+			return errors.New("USDT orders require a verified gateway callback")
+		}
 
 		// 幂等处理：已成功直接返回
 		if topUp.Status == common.TopUpStatusSuccess {

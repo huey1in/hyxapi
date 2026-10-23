@@ -34,6 +34,7 @@ type oauthFlowPayload struct {
 	AffiliateCode   string                         `json:"affiliate_code,omitempty"`
 	Verification    *service.OAuthVerificationFlow `json:"verification,omitempty"`
 	Telegram        *oauth.TelegramOAuthFlow       `json:"telegram,omitempty"`
+	Google          *oauth.GoogleOAuthFlow         `json:"google,omitempty"`
 	SessionIdentity *service.AuthIdentity          `json:"session_identity,omitempty"`
 	Authorization   *model.AuthFlowAuthorization   `json:"authorization,omitempty"`
 }
@@ -73,6 +74,14 @@ func GenerateOAuthCode(c *gin.Context) {
 		}
 		flowPayload.Telegram = telegramFlow
 	}
+	if request.Provider == "google" {
+		googleFlow, err := oauth.NewGoogleOAuthFlow()
+		if err != nil {
+			writeSecurityOperationError(c, err)
+			return
+		}
+		flowPayload.Google = googleFlow
+	}
 	if request.Intent == model.AuthFlowIntentBind || request.Intent == model.AuthFlowIntentVerify {
 		identity, ok := middleware.GetSessionAuthIdentity(c)
 		if !ok {
@@ -96,7 +105,7 @@ func GenerateOAuthCode(c *gin.Context) {
 			}
 			flowPayload.SessionIdentity = &identity
 		}
-		if flowPayload.Telegram != nil {
+		if flowPayload.Telegram != nil || flowPayload.Google != nil {
 			if _, _, err := service.ValidateLoginSession(identity); err != nil {
 				writeSecurityOperationError(c, err)
 				return
@@ -135,6 +144,9 @@ func GenerateOAuthCode(c *gin.Context) {
 	data := gin.H{"flow_token": state, "expires_at": expiresAt.Unix()}
 	if flowPayload.Telegram != nil {
 		data["authorization_url"] = flowPayload.Telegram.AuthorizationURL(state)
+	}
+	if flowPayload.Google != nil {
+		data["authorization_url"] = flowPayload.Google.AuthorizationURL(state)
 	}
 	c.JSON(http.StatusOK, gin.H{
 		"success": true,
@@ -212,19 +224,25 @@ func HandleOAuth(c *gin.Context) {
 	}
 
 	// 3. Check if provider is enabled
-	var telegramPayload oauthFlowPayload
-	if providerName == "telegram" {
-		if err := oauth.TelegramConfigurationError(); err != nil {
+	var pinnedPayload oauthFlowPayload
+	if providerName == "telegram" || providerName == "google" {
+		configurationError := oauth.TelegramConfigurationError
+		if providerName == "google" {
+			configurationError = oauth.GoogleConfigurationError
+		}
+		if err := configurationError(); err != nil {
 			writeSecurityOperationError(c, err)
 			return
 		}
-		if err := common.UnmarshalJsonStr(pendingFlow.Payload, &telegramPayload); err != nil || telegramPayload.Telegram == nil {
+		if err := common.UnmarshalJsonStr(pendingFlow.Payload, &pinnedPayload); err != nil ||
+			(providerName == "telegram" && pinnedPayload.Telegram == nil) ||
+			(providerName == "google" && pinnedPayload.Google == nil) {
 			writeSecurityOperationError(c, model.ErrAuthFlowInvalid)
 			return
 		}
 		if pendingFlow.Intent != model.AuthFlowIntentLogin {
 			identity, _ := middleware.GetSessionAuthIdentity(c)
-			if telegramPayload.SessionIdentity == nil || *telegramPayload.SessionIdentity != identity {
+			if pinnedPayload.SessionIdentity == nil || *pinnedPayload.SessionIdentity != identity {
 				writeSecurityOperationError(c, model.ErrAuthFlowInvalid)
 				return
 			}
@@ -233,7 +251,11 @@ func HandleOAuth(c *gin.Context) {
 				return
 			}
 		}
-		c.Set(oauth.TelegramOAuthFlowContextKey, telegramPayload.Telegram)
+		if providerName == "telegram" {
+			c.Set(oauth.TelegramOAuthFlowContextKey, pinnedPayload.Telegram)
+		} else {
+			c.Set(oauth.GoogleOAuthFlowContextKey, pinnedPayload.Google)
+		}
 	}
 	if !provider.IsEnabled() {
 		common.ApiErrorT(c, "{{provider}} login and registration has not been enabled by administrator", providerParams(provider.GetName()))
@@ -381,6 +403,9 @@ func handleOAuthBind(c *gin.Context, providerName string, provider oauth.Provide
 	_, err = model.ConsumeAuthFlowWithAction(state, match, func(tx *gorm.DB, _ *model.AuthFlow) error {
 		if providerName == "telegram" {
 			return model.BindTelegramForSessionWithTx(tx, identity, oauthUser.ProviderUserID)
+		}
+		if providerName == "google" {
+			return model.BindGoogleForSessionWithTx(tx, identity, oauthUser.ProviderUserID)
 		}
 		if custom, ok := provider.(*oauth.GenericOAuthProvider); ok {
 			return model.UpdateUserOAuthBindingForSessionWithTx(tx, identity, custom.GetProviderId(), oauthUser.ProviderUserID)
@@ -559,8 +584,14 @@ func findOrCreateOAuthUser(c *gin.Context, provider oauth.Provider, oauthUser *o
 
 			// Set the provider user ID on the user model and update
 			provider.SetProviderUserID(user, oauthUser.ProviderUserID)
+			if provider.ProviderUserIDColumn() == "google_id" {
+				if err := model.ClaimExternalIdentityWithTx(tx, model.ExternalIdentityProviderGoogle, oauthUser.ProviderUserID, user.Id); err != nil {
+					return err
+				}
+			}
 			if err := tx.Model(user).Updates(map[string]any{
 				"github_id":   user.GitHubId,
+				"google_id":   user.GoogleId,
 				"discord_id":  user.DiscordId,
 				"oidc_id":     user.OidcId,
 				"linux_do_id": user.LinuxDOId,

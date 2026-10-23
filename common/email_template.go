@@ -2,6 +2,8 @@ package common
 
 import (
 	"fmt"
+	"html"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -46,8 +48,8 @@ const DefaultEmailVerificationTemplate = EmailHead + `
 <tr>
   <td width="48" style="font-size:1px;">&nbsp;</td>
   <td>
-    <h1 style="margin:0 0 16px;font-size:21px;font-weight:400;color:#1a1a1a;font-family:` + emailFont + `;">验证您的邮箱</h1>
-    <p style="margin:0;font-size:15px;line-height:1.6;color:#525252;font-family:` + emailFont + `;">请输入以下验证码完成邮箱验证，验证码将在 {{expireMinutes}} 分钟后失效。</p>
+    <h1 style="margin:0 0 16px;font-size:21px;font-weight:400;color:#1a1a1a;font-family:` + emailFont + `;">{{title}}</h1>
+    <p style="margin:0;font-size:15px;line-height:1.6;color:#525252;font-family:` + emailFont + `;">{{description}}</p>
   </td>
   <td width="48" style="font-size:1px;">&nbsp;</td>
 </tr>
@@ -60,7 +62,7 @@ const DefaultEmailVerificationTemplate = EmailHead + `
 <tr><td colspan="3" height="28" style="font-size:1px;line-height:1px;">&nbsp;</td></tr>
 <tr>
   <td width="48" style="font-size:1px;">&nbsp;</td>
-  <td><p style="margin:0;font-size:13px;line-height:1.6;color:#ababab;font-family:` + emailFont + `;">如果这不是您本人的操作，请忽略此邮件。</p></td>
+  <td><p style="margin:0;font-size:13px;line-height:1.6;color:#ababab;font-family:` + emailFont + `;">{{notice}}</p></td>
   <td width="48" style="font-size:1px;">&nbsp;</td>
 </tr>
 ` + EmailFoot
@@ -149,6 +151,39 @@ func GetEmailTemplate(key string) string {
 		return def
 	}
 	return ""
+}
+
+type VerificationEmail struct {
+	Code          string
+	ExpireMinutes int
+	Title         string
+	Description   string
+	Notice        string
+}
+
+// RenderVerificationEmail shares the configured verification template across
+// registration, account binding and notification-mailbox verification.
+func RenderVerificationEmail(mail VerificationEmail) string {
+	if mail.Title == "" {
+		mail.Title = "验证您的邮箱"
+	}
+	if mail.Description == "" {
+		mail.Description = fmt.Sprintf("请输入以下验证码完成邮箱验证，验证码将在 %d 分钟后失效。", mail.ExpireMinutes)
+	}
+	if mail.Notice == "" {
+		mail.Notice = "如果这不是您本人的操作，请勿将验证码告诉任何人。"
+	}
+	commonVars := map[string]string{
+		"siteName": SystemName, "code": mail.Code, "expireMinutes": strconv.Itoa(mail.ExpireMinutes),
+		"title": mail.Title, "description": mail.Description, "notice": mail.Notice,
+	}
+	for key, value := range commonVars {
+		commonVars[key] = html.EscapeString(value)
+	}
+	OptionMapRWMutex.RLock()
+	tmpl := GetEmailTemplate(EmailTemplateVerificationKey)
+	OptionMapRWMutex.RUnlock()
+	return RenderTemplate(tmpl, commonVars)
 }
 
 // RenderTestEmail renders the test email template

@@ -4,10 +4,12 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"strconv"
 	"strings"
 
 	"github.com/QuantumNous/new-api/common"
 	"github.com/QuantumNous/new-api/model"
+	"github.com/QuantumNous/new-api/oauth"
 	"github.com/QuantumNous/new-api/setting"
 	"github.com/QuantumNous/new-api/setting/billing_setting"
 	"github.com/QuantumNous/new-api/setting/console_setting"
@@ -108,6 +110,42 @@ func UpdateOption(c *gin.Context) {
 		return
 	}
 	switch option.Key {
+	case "usdt.enabled":
+		if option.Value == "true" {
+			if err := system_setting.GetUSDTSettings().Validate(); err != nil {
+				common.ApiError(c, err)
+				return
+			}
+		}
+	case "usdt.min_topup":
+		value, err := strconv.ParseInt(option.Value.(string), 10, 64)
+		if err != nil || value < 1 || value > 1000000 {
+			common.ApiErrorT(c, "Invalid parameters")
+			return
+		}
+	case "usdt.gateway_url":
+		s := *system_setting.GetUSDTSettings()
+		s.GatewayURL = option.Value.(string)
+		if s.GatewayURL != "" {
+			s.MerchantID, s.APIKey, s.MinTopUp = "validate", "validate", 1
+			if err := s.Validate(); err != nil {
+				common.ApiError(c, err)
+				return
+			}
+		}
+	case "usdt.network":
+		s := *system_setting.GetUSDTSettings()
+		s.Network = option.Value.(string)
+		s.GatewayURL, s.MerchantID, s.APIKey, s.MinTopUp = "https://validate.example", "validate", "validate", 1
+		if err := s.Validate(); err != nil {
+			common.ApiError(c, err)
+			return
+		}
+	case "google.enabled":
+		if option.Value == "true" && !system_setting.GetGoogleSettings().IsConfigured() {
+			common.ApiError(c, oauth.ErrGoogleOAuthNotConfigured)
+			return
+		}
 	case "GitHubOAuthEnabled":
 		if option.Value == "true" && common.GitHubClientId == "" {
 			c.JSON(http.StatusOK, gin.H{

@@ -10,8 +10,8 @@ const otherSchema = z.object({
   input_price: field(number), output_price: field(number), request_price: field(number),
   cache_read_price: field(number), cache_write_price: field(number), cache_write_price_5m: field(number), cache_write_price_1h: field(number),
   image_price: field(number), audio_input_price: field(number), audio_output_price: field(number), group_ratio: field(number),
-  cache_tokens: field(count), cache_write_tokens: field(count), cache_creation_tokens: field(count),
-  cache_creation_tokens_5m: field(count), cache_creation_tokens_1h: field(count), input_tokens_total: field(count), frt: field(number),
+  cache_tokens: field(count), cache_write_tokens: field(count),
+  cache_write_tokens_5m: field(count), cache_write_tokens_1h: field(count), input_tokens_total: field(count), frt: field(number),
   matched_tier: field(z.string()), billing_unit: field(z.string()), fixed_price: field(number), image_count: field(count),
   expr_b64: field(z.string()), request_rules: field(z.array(z.object({ cond: z.string(), multiplier: number, matched: z.boolean() }))),
   usage_facts: field(record), billing_usage_schema: field(usageSchema),
@@ -47,16 +47,23 @@ export function enrichLog(row: LogRow, role: number) {
   const other = otherSchema.parse(raw);
   if (Object.keys(otherSchema.shape).some((key) => raw[key] != null && other[key] === undefined)) invalid = true;
   const cacheHit = other.cache_tokens ?? 0;
-  // An explicit zero is authoritative; split durations supersede the legacy total.
-  const splitWrite = (other.cache_creation_tokens_5m ?? 0) + (other.cache_creation_tokens_1h ?? 0);
-  const cacheWrite = other.cache_write_tokens ?? (splitWrite || other.cache_creation_tokens || 0);
+  const cacheWrite = other.cache_write_tokens ?? 0;
+  const cacheReadKnown = other.cache_tokens != null;
+  const cacheWriteKnown = other.cache_write_tokens != null;
+  const inputTokens = other.input_tokens_total ?? row.prompt_tokens;
+  const cacheStatus: keyof typeof cacheStatusLabels = cacheHit > 0 ? 'hit' : cacheReadKnown ? 'miss' : 'unknown';
+  const cacheInput = other.input_tokens_total;
+  const cacheHitRate = cacheReadKnown && cacheInput != null && cacheInput > 0 && cacheHit <= cacheInput ? cacheHit / cacheInput : undefined;
   return {
     ...row, upstream_request_id: role >= 100 ? row.upstream_request_id : '',
     _other: other, _rawOther: raw, _metadataInvalid: invalid,
     _cacheHit: cacheHit, _cacheWrite: cacheWrite, _cache: cacheHit + cacheWrite,
+    _cacheReadKnown: cacheReadKnown, _cacheWriteKnown: cacheWriteKnown, _cacheStatus: cacheStatus,
+    _cacheHitRate: cacheHitRate, _inputTokens: inputTokens,
   };
 }
 export type EnrichedLog = ReturnType<typeof enrichLog>;
+export const cacheStatusLabels = { hit: 'Cache hit', miss: 'Cache miss', unknown: 'Not recorded' };
 
 const TOKEN_PRICE_FIELDS = [
   { key: 'input_price', label: 'Input price' }, { key: 'output_price', label: 'Output price' },

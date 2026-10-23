@@ -2,13 +2,13 @@ import { useTranslation } from 'react-i18next';
 import { renderNumber, renderQuota, timestamp2string } from '../../helpers';
 import { ExpressionBillingLog } from '../../features/pricing/ExpressionBillingLog';
 import ToolSurcharges from '../../features/pricing/ToolSurcharges';
-import { getBillingPriceFields } from './log-data';
+import { cacheStatusLabels, getBillingPriceFields } from './log-data';
 import type { EnrichedLog } from './log-data';
 import { Quota, TypeBadge } from './LogCells';
 import { DetailCode, DetailContent, DetailField, DetailFields, DetailSection, DetailText } from './LogDetailLayout';
 
 export default function RequestLogDetail({ row, isAdmin, isRoot }: { row: EnrichedLog; isAdmin: boolean; isRoot: boolean }) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const other = row._other;
   const source = other.billing_source || other.wallet;
   const conversion = other.request_conversion?.join(' → ') || other.request_convert;
@@ -40,13 +40,8 @@ export default function RequestLogDetail({ row, isAdmin, isRoot }: { row: Enrich
       <DetailFields>
         <DetailField label={t('Cost')} value={<Quota row={row} />} />
         {source && <DetailField label={t('Billing source')} value={source === 'wallet' ? t('Wallet') : source === 'subscription' ? t('Subscription') : source} />}
-        <DetailField label={t('Input tokens')} value={renderNumber(row.prompt_tokens)} />
+        <DetailField label={t('Input tokens')} value={renderNumber(row._inputTokens)} />
         <DetailField label={t('Output tokens')} value={renderNumber(row.completion_tokens)} />
-        {row._cacheHit > 0 && <DetailField label={t('Cache read tokens')} value={renderNumber(row._cacheHit)} />}
-        {row._cacheWrite > 0 && <DetailField label={t('Cache write tokens')} value={renderNumber(row._cacheWrite)} />}
-        {other.cache_creation_tokens_5m != null && <DetailField label={t('Cache write tokens (5m)')} value={renderNumber(other.cache_creation_tokens_5m)} />}
-        {other.cache_creation_tokens_1h != null && <DetailField label={t('Cache write tokens (1h)')} value={renderNumber(other.cache_creation_tokens_1h)} />}
-        {other.input_tokens_total != null && <DetailField label={t('Normalized input tokens')} value={renderNumber(other.input_tokens_total)} />}
         {getBillingPriceFields(other).map(({ key, label, unit, value }) => <DetailField key={key} label={t(label)} value={formatUnitPrice(value, unit)} />)}
         {other.billing_mode === 'tiered_expr' && <>
           <DetailField label={t('Billing mode')} value={t('Expression billing')} />
@@ -67,6 +62,16 @@ export default function RequestLogDetail({ row, isAdmin, isRoot }: { row: Enrich
       {other.tool_surcharges != null && <ToolSurcharges value={other.tool_surcharges} />}
       {other.billing_mode === 'tiered_expr' && <ExpressionBillingLog other={other} modelName={row.model_name} />}
     </DetailSection>
+    {(row.type === 2 || row._cache > 0) && <DetailSection title={t('Request cache')}>
+      <DetailFields>
+        <DetailField label={t('Cache status')} value={t(cacheStatusLabels[row._cacheStatus])} />
+        <DetailField label={t('Cache read tokens')} value={row._cacheReadKnown ? row._cacheHit.toLocaleString(i18n.language) : '—'} />
+        <DetailField label={t('Cache write tokens')} value={row._cacheWriteKnown ? row._cacheWrite.toLocaleString(i18n.language) : '—'} />
+        {row._cacheHitRate != null && <DetailField label={t('Cache hit rate')} value={new Intl.NumberFormat(i18n.language, { style: 'percent', maximumFractionDigits: 1 }).format(row._cacheHitRate)} />}
+        {other.cache_write_tokens_5m != null && <DetailField label={t('Cache write tokens (5m)')} value={other.cache_write_tokens_5m.toLocaleString(i18n.language)} />}
+        {other.cache_write_tokens_1h != null && <DetailField label={t('Cache write tokens (1h)')} value={other.cache_write_tokens_1h.toLocaleString(i18n.language)} />}
+      </DetailFields>
+    </DetailSection>}
     {other.billing_mode === 'tiered_expr' && other.billing_tokens != null && <DetailCode title={t('Billing token details')} value={JSON.stringify(other.billing_tokens)} />}
     {row.content && <DetailSection title={t('Content')}><DetailText>{row.content}</DetailText></DetailSection>}
     {isAdmin && Array.isArray(other.admin_info?.request_policy) && <DetailCode title={t('Request policy decisions')} value={JSON.stringify(other.admin_info.request_policy)} />}

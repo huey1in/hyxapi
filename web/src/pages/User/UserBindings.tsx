@@ -14,6 +14,7 @@ type Binding = { key: string; label: string; value: string; endpoint: string; en
 const builtins = [
   { key: 'email', field: 'email', label: 'Email', enabled: '' },
   { key: 'github', field: 'github_id', label: 'GitHub', enabled: 'github_oauth' },
+  { key: 'google', field: 'google_id', label: 'Google', enabled: 'google_oauth' },
   { key: 'discord', field: 'discord_id', label: 'Discord', enabled: 'discord_oauth' },
   { key: 'oidc', field: 'oidc_id', label: 'OIDC', enabled: 'oidc_enabled' },
   { key: 'wechat', field: 'wechat_id', label: 'WeChat', enabled: 'wechat_login' },

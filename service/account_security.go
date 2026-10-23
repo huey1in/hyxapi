@@ -53,5 +53,5 @@ func NotifyAccountSecurityChange(lang, email, eventKey string, eventArgs ...map[
 	content := fmt.Sprintf("<p>%s</p><p>%s</p>",
 		i18n.Translate(lang, i18n.MsgEmailSecurityNoticeChanged, map[string]any{"Event": event}),
 		i18n.Translate(lang, i18n.MsgEmailSecurityNoticeAdvice))
-	return common.SendEmail(subject, email, content)
+	return common.SendEmail(subject, email, common.WrapEmailShell(subject, content))
 }

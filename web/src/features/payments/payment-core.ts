@@ -5,6 +5,7 @@ const currency = z.string().regex(/^[A-Z]{3}$/);
 const positiveNumber = z.number().finite().positive();
 const minimum = z.number().finite().nonnegative();
 export const paymentInfoSchema = z.object({
+  enable_usdt_topup: z.boolean().optional(), usdt_min_topup: minimum.optional(), usdt_network: z.string().optional(),
   enable_invitation_rewards: z.boolean().default(false),
   enable_online_topup: z.boolean().optional(), enable_alipay_topup: z.boolean().optional(),
   enable_stripe_topup: z.boolean().optional(), enable_creem_topup: z.boolean().optional(),
@@ -31,7 +32,7 @@ const text = (value: unknown, fallback: string) => typeof value === 'string' && 
 type PaymentMethod = {
   id: string;
   name: string;
-  provider: 'epay' | 'alipay' | 'stripe' | 'creem' | 'waffo' | 'waffo_pancake' | 'balance';
+  provider: 'epay' | 'alipay' | 'stripe' | 'creem' | 'waffo' | 'waffo_pancake' | 'balance' | 'usdt';
   type?: string;
   index?: number;
   min: number;
@@ -41,7 +42,7 @@ type PaymentMethod = {
   quota?: number;
 };
 
-const reserved = new Set(['stripe', 'creem', 'waffo', 'waffo_pancake', 'balance']);
+const reserved = new Set(['stripe', 'creem', 'waffo', 'waffo_pancake', 'balance', 'usdt']);
 
 export function paymentMethods(info: Info | null): PaymentMethod[] {
   if (!info) return [];
@@ -52,6 +53,7 @@ export function paymentMethods(info: Info | null): PaymentMethod[] {
       methods.push({ id: `epay:${method.type}`, name: text(method.name, method.type), provider: 'epay', type: method.type, min: positive(method.min_topup, positive(info.min_topup)), currency: 'CNY' });
     }
   }
+  if (info.enable_usdt_topup) methods.push({ id: 'usdt', name: 'USDT', provider: 'usdt', min: positive(info.usdt_min_topup, 5), currency: 'USD' });
   if (info.enable_alipay_topup) methods.push({ id: 'alipay-official', name: 'Alipay desktop checkout', provider: 'alipay', min: positive(info.alipay_min_topup), currency: 'CNY' });
   if (info.enable_stripe_topup) methods.push({ id: 'stripe', name: 'Stripe', provider: 'stripe', min: positive(info.stripe_min_topup), currency: 'USD' });
   if (info.enable_creem_topup) {
@@ -75,7 +77,7 @@ export function topUpRequest(method: PaymentMethod, units: number, info: Info, q
     return { url: '/api/user/creem/pay', body: { product_id: method.productId, payment_method: 'creem' } };
   }
   let amount = units;
-  if (method.provider !== 'alipay' && info.quota_display_type === 'TOKENS') amount *= positive(info.quota_per_unit, 500000);
+  if (method.provider !== 'alipay' && method.provider !== 'usdt' && info.quota_display_type === 'TOKENS') amount *= positive(info.quota_per_unit, 500000);
   if (!Number.isSafeInteger(amount)) throw new Error('Top-up amount is too large.');
   const base = '/api/user';
   if (method.provider === 'alipay') return { url: quote ? `${base}/alipay/amount` : `${base}/payment/alipay/checkout`, body: { amount } };

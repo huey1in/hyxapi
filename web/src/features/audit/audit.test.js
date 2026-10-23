@@ -11,6 +11,13 @@ const entry = (patch = {}) => ({ event_id: 'audit-1', user_id: 3, username: 'mem
   category: 'operation', action: 'token.update', token_ref: '', auth_method: 'session', ip: '127.0.0.1', user_agent: 'Browser',
   method: 'PUT', route: '/api/token/', status: 200, success: true, request_id: 'request-1', content: '', other: null, ...patch });
 
+test('support ticket audit records identify the support role and event', () => {
+  const row = entry({ actor_role: 5, action: 'ticket.update', other: { op: { action: 'ticket.update', params: { ticket_id: 11, status: 'resolved', assignee_id: 3 } } } });
+  const result = buildAuditDetails(row, t);
+  assert.equal(result.actorRole, 'Customer support');
+  assert.match(renderAuditContent(row.other, t), /Updated support ticket 11/);
+});
+
 test('audit filters use server-supported fields, normalize fingerprints, and isolate self scope', () => {
   const filters = { ...types.emptyAuditFilters(), username: ' another-user ', request_id: ' exact-request ', category: 'security', success: 'false', token_ref: 'A'.repeat(64) };
   const self = types.auditParams(filters, 'self', 2, 50);

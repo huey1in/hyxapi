@@ -12,7 +12,7 @@ export const CLIENT_ROUTE_REDIRECTS: Record<string, string> = {
   '/console/notices': '/notices',
 };
 
-const clientPages = new Set(['token', 'log', 'topup', 'subscription', 'personal', 'notices']);
+const clientPages = new Set(['token', 'log', 'topup', 'subscription', 'personal', 'notices', 'tickets']);
 const isPricingPath = (path: string) => path === '/pricing' || path.startsWith('/pricing/');
 export const isConsolePath = (path: string, authenticated = false) => path === '/console' || path.startsWith('/console/') || clientPages.has(path.split('/')[1]) || (authenticated && isPricingPath(path));
 

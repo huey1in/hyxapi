@@ -30,7 +30,8 @@ export function PersonalSkeleton({ tab = 'account', onChange }: { tab?: Personal
   const [statusState] = useContext(StatusContext);
   const status = statusState.status;
   const bindings = [
-    (status?.github_oauth || user?.github_id) && 'GitHub', (status?.discord_oauth || user?.discord_id) && 'Discord',
+    (status?.github_oauth || user?.github_id) && 'GitHub', (status?.google_oauth || user?.google_id) && 'Google',
+    (status?.discord_oauth || user?.discord_id) && 'Discord',
     (status?.oidc_enabled || user?.oidc_id) && (status?.oidc_display_name || 'OIDC'), (status?.linuxdo_oauth || user?.linux_do_id) && 'Linux DO',
     (status?.telegram_oauth || user?.telegram_id) && 'Telegram', (status?.wechat_login || user?.wechat_id) && 'WeChat',
     ...(status?.custom_oauth_providers ?? []).map((provider) => provider.name || provider.slug),

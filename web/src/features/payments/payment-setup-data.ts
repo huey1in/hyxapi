@@ -102,16 +102,19 @@ const unitPrices = new Set([
   'WaffoPancakeUnitPrice',
 ]);
 const minimums = new Set([
+  'usdt.min_topup',
   'MinTopUp',
   'StripeMinTopUp',
   'WaffoMinTopUp',
   'WaffoPancakeMinTopUp',
 ]);
 export function validPaymentSetting(key: string, value: string): boolean {
+  if (key === 'usdt.min_topup') return value.trim() !== '' && quota.max(1000000).safeParse(Number(value)).success;
   if (unitPrices.has(key))
     return value.trim() !== '' && positive.safeParse(Number(value)).success;
   if (minimums.has(key))
     return value.trim() !== '' && quota.safeParse(Number(value)).success;
+  if (key === 'usdt.gateway_url' && value) { try { const url = new URL(value); return url.protocol === 'https:' && !url.username && !url.password && !url.search && !url.hash; } catch { return false; } }
   if (key === 'WaffoCurrency') return /^[A-Z]{3}$/.test(value);
   const schema = paymentJSON[key];
   if (!schema) return true;

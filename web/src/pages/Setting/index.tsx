@@ -1,5 +1,5 @@
 import { LayoutSkeleton } from '../../components/ui/feedback/ContentSkeleton';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { z } from 'zod';
 import { Lock, RefreshCw, Save } from 'lucide-react';
@@ -30,6 +30,7 @@ import SiteNoticeEditor from './SiteNoticeEditor';
 import GroupPricingRules from './GroupPricingRules';
 import { groupPricingRuleKeys } from './group-pricing-rules';
 import { useAuthStore } from '../../stores/auth-store';
+import { StatusContext } from '../../context/Status';
 import {
   quotaToDisplayAmount,
   displayAmountToQuota,
@@ -81,6 +82,7 @@ import EmailTest from './EmailTest';
 const toBool = (value: string) => value === 'true' || value === '1';
 function SettingPageContent() {
   const { t } = useTranslation();
+  const [statusState] = useContext(StatusContext);
   const root = useAuthStore((state) => state.auth.user?.role === 100);
   const read = useRef<AbortController | null>(null);
   const drafts = useRef<EditorCache>(new Map());
@@ -364,12 +366,17 @@ function SettingPageContent() {
             <Input
               id={id}
               aria-label={label}
-              type={key === 'WorkerValidKey' ? 'password' : 'text'}
+              type={key === 'WorkerValidKey' || key === 'google.client_secret' ? 'password' : 'text'}
               value={val(key)}
               onChange={(value) => set(key, value)}
             />
           )}
         </fieldset>
+        {key === 'google.client_id' && typeof statusState.status?.google_redirect_uri === 'string' && (
+          <p className='mt-2 break-all text-xs text-ui-text-3'>
+            {t('Google authorized redirect URI')}: <code>{statusState.status.google_redirect_uri}</code>
+          </p>
+        )}
         {key === 'WorkerValidKey' && (
           <p className="mt-1 text-xs text-ui-text-3">
             {t(

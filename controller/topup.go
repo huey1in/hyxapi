@@ -16,6 +16,7 @@ import (
 	"github.com/QuantumNous/new-api/service"
 	"github.com/QuantumNous/new-api/setting"
 	"github.com/QuantumNous/new-api/setting/operation_setting"
+	"github.com/QuantumNous/new-api/setting/system_setting"
 
 	"github.com/Calcium-Ion/go-epay/epay"
 	"github.com/gin-gonic/gin"
@@ -93,6 +94,9 @@ func GetTopUpInfo(c *gin.Context) {
 	}
 
 	data := gin.H{
+		"enable_usdt_topup":                 system_setting.GetUSDTSettings().Enabled && system_setting.GetUSDTSettings().Validate() == nil,
+		"usdt_min_topup":                    system_setting.GetUSDTSettings().MinTopUp,
+		"usdt_network":                      system_setting.GetUSDTSettings().Network,
 		"enable_alipay_topup":               operation_setting.AlipayEnabled,
 		"alipay_min_topup":                  operation_setting.MinTopUp,
 		"waffo_currency":                    getWaffoCurrency(),
@@ -531,6 +535,10 @@ func RequestAmount(c *gin.Context) {
 }
 
 func GetUserTopUps(c *gin.Context) {
+	if err := model.ExpireUSDTOrders(c.GetInt("id")); err != nil {
+		common.ApiError(c, err)
+		return
+	}
 	userId := c.GetInt("id")
 	pageInfo := common.GetPageQuery(c)
 	keyword := c.Query("keyword")
@@ -557,6 +565,10 @@ func GetUserTopUps(c *gin.Context) {
 
 // GetAllTopUps 管理员获取全平台充值记录
 func GetAllTopUps(c *gin.Context) {
+	if err := model.ExpireUSDTOrders(0); err != nil {
+		common.ApiError(c, err)
+		return
+	}
 	pageInfo := common.GetPageQuery(c)
 	keyword := c.Query("keyword")
 

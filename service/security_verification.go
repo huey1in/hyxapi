@@ -50,7 +50,7 @@ const (
 
 // adminUserManageActions are the ManageUser actions that change a user's
 // status or role. Quota adjustments are not gated and deletion has its own scope.
-var adminUserManageActions = []string{"disable", "enable", "promote", "demote"}
+var adminUserManageActions = []string{"disable", "enable", "promote", "demote", "support"}
 
 var (
 	ErrVerificationFailed         = errors.New("Verification failed. Please try again.")
@@ -222,7 +222,7 @@ func BindVerificationOperation(operation VerificationOperation) (VerificationBin
 		normalized = context
 	case VerificationScopeAdminUserCreate:
 		var context AdminUserCreateContext
-		if len(fields) != 1 || common.Unmarshal(fields["role"], &context.Role) != nil || context.Role < common.RoleAdminUser || !common.IsValidateRole(context.Role) {
+		if len(fields) != 1 || common.Unmarshal(fields["role"], &context.Role) != nil || context.Role < common.RoleSupportUser || !common.IsValidateRole(context.Role) {
 			return VerificationBinding{}, ErrVerificationContextInvalid
 		}
 		normalized = context
@@ -454,6 +454,8 @@ func verificationOAuthProviders(user *model.User) ([]VerificationOAuthProvider, 
 			switch provider.ProviderUserIDColumn() {
 			case "github_id":
 				userID = user.GitHubId
+			case "google_id":
+				userID = user.GoogleId
 			case "discord_id":
 				userID = user.DiscordId
 			case "oidc_id":

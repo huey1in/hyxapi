@@ -269,11 +269,14 @@ export function EmailTemplateEditor({
         .replaceAll('{{siteName}}', 'HyxAPI')
         .replaceAll('{{code}}', '482913')
         .replaceAll('{{expireMinutes}}', '10')
+        .replaceAll('{{title}}', t('Verify your email'))
+        .replaceAll('{{description}}', t('Use the following code to verify your email. The code expires in 10 minutes.'))
+        .replaceAll('{{notice}}', t('If you did not request this, do not share this code.'))
         .replaceAll(
           '{{resetLink}}',
           `${window.location.origin}/user/reset?email=example%40example.com&token=example`,
         ),
-    [value],
+    [value, t],
   );
   return (
     <div className="email-template-editor">
@@ -320,6 +323,7 @@ export function EmailTemplateEditor({
       <div className="email-template-editor__variables">
         {t('Available variables')}: {'{{siteName}}'},{' '}
         {reset ? '{{resetLink}}' : '{{code}}'}, {'{{expireMinutes}}'}
+        {!reset && <>, {'{{title}}'}, {'{{description}}'}, {'{{notice}}'}</>}
       </div>
     </div>
   );

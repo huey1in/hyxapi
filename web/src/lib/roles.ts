@@ -19,6 +19,7 @@ For commercial licensing, please contact support@quantumnous.com
 export const ROLE = {
   GUEST: 0, // 后续如果需要用到这个角色那就再加，同语先留一下
   USER: 1,
+  SUPPORT: 5,
   ADMIN: 10,
   SUPER_ADMIN: 100,
 } as const

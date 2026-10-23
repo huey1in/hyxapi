@@ -9,10 +9,12 @@ import Skeleton from '../ui/feedback/Skeleton';
 import { TopUpSkeleton } from '../../features/payments/TopUpLayout';
 import { personalSettingsTab } from '../../pages/Personal/personal-navigation';
 import LogsLoading from '../../pages/Log/LogsLoading';
+import TicketsLoading from '../../pages/Tickets/TicketsLoading';
 
 export default function RouteSkeleton() {
   const { pathname, search } = useLocation();
   const { t } = useTranslation();
+  if (pathname === '/tickets') return <TicketsLoading />;
   if (pathname === '/personal') return <PersonalSkeleton tab={personalSettingsTab(search)} />;
   if (pathname === '/topup') return <TopUpSkeleton />;
   if (pathname === '/log') return <div className='console-content-page'>

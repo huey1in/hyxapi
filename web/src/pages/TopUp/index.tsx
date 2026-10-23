@@ -15,12 +15,14 @@ import { AffiliateTransferDialog, RedemptionDialog } from '../../features/paymen
 import TopUpHistory from '../../features/payments/TopUpHistory';
 import usePaymentCheckout from '../../features/payments/usePaymentCheckout';
 import SubscriptionOffers from '../../features/payments/SubscriptionOffers';
+import USDTCheckout from '../../features/payments/USDTCheckout';
 import DailyCheckin from '../../features/payments/DailyCheckin';
 
 type Quote = { key: string; value?: number; error?: string };
 function TopUp({ identity }: { identity: string }) {
   const { t, i18n } = useTranslation(); const [searchParams] = useSearchParams();
   const auth = useAuthStore((state) => state.auth); const userId = auth.user?.id; const role = auth.user?.role ?? 0;
+  const [usdtAmount, setUsdtAmount] = useState<number | null>(null);
   const [redeemOpen, setRedeemOpen] = useState(false); const [transferOpen, setTransferOpen] = useState(false); const [showHistory, setShowHistory] = useState(false);
   const [draft, setDraft] = useState('1'); const [custom, setCustom] = useState(false); const [selectedMethod, setSelectedMethod] = useState('');
   const [quote, setQuote] = useState<Quote | null>(null); const [quoteGeneration, setQuoteGeneration] = useState(0);
@@ -68,6 +70,7 @@ function TopUp({ identity }: { identity: string }) {
   const payTotal = currentQuote?.error ? '—' : currentQuote?.value !== undefined ? new Intl.NumberFormat(i18n.language, { style: 'currency', currency: method?.currency || 'USD' }).format(currentQuote.value) : t('Getting quote…');
   const startCheckout = () => {
     if (!canCheckout || !method || !paymentInfo) return;
+    if (method.provider === 'usdt') { setUsdtAmount(units); return; }
     try { const request = topUpRequest(method, method.provider === 'creem' ? 1 : units, paymentInfo); if (request) void checkout(request); }
     catch (error) { showError(t(apiErrorMessage(error, 'Payment request failed'))); }
   };
@@ -102,6 +105,7 @@ function TopUp({ identity }: { identity: string }) {
     </InvitationRewards>}
     {redeemOpen && canRedeem && <RedemptionDialog initialCode={searchParams.get('code') || ''} onClose={() => setRedeemOpen(false)} onSaved={refreshUser} />}
     {transferOpen && invitationRewardsEnabled && user && paymentInfo && <AffiliateTransferDialog quotaPerUnit={paymentInfo.quota_per_unit} available={user.aff_quota} onClose={() => setTransferOpen(false)} onSaved={refreshUser} />}
+    {usdtAmount !== null && <USDTCheckout identity={identity} amount={usdtAmount} network={paymentInfo?.usdt_network || 'tron'} onClose={() => setUsdtAmount(null)} onPaid={refreshUser} />}
     {showHistory && <TopUpHistory identity={identity} role={role} onClose={() => setShowHistory(false)} onSaved={refreshUser} />}
   </TopUpPage>;
 }

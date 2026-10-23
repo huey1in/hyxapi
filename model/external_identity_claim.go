@@ -10,7 +10,10 @@ import (
 	"gorm.io/gorm/clause"
 )
 
-const ExternalIdentityProviderTelegram = "telegram"
+const (
+	ExternalIdentityProviderTelegram = "telegram"
+	ExternalIdentityProviderGoogle   = "google"
+)
 
 var ErrExternalIdentityAlreadyClaimed = errors.New("external identity is already claimed")
 
@@ -21,7 +24,7 @@ var ErrExternalIdentityAlreadyClaimed = errors.New("external identity is already
 type ExternalIdentityClaim struct {
 	Id        int64     `json:"id" gorm:"primaryKey"`
 	Provider  string    `json:"provider" gorm:"type:varchar(32);not null;uniqueIndex:idx_external_identity_subject,priority:1;uniqueIndex:idx_external_identity_user,priority:1"`
-	Subject   string    `json:"subject" gorm:"type:varchar(128);not null;uniqueIndex:idx_external_identity_subject,priority:2"`
+	Subject   string    `json:"subject" gorm:"type:varchar(255);not null;uniqueIndex:idx_external_identity_subject,priority:2"`
 	UserId    int       `json:"user_id" gorm:"not null;index;uniqueIndex:idx_external_identity_user,priority:2"`
 	CreatedAt time.Time `json:"created_at"`
 }

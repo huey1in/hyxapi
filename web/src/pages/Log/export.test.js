@@ -65,3 +65,21 @@ test('incomplete or invalid unified exports never produce a CSV', () => {
   assert.throws(() => csv.feedToCSV(ndjson([{ ...task, time: 'invalid' }]), 1), /finish/);
   assert.throws(() => csv.feedToCSV(ndjson([request]).replace('"count":1', '"count":"1"'), 1), /finish/);
 });
+
+test('cache CSV uses canonical counters, distinguishes missing values and normalizes input totals', () => {
+  const usage = (other) => ({ ...request, log: { ...request.log, other: JSON.stringify(other) } });
+  const data = ndjson([
+    usage({ cache_tokens: 20, cache_write_tokens: 12, cache_write_tokens_5m: 4, cache_write_tokens_1h: 6, input_tokens_total: 40 }),
+    usage({ cache_tokens: 0, cache_write_tokens: 0, input_tokens_total: 30 }),
+    usage({ cache_creation_tokens: 99 }),
+  ]);
+  const rows = csv.feedToCSV(data, 1).replace(/^\uFEFF/, '').trim().split('\r\n');
+  // These fixture fields contain no embedded commas; metadata follows these columns.
+  const fields = rows.map((row) => row.match(/"(?:[^"]|"")*"/g).map((value) => value.slice(1, -1).replaceAll('""', '"')));
+  const column = (name) => fields[0].indexOf(name);
+  assert.deepEqual(fields.slice(1).map((row) => row[column('Cache read tokens')]), ['20', '0', '']);
+  assert.deepEqual(fields.slice(1).map((row) => row[column('Cache write tokens')]), ['12', '0', '']);
+  assert.deepEqual(fields.slice(1).map((row) => row[column('Cache status')]), ['Cache hit', 'Cache miss', 'Not recorded']);
+  assert.deepEqual(fields.slice(1).map((row) => row[column('Cache hit rate')]), ['50%', '0%', '']);
+  assert.deepEqual(fields.slice(1).map((row) => row[column('Input tokens')]), ['40', '30', '0']);
+});

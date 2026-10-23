@@ -39,6 +39,7 @@ func GenerateTextOtherInfo(ctx *gin.Context, relayInfo *relaycommon.RelayInfo, i
 	other["group_ratio"] = groupRatio
 	other["output_price"] = outputPrice
 	other["cache_tokens"] = cacheTokens
+	other["cache_write_tokens"] = 0
 	other["cache_read_price"] = cacheReadPrice
 	other["request_price"] = requestPrice
 	other["billing_type"] = relayInfo.PriceData.BillingType
@@ -240,6 +241,7 @@ func GenerateWssOtherInfo(ctx *gin.Context, relayInfo *relaycommon.RelayInfo, us
 	info["audio_input_price"] = audioInputPrice
 	info["audio_output_price"] = audioOutputPrice
 	info["cache_write_tokens"] = usage.InputTokenDetails.CachedCreationTokens
+	info["input_tokens_total"] = usage.InputTokens
 	info["cache_write_price"] = relayInfo.PriceData.CacheWritePrice
 	info["image_input"] = usage.InputTokenDetails.ImageTokens
 	info["image_price"] = relayInfo.PriceData.ImagePrice
@@ -257,6 +259,7 @@ func GenerateAudioOtherInfo(ctx *gin.Context, relayInfo *relaycommon.RelayInfo, 
 	info["audio_input_price"] = audioInputPrice
 	info["audio_output_price"] = audioOutputPrice
 	info["cache_write_tokens"] = usage.PromptTokensDetails.CachedCreationTokens
+	info["input_tokens_total"] = usage.PromptTokens
 	info["cache_write_price"] = relayInfo.PriceData.CacheWritePrice
 	info["image_input"] = usage.PromptTokensDetails.ImageTokens
 	info["image_price"] = relayInfo.PriceData.ImagePrice
@@ -271,14 +274,14 @@ func GenerateClaudeOtherInfo(ctx *gin.Context, relayInfo *relaycommon.RelayInfo,
 	requestPrice float64) map[string]interface{} {
 	info := GenerateTextOtherInfo(ctx, relayInfo, inputPrice, groupRatio, outputPrice, cacheTokens, cacheReadPrice, requestPrice)
 	info["claude"] = true
-	info["cache_creation_tokens"] = cacheCreationTokens
+	info["cache_write_tokens"] = cacheCreationTokens
 	info["cache_write_price"] = cacheWritePrice
 	if cacheCreationTokens5m != 0 {
-		info["cache_creation_tokens_5m"] = cacheCreationTokens5m
+		info["cache_write_tokens_5m"] = cacheCreationTokens5m
 		info["cache_write_price_5m"] = cacheWritePrice5m
 	}
 	if cacheCreationTokens1h != 0 {
-		info["cache_creation_tokens_1h"] = cacheCreationTokens1h
+		info["cache_write_tokens_1h"] = cacheCreationTokens1h
 		info["cache_write_price_1h"] = cacheWritePrice1h
 	}
 	return info

@@ -25,6 +25,7 @@ func TestRemovedFeatureSettingsArePurgedAndCannotBeRestored(t *testing.T) {
 	keys := []string{
 		"model_deployment.ionet.enabled", "model_deployment.ionet.api_key",
 		"Chats", "ChatLink", "ChatLink2", "log_setting.max_range_days", "About",
+		"monitor_setting.model_health_enabled", "monitor_setting.model_health_interval_minutes",
 		"ApiInfo", "FAQ", "console_setting.api_info", "console_setting.faq",
 		"console_setting.api_info_enabled", "console_setting.faq_enabled", "general_setting.docs_link",
 		"payment_setting.compliance_confirmed", "payment_setting.compliance_terms_version",

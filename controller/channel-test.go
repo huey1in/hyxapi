@@ -516,16 +516,23 @@ func testChannel(ctx context.Context, channel *model.Channel, testUserID int, te
 			usage.PromptTokensDetails.CachedTokens, priceData.CacheReadPrice, priceData.RequestPrice)
 	}
 	if cacheWriteTokens > 0 {
-		other["cache_creation_tokens"] = cacheWriteTokens
-		other["cache_write_tokens"] = cacheWriteTokens
 		other["cache_write_price"] = priceData.CacheWritePrice
 	}
+	other["cache_write_tokens"] = cacheWriteTokens
+	inputTokens := usage.PromptTokens
+	if anthropicUsage {
+		inputTokens += usage.PromptTokensDetails.CachedTokens + cacheWriteTokens
+	}
+	if !anthropicUsage && usage.UsageSource != "" && usage.InputTokens > 0 {
+		inputTokens = usage.InputTokens
+	}
+	other["input_tokens_total"] = inputTokens
 	if usage.ClaudeCacheCreation5mTokens > 0 {
-		other["cache_creation_tokens_5m"] = usage.ClaudeCacheCreation5mTokens
+		other["cache_write_tokens_5m"] = usage.ClaudeCacheCreation5mTokens
 		other["cache_write_price_5m"] = priceData.CacheWritePrice
 	}
 	if usage.ClaudeCacheCreation1hTokens > 0 {
-		other["cache_creation_tokens_1h"] = usage.ClaudeCacheCreation1hTokens
+		other["cache_write_tokens_1h"] = usage.ClaudeCacheCreation1hTokens
 		other["cache_write_price_1h"] = priceData.CacheWritePrice
 	}
 	if tieredResult != nil {

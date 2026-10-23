@@ -64,6 +64,8 @@ func GetStatus(c *gin.Context) {
 		"default_use_auto_group":      setting.DefaultUseAutoGroup,
 		"github_oauth":                common.GitHubOAuthEnabled,
 		"github_client_id":            common.GitHubClientId,
+		"google_oauth":                oauth.GoogleConfigurationError() == nil,
+		"google_redirect_uri":         oauth.GoogleRedirectURI(),
 		"discord_oauth":               system_setting.GetDiscordSettings().Enabled,
 		"discord_client_id":           system_setting.GetDiscordSettings().ClientId,
 		"linuxdo_oauth":               common.LinuxDOOAuthEnabled,
@@ -234,11 +236,8 @@ func SendEmailVerification(c *gin.Context) {
 	code := common.GenerateVerificationCode(6)
 	common.RegisterVerificationCodeWithKey(email, code, common.EmailVerificationPurpose)
 	subject := fmt.Sprintf("%s邮箱验证邮件", common.SystemName)
-	tmpl := common.GetEmailTemplate(common.EmailTemplateVerificationKey)
-	content := common.RenderTemplate(tmpl, map[string]string{
-		"siteName":      common.SystemName,
-		"code":          code,
-		"expireMinutes": strconv.Itoa(common.VerificationValidMinutes),
+	content := common.RenderVerificationEmail(common.VerificationEmail{
+		Code: code, ExpireMinutes: common.VerificationValidMinutes,
 	})
 	err := common.SendEmail(subject, email, content)
 	if err != nil {

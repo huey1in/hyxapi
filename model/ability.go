@@ -50,13 +50,6 @@ func GetGroupEnabledModels(group string) []string {
 	return models
 }
 
-// GetEnabledAbilities returns all enabled abilities (unique group+model pairs with enabled channels).
-func GetEnabledAbilities() []Ability {
-	var abilities []Ability
-	DB.Table("abilities").Distinct("group", "model").Where("enabled = ?", true).Find(&abilities)
-	return abilities
-}
-
 func GetEnabledModels() []string {
 	var models []string
 	// Find distinct models

@@ -68,7 +68,7 @@ function UsersWorkspace({ actor }: { actor: AuthUser | null }) {
       const totalQuota = user.quota + user.used_quota; const pct = totalQuota > 0 ? Math.min(100, user.used_quota / totalQuota * 100) : 0;
       return <div style={{ minWidth: 120 }}><div className='flex justify-between gap-2 text-xs mb-1'><span>{t('Used {{amount}}', { amount: renderQuota(user.used_quota, 2) })}</span><span className='text-ui-text-3'>{renderQuota(totalQuota, 2)}</span></div><div className='h-1.5 rounded-sm bg-ui-bg-subtle overflow-hidden'><div className='h-full rounded-sm bg-ui-accent' style={{ width: `${pct}%` }} /></div></div>;
     } },
-    { key: 'role', title: t('Role'), render: (user) => <Tag color={user.role === 100 ? 'red' : user.role === 10 ? 'blue' : 'grey'}>{t(user.role === 100 ? 'Super administrator' : user.role === 10 ? 'Administrator' : 'Regular user')}</Tag> },
+    { key: 'role', title: t('Role'), render: (user) => <Tag color={user.role === 100 ? 'red' : user.role === 10 ? 'blue' : 'grey'}>{t(user.role === 100 ? 'Super administrator' : user.role === 10 ? 'Administrator' : user.role === 5 ? 'Customer support' : 'Regular user')}</Tag> },
     { key: 'aff_count', title: t('Invites') },
     { key: 'aff_quota', title: t('Earnings'), render: (user) => renderQuota(user.aff_quota, 2) },
     { key: 'last_login_at', title: t('Last login'), render: (user) => <span className='text-xs whitespace-nowrap'>{date(user.last_login_at)}<span className='block text-ui-text-3'>{t('Created: {{time}}', { time: date(user.created_at) })}</span></span> },
@@ -79,6 +79,7 @@ function UsersWorkspace({ actor }: { actor: AuthUser | null }) {
       <IconButton icon={Pencil} title={t('Edit')} disabled={busy} onClick={() => setWindowState({ kind: 'edit', user })} />
       {user.role !== 100 && <>
         <IconButton icon={user.status === 1 ? ShieldOff : ShieldCheck} title={t(user.status === 1 ? 'Disable' : 'Enable')} disabled={busy} onClick={() => void act(user, user.status === 1 ? 'disable' : 'enable')} />
+        {user.role < 10 && <Button size='sm' variant='link' disabled={busy} onClick={() => void act(user, user.role === 5 ? 'demote' : 'support')}>{t(user.role === 5 ? 'Remove support role' : 'Assign support role')}</Button>}
         {actor.role === 100 && <IconButton icon={user.role === 10 ? ArrowDown : ArrowUp} title={t(user.role === 10 ? 'Demote' : 'Promote')} disabled={busy} onClick={() => void act(user, user.role === 10 ? 'demote' : 'promote')} />}
       </>}
       <IconButton icon={MoreHorizontal} title={t('Account security')} disabled={busy} onClick={() => setWindowState({ kind: 'security', user })} />
@@ -94,7 +95,7 @@ function UsersWorkspace({ actor }: { actor: AuthUser | null }) {
       </div>
       <div className='mt-3 flex flex-wrap items-center gap-3'>
         <Select aria-label={t('Filter by group')} value={filters.group} onChange={(value) => filter('group', value)} options={[{ value: '', label: t('All groups') }, ...[...new Set([...(groupList.data ?? []), filters.group])].filter(Boolean).map((value) => ({ value, label: value }))]} width={150} />
-        <Select aria-label={t('Filter by role')} value={filters.role} onChange={(value) => filter('role', value)} options={[{ value: '', label: t('All roles') }, { value: '1', label: t('Regular user') }, { value: '10', label: t('Administrator') }, { value: '100', label: t('Super administrator') }]} width={150} />
+        <Select aria-label={t('Filter by role')} value={filters.role} onChange={(value) => filter('role', value)} options={[{ value: '', label: t('All roles') }, { value: '1', label: t('Regular user') }, { value: '5', label: t('Customer support') }, { value: '10', label: t('Administrator') }, { value: '100', label: t('Super administrator') }]} width={150} />
         <Select aria-label={t('Filter by status')} value={filters.status} onChange={(value) => filter('status', value)} options={[{ value: '', label: t('All statuses') }, { value: '1', label: t('Enabled') }, { value: '2', label: t('Disabled') }, { value: '-1', label: t('Deleted') }]} width={150} />
         <Select aria-label={t('Sort users by')} value={sort} onChange={(value) => { setPage(1); setSort(value); }} options={([{ value: 'id', label: 'ID' }, { value: 'username', label: t('Username') }, { value: 'quota', label: t('Quota') }, { value: 'group', label: t('User group') }, { value: 'created_at', label: t('Created time') }, { value: 'last_login_at', label: t('Last login') }] satisfies { value: UserSort; label: string }[])} width={150} />
         <Select aria-label={t('Sort direction')} value={order} onChange={(value) => { setPage(1); setOrder(value); }} options={[{ value: 'desc', label: t('Descending') }, { value: 'asc', label: t('Ascending') }]} width={140} />

@@ -87,7 +87,6 @@ const (
 	MsgNotificationEmailIntro                  = "email.notification.intro"
 	MsgEmailBindingNewIntro                    = "email.binding.new_intro"
 	MsgEmailBindingOldIntro                    = "email.binding.old_intro"
-	MsgEmailBindingCode                        = "email.binding.code"
 	MsgEmailBindingNewValidity                 = "email.binding.new_validity"
 	MsgEmailBindingOldValidity                 = "email.binding.old_validity"
 	MsgEmailSecurityNoticeSubject              = "email.security_notice.subject"

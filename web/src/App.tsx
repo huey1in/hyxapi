@@ -21,6 +21,7 @@ const AuditLog = lazy(() => import('./pages/AuditLog'));
 const SystemStatus = lazy(() => import('./pages/SystemStatus'));
 const Setup = lazy(() => import('./pages/Setup'));
 const Personal = lazy(() => import('./pages/Personal'));
+const Tickets = lazy(() => import('./pages/Tickets'));
 const Notices = lazy(() => import('./pages/Notices'));
 const Forbidden = lazy(() => import('./pages/Forbidden'));
 const PasswordReset = lazy(() => import('./pages/PasswordReset'));
@@ -64,6 +65,7 @@ const App = () => (
       <Route path='/subscription'             element={<MySubscription />} />
       <Route path='/console/setting'          element={<Setting />} />
       <Route path='/personal'                 element={<Personal />} />
+      <Route path='/tickets' element={<Tickets />} />
       <Route path='/notices'                  element={<Notices />} />
 
       <Route path='*' element={<Navigate to='/' replace />} />

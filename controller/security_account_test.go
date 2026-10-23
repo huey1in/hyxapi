@@ -325,7 +325,7 @@ func (mailbox *securityMailbox) code(t *testing.T, receiver string) string {
 	mailbox.mutex.Lock()
 	defer mailbox.mutex.Unlock()
 	for index := len(mailbox.mail[receiver]) - 1; index >= 0; index-- {
-		match := regexp.MustCompile(`<strong>([0-9]{6})</strong>`).FindStringSubmatch(mailbox.mail[receiver][index])
+		match := regexp.MustCompile(`<(?:strong|code)(?:\s[^>]*)?>([0-9]{6})</(?:strong|code)>`).FindStringSubmatch(mailbox.mail[receiver][index])
 		if len(match) == 2 {
 			return match[1]
 		}

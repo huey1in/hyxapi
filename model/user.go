@@ -87,6 +87,7 @@ type User struct {
 	Status               int                        `json:"status" gorm:"type:int;default:1"` // enabled, disabled
 	Email                string                     `json:"email" gorm:"index" validate:"max=50"`
 	GitHubId             string                     `json:"github_id" gorm:"column:github_id;index"`
+	GoogleId             string                     `json:"google_id" gorm:"column:google_id;type:varchar(255);index"`
 	DiscordId            string                     `json:"discord_id" gorm:"column:discord_id;index"`
 	OidcId               string                     `json:"oidc_id" gorm:"column:oidc_id;index"`
 	WeChatId             string                     `json:"wechat_id" gorm:"column:wechat_id;index"`
@@ -195,6 +196,7 @@ func UpdateUserSetting(userId int, setting dto.UserSetting) error {
 // 列名只可能来自代码内部的 provider 实现，白名单是防御纵深，不依赖调用方自律。
 var userBindColumns = map[string]bool{
 	"github_id":   true,
+	"google_id":   true,
 	"discord_id":  true,
 	"oidc_id":     true,
 	"linux_do_id": true,
@@ -447,7 +449,7 @@ func GetSelfUserById(id int) (*User, error) {
 	}
 	err := DB.Model(&User{}).Select([]string{
 		"id", "username", "display_name", "role", "status", "email",
-		"github_id", "discord_id", "oidc_id", "wechat_id", "telegram_id",
+		"github_id", "google_id", "discord_id", "oidc_id", "wechat_id", "telegram_id",
 		"group", "quota", "used_quota", "aff_code", "aff_count",
 		"aff_quota", "aff_history", "inviter_id", "linux_do_id", "setting",
 		"stripe_customer", "auth_version",
@@ -714,6 +716,7 @@ func (user *User) ClearBinding(bindingType string) error {
 	bindingColumnMap := map[string]string{
 		"email":    "email",
 		"github":   "github_id",
+		"google":   "google_id",
 		"discord":  "discord_id",
 		"oidc":     "oidc_id",
 		"wechat":   "wechat_id",
@@ -730,8 +733,8 @@ func (user *User) ClearBinding(bindingType string) error {
 		if err := tx.Model(&User{}).Where("id = ?", user.Id).Update(column, "").Error; err != nil {
 			return err
 		}
-		if bindingType == ExternalIdentityProviderTelegram {
-			return ReleaseExternalIdentityWithTx(tx, ExternalIdentityProviderTelegram, user.Id)
+		if bindingType == ExternalIdentityProviderTelegram || bindingType == ExternalIdentityProviderGoogle {
+			return ReleaseExternalIdentityWithTx(tx, bindingType, user.Id)
 		}
 		return nil
 	}); err != nil {

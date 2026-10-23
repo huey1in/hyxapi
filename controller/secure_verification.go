@@ -70,6 +70,12 @@ func writeSecurityOperationError(c *gin.Context, err error) {
 		code, message = "LAST_LOGIN_METHOD", err.Error()
 	case errors.Is(err, oauth.ErrTelegramOAuthNotConfigured):
 		code, message = "TELEGRAM_OAUTH_NOT_CONFIGURED", oauth.ErrTelegramOAuthNotConfigured.Error()
+	case errors.Is(err, oauth.ErrGoogleOAuthNotConfigured):
+		code, message = "GOOGLE_OAUTH_NOT_CONFIGURED", oauth.ErrGoogleOAuthNotConfigured.Error()
+	case errors.Is(err, oauth.ErrGoogleOAuthConflict):
+		code, message = "GOOGLE_OAUTH_CONFLICT", oauth.ErrGoogleOAuthConflict.Error()
+	case errors.Is(err, oauth.ErrGoogleOAuthFailed):
+		code, message = "GOOGLE_OAUTH_FAILED", oauth.ErrGoogleOAuthFailed.Error()
 	case errors.Is(err, oauth.ErrTelegramOAuthConflict):
 		code, message = "TELEGRAM_OAUTH_CONFLICT", oauth.ErrTelegramOAuthConflict.Error()
 	case errors.Is(err, oauth.ErrTelegramOAuthFailed):

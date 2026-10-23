@@ -6,7 +6,7 @@ import { useTranslation } from 'react-i18next';
 import {
   BarChart3, Key, FileText, Wallet, User,
   Radio, CreditCard, Ticket, Users, Settings,
-  ChevronLeft, Menu, X, Layers, Store, Bell, TrendingUp, Activity, Shield,
+  Headset, ChevronLeft, Menu, X, Layers, Store, Bell, TrendingUp, Activity, Shield,
 } from 'lucide-react';
 import { StatusContext } from '../../context/Status';
 import { useMobileSidebar } from '../../context/MobileSidebar';
@@ -33,6 +33,7 @@ const NAV_ITEMS: NavItem[] = [
   { to: '/subscription', label: '订阅',   icon: CreditCard },
   { to: '/log',        label: '日志',     icon: FileText },
   { to: '/notices',    label: '通知',     icon: Bell },
+  { to: '/tickets', label: 'Support tickets', icon: Headset },
   { to: '/personal',   label: '设置',     icon: User },
   { divider: true, admin: true },
   { to: '/console/operations',   label: '线索运营',   icon: TrendingUp, admin: true },

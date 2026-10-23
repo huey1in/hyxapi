@@ -1,8 +1,6 @@
 package service
 
 import (
-	"fmt"
-	"html"
 	"time"
 
 	"github.com/QuantumNous/new-api/common"
@@ -31,10 +29,11 @@ func StartNotificationEmailVerification(identity AuthIdentity, email, lang strin
 		return nil, err
 	}
 	subject := i18n.Translate(lang, i18n.MsgNotificationEmailSubject, map[string]any{"SystemName": common.SystemName})
-	content := fmt.Sprintf("<p>%s</p><p>%s</p><p>%s</p>",
-		i18n.Translate(lang, i18n.MsgNotificationEmailIntro),
-		i18n.Translate(lang, i18n.MsgEmailBindingCode, map[string]any{"Code": html.EscapeString(codes.New)}),
-		i18n.Translate(lang, i18n.MsgEmailBindingNewValidity, map[string]any{"Minutes": int(model.EmailBindingTTL / time.Minute)}))
+	content := common.RenderVerificationEmail(common.VerificationEmail{
+		Code: codes.New, ExpireMinutes: int(model.EmailBindingTTL / time.Minute), Title: subject,
+		Description: i18n.Translate(lang, i18n.MsgNotificationEmailIntro),
+		Notice:      i18n.Translate(lang, i18n.MsgEmailBindingNewValidity, map[string]any{"Minutes": int(model.EmailBindingTTL / time.Minute)}),
+	})
 	if err := common.SendEmail(subject, email, content); err != nil {
 		_, _ = model.ConsumeAuthFlow(token, model.AuthFlowMatch{Purpose: model.AuthFlowPurposeNotificationEmail, UserId: identity.UserID, SessionId: identity.SessionID})
 		return nil, ErrEmailBindingDelivery

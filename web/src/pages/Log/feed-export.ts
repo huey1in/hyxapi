@@ -1,10 +1,12 @@
 import { z } from 'zod';
 import { feedItemSchema, feedModel, projectFeedItem } from './feed-data';
+import { cacheStatusLabels } from './log-data';
 
 const columns = [
   ['time', 'Time'], ['source', 'Log source'], ['type', 'Type'], ['model', 'Model / task'],
   ['username', 'User'], ['token_name', 'Token name'], ['group', 'Group'],
   ['prompt_tokens', 'Input tokens'], ['completion_tokens', 'Output tokens'], ['quota', 'Quota'],
+  ['cache_read_tokens', 'Cache read tokens'], ['cache_write_tokens', 'Cache write tokens'], ['cache_status', 'Cache status'], ['cache_hit_rate', 'Cache hit rate'],
   ['use_time', 'Duration (s)'], ['request_id', 'Request ID'], ['upstream_request_id', 'Upstream Request ID'],
   ['task_id', 'Task ID'], ['status', 'Status'], ['action', 'Action'], ['platform', 'Plugin / platform'],
   ['channel', 'Channel'], ['content', 'Content'], ['other', 'Details'],
@@ -29,7 +31,14 @@ export function feedToCSV(ndjson: string, role: number, translate: (key: string)
     const result = feedItemSchema.safeParse(record);
     if (!result.success) throw new Error('Log export did not finish');
     const row = projectFeedItem(result.data, role);
-    const data = row.source === 'usage' ? { ...row.log, type: translate(types[row.log.type] || 'System'), other: JSON.stringify(row.log._rawOther) }
+    const data = row.source === 'usage' ? {
+      ...row.log, prompt_tokens: row.log._inputTokens,
+      cache_read_tokens: row.log._cacheReadKnown ? row.log._cacheHit : '',
+      cache_write_tokens: row.log._cacheWriteKnown ? row.log._cacheWrite : '',
+      cache_status: row.log.type === 2 || row.log._cache > 0 ? translate(cacheStatusLabels[row.log._cacheStatus]) : '',
+      cache_hit_rate: row.log._cacheHitRate != null ? `${Number((row.log._cacheHitRate * 100).toFixed(2))}%` : '',
+      type: translate(types[row.log.type] || 'System'), other: JSON.stringify(row.log._rawOther),
+    }
       : row.source === 'tasks' ? { ...row.task, task_id: row.task.task_id, channel: row.task.channel_id, username: row.task.username || row.task.user_id, other: JSON.stringify(row.task) }
         : { ...row.midjourney, task_id: row.midjourney.mj_id, channel: row.midjourney.channel_id, username: row.midjourney.user_id, other: JSON.stringify(row.midjourney) };
     const values: Record<string, unknown> = { ...data, time: new Date(row.time).toISOString(), source: translate(sourceLabels[row.source]), model: feedModel(row) };

@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"sort"
-	"time"
 
 	"github.com/QuantumNous/new-api/common"
 	"github.com/QuantumNous/new-api/logger"
@@ -578,75 +577,6 @@ func DeleteOldLog(ctx context.Context, targetTimestamp int64, limit int) (int64,
 	}
 
 	return total, nil
-}
-
-// ModelGroupLogStat holds aggregated log stats for a model+group in a time window.
-type ModelGroupLogStat struct {
-	Total        int64 // total requests (consume + error)
-	Errors       int64 // error requests
-	AvgLatencyMs int64 // average use_time in ms (from successful requests)
-	PromptTokens int64 // successful prompt tokens
-	CacheTokens  int64 // successful cache read tokens
-}
-
-// GetModelGroupLogStat aggregates log entries for a model+group since a given timestamp.
-func GetModelGroupLogStat(modelName, group string, since int64) (*ModelGroupLogStat, error) {
-	return GetModelGroupLogStatRange(modelName, group, since, time.Now().Unix()+1)
-}
-
-// GetModelGroupLogStatRange aggregates log entries for a model+group in [since, until).
-func GetModelGroupLogStatRange(modelName, group string, since, until int64) (*ModelGroupLogStat, error) {
-	var stat ModelGroupLogStat
-
-	// Count total requests (type 2 = consume, type 5 = error)
-	var totalRow struct{ Cnt int64 }
-	err := LOG_DB.Model(&Log{}).
-		Select("count(*) as cnt").
-		Where("model_name = ? AND "+logGroupCol+" = ? AND created_at >= ? AND created_at < ? AND type IN (?, ?)", modelName, group, since, until, LogTypeConsume, LogTypeError).
-		Scan(&totalRow).Error
-	if err != nil {
-		return nil, err
-	}
-	stat.Total = totalRow.Cnt
-
-	if stat.Total == 0 {
-		return &stat, nil
-	}
-
-	// Count errors
-	var errRow struct{ Cnt int64 }
-	if err := LOG_DB.Model(&Log{}).
-		Select("count(*) as cnt").
-		Where("model_name = ? AND "+logGroupCol+" = ? AND created_at >= ? AND created_at < ? AND type = ?", modelName, group, since, until, LogTypeError).
-		Scan(&errRow).Error; err != nil {
-		return nil, err
-	}
-	stat.Errors = errRow.Cnt
-
-	// Average latency from successful requests (use_time is in seconds)
-	var latRow struct{ Avg float64 }
-	if err := LOG_DB.Model(&Log{}).
-		Select("COALESCE(AVG(use_time), 0) as avg").
-		Where("model_name = ? AND "+logGroupCol+" = ? AND created_at >= ? AND created_at < ? AND type = ? AND use_time > 0", modelName, group, since, until, LogTypeConsume).
-		Scan(&latRow).Error; err != nil {
-		return nil, err
-	}
-	stat.AvgLatencyMs = int64(latRow.Avg * 1000)
-
-	var cacheRow struct {
-		PromptTokens int64
-		CacheTokens  int64
-	}
-	if err := LOG_DB.Model(&Log{}).
-		Select(fmt.Sprintf("COALESCE(SUM(prompt_tokens), 0) as prompt_tokens, COALESCE(SUM(%s), 0) as cache_tokens", jsonIntExtract("other", "cache_tokens"))).
-		Where("model_name = ? AND "+logGroupCol+" = ? AND created_at >= ? AND created_at < ? AND type = ?", modelName, group, since, until, LogTypeConsume).
-		Scan(&cacheRow).Error; err != nil {
-		return nil, err
-	}
-	stat.PromptTokens = cacheRow.PromptTokens
-	stat.CacheTokens = cacheRow.CacheTokens
-
-	return &stat, nil
 }
 
 type UserConsumption struct {

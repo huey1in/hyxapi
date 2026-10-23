@@ -39,6 +39,14 @@ func accessTokenScopeRule(scope string) accessTokenRouteRule {
 // Casbin-guarded routes declare themselves through
 // DeclareAccessTokenPermissionRoute when they are registered.
 var accessTokenRouteRules = map[string]accessTokenRouteRule{
+	"GET /api/tickets":                    accessTokenSessionRule,
+	"GET /api/tickets/agents":             accessTokenSessionRule,
+	"GET /api/tickets/:id":                accessTokenSessionRule,
+	"POST /api/tickets":                   accessTokenSessionRule,
+	"PATCH /api/tickets/:id":              accessTokenSessionRule,
+	"GET /api/user/usdt/orders/:trade_no": accessTokenScopeRule("wallet:read"),
+	"POST /api/user/usdt/pay":             accessTokenScopeRule("wallet:write"),
+	"POST /api/user/usdt/amount":          accessTokenScopeRule("wallet:read"),
 	// Existing HyxAPI endpoints share the same explicit scope policy.
 	"GET /api/operations/revenue_trend":            accessTokenScopeRule("billing:read"),
 	"GET /api/operations/ranking":                  accessTokenScopeRule("log:read"),

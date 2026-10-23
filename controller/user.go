@@ -508,6 +508,7 @@ func buildSelfUserData(user *model.User) map[string]any {
 		"status":            user.Status,
 		"email":             user.Email,
 		"github_id":         user.GitHubId,
+		"google_id":         user.GoogleId,
 		"discord_id":        user.DiscordId,
 		"oidc_id":           user.OidcId,
 		"wechat_id":         user.WeChatId,
@@ -905,7 +906,7 @@ func CreateUser(c *gin.Context) {
 	}
 	auditParams := map[string]any{"role": user.Role}
 	// Creating an administrator grants privilege just like promoting one.
-	if user.Role >= common.RoleAdminUser {
+	if user.Role >= common.RoleSupportUser {
 		authorization := requireAdminUserProof(c, service.VerificationScopeAdminUserCreate, service.AdminUserCreateContext{Role: user.Role})
 		if authorization == nil {
 			return
@@ -1038,6 +1039,12 @@ func ManageUser(c *gin.Context) {
 			"message": "",
 		})
 		return
+	case "support":
+		if user.Role >= common.RoleAdminUser {
+			common.ApiErrorT(c, "Invalid parameters")
+			return
+		}
+		user.Role = common.RoleSupportUser
 	case "promote":
 		if myRole != common.RoleRootUser {
 			common.ApiErrorT(c, "Regular administrators cannot promote other users to administrator")
@@ -1067,7 +1074,7 @@ func ManageUser(c *gin.Context) {
 	if authorization == nil {
 		return
 	}
-	if req.Action == "demote" {
+	if req.Action == "demote" || req.Action == "support" {
 		if err := model.DB.Transaction(func(tx *gorm.DB) error {
 			if err := user.UpdateWithTx(tx, false); err != nil {
 				return err

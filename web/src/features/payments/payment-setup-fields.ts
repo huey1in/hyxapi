@@ -6,6 +6,14 @@ export type PaymentField = [
 type PaymentSetupGroup = [title: string, fields: PaymentField[]];
 
 export const paymentSetupGroups: PaymentSetupGroup[] = [
+  ['USDT (self-hosted Epusdt)', [
+    ['usdt.enabled', 'Enable USDT payments', 'bool'],
+    ['usdt.gateway_url', 'Gateway HTTPS address'],
+    ['usdt.merchant_id', 'Merchant PID'],
+    ['usdt.api_key', 'API Secret', 'secret'],
+    ['usdt.network', 'USDT network'],
+    ['usdt.min_topup', 'Minimum top-up (USD)', 'number'],
+  ]],
   [
     '充值选项',
     [

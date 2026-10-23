@@ -42,13 +42,6 @@ func TestLogGroupStatisticsUseTheLogDatabaseDialect(t *testing.T) {
 				{ModelName: "group-test", Group: "default", CreatedAt: 101, Type: LogTypeError},
 				{ModelName: "group-test", Group: "other", CreatedAt: 100, Type: LogTypeConsume, PromptTokens: 9000},
 			}).Error)
-			stats, err := GetModelGroupLogStatRange("group-test", "default", 90, 110)
-			require.NoError(t, err)
-			require.EqualValues(t, 2, stats.Total)
-			require.EqualValues(t, 1, stats.Errors)
-			require.EqualValues(t, 2000, stats.AvgLatencyMs)
-			require.EqualValues(t, 1000, stats.PromptTokens)
-			require.EqualValues(t, 400, stats.CacheTokens)
 			quota, err := SumUsedQuota(0, 90, 110, "group%", "test_%", "", "default")
 			require.NoError(t, err)
 			require.Equal(t, 5000, quota.Quota)

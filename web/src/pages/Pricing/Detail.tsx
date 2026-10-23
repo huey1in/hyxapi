@@ -1,10 +1,6 @@
-import { ParagraphSkeleton } from '../../components/ui/feedback/ContentSkeleton';
 import { PricingDetailSkeleton } from '../../components/layout/PageSkeletons';
 import React, { useMemo, useState, useEffect } from 'react';
 import type { ReactNode } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { useAuthStore } from '../../stores/auth-store';
-import { healthSchema, summarizeHealth as summarizeHistory } from '../../features/pricing/health-data';
 import type { TableColumn } from '../../components/ui/layout/Table';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
@@ -12,20 +8,12 @@ import { ArrowLeft, Coins, Copy, SearchX } from 'lucide-react';
 import { PageShell, Card, Tag, Table, Button, Divider, EmptyState, Select, Breadcrumb } from '../../components/ui';
 import { useModelPricingData } from '../../hooks/model-pricing/useModelPricingData';
 import { usePageTitle } from '../../hooks/common/usePageTitle';
-import { API, calculateModelPrice, getModelPriceItems, getLobeHubIcon, getModelIcon } from '../../helpers';
+import { calculateModelPrice, getModelPriceItems, getLobeHubIcon, getModelIcon } from '../../helpers';
 import { QuotaTag, VendorTag } from './tags';
-import StatusBar from './StatusBar';
 import { ModelPerformance } from '../../features/performance-metrics/PerformancePanel';
 import { DynamicPricingDetails } from '../../features/pricing/DynamicPricingDetails';
 import { modelNameFromPricingPath } from '../../lib/model-pricing-route';
 import ModelApiExamples from '../../features/pricing/ModelApiExamples';
-
-const HEAT_MIN_CALLS = 5; // 近窗口调用数低于此值视为热度不高
-const STATE_META: Record<string, { tone: 'success' | 'warning' | 'danger'; label: string }> = {
-  up: { tone: 'success', label: "Normal" },
-  degraded: { tone: 'warning', label: "Degraded" },
-  down: { tone: 'danger', label: "Abnormal" },
-};
 
 const SectionLabel = ({ children }: { children: ReactNode }) => (
   <div className='text-xs font-medium uppercase tracking-wide text-ui-text-3'>{children}</div>
@@ -51,17 +39,6 @@ const PricingDetail = () => {
   usePageTitle(model ? model.model_name : t("Model details"));
 
   const [expressionGroup, setExpressionGroup] = useState('');
-  const userId = useAuthStore((state) => state.auth.user?.id);
-  const sid = useAuthStore((state) => state.auth.session?.sid);
-  const health = useQuery({
-    queryKey: ['model-health', userId, sid, modelName], enabled: !!model, gcTime: 0, retry: false, refetchOnWindowFocus: false,
-    queryFn: async ({ signal }) => {
-      const response = await API.get('/api/model-health/status', { params: { model: modelName }, signal, disableDuplicate: true, skipErrorHandler: true });
-      signal.throwIfAborted(); if (!response.data.success) throw new Error('Unable to load service status');
-      return healthSchema.parse(response.data.data);
-    },
-  });
-  const statusByGroup = new Map((health.isError ? [] : health.data ?? []).map((entry) => [entry.group, entry]));
   useEffect(() => {
     setExpressionGroup('');
     const query = new URLSearchParams(location.search); setTokenUnit(query.get('tokenUnit') === 'K' ? 'K' : 'M');
@@ -241,48 +218,6 @@ const PricingDetail = () => {
 
             <ModelApiExamples model={model} endpoints={supportedEndpoints} />
             <ModelPerformance model={model.model_name} />
-
-            {/* 服务状态（按分组，基于真实调用日志被动聚合） */}
-            {model.enable_groups?.length > 0 && (
-              <Card>
-                <div className='flex flex-col gap-4'>
-                  <div className='flex items-center justify-between gap-2'>
-                    <SectionLabel>{t("Service status")}</SectionLabel>
-                    <span className='text-xs text-ui-text-3'>{t("Recent calls")}</span>
-                  </div>
-                  {health.isError ? (<div role='alert' className='flex flex-wrap items-center gap-3 text-xs text-ui-text-3'>{t('Unable to load service status')}<Button variant='link' onClick={() => void health.refetch()}>{t('Retry')}</Button></div>) : health.isPending ? (
-                    <ParagraphSkeleton lines={2} />
-                  ) : (
-                    <div className='flex flex-col gap-5'>
-                      {model.enable_groups.map((g) => {
-                        const entry = statusByGroup.get(g);
-                        const sum = summarizeHistory(entry);
-                        const lowHeat = sum.calls < HEAT_MIN_CALLS;
-                        const meta = STATE_META[entry?.current?.status ?? ''] || null;
-                        return (
-                          <div key={g} className='flex flex-col gap-2'>
-                            <div className='flex items-center justify-between gap-2'>
-                              <div className='flex items-center gap-2'>
-                                <Tag>{g}</Tag>
-                                {!lowHeat && meta && <Tag tone={meta.tone}>{t(meta.label)}</Tag>}
-                              </div>
-                              {!lowHeat && (
-                                <span className='text-xs text-ui-text-3 tabular-nums'>
-                                  {sum.successRate !== null && <>{t("Success rate")} {Math.round(sum.successRate * 100)}%</>}
-                                  {sum.avgLatency !== null && <>{sum.successRate !== null ? ' · ' : ''}{t("Latency")} {(sum.avgLatency / 1000).toFixed(2)}s</>}
-                                  {sum.cacheRate !== null && <>{(sum.successRate !== null || sum.avgLatency !== null) ? ' · ' : ''}{t("Cache rate")} {(sum.cacheRate * 100).toFixed(1)}%</>}
-                                </span>
-                              )}
-                            </div>
-                            <StatusBar history={entry?.history || []} />
-                          </div>
-                        );
-                      })}
-                    </div>
-                  )}
-                </div>
-              </Card>
-            )}
 
             {/* 分组 / 端点 / 标签 */}
             {metaSections.length > 0 && (

@@ -1,6 +1,17 @@
 import { useTranslation } from 'react-i18next';
 import { renderNumber, renderQuota } from '../../helpers';
 import type { EnrichedLog } from './log-data';
+import { cacheStatusLabels } from './log-data';
+
+export function RequestCache({ row }: { row: EnrichedLog }) {
+  const { t, i18n } = useTranslation();
+  if (row.type !== 2 && row._cache === 0) return <span className='text-ui-text-3'>—</span>;
+  const reported = row._cacheReadKnown || row._cacheWriteKnown;
+  return <div className='text-sm tabular-nums'>
+    <span>{t(cacheStatusLabels[row._cacheStatus])}{row._cacheHitRate != null && row._cacheHit > 0 && <span className='ml-1 text-xs text-ui-text-3'>{new Intl.NumberFormat(i18n.language, { style: 'percent', maximumFractionDigits: 1 }).format(row._cacheHitRate)}</span>}</span>
+    {reported && <div className='text-xs text-ui-text-3'>{t('Read')} {row._cacheReadKnown ? row._cacheHit.toLocaleString(i18n.language) : '—'} · {t('Write')} {row._cacheWriteKnown ? row._cacheWrite.toLocaleString(i18n.language) : '—'}</div>}
+  </div>;
+}
 
 const TYPE_LABELS: Record<number, string> = {
   1: 'Top up', 2: 'Consumption', 3: 'Management', 4: 'System', 5: 'Error', 6: 'Refund', 7: 'Login',

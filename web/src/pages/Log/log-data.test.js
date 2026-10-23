@@ -26,12 +26,32 @@ test('legacy metadata failures do not hide usage or expose privileged diagnostic
   assert.equal(data.logSchema.safeParse({ ...row, quota: 'free' }).success, false);
 });
 
-test('cache creation durations do not double count legacy totals and explicit zeros remain authoritative', () => {
-  const other = { cache_creation_tokens: 100, cache_creation_tokens_5m: 4, cache_creation_tokens_1h: 6, input_tokens_total: 40 };
-  assert.equal(data.enrichLog(log(other), 1)._cacheWrite, 10);
+test('cache counters use only the current fields and never sum duration details into the total', () => {
+  const other = { cache_tokens: 20, cache_write_tokens: 12, cache_write_tokens_5m: 4, cache_write_tokens_1h: 6, input_tokens_total: 40 };
+  const row = data.enrichLog(log(other), 1);
+  assert.equal(row._cacheWrite, 12);
+  assert.equal(row._cache, 32);
+  assert.equal(row._cacheStatus, 'hit');
+  assert.equal(row._cacheHitRate, 0.5);
+  assert.equal(row._inputTokens, 40);
   assert.equal(data.enrichLog(log({ ...other, cache_write_tokens: 0 }), 1)._cacheWrite, 0);
-  assert.equal(data.enrichLog(log({ ...other, cache_write_tokens: 12 }), 1)._cacheWrite, 12);
-  assert.equal(data.enrichLog(log(other), 1)._other.input_tokens_total, 40);
+  const missing = data.enrichLog(log({ cache_creation_tokens: 100, cache_creation_tokens_5m: 4, cache_creation_tokens_1h: 6 }), 1);
+  assert.equal(missing._cacheWrite, 0);
+  assert.equal(missing._cacheWriteKnown, false);
+  assert.equal(missing._cacheStatus, 'unknown');
+  assert.equal(missing._cacheHitRate, undefined);
+  assert.equal(data.enrichLog(log({ cache_write_tokens_5m: 4, cache_write_tokens_1h: 6 }), 1)._cacheWriteKnown, false);
+});
+
+test('cache misses, missing measurements and invalid fractions stay distinct', () => {
+  const miss = data.enrichLog(log({ cache_tokens: 0, cache_write_tokens: 20, input_tokens_total: 40 }), 1);
+  assert.equal(miss._cacheStatus, 'miss');
+  assert.equal(miss._cacheReadKnown, true);
+  assert.equal(miss._cacheHitRate, 0);
+  for (const other of [{ cache_tokens: 50, input_tokens_total: 40 }, { cache_tokens: 20 }, { cache_tokens: 0, input_tokens_total: 0 }]) {
+    assert.equal(data.enrichLog(log(other), 1)._cacheHitRate, undefined);
+  }
+  assert.equal(data.enrichLog(log({ cache_tokens: -5, cache_write_tokens: '12' }), 1)._metadataInvalid, true);
 });
 
 test('historical log ranges have no maximum span while invalid dates are rejected', () => {

@@ -199,7 +199,9 @@ export default function PaymentSetup({
         <label htmlFor={inputID} className='block'>
           {t(label)}
         </label>
-        {type === 'bool' ? (
+        {key === 'usdt.network' ? (
+          <Select popover id={inputID} aria-label={t('USDT network')} value={text || 'tron'} onChange={(next) => onChange(key, next)} options={[{ value: 'tron', label: 'TRON (TRC20)' }, { value: 'ethereum', label: 'Ethereum (ERC20)' }, { value: 'bsc', label: 'BNB Smart Chain (BEP20)' }, { value: 'polygon', label: 'Polygon' }, { value: 'solana', label: 'Solana' }, { value: 'arbitrum', label: 'Arbitrum' }, { value: 'base', label: 'Base' }, { value: 'plasma', label: 'Plasma' }]} />
+        ) : type === 'bool' ? (
           <Switch
             id={inputID}
             checked={bool(text)}
@@ -212,8 +214,8 @@ export default function PaymentSetup({
             value={
               text.trim() && Number.isFinite(Number(text)) ? Number(text) : ''
             }
-            min={key.endsWith('MinTopUp') ? 1 : 0}
-            step={key.endsWith('MinTopUp') ? 1 : 0.01}
+            min={key.endsWith('MinTopUp') || key === 'usdt.min_topup' ? 1 : 0}
+            step={key.endsWith('MinTopUp') || key === 'usdt.min_topup' ? 1 : 0.01}
             invalid={invalid}
             data-setting-invalid={invalid ? 'true' : undefined}
             onChange={(next) => onChange(key, String(next))}
@@ -273,6 +275,7 @@ export default function PaymentSetup({
             <div className='grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4'>
               {fields.map(field)}
             </div>
+            {title === 'USDT (self-hosted Epusdt)' && <p className='mt-3 text-xs leading-5 text-ui-text-3'>{t('Use Epusdt v2 with a USDT wallet on the selected network. Orders are priced in USD; the payment dialog shows the exact USDT amount.')}<br />{t('Webhook URL')}: {window.location.origin}/api/usdt/notify</p>}
             {title === 'Stripe' && (
               <p className='text-xs text-ui-text-3 mt-3'>
                 {t(

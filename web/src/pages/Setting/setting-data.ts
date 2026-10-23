@@ -161,7 +161,6 @@ export type DomainImpact = z.output<typeof domainImpactSchema>;
 const fractional = new Set([
   'ChannelDisableThreshold',
   'monitor_setting.auto_test_channel_minutes',
-  'monitor_setting.model_health_interval_minutes',
   'grok.violation_deduction_amount',
   'Price',
 ]);

@@ -144,14 +144,15 @@ const (
 )
 
 const (
-	RoleGuestUser  = 0
-	RoleCommonUser = 1
-	RoleAdminUser  = 10
-	RoleRootUser   = 100
+	RoleGuestUser   = 0
+	RoleCommonUser  = 1
+	RoleSupportUser = 5
+	RoleAdminUser   = 10
+	RoleRootUser    = 100
 )
 
 func IsValidateRole(role int) bool {
-	return role == RoleGuestUser || role == RoleCommonUser || role == RoleAdminUser || role == RoleRootUser
+	return role == RoleGuestUser || role == RoleCommonUser || role == RoleSupportUser || role == RoleAdminUser || role == RoleRootUser
 }
 
 var (

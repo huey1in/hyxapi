@@ -354,33 +354,28 @@ func PostTextConsumeQuota(ctx *gin.Context, relayInfo *relaycommon.RelayInfo, us
 		other["image_generation_call_price"] = summary.ImageGenerationCallPrice
 	}
 	if summary.CacheCreationTokens > 0 {
-		other["cache_creation_tokens"] = summary.CacheCreationTokens
 		other["cache_write_price"] = summary.CacheWritePrice
 	}
 	if summary.CacheCreationTokens5m > 0 {
-		other["cache_creation_tokens_5m"] = summary.CacheCreationTokens5m
+		other["cache_write_tokens_5m"] = summary.CacheCreationTokens5m
 		other["cache_write_price_5m"] = summary.CacheWrite5mPrice
 	}
 	if summary.CacheCreationTokens1h > 0 {
-		other["cache_creation_tokens_1h"] = summary.CacheCreationTokens1h
+		other["cache_write_tokens_1h"] = summary.CacheCreationTokens1h
 		other["cache_write_price_1h"] = summary.CacheWrite1hPrice
 	}
 	InjectTieredBillingInfo(other, relayInfo, summary.TieredResult)
 	appendUsageBillingPathForLog(other, common.GetContextKeyBool(ctx, constant.ContextKeyLocalCountTokens), originUsage)
 	cacheWriteTokens := cacheWriteTokensTotal(summary)
-	if cacheWriteTokens > 0 {
-		// cache_write_tokens: normalized cache creation total for UI display.
-		// If split 5m/1h values are present, this is their sum; otherwise it falls back
-		// to cache_creation_tokens.
-		other["cache_write_tokens"] = cacheWriteTokens
+	other["cache_write_tokens"] = cacheWriteTokens
+	inputTokens := summary.PromptTokens
+	if summary.IsClaudeUsageSemantic {
+		inputTokens += summary.CacheTokens + cacheWriteTokens
 	}
 	if relayInfo.GetFinalRequestRelayFormat() != relaytypes.RelayFormatClaude && usage != nil && usage.UsageSource != "" && usage.InputTokens > 0 {
-		// input_tokens_total: explicit normalized total input used by the usage log UI.
-		// Only write this field when upstream/current conversion has already provided a
-		// reliable total input value and tagged the usage source. Do not infer it from
-		// prompt/cache fields here, otherwise old upstream payloads may be double-counted.
-		other["input_tokens_total"] = usage.InputTokens
+		inputTokens = usage.InputTokens
 	}
+	other["input_tokens_total"] = inputTokens
 
 	model.RecordConsumeLog(ctx, relayInfo.UserId, model.RecordConsumeLogParams{
 		ChannelId:        relayInfo.ChannelId,

@@ -12,6 +12,7 @@ import { useLiveSearch } from '../../hooks/useLiveSearch';
 import { topUpPageSchema } from './wallet-data';
 import type { TopUpRecord } from './wallet-data';
 import { readWalletData, walletRequestConfig } from './wallet-query';
+import USDTCheckout from './USDTCheckout';
 
 function CompleteOrder({ order, onClose, onSaved }: { order: TopUpRecord; onClose: () => void; onSaved: () => void }) {
   const { t } = useTranslation(); const { busy, run } = useOwnedOperation();
@@ -28,6 +29,7 @@ export default function TopUpHistory({ identity, role, onClose, onSaved }: { ide
   const { t } = useTranslation(); const [scope, setScope] = useState('self');
   const [search, setSearch] = useState(''); const [keyword, setKeyword] = useState(''); const [page, setPage] = useState(1);
   const [complete, setComplete] = useState<TopUpRecord | null>(null);
+  const [usdt, setUsdt] = useState<TopUpRecord | null>(null);
   useLiveSearch(search.trim(), (value) => { setKeyword(value); setPage(1); setComplete(null); });
   const pageSize = 20; const admin = role >= 10 && scope === 'all';
   const query = useQuery({ queryKey: ['wallet-history', identity, admin, keyword, page], gcTime: 0, retry: false,
@@ -37,8 +39,9 @@ export default function TopUpHistory({ identity, role, onClose, onSaved }: { ide
   const columns: TableColumn<TopUpRecord>[] = [
     { key: 'time', title: t('Time'), render: (order) => <span className='whitespace-nowrap'>{order.create_time ? timestamp2string(order.create_time) : '—'}</span> },
     { key: 'description', title: t('Description'), mobileRole: 'wide', render: (order) => <div><div>{order.payment_method || order.payment_provider || '—'} · {t(statusLabels[order.status] || order.status)}</div><div className='break-all text-xs text-ui-text-3'>{order.trade_no}{admin && ` · ${t('User #{{id}}', { id: order.user_id })}`}</div></div> },
-    { key: 'money', title: t('Payment amount'), align: 'right', render: (order) => <span className='tabular-nums'>{order.money.toFixed(2)}</span> },
-    ...(admin ? [{ key: 'actions', title: t('Actions'), mobileRole: 'actions' as const, render: (order: TopUpRecord) => order.status === 'pending' && <Button size='sm' variant='link' onClick={() => setComplete(order)}>{t('Complete order')}</Button> }] : []),
+    { key: 'money', title: t('Payment amount'), align: 'right', render: (order) => <span className='tabular-nums'>{`${order.payment_provider === 'epusdt' ? 'USD ' : ''}${order.money.toFixed(2)}`}</span> },
+    ...(!admin ? [{ key: 'payment', title: t('Actions'), mobileRole: 'actions' as const, render: (order: TopUpRecord) => order.payment_provider === 'epusdt' && <Button size='sm' variant='link' onClick={() => setUsdt(order)}>{t('Payment details')}</Button> }] : []),
+    ...(admin ? [{ key: 'actions', title: t('Actions'), mobileRole: 'actions' as const, render: (order: TopUpRecord) => order.status === 'pending' && order.payment_provider !== 'epusdt' && <Button size='sm' variant='link' onClick={() => setComplete(order)}>{t('Complete order')}</Button> }] : []),
   ];
   return <Modal open title={t('Top-up history')} onClose={onClose} width={admin ? 640 : 520} hideFooter>
     <div className={`grid min-w-0 grid-cols-[minmax(0,240px)] justify-start gap-2 ${role >= 10 ? 'sm:grid-cols-[150px_minmax(0,240px)]' : ''}`}>
@@ -50,5 +53,6 @@ export default function TopUpHistory({ identity, role, onClose, onSaved }: { ide
       <Pagination page={page} pageSize={pageSize} total={data?.total ?? 0} onChange={(value: number) => { setPage(value); setComplete(null); }} />
     </>}
     {complete && <CompleteOrder key={complete.id} order={complete} onClose={() => setComplete(null)} onSaved={() => { void query.refetch(); onSaved(); }} />}
+    {usdt && <USDTCheckout key={usdt.trade_no} identity={identity} tradeNo={usdt.trade_no} onClose={() => setUsdt(null)} onPaid={() => { void query.refetch(); onSaved(); }} />}
   </Modal>;
 }

@@ -183,6 +183,7 @@ func TestGenerateWssOtherInfoIncludesDirectCacheAndImagePrices(t *testing.T) {
 	})
 	relayInfo.ChannelMeta = &relaycommon.ChannelMeta{}
 	usage := &dto.RealtimeUsage{
+		InputTokens: 1000,
 		InputTokenDetails: dto.InputTokenDetails{
 			CachedTokens:         300,
 			CachedCreationTokens: 40,
@@ -199,7 +200,25 @@ func TestGenerateWssOtherInfoIncludesDirectCacheAndImagePrices(t *testing.T) {
 	require.Equal(t, 300, other["cache_tokens"])
 	require.Equal(t, 0.5, other["cache_read_price"])
 	require.Equal(t, 40, other["cache_write_tokens"])
+	require.Equal(t, 1000, other["input_tokens_total"])
 	require.Equal(t, 10.0, other["cache_write_price"])
 	require.Equal(t, 50, other["image_input"])
 	require.Equal(t, 4.0, other["image_price"])
+}
+
+func TestGenerateClaudeOtherInfoUsesCanonicalCacheCounters(t *testing.T) {
+	info := newTextQuotaRelayInfo(tokenPriceData())
+	info.ChannelMeta = &relaycommon.ChannelMeta{}
+	other := GenerateClaudeOtherInfo(newTextQuotaTestContext(), info,
+		2, 1, 4, 100, 0.5, 50, 10, 10, 12, 20, 16, 0)
+	require.Equal(t, 100, other["cache_tokens"])
+	require.Equal(t, 50, other["cache_write_tokens"])
+	require.Equal(t, 10, other["cache_write_tokens_5m"])
+	require.Equal(t, 20, other["cache_write_tokens_1h"])
+	for _, key := range []string{"cache_creation_tokens", "cache_creation_tokens_5m", "cache_creation_tokens_1h"} {
+		require.NotContains(t, other, key)
+	}
+	uncached := GenerateTextOtherInfo(newTextQuotaTestContext(), info, 2, 1, 4, 0, 0.5, 0)
+	require.Equal(t, 0, uncached["cache_tokens"])
+	require.Equal(t, 0, uncached["cache_write_tokens"])
 }

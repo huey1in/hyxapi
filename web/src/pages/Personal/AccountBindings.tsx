@@ -54,6 +54,7 @@ function Bindings({ identity }: { identity: string }) {
   const providers: Provider[] = [];
   const add = (enabled: unknown, slug: string, name: string, bound: unknown) => { if (enabled || bound) providers.push({ slug, name, bound: !!bound }); };
   add(status.github_oauth, 'github', 'GitHub', user?.github_id);
+  add(status.google_oauth, 'google', 'Google', user?.google_id);
   add(status.discord_oauth, 'discord', 'Discord', user?.discord_id);
   add(status.oidc_enabled, 'oidc', typeof status.oidc_display_name === 'string' ? status.oidc_display_name : 'OIDC', user?.oidc_id);
   add(status.linuxdo_oauth, 'linuxdo', 'Linux DO', user?.linux_do_id);

@@ -4,6 +4,17 @@ import { paymentInfoSchema, paymentMethods, topUpRequest, checkoutDestination, s
 
 const info = { enable_online_topup: true, pay_methods: [{ type: 'alipay' }, { type: 'stripe' }, { type: 'alipay' }], min_topup: 2, enable_stripe_topup: true, stripe_min_topup: 1 };
 
+test('USDT is explicitly enabled, prices USD credits and preserves units in token display mode', () => {
+  const config = { enable_usdt_topup: true, usdt_min_topup: 5, quota_display_type: 'TOKENS', quota_per_unit: 500000 };
+  const [method] = paymentMethods(config);
+  assert.equal(method.currency, 'USD');
+  assert.deepEqual(topUpRequest(method, 10, config), { url: '/api/user/usdt/pay', body: { amount: 10, payment_method: 'usdt' } });
+  assert.equal(topUpRequest(method, 10, config, true).url, '/api/user/usdt/amount');
+  assert.throws(() => topUpRequest(method, 4, config));
+  assert.equal(paymentMethods({ enable_online_topup: true, pay_methods: [{ type: 'usdt' }] }).length, 0);
+  assert.equal(paymentMethods({ enable_usdt_topup: false }).length, 0);
+});
+
 test('wallet invitation rewards require an explicit boolean opt-in', () => {
   const config = { ...info, quota_per_unit: 500000 };
   assert.equal(paymentInfoSchema.parse(config).enable_invitation_rewards, false);

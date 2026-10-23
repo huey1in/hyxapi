@@ -10,7 +10,7 @@ export const managedUserSchema = z.object({
   quota: z.number(), used_quota: z.number().default(0),
   aff_count: z.number().default(0), aff_quota: z.number().default(0),
   created_at: z.number().default(0), last_login_at: z.number().default(0), remark: text,
-  DeletedAt: z.string().nullish(), github_id: text, discord_id: text, oidc_id: text,
+  DeletedAt: z.string().nullish(), github_id: text, google_id: text, discord_id: text, oidc_id: text,
   wechat_id: text, telegram_id: text, linux_do_id: text,
   admin_permissions: z.record(z.string(), z.record(z.string(), z.boolean())).optional(),
 });
@@ -18,7 +18,7 @@ export const userPageSchema = z.object({ items: z.array(managedUserSchema), tota
 export type ManagedUser = z.infer<typeof managedUserSchema>;
 export type UserFilters = { keyword: string; group: string; role: string; status: string };
 export type UserSort = 'id' | 'username' | 'quota' | 'group' | 'created_at' | 'last_login_at';
-export type UserAction = 'enable' | 'disable' | 'promote' | 'demote' | 'delete';
+export type UserAction = 'enable' | 'disable' | 'promote' | 'demote' | 'support' | 'delete';
 export type UserForm = { username: string; display_name: string; password: string; role: number; group: string; remark: string; admin_permissions?: AdminPermissionMatrix };
 
 export function canManageUser(actorRole: number, user: Pick<ManagedUser, 'role' | 'DeletedAt'>): boolean {

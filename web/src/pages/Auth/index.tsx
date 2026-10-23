@@ -25,6 +25,7 @@ import { useAuthOperation } from './useAuthOperation';
 import { usePageTitle } from '../../hooks/common/usePageTitle';
 
 const oauthIconCdn = {
+  google: 'https://www.gstatic.com/images/branding/googleg/1x/googleg_standard_color_128dp.png',
   github: 'https://cdn.simpleicons.org/github/181717',
   discord: 'https://cdn.simpleicons.org/discord/5865F2',
   linuxdo: 'https://www.google.com/s2/favicons?domain=linux.do&sz=64',
@@ -109,6 +110,7 @@ const Auth = () => {
   const oauthProviders: { id: string; label: string; icon: string }[] = [];
   if (isLogin || registerEnabled) {
     if (status.github_oauth && status.github_client_id) oauthProviders.push({ id: 'github', label: 'GitHub', icon: oauthIconCdn.github });
+    if (status.google_oauth) oauthProviders.push({ id: 'google', label: 'Google', icon: oauthIconCdn.google });
     if (status.discord_oauth && status.discord_client_id) oauthProviders.push({ id: 'discord', label: 'Discord', icon: oauthIconCdn.discord });
     if (status.linuxdo_oauth && status.linuxdo_client_id) oauthProviders.push({ id: 'linuxdo', label: 'Linux DO', icon: oauthIconCdn.linuxdo });
     if (status.oidc_enabled && status.oidc_client_id && status.oidc_authorization_endpoint) oauthProviders.push({ id: 'oidc', label: status.oidc_display_name || 'OIDC', icon: oauthIconCdn.oidc });
