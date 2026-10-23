@@ -340,12 +340,3 @@ func UsedUsageKeys(exprStr string) map[string]bool {
 	}
 	return nil
 }
-
-// InvalidateCache clears the compiled-expression cache.
-// Tests and benchmarks use it to isolate compiled entries. Rule changes use
-// content-derived cache keys and do not require a global reset.
-func InvalidateCache() {
-	cacheMu.Lock()
-	cache = make(map[string]*cachedEntry, 64)
-	cacheMu.Unlock()
-}

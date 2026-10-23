@@ -254,13 +254,13 @@ func TestSecurityFactorMutationsAdvanceUserAuthVersion(t *testing.T) {
 	assertUserAuthVersion(t, user.Id, 2)
 	assert.ErrorIs(t, EnableTwoFAEnrollment(identity, token, code), ErrTwoFASetupInvalid)
 	assertUserAuthVersion(t, user.Id, 2)
-	require.NoError(t, ReplaceBackupCodesWithAuthVersion(user.Id, []string{"ABCD-1234"}))
+	require.NoError(t, replaceBackupCodesWithAuthVersion(user.Id, []string{"ABCD-1234"}, nil))
 	assertUserAuthVersion(t, user.Id, 3)
 	require.NoError(t, DisableTwoFAWithAuthVersion(user.Id))
 	assertUserAuthVersion(t, user.Id, 4)
 
 	credential := &PasskeyCredential{UserID: user.Id, CredentialID: "credential-id", PublicKey: "public-key"}
-	require.NoError(t, UpsertPasskeyCredentialWithAuthVersion(credential))
+	require.NoError(t, upsertPasskeyCredentialWithAuthVersion(credential, nil))
 	assertUserAuthVersion(t, user.Id, 5)
 	require.NoError(t, DeletePasskeyByUserIDWithAuthVersion(user.Id))
 	assertUserAuthVersion(t, user.Id, 6)

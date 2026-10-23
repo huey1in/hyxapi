@@ -19,8 +19,6 @@ token.expired_cannot_enable: "Token has expired and cannot be enabled. Please mo
 token.exhausted_cannot_enable: "Token quota is exhausted and cannot be enabled. Please modify the remaining quota or set it to unlimited"
 token.invalid: "Invalid token"
 token.not_provided: "Token not provided"
-token.expired: "This token has expired"
-token.exhausted: "This token quota is exhausted TokenStatusExhausted[sk-{{.Prefix}}***{{.Suffix}}]"
 
 # Redemption messages
 redemption.count_positive: "Redemption code count must be greater than 0"

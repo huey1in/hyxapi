@@ -41,7 +41,7 @@ export { default as MultiSelect } from './select/MultiSelect';
 
 export { default as Switch }      from './toggle/Switch';
 export { default as Checkbox }    from './toggle/Checkbox';
-export { default as Radio, RadioGroup } from './toggle/Radio';
+export { RadioGroup } from './toggle/Radio';
 
 export { default as Modal }         from './modal/Modal';
 export { default as ModalShell }    from './modal/ModalShell';

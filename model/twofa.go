@@ -136,12 +136,6 @@ func replaceBackupCodesWithTx(tx *gorm.DB, userId int, codes []string) error {
 	return nil
 }
 
-// ReplaceBackupCodesWithAuthVersion atomically replaces the factor's recovery
-// credentials and advances the user's authentication version.
-func ReplaceBackupCodesWithAuthVersion(userId int, codes []string) error {
-	return replaceBackupCodesWithAuthVersion(userId, codes, nil)
-}
-
 func ReplaceBackupCodesForSession(identity AuthSessionIdentity, codes []string) error {
 	return replaceBackupCodesWithAuthVersion(identity.UserID, codes, &identity)
 }

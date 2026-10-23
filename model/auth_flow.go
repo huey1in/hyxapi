@@ -174,15 +174,6 @@ func createAuthFlowWithTx(tx *gorm.DB, input AuthFlowCreate) (string, *AuthFlow,
 	return token, flow, nil
 }
 
-// ClaimExternalAuthAssertion records a signed provider assertion as consumed.
-// The assertion is HMACed before storage and the unique token_hash index makes
-// replay rejection atomic on SQLite, MySQL and PostgreSQL.
-func ClaimExternalAuthAssertion(purpose, assertion string, expiresAt time.Time) error {
-	return DB.Transaction(func(tx *gorm.DB) error {
-		return ClaimExternalAuthAssertionWithTx(tx, purpose, assertion, expiresAt)
-	})
-}
-
 // ClaimExternalAuthAssertionWithTx records a provider assertion in the
 // caller's transaction so replay protection can commit atomically with the
 // authentication flow and its resulting state change.

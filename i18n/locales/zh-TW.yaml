@@ -19,8 +19,6 @@ token.expired_cannot_enable: "令牌已過期，無法啟用，請先修改令�
 token.exhausted_cannot_enable: "令牌可用額度已用盡，無法啟用，請先修改令牌剩餘額度，或者設定為無限額度"
 token.invalid: "無效的令牌"
 token.not_provided: "未提供令牌"
-token.expired: "該令牌已過期"
-token.exhausted: "該令牌額度已用盡 TokenStatusExhausted[sk-{{.Prefix}}***{{.Suffix}}]"
 
 # Redemption messages
 redemption.count_positive: "兌換碼個數必須大於0"

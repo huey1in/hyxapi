@@ -19,6 +19,21 @@ import (
 	"gorm.io/gorm"
 )
 
+func bumpUserAuthVersion(userID int) (int64, error) {
+	var next int64
+	if err := model.DB.Transaction(func(tx *gorm.DB) error {
+		var err error
+		next, err = model.IncrementUserAuthVersionWithTx(tx, userID)
+		return err
+	}); err != nil {
+		return 0, err
+	}
+	if err := model.PublishUserAuthCache(userID); err != nil {
+		return next, err
+	}
+	return next, nil
+}
+
 func setupAuthSessionTestDB(t *testing.T) *model.User {
 	t.Helper()
 	previousDB, previousRedis := model.DB, common.RedisEnabled
@@ -412,7 +427,7 @@ func TestIndependentRedisAuthVersionAdvanceConvergesAfterCacheTTL(t *testing.T) 
 	assert.Equal(t, "1", version, "node B must hold the pre-rotation session version")
 
 	common.RDB = clientA
-	_, err = model.BumpUserAuthVersion(user.Id)
+	_, err = bumpUserAuthVersion(user.Id)
 	require.NoError(t, err)
 	rotated, err := AdvanceCurrentSessionToUserVersion(oldIdentity, "security_update")
 	require.NoError(t, err)
@@ -437,7 +452,7 @@ func TestUserAuthVersionInvalidatesExistingSession(t *testing.T) {
 	identity, err := ParseAccessToken(bundle.AccessToken)
 	require.NoError(t, err)
 
-	_, err = model.BumpUserAuthVersion(user.Id)
+	_, err = bumpUserAuthVersion(user.Id)
 	require.NoError(t, err)
 	_, _, err = ValidateLoginSession(identity)
 	assert.ErrorIs(t, err, ErrLoginSessionRevoked)

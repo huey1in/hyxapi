@@ -45,5 +45,3 @@ export const RadioGroup = ({ value, onChange, options = [], direction = 'row', n
     ))}
   </div>
 );
-
-export default Radio;

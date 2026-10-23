@@ -201,24 +201,6 @@ func IncrementUserAuthVersionWithTx(tx *gorm.DB, userId int) (int64, error) {
 	return 0, ErrUserAuthVersionConflict
 }
 
-// BumpUserAuthVersion advances the version in its own transaction and publishes
-// the cache. Security mutations use IncrementUserAuthVersionWithTx atomically;
-// this standalone operation also supports session invalidation test fixtures.
-func BumpUserAuthVersion(userId int) (int64, error) {
-	var next int64
-	if err := DB.Transaction(func(tx *gorm.DB) error {
-		var err error
-		next, err = IncrementUserAuthVersionWithTx(tx, userId)
-		return err
-	}); err != nil {
-		return 0, err
-	}
-	if err := PublishUserAuthCache(userId); err != nil {
-		return next, err
-	}
-	return next, nil
-}
-
 // PublishUserAuthCache refreshes the current database state after a successful
 // auth-sensitive transaction without touching the cached quota field.
 func PublishUserAuthCache(userId int) error {

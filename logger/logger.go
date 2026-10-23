@@ -34,15 +34,6 @@ var setupLogWorking bool
 var currentLogPathMu sync.RWMutex
 var currentLogFile *os.File
 
-func GetCurrentLogPath() string {
-	currentLogPathMu.RLock()
-	defer currentLogPathMu.RUnlock()
-	if currentLogFile == nil {
-		return ""
-	}
-	return currentLogFile.Name()
-}
-
 func isCurrentLogFile(path string) bool {
 	if currentLogFile == nil {
 		return false

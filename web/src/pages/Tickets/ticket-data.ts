@@ -2,7 +2,7 @@ import { z } from 'zod';
 import { API } from '../../helpers';
 import type { ApiEnvelope } from '../../types/api';
 
-export const ticketSchema = z.object({
+const ticketSchema = z.object({
   id: z.number().int().positive(), user_id: z.number().int().positive(),
   subject: z.string(), category: z.enum(['account', 'billing', 'api', 'other']),
   priority: z.enum(['low', 'normal', 'high']),

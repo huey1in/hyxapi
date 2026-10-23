@@ -253,24 +253,6 @@ func NewMessage(msgType MsgType, flag MsgTypeFlagBits) (*Message, error) {
 	}, nil
 }
 
-func (m *Message) String() string {
-	switch m.MsgType {
-	case MsgTypeAudioOnlyServer, MsgTypeAudioOnlyClient:
-		if m.MsgTypeFlag == MsgTypeFlagPositiveSeq || m.MsgTypeFlag == MsgTypeFlagNegativeSeq {
-			return fmt.Sprintf("%s, %s, Sequence: %d, PayloadSize: %d", m.MsgType, m.EventType, m.Sequence, len(m.Payload))
-		}
-		return fmt.Sprintf("%s, %s, PayloadSize: %d", m.MsgType, m.EventType, len(m.Payload))
-	case MsgTypeError:
-		return fmt.Sprintf("%s, %s, ErrorCode: %d, Payload: %s", m.MsgType, m.EventType, m.ErrorCode, string(m.Payload))
-	default:
-		if m.MsgTypeFlag == MsgTypeFlagPositiveSeq || m.MsgTypeFlag == MsgTypeFlagNegativeSeq {
-			return fmt.Sprintf("%s, %s, Sequence: %d, Payload: %s",
-				m.MsgType, m.EventType, m.Sequence, string(m.Payload))
-		}
-		return fmt.Sprintf("%s, %s, Payload: %s", m.MsgType, m.EventType, string(m.Payload))
-	}
-}
-
 func (m *Message) Marshal() ([]byte, error) {
 	buf := new(bytes.Buffer)
 

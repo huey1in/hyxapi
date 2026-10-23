@@ -220,12 +220,6 @@ func upsertPasskeyCredentialWithTx(tx *gorm.DB, credential *PasskeyCredential) e
 	return nil
 }
 
-// UpsertPasskeyCredentialWithAuthVersion is reserved for enrollment changes;
-// assertion sign-count updates must use UpdatePasskeyAssertionState.
-func UpsertPasskeyCredentialWithAuthVersion(credential *PasskeyCredential) error {
-	return upsertPasskeyCredentialWithAuthVersion(credential, nil)
-}
-
 func RegisterPasskeyForSession(identity AuthSessionIdentity, credential *PasskeyCredential) error {
 	return upsertPasskeyCredentialWithAuthVersion(credential, &identity)
 }

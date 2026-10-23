@@ -16,7 +16,7 @@ func TestLogCleanupProtectsActiveWriter(t *testing.T) {
 	previous := currentLogFile
 	currentLogFile = fd
 	t.Cleanup(func() { currentLogFile = previous; fd.Close() })
-	require.Equal(t, activePath, GetCurrentLogPath())
+	require.True(t, IsCurrentLogFile(activePath))
 	deleted, err := RemoveInactiveLogFile(filepath.Join(dir, ".", "oneapi-current.log"))
 	require.NoError(t, err)
 	require.False(t, deleted)

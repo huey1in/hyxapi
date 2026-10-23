@@ -110,16 +110,3 @@ func backfillChannelNames(logs []*Log) {
 		logs[i].ChannelName = m[logs[i].ChannelId]
 	}
 }
-
-func jsonIntExtract(field, key string) string {
-	if common.UsingLogDatabase(common.DatabaseTypePostgreSQL) {
-		return "COALESCE(NULLIF((NULLIF(" + field + ", '')::jsonb->>'" + key + "'), '')::bigint, 0)"
-	}
-	if common.UsingLogDatabase(common.DatabaseTypeSQLite) {
-		return "CAST(COALESCE(NULLIF(json_extract(NULLIF(" + field + ", ''), '$." + key + "'), ''), '0') AS INTEGER)"
-	}
-	if common.UsingLogDatabase(common.DatabaseTypeClickHouse) {
-		return "toInt64OrZero(JSON_VALUE(" + field + ", '$." + key + "'))"
-	}
-	return "CAST(COALESCE(NULLIF(JSON_UNQUOTE(JSON_EXTRACT(NULLIF(" + field + ", ''), '$." + key + "')), ''), '0') AS SIGNED)"
-}
