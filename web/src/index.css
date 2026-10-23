@@ -548,6 +548,8 @@ input[type='number'] {
 .email-template-editor__preview iframe { display:block; width:100%; height:620px; border:0; background:#f5f3ed; }
 
 .console-content-page { display:flex; flex-direction:column; gap:28px; width:100%; min-width:0; max-width:960px; margin-inline:auto; padding:24px 16px; }
+.logs-page { max-width:1280px; }
+.pricing-page { max-width:1440px; container:pricing / inline-size; }
 .token-page-content { display:flex; min-height:0; }
 .token-management-page { flex:1; min-height:0; gap:20px; }
 .token-management-page > .console-page-header,.token-page-toolbar,.token-page-pagination { flex-shrink:0; }
@@ -558,8 +560,8 @@ input[type='number'] {
 .api-key-table .api-key-empty-state { position:sticky; left:12px; display:flex; align-items:center; justify-content:center; width:calc(100cqw - 24px); min-height:calc(var(--api-key-table-height) - 64px); }
 .api-key-table :is(th,td) { font-size:14px; line-height:20px; }
 .logs-table :is(th,td) { padding-inline:8px; }
-.logs-table :is(th,td):first-child { padding-left:12px; }
-.logs-table :is(th,td):last-child { padding-right:12px; }
+.logs-table :is(th,td):first-child { padding-left:24px; }
+.logs-table :is(th,td):last-child { padding-right:24px; }
 .logs-table th { font-size:14px; line-height:22px; white-space:normal; }
 .logs-table td { font-size:15px; line-height:22px; overflow-wrap:anywhere; }
 .mobile-table-card { min-width:0; border:1px solid var(--ui-border); border-radius:16px; background:var(--page-bg); padding:16px; }
@@ -592,7 +594,13 @@ input[type='number'] {
   .api-key-table .api-key-empty-state { position:static; width:auto; min-height:calc(var(--api-key-table-height) - 34px); }
 }
 .token-management-page .token-key-list tbody tr { height:49px; }
-.pricing-model-grid { grid-template-columns:repeat(auto-fill,minmax(min(100%,260px),1fr)); gap:12px; margin-bottom:16px; }
+.pricing-model-grid { grid-template-columns:repeat(4,minmax(0,1fr)); gap:12px; margin-bottom:16px; }
+@container pricing (max-width:1035px) {
+  .pricing-model-grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
+}
+@container pricing (max-width:535px) {
+  .pricing-model-grid { grid-template-columns:minmax(0,1fr); }
+}
 .dashboard-primary-stats { display:grid; grid-template-columns:repeat(2, minmax(0, 1fr)); gap:12px; }
 .dashboard-primary-card { display:flex; align-items:center; justify-content:space-between; min-width:0; padding:26px 20px; border:1px solid var(--ui-border); border-radius:26px; }
 .dashboard-usage-filters { display:flex; flex-wrap:wrap; justify-content:flex-start; align-items:flex-end; gap:8px; }

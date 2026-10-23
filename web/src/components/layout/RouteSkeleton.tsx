@@ -18,7 +18,7 @@ export default function RouteSkeleton() {
   if (pathname === '/tickets/manage') return <TicketsLoading management />;
   if (pathname === '/personal') return <PersonalSkeleton tab={personalSettingsTab(search)} />;
   if (pathname === '/topup') return <TopUpSkeleton />;
-  if (pathname === '/log') return <div className='console-content-page'>
+  if (pathname === '/log') return <div className='console-content-page logs-page'>
     <ConsolePageHeader title={t('日志')} />
     <LogsLoading />
   </div>;
@@ -29,7 +29,7 @@ export default function RouteSkeleton() {
     <div className='token-key-list flex flex-col gap-3'><TokenTable loading /></div>
     <div className='token-page-pagination'><Pagination page={1} pageSize={TOKEN_PAGE_SIZE} total={0} onChange={() => {}} /></div>
   </div>;
-  if (pathname === '/pricing') return <div className='console-content-page'>
+  if (pathname === '/pricing') return <div className='console-content-page pricing-page'>
     <ConsolePageHeader title={t('Models')} />
     <div><div className='mb-4 flex flex-wrap items-center gap-2 rounded-2xl border border-ui-border p-4'>
       <div className='min-w-0 basis-full sm:w-[320px] sm:basis-auto'><Skeleton width='100%' height={36} rounded='rounded-full' /></div><Skeleton width={90} height={32} />

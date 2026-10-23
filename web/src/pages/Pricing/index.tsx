@@ -237,7 +237,7 @@ const Pricing = () => {
   ];
 
   return (
-    <div className='console-content-page'>
+    <div className='console-content-page pricing-page'>
       <ConsolePageHeader title={t('Models')} />
       <div>
         <div className='pricing-filter-panel flex flex-wrap items-center gap-3'>

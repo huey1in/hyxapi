@@ -16,7 +16,7 @@ export default function LogsPage() {
   const identity = useAuthStore((state) => `${state.auth.user?.id}:${state.auth.session?.sid}:${state.auth.user?.role}`);
   const sources = visibleLogSources(parseSidebarModules(status.status?.SidebarModulesAdmin));
 
-  return <div className='console-content-page'>
+  return <div className='console-content-page logs-page'>
     <ConsolePageHeader title={t('日志')} />
     {!status.status ? <LogsLoading /> : !sources.length ? <EmptyState icon={ScrollText} padding='md' title={t('No log views are enabled.')} /> : <UnifiedLogs key={`${identity}:${sources.map((source) => source.value).join(',')}`} sources={sources} />}
   </div>;
