@@ -70,16 +70,6 @@ func RedisGet(key string) (string, error) {
 	return val, err
 }
 
-//func RedisExpire(key string, expiration time.Duration) error {
-//	ctx := context.Background()
-//	return RDB.Expire(ctx, key, expiration).Err()
-//}
-//
-//func RedisGetEx(key string, expiration time.Duration) (string, error) {
-//	ctx := context.Background()
-//	return RDB.GetSet(ctx, key, expiration).Result()
-//}
-
 func RedisDelKey(key string) error {
 	if DebugEnabled {
 		SysLog(fmt.Sprintf("Redis DEL Key: key=%s", key))

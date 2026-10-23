@@ -46,14 +46,6 @@ func (a *Adaptor) ConvertImageRequest(c *gin.Context, info *relaycommon.RelayInf
 }
 
 func (a *Adaptor) Init(info *relaycommon.RelayInfo) {
-	//if strings.HasPrefix(info.UpstreamModelName, "agent") {
-	//	a.BotType = BotTypeAgent
-	//} else if strings.HasPrefix(info.UpstreamModelName, "workflow") {
-	//	a.BotType = BotTypeWorkFlow
-	//} else if strings.HasPrefix(info.UpstreamModelName, "chat") {
-	//	a.BotType = BotTypeCompletion
-	//} else {
-	//}
 	a.BotType = BotTypeChatFlow
 
 }

@@ -366,7 +366,6 @@ func RelayMidjourney(c *gin.Context) {
 	default:
 		mjErr = relay.RelayMidjourneySubmit(c, relayInfo)
 	}
-	//err = relayMidjourneySubmit(c, relayMode)
 	if mjErr != nil {
 		policy.Successful = false
 		statusCode := http.StatusBadRequest

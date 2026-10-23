@@ -1,4 +1,4 @@
-# Vite cache & build output
+# Dependency caches & build output
 node_modules/
 .vite/
 dist/

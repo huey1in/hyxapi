@@ -497,10 +497,6 @@ func GenRelayInfoOpenAI(c *gin.Context, request dto.Request) *RelayInfo {
 
 func genBaseRelayInfo(c *gin.Context, request dto.Request) *RelayInfo {
 
-	//channelType := common.GetContextKeyInt(c, constant.ContextKeyChannelType)
-	//channelId := common.GetContextKeyInt(c, constant.ContextKeyChannelId)
-	//paramOverride := common.GetContextKeyStringMap(c, constant.ContextKeyChannelParamOverride)
-
 	tokenGroup := common.GetContextKeyString(c, constant.ContextKeyTokenGroup)
 	// 当令牌分组为空时，表示使用用户分组
 	if tokenGroup == "" {
@@ -727,10 +723,6 @@ func GenRelayInfoAlphaSearch(c *gin.Context, request *dto.AlphaSearchRequest) *R
 	}
 	return info
 }
-
-//func (info *RelayInfo) SetPromptTokens(promptTokens int) {
-//	info.promptTokens = promptTokens
-//}
 
 func (info *RelayInfo) SetEstimatePromptTokens(promptTokens int) {
 	if info == nil {

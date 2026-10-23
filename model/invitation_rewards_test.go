@@ -40,8 +40,8 @@ func TestRegistrationInvitationRewardsRespectFeatureSwitch(t *testing.T) {
 				if flow == "password" {
 					require.NoError(t, invitee.Insert(inviter.Id))
 				} else {
-					require.NoError(t, DB.Transaction(func(tx *gorm.DB) error { return invitee.InsertWithTx(tx, inviter.Id) }))
-					invitee.FinalizeOAuthUserCreation(inviter.Id)
+					require.NoError(t, DB.Transaction(func(tx *gorm.DB) error { return invitee.InsertWithTx(tx) }))
+					invitee.FinishInsert(inviter.Id)
 				}
 				var storedInviter, storedInvitee User
 				require.NoError(t, DB.First(&storedInviter, inviter.Id).Error)

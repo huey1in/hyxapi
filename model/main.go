@@ -48,8 +48,6 @@ func initCol() {
 			logGroupCol = commonGroupCol
 		}
 	}
-	// log sql type and database type
-	//common.SysLog("Using Log SQL Type: " + common.LogSqlType)
 }
 
 var DB *gorm.DB

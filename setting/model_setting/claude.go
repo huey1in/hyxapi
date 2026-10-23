@@ -9,12 +9,6 @@ import (
 	"github.com/QuantumNous/new-api/setting/config"
 )
 
-//var claudeHeadersSettings = map[string][]string{}
-//
-//var ClaudeThinkingAdapterEnabled = true
-//var ClaudeThinkingAdapterMaxTokens = 8192
-//var ClaudeThinkingAdapterBudgetTokensPercentage = 0.8
-
 // ClaudeSettings 定义Claude模型的配置
 type ClaudeSettings struct {
 	HeadersSettings                       map[string]map[string][]string `json:"model_headers_settings"`

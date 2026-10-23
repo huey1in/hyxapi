@@ -8,18 +8,6 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-//func GetPromptTokens(textRequest dto.GeneralOpenAIRequest, relayMode int) (int, error) {
-//	switch relayMode {
-//	case constant.RelayModeChatCompletions:
-//		return CountTokenMessages(textRequest.Messages, textRequest.Model)
-//	case constant.RelayModeCompletions:
-//		return CountTokenInput(textRequest.Prompt, textRequest.Model), nil
-//	case constant.RelayModeModerations:
-//		return CountTokenInput(textRequest.Input, textRequest.Model), nil
-//	}
-//	return 0, errors.New("unknown relay mode")
-//}
-
 func ResponseText2Usage(c *gin.Context, responseText string, modeName string, promptTokens int) *dto.Usage {
 	common.SetContextKey(c, constant.ContextKeyLocalCountTokens, true)
 	usage := &dto.Usage{}

@@ -60,7 +60,6 @@ type API2GPTUsageResponse struct {
 }
 
 type APGC2DGPTUsageResponse struct {
-	//Grants         interface{} `json:"grants"`
 	Object         string  `json:"object"`
 	TotalAvailable float64 `json:"total_available"`
 	TotalGranted   float64 `json:"total_granted"`
@@ -416,8 +415,6 @@ func updateStandardChannelBalance(ctx context.Context, channel *model.Channel) (
 		return 0, errors.New("尚未实现")
 	case constant.ChannelTypeCustom:
 		baseURL = channel.GetBaseURL()
-	//case common.ChannelTypeOpenAISB:
-	//	return updateChannelOpenAISBBalance(channel)
 	case constant.ChannelTypeAIProxy:
 		return updateChannelAIProxyBalance(ctx, channel)
 	case constant.ChannelTypeAPI2GPT:

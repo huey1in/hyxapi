@@ -1,6 +1,5 @@
 module github.com/QuantumNous/new-api
 
-// +heroku goVersion go1.18
 go 1.26
 
 require (

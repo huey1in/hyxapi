@@ -60,16 +60,6 @@ func (a *Adaptor) ConvertGeminiRequest(c *gin.Context, info *relaycommon.RelayIn
 }
 
 func (a *Adaptor) ConvertClaudeRequest(c *gin.Context, info *relaycommon.RelayInfo, request *dto.ClaudeRequest) (any, error) {
-	//if !strings.Contains(request.Model, "claude") {
-	//	return nil, fmt.Errorf("you are using openai channel type with path /v1/messages, only claude model supported convert, but got %s", request.Model)
-	//}
-	//if common.DebugEnabled {
-	//	bodyBytes := []byte(common.GetJsonString(request))
-	//	err := os.WriteFile(fmt.Sprintf("claude_request_%s.txt", c.GetString(common.RequestIdKey)), bodyBytes, 0644)
-	//	if err != nil {
-	//		println(fmt.Sprintf("failed to save request body to file: %v", err))
-	//	}
-	//}
 	result, err := service.ConvertRequest(c, info, types.RelayFormatOpenAI, request)
 	if err != nil {
 		return nil, err
@@ -78,15 +68,6 @@ func (a *Adaptor) ConvertClaudeRequest(c *gin.Context, info *relaycommon.RelayIn
 	if !ok {
 		return nil, fmt.Errorf("expected OpenAI chat completions request, got %T", result.Value)
 	}
-	//if common.DebugEnabled {
-	//	println(fmt.Sprintf("convert claude to openai request result: %s", common.GetJsonString(aiRequest)))
-	//	// Save request body to file for debugging
-	//	bodyBytes := []byte(common.GetJsonString(aiRequest))
-	//	err = os.WriteFile(fmt.Sprintf("claude_to_openai_request_%s.txt", c.GetString(common.RequestIdKey)), bodyBytes, 0644)
-	//	if err != nil {
-	//		println(fmt.Sprintf("failed to save request body to file: %v", err))
-	//	}
-	//}
 	if info.SupportStreamOptions && info.IsStream {
 		aiRequest.StreamOptions = &dto.StreamOptions{
 			IncludeUsage: true,
@@ -173,8 +154,6 @@ func (a *Adaptor) GetRequestURL(info *relaycommon.RelayInfo) (string, error) {
 			requestURL = fmt.Sprintf("/openai/realtime?deployment=%s&api-version=%s", model_, apiVersion)
 		}
 		return relaycommon.GetFullRequestURL(info.ChannelBaseUrl, requestURL, info.ChannelType), nil
-	//case constant.ChannelTypeMiniMax:
-	//	return minimax.GetRequestURL(info)
 	case constant.ChannelTypeCustom:
 		url := info.ChannelBaseUrl
 		url = strings.Replace(url, "{model}", info.UpstreamModelName, -1)
@@ -223,9 +202,6 @@ func (a *Adaptor) SetupRequestHeader(c *gin.Context, header *http.Header, info *
 				items = append(items, "openai-beta.realtime-v1")
 			}
 			header.Set("Sec-WebSocket-Protocol", strings.Join(items, ","))
-			//req.Header.Set("Sec-WebSocket-Key", c.Request.Header.Get("Sec-WebSocket-Key"))
-			//req.Header.Set("Sec-Websocket-Extensions", c.Request.Header.Get("Sec-Websocket-Extensions"))
-			//req.Header.Set("Sec-Websocket-Version", c.Request.Header.Get("Sec-Websocket-Version"))
 		} else {
 			if legacyRealtimeBeta {
 				header.Set("openai-beta", "realtime=v1")
@@ -803,8 +779,6 @@ func (a *Adaptor) GetModelList() []string {
 		return ai360.ModelList
 	case constant.ChannelTypeLingYiWanWu:
 		return lingyiwanwu.ModelList
-	//case constant.ChannelTypeMiniMax:
-	//	return minimax.ModelList
 	case constant.ChannelTypeXinference:
 		return xinference.ModelList
 	case constant.ChannelTypeOpenRouter:
@@ -820,8 +794,6 @@ func (a *Adaptor) GetChannelName() string {
 		return ai360.ChannelName
 	case constant.ChannelTypeLingYiWanWu:
 		return lingyiwanwu.ChannelName
-	//case constant.ChannelTypeMiniMax:
-	//	return minimax.ChannelName
 	case constant.ChannelTypeXinference:
 		return xinference.ChannelName
 	case constant.ChannelTypeOpenRouter:

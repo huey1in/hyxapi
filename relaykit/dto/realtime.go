@@ -18,9 +18,8 @@ const (
 )
 
 type RealtimeEvent struct {
-	EventId string `json:"event_id"`
-	Type    string `json:"type"`
-	//PreviousItemId string `json:"previous_item_id"`
+	EventId  string             `json:"event_id"`
+	Type     string             `json:"type"`
 	Session  *RealtimeSession   `json:"session,omitempty"`
 	Item     *RealtimeItem      `json:"item,omitempty"`
 	Error    *types.OpenAIError `json:"error,omitempty"`
@@ -52,7 +51,6 @@ type RealtimeSession struct {
 	Tools                   []RealTimeTool          `json:"tools"`
 	ToolChoice              string                  `json:"tool_choice"`
 	Temperature             float64                 `json:"temperature"`
-	//MaxResponseOutputTokens int                     `json:"max_response_output_tokens"`
 }
 
 type InputAudioTranscription struct {

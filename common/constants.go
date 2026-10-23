@@ -106,8 +106,6 @@ var PreConsumedQuota = 500
 
 var RetryTimes = 0
 
-//var RootUserEmail = ""
-
 var IsMasterNode bool
 
 // NodeName 节点名称，优先从 NODE_NAME 环境变量读取，未配置时回退主机名。

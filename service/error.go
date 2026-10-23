@@ -18,33 +18,6 @@ import (
 	"github.com/QuantumNous/new-api/relaykit/types"
 )
 
-//// OpenAIErrorWrapper wraps an error into an OpenAIErrorWithStatusCode
-//func OpenAIErrorWrapper(err error, code string, statusCode int) *dto.OpenAIErrorWithStatusCode {
-//	text := err.Error()
-//	lowerText := strings.ToLower(text)
-//	if !strings.HasPrefix(lowerText, "get file base64 from url") && !strings.HasPrefix(lowerText, "mime type is not supported") {
-//		if strings.Contains(lowerText, "post") || strings.Contains(lowerText, "dial") || strings.Contains(lowerText, "http") {
-//			common.SysLog(fmt.Sprintf("error: %s", text))
-//			text = "请求上游地址失败"
-//		}
-//	}
-//	openAIError := dto.OpenAIError{
-//		Message: text,
-//		Type:    "new_api_error",
-//		Code:    code,
-//	}
-//	return &dto.OpenAIErrorWithStatusCode{
-//		Error:      openAIError,
-//		StatusCode: statusCode,
-//	}
-//}
-//
-//func OpenAIErrorWrapperLocal(err error, code string, statusCode int) *dto.OpenAIErrorWithStatusCode {
-//	openaiErr := OpenAIErrorWrapper(err, code, statusCode)
-//	openaiErr.LocalError = true
-//	return openaiErr
-//}
-
 func RelayErrorHandler(ctx context.Context, resp *http.Response, showBodyWhenFail bool) (newApiErr *types.NewAPIError) {
 	newApiErr = types.InitOpenAIError(types.ErrorCodeBadResponseStatusCode, resp.StatusCode)
 
@@ -163,7 +136,6 @@ func TaskErrorWrapper(err error, code string, statusCode int, upstreamURLs ...st
 	lowerText := strings.ToLower(text)
 	if strings.Contains(lowerText, "post") || strings.Contains(lowerText, "dial") || strings.Contains(lowerText, "http") {
 		common.SysLog(fmt.Sprintf("error: %s", text))
-		//text = "请求上游地址失败"
 		text = common.MaskSensitiveInfo(text, upstreamURLs...)
 	}
 	//避免暴露内部错误

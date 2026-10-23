@@ -287,6 +287,5 @@ func doRequest(req *http.Request, info *relaycommon.RelayInfo) (*http.Response, 
 	if err != nil { // 增加对 client.Do(req) 返回错误的检查
 		return nil, fmt.Errorf("client.Do failed: %w", err)
 	}
-	// _ = resp.Body.Close()
 	return resp, nil
 }

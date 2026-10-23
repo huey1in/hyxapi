@@ -453,7 +453,6 @@ func RelayMidjourneySubmit(c *gin.Context, relayInfo *relaycommon.RelayInfo) *dt
 			} else if midjRequest.Index == 0 {
 				return service.MidjourneyErrorWrapper(constant.MjRequestError, "index_is_required")
 			}
-			//action = midjRequest.Action
 			mjId = midjRequest.TaskId
 		} else if relayInfo.RelayMode == relayconstant.RelayModeMidjourneySimpleChange {
 			if midjRequest.Content == "" {
@@ -466,9 +465,6 @@ func RelayMidjourneySubmit(c *gin.Context, relayInfo *relaycommon.RelayInfo) *dt
 			mjId = params.TaskId
 			midjRequest.Action = params.Action
 		} else if relayInfo.RelayMode == relayconstant.RelayModeMidjourneyModal {
-			//if midjRequest.MaskBase64 == "" {
-			//	return service.MidjourneyErrorWrapper(constant.MjRequestError, "mask_base64_is_required")
-			//}
 			mjId = midjRequest.TaskId
 			midjRequest.Action = constant.MjActionModal
 		} else if relayInfo.RelayMode == relayconstant.RelayModeMidjourneyVideo {
@@ -504,24 +500,15 @@ func RelayMidjourneySubmit(c *gin.Context, relayInfo *relaycommon.RelayInfo) *dt
 		}
 		midjRequest.Prompt = originTask.Prompt
 
-		//if channelType == common.ChannelTypeMidjourneyPlus {
-		//	// plus
-		//} else {
-		//	// 普通版渠道
-		//
-		//}
 	}
 
 	if midjRequest.Action == constant.MjActionInPaint || midjRequest.Action == constant.MjActionCustomZoom {
 		consumeQuota = false
 	}
 
-	//baseURL := common.ChannelBaseURLs[channelType]
 	requestURL := getMjRequestPath(c.Request.URL.String())
 
 	baseURL := c.GetString("base_url")
-
-	//midjRequest.NotifyHook = "http://127.0.0.1:3000/mj/notify"
 
 	fullRequestURL := fmt.Sprintf("%s%s", baseURL, requestURL)
 
@@ -682,12 +669,8 @@ func RelayMidjourneySubmit(c *gin.Context, relayInfo *relaycommon.RelayInfo) *dt
 		newBody := strings.Replace(string(responseBody), `"code":22`, `"code":1`, -1)
 		responseBody = []byte(newBody)
 	}
-	//resp.Body = io.NopCloser(bytes.NewBuffer(responseBody))
 	bodyReader := io.NopCloser(bytes.NewBuffer(responseBody))
 
-	//for k, v := range resp.Header {
-	//	c.Writer.Header().Set(k, v[0])
-	//}
 	c.Writer.WriteHeader(midjResponseWithStatus.StatusCode)
 
 	_, err = io.Copy(c.Writer, bodyReader)

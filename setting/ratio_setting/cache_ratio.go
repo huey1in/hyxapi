@@ -130,8 +130,6 @@ var defaultCreateCacheRatio = map[string]float64{
 	"claude-opus-4-8-low":                 1.25,
 }
 
-//var defaultCreateCacheRatio = map[string]float64{}
-
 var cacheRatioMap = types.NewRWMap[string, float64]()
 var createCacheRatioMap = types.NewRWMap[string, float64]()
 

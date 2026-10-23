@@ -1,12 +1,5 @@
 package dto
 
-//type SimpleMjRequest struct {
-//	Prompt   string `json:"prompt"`
-//	CustomId string `json:"customId"`
-//	Action   string `json:"action"`
-//	Content  string `json:"content"`
-//}
-
 type SwapFaceRequest struct {
 	SourceBase64 string `json:"sourceBase64"`
 	TargetBase64 string `json:"targetBase64"`

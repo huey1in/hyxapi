@@ -108,7 +108,6 @@ func (c *ChatCompletionsStreamResponseChoiceDelta) GetReasoningContent() string 
 
 func (c *ChatCompletionsStreamResponseChoiceDelta) SetReasoningContent(s string) {
 	c.ReasoningContent = &s
-	//c.Reasoning = &s
 }
 
 type ToolCallResponse struct {

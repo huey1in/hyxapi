@@ -164,8 +164,6 @@ func main() {
 			},
 		})
 	}))
-	// This will cause SSE not to work!!!
-	//server.Use(gzip.Gzip(gzip.DefaultCompression))
 	server.Use(middleware.RequestId())
 	server.Use(middleware.PoweredBy())
 	// 带凭证的浏览器跨源中间件，必须先于全局 CORS()（在 SetRouter→SetRelayRouter 中注册），
