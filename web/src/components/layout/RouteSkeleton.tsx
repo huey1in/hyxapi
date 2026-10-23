@@ -15,7 +15,7 @@ export default function RouteSkeleton() {
   const { pathname, search } = useLocation();
   const { t } = useTranslation();
   if (pathname === '/tickets') return <TicketsLoading />;
-  if (pathname === '/console/tickets') return <TicketsLoading management />;
+  if (pathname === '/tickets/manage') return <TicketsLoading management />;
   if (pathname === '/personal') return <PersonalSkeleton tab={personalSettingsTab(search)} />;
   if (pathname === '/topup') return <TopUpSkeleton />;
   if (pathname === '/log') return <div className='console-content-page'>
@@ -36,7 +36,7 @@ export default function RouteSkeleton() {
       <Skeleton width={64} height={32} className='ml-auto' />
     </div><PricingCardsSkeleton /></div>
   </div>;
-  if (pathname === '/console/operations' || pathname === '/console/system-status') return <ConsolePage>
+  if (pathname === '/operations' || pathname === '/system-status') return <ConsolePage>
     <div className='flex h-8 items-center justify-between gap-3'><h1 className='text-lg font-semibold text-ui-text'>{t(pathname.endsWith('operations') ? 'Operations' : 'System status')}</h1><Skeleton width={130} height={28} /></div>
     <StatisticsSkeleton system={pathname.endsWith('system-status')} />
   </ConsolePage>;

@@ -83,7 +83,7 @@ export default function SystemTaskActions({ children }: { children?: ReactNode }
       <Button size='sm' variant='toggle' disabled={busy} onClick={() => setConfirmation('model_update')}>{t('Detect all model updates')}</Button>
     </>}
     {children}
-    {root && <Link className='text-xs text-ui-text-3 underline' to='/console/system-status'>{t('View background task runs')}</Link>}
+    {root && <Link className='text-xs text-ui-text-3 underline' to='/system-status'>{t('View background task runs')}</Link>}
     {error && !task && <p role='alert' className='w-full text-sm text-ui-danger'>{error}</p>}
     <ConfirmDialog open={!!confirmation} loading={busy} closeOnConfirm={false} onClose={() => { if (!lock.current) setConfirmation(null); }} onConfirm={() => void submit()}
       title={t(confirmation === 'channel_test' ? 'Test all channels' : 'Detect all model updates')} confirmText={t('Start task')} cancelText={t('Cancel')}
@@ -95,7 +95,7 @@ export default function SystemTaskActions({ children }: { children?: ReactNode }
         {error && <p role='alert' className='text-ui-danger'>{error}</p>}
         {task.error && <p className='text-ui-danger whitespace-pre-wrap break-all'>{task.error}</p>}
         {task.result != null && <pre className='text-xs whitespace-pre-wrap break-all'>{JSON.stringify(task.result, null, 2)}</pre>}
-        {root ? <Link className='text-xs underline' to='/console/system-status'>{t('View complete task record')}</Link> : <p className='text-xs text-ui-text-3'>{t('The task runs in the background. Refresh the channel list to see changes.')}</p>}
+        {root ? <Link className='text-xs underline' to='/system-status'>{t('View complete task record')}</Link> : <p className='text-xs text-ui-text-3'>{t('The task runs in the background. Refresh the channel list to see changes.')}</p>}
       </div>}
     </Modal>
   </div>;

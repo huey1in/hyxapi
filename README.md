@@ -10,7 +10,6 @@
 
 [![License: AGPL-3.0](https://img.shields.io/badge/License-AGPL--3.0-18181b?style=flat-square&logo=gnu&logoColor=white)](LICENSE)
 [![Based on New API](https://img.shields.io/badge/Based_on-New_API-18181b?style=flat-square&logo=github&logoColor=white)](https://github.com/QuantumNous/new-api)
-[![LINUX DO Community](https://img.shields.io/badge/LINUX_DO-Community-18181b?style=flat-square&logo=discourse&logoColor=white)](https://linux.do/)
 [![Docker build](https://github.com/huey1in/hyxapi/actions/workflows/docker.yml/badge.svg)](https://github.com/huey1in/hyxapi/actions/workflows/docker.yml)
 [![GHCR](https://img.shields.io/badge/GHCR-Docker-2496ED?style=flat-square&logo=docker&logoColor=white)](https://github.com/huey1in/hyxapi/pkgs/container/hyxapi)
 

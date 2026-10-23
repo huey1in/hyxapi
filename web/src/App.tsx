@@ -2,8 +2,8 @@ import { lazy } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import PageLayout from './components/layout/PageLayout';
 import LegacyLogRedirect from './pages/Log/LegacyLogRedirect';
-import ClientRouteRedirect from './components/layout/ClientRouteRedirect';
-import { CLIENT_ROUTE_REDIRECTS } from './lib/console-routes';
+import ConsoleRouteRedirect from './components/layout/ConsoleRouteRedirect';
+import { CONSOLE_ROUTE_REDIRECTS } from './lib/console-routes';
 
 const Dashboard = lazy(() => import('./pages/Dashboard'));
 const Channel = lazy(() => import('./pages/Channel'));
@@ -36,7 +36,7 @@ const App = () => (
     {/* TODO: 首页暂未完成设计，保留 pages/Home，完成设计后恢复路由。 */}
     <Route path='/' element={<Navigate to='/console' replace />} />
     <Route path='/index.html' element={<Navigate to='/console' replace />} />
-    {Object.keys(CLIENT_ROUTE_REDIRECTS).map((path) => <Route key={path} path={`${path}/*`} element={<ClientRouteRedirect />} />)}
+    {Object.keys(CONSOLE_ROUTE_REDIRECTS).map((path) => <Route key={path} path={`${path}/*`} element={<ConsoleRouteRedirect />} />)}
     <Route path='/console/task' element={<LegacyLogRedirect />} />
     <Route path='/console/midjourney' element={<LegacyLogRedirect />} />
     <Route element={<PageLayout />}>
@@ -51,23 +51,23 @@ const App = () => (
       <Route path='/pricing/model/*'    element={<PricingDetail />} />
 
       <Route path='/console'                  element={<Dashboard />} />
-      <Route path='/console/channel'          element={<Channel />} />
-      <Route path='/console/models'           element={<Metadata />} />
-      <Route path='/console/vendors'          element={<Metadata kind='vendors' />} />
+      <Route path='/channel'          element={<Channel />} />
+      <Route path='/models'           element={<Metadata />} />
+      <Route path='/vendors'          element={<Metadata kind='vendors' />} />
       <Route path='/token'                    element={<Token />} />
       <Route path='/log'                      element={<Log />} />
-      <Route path='/console/user'             element={<User />} />
-      <Route path='/console/operations'       element={<Operations />} />
-      <Route path='/console/audit'            element={<AuditLog />} />
-      <Route path='/console/system-status'    element={<SystemStatus />} />
-      <Route path='/console/redemption'       element={<Redemption />} />
-      <Route path='/console/subscription'     element={<Subscription />} />
+      <Route path='/user'             element={<User />} />
+      <Route path='/operations'       element={<Operations />} />
+      <Route path='/audit'            element={<AuditLog />} />
+      <Route path='/system-status'    element={<SystemStatus />} />
+      <Route path='/redemption'       element={<Redemption />} />
+      <Route path='/subscription/manage'     element={<Subscription />} />
       <Route path='/topup'                    element={<TopUp />} />
       <Route path='/subscription'             element={<MySubscription />} />
-      <Route path='/console/setting'          element={<Setting />} />
+      <Route path='/setting'          element={<Setting />} />
       <Route path='/personal'                 element={<Personal />} />
       <Route path='/tickets' element={<Tickets />} />
-      <Route path='/console/tickets' element={<Tickets management />} />
+      <Route path='/tickets/manage' element={<Tickets management />} />
       <Route path='/notices'                  element={<Notices />} />
 
       <Route path='*' element={<Navigate to='/' replace />} />

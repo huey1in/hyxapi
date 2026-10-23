@@ -8,7 +8,7 @@ import { useAuthStore } from '../../stores/auth-store';
 import { StatusContext } from '../../context/Status';
 import { apiErrorMessage } from '../../lib/api-error';
 import type { ApiEnvelope } from '../../types/api';
-import { changeFeedSource, emptyFeedFilters, feedPageSchema, feedQuery, projectFeedItem, validateFeedFilters } from './feed-data';
+import { changeFeedSource, emptyFeedFilters, feedPageSchema, feedQuery, feedRefreshOptions, projectFeedItem, validateFeedFilters } from './feed-data';
 import type { FeedFilters, FeedRow } from './feed-data';
 import type { LogSourceOption } from './log-navigation';
 import LogsTable from './LogsTable';
@@ -43,7 +43,7 @@ export default function UnifiedLogs({ sources }: { sources: LogSourceOption[] })
   const cursor = pagination.cursors[pagination.page - 1];
   const query = useQuery({
     queryKey: ['log-feed', identity, all, queryString, cursor, revision], gcTime: 0, retry: false,
-    refetchInterval: refresh ? 5000 : false,
+    ...feedRefreshOptions(refresh),
     queryFn: async ({ signal }) => {
       const params = new URLSearchParams(queryString); params.set('size', String(PAGE_SIZE)); if (cursor) params.set('cursor', cursor);
       const { data } = await API.get<ApiEnvelope<unknown>>(`${all ? '/api/log' : '/api/log/self'}/feed?${params}`, { signal, timeout: 30000, disableDuplicate: true, skipErrorHandler: true });

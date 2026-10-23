@@ -2,7 +2,7 @@
 
 ## 工单权限
 
-个人入口为 `/tickets`，仅列出当前用户提交的工单；后台“工单管理”入口为 `/console/tickets`，从客服等级开始开放。详情链接分别为 `/tickets?ticket=<id>` 和 `/console/tickets?ticket=<id>`。数据库迁移自动创建 `tickets`、`ticket_messages`；不需要手动建表。
+个人入口为 `/tickets`，仅列出当前用户提交的工单；后台“工单管理”入口为 `/tickets/manage`，从客服等级开始开放。详情链接分别为 `/tickets?ticket=<id>` 和 `/tickets/manage?ticket=<id>`。数据库迁移自动创建 `tickets`、`ticket_messages`；不需要手动建表。
 
 | 角色 | 权限 |
 | --- | --- |

@@ -18,16 +18,16 @@ const routes: Record<string, readonly (readonly [string, string])[]> = {
   '/console': [['console', 'detail']],
   '/token': [['console', 'token']],
   '/log': [['console', 'log'], ['console', 'task'], ['console', 'midjourney']],
-  '/console/audit': [['console', 'audit']], '/console/task': [['console', 'task']],
+  '/audit': [['console', 'audit']], '/console/task': [['console', 'task']],
   '/console/midjourney': [['console', 'midjourney']],
   '/topup': [['personal', 'topup']], '/subscription': [['personal', 'topup']],
   // Profile and security share one local page. Keep its entry when either of
   // the corresponding upstream modules remains visible.
   '/personal': [['personal', 'personal'], ['personal', 'security']],
-  '/console/channel': [['admin', 'channel']], '/console/models': [['admin', 'models']],
-  '/console/vendors': [['admin', 'models']],
-  '/console/redemption': [['admin', 'redemption']], '/console/user': [['admin', 'user']],
-  '/console/subscription': [['admin', 'subscription']], '/console/setting': [['admin', 'setting']],
+  '/channel': [['admin', 'channel']], '/models': [['admin', 'models']],
+  '/vendors': [['admin', 'models']],
+  '/redemption': [['admin', 'redemption']], '/user': [['admin', 'user']],
+  '/subscription/manage': [['admin', 'subscription']], '/setting': [['admin', 'setting']],
 };
 
 export function isSidebarModuleVisible(route: string, admin: SidebarModules): boolean {

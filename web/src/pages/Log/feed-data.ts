@@ -20,6 +20,14 @@ export type FeedRow = ReturnType<typeof projectFeedItem>;
 export const emptyFeedFilters = () => ({ ...emptyLogFilters(), source: '', task_id: '', platform: '', status: '', action: '' });
 export type FeedFilters = ReturnType<typeof emptyFeedFilters>;
 
+export function feedRefreshOptions(enabled: boolean) {
+  return {
+    refetchInterval: enabled ? 5000 : false,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
+  } as const;
+}
+
 export function changeFeedSource(filters: FeedFilters, source: string): FeedFilters {
   return { ...emptyFeedFilters(), source, start_timestamp: filters.start_timestamp, end_timestamp: filters.end_timestamp, username: filters.username, group: !source || source === 'usage' ? filters.group : '' };
 }

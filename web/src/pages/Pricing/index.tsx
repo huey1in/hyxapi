@@ -283,6 +283,7 @@ const Pricing = () => {
                 </div>
               ) : (
                 <Table
+                  className='mb-4'
                   emptyIcon={Boxes}
                   columns={columns}
                   rows={pagedRows}

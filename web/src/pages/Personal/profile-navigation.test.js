@@ -9,7 +9,7 @@ test('sidebar navigation respects administrator visibility and role requirements
   assert.equal(sidebar.isSidebarModuleVisible('/token', admin), false);
   assert.equal(sidebar.isSidebarModuleVisible('/log', admin), false);
   assert.equal(sidebar.isSidebarModuleVisible('/subscription', admin), false);
-  const items = [{ to: '/console' }, { to: '/console/channel', admin: true }];
+  const items = [{ to: '/console' }, { to: '/channel', admin: true }];
   assert.deepEqual(filterSidebarItems(items, { admin: false, root: false, isVisible: (route) => sidebar.isSidebarModuleVisible(route, admin) }), [{ to: '/console' }]);
   assert.equal(sidebar.isSidebarModuleVisible('/personal', { personal: { personal: false } }), true);
   assert.equal(sidebar.isSidebarModuleVisible('/personal', { personal: { personal: false, security: false } }), false);

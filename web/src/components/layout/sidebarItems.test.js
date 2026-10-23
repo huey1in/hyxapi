@@ -6,9 +6,9 @@ const { entry0: { filterSidebarItems } } = await loadTestModules(['./src/compone
 
 const items = [
   { to: '/console' },
-  { to: '/console/channel', admin: true },
-  { to: '/console/audit', admin: true },
-  { to: '/console/setting', root: true },
+  { to: '/channel', admin: true },
+  { to: '/audit', admin: true },
+  { to: '/setting', root: true },
 ];
 
 test('sidebar follows the signed-in role', () => {

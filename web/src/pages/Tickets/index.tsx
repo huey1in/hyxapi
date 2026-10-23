@@ -26,7 +26,7 @@ function NewTicket({ onClose, onCreated }: { onClose: () => void; onCreated: (id
       <label htmlFor='ticket-subject'>{t('Subject')}</label>
       <div className='flex min-w-0 items-center gap-2'>
         <div className='min-w-0 flex-1'><Input id='ticket-subject' aria-label={t('Subject')} value={subject} onChange={setSubject} maxLength={160} disabled={busy} width='full' /></div>
-        <div className='max-w-[40%] shrink-0'><Select popover aria-label={t('Category')} value={category} disabled={busy} onChange={setCategory} options={['account', 'billing', 'api', 'other'].map((value) => ({ value, label: t(ticketLabels[value]) }))} /></div>
+        <div className='max-w-[40%] shrink-0'><Select popover placement='bottom-end' aria-label={t('Category')} value={category} disabled={busy} onChange={setCategory} options={['account', 'billing', 'api', 'other'].map((value) => ({ value, label: t(ticketLabels[value]) }))} /></div>
       </div>
     </div>
     <label className='block space-y-2 text-sm'><span>{t('Message')}</span><Textarea aria-label={t('Message')} placeholder={t('Describe your issue or reply here')} value={body} onChange={setBody} rows={5} maxLength={10000} disabled={busy} width='full' /></label>
