@@ -549,6 +549,7 @@ input[type='number'] {
 .email-template-editor__preview iframe { display:block; width:100%; height:620px; border:0; background:#f5f3ed; }
 
 .console-content-page { display:flex; flex-direction:column; gap:28px; width:100%; min-width:0; max-width:960px; margin-inline:auto; padding:24px 16px; }
+.personal-settings-page { max-width:800px; }
 .console-wide-page,.logs-page { max-width:1280px; }
 .pricing-page { max-width:1440px; container:pricing / inline-size; }
 .dashboard-overview { max-width:1280px; container:dashboard / inline-size; }

@@ -41,7 +41,7 @@ function PersonalProfile({ identity, tab, onChange }: { identity: string; tab: P
     signal.throwIfAborted(); useAuthStore.getState().auth.setUser(result);
   };
   if (profile.isPending) return <PersonalSkeleton tab={tab} onChange={onChange} />;
-  if (profile.error) return <div className='console-content-page'><PersonalSettingsHeader tab={tab} onChange={onChange} /><div role='alert' className='text-sm'>{t(apiErrorMessage(profile.error, 'Unable to load profile'))} <Button onClick={() => void profile.refetch()} loading={profile.isFetching}>{t('Retry')}</Button></div></div>;
+  if (profile.error) return <div className='console-content-page personal-settings-page'><PersonalSettingsHeader tab={tab} onChange={onChange} /><div role='alert' className='text-sm'>{t(apiErrorMessage(profile.error, 'Unable to load profile'))} <Button onClick={() => void profile.refetch()} loading={profile.isFetching}>{t('Retry')}</Button></div></div>;
   if (!ready) return <PersonalSkeleton tab={tab} onChange={onChange} />;
   if (!user || !profile.data) return null;
   return <PersonalSettings key={`${identity}:${user.role}`} identity={identity} user={user} refresh={refresh} tab={tab} onChange={onChange} />;
@@ -49,7 +49,7 @@ function PersonalProfile({ identity, tab, onChange }: { identity: string; tab: P
 
 function PersonalSettings({ identity, user, refresh, tab, onChange }: { identity: string; user: AuthUser; refresh: RefreshProfile; tab: PersonalSettingsTab; onChange: (tab: PersonalSettingsTab) => void }) {
   const preferences = useSettingsAutosave(user, refresh);
-  return <div className='console-content-page'>
+  return <div className='console-content-page personal-settings-page'>
     <PersonalSettingsHeader tab={tab} onChange={onChange} />
     <div key={tab} data-settings-panel={tab} className='flex min-w-0 flex-col gap-6'>
       {tab === 'account' && <><AccountSettings user={user} refresh={refresh} /><AccountBindings /><LanguagePreference refresh={refresh} /><AccountActions user={user} /></>}

@@ -46,7 +46,7 @@ export function PersonalSkeleton({ tab = 'account', onChange }: { tab?: Personal
     const width = label === 'Notification Email' ? 145 : textInput ? 'min(220px,48vw)' : toggle ? 44 : label === 'Reminder threshold' ? 128 : label === 'Message Priority' ? 96 : input ? 160 : 70;
     return <SettingRow key={`${label}:${row}`} title={t(label)} description={textInput ? undefined : <Skeleton width={220} height={18} />} last={row === rows.length - 1}><Skeleton width={width} height={toggle ? 24 : 36} rounded={input ? 'rounded-xl' : 'rounded-full'} /></SettingRow>;
   })}</SettingGroup>;
-  return <div className='console-content-page'>
+  return <div className='console-content-page personal-settings-page'>
     <PersonalSettingsHeader tab={tab} onChange={onChange} />
     <ContentSkeleton variant='form'><div data-settings-panel={tab} className='flex min-w-0 flex-col gap-6'>
       {tab === 'account' && <>{group('Account', ['Email'])}{bindings.length > 0 && group('Linked accounts', bindings)}{group('Preferences', ['Language'])}{role < 100 && group('Account actions', ['Delete account'])}</>}

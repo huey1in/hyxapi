@@ -62,7 +62,7 @@ function MySubscription({ identity }: { identity: string }) {
   }, [data, clock]);
   const active = data?.all_subscriptions.filter(({ subscription }) => isActiveSubscription(subscription, now)) ?? [];
   const inactive = data?.all_subscriptions.filter(({ subscription }) => !isActiveSubscription(subscription, now)) ?? [];
-  return <div className='console-content-page console-wide-page'>
+  return <div className='console-content-page'>
     <ConsolePageHeader title={t('My subscriptions')} />
     {query.isPending ? <MySubscriptionSkeleton /> : query.isError ? <div role='alert' className='space-y-2 text-sm text-ui-danger'><p>{t(apiErrorMessage(query.error, 'Unable to load subscriptions'))}</p><Button onClick={() => void query.refetch()}>{t('Retry')}</Button></div> : data && <>
       {!data.all_subscriptions.length ? <EmptyState icon={CreditCard} padding='md' title={t('No subscriptions yet. Activate one with a code or buy a plan.')} action={<Button onClick={() => navigate('/topup')}>{t('Open top-up page')}</Button>} /> : <>
