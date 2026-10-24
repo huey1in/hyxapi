@@ -10,6 +10,7 @@ const BRAND_RULES: [RegExp, ModelBrand][] = [
   [/mistral|mixtral|codestral/i, { name: 'Mistral AI', icon: 'Mistral.Color' }],
   [/qwen|qwq/i, { name: 'Qwen', icon: 'Qwen.Color' }],
   [/moonshot|kimi/i, { name: 'Moonshot', icon: 'Moonshot' }],
+  [/minimax|abab/i, { name: 'MiniMax', icon: 'Minimax.Color' }],
   [/glm|chatglm/i, { name: 'Zhipu AI', icon: 'Zhipu.Color' }],
   [/llama/i, { name: 'Meta', icon: 'Meta.Color' }],
   [/command|cohere/i, { name: 'Cohere', icon: 'Cohere.Color' }],

@@ -20,7 +20,7 @@ const MODEL_ICON_CDN = 'https://registry.npmmirror.com/@lobehub/icons-static-png
 const ICON_SLUGS: Record<string, string> = {
   openai: 'openai', claude: 'claude', gemini: 'gemini', deepseek: 'deepseek',
   xai: 'xai', mistral: 'mistral', qwen: 'qwen', moonshot: 'moonshot',
-  zhipu: 'zhipu', meta: 'meta', cohere: 'cohere', doubao: 'doubao',
+  zhipu: 'zhipu', meta: 'meta', cohere: 'cohere', doubao: 'doubao', minimax: 'minimax',
   anthropic: 'claude-color', google: 'gemini-color', mistralai: 'mistral-color',
 };
 
@@ -52,6 +52,7 @@ const modelProviders = [
   { name: 'Anthropic', icon: 'Claude.Color' },
   { name: 'Google', icon: 'Gemini.Color' },
   { name: 'DeepSeek', icon: 'DeepSeek.Color' },
+  { name: 'MiniMax', icon: 'Minimax.Color' },
   { name: 'xAI', icon: 'XAI' },
   { name: 'Mistral AI', icon: 'Mistral.Color' },
 ];

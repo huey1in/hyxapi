@@ -41,6 +41,7 @@ const CHANNEL_TYPE_ICON_SLUG: Record<number, string> = {
 const getModelIconSlug = (model: string, channelType: number) => {
   const name = String(model || '').toLowerCase();
   if (/claude/.test(name)) return 'claude-color';
+  if (/minimax|abab/.test(name)) return 'minimax-color';
   if (/deepseek/.test(name)) return 'deepseek-color';
   if (/gemini|palm/.test(name)) return 'gemini-color';
   if (/gpt|o1|o3|o4|dall|whisper|text-embedding/.test(name)) return 'openai';

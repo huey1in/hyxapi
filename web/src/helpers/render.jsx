@@ -80,6 +80,7 @@ export function getLobeHubIcon(iconName, size = 14) {
 export function getModelIcon(modelName, vendorIcon) {
   const name = String(modelName || '').toLowerCase();
   if (name.includes('claude')) return 'claude-color';
+  if (/minimax|abab/.test(name)) return 'minimax-color';
   return vendorIcon || 'layers';
 }
 
