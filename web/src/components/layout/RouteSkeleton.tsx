@@ -10,10 +10,12 @@ import { TopUpSkeleton } from '../../features/payments/TopUpLayout';
 import { personalSettingsTab } from '../../pages/Personal/personal-navigation';
 import LogsLoading from '../../pages/Log/LogsLoading';
 import TicketsLoading from '../../pages/Tickets/TicketsLoading';
+import LeaderboardLoading from '../../pages/Leaderboard/LeaderboardLoading';
 
 export default function RouteSkeleton() {
   const { pathname, search } = useLocation();
   const { t } = useTranslation();
+  if (pathname === '/leaderboard') return <LeaderboardLoading />;
   if (pathname === '/tickets') return <TicketsLoading />;
   if (pathname === '/tickets/manage') return <TicketsLoading management />;
   if (pathname === '/personal') return <PersonalSkeleton tab={personalSettingsTab(search)} />;

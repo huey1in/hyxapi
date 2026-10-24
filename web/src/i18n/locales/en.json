@@ -3196,6 +3196,25 @@
     "Unable to prepare CC Switch import": "Unable to prepare CC Switch import",
     "Invalid CC Switch application": "Invalid CC Switch application",
     "Please select a primary model": "Please select a primary model",
-    "Invalid API server address": "Invalid API server address"
+    "Invalid API server address": "Invalid API server address",
+    "Usage leaderboard": "Usage leaderboard",
+    "Ranking metric": "Ranking metric",
+    "Rank by": "Rank by",
+    "Active members": "Active members",
+    "Your ranking": "Your ranking",
+    "Champion": "Champion",
+    "Runner-up": "Runner-up",
+    "Third place": "Third place",
+    "Member rankings": "Member rankings",
+    "Member": "Member",
+    "Model preferences": "Model preferences",
+    "Anonymous member": "Anonymous member",
+    "You": "You",
+    "Other models": "Other models",
+    "Popular models": "Popular models",
+    "Request share": "Request share",
+    "Model preferences are based on successful requests.": "Model preferences are based on successful requests.",
+    "No usage in this period": "No usage in this period",
+    "Unable to load leaderboard": "Unable to load leaderboard"
   }
 }

@@ -16,6 +16,7 @@ export function parseSidebarModules(raw: unknown): SidebarModules {
 
 const routes: Record<string, readonly (readonly [string, string])[]> = {
   '/console': [['console', 'detail']],
+  '/leaderboard': [['console', 'leaderboard']],
   '/token': [['console', 'token']],
   '/log': [['console', 'log'], ['console', 'task'], ['console', 'midjourney']],
   '/audit': [['console', 'audit']], '/console/task': [['console', 'task']],

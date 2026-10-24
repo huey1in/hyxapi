@@ -7,6 +7,7 @@ const PAGE_TITLES: Record<string, string> = {
   '/forbidden': 'Access denied',
   '/pricing': 'Models',
   '/console': '概览',
+  '/leaderboard': 'Usage leaderboard',
   '/channel': '渠道管理',
   '/models': '模型管理',
   '/vendors': '供应商管理',

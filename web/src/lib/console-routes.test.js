@@ -10,7 +10,7 @@ test('console authorization respects route boundaries and role requirements', ()
   assert.equal(isConsolePath('/console'), true);
   assert.equal(isConsolePath('/console/token'), false);
   assert.equal(isConsolePath('/console-preview'), false);
-  for (const path of ['/token', '/log', '/topup', '/subscription', '/personal', '/notices']) {
+  for (const path of ['/token', '/log', '/topup', '/subscription', '/personal', '/notices', '/leaderboard']) {
     assert.equal(isConsolePath(path), true, path);
     assert.equal(canOpenConsolePage(path, member), true, path);
     assert.equal(canOpenConsolePage(path, null), false, path);

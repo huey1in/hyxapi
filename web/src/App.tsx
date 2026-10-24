@@ -3,6 +3,7 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 import PageLayout from './components/layout/PageLayout';
 
 const Dashboard = lazy(() => import('./pages/Dashboard'));
+const Leaderboard = lazy(() => import('./pages/Leaderboard'));
 const Channel = lazy(() => import('./pages/Channel'));
 const Metadata = lazy(() => import('./features/metadata'));
 const Token = lazy(() => import('./pages/Token'));
@@ -44,6 +45,7 @@ const App = () => (
       <Route path='/pricing/model/*'    element={<PricingDetail />} />
 
       <Route path='/console'                  element={<Dashboard />} />
+      <Route path='/leaderboard' element={<Leaderboard />} />
       <Route path='/channel'          element={<Channel />} />
       <Route path='/models'           element={<Metadata />} />
       <Route path='/vendors'          element={<Metadata kind='vendors' />} />

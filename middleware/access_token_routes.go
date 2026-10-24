@@ -75,6 +75,7 @@ var accessTokenRouteRules = map[string]accessTokenRouteRule{
 	"PUT /api/authz/user/:id/permissions": accessTokenScopeRule("user:write"),
 	// router/api-router.go: top level
 	"GET /api/models":                     accessTokenScopeRule("profile:read"),
+	"GET /api/leaderboard":                accessTokenSessionRule,
 	"GET /api/status/test":                accessTokenScopeRule("log:read"),
 	"GET /api/pricing":                    accessTokenAnyRule,
 	"GET /api/perf-metrics/summary":       accessTokenAnyRule,

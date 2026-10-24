@@ -2,7 +2,7 @@ import type { AuthUser } from '../stores/auth-store';
 import { hasPermission } from './admin-permissions';
 import { ROLE } from './roles';
 
-const clientPages = new Set(['token', 'log', 'topup', 'subscription', 'personal', 'notices', 'tickets']);
+const clientPages = new Set(['token', 'log', 'topup', 'subscription', 'personal', 'notices', 'tickets', 'leaderboard']);
 const isPricingPath = (path: string) => path === '/pricing' || path.startsWith('/pricing/');
 const within = (path: string, root: string) => path === root || path.startsWith(`${root}/`);
 const adminPaths = ['/channel', '/models', '/vendors', '/user', '/operations', '/system-status', '/redemption', '/subscription/manage', '/audit'];

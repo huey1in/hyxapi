@@ -4,7 +4,7 @@ import { canOpenConsolePage } from '../../lib/console-routes';
 import { Link, NavLink } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import {
-  BarChart3, Key, FileText, Wallet, User,
+  BarChart3, Key, FileText, Wallet, User, Trophy,
   Radio, CreditCard, Ticket, Users, Settings,
   Headset, ChevronLeft, Menu, X, Layers, Store, Bell, TrendingUp, Activity, Shield,
 } from 'lucide-react';
@@ -27,6 +27,7 @@ const COLLAPSED = 57;
 type NavItem = { to: string; label: string; icon: LucideIcon; end?: boolean; support?: boolean; admin?: boolean; root?: boolean; divider?: false } | { divider: true; support?: boolean; admin?: boolean; root?: boolean; to?: never; label?: never; icon?: never; end?: never };
 const NAV_ITEMS: NavItem[] = [
   { to: '/console',            label: '概览',     icon: BarChart3, end: true },
+  { to: '/leaderboard', label: 'Usage leaderboard', icon: Trophy },
   { to: '/pricing',    label: 'Models',   icon: Store },
   { to: '/token',      label: 'API',      icon: Key },
   { to: '/topup',      label: '充值',     icon: Wallet },

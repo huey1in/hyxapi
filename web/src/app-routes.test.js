@@ -8,7 +8,7 @@ const routes = createRoutesFromChildren(App().props.children);
 const routeAt = (path) => matchRoutes(routes, path)?.at(-1).route;
 
 test('current routes are registered without old console redirects', () => {
-  for (const path of ['/console', '/token', '/pricing', '/log', '/topup', '/subscription', '/personal', '/notices', '/channel', '/models', '/vendors', '/user', '/operations', '/audit', '/system-status', '/redemption', '/subscription/manage', '/setting', '/tickets', '/tickets/manage', '/user/reset']) {
+  for (const path of ['/console', '/leaderboard', '/token', '/pricing', '/log', '/topup', '/subscription', '/personal', '/notices', '/channel', '/models', '/vendors', '/user', '/operations', '/audit', '/system-status', '/redemption', '/subscription/manage', '/setting', '/tickets', '/tickets/manage', '/user/reset']) {
     assert.equal(routeAt(path).path, path, path);
   }
   for (const path of ['/console/token', '/console/my-subscription', '/console/task', '/console/midjourney', '/console/tickets', '/index.html']) assert.equal(routeAt(path).path, '*', path);

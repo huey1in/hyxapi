@@ -17,7 +17,7 @@ const BRAND_RULES: [RegExp, ModelBrand][] = [
   [/doubao/i, { name: 'Doubao', icon: 'Doubao.Color' }],
 ];
 
-const inferBrand = (modelName: string) => BRAND_RULES.find(([pattern]) => pattern.test(modelName || ''))?.[1];
+export const inferModelBrand = (modelName: string) => BRAND_RULES.find(([pattern]) => pattern.test(modelName || ''))?.[1];
 
 export const extractSupportedModelBrands = (models: unknown = [], vendors: unknown = []): ModelBrand[] => {
   if (!Array.isArray(models)) return [];
@@ -29,8 +29,8 @@ export const extractSupportedModelBrands = (models: unknown = [], vendors: unkno
     const model = object(value); if (!model || typeof model.model_name !== 'string') return;
     const vendor = model.vendor_id != null ? vendorMap.get(String(model.vendor_id)) : null;
     const brand = typeof vendor?.name === 'string' && vendor.name.trim()
-      ? { name: vendor.name, icon: typeof vendor.icon === 'string' && vendor.icon ? vendor.icon : inferBrand(model.model_name)?.icon || '' }
-      : inferBrand(model.model_name);
+      ? { name: vendor.name, icon: typeof vendor.icon === 'string' && vendor.icon ? vendor.icon : inferModelBrand(model.model_name)?.icon || '' }
+      : inferModelBrand(model.model_name);
     if (!brand?.name || seen.has(brand.name)) return;
     seen.add(brand.name);
     brands.push(brand);
