@@ -58,7 +58,7 @@ function TicketWorkspace({ userID, role, identity, management }: { userID: numbe
     ...(management ? [{ key: 'user', title: t('Requester'), render: (ticket: SupportTicket) => `#${ticket.user_id}` }, { key: 'priority', title: t('Priority'), render: (ticket: SupportTicket) => t(ticketLabels[ticket.priority]) }, { key: 'assignee', title: t('Assigned support'), render: (ticket: SupportTicket) => ticket.assignee_id ? ticket.assignee_id === userID ? t('Me') : `#${ticket.assignee_id}` : t('Unassigned') }] : []),
     { key: 'updated_at', title: t('Updated time'), render: (ticket) => <span className='whitespace-nowrap text-ui-text-3'>{new Date(ticket.updated_at * 1000).toLocaleString(i18n.language)}</span> },
   ];
-  return <div className='console-content-page'>
+  return <div className='console-content-page console-wide-page'>
     <ConsolePageHeader title={t(management ? 'Ticket management' : 'Support tickets')} />
     <div className='mb-5 flex flex-wrap items-center gap-2'>
       <div className='w-40 min-w-0 max-w-full sm:w-64'><Input aria-label={t('Search tickets')} placeholder={t('Search tickets')} prefix={<Search size={15} />} value={search} onChange={setSearch} clearable /></div>

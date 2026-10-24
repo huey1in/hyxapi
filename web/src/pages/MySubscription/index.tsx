@@ -1,4 +1,5 @@
 import { MySubscriptionSkeleton } from '../../components/layout/PageSkeletons';
+import ConsolePageHeader from '../../components/layout/ConsolePageHeader';
 import { useEffect, useState } from 'react';
 import { CreditCard } from 'lucide-react';
 import type { ReactNode } from 'react';
@@ -61,8 +62,8 @@ function MySubscription({ identity }: { identity: string }) {
   }, [data, clock]);
   const active = data?.all_subscriptions.filter(({ subscription }) => isActiveSubscription(subscription, now)) ?? [];
   const inactive = data?.all_subscriptions.filter(({ subscription }) => !isActiveSubscription(subscription, now)) ?? [];
-  return <div style={{ display: 'flex', flexDirection: 'column', gap: mobile ? 20 : 28, width: '100%', maxWidth: 960, marginInline: 'auto', padding: mobile ? '16px' : '24px 16px' }}>
-    <h1 className='text-lg font-semibold text-ui-text'>{t('My subscriptions')}</h1>
+  return <div className='console-content-page console-wide-page'>
+    <ConsolePageHeader title={t('My subscriptions')} />
     {query.isPending ? <MySubscriptionSkeleton /> : query.isError ? <div role='alert' className='space-y-2 text-sm text-ui-danger'><p>{t(apiErrorMessage(query.error, 'Unable to load subscriptions'))}</p><Button onClick={() => void query.refetch()}>{t('Retry')}</Button></div> : data && <>
       {!data.all_subscriptions.length ? <EmptyState icon={CreditCard} padding='md' title={t('No subscriptions yet. Activate one with a code or buy a plan.')} action={<Button onClick={() => navigate('/topup')}>{t('Open top-up page')}</Button>} /> : <>
         {active.map(({ subscription }) => <SubscriptionCard key={subscription.id} subscription={subscription} title={planTitles.get(subscription.plan_id)} mobile={mobile} now={now} />)}

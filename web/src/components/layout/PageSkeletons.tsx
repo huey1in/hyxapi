@@ -46,7 +46,7 @@ export function PersonalSkeleton({ tab = 'account', onChange }: { tab?: Personal
     const width = label === 'Notification Email' ? 145 : textInput ? 'min(220px,48vw)' : toggle ? 44 : label === 'Reminder threshold' ? 128 : label === 'Message Priority' ? 96 : input ? 160 : 70;
     return <SettingRow key={`${label}:${row}`} title={t(label)} description={textInput ? undefined : <Skeleton width={220} height={18} />} last={row === rows.length - 1}><Skeleton width={width} height={toggle ? 24 : 36} rounded={input ? 'rounded-xl' : 'rounded-full'} /></SettingRow>;
   })}</SettingGroup>;
-  return <ConsolePage width={720} gap={24} mobileGap={24}>
+  return <div className='console-content-page'>
     <PersonalSettingsHeader tab={tab} onChange={onChange} />
     <ContentSkeleton variant='form'><div data-settings-panel={tab} className='flex min-w-0 flex-col gap-6'>
       {tab === 'account' && <>{group('Account', ['Email'])}{bindings.length > 0 && group('Linked accounts', bindings)}{group('Preferences', ['Language'])}{role < 100 && group('Account actions', ['Delete account'])}</>}
@@ -54,7 +54,7 @@ export function PersonalSkeleton({ tab = 'account', onChange }: { tab?: Personal
       {tab === 'usage' && <><BillingSettingsSkeleton />{group('Usage preferences', ['Record IP Address', 'Allow models without a configured price'], true)}</>}
       {tab === 'notifications' && group('Notifications', notificationRows)}
     </div></ContentSkeleton>
-  </ConsolePage>;
+  </div>;
 }
 
 export function ProfileRowsSkeleton({ rows = 1, lines = 1, switches = false }: { rows?: number; lines?: number; switches?: boolean }) {
@@ -103,25 +103,25 @@ export function StatisticsSkeleton({ system = false }: { system?: boolean }) {
 export function DashboardPrimaryStatsSkeleton() {
   const { t } = useTranslation();
   return <ContentSkeleton variant='dashboard'><div className='dashboard-primary-stats'>{['Top-up balance', 'Total spending'].map((label, index) => <div key={label} className='dashboard-primary-card'>
-      <div className='min-w-0'><div className='mb-2 text-sm text-ui-text-3'>{t(label)}</div><div className='flex h-[42px] items-center'><Skeleton width={140} height={28} /></div></div>
-      {index === 0 && <Skeleton width={76} height={32} rounded='rounded-full' />}
+      <div className='min-w-0'><div className='dashboard-primary-label'>{t(label)}</div><div className='dashboard-primary-value flex items-center'><Skeleton width='calc(140 * var(--dashboard-unit, 1px))' height='calc(28 * var(--dashboard-unit, 1px))' /></div></div>
+      {index === 0 && <Skeleton width='calc(76 * var(--dashboard-unit, 1px))' height='calc(32 * var(--dashboard-unit, 1px))' rounded='rounded-full' />}
     </div>)}</div></ContentSkeleton>;
 }
 
 export function DashboardUsageStatsSkeleton() {
   const { t } = useTranslation();
   return <ContentSkeleton variant='dashboard'><div className='dashboard-secondary-stats'>{['Spending amount', 'API requests', 'Tokens'].map((label) => <div className='dashboard-stat-mini' key={label}>
-    <div className='mb-1 text-xs text-ui-text-3'>{label === 'Tokens' ? label : t(label)}</div><div className='flex h-[30px] items-center'><Skeleton width={72} height={20} /></div>
+    <div className='dashboard-stat-label'>{label === 'Tokens' ? label : t(label)}</div><div className='dashboard-stat-value flex items-center'><Skeleton width='calc(72 * var(--dashboard-unit, 1px))' height='calc(20 * var(--dashboard-unit, 1px))' /></div>
   </div>)}</div></ContentSkeleton>;
 }
 
 export function DashboardStatsSkeleton() {
   const { t } = useTranslation();
-  return <div className='flex flex-col gap-4 min-[769px]:gap-7'>
+  return <div className='dashboard-content'>
     <DashboardPrimaryStatsSkeleton />
-    <div aria-hidden='true' className='mx-6 my-3 h-px shrink-0 bg-ui-divider max-[768px]:mx-3' />
-    <div className='space-y-3'><ContentSkeleton variant='dashboard'><div className='dashboard-usage-filters'>{['Time', 'API Key'].map((label, index) => <div key={label} className={`dashboard-filter-field${index ? ' dashboard-key-filter' : ''}`}>
-      <div className='flex h-8 w-full items-center gap-1.5 rounded-xl border border-ui-border px-[11px] text-sm'><span className='shrink-0 text-xs text-ui-text-3'>{index ? label : t(label)}</span><div className='relative min-w-0 flex-1 whitespace-nowrap'><span className='invisible'>{t(index ? 'All' : 'Last 30 days')}</span><div className='absolute inset-x-0 top-1/2 -translate-y-1/2'><Skeleton height={14} /></div></div><ChevronDown size={14} className='shrink-0 text-ui-text-3' /></div>
+    <div aria-hidden='true' className='dashboard-divider' />
+    <div className='dashboard-usage'><ContentSkeleton variant='dashboard'><div className='dashboard-usage-filters'>{['Time', 'API Key'].map((label, index) => <div key={label} className={`dashboard-filter-field${index ? ' dashboard-key-filter' : ''}`}>
+      <div className='dashboard-filter-skeleton flex w-full items-center gap-1.5 rounded-xl border border-ui-border'><span className='shrink-0 text-xs text-ui-text-3'>{index ? label : t(label)}</span><div className='relative min-w-0 flex-1 whitespace-nowrap'><span className='invisible'>{t(index ? 'All' : 'Last 30 days')}</span><div className='absolute inset-x-0 top-1/2 -translate-y-1/2'><Skeleton height='calc(14 * var(--dashboard-unit, 1px))' /></div></div><ChevronDown size={14} className='shrink-0 text-ui-text-3' /></div>
     </div>)}</div></ContentSkeleton><DashboardUsageStatsSkeleton /><SpendingTrendChart loading /></div>
   </div>;
 }

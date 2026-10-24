@@ -18,8 +18,8 @@ import ConsolePageHeader from '../../components/layout/ConsolePageHeader';
 
 const StatMini = ({ label, value }: { label: string; value: ReactNode }) => (
   <div className='dashboard-stat-mini'>
-    <div style={{ fontSize: 12, color: 'var(--ui-text-3)', marginBottom: 4 }}>{label}</div>
-    <div style={{ fontSize: 20, fontWeight: 700, color: 'var(--ui-text)', fontVariantNumeric: 'tabular-nums' }}>{value}</div>
+    <div className='dashboard-stat-label'>{label}</div>
+    <div className='dashboard-stat-value'>{value}</div>
   </div>
 );
 
@@ -59,66 +59,64 @@ function DashboardContent() {
 
   return (
     <div className='console-content-page dashboard-overview'>
-      {/* 页面标题 */}
-      <ConsolePageHeader title={t('Usage overview')} />
-      {overviewError && <div role='alert' className='flex flex-wrap items-center justify-between gap-3 rounded-xl border border-ui-border p-4 text-sm text-ui-text-2'><span>{t('Unable to load overview')}</span><Button variant='toggle' onClick={refresh}>{t('Retry')}</Button></div>}
+      <div className='dashboard-content'>
+        {/* 页面标题 */}
+        <ConsolePageHeader title={t('Usage overview')} />
+        {overviewError && <div role='alert' className='flex flex-wrap items-center justify-between gap-3 rounded-xl border border-ui-border p-4 text-sm text-ui-text-2'><span>{t('Unable to load overview')}</span><Button variant='toggle' onClick={refresh}>{t('Retry')}</Button></div>}
 
-      {/* 统计卡片 */}
-      {profile.isPending ? <DashboardPrimaryStatsSkeleton /> :
-      <div className='dashboard-primary-stats'>
-        {/* 充值余额 */}
-        <div className='dashboard-primary-card'>
-          <div>
-            <div style={{ fontSize: 14, fontWeight: 400, color: 'var(--ui-text-3)', marginBottom: 8 }}>{t('Top-up balance')}</div>
-            <div style={{ fontSize: 28, fontWeight: 700, color: 'var(--ui-text)' }}>{u ? renderQuota(u.quota) : '—'}</div>
+        {/* 统计卡片 */}
+        {profile.isPending ? <DashboardPrimaryStatsSkeleton /> :
+        <div className='dashboard-primary-stats'>
+          {/* 充值余额 */}
+          <div className='dashboard-primary-card'>
+            <div>
+              <div className='dashboard-primary-label'>{t('Top-up balance')}</div>
+              <div className='dashboard-primary-value'>{u ? renderQuota(u.quota) : '—'}</div>
+            </div>
+            <button
+              onClick={() => navigate('/topup')}
+              className='dashboard-topup-button'
+              style={{
+                background: isDark
+                  ? 'var(--ui-bg-subtle)'
+                  : 'linear-gradient(136deg, #daf5fe, #ffeddf, #daf5fe, #ffeddf)',
+                backgroundSize: '300% 300%',
+              }}
+            >{t('Top up')}</button>
           </div>
-          <button
-            onClick={() => navigate('/topup')}
-            style={{
-              cursor: 'pointer',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              height: 32, paddingInline: 16, border: 'none', borderRadius: 24,
-              fontSize: 14, fontWeight: 500, color: 'var(--ui-text)',
-              background: isDark
-                ? 'var(--ui-bg-subtle)'
-                : 'linear-gradient(136deg, #daf5fe, #ffeddf, #daf5fe, #ffeddf)',
-              backgroundSize: '300% 300%',
-            }}
-          >{t('Top up')}</button>
-        </div>
-        {/* 累计消费金额 */}
-        <div className='dashboard-primary-card'>
-          <div>
-            <div style={{ fontSize: 14, fontWeight: 400, color: 'var(--ui-text-3)', marginBottom: 8 }}>{t('Total spending')}</div>
-            <div style={{ fontSize: 28, fontWeight: 700, color: 'var(--ui-text)' }}>{u ? renderQuota(u.used_quota) : '—'}</div>
+          {/* 累计消费金额 */}
+          <div className='dashboard-primary-card'>
+            <div>
+              <div className='dashboard-primary-label'>{t('Total spending')}</div>
+              <div className='dashboard-primary-value'>{u ? renderQuota(u.used_quota) : '—'}</div>
+            </div>
           </div>
         </div>
+        }
+
+        <div aria-hidden='true' className='dashboard-divider' />
+
+        <section className='dashboard-usage' aria-label={t('Usage statistics')} data-dashboard-usage>
+          <div className='dashboard-usage-filters'>
+            <div className='dashboard-filter-field'>
+              <Select id='dashboard-period' size={32} prefix={t('Time')} aria-label={t('Time range')} value={typeof range === 'string' ? range : 'custom'} options={[...dashboardPeriods.map((period) => ({ value: period.value, label: <span title={t(period.label)}>{t(period.label)}</span> })), { value: 'custom', label: <span title={customRangeTitle}>{t('Custom range')}</span> }]} onChange={(value) => {
+                if (value === 'custom') setRangeDialogOpen(true);
+                else setRange(value);
+              }} />
+            </div>
+            <div className='dashboard-filter-field dashboard-key-filter'>
+              <Select id='dashboard-key' popover size={32} prefix='API Key' aria-label='API Key' value={activeKeyID} disabled={keys.isPending} options={[{ value: 0, label: t('All') }, ...availableKeys.map((key) => ({ value: key.id, label: <span title={`${key.name || 'API Key'} (#${key.id})`}>{key.name || 'API Key'} (#{key.id})</span> }))]} onChange={setSelectedKeyID} />
+            </div>
+          </div>
+          {rangeDialogOpen && <DashboardRangeDialog initialRange={dashboardRange(range)} onClose={closeRangeDialog} onApply={(next) => { setRange(next); closeRangeDialog(); }} />}
+          {usage.isPending ? <DashboardUsageStatsSkeleton /> : <div className='dashboard-secondary-stats'>
+            <StatMini label={t('Spending amount')} value={activeStats ? renderQuota(activeStats.quota) : '—'} />
+            <StatMini label={t('API requests')} value={activeStats ? renderNumber(activeStats.requests) : '—'} />
+            <StatMini label='Tokens' value={fmtTokens(activeStats?.tokens)} />
+          </div>}
+          <SpendingTrendChart usage={activeStats} loading={usage.isPending} />
+        </section>
       </div>
-      }
-
-      <div aria-hidden='true' className='mx-6 my-3 h-px shrink-0 bg-ui-divider max-[768px]:mx-3' />
-
-      <section className='space-y-3' aria-label={t('Usage statistics')} data-dashboard-usage>
-        <div className='dashboard-usage-filters'>
-          <div className='dashboard-filter-field'>
-            <Select id='dashboard-period' size={32} prefix={t('Time')} aria-label={t('Time range')} value={typeof range === 'string' ? range : 'custom'} options={[...dashboardPeriods.map((period) => ({ value: period.value, label: <span title={t(period.label)}>{t(period.label)}</span> })), { value: 'custom', label: <span title={customRangeTitle}>{t('Custom range')}</span> }]} onChange={(value) => {
-              if (value === 'custom') setRangeDialogOpen(true);
-              else setRange(value);
-            }} />
-          </div>
-          <div className='dashboard-filter-field dashboard-key-filter'>
-            <Select id='dashboard-key' popover size={32} prefix='API Key' aria-label='API Key' value={activeKeyID} disabled={keys.isPending} options={[{ value: 0, label: t('All') }, ...availableKeys.map((key) => ({ value: key.id, label: <span title={`${key.name || 'API Key'} (#${key.id})`}>{key.name || 'API Key'} (#{key.id})</span> }))]} onChange={setSelectedKeyID} />
-          </div>
-        </div>
-        {rangeDialogOpen && <DashboardRangeDialog initialRange={dashboardRange(range)} onClose={closeRangeDialog} onApply={(next) => { setRange(next); closeRangeDialog(); }} />}
-        {usage.isPending ? <DashboardUsageStatsSkeleton /> : <div className='dashboard-secondary-stats'>
-          <StatMini label={t('Spending amount')} value={activeStats ? renderQuota(activeStats.quota) : '—'} />
-          <StatMini label={t('API requests')} value={activeStats ? renderNumber(activeStats.requests) : '—'} />
-          <StatMini label='Tokens' value={fmtTokens(activeStats?.tokens)} />
-        </div>}
-        <SpendingTrendChart usage={activeStats} loading={usage.isPending} />
-      </section>
-
     </div>
   );
 };

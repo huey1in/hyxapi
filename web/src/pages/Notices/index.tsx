@@ -21,7 +21,7 @@ function Notifications() {
   useEffect(() => { setPage((current) => Math.min(current, Math.max(1, Math.ceil(announcements.length / pageSize)))); }, [announcements.length]);
   useEffect(() => { markRead(keys); }, [keys, markRead]);
   const date = (raw: string) => { const value = new Date(raw); return Number.isNaN(value.getTime()) ? raw : new Intl.DateTimeFormat(i18n.language, { dateStyle: 'medium', timeStyle: 'short' }).format(value); };
-  return <div className='console-content-page'>
+  return <div className='console-content-page console-wide-page'>
     <ConsolePageHeader title={t('Notifications')} />
     <section aria-label={t('System announcements')} className='notices-announcements flex min-h-[440px] min-w-0 flex-col rounded-[26px] border border-ui-border p-6 md:min-h-[560px]'>
       <h2 className='mb-5 text-sm font-semibold'>{t('System announcements')}</h2>

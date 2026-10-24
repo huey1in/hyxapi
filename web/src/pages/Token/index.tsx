@@ -29,7 +29,7 @@ const TokenPage = () => {
   };
 
   return (
-    <div className='console-content-page token-management-page'>
+    <div className='console-content-page console-wide-page token-management-page'>
       <ConsolePageHeader title='API keys' />
       <div className='token-page-toolbar'><button
         disabled={management.busy}

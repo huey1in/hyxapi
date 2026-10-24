@@ -11,7 +11,7 @@ import { DailyCheckinSkeleton } from './DailyCheckin';
 
 export function TopUpPage({ children, pending = false }: PropsWithChildren<{ pending?: boolean }>) {
   const { t } = useTranslation();
-  return <div className='console-content-page'>
+  return <div className='console-content-page console-wide-page'>
     <ConsolePageHeader title={t('充值')} actions={pending && <div role='status' aria-label={t('Loading...')} aria-busy='true' className='flex h-10 items-center'>
       <Skeleton width={72} height={3} rounded='rounded-full' />
     </div>} />
