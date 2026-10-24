@@ -9,12 +9,11 @@ import { useAuthStore } from '../../stores/auth-store';
 import { apiErrorMessage } from '../../lib/api-error';
 import { paymentMethods, paymentError, paymentSucceeded, topUpRequest, safePaymentURL } from '../../features/payments/payment-core';
 import { walletProfileSchema, affiliateURL } from '../../features/payments/wallet-data';
-import { readWalletData, useWalletOffers, useWalletPaymentInfo, walletRequestConfig } from '../../features/payments/wallet-query';
+import { readWalletData, useWalletPaymentInfo, walletRequestConfig } from '../../features/payments/wallet-query';
 import { InvitationRewards, TopUpPage, WalletBalanceCard } from '../../features/payments/TopUpLayout';
 import { AffiliateTransferDialog, RedemptionDialog } from '../../features/payments/WalletDialogs';
 import TopUpHistory from '../../features/payments/TopUpHistory';
 import usePaymentCheckout from '../../features/payments/usePaymentCheckout';
-import SubscriptionOffers from '../../features/payments/SubscriptionOffers';
 import USDTCheckout from '../../features/payments/USDTCheckout';
 import DailyCheckin from '../../features/payments/DailyCheckin';
 
@@ -28,7 +27,6 @@ function TopUp({ identity }: { identity: string }) {
   const [quote, setQuote] = useState<Quote | null>(null); const [quoteGeneration, setQuoteGeneration] = useState(0);
   const { checkingOut, checkout } = usePaymentCheckout();
   const info = useWalletPaymentInfo(identity); const paymentInfo = info.isError ? undefined : info.data;
-  const offers = useWalletOffers(identity);
   const profile = useQuery({ queryKey: ['wallet-profile', identity], gcTime: 0, retry: false, queryFn: async ({ signal }) => {
     const result = await readWalletData('/api/user/self', walletProfileSchema, signal);
     if (result.id !== userId) throw new Error('Invalid wallet data; reload and try again.'); return result;
@@ -77,7 +75,7 @@ function TopUp({ identity }: { identity: string }) {
   let otherLink = '';
   if (paymentInfo?.topup_link) { try { otherLink = safePaymentURL(paymentInfo.topup_link, window.location.origin); } catch { /* A malformed optional link is not actionable. */ } }
   const canRedeem = Boolean(paymentInfo);
-  return <TopUpPage pending={info.isPending || offers.isPending}>
+  return <TopUpPage pending={info.isPending}>
     <WalletBalanceCard user={user} pending={profile.isPending} onHistory={() => setShowHistory(true)} />
     <DailyCheckin identity={identity} />
     {profile.isError && <div role='alert' className='space-y-2 text-sm text-ui-danger'><p>{t(apiErrorMessage(profile.error, 'Unable to load wallet data'))}</p><Button onClick={refreshUser}>{t('Retry')}</Button></div>}
@@ -97,7 +95,6 @@ function TopUp({ identity }: { identity: string }) {
     </section>}
     {!methods.length && canRedeem && <Button variant='link' onClick={() => setRedeemOpen(true)}>{t('Use redemption code')}</Button>}
     {otherLink && <a href={otherLink} target='_blank' rel='noopener noreferrer' className='text-sm text-ui-text-2 underline'>{t('Other top-up methods')}</a>}
-    <SubscriptionOffers onPurchased={refreshUser} />
     {invitationRewardsEnabled && <InvitationRewards user={user} pending={profile.isPending} link={affLink} linkPending={affiliate.isPending}
       transferDisabled={!user || !paymentInfo || user.aff_quota < Math.ceil(paymentInfo.quota_per_unit)}
       onTransfer={() => setTransferOpen(true)} onCopy={async () => { if (await copy(affLink)) showSuccess(t('Invitation link copied')); }}>
