@@ -491,42 +491,10 @@ function _MarkdownContent({ content }) {
             }}
           />
         ),
-        table: (props) => (
-          <div style={{ overflow: 'auto', margin: '12px 0' }}>
-            <table
-              {...props}
-              style={{
-                width: '100%',
-                borderCollapse: 'collapse',
-                border: '1px solid var(--semi-color-border)',
-                borderRadius: '6px',
-                overflow: 'hidden',
-              }}
-            />
+        table: ({ node, ...props }) => (
+          <div className='markdown-table-scroll' tabIndex={0}>
+            <table {...props} />
           </div>
-        ),
-        th: (props) => (
-          <th
-            {...props}
-            style={{
-              padding: '8px 12px',
-              backgroundColor: 'var(--semi-color-fill-1)',
-              border: '1px solid var(--semi-color-border)',
-              fontWeight: 'bold',
-              textAlign: 'left',
-              color: 'inherit',
-            }}
-          />
-        ),
-        td: (props) => (
-          <td
-            {...props}
-            style={{
-              padding: '8px 12px',
-              border: '1px solid var(--semi-color-border)',
-              color: 'inherit',
-            }}
-          />
         ),
       }}
     >
@@ -541,7 +509,7 @@ function MarkdownRenderer({ content }) {
   return (
     <div
       className='markdown-body'
-      style={{ fontSize: '14px', fontFamily: 'inherit', lineHeight: '1.6', color: 'var(--semi-color-text-0)' }}
+      style={{ fontSize: '14px', fontFamily: 'inherit', lineHeight: '1.6', color: 'var(--ui-text)' }}
       dir='auto'
     >
       <MarkdownContent content={content} />
