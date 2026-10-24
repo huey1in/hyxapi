@@ -27,7 +27,7 @@ func GetLeaderboardUsage(ctx context.Context, start, end int64) ([]LeaderboardUs
 		Username string
 	}
 	if err := DB.WithContext(ctx).Model(&User{}).Select("id, username").
-		Where("role = ? AND status = ?", common.RoleCommonUser, common.UserStatusEnabled).
+		Where("role IN ? AND status = ?", []int{common.RoleCommonUser, common.RoleAdminUser, common.RoleRootUser}, common.UserStatusEnabled).
 		Find(&users).Error; err != nil {
 		return nil, err
 	}

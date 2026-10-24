@@ -54,6 +54,8 @@ func TestLeaderboardResponseKeepsPrivateFieldsAndViewerDataSeparated(t *testing.
 	for _, user := range []model.User{
 		{Id: 871, Username: "leader-alice", AffCode: "leader-alice", Group: "default", Role: common.RoleCommonUser, Status: 1, Email: "private-alice@example.com", Password: "private-password"},
 		{Id: 872, Username: "leader-bob", AffCode: "leader-bob", Group: "vip_only", Role: common.RoleCommonUser, Status: 1, Email: "private-bob@example.com"},
+		{Id: 873, Username: "leader-admin", AffCode: "leader-admin", Group: "default", Role: common.RoleAdminUser, Status: 1, Email: "private-admin@example.com"},
+		{Id: 874, Username: "leader-root", AffCode: "leader-root", Group: "default", Role: common.RoleRootUser, Status: 1, Email: "private-root@example.com"},
 	} {
 		require.NoError(t, db.Create(&user).Error)
 	}
@@ -69,9 +71,11 @@ func TestLeaderboardResponseKeepsPrivateFieldsAndViewerDataSeparated(t *testing.
 		{UserId: 871, CreatedAt: time.Now().Unix(), Type: model.LogTypeConsume, ModelName: "leader-public", PromptTokens: 100, Content: "private-prompt", Ip: "192.0.2.33", TokenName: "private-key", Other: "private-other"},
 		{UserId: 871, CreatedAt: time.Now().Unix(), Type: model.LogTypeConsume, ModelName: "leader-private", PromptTokens: 300},
 		{UserId: 872, CreatedAt: time.Now().Unix(), Type: model.LogTypeConsume, ModelName: "leader-public", PromptTokens: 200},
+		{UserId: 873, CreatedAt: time.Now().Unix(), Type: model.LogTypeConsume, ModelName: "leader-public", PromptTokens: 600},
+		{UserId: 874, CreatedAt: time.Now().Unix(), Type: model.LogTypeConsume, ModelName: "leader-private", PromptTokens: 800},
 	}).Error)
 	model.InvalidatePricingCache()
-	for index, viewerID := range []int{871, 872} {
+	for index, viewerID := range []int{871, 872, 873, 874} {
 		response := httptest.NewRecorder()
 		c, _ := gin.CreateTestContext(response)
 		c.Set("id", viewerID)
@@ -93,15 +97,22 @@ func TestLeaderboardResponseKeepsPrivateFieldsAndViewerDataSeparated(t *testing.
 		local := time.Now().In(time.FixedZone("Asia/Shanghai", 8*3600))
 		start := time.Date(local.Year(), local.Month(), local.Day(), 0, 0, 0, 0, local.Location())
 		require.Equal(t, start.Unix(), envelope.Data.StartAt)
-		require.Len(t, envelope.Data.Users, 2)
-		require.Equal(t, "leader-alice", envelope.Data.Users[0].Username)
-		require.Equal(t, index+1, *envelope.Data.MyRank)
-		require.True(t, envelope.Data.Users[index].IsMe)
-		require.False(t, envelope.Data.Users[1-index].IsMe)
-		for _, private := range []string{"example.com", "private-password", "private-prompt", "192.0.2.33", "private-key", "private-other", `"user_id"`, `"email"`, `"quota"`, `"id"`} {
+		require.Len(t, envelope.Data.Users, 4)
+		require.Equal(t, 4, envelope.Data.ActiveUsers)
+		require.EqualValues(t, 5, envelope.Data.Requests)
+		require.EqualValues(t, 2000, envelope.Data.Tokens)
+		require.Equal(t, []string{"leader-root", "leader-admin", "leader-alice", "leader-bob"}, []string{
+			envelope.Data.Users[0].Username, envelope.Data.Users[1].Username, envelope.Data.Users[2].Username, envelope.Data.Users[3].Username,
+		})
+		expectedRank := map[int]int{871: 3, 872: 4, 873: 2, 874: 1}[viewerID]
+		require.Equal(t, expectedRank, *envelope.Data.MyRank)
+		for _, user := range envelope.Data.Users {
+			require.Equal(t, user.Rank == expectedRank, user.IsMe)
+		}
+		for _, private := range []string{"example.com", "private-password", "private-prompt", "192.0.2.33", "private-key", "private-other", `"user_id"`, `"email"`, `"quota"`, `"id"`, `"role"`} {
 			require.NotContains(t, response.Body.String(), private)
 		}
-		if index == 0 {
+		if viewerID != 872 {
 			require.NotContains(t, response.Body.String(), "leader-private")
 		} else {
 			require.Contains(t, response.Body.String(), "leader-private")
