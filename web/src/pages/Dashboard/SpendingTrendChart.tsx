@@ -7,7 +7,7 @@ import type { DashboardUsage } from './dashboard-data';
 
 export default function SpendingTrendChart({ usage, loading = false }: { usage?: DashboardUsage; loading?: boolean }) {
   const { t, i18n } = useTranslation();
-  const titleId = useId(); const hintId = useId(); const fillId = useId();
+  const titleId = useId(); const hintId = useId();
   const plotRef = useRef<HTMLDivElement>(null);
   const [{ width, height }, setSize] = useState({ width: 600, height: 240 });
   const [active, setActive] = useState<number | null>(null);
@@ -40,16 +40,11 @@ export default function SpendingTrendChart({ usage, loading = false }: { usage?:
   const axisWidth = Math.max(44, Math.min(80, Math.max(...ticks.map((value) => money(value).length)) * 6 + 12)) * scale;
   const left = 8 * scale;
   const right = Math.max(left + 1, width - axisWidth); const top = 16 * scale; const bottom = height - 36 * scale;
-  const x = (index: number) => points.length > 1 ? left + index * (right - left) / (points.length - 1) : (left + right) / 2;
+  const slotWidth = (right - left) / Math.max(1, points.length);
+  const barWidth = Math.min(32 * scale, slotWidth * 0.68);
+  const x = (index: number) => left + (index + 0.5) * slotWidth;
   const y = (amount: number) => bottom - (amount - lower) / (upper - lower) * (bottom - top);
-  // Horizontal control handles soften each segment while keeping the curve
-  // between its observed endpoints, without introducing peaks or negative spend.
-  const path = values.map((value, index) => {
-    if (!index) return `M ${x(index)} ${y(value)}`;
-    const handle = (x(index) - x(index - 1)) * 0.36;
-    return `C ${x(index - 1) + handle} ${y(values[index - 1])}, ${x(index) - handle} ${y(value)}, ${x(index)} ${y(value)}`;
-  }).join(' ');
-  const area = points.length > 1 ? `${path} L ${x(points.length - 1)} ${y(0)} L ${x(0)} ${y(0)} Z` : '';
+  const baseline = y(0);
   const labelCount = Math.min(points.length, width < 420 ? 3 : 5);
   const labels = Array.from({ length: labelCount }, (_, index) => labelCount === 1 ? 0 : Math.round(index * (points.length - 1) / (labelCount - 1)));
   const date = (timestamp: number, full = false) => new Intl.DateTimeFormat(i18n.language, full
@@ -67,26 +62,29 @@ export default function SpendingTrendChart({ usage, loading = false }: { usage?:
       : !usage ? <div className='dashboard-trend-message'>{t('Unable to load overview')}</div>
         : <div ref={plotRef} className='dashboard-trend-plot' data-empty={usage.requests === 0 || undefined} role='group' aria-label={t('Spending trend')} aria-describedby={hintId} tabIndex={0}
           onPointerMove={(event) => {
+            if (!points.length) return;
             const position = event.clientX - event.currentTarget.getBoundingClientRect().left;
-            setActive(Math.max(0, Math.min(points.length - 1, Math.round((position - left) / (right - left) * (points.length - 1)))));
+            setActive(Math.max(0, Math.min(points.length - 1, Math.floor((position - left) / slotWidth))));
           }}
           onPointerLeave={() => { if (document.activeElement !== plotRef.current) setActive(null); }}
-          onFocus={() => setActive(points.length - 1)} onBlur={() => setActive(null)}
+          onFocus={() => { if (points.length) setActive(points.length - 1); }} onBlur={() => setActive(null)}
           onKeyDown={(event) => {
-            if (!['ArrowLeft', 'ArrowRight', 'Home', 'End', 'Escape'].includes(event.key)) return;
+            if (!points.length || !['ArrowLeft', 'ArrowRight', 'Home', 'End', 'Escape'].includes(event.key)) return;
             event.preventDefault();
             if (event.key === 'Escape') setActive(null);
             else setActive((current) => event.key === 'Home' ? 0 : event.key === 'End' ? points.length - 1 : Math.max(0, Math.min(points.length - 1, (current ?? points.length - 1) + (event.key === 'ArrowLeft' ? -1 : 1))));
           }}>
           <p id={hintId} className='sr-only'>{t('Use arrow keys to inspect spending by date')}</p>
           <svg width='100%' height={height} viewBox={`0 0 ${width} ${height}`} aria-hidden='true'>
-            <defs><linearGradient id={fillId} x1='0' y1='0' x2='0' y2='1'><stop offset='0%' className='dashboard-trend-fill-start' /><stop offset='100%' className='dashboard-trend-fill-end' /></linearGradient></defs>
             {ticks.map((value, index) => <g key={index}><line x1={left} x2={right} y1={y(value)} y2={y(value)} className='dashboard-trend-grid' /><text x={width - 2 * scale} y={y(value)} textAnchor='end' dominantBaseline='middle' className='dashboard-trend-axis'>{money(value)}</text></g>)}
             {labels.map((index, position) => <text key={index} x={x(index)} y={height - 10 * scale} textAnchor={position === 0 && points.length > 1 ? 'start' : position === labels.length - 1 && points.length > 1 ? 'end' : 'middle'} className='dashboard-trend-axis'>{date(points[index].timestamp)}</text>)}
-            {area && <path d={area} fill={`url(#${fillId})`} className='dashboard-trend-area' />}
-            <path d={path} fill='none' className='dashboard-trend-line' strokeWidth={1.75 * scale} strokeLinecap='round' strokeLinejoin='round' />
-            {points.length === 1 && <circle cx={x(0)} cy={y(values[0])} r={3 * scale} className='dashboard-trend-dot' />}
-            {selected && <><line x1={x(active!)} x2={x(active!)} y1={top} y2={bottom} className='dashboard-trend-crosshair' /><circle cx={x(active!)} cy={y(values[active!])} r={8 * scale} className='dashboard-trend-halo' /><circle cx={x(active!)} cy={y(values[active!])} r={4 * scale} className='dashboard-trend-dot' /></>}
+            <line x1={left} x2={right} y1={baseline} y2={baseline} className='dashboard-trend-baseline' />
+            <g key={`${interval}:${points[0]?.timestamp}:${points.length}`} className='dashboard-trend-bars' style={{ transformOrigin: `0px ${baseline}px` }}>
+              {values.map((value, index) => {
+                const barHeight = Math.abs(y(value) - baseline);
+                return <rect key={points[index].timestamp} x={x(index) - barWidth / 2} y={Math.min(y(value), baseline)} width={barWidth} height={barHeight} rx={Math.min(3 * scale, barWidth / 2, barHeight / 2)} className='dashboard-trend-bar' data-active={active === index || undefined} />;
+              })}
+            </g>
           </svg>
           {usage.requests === 0 && <div className='dashboard-trend-empty'>{t('No data')}</div>}
           {selected && <div className='dashboard-trend-tooltip' role='status' style={{ left: Math.max(0, Math.min(width - 168 * scale, x(active!) < width / 2 ? x(active!) + 14 * scale : x(active!) - 182 * scale)), top: y(values[active!]) < 80 * scale ? y(values[active!]) + 16 * scale : y(values[active!]) - 72 * scale }}><span>{date(selected.timestamp, true)}</span><strong>{renderQuota(selected.quota)}</strong></div>}

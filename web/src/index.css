@@ -635,14 +635,15 @@ input[type='number'] {
 .dashboard-trend-plot:focus-visible { outline:2px solid var(--ui-text-3); outline-offset:4px; }
 .dashboard-trend-axis { fill:var(--ui-text-3); font-size:calc(11 * var(--dashboard-unit)); font-family:inherit; font-variant-numeric:tabular-nums; }
 .dashboard-trend-grid { stroke:var(--ui-border); stroke-width:1; stroke-dasharray:3 6; opacity:.65; }
-.dashboard-trend-line { stroke:color-mix(in srgb,var(--ui-text) 78%,var(--page-bg)); }
-.dashboard-trend-plot[data-empty] .dashboard-trend-line { stroke:var(--ui-border); stroke-width:1; }
-.dashboard-trend-plot[data-empty] .dashboard-trend-dot { fill:var(--ui-border); }
-.dashboard-trend-fill-start { stop-color:var(--ui-text); stop-opacity:.07; }
-.dashboard-trend-fill-end { stop-color:var(--ui-text); stop-opacity:0; }
-.dashboard-trend-dot { fill:var(--ui-text); stroke:var(--page-bg); stroke-width:calc(2 * var(--dashboard-unit)); }
-.dashboard-trend-halo { fill:var(--ui-text); opacity:.08; }
-.dashboard-trend-crosshair { stroke:var(--ui-text-3); stroke-width:1; stroke-dasharray:3 5; opacity:.6; }
+.dashboard-trend-baseline { stroke:var(--ui-border); stroke-width:1; }
+.dashboard-trend-bars { transform-box:view-box; animation:dashboard-trend-bars-rise .6s cubic-bezier(.22,1,.36,1) both; }
+@keyframes dashboard-trend-bars-rise {
+  from { transform:scaleY(0); }
+  to { transform:scaleY(1); }
+}
+.dashboard-trend-bar { fill:color-mix(in srgb,var(--ui-text) 58%,var(--page-bg)); transition:fill .15s ease; }
+.dashboard-trend-bar[data-active] { fill:color-mix(in srgb,var(--ui-text) 85%,var(--page-bg)); }
+@media (prefers-reduced-motion:reduce) { .dashboard-trend-bars { animation:none; } }
 .dashboard-trend-placeholder { height:calc(240 * var(--dashboard-unit)); padding:calc(16 * var(--dashboard-unit)) calc(2 * var(--dashboard-unit)) calc(10 * var(--dashboard-unit)) calc(8 * var(--dashboard-unit)); }
 .dashboard-trend-placeholder-grid { display:flex; flex-direction:column; justify-content:space-between; height:calc(188 * var(--dashboard-unit)); }
 .dashboard-trend-placeholder-grid > div { display:flex; align-items:center; gap:calc(12 * var(--dashboard-unit)); }
